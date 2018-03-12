@@ -33,7 +33,7 @@ $(function() {
         };
 
         self.showTab = function(tab) {
-            $("a[href=#" + tab + "]", self.aboutTabs).tab("show");
+            $('a[href="#' + tab + '"]', self.aboutTabs).tab("show");
         };
     }
 

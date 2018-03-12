@@ -213,6 +213,17 @@ Version checks
       information and whether the current version is up-to-date or not, see
       below for details.
 
+  * ``always_current``: Always reports that no update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``current_version``: Version to report for both local and remote version.
+
+  * ``never_current``: Always reports that an update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``local_version``: Current local version. Defaults to ``1.0.0``.
+    * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
+
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
 Update methods
@@ -232,6 +243,9 @@ Update methods
   * ``python_updater``: Can only be specified by plugins through the
     :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A python callable
     which performs the update, see below for details.
+  * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
+    a countdown in the meantime. Useful for debugging software update mechanisms
+    during development.
 
 .. note::
 

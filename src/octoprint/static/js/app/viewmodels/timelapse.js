@@ -11,7 +11,6 @@ $(function() {
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
         self.defaultMinDelay = 5.0;
-        self.defaultCapturePostRoll = true;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
@@ -19,7 +18,6 @@ $(function() {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
-        self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
 
         self.serverConfig = ko.observable();
 
@@ -74,9 +72,6 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseMinDelay.subscribe(function() {
-            self.isDirty(true);
-        });
-        self.timelapseCapturePostRoll.subscribe(function() {
             self.isDirty(true);
         });
         self.persist.subscribe(function() {
@@ -174,12 +169,6 @@ $(function() {
                 self.timelapseTimedInterval(config.interval);
             } else {
                 self.timelapseTimedInterval(self.defaultInterval);
-            }
-
-            if (config.type === "timed" && config.capturePostRoll !== undefined){
-                self.timelapseCapturePostRoll(config.capturePostRoll);
-            } else {
-                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
             if (config.type === "zchange" && config.retractionZHop !== undefined && config.retractionZHop > 0) {
@@ -386,7 +375,6 @@ $(function() {
 
             if (self.timelapseType() === "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
-                payload["capturePostRoll"] = self.timelapseCapturePostRoll();
             }
 
             if (self.timelapseType() === "zchange") {

@@ -114,19 +114,22 @@ class VirtualPrinter(object):
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
 		self._sendBusy = settings().getBoolean(["devel", "virtualPrinter", "sendBusy"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
+		self._busyInterval = settings().getFloat(["devel", "virtualPrinter", "busyInterval"])
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+		self._brokenResend = settings().getBoolean(["devel", "virtualPrinter", "brokenResend"])
 
 		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
 
-		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"], merged=True)
 
 		self._temperature_reporter = None
+		self._sdstatus_reporter = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -352,9 +355,11 @@ class VirtualPrinter(object):
 
 	def _gcode_T(self, code, data):
 		t = int(code)
-		if 0 <= t <= self.extruderCount:
+		if 0 <= t < self.extruderCount:
 			self.currentExtruder = t
 			self._send("Active Extruder: %d" % self.currentExtruder)
+		else:
+			self._send("echo:T{} Invalid extruder ".format(t))
 
 	def _gcode_F(self, code, data):
 		if self._supportF:
@@ -410,8 +415,23 @@ class VirtualPrinter(object):
 			self._setSdPos(pos)
 
 	def _gcode_M27(self, data):
-		if self._sdCardReady:
-			self._reportSdStatus()
+		def report():
+			if self._sdCardReady:
+				self._reportSdStatus()
+
+		match = re.search("S([0-9]+)", data)
+		if match:
+			interval = int(match.group(1))
+			if self._sdstatus_reporter is not None:
+				self._sdstatus_reporter.cancel()
+
+			if interval > 0:
+				self._sdstatus_reporter = RepeatedTimer(interval, report)
+				self._sdstatus_reporter.start()
+			else:
+				self._sdstatus_reporter = None
+
+		report()
 
 	def _gcode_M28(self, data):
 		if self._sdCardReady:
@@ -426,6 +446,11 @@ class VirtualPrinter(object):
 		if self._sdCardReady:
 			filename = data.split(None, 1)[1].strip()
 			self._deleteSdFile(filename)
+
+	def _gcode_M113(self, data):
+		interval = int(re.search("S([0-9]+)", data).group(1))
+		if 0 <= interval <= 60:
+			self._busyInterval = interval
 
 	def _gcode_M114(self, data):
 		if settings().getBoolean(["devel", "virtualPrinter", "reprapfwM114"]):
@@ -536,10 +561,10 @@ class VirtualPrinter(object):
 		elif matchS:
 			_timeout = float(matchS.group(1))
 
-		if self._sendBusy:
+		if self._sendBusy and self._busyInterval > 0:
 			until = time.time() + _timeout
 			while time.time() < until:
-				time.sleep(1.0)
+				time.sleep(self._busyInterval)
 				self._send("busy:processing")
 		else:
 			time.sleep(_timeout)
@@ -575,7 +600,8 @@ class VirtualPrinter(object):
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._sendOk()
+				if not self._brokenResend:
+					self._sendOk()
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()
@@ -1035,19 +1061,26 @@ class VirtualPrinter(object):
 	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
 		delay = 1
+		last_busy = time.time()
 
 		try:
 			if heater.startswith("tool"):
 				toolNum = int(heater[len("tool"):])
-				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or (not only_wait_if_higher and self.temp[toolNum] > self.targetTemp[toolNum] + delta)):
-					self._simulateTemps(delta=delta)
-					self._output("T:%0.2f" % self.temp[toolNum])
-					time.sleep(delay)
+				test = lambda: self.temp[toolNum] < self.targetTemp[toolNum] - delta or (not only_wait_if_higher and self.temp[toolNum] > self.targetTemp[toolNum] + delta)
+				output = lambda: "T:%0.2f" % self.temp[toolNum]
 			elif heater == "bed":
-				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)):
-					self._simulateTemps(delta=delta)
-					self._output("B:%0.2f" % self.bedTemp)
-					time.sleep(delay)
+				test = lambda: self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)
+				output = lambda: "B:%0.2f" % self.bedTemp
+			else:
+				return
+
+			while not self._killed and test():
+				self._simulateTemps(delta=delta)
+				self._output(output())
+				if self._sendBusy and time.time() - last_busy >= self._busyInterval:
+					self._output("echo:busy: processing")
+					last_busy = time.time()
+				time.sleep(delay)
 		except AttributeError:
 			if self.outgoing is not None:
 				raise

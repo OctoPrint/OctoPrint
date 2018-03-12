@@ -125,8 +125,27 @@ $(function() {
                         self.settings.printerProfiles.requestData();
                     });
             } else {
-                self.requestData();
-                OctoPrint.connection.disconnect();
+                if (!self.isPrinting() && !self.isPaused()) {
+                    self.requestData();
+                    OctoPrint.connection.disconnect();
+                } else {
+                    showConfirmationDialog({
+                        title: gettext("Are you sure?"),
+                        message: gettext("<p><strong>You are about to disconnect from the printer while a print "
+                            + "is in progress.</strong></p>"
+                            + "<p>Disconnecting while a print is in progress will prevent OctoPrint from "
+                            + "completing the print. If you're printing from an SD card attached directly "
+                            + "to the printer, any attempt to restart OctoPrint or reconnect to the printer "
+                            + "could interrupt the print.<p>"),
+                        question: gettext("Are you sure you want to disconnect from the printer?"),
+                        cancel: gettext("Stay Connected"),
+                        proceed: gettext("Disconnect"),
+                        onproceed:  function() {
+                            self.requestData();
+                            OctoPrint.connection.disconnect();
+                        }
+                    })
+                }
             }
         };
 

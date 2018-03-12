@@ -30,7 +30,7 @@ INSTALL_REQUIRES = [
 	"Flask-Babel>=0.9,<0.10",
 	"Flask-Assets>=0.10,<0.11",
 	"markdown>=2.6.4,<2.7",
-	"pyserial>=2.7,<2.8",
+	"pyserial>=2.7,<3.5",
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
 	"sarge>=0.1.4,<0.2",
@@ -52,7 +52,8 @@ INSTALL_REQUIRES = [
 	"wrapt>=1.10.10,<1.11",
 	"futures>=3.1.1,<3.2",
 	"emoji>=0.4.5,<0.5",
-	"monotonic>=1.3,<1.4"
+	"monotonic>=1.3,<1.4",
+	"frozendict>=1.2,<1.3"
 ]
 
 if sys.platform == "darwin":

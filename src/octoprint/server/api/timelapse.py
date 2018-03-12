@@ -43,8 +43,7 @@ def _config_for_timelapse(timelapse):
 		return dict(type="timed",
 		            postRoll=timelapse.post_roll,
 		            fps=timelapse.fps,
-		            interval=timelapse.interval,
-		            capturePostRoll=timelapse.capture_post_roll)
+		            interval=timelapse.interval)
 	else:
 		return dict(type="off")
 
@@ -128,7 +127,7 @@ def downloadTimelapse(filename):
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4"]):
+	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4", "m4v", "mkv"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
@@ -215,14 +214,6 @@ def setTimelapseConfig():
 					config["options"]["interval"] = interval
 				else:
 					return make_response("Invalid value for interval: %d" % interval, 400)
-
-		if "capturePostRoll" in data:
-			try:
-				capturePostRoll = bool(data["capturePostRoll"])
-			except ValueError:
-				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"], 400)
-			else:
-				config["options"]["capturePostRoll"] = capturePostRoll
 
 		if "retractionZHop" in data:
 			try:

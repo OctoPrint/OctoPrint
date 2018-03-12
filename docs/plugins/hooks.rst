@@ -420,7 +420,7 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, subcode=None, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, subcode=None, tags=None, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
@@ -443,7 +443,39 @@ This describes actually four hooks:
    the communication layer or before they are actually sent over the serial port, or to react to the queuing or sending
    of commands after the fact. The hook handler will be called with the processing ``phase``, the ``cmd`` to be sent to
    the printer as well as the ``cmd_type`` parameter used for enqueuing (OctoPrint will make sure that the send queue
-   will never contain more than one line with the same ``cmd_type``) and the detected gcode command (if it is one).
+   will never contain more than one line with the same ``cmd_type``) and the detected ``gcode`` command (if it is one)
+   as well as its ``subcode`` (if it has one). OctoPrint will also provide any ``tags`` attached to the command throughout
+   its lifecycle.
+
+   Tags are arbitrary strings that can be attached to a command as it moves through the various phases and can be used to e.g.
+   distinguish between commands that originated in a printed file (``source:file``) vs. a configured GCODE script
+   (``source:script``) vs. an API call (``source:api``) vs. a plugin (``source:plugin`` or ``source:rewrite`` and
+   ``plugin:<plugin identifier>``). If during development you want to get an idea of the various possible tags, set
+   the logger ``octoprint.util.comm.command_phases``  to ``DEBUG``, connect to a printer (real or virtual) and take a
+   look at your ``octoprint.log`` during serial traffic:
+
+   .. code-block:: none
+
+      2018-02-16 18:20:31,213 - octoprint.util.comm.command_phases - DEBUG - phase: queuing | command: T0 | gcode: T | tags: [ api:printer.command, source:api, trigger:printer.commands ]
+      2018-02-16 18:20:31,216 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: M117 Before T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:31,217 - octoprint.util.comm.command_phases - DEBUG - phase: sending | command: M117 Before T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:31,217 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: T0 | gcode: T | tags: [ api:printer.command, source:api, trigger:printer.commands ]
+      2018-02-16 18:20:31,219 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: M117 After T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:31,220 - octoprint.util.comm.command_phases - DEBUG - phase: sent | command: M117 Before T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:31,230 - tornado.access - INFO - 204 POST /api/printer/command (127.0.0.1) 23.00ms
+      2018-02-16 18:20:31,232 - tornado.access - INFO - 200 POST /api/printer/command (127.0.0.1) 25.00ms
+      2018-02-16 18:20:31,232 - octoprint.util.comm.command_phases - DEBUG - phase: sending | command: T0 | gcode: T | tags: [ api:printer.command, source:api, trigger:printer.commands ]
+      2018-02-16 18:20:31,234 - octoprint.util.comm.command_phases - DEBUG - phase: sent | command: T0 | gcode: T | tags: [ api:printer.command, source:api, trigger:printer.commands ]
+      2018-02-16 18:20:31,242 - octoprint.util.comm.command_phases - DEBUG - phase: sending | command: M117 After T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:31,243 - octoprint.util.comm.command_phases - DEBUG - phase: sent | command: M117 After T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
+      2018-02-16 18:20:38,552 - octoprint.util.comm.command_phases - DEBUG - phase: queuing | command: G91 | gcode: G91 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,552 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: G91 | gcode: G91 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,553 - octoprint.util.comm.command_phases - DEBUG - phase: sending | command: G91 | gcode: G91 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,553 - octoprint.util.comm.command_phases - DEBUG - phase: queuing | command: G1 X10 F6000 | gcode: G1 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,555 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: G1 X10 F6000 | gcode: G1 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,556 - octoprint.util.comm.command_phases - DEBUG - phase: sent | command: G91 | gcode: G91 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,556 - octoprint.util.comm.command_phases - DEBUG - phase: queuing | command: G90 | gcode: G90 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
+      2018-02-16 18:20:38,558 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: G90 | gcode: G90 | tags: [ api:printer.printhead, source:api, trigger:printer.commands, trigger:printer.jog ]
 
    Defining a ``cmd_type`` other than None will make sure OctoPrint takes care of only having one command of that type
    in its sending queue. Predefined types are ``temperature_poll`` for temperature polling via ``M105`` and
@@ -482,6 +514,8 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * A 3-tuple consisting of a rewritten version of the ``cmd``, the ``cmd_type`` and any additional ``tags`` you might
+       want to attach to the lifecycle of the command in a set, e.g. ``return "M105", "temperature_poll", {"my_custom_tag"}``
      * **"queuing" phase only**: A list of any of the above to allow for expanding one command into
        many. The following example shows how any queued command could be turned into a sequence of a temperature query,
        line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
@@ -489,7 +523,7 @@ This describes actually four hooks:
 
        .. code-block:: python
 
-          def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+          def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, subcode=None, tags=None *args, **kwargs):
               if gcode or not cmd.startswith("@foo"):
                   return
 
@@ -524,6 +558,7 @@ This describes actually four hooks:
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
        or no command could be parsed.
+   :param tags: Tags attached to the command
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:
@@ -552,6 +587,36 @@ octoprint.comm.protocol.gcode.received
    :return: The received line or in any case, a modified version of it.
    :rtype: str
 
+.. _sec-plugins-hook-comm-protocol-gcode-error:
+
+octoprint.comm.protocol.gcode.error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: gcode_error_hook(comm_instance, error_message, *args, **kwargs)
+
+   Get the messages of any errors messages sent by the printer, with the leading ``Error:`` or ``!!`` already
+   stripped. Handlers should return True if they handled that error internally and it should not be processed by
+   the system further. Normal processing of these kinds of errors - depending on the configuration of error
+   handling - involves canceling the ongoing print and possibly also disconnecting.
+
+   Plugins might utilize this hook to handle errors generated by the printer that are recoverable in one way or
+   the other and should not trigger the normal handling that assumes the worst.
+
+   **Example:**
+
+   Looks for error messages containing "fan error" or "bed missing" (ignoring case) and marks them as handled by the
+   plugin.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/comm_error_handler_test.py
+      :linenos:
+      :tab-width: 4
+      :caption: `comm_error_handler_test.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/comm_error_handler_test.py>`_
+
+   :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str error_message: The error message received from the printer.
+   :return: True if the error was handled in the plugin and should not be processed further, False (or None) otherwise.
+   :rtype: bool
+
 .. _sec-plugins-hook-comm-protocol-scripts:
 
 octoprint.comm.protocol.scripts
@@ -559,19 +624,19 @@ octoprint.comm.protocol.scripts
 
 .. py:function:: protocol_scripts_hook(comm_instance, script_type, script_name, *args, **kwargs)
 
-   Return a prefix to prepend and a postfix to append to the script ``script_name`` of type ``type``. Handlers should
+   Return a prefix to prepend, postfix to append, and optionally a dictionary of variables to provide to the script ``script_name`` of type ``type``. Handlers should
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
    handled scripts. If not, None should be returned directly.
 
-   If the hook handler has something to add to the specified script, it may return a 2-tuple, with the first entry
-   defining the prefix (what to *prepend* to the script in question) and the last entry defining the postfix (what to
-   *append* to the script in question). Both prefix and postfix can be None to signify that nothing should be prepended
+   If the hook handler has something to add to the specified script, it may return a 2-tuple or a 3-tuple with the first entry
+   defining the prefix (what to *prepend* to the script in question), the second entry defining the postfix (what to
+   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script. Both prefix and postfix can be None to signify that nothing should be prepended
    respectively appended.
 
-   The returned entries may be either iterables of script lines or a string including newlines of the script lines (which
+   The returned prefix and postfix entries may be either iterables of script lines or a string including newlines of the script lines (which
    will be split by the caller if necessary).
 
-   **Example:**
+   **Example 1:**
 
    Appends an ``M117 OctoPrint connected`` to the configured ``afterPrinterConnected`` GCODE script.
 
@@ -580,10 +645,19 @@ octoprint.comm.protocol.scripts
       :tab-width: 4
       :caption: `message_on_connect.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/message_on_connect.py>`_
 
+   **Example 2:**
+
+   Provides the variable ``myvariable`` to the configured ``beforePrintStarted`` GCODE script.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/gcode_script_variables.py
+      :linenos:
+      :tab-width: 4
+      :caption: `gcode_script_variables.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/gcode_script_variables.py>`_
+
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str script_type: The type of the script for which the hook was called, currently only "gcode" is supported here.
    :param str script_name: The name of the script for which the hook was called.
-   :return: A 2-tuple in the form ``(prefix, postfix)`` or None
+   :return: A 2-tuple in the form ``(prefix, postfix)``, 3-tuple in the form ``(prefix, postfix, variables)``, or None
    :rtype: tuple or None
 
 .. _sec-plugins-hook-comm-protocol-temperatures-received:

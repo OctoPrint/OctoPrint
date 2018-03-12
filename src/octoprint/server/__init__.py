@@ -8,10 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
-from flask.ext.login import LoginManager, current_user, session_protected, user_logged_out
-from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
-from flask.ext.babel import Babel, gettext, ngettext
-from flask.ext.assets import Environment, Bundle
+from flask_login import LoginManager, current_user, session_protected, user_logged_out
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
+from flask_babel import Babel, gettext, ngettext
+from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -147,6 +147,13 @@ def load_user(id):
 
 	return None
 
+def load_user_from_request(request):
+	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+def unauthorized_user():
+	from flask import abort
+	abort(403)
+
 
 #~~ startup code
 
@@ -211,6 +218,7 @@ class Server(object):
 		safe_mode = self._safe_mode
 
 		self._logger = logging.getLogger(__name__)
+		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
 		# monkey patch a bunch of stuff
@@ -343,8 +351,37 @@ class Server(object):
 			"""Factory for injections for all OctoPrintPlugins"""
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
+
+			components_copy = dict(components)
+			if "printer" in components:
+				import wrapt
+				import functools
+
+				def tagwrap(f):
+					@functools.wraps(f)
+					def wrapper(*args, **kwargs):
+						tags = kwargs.get("tags", set()) | {"source:plugin",
+						                                    "plugin:{}".format(name)}
+						kwargs["tags"] = tags
+						return f(*args, **kwargs)
+					setattr(wrapper, "__tagwrapped__", True)
+					return wrapper
+
+				class TaggedFuncsPrinter(wrapt.ObjectProxy):
+					def __getattribute__(self, attr):
+						__wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__("__wrapped__")
+						item = getattr(__wrapped__, attr)
+						if callable(item) \
+								and ("tags" in item.__code__.co_varnames or "kwargs" in item.__code__.co_varnames) \
+								and not getattr(item, "__tagwrapped__", False):
+							return tagwrap(item)
+						else:
+							return item
+
+				components_copy["printer"] = TaggedFuncsPrinter(components["printer"])
+
 			props = dict()
-			props.update(components)
+			props.update(components_copy)
 			props.update(dict(
 				data_folder=os.path.join(self._settings.getBaseFolder("data"), name)
 			))
@@ -414,18 +451,6 @@ class Server(object):
 		# setup jinja2
 		self._setup_jinja2()
 
-		# make sure plugin lifecycle events relevant for jinja2 are taken care of
-		def template_enabled(name, plugin):
-			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
-				return
-			self._register_additional_template_plugin(plugin.implementation)
-		def template_disabled(name, plugin):
-			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
-				return
-			self._unregister_additional_template_plugin(plugin.implementation)
-		pluginLifecycleManager.add_callback("enabled", template_enabled)
-		pluginLifecycleManager.add_callback("disabled", template_disabled)
-
 		# setup assets
 		self._setup_assets()
 
@@ -437,13 +462,8 @@ class Server(object):
 		if self._debug:
 			events.DebugEventListener()
 
-		loginManager = LoginManager()
-		loginManager.session_protection = "strong"
-		loginManager.user_callback = load_user
-		if not userManager.enabled:
-			loginManager.anonymous_user = users.DummyUser
-			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		loginManager.init_app(app, add_context_processor=False)
+		# setup login manager
+		self._setup_login_manager()
 
 		# register API blueprint
 		self._setup_blueprints()
@@ -499,7 +519,7 @@ class Server(object):
 		server_routes = self._router.urls + [
 			# various downloads
 			# .mpg and .mp4 timelapses:
-			(r"/downloads/timelapse/([^/]*\.mp[g4])", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			(r"/downloads/timelapse/([^/]*\.m(.*))", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
 			                                                                                      download_handler_kwargs,
 			                                                                                      no_hidden_files_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
@@ -508,7 +528,8 @@ class Server(object):
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs")),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
+			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
 			                                                                            download_handler_kwargs,
 			                                                                            admin_validator)),
 			# camera snapshot
@@ -521,7 +542,11 @@ class Server(object):
 			# online indicators - text file with "online" as content and a transparent gif
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
 			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
-			                                                      content_type="image/gif"))
+			                                                      content_type="image/gif")),
+
+			# deprecated endpoints
+			(r"/api/logs", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs")),
+			(r"/api/logs/(.*)", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs/{0}")),
 		]
 
 		# fetch additional routes from plugins
@@ -608,7 +633,7 @@ class Server(object):
 				(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 				printer_profile = printerProfileManager.get_default()
 				connectionOptions = printer.__class__.get_connection_options()
-				if port in connectionOptions["ports"]:
+				if port in connectionOptions["ports"] or port == "AUTO":
 						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 			except:
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
@@ -746,12 +771,26 @@ class Server(object):
 
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
+	def _setup_heartbeat_logging(self):
+		logger = logging.getLogger(__name__ + ".heartbeat")
+
+		def log_heartbeat():
+			logger.info("Server heartbeat <3")
+
+		interval = settings().getFloat(["server", "heartbeat"])
+		logger.info("Starting server heartbeat, {}s interval".format(interval))
+
+		timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
+		timer.start()
+
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, OctoPrintJsonEncoder
 
 		s = settings()
 
 		app.debug = self._debug
+
+		app.json_encoder = OctoPrintJsonEncoder
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
@@ -892,6 +931,18 @@ class Server(object):
 		app.jinja_loader = jinja_loader
 
 		self._register_template_plugins()
+
+		# make sure plugin lifecycle events relevant for jinja2 are taken care of
+		def template_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._register_additional_template_plugin(plugin.implementation)
+		def template_disabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._unregister_additional_template_plugin(plugin.implementation)
+		pluginLifecycleManager.add_callback("enabled", template_enabled)
+		pluginLifecycleManager.add_callback("disabled", template_disabled)
 
 	def _execute_preemptive_flask_caching(self, preemptive_cache):
 		from werkzeug.test import EnvironBuilder
@@ -1217,7 +1268,6 @@ class Server(object):
 			"js/app/client/files.js",
 			"js/app/client/job.js",
 			"js/app/client/languages.js",
-			"js/app/client/logs.js",
 			"js/app/client/printer.js",
 			"js/app/client/printerprofiles.js",
 			"js/app/client/settings.js",
@@ -1387,6 +1437,23 @@ class Server(object):
 		assets.register("less_core", less_core_bundle)
 		assets.register("less_plugins", less_plugins_bundle)
 		assets.register("less_app", less_app_bundle)
+
+	def _setup_login_manager(self):
+		util.flask.fix_flask_login_remote_address()
+
+		loginManager = LoginManager()
+		loginManager.session_protection = "strong"
+		loginManager.user_callback = load_user
+		loginManager.unauthorized_callback = unauthorized_user
+
+		# login users authenticated by basic auth
+		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
+			loginManager.request_callback = load_user_from_request
+
+		if not userManager.enabled:
+			loginManager.anonymous_user = users.DummyUser
+			principals.identity_loaders.appendleft(users.dummy_identity_loader)
+		loginManager.init_app(app, add_context_processor=False)
 
 	def _start_intermediary_server(self):
 		import BaseHTTPServer

@@ -335,7 +335,7 @@ var doParse = function () {
 
         var log = false;
 
-        if (/^(?:G0|G1|G2|G3)\s/i.test(line)) {
+        if (/^(?:G0|G1|G2|G3)(\.\d+)?\s/i.test(line)) {
             args = line.split(/\s/);
 
             for (j = 0; j < args.length; j++) {
@@ -426,25 +426,25 @@ var doParse = function () {
                 addToModel = true;
                 move = true;
             }
-        } else if (/^(?:M82)/i.test(line)) {
+        } else if (/^(?:M82)(\.\d+)?/i.test(line)) {
             relativeE = false;
-        } else if (/^(?:G91)/i.test(line)) {
+        } else if (/^(?:G91)(\.\d+)?/i.test(line)) {
             relativeMode = true;
             if (g90InfluencesExtruder) {
                 relativeE = true;
             }
-        } else if (/^(?:G90)/i.test(line)) {
+        } else if (/^(?:G90)(\.\d+)?/i.test(line)) {
             relativeMode = false;
             if (g90InfluencesExtruder) {
                 relativeE = false;
             }
-        } else if (/^(?:M83)/i.test(line)) {
+        } else if (/^(?:M83)(\.\d+)?/i.test(line)) {
             relativeE = true;
-        } else if (/^(?:M101)/i.test(line)) {
+        } else if (/^(?:M101)(\.\d+)?/i.test(line)) {
             dcExtrude = true;
-        } else if (/^(?:M103)/i.test(line)) {
+        } else if (/^(?:M103)(\.\d+)?/i.test(line)) {
             dcExtrude = false;
-        } else if (/^(?:G92)/i.test(line)) {
+        } else if (/^(?:G92)(\.\d+)?/i.test(line)) {
             args = line.split(/\s/);
 
             for (j = 0; j < args.length; j++) {
@@ -494,7 +494,7 @@ var doParse = function () {
                 move = false;
             }
 
-        } else if (/^(?:G28)/i.test(line)) {
+        } else if (/^(?:G28)(\.\d+)?/i.test(line)) {
             args = line.split(/\s/);
 
             if (args.length === 1) {

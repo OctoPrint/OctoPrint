@@ -10,8 +10,8 @@ import netaddr
 import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
-from flask.ext.login import login_user, logout_user, current_user
-from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
+from flask_login import login_user, logout_user, current_user
+from flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
 import octoprint.users
@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -34,7 +34,6 @@ from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
-from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles
 from . import languages as api_languages
@@ -47,6 +46,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
 api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
@@ -240,6 +240,9 @@ def _logout(user):
 	octoprint.server.userManager.logout_user(user)
 
 
+#~~ Test utils
+
+
 @api.route("/util/test", methods=["POST"])
 @restricted_access
 @admin_permission.require(403)
@@ -334,6 +337,7 @@ def utilTestPath():
 		url = data["url"]
 		method = data.get("method", "HEAD")
 		timeout = 3.0
+		valid_ssl = True
 		check_status = [status_ranges["normal"]]
 
 		if "timeout" in data:
@@ -341,6 +345,9 @@ def utilTestPath():
 				timeout = float(data["timeout"])
 			except:
 				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+
+		if "validSsl" in data:
+			valid_ssl = data["validSsl"] in valid_boolean_trues
 
 		if "status" in data:
 			request_status = data["status"]
@@ -360,7 +367,7 @@ def utilTestPath():
 							check_status.append([code])
 
 		try:
-			response = requests.request(method=method, url=url, timeout=timeout)
+			response = requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl)
 			status = response.status_code
 		except:
 			status = 0
@@ -395,25 +402,25 @@ def utilTestPath():
 			port = int(data["port"])
 		except:
 			return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
-		
+
 		timeout = 3.05
 		if "timeout" in data:
 			try:
 				timeout = float(data["timeout"])
 			except:
 				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
-		
+
 		protocol = data.get("protocol", "tcp")
 		if protocol not in ("tcp", "udp"):
 			return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
-		
+
 		from octoprint.util import server_reachable
 		reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
-		
+
 		result = dict(host=host,
 		              port=port,
 		              protocol=protocol,
 		              result=reachable)
-		
+
 		return jsonify(**result)
 

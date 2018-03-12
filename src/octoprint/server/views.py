@@ -473,7 +473,7 @@ def _process_templates():
 		else:
 			# Finally everything else
 			return u"2:{}".format(to_unicode(d[0]))
-	
+
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
 		sidebar=dict(add="append", key="name"),
@@ -535,7 +535,7 @@ def _process_templates():
 	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isUser")),
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isUser", template_header="sidebar/connection_header.jinja2")),
 		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle")),
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2"))
 	)
@@ -573,7 +573,6 @@ def _process_templates():
 		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
 		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
-		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
 		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
 

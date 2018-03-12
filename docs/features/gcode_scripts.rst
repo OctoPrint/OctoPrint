@@ -66,7 +66,7 @@ Context
 
 All GCODE scripts have access to the following template variables through the template context:
 
-  * ``printer_profile``: The currently selected Printer Profile, including
+  * ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
     information such as the extruder count, the build volume size, the filament diameter etc.
   * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
     Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
@@ -80,6 +80,7 @@ All GCODE scripts have access to the following template variables through the te
     note that ``actual`` and ``target`` might be ``None``.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
+  * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
 
 There are a few additional template variables available for the following specific scripts:
 
