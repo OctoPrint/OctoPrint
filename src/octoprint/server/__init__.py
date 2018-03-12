@@ -1439,6 +1439,8 @@ class Server(object):
 		assets.register("less_app", less_app_bundle)
 
 	def _setup_login_manager(self):
+		util.flask.fix_flask_login_remote_address()
+
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
