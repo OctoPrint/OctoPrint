@@ -551,7 +551,8 @@ class Server(object):
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs")),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
+			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
 			                                                                            download_handler_kwargs,
 			                                                                            admin_validator)),
 			# camera snapshot
