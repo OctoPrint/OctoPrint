@@ -3273,7 +3273,7 @@ class MachineCom(object):
 		tags = kwargs.get("tags", set())
 		if not "script:afterPrintCancelled" in tags:
 			self.cancelPrint(tags={"trigger:atcommand_cancel"})
-	_atcommand_abort_sending = _atcommand_cancel_queuing
+	_atcommand_abort_queuing = _atcommand_cancel_queuing
 
 	def _atcommand_resume_queuing(self, *args, **kwargs):
 		tags = kwargs.get("tags", set())
