@@ -16,6 +16,8 @@ from octoprint.util import deprecated
 from octoprint.plugin import plugin_manager
 
 import flask as _flask
+import flask_login
+import flask_principal
 import logging
 
 from . import flask
@@ -95,9 +97,9 @@ def loginUser(user, remember=False):
 	Returns: (bool) True if the login succeeded, False otherwise
 
 	"""
-	if user is not None and user.is_active() and _flask.ext.login.login_user(user, remember=remember):
-		_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
-		                                           identity=_flask.ext.principal.Identity(user.get_id()))
+	if user is not None and user.is_active() and flask_login.login_user(user, remember=remember):
+		flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
+		                                      identity=flask_principal.Identity(user.get_id()))
 		return True
 	return False
 

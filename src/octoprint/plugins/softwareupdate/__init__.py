@@ -21,7 +21,7 @@ from concurrent import futures
 
 from . import version_checks, updaters, exceptions, util, cli
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
@@ -565,7 +565,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	##~~ TemplatePlugin API
 
 	def get_template_configs(self):
-		from flask.ext.babel import gettext
+		from flask_babel import gettext
 		return [
 			dict(type="settings", name=gettext("Software Update"))
 		]
@@ -972,7 +972,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		result = dict(check)
 
 		if target == "octoprint":
-			from flask.ext.babel import gettext
+			from flask_babel import gettext
 
 			from octoprint.util.version import is_released_octoprint_version, is_stable_octoprint_version
 

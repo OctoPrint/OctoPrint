@@ -11,7 +11,7 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 
 import logging
 import flask
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 # noinspection PyCompatibility
 from builtins import range

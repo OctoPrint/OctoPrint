@@ -18,7 +18,7 @@ from octoprint.util.version import get_octoprint_version_string, get_octoprint_v
 from octoprint.util.platform import get_os
 
 from flask import jsonify, make_response
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 import logging
 import sarge
