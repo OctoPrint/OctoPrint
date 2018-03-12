@@ -920,7 +920,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="No internet connection"))
 
 		except Exception as e:
-			self._logger.exception("Update of %s can not be performed" % target)
+			self._logger.exception("Update of %s can not be performed, please also check plugin_softwareupdate_console.log for possible causes of this" % target)
 			if not "ignorable" in populated_check or not populated_check["ignorable"]:
 				target_error = True
 

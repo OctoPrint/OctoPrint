@@ -815,7 +815,7 @@ $(function() {
                 }
                 case "error": {
                     title = gettext("Update failed!");
-                    text = gettext("The update did not finish successfully. Please consult octoprint.log and plugin_softwareupdate_console.log for details.");
+                    text = gettext("The update did not finish successfully. Please consult <code>octoprint.log</code> and <code>plugin_softwareupdate_console.log</code> for details.");
                     self._showPopup({
                         title: title,
                         text: text,
