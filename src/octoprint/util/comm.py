@@ -532,6 +532,10 @@ class MachineCom(object):
 		)
 		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
 		self._error_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.error")
+		self._atcommand_hooks = dict(
+			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
+			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")
+		)
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -2942,16 +2946,24 @@ class MachineCom(object):
 			parameters = split[1]
 		else:
 			atcommand = split[0]
-			parameters = None
+			parameters = ""
 
 		atcommand = atcommand[1:]
 
+		# send it through the phase specific handlers provided by plugins
+		for name, hook in self._atcommand_hooks[phase].items():
+			try:
+				hook(self, phase, atcommand, parameters, tags=tags)
+			except:
+				self._logger.exception("Error while processing hook {} for phase {} and command {}:".format(name, phase, atcommand))
+
+		# trigger built-in handler if available
 		handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)
 		if callable(handler):
 			try:
 				handler(atcommand, parameters, tags=tags)
 			except:
-				self._logger.exception("Error in handler for phase {} and command {} atcommand".format(phase, atcommand))
+				self._logger.exception("Error in handler for phase {} and command {}".format(phase, atcommand))
 
 	##~~ actual sending via serial
 
@@ -3264,19 +3276,22 @@ class MachineCom(object):
 
 	## atcommands
 
-	def _atcommand_pause_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_pause_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:afterPrintPaused" in tags:
 			self.setPause(True, tags={"trigger:atcommand_pause"})
 
-	def _atcommand_cancel_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_cancel_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:afterPrintCancelled" in tags:
 			self.cancelPrint(tags={"trigger:atcommand_cancel"})
 	_atcommand_abort_queuing = _atcommand_cancel_queuing
 
-	def _atcommand_resume_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_resume_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:beforePrintResumed" in tags:
 			self.setPause(False, tags={"trigger:atcommand_resume"})
 
