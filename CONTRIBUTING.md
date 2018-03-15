@@ -140,12 +140,10 @@ existing ticket**:
 
 ```
 <!--
-
 READ THE FOLLOWING FIRST:
 
-If not already done, please read the "guidelines for contributing"
-aka the Contribution Guidelines that are linked ^-- just up there
-in the big yellow box.
+If not already done, please read the the Contribution Guidelines that
+are linked to the right under "Helpful resources" > "Contributing".
 
 Also read the FAQ: http://faq.octoprint.org
 
@@ -170,12 +168,12 @@ in safe mode - how to do that is also explained in the Contribution
 Guidelines linked up there in the big yellow box.
 
 Thank you!
-
 -->
 
 #### What were you doing?
 
-<!-- Please be as specific as possible here. The maintainers will need to
+<!-- 
+Please be as specific as possible here. The maintainers will need to
 reproduce your issue in order to fix it and that is not possible if they
 don't know what you did to get it to happen in the first place.
 
