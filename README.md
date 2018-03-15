@@ -7,7 +7,7 @@ and released under the [GNU Affero General Public License V3](http://www.gnu.org
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
-The community forum available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
+The community forum is available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
 
 The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
 
