@@ -7,8 +7,9 @@
 # The file is processed from top to bottom, the first matching line wins. If <tag> or <reference commit> are left out,
 # the lookup table does not apply to the matched branches
 
-# master and rc shall not use the lookup table, only tags
+# master, meta, rc and prerelease shall not use the lookup table, only tags
 master
+meta/.*
 rc/.*
 prerelease
 
