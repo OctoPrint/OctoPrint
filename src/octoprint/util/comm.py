@@ -2416,7 +2416,7 @@ class MachineCom(object):
 				self._logger.exception("Unexpected error while reading from serial port")
 				self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
 				if isinstance(ex, serial.SerialException):
-					self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+					self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 					               level=logging.ERROR)
 				self._errorValue = get_exception_string()
 				self.close(is_error=True)
@@ -3016,7 +3016,7 @@ class MachineCom(object):
 						self._logger.exception("Unexpected error while writing to serial port")
 						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 						if isinstance(ex, serial.SerialException):
-							self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+							self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 							               level=logging.ERROR)
 						self._errorValue = get_exception_string()
 						self.close(is_error=True)
@@ -3026,7 +3026,7 @@ class MachineCom(object):
 					self._logger.exception("Unexpected error while writing to serial port")
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					if isinstance(ex, serial.SerialException):
-						self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+						self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 						               level=logging.ERROR)
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
