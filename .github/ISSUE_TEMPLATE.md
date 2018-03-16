@@ -4,7 +4,7 @@ READ THE FOLLOWING FIRST:
 If not already done, please read the the Contribution Guidelines that
 are linked to the right under "Helpful resources" > "Contributing".
 
-Also read the FAQ: http://faq.octoprint.org
+Also read the FAQ: https://faq.octoprint.org
 
 This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint

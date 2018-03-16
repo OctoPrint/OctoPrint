@@ -29,7 +29,7 @@ nothing but ticket management.
 
 ![Ticket flow chart](https://i.imgur.com/SmU7iCJ.png)
 
-- **[Read the FAQ](http://faq.octoprint.org)**
+- **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
   and *[use the provided template](#what-should-i-include-in-a-ticket)*.
   You do not need to do anything else with your ticket.
@@ -100,7 +100,7 @@ following section *completely* and also follow the instructions in the
    more about safe mode in the [docs](http://docs.octoprint.org/en/master/features/safemode.html).
 
    You might also want to try the current development version of OctoPrint
-   (if you aren't already). Refer to the [FAQ](http://faq.octoprint.org)
+   (if you aren't already). Refer to the [FAQ](https://faq.octoprint.org)
    for information on how to do this.
 
 3. The problem still exists? Then please **look through the
@@ -145,7 +145,7 @@ READ THE FOLLOWING FIRST:
 If not already done, please read the the Contribution Guidelines that
 are linked to the right under "Helpful resources" > "Contributing".
 
-Also read the FAQ: http://faq.octoprint.org
+Also read the FAQ: https://faq.octoprint.org
 
 This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint
