@@ -120,7 +120,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                    printTimeLeft=None,
 			                    printTimeOrigin=None),
 			current_z=None,
-			offsets=self._dict()
+			offsets=self._dict(),
+			warnings=self._dict()
 		)
 
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
@@ -1066,6 +1067,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
 			self._setOffsets(None)
+			self._stateMonitor.set_warnings(None)
 			self._addTemperatureData()
 			self._printerProfileManager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
@@ -1254,6 +1256,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
+	def on_comm_set_warnings(self, warnings):
+		self._stateMonitor.set_warnings(self._dict(warnings))
+
 	def _payload_for_print_job_event(self, location=None, print_job_file=None, print_job_size=None, position=None):
 		if print_job_file is None:
 			with self._selectedFileMutex:
@@ -1310,6 +1315,7 @@ class StateMonitor(object):
 		self._current_z = None
 		self._offsets = dict()
 		self._progress = None
+		self._warnings = dict()
 
 		self._progress_dirty = False
 
@@ -1327,12 +1333,13 @@ class StateMonitor(object):
 			return self._on_get_progress()
 		return self._progress
 
-	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None):
+	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None, warnings=None):
 		self.set_state(state)
 		self.set_job_data(job_data)
 		self.set_progress(progress)
 		self.set_current_z(current_z)
 		self.set_temp_offsets(offsets)
+		self.set_warnings(warnings)
 
 	def add_temperature(self, temperature):
 		self._on_add_temperature(temperature)
@@ -1344,6 +1351,10 @@ class StateMonitor(object):
 
 	def add_message(self, message):
 		self._on_add_message(message)
+		self._change_event.set()
+
+	def set_warnings(self, warnings):
+		self._warnings = warnings
 		self._change_event.set()
 
 	def set_current_z(self, current_z):
@@ -1403,7 +1414,8 @@ class StateMonitor(object):
 			"job": self._job_data,
 			"currentZ": self._current_z,
 			"progress": self._progress,
-			"offsets": self._offsets
+			"offsets": self._offsets,
+			"warnings": self._warnings
 		}
 
 

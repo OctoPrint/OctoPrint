@@ -19,6 +19,7 @@ except ImportError:
 from past.builtins import basestring
 
 import logging
+import textwrap
 
 import serial
 
@@ -197,6 +198,16 @@ regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
 
 regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
+
+SAFETY_WARNING = """
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{message}
+
+Learn more at https://faq.octoprint.org/warning-{key}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+"""
+
 
 def serialList():
 	baselist=[]
@@ -432,6 +443,8 @@ class MachineCom(object):
 		self._toolBeforeChange = None
 		self._toolBeforeHeatup = None
 		self._knownInvalidTools = set()
+
+		self._warnings = dict()
 
 		self._long_running_command = False
 		self._heating = False
@@ -1677,6 +1690,15 @@ class MachineCom(object):
 						ver = data.get("VER")
 						if name and "malyan" in name.lower() and ver:
 							firmware_name = name.strip() + " " + ver.strip()
+
+					# special handling for dangerous firmware without obligatory safety features
+					if firmware_name and firmware_name.lower().startswith("anet_a8"):
+						key = "firmware-unsafe"
+						message = "Your printer's firmware is known to lack mandatory safety features (e.g. " \
+						          "thermal runaway protection). This is a fire risk."
+						self._log(SAFETY_WARNING.format(message="\n".join(textwrap.wrap(message, 75)), key=key))
+						self._warnings[key] = message
+						self._callback.on_comm_set_warnings(self._warnings)
 
 					if not self._firmware_info_received and firmware_name:
 						firmware_name = firmware_name.strip()
@@ -3368,6 +3390,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_record_fileposition(self, origin, name, pos):
+		pass
+
+	def on_comm_set_warnings(self, warnings):
 		pass
 
 ### Printing file information classes ##################################################################################

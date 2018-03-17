@@ -1,3 +1,10 @@
+<div data-bind="visible: warnings().length > 0 && isOperational(), foreach: warnings" style="display: none">
+    <div class="alert alert-danger">
+        <strong>{{ _('Warning!') }}</strong>
+        <span data-bind="text: message"></span><br>
+        <a target="_blank" rel="noreferrer noopener" data-bind="attr: {href: 'https://faq.octoprint.org/warning-' + type}">{{ _('Learn more...') }}</a>
+    </div>
+</div>
 <span title="{{ _('Current printer state') }}">{{ _('State') }}</span>: <strong data-bind="text: stateString"></strong><br>
 <hr>
 <span title="{{ _('Name of file currently selected for printing') }}">{{ _('File') }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
