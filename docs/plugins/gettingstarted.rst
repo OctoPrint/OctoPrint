@@ -134,7 +134,7 @@ as a simple python file following the naming convention ``<plugin identifier>.py
 ``~/.octoprint/plugins`` folder. You already know how that works. But let's say you have more than just a simple plugin
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
 so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
-best way possible, meaning we want to make our plugin a fully installable python module that your users will be able to
+best way possible, meaning we want to make our plugin a fully installable Python module that your users will be able to
 install directly via `OctoPrint's built-in Plugin Manager <https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager>`_
 or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
@@ -282,7 +282,7 @@ of information now defined twice:
    plugin_version = "1.0.0"
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
 
-The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
+The nice thing about our plugin now being a proper Python package is that OctoPrint can and will access the metadata defined
 within ``setup.py``! So, we don't really need to define all this data twice. Remove ``__plugin_name__``, ``__plugin_version__``
 and ``__plugin_description__`` from ``__init__.py``:
 

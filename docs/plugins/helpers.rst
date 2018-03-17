@@ -8,7 +8,7 @@ system. They are registered with the OctoPrint plugin system through the use of 
 
 An example for providing some helper functions to the system can be found in the
 `Discovery Plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery>`_,
-which provides it's SSDP browsing and Zeroconf browsing and publishing functions as helper methods.
+which provides its SSDP browsing and Zeroconf browsing and publishing functions as helper methods.
 
 .. code-block:: python
    :linenos:

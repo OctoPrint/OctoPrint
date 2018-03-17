@@ -265,7 +265,7 @@ MetadataAnalysisFinished
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the file's origin storage location
-     * ``result``: the analysis result -- this is a python object currently only available for internal use
+     * ``result``: the analysis result -- this is a Python object currently only available for internal use
 
    .. deprecated:: 1.3.0
 
