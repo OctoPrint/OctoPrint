@@ -51,7 +51,7 @@ An overview of these properties follows.
 .. seealso::
 
    :class:`~octoprint.plugin.core.Plugin` and :class:`~octoprint.plugin.types.OctoPrintPlugin`
-       Class documentation also containing the properties shared among all mixing implementations.
+       Class documentation also containing the properties shared among all mixin implementations.
 
    :ref:`Available Mixins <sec-plugins-mixins-available>`
        Some mixin types trigger the injection of additional properties.

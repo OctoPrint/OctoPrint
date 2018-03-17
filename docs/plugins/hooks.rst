@@ -608,7 +608,7 @@ octoprint.comm.protocol.gcode.received
 .. py:function:: gcode_received_hook(comm_instance, line, *args, **kwargs)
 
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
-   version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
+   version of it. If the handler returns None, processing will be aborted and the communication layer will get an
    empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
    ``return`` statement is used or just nothing is returned explicitly from the handler.
 
@@ -896,7 +896,7 @@ octoprint.printer.factory
 
    If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
 
-   If no of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
+   If none of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
    class will be instantiated.
 
    :param dict components: System components to use for printer instance initialization
@@ -998,7 +998,7 @@ octoprint.server.http.routes
          that allows delivery of the requested resource as attachment and access validation through an optional callback.
       :class:`~octoprint.server.util.tornado.UrlForwardHandler`
          `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
-         requests to a preconfigured url and returns the response.
+         requests to a preconfigured URL and returns the response.
 
    :param list server_routes: read-only list of the currently configured server routes
    :return: a list of 3-tuples with additional routes as defined above
@@ -1141,7 +1141,7 @@ octoprint.users.factory
 
    If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
 
-   If no of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
    entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
    :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
    file ``~/.octoprint/users.yaml``.

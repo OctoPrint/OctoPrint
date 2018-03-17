@@ -64,7 +64,7 @@
 
 .. js:function:: OctoPrintClient.job.resume(opts)
 
-   Resumes the current job if it's currently pause, does nothing if it's running.
+   Resumes the current job if it's currently paused, does nothing if it's running.
 
    See :ref:`Issue a job command <sec-api-jobs-command>` for details.
 

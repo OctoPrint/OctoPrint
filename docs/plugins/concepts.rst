@@ -23,9 +23,9 @@ Lifecycle
 
 There are three sources of installed plugins that OctoPrint will check during start up:
 
-  * it's own ``octoprint/plugins`` folder (this is where the bundled plugins reside),
+  * its own ``octoprint/plugins`` folder (this is where the bundled plugins reside),
   * the ``plugins`` folder in its configuration directory (e.g. ``~/.octoprint/plugins`` on Linux),
-  * any python packages registered for the entry point ``octoprint.plugin``.
+  * any Python packages registered for the entry point ``octoprint.plugin``.
 
 Each plugin that OctoPrint finds it will first load, then enable. On enabling a plugin, OctoPrint will
 register its declared :ref:`hook handlers <sec-plugins-hooks>` and :ref:`helpers <sec-plugins-helpers>`, apply
@@ -36,7 +36,7 @@ any :ref:`settings overlays <sec-plugins-controlproperties-plugin_settings_overl
 On disabling a plugin, its hook handlers, helpers, mixin implementations and settings overlays will be de-registered again.
 
 Some plugin types require a reload of the frontend or a restart of OctoPrint for enabling/disabling them. You
-can recognized such plugins by their implementations implementing :class:`~octoprint.plugin.ReloadNeedingPlugin` or
+can recognize such plugins by their implementations implementing :class:`~octoprint.plugin.ReloadNeedingPlugin` or
 :class:`~octoprint.plugin.RestartNeedingPlugin` or providing handlers for one of the hooks marked correspondingly.
 
 .. image:: ../images/plugins_lifecycle.png
