@@ -46,7 +46,7 @@ There you can adjust the following settings:
     for the various components registered with the plugin, so that they don't have to be queried from the internet every time
     you load the page. Defaults to 24h, you usually shouldn't need to change that value.
 
-More settings are available by :ref:`editing the correspondi.. _section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
+More settings are available by :ref:`editing the corresponding section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
 That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
@@ -56,9 +56,9 @@ Command line usage
 ------------------
 
 The functionality of the Software Update Plugin is also available on OctoPrint's command line interface under the
-``plugins`` sub command. It's is possible to check for updates via ``octoprint plugins softwareupdate:check``
-and to apply available updates via ``octoprint plugins softwareupdate:update``. Please the corresponding
-``--help`` pages on details:
+``plugins`` sub command. It's possible to check for updates via ``octoprint plugins softwareupdate:check``
+and to apply available updates via ``octoprint plugins softwareupdate:update``. Please see the corresponding
+``--help`` pages for details:
 
 .. code-block:: none
 
@@ -126,7 +126,7 @@ Configuring the Plugin
        checks:
          # "octoprint" is reserved for OctoPrint
          octoprint:
-           # this defines an version check that will check against releases
+           # this defines a version check that will check against releases
            # published on OctoPrint's Github repository and pip as update method
            # against the release archives on Github - this is the default
            type: github_release
@@ -135,7 +135,7 @@ Configuring the Plugin
            method: pip
            pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
 
-         # further checks may be define here
+         # further checks may be defined here
 
        # pip command, if another one than the automatically detected one should be
        # used - should normally NOT be necessary and hence set
@@ -209,7 +209,7 @@ Version checks
     :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. Additional config
     parameters:
 
-    * ``python_checker``: (mandatory) A python callable which returns version
+    * ``python_checker``: (mandatory) A Python callable which returns version
       information and whether the current version is up-to-date or not, see
       below for details.
 
@@ -241,7 +241,7 @@ Update methods
     ``update_folder`` setting or if the ``git_commit`` check is used its
     ``checkout_folder`` setting.
   * ``python_updater``: Can only be specified by plugins through the
-    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A python callable
+    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
     which performs the update, see below for details.
 
 .. note::

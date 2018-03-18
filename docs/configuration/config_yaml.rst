@@ -1107,7 +1107,7 @@ OctoPrint is running is allowed to do this without password entry:
        command: sudo shutdown -h now
        confirm: You are about to shutdown the system.
 
-You can also add an divider by setting action to divider like this:
+You can also add a divider by setting action to divider like this:
 
 .. code-block:: yaml
 

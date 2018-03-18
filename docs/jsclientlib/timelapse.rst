@@ -15,7 +15,7 @@
 
 .. js:function:: OctoPrintClient.timelapse.list(opts)
 
-   Get the lists of rendered and unrendered timelapses. The returned promis
+   Get the lists of rendered and unrendered timelapses. The returned promise
    will be resolved with an object containing the properties ``rendered``
    which will have the list of rendered timelapses, and ``unrendered`` which
    will have the list of unrendered timelapses.

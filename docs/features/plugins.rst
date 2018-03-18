@@ -46,7 +46,7 @@ Manual Installation
 
 If you don't want or can't use the Plugin Manager, plugins may also be installed manually either by copying and
 unpacking them into one of the configured plugin folders (regularly those are ``<octoprint source root>/plugins`` and
-``<octoprint config folder>/plugins`` [#f1]_ or by installing them as regular python modules via ``pip`` [#f2]_.
+``<octoprint config folder>/plugins`` [#f1]_ or by installing them as regular Python modules via ``pip`` [#f2]_.
 
 For a plugin available on the Python Package Index (PyPi), the process is as simple as issuing a
 

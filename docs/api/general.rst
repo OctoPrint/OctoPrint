@@ -12,7 +12,7 @@ Authorization
 =============
 
 OctoPrint's API expects an API key to be supplied with each request. This API key can be either the globally
-configured one, a user specific one if "Access Control" is enabled or an ref:`App Session Key <sec-api-apps-sessionkey>`.
+configured one, a user specific one if "Access Control" is enabled or an :ref:`App Session Key <sec-api-apps-sessionkey>`.
 Users are able to generate and revoke their custom API key via the "Change password" dialog.
 
 The API key must be supplied in the custom HTTP header ``X-Api-Key``, e.g.
@@ -65,7 +65,7 @@ Please be advised that clients should use the header field variant if at all pos
 Content Type
 ============
 
-If not otherwise stated OctoPrint's API expects request bodies and issues response bodies as ``Content-Type: application/json``.
+If not otherwise stated, OctoPrint's API expects request bodies and issues response bodies as ``Content-Type: application/json``.
 
 .. _sec-api-general-encoding:
 
