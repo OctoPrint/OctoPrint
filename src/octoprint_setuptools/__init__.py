@@ -14,7 +14,6 @@ from distutils.command.clean import clean as _clean
 
 
 def package_data_dirs(source, sub_folders):
-	import os
 	dirs = []
 
 	for d in sub_folders:

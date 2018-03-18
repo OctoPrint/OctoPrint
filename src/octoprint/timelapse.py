@@ -30,9 +30,9 @@ import collections
 import re
 
 try:
-	from os import scandir, walk
+	from os import scandir
 except ImportError:
-	from scandir import scandir, walk
+	from scandir import scandir
 
 
 # currently configured timelapse
