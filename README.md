@@ -9,6 +9,8 @@ Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=gi
 
 The community forum is available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
 
+The FAQ can be accessed by following [faq.octoprint.org](https://faq.octoprint.org/?utm_source=github&utm_medium=readme).
+
 The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
 
 The official plugin repository can be reached at [plugins.octoprint.org](https://plugins.octoprint.org/?utm_source=github&utm_medium=readme).
