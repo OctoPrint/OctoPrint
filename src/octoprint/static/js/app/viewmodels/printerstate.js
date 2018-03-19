@@ -39,8 +39,6 @@ $(function() {
         self.sd = ko.observable(undefined);
         self.timelapse = ko.observable(undefined);
 
-        self.warnings = ko.observableArray([]);
-
         self.busyFiles = ko.observableArray([]);
 
         self.filament = ko.observableArray([]);
@@ -187,7 +185,6 @@ $(function() {
             self._processProgressData(data.progress);
             self._processZData(data.currentZ);
             self._processBusyFiles(data.busyFiles);
-            self._processWarnings(data.warnings);
         };
 
         self._processStateData = function(data) {
@@ -273,14 +270,6 @@ $(function() {
                 }
             });
             self.busyFiles(busyFiles);
-        };
-
-        self._processWarnings = function(data) {
-            var warnings = [];
-            _.each(data, function(message, key) {
-                warnings.push({type: key, message: message});
-            });
-            self.warnings(warnings);
         };
 
         self.print = function() {

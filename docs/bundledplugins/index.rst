@@ -11,4 +11,5 @@ Bundled Plugins
    discovery.rst
    logging.rst
    pluginmanager.rst
+   printer_safety_check.rst
    softwareupdate.rst

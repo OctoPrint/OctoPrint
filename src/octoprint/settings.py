@@ -280,7 +280,7 @@ default_settings = {
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
-				"sidebar": ["connection", "state", "files"],
+				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
