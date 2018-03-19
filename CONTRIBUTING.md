@@ -202,7 +202,7 @@ on how to enable safe mode in the Contribution Guidelines.
 If you can't reproduce in safe mode, this is a bug with one of your
 installed third party plugins. Don't open a ticket here!
 
-If you can't text this in safe mode, state why.
+If you can't test this in safe mode, state why.
 -->
 
 #### Version of OctoPrint
