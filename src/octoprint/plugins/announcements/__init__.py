@@ -56,11 +56,11 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# SettingsPlugin
 
 	def get_settings_defaults(self):
-		settings = dict(channels=dict(_important=dict(name="Important Announcements",
-		                                              description="Important announcements about OctoPrint.",
+		settings = dict(channels=dict(_important=dict(name="MakerGear Announcements",
+		                                              description="MakerGear announcements about OctoPrint.",
 		                                              priority=1,
 		                                              type="rss",
-		                                              url="https://octoprint.org/feeds/important.xml"),
+		                                              url="http://setup.makergear.com/feeds/important.xml"),
 		                              _releases=dict(name="Release Announcements",
 		                                             description="Announcements of new releases and release candidates of OctoPrint.",
 		                                             priority=2,

@@ -9,6 +9,8 @@ import octoprint.plugin
 from flask.ext.babel import gettext
 from .subwizards import Subwizards
 
+#need to import settings for wizard overide
+from octoprint.settings import settings as s, valid_boolean_trues
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
                        octoprint.plugin.TemplatePlugin,
@@ -99,6 +101,20 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ helpers
 
 	def _get_subwizard_attrs(self, start, end, callback=None):
+
+		#to avoid forcing the user through the wizard, set these values if they do not exist
+		#TODO: set serial number to something here incase ?
+		#check if the check plugin blacklist is enabled, if not set to true
+		if s().get(["server", "pluginBlacklist", "enabled"]) is None:
+			s().set(["server", "pluginBlacklist", "enabled"], True)
+			s().save()
+		
+		#check if the check interent connectivity is enabled, if not set to true
+		if s().get(["server", "onlineCheck", "enabled"]) is None:
+			s().set(["server", "onlineCheck", "enabled"], True)
+			s().save()
+		
+
 		result = dict()
 
 		for item in dir(self):

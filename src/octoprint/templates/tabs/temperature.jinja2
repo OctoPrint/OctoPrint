@@ -25,7 +25,7 @@
             <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
                 <div class="input-prepend input-append">
                     <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: -1°C') }}"><i class="fa fa-minus"></i></button>
-                    <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target())}, value: newTarget, valueUpdate: 'input', enable: $root.isOperational() && $root.loginState.isUser(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
+                    <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px;margin-bottom:0px;" data-bind="attr: {placeholder: cleanTemperature(target())}, value: newTarget, valueUpdate: 'input', enable: $root.isOperational() && $root.loginState.isUser(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
                     <span class="add-on">&deg;C</span>
                     <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: +1°C') }}"><i class="fa fa-plus"></i></button>
                 </div>
