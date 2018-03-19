@@ -851,7 +851,7 @@ octoprint.filemanager.preprocessor
 
    ``file_object`` will be a subclass of :class:`~octoprint.filemanager.util.AbstractFileWrapper`. Handlers may
    access the raw data of the file via :func:`~octoprint.filemanager.util.AbstractFileWrapper.stream`, e.g.
-   to wrap it further. Handlers which do not wish to handle the `file_object`
+   to wrap it further. Handlers which do not wish to handle the `file_object` should just return it untouched.
 
    **Example**
 
