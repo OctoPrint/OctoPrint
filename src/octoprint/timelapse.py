@@ -30,9 +30,9 @@ import collections
 import re
 
 try:
-	from os import scandir, walk
+	from os import scandir
 except ImportError:
-	from scandir import scandir, walk
+	from scandir import scandir
 
 
 # currently configured timelapse
@@ -334,11 +334,7 @@ def configure_timelapse(config=None, persist=False):
 			if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 				interval = config["options"]["interval"]
 
-			capture_post_roll = True
-			if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
-				capture_post_roll = config["options"]["capturePostRoll"]
-
-			current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
+			current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps)
 
 	notify_callbacks(current)
 
@@ -368,6 +364,8 @@ class Timelapse(object):
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
 		self._movie_dir = settings().getBaseFolder("timelapse")
 		self._snapshot_url = settings().get(["webcam", "snapshot"])
+		self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
+		self._snapshot_validate_ssl = settings().getBoolean(["webcam", "snapshotSslValidation"])
 
 		self._fps = fps
 
@@ -595,7 +593,10 @@ class Timelapse(object):
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
-			r = requests.get(self._snapshot_url, stream=True, timeout=5)
+			r = requests.get(self._snapshot_url,
+			                 stream=True,
+			                 timeout=self._snapshot_timeout,
+			                 verify=self._snapshot_validate_ssl)
 			r.raise_for_status()
 
 			with open (filename, "wb") as f:
@@ -712,13 +713,11 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, interval=1, capture_post_roll=True, post_roll=0, fps=25):
+	def __init__(self, interval=1, post_roll=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s
-		self._capture_post_roll = capture_post_roll
-		self._postroll_captures = 0
 		self._timer = None
 		self._logger.debug("TimedTimelapse initialized")
 
@@ -726,16 +725,11 @@ class TimedTimelapse(Timelapse):
 	def interval(self):
 		return self._interval
 
-	@property
-	def capture_post_roll(self):
-		return self._capture_post_roll
-
 	def config_data(self):
 		return {
 			"type": "timed",
 			"options": {
-				"interval": self._interval,
-				"capture_post_roll": self._capture_post_roll
+				"interval": self._interval
 			}
 		}
 
@@ -751,40 +745,18 @@ class TimedTimelapse(Timelapse):
 		                            on_finish=self._on_timer_finished)
 		self._timer.start()
 
-	def on_print_done(self, event, payload):
-		if self._capture_post_roll:
-			self._postroll_captures = self._post_roll * self._fps
-		else:
-			self._postroll_captures = 0
-		Timelapse.on_print_done(self, event, payload)
-
-	def calculate_post_roll(self):
-		if self._capture_post_roll:
-			return self._post_roll * self._fps * self._interval
-		else:
-			return Timelapse.calculate_post_roll(self)
-
 	def process_post_roll(self):
-		if self._capture_post_roll:
-			return
-
-		# we only use the final image as post roll if we
-		# are not supposed to capture it
+		# we only use the final image as post roll
 		self._copying_postroll()
 		self.post_roll_finished()
 
 	def _timer_active(self):
-		return self._in_timelapse or self._postroll_captures > 0
+		return self._in_timelapse
 
 	def _timer_task(self):
 		self.capture_image()
-		if self._postroll_captures > 0:
-			self._postroll_captures -= 1
 
 	def _on_timer_finished(self):
-		if self._capture_post_roll:
-			self.post_roll_finished()
-
 		# timer is done, delete it
 		self._timer = None
 

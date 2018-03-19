@@ -44,6 +44,14 @@ Printer State
      - 1
      - Boolean
      - ``true`` if the printer is currently printing, ``false`` otherwise
+   * - ``flags.pausing``
+     - 1
+     - Boolean
+     - ``true`` if the printer is currently printing and in the process of pausing, ``false`` otherwise
+   * - ``flags.cancelling``
+     - 1
+     - Boolean
+     - ``true`` if the printer is currently printing and in the process of pausing, ``false`` otherwise
    * - ``flags.sdReady``
      - 1
      - Boolean

@@ -153,7 +153,7 @@ An overview of these properties can be found in the section :ref:`Injected Prope
 .. seealso::
 
    :class:`~octoprint.plugin.core.Plugin` and :class:`~octoprint.plugin.types.OctoPrintPlugin`
-       Class documentation also containing the properties shared among all mixing implementations.
+       Class documentation also containing the properties shared among all mixin implementations.
 
 .. _sec-plugins-mixins-available:
 

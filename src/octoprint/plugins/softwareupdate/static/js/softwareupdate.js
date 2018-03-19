@@ -303,6 +303,11 @@ $(function() {
             var octoprint = data.information["octoprint"];
             self.octoprintReleasedVersion(!octoprint || octoprint.released_version);
 
+            if (data.status === "inProgress") {
+                self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
+                return;
+            }
+
             if (!self.loginState.isAdmin() && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
 
             if (data.status === "updateAvailable" || data.status === "updatePossible") {
@@ -664,22 +669,32 @@ $(function() {
             var title = undefined;
             var text = undefined;
 
+            switch(messageType) {
+                // make sure we are marked as working if we get any of the in-progress messages
+                case "loglines":
+                case "updating":
+                case "restarting":
+                case "restart_manually":
+                case "restart_failed":
+                case "success":
+                case "error": {
+                    if (!self.working()) {
+                        self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
+                    }
+                    break;
+                }
+            }
+
             switch (messageType) {
                 case "loglines": {
-                    if (self.working()) {
-                        _.each(messageData.loglines, function(line) {
-                            self.loglines.push(self._preprocessLine(line));
-                        });
-                        self._scrollWorkingOutputToEnd();
-                    }
+                    _.each(messageData.loglines, function(line) {
+                        self.loglines.push(self._preprocessLine(line));
+                    });
+                    self._scrollWorkingOutputToEnd();
                     break;
                 }
                 case "updating": {
                     console.log(JSON.stringify(messageData));
-
-                    if (!self.working()) {
-                        self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
-                    }
 
                     text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
                     self.loglines.push({line: "", stream: "separator"});
@@ -800,7 +815,7 @@ $(function() {
                 }
                 case "error": {
                     title = gettext("Update failed!");
-                    text = gettext("The update did not finish successfully. Please consult octoprint.log and plugin_softwareupdate_console.log for details.");
+                    text = gettext("The update did not finish successfully. Please consult <code>octoprint.log</code> and <code>plugin_softwareupdate_console.log</code> for details.");
                     self._showPopup({
                         title: title,
                         text: text,

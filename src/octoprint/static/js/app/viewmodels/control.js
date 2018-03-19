@@ -226,6 +226,10 @@ $(function() {
                 }
             }
 
+            if (!control.hasOwnProperty("additionalClasses")) {
+                control.additionalClasses = "";
+            }
+
             control.processed = true;
             return control;
         };

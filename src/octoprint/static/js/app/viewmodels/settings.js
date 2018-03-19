@@ -120,6 +120,8 @@ $(function() {
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
+        self.webcam_snapshotTimeout = ko.observable(undefined);
+        self.webcam_snapshotSslValidation = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
@@ -156,14 +158,14 @@ $(function() {
         self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
+        self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
-        self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
-        self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
@@ -182,6 +184,7 @@ $(function() {
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
         self.serial_capAutoreportTemp = ko.observable(undefined);
+        self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -323,7 +326,12 @@ $(function() {
             var errorTitle = gettext("Snapshot test failed");
 
             self.testWebcamSnapshotUrlBusy(true);
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {
+                method: "GET",
+                response: "bytes",
+                timeout: self.webcam_snapshotTimeout(),
+                validSsl: self.webcam_snapshotSslValidation()
+            })
                 .done(function(response) {
                     if (!response.result) {
                         showMessageDialog({
@@ -694,8 +702,10 @@ $(function() {
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
-                    alwaysSendChecksum: function() { return self.serial_sendChecksum() == "always"},
-                    neverSendChecksum: function() { return self.serial_sendChecksum() == "never"}
+                    alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
+                    neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
+                    ignoreErrorsFromFirmware: function() { return self.serial_serialErrorBehaviour() === "ignore"},
+                    disconnectOnErrors: function() { return self.serial_serialErrorBehaviour() === "disconnect" }
                 },
                 scripts: {
                     gcode: function() {
@@ -812,7 +822,9 @@ $(function() {
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
-                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}}
+                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},
+                    ignoreErrorsFromFirmware: function(value) { if (value) {self.serial_serialErrorBehaviour("ignore")}},
+                    disconnectOnErrors: function(value) { if (value) {self.serial_serialErrorBehaviour("disconnect")}}
                 },
                 terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
                 temperature: {

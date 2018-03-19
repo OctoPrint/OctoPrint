@@ -184,7 +184,8 @@ class PipCaller(CommandlineCaller):
 			return
 
 		if pip_version in self.__class__.broken:
-			self._logger.error("This version of pip is known to have bugs that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
+			self._logger.error("This version of pip is known to have bugs that make it incompatible with how it needs "
+			                   "to be used by OctoPrint. Please upgrade your pip version.")
 			return
 
 		# Now figure out if pip belongs to a virtual environment and if the
@@ -203,7 +204,12 @@ class PipCaller(CommandlineCaller):
 
 		ok, pip_user, pip_virtual_env, pip_install_dir = self._check_pip_setup(pip_command)
 		if not ok:
-			self._logger.error("Cannot use pip")
+			if pip_install_dir:
+				self._logger.error("Cannot use this pip install, can't write to the install dir and also can't use "
+				                   "--user for installing. Check your setup and the permissions on {}.".format(pip_install_dir))
+			else:
+				self._logger.error("Cannot use this pip install, something's wrong with the python environment. "
+				                   "Check the lines before.")
 			return
 
 		self._command = pip_command
@@ -371,17 +377,19 @@ class PipCaller(CommandlineCaller):
 				ok = writable or can_use_user_flag
 				user_flag = not writable and can_use_user_flag
 
-				self._logger.info("pip installs to {}, --user flag needed => {}, "
-				                  "virtual env => {}".format(install_dir,
+				self._logger.info("pip installs to {} (writable -> {}), --user flag needed -> {}, "
+				                  "virtual env -> {}".format(install_dir,
+				                                             "yes" if writable else "no",
 				                                             "yes" if user_flag else "no",
 				                                             "yes" if virtual_env else "no"))
+				self._logger.info("==> pip ok -> {}".format("yes" if ok else "NO!"))
 
 				# ok, enable user flag, virtual env yes/no, installation dir
 				result = ok, user_flag, virtual_env, install_dir
 				_cache["setup"][pip_command_str] = result
 				return result
 			else:
-				self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
+				self._logger.error("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 				return False, False, False, None
 
 	def _preprocess_lines(self, *lines):
@@ -425,8 +433,18 @@ class LocalPipCaller(PipCaller):
 		writable = os.access(install_dir, os.W_OK)
 
 		can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
+		user_flag = not writable and can_use_user_flag
 
-		return writable or can_use_user_flag, \
-		       not writable and can_use_user_flag, \
+		ok = writable or can_use_user_flag
+
+		self._logger.info("pip installs to {} (writable -> {}), --user flag needed -> {}, "
+		                  "virtual env -> {}".format(install_dir,
+		                                             "yes" if writable else "no",
+		                                             "yes" if user_flag else "no",
+		                                             "yes" if virtual_env else "no"))
+		self._logger.info("==> pip ok -> {}".format("yes" if ok else "NO!"))
+
+		return ok, \
+		       user_flag, \
 		       virtual_env, \
 		       install_dir

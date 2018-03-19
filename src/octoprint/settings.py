@@ -98,7 +98,9 @@ default_settings = {
 			"temperature": 5,
 			"temperatureTargetSet": 2,
 			"temperatureAutoreport": 2,
-			"sdStatus": 1
+			"sdStatus": 1,
+			"sdStatusAutoreport": 1,
+			"resendOk": .5
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,
@@ -114,7 +116,7 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
-		"supportResendsWithoutOk": False,
+		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
 		"waitForStartOnConnect": False,
@@ -136,6 +138,7 @@ default_settings = {
 
 		"capabilities": {
 			"autoreport_temp": True,
+			"autoreport_sdstatus": True,
 			"busy_protocol": True
 		},
 
@@ -149,6 +152,7 @@ default_settings = {
 		"startOnceInSafeMode": False,
 		"seenWizards": {},
 		"secretKey": None,
+		"heartbeat": 15 * 60, # 15 min
 		"reverseProxy": {
 			"prefixHeader": None,
 			"schemeHeader": None,
@@ -197,6 +201,8 @@ default_settings = {
 		"streamRatio": "16:9",
 		"streamTimeout": 5,
 		"snapshot": None,
+		"snapshotTimeout": 5,
+		"snapshotSslValidation": True,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
 		"bitrate": "5000k",
@@ -274,7 +280,7 @@ default_settings = {
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
-				"sidebar": ["connection", "state", "files"],
+				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
@@ -328,7 +334,7 @@ default_settings = {
 	},
 	"terminalFilters": [
 		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?(B|T\d*):)" },
-		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)" },
+		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
@@ -362,6 +368,7 @@ default_settings = {
 			"bundle": True,
 			"clean_on_startup": True
 		},
+		"useFrozenDictForPrinterState": True,
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
@@ -385,6 +392,7 @@ default_settings = {
 			"supportM112": True,
 			"echoOnM117": True,
 			"brokenM29": True,
+			"brokenResend": False,
 			"supportF": False,
 			"firmwareName": "Virtual Marlin 1.0",
 			"sharedNozzle": False,
@@ -397,7 +405,8 @@ default_settings = {
 			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",
 			"m115ReportCapabilities": False,
 			"capabilities": {
-				"AUTOREPORT_TEMP": True
+				"AUTOREPORT_TEMP": True,
+				"AUTOREPORT_SD_STATUS": True
 			},
 			"ambientTemperature": 21.3,
 			"errors": {
@@ -909,7 +918,8 @@ class Settings(object):
 			self._migrate_printer_parameters,
 			self._migrate_gcode_scripts,
 			self._migrate_core_system_commands,
-			self._migrate_serial_features
+			self._migrate_serial_features,
+			self._migrate_resend_without_ok
 		)
 
 		for migrate in migrators:
@@ -1215,6 +1225,22 @@ class Settings(object):
 			self._logger.info("Made a copy of the current config at {} to allow recovery of serial feature flags".format(backup_path))
 
 		return changed
+
+	def _migrate_resend_without_ok(self, config):
+		"""
+		Migrates supportResendsWithoutOk flag from boolean to ("always", "detect", "never") value range.
+
+		True gets migrated to "always", False to "detect" (which is the new default).
+		"""
+		if "serial" in config and "supportResendsWithoutOk" in config["serial"] \
+				and config["serial"]["supportResendsWithoutOk"] not in ("always", "detect", "never"):
+			value = config["serial"]["supportResendsWithoutOk"]
+			if value:
+				config["serial"]["supportResendsWithoutOk"] = "always"
+			else:
+				config["serial"]["supportResendsWithoutOk"] = "detect"
+			return True
+		return False
 
 	def backup(self, suffix, path=None):
 		import shutil
