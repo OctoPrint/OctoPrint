@@ -41,7 +41,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
 
-	DATA_FORMAT_VERSION = "v2"
+	DATA_FORMAT_VERSION = "v3"
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
@@ -499,7 +499,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		def view():
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
+				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
 				                          information=information,
 				                          timestamp=self._version_cache_timestamp))
 			except exceptions.ConfigurationInvalid as e:
@@ -530,6 +530,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			hash.update(",".join(targets))
 			hash.update(str(self._version_cache_timestamp))
 			hash.update(str(self._connectivity_checker.online))
+			hash.update(str(self._update_in_progress))
 			hash.update(self.DATA_FORMAT_VERSION)
 			return hash.hexdigest()
 
@@ -936,7 +937,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="No internet connection"))
 
 		except Exception as e:
-			self._logger.exception("Update of %s can not be performed" % target)
+			self._logger.exception("Update of %s can not be performed, please also check plugin_softwareupdate_console.log for possible causes of this" % target)
 			if not "ignorable" in populated_check or not populated_check["ignorable"]:
 				target_error = True
 
@@ -1129,7 +1130,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		mapping = dict(update_script=updaters.update_script,
 		               pip=updaters.pip,
-		               python_updater=updaters.python_updater)
+		               python_updater=updaters.python_updater,
+		               sleep_a_bit=updaters.sleep_a_bit)
 
 		method = self._get_update_method(target, check, valid_methods=mapping.keys())
 		return mapping[method]

@@ -5,7 +5,7 @@
 
 .. note::
 
-   Most methods here require that the used API token or a the existing browser session
+   Most methods here require that the used API token or the existing browser session
    has admin rights *or* corresponds to the user to be modified. Some methods
    definitely require admin rights.
 

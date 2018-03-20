@@ -10,6 +10,8 @@ $(function() {
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
+        self.isCancelling = ko.observable(undefined);
+        self.isPausing = ko.observable(undefined);
         self.isPaused = ko.observable(undefined);
         self.isError = ko.observable(undefined);
         self.isReady = ko.observable(undefined);
@@ -18,18 +20,26 @@ $(function() {
 
         self.enablePrint = ko.pureComputed(function() {
             return self.isOperational() &&
-                    self.isReady() &&
-                    !self.isPrinting() &&
-                    self.loginState.hasPermission(self.access.permissions.PRINT) &&
-                    self.filename() !== undefined;
+                self.isReady() &&
+                !self.isPrinting() &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.hasPermission(self.access.permissions.PRINT) &&
+                self.filename() !== undefined;
         });
         self.enablePause = ko.pureComputed(function() {
             return self.isOperational() &&
-                    (self.isPrinting() || self.isPaused()) &&
-                    self.loginState.hasPermission(self.access.permissions.PRINT);
+                (self.isPrinting() || self.isPaused()) &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.hasPermission(self.access.permissions.PRINT);
         });
         self.enableCancel = ko.pureComputed(function() {
-            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.loggedIn();
+            return self.isOperational() &&
+                (self.isPrinting() || self.isPaused()) &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.loggedIn();
         });
 
         self.filename = ko.observable(undefined);
@@ -200,6 +210,8 @@ $(function() {
             self.isOperational(data.flags.operational);
             self.isPaused(data.flags.paused);
             self.isPrinting(data.flags.printing);
+            self.isCancelling(data.flags.cancelling);
+            self.isPausing(data.flags.pausing);
             self.isError(data.flags.error);
             self.isReady(data.flags.ready);
             self.isSdReady(data.flags.sdReady);

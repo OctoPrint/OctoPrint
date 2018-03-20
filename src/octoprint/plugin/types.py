@@ -1863,6 +1863,47 @@ class SlicerPlugin(OctoPrintPlugin):
 			destination_extensions=["gco", "gcode", "g"]
 		)
 
+	def get_slicer_profiles(self, profile_path):
+		"""
+		Fetch all :class:`~octoprint.slicing.SlicingProfile` stored for this slicer.
+
+		For compatibility reasons with existing slicing plugins this method defaults to returning profiles parsed from
+		.profile files in the plugin's ``profile_path``, utilizing the :func:`SlicingPlugin.get_slicer_profile` method
+		of the plugin implementation.
+
+		Arguments:
+		    profile_path (str): The base folder where OctoPrint stores this slicer plugin's profiles
+		"""
+
+		try:
+			from os import scandir
+		except ImportError:
+			from scandir import scandir
+
+		import octoprint.util
+
+		profiles = dict()
+		for entry in scandir(profile_path):
+			if not entry.name.endswith(".profile") or octoprint.util.is_hidden_path(entry.name):
+				# we are only interested in profiles and no hidden files
+				continue
+
+			profile_name = entry.name[:-len(".profile")]
+			profiles[profile_name] = self.get_slicer_profile(entry.path)
+		return profiles
+
+	# noinspection PyMethodMayBeStatic
+	def get_slicer_profiles_lastmodified(self, profile_path):
+		import os
+		try:
+			from os import scandir
+		except ImportError:
+			from scandir import scandir
+
+		lms = [os.stat(profile_path).st_mtime]
+		lms += [os.stat(entry.path).st_mtime for entry in scandir(profile_path) if entry.name.endswith(".profile")]
+		return max(lms)
+
 	# noinspection PyMethodMayBeStatic
 	def get_slicer_default_profile(self):
 		"""

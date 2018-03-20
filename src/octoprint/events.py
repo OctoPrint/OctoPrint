@@ -69,6 +69,7 @@ class Events(object):
 	PRINT_STARTED = "PrintStarted"
 	PRINT_DONE = "PrintDone"
 	PRINT_FAILED = "PrintFailed"
+	PRINT_CANCELLING = "PrintCancelling"
 	PRINT_CANCELLED = "PrintCancelled"
 	PRINT_PAUSED = "PrintPaused"
 	PRINT_RESUMED = "PrintResumed"
@@ -87,6 +88,7 @@ class Events(object):
 	EJECT = "Eject"
 	E_STOP = "EStop"
 	POSITION_UPDATE = "PositionUpdate"
+	FIRMWARE_DATA = "FirmwareData"
 	TOOL_CHANGE = "ToolChange"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 

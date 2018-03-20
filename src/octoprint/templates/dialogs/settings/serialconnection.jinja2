@@ -87,12 +87,22 @@
                     </div>
                 </div>
                 <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
-                    <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status interval') }}</label>
+                    <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status interval (polling)') }}</label>
                     <div class="controls">
                         <div class="input-append">
                             <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatus" id="settings-serialTimeoutSdStatus">
                             <span class="add-on">s</span>
                         </div>
+                    </div>
+                </div>
+                <div class="control-group" title="{{ _('SD status interval to request from autoreport capable firmwares. A value of 0 disables autoreporting by the firmware and forces polling.') }}">
+                    <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status interval (autoreport)') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatusAutoreport" id="settings-serialTimeoutSdStatusAutoreport">
+                            <span class="add-on">s</span>
+                        </div>
+                        <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
                     </div>
                 </div>
             </fieldset>
@@ -246,21 +256,39 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capAutoreportSdStatus" id="settings-serialCapAutoreportSdStatus"> {{ _('Support sd status autoreporting by firmware, if detected') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capBusyProtocol" id="settings-serialCapBusyProtocol"> {{ _('Support <code>busy</code> protocol, if detected') }}
                                 </label>
                             </div>
                         </div>
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
-                                <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions < v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
-                            </label>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
+                                    <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions < v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOk"> {{ _('Simulate <code>ok</code> for resend requests') }}
-                                <span class="help-block">{{ _('Some Marlin forks do not send an acknowledging <code>ok</code> with their resend requests. Check this if you run into communication stalls following resend requests due to that.') }}</span>
-                            </label>
+                        <div class="control-group">
+                            <label class="control-label"> {{ _('Simulate <code>ok</code> for resend requests') }}</label>
+                            <div class="controls">
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="detect" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkDetect"> {{ _('If detected as necessary') }}
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="always" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkAlways"> {{ _('Always') }}
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="never" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkNever"> {{ _('Never') }}
+                                </label>
+                                <span class="help-block">{{ _('Some Marlin forks lack an acknowledging <code>ok</code> with their resend requests. Set this to "always" or "if detected as necessary" if you run into communication stalls on resend requests.') }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -307,16 +335,17 @@
             <fieldset>
                 <legend>{{ _('Error handling') }}</legend>
                 <div class="control-group">
+                    <label class="control-label">{{ _('What to do on a firmware error (<code>Error:</code> or <code>!!</code>)') }}</label>
                     <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: serial_disconnectOnErrors" id="settings-serialDisconnectOnErrors"> {{ _('Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware.') }}
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="disconnect" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourDisconnect"> {{ _('Disconnect from the printer') }}
                         </label>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-serialIgnoreErrorsFromFirmware"> {{ _('Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }}
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="ignore" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourIgnore"> {{ _('Ignore') }} <span class="label label-important">{{ _('Warning') }}</span>
+                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues, be careful!') }}</span>
                         </label>
                     </div>
                 </div>

@@ -5,7 +5,7 @@
 
 .. note::
 
-   All methods here require that the used API token or a the existing browser session
+   All methods here require that the used API token or the existing browser session
    has admin rights.
 
 .. js:function:: OctoPrintClient.util.test(command, parameters, opts)
@@ -206,4 +206,4 @@
 .. seealso::
 
    :ref:`Util API <sec-api-util>`
-     Documentation of the underlying util API
+     Documentation of the underlying util API.

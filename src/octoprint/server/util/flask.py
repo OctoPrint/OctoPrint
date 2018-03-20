@@ -9,6 +9,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import tornado.web
 import flask
+import flask.json
 import flask_login
 import flask_principal
 import flask_assets
@@ -30,6 +31,7 @@ import octoprint.access.users
 import octoprint.plugin
 
 from octoprint.util import DefaultOrderedDict
+from octoprint.util.json import JsonEncoding
 
 from werkzeug.contrib.cache import BaseCache
 
@@ -235,26 +237,19 @@ def fix_webassets_filtertool():
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
-# TODO: Remove compatibility layer in OctoPrint 1.5.0
-def deprecate_flaskext():
-	import flask
-	import importlib
+def fix_flask_login_remote_address():
+	def fixed_get_remote_addr():
+		"""Backported from https://github.com/maxcountryman/flask-login/pull/217"""
 
-	class FlaskExtDeprecator(object):
+		from flask import request
+		address = request.headers.get('X-Forwarded-For', request.remote_addr)
+		if address is not None:
+			# An 'X-Forwarded-For' header includes a comma separated list of the
+			# addresses, the first address being the actual remote address.
+			address = address.encode('utf-8').split(b',')[0].strip()
+		return address
 
-		def __getattr__(self, item):
-			old_name = "flask.ext.{}".format(item)
-			new_name = "flask_{}".format(item)
-			module = importlib.import_module(new_name)
-
-			from warnings import warn
-			message = "The {old} import is deprecated in Flask versions >= 0.11, which OctoPrint now uses. " + \
-			          "Import {new} instead. This compatibility layer will be removed in OctoPrint 1.5.0."
-			warn(DeprecationWarning(message.format(old=old_name, new=new_name)), stacklevel=2)
-
-			return module
-
-	flask.ext = FlaskExtDeprecator()
+	flask_login._get_remote_addr = fixed_get_remote_addr
 
 #~~ WSGI environment wrapper for reverse proxying
 
@@ -514,7 +509,8 @@ def passive_login():
 
 	if user is not None and not user.is_anonymous and user.is_active:
 		# login known user
-		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+		                                      identity=flask_principal.Identity(user.get_id()))
 		if hasattr(user, "session"):
 			flask.session["usersession.id"] = user.session
 		flask.g.user = user
@@ -538,7 +534,8 @@ def passive_login():
 					flask.g.user = user
 
 					flask_login.login_user(user)
-					flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
+					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+					                                      identity=flask_principal.Identity(user.get_id()))
 
 					user = autologin_user
 		except:

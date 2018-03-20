@@ -1,3 +1,4 @@
+<!--
 Thank you for your interest into contributing to OctoPrint, it's
 highly appreciated!
 
@@ -7,6 +8,7 @@ as well that contains important information.
 
 As a summary, please make sure you have ticked all points on this
 checklist:
+-->
 
   * [ ] Your changes are not possible to do through a plugin and relevant
     to a large audience (ideally all users of OctoPrint)
@@ -16,12 +18,13 @@ checklist:
     Brainstorming ticket
   * [ ] Your PR targets OctoPrint's devel branch, or maintenance if it's
     a bug fix for an issue present in the current stable version (no PRs
-    against master or anything else)
+    against master or anything else please)
   * [ ] Your PR was opened from a custom branch on your repository
     (no PRs from your version of master, maintenance or devel please),
-    e.g. dev/my_new_feature
+    e.g. dev/my_new_feature or fix/my_bugfix
   * [ ] Your PR only contains relevant changes: no unrelated files,
-    no dead code, ideally only one commit - rebase your PR if necessary!
+    no dead code, ideally only one commit - rebase and squash your PR 
+    if necessary!
   * [ ] Your changes follow the existing coding style
   * [ ] If your changes include style sheets: You have modified the
     .less source files, not the .css files (those are generated with
@@ -32,11 +35,10 @@ checklist:
     nothing broke
   * [ ] You have added yourself to the AUTHORS.md file :)
 
-Feel free to delete all this help text, then describe
-your PR further. You may use the template provided below to do that.
-The more details the better!
-
-----
+<!--
+Describe your PR further using the template provided below. The more 
+details the better!
+-->
 
 #### What does this PR do and why is it necessary?
 

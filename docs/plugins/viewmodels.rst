@@ -125,7 +125,7 @@ gcodeFilesViewModel
 logViewModel
    View model for the logfile settings dialog.
 loginStateViewModel
-   View model for the current loginstate of the user, very interesting for plugins that need to
+   View model for the current login state of the user, very interesting for plugins that need to
    evaluate the current login state or information about the current user, e.g. associated roles.
 navigationViewModel
    View model for the navigation bar.
@@ -168,7 +168,7 @@ OctoPrint's web application will call several callbacks on all registered view m
 Those are listed below:
 
 onStartup()
-   Called when the first initialization has been done: All view models are constructed and hence their dependencies
+   Called when the first initialization has been done. All view models are constructed and hence their dependencies
    resolved, no bindings have been done yet.
 
 onBeforeBinding()
@@ -210,7 +210,7 @@ onDataUpdaterPluginMessage(plugin, message)
    Called when a plugin message is pushed from the server with the identifier of the calling plugin as first
    and the actual message as the second parameter. Note that the latter might be a full fledged object, depending
    on the plugin sending the message. You can use this method to asynchronously push data from your plugin's server
-   component to it's frontend component.
+   component to its frontend component.
 
 onUserLoggedIn(user)
    Called when a user gets logged into the web app, either passively (upon initial load of the page due to a valid

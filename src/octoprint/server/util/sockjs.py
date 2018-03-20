@@ -9,6 +9,8 @@ import logging
 import threading
 import sockjs.tornado
 import sockjs.tornado.session
+import sockjs.tornado.proto
+import sockjs.tornado.util
 import time
 
 import octoprint.timelapse
@@ -20,8 +22,12 @@ from octoprint.events import Events
 from octoprint.settings import settings
 from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener, AnonymousUser
+from octoprint.util.json import JsonEncoding
 
 import octoprint.printer
+
+import wrapt
+import json
 
 
 class ThreadSafeSession(sockjs.tornado.session.Session):
@@ -52,10 +58,27 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 		return result
 
 
+class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
+
+	def send_message(self, msg, stats=True, binary=False):
+		"""Send or queue outgoing message
+
+		`msg`
+		    Message to send
+		`stats`
+		    If set to True, will update statistics after operation completes
+		"""
+		self.send_jsonified(json.dumps(sockjs.tornado.util.bytes_to_str(msg),
+		                               separators=(',', ':'),
+		                               default=JsonEncoding.encode),
+		                    stats)
+
+
 class PrinterStateConnection(sockjs.tornado.SockJSConnection,
                              octoprint.printer.PrinterCallback,
                              LoginStatusListener):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, groupManager, eventManager, pluginManager, session):
+		session = JsonEncodingSessionWrapper(session)
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)
@@ -89,6 +112,12 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
 			return forwarded_for.split(",")[0]
 		return info.ip
 
+	def __str__(self):
+		if self._remoteAddress:
+			return "{!r} connected to {}".format(self, self._remoteAddress)
+		else:
+			return "Unconnected {!r}".format(self)
+
 	def on_open(self, info):
 		self._remoteAddress = self._get_remote_address(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
@@ -121,13 +150,14 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
 		self._register()
 
 	def on_close(self):
-		self._logger.info("Client connection closed: %s" % self._remoteAddress)
-
 		self._user = AnonymousUser([self._groupManager.guest_group])
 		self._userManager.unregister_login_status_listener(self)
 
 		self._unregister()
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
+
+		self._logger.info("Client connection closed: %s" % self._remoteAddress)
+		self._remoteAddress = None
 
 	def on_message(self, message):
 		try:

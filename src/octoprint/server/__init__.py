@@ -240,6 +240,7 @@ class Server(object):
 		safe_mode = self._safe_mode
 
 		self._logger = logging.getLogger(__name__)
+		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
 		# monkey patch some stuff
@@ -505,18 +506,6 @@ class Server(object):
 		# setup jinja2
 		self._setup_jinja2()
 
-		# make sure plugin lifecycle events relevant for jinja2 are taken care of
-		def template_enabled(name, plugin):
-			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
-				return
-			self._register_additional_template_plugin(plugin.implementation)
-		def template_disabled(name, plugin):
-			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
-				return
-			self._unregister_additional_template_plugin(plugin.implementation)
-		pluginLifecycleManager.add_callback("enabled", template_enabled)
-		pluginLifecycleManager.add_callback("disabled", template_disabled)
-
 		# setup assets
 		self._setup_assets()
 
@@ -528,26 +517,8 @@ class Server(object):
 		if self._debug:
 			events.DebugEventListener()
 
-		loginManager = LoginManager()
-		loginManager.session_protection = "strong"
-		loginManager.user_callback = load_user
-
-		loginManager.unauthorized_callback = unauthorized_user
-
-		# login users authenticated by basic auth
-		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
-
-		if userManager.enabled:
-			def anonymous_user_factory():
-				return users.AnonymousUser([groupManager.guest_group])
-			loginManager.anonymous_user = anonymous_user_factory # TODO: remove in 1.5.0
-		else:
-			def dummy_user_factory():
-				return users.DummyUser([groupManager.admin_group])
-			loginManager.anonymous_user = dummy_user_factory
-			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		loginManager.init_app(app, add_context_processor=False)
+		# setup login manager
+		self._setup_login_manager()
 
 		# register API blueprint
 		self._setup_blueprints()
@@ -618,7 +589,8 @@ class Server(object):
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs")),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
+			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
 			                                                                            download_handler_kwargs,
 			                                                                            log_permission_validator)),
 			# camera snapshot
@@ -860,10 +832,20 @@ class Server(object):
 
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
-	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, deprecate_flaskext
+	def _setup_heartbeat_logging(self):
+		logger = logging.getLogger(__name__ + ".heartbeat")
 
-		deprecate_flaskext() # TODO: remove in OctoPrint 1.5.0
+		def log_heartbeat():
+			logger.info("Server heartbeat <3")
+
+		interval = settings().getFloat(["server", "heartbeat"])
+		logger.info("Starting server heartbeat, {}s interval".format(interval))
+
+		timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
+		timer.start()
+
+	def _setup_app(self, app):
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
 
 		s = settings()
 
@@ -1013,6 +995,18 @@ class Server(object):
 		app.jinja_loader = jinja_loader
 
 		self._register_template_plugins()
+
+		# make sure plugin lifecycle events relevant for jinja2 are taken care of
+		def template_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._register_additional_template_plugin(plugin.implementation)
+		def template_disabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._unregister_additional_template_plugin(plugin.implementation)
+		pluginLifecycleManager.add_callback("enabled", template_enabled)
+		pluginLifecycleManager.add_callback("disabled", template_disabled)
 
 	def _execute_preemptive_flask_caching(self, preemptive_cache):
 		from werkzeug.test import EnvironBuilder
@@ -1507,6 +1501,27 @@ class Server(object):
 		assets.register("less_core", less_core_bundle)
 		assets.register("less_plugins", less_plugins_bundle)
 		assets.register("less_app", less_app_bundle)
+
+	def _setup_login_manager(self):
+		loginManager = LoginManager()
+		loginManager.session_protection = "strong"
+		loginManager.user_callback = load_user
+		loginManager.unauthorized_callback = unauthorized_user
+
+		# login users authenticated by basic auth
+		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
+			loginManager.request_callback = load_user_from_request
+
+		if userManager.enabled:
+			def anonymous_user_factory():
+				return users.AnonymousUser([groupManager.guest_group])
+			loginManager.anonymous_user = anonymous_user_factory # TODO: remove in 1.5.0
+		else:
+			def dummy_user_factory():
+				return users.DummyUser([groupManager.admin_group])
+			loginManager.anonymous_user = dummy_user_factory
+			principals.identity_loaders.appendleft(users.dummy_identity_loader)
+		loginManager.init_app(app, add_context_processor=False)
 
 	def _start_intermediary_server(self):
 		import BaseHTTPServer

@@ -139,7 +139,7 @@ Execute a registered system command
 
 .. http:post:: /api/system/commands/(string:source)/(string:action)
 
-   Execute the system command ``action`` on defined in ``source``.
+   Execute the system command ``action`` defined in ``source``.
 
    **Example**
 

@@ -119,15 +119,17 @@ class VirtualPrinter(object):
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+		self._brokenResend = settings().getBoolean(["devel", "virtualPrinter", "brokenResend"])
 
 		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
 
-		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"], merged=True)
 
 		self._temperature_reporter = None
+		self._sdstatus_reporter = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -353,9 +355,11 @@ class VirtualPrinter(object):
 
 	def _gcode_T(self, code, data):
 		t = int(code)
-		if 0 <= t <= self.extruderCount:
+		if 0 <= t < self.extruderCount:
 			self.currentExtruder = t
 			self._send("Active Extruder: %d" % self.currentExtruder)
+		else:
+			self._send("echo:T{} Invalid extruder ".format(t))
 
 	def _gcode_F(self, code, data):
 		if self._supportF:
@@ -411,8 +415,23 @@ class VirtualPrinter(object):
 			self._setSdPos(pos)
 
 	def _gcode_M27(self, data):
-		if self._sdCardReady:
-			self._reportSdStatus()
+		def report():
+			if self._sdCardReady:
+				self._reportSdStatus()
+
+		match = re.search("S([0-9]+)", data)
+		if match:
+			interval = int(match.group(1))
+			if self._sdstatus_reporter is not None:
+				self._sdstatus_reporter.cancel()
+
+			if interval > 0:
+				self._sdstatus_reporter = RepeatedTimer(interval, report)
+				self._sdstatus_reporter.start()
+			else:
+				self._sdstatus_reporter = None
+
+		report()
 
 	def _gcode_M28(self, data):
 		if self._sdCardReady:
@@ -581,7 +600,8 @@ class VirtualPrinter(object):
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._sendOk()
+				if not self._brokenResend:
+					self._sendOk()
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()

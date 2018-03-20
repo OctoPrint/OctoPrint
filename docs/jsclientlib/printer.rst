@@ -174,7 +174,7 @@
 
    Sets the given temperature on the printer's heated bed (if available).
 
-   ``target`` is expected to be a the target temperature as a float value.
+   ``target`` is expected to be the target temperature as a float value.
 
    **Example:**
 

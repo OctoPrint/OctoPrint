@@ -1289,10 +1289,19 @@ class CountedEvent(object):
 	def __init__(self, value=0, maximum=None, **kwargs):
 		self._counter = 0
 		self._max = kwargs.get("max", maximum)
-		self._mutex = threading.Lock()
+		self._mutex = threading.RLock()
 		self._event = threading.Event()
 
 		self._internal_set(value)
+
+	@property
+	def is_set(self):
+		return self._event.is_set
+
+	@property
+	def counter(self):
+		with self._mutex:
+			return self._counter
 
 	def set(self):
 		with self._mutex:
@@ -1309,8 +1318,13 @@ class CountedEvent(object):
 		self._event.wait(timeout)
 
 	def blocked(self):
-		with self._mutex:
-			return self._counter == 0
+		return self.counter == 0
+
+	def acquire(self, blocking=1):
+		return self._mutex.acquire(blocking=blocking)
+
+	def release(self):
+		return self._mutex.release()
 
 	def _internal_set(self, value):
 		self._counter = value

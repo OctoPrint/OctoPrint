@@ -18,7 +18,6 @@ from octoprint.plugin import plugin_manager
 import flask as _flask
 import flask_login
 import flask_principal
-
 import logging
 
 from . import flask

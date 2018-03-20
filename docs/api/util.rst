@@ -38,13 +38,15 @@ Test paths or URLs
    .. _sec-api-util-test-url:
 
    url
-     Tests whether a provided url responds. Request method and expected status codes can
+     Tests whether a provided URL responds. Request method and expected status codes can
      optionally be specified as well. Supported parameters are:
 
-       * ``url``: The url to test. Mandatory.
+       * ``url``: The URL to test. Mandatory.
        * ``method``: The request method to use for the test. Optional, defaults to ``HEAD``.
        * ``timeout``: A timeout for the request, in seconds. If no reply from the tested URL has been
          received within this time frame, the check will be considered a failure. Optional, defaults to 3 seconds.
+       * ``validSsl``: Whether to validate the SSL connection if the ``url`` happens to be an HTTPS URL or not. Optional,
+         defaults to ``True``.
        * ``status``: The status code(s) or named status range(s) to test for. Can be either a single
          value or a list of either HTTP status codes or any of the following named status ranges:
 
