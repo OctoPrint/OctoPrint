@@ -24,7 +24,6 @@ from . import flask
 from . import sockjs
 from . import tornado
 from . import watchdog
-from . import serialization
 
 
 def enforceApiKeyRequestHandler():

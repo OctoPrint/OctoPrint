@@ -1417,3 +1417,9 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				break
 
 	return assets
+
+##~~ JSON encoding
+
+class OctoPrintJsonEncoder(flask.json.JSONEncoder):
+	def default(self, obj):
+		return JsonEncoding.encode(obj)

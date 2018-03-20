@@ -21,6 +21,7 @@ from builtins import bytes, range
 from past.builtins import basestring
 
 from octoprint import util
+from octoprint.util.json import JsonEncoding
 
 import os
 import logging
@@ -95,7 +96,6 @@ import octoprint.slicing
 from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
 	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
-from octoprint.server.util.serialization import OctoPrintJsonEncoder, OctoPrintJsonDecoder
 
 UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
@@ -285,12 +285,9 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
-		jsonEncoder = OctoPrintJsonEncoder()
-		jsonDecoder = OctoPrintJsonDecoder()
-
-		jsonEncoder.add_multi_encoder(users.User, lambda u: u.as_dict())
-		jsonEncoder.add_encoder(groups.Group, lambda g: g.as_dict())
-		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.as_dict())
+		JsonEncoding.add_encoder(users.User, lambda obj: obj.as_dict())
+		JsonEncoding.add_encoder(groups.Group, lambda obj: obj.as_dict())
+		JsonEncoding.add_encoder(permissions.OctoPrintPermission, lambda obj: obj.as_dict())
 
 		# start regular check if we are connected to the internet
 		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
@@ -845,13 +842,13 @@ class Server(object):
 		timer.start()
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, \
+			OctoPrintFlaskResponse, OctoPrintJsonEncoder
 
 		s = settings()
 
 		# setup octoprint's flask json serialization/deserialization
-		app.json_encoder = OctoPrintJsonEncoder.Encoder
-		app.json_decoder = OctoPrintJsonDecoder.Decoder
+		app.json_encoder = OctoPrintJsonEncoder
 
 		app.debug = self._debug
 		app.config["TEMPLATES_AUTO_RELOAD"] = True
