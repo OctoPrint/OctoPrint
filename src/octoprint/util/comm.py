@@ -65,7 +65,7 @@ except AttributeError:
 			before.
 			"""
 			self.duration = duration
-			self.target_time = monotonic.monotonic() + duration
+			self.target_time = monotonic_time() + duration
 
 	serial.Timeout = _Timeout
 	del _Timeout
