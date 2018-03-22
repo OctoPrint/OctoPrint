@@ -1049,17 +1049,22 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			with self._selectedFileMutex:
 				if self._selectedFile is not None:
 					if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
-						def log_print():
-							self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL,
-							                            self._selectedFile["filename"],
-							                            time.time(),
-							                            self._comm.getPrintTime(),
-							                            False,
-							                            self._printerProfileManager.get_current_or_default()["id"])
+						payload = self._payload_for_print_job_event()
+						if payload:
+							payload["time"] = self._comm.getPrintTime()
 
-						thread = threading.Thread(target=log_print)
-						thread.daemon = True
-						thread.start()
+							def finalize():
+								self._fileManager.log_print(payload["origin"],
+								                            payload["path"],
+								                            time.time(),
+								                            payload["time"],
+								                            False,
+								                            self._printerProfileManager.get_current_or_default()["id"])
+								eventManager().fire(Events.PRINT_FAILED, payload)
+
+							thread = threading.Thread(target=finalize)
+							thread.daemon = True
+							thread.start()
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
