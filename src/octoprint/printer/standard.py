@@ -550,11 +550,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return self._comm.getStateId(state=state)
 
 	def get_current_data(self, *args, **kwargs):
-		return self._stateMonitor.get_current_data()
+		return util.thaw_frozendict(self._stateMonitor.get_current_data())
 
 	def get_current_job(self, *args, **kwargs):
 		currentData = self._stateMonitor.get_current_data()
-		return currentData["job"]
+		return util.thaw_frozendict(currentData["job"])
 
 	def get_current_temperatures(self, *args, **kwargs):
 		if self._comm is not None:
