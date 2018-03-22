@@ -28,7 +28,7 @@ try:
 except AttributeError:
 	# pyserial < 3.2: add backported Timeout abstraction, slightly modified since we have monotonic available
 
-	import monotonic
+	from octoprint.util import monotonic_time
 	class _Timeout(object):
 		def __init__(self, duration):
 			"""Initialize a timeout with given duration"""
@@ -36,7 +36,7 @@ except AttributeError:
 			self.is_non_blocking = (duration == 0)
 			self.duration = duration
 			if duration is not None:
-				self.target_time = monotonic.monotonic() + duration
+				self.target_time = monotonic_time() + duration
 			else:
 				self.target_time = None
 
@@ -51,10 +51,10 @@ except AttributeError:
 			elif self.is_infinite:
 				return None
 			else:
-				delta = self.target_time - monotonic.monotonic()
+				delta = self.target_time - monotonic_time()
 				if delta > self.duration:
 					# clock jumped, recalculate
-					self.target_time = monotonic.monotonic() + self.duration
+					self.target_time = monotonic_time() + self.duration
 					return self.duration
 				else:
 					return max(0, delta)
