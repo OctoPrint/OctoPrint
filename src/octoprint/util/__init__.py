@@ -22,6 +22,7 @@ import warnings
 import contextlib
 import collections
 import frozendict
+import copy
 
 try:
 	import queue
@@ -981,7 +982,7 @@ def thaw_frozendict(obj):
 		if isinstance(value, frozendict.frozendict):
 			letitgo[key] = thaw_frozendict(value)
 		else:
-			letitgo[key] = value
+			letitgo[key] = copy.deepcopy(value)
 	return letitgo
 
 
