@@ -222,6 +222,14 @@ class VirtualPrinter(object):
 		self._triggerResendWithMissingLinenoAt110 = True
 		self._triggerResendWithChecksumMismatchAt115 = True
 
+		if self._temperature_reporter is not None:
+			self._temperature_reporter.cancel()
+			self._temperature_reporter = None
+
+		if self._sdstatus_reporter is not None:
+			self._sdstatus_reporter.cancel()
+			self._sdstatus_reporter = None
+
 		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
 			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
 				self._send(item + "\n")
@@ -1133,6 +1141,7 @@ class VirtualPrinter(object):
 		delay = 1
 		last_busy = time.time()
 
+		self._heatingUp = True
 		try:
 			if heater.startswith("tool"):
 				toolNum = int(heater[len("tool"):])
@@ -1154,6 +1163,8 @@ class VirtualPrinter(object):
 		except AttributeError:
 			if self.outgoing is not None:
 				raise
+		finally:
+			self._heatingUp = False
 
 	def _deleteSdFile(self, filename):
 		if filename.startswith("/"):
