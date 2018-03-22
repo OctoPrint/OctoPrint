@@ -167,9 +167,9 @@ class VirtualPrinter(object):
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
 
 	def _reset(self):
-		self.incoming.queue.clear()
-		self.outgoing.queue.clear()
-		self.buffered.queue.clear()
+		self._clearQueue(self.incoming)
+		self._clearQueue(self.outgoing)
+		self._clearQueue(self.buffered)
 
 		self._relative = True
 		self._lastX = 0.0
@@ -252,9 +252,10 @@ class VirtualPrinter(object):
 		self._logger.debug("Setting write timeout to {}s".format(value))
 		self._write_timeout = value
 
-	def _clearQueue(self, queue):
+	def _clearQueue(self, q):
 		try:
-			while queue.get(block=False):
+			while q.get(block=False):
+				q.task_done()
 				continue
 		except queue.Empty:
 			pass
@@ -1326,6 +1327,10 @@ class CharCountingQueue(queue.Queue):
 		queue.Queue.__init__(self, maxsize=maxsize)
 		self._size = 0
 		self._name = name
+
+	def clear(self):
+		with self.mutex:
+			self.queue.clear()
 
 	def put(self, item, block=True, timeout=None, partial=False):
 		self.not_full.acquire()
