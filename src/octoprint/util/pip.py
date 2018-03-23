@@ -11,6 +11,7 @@ import sys
 import logging
 import site
 import threading
+import os
 
 import pkg_resources
 
@@ -237,6 +238,10 @@ class PipCaller(CommandlineCaller):
 	@classmethod
 	def autodetect_pip(cls):
 		commands = [[sys.executable, "-m", "pip"],
+		            [os.path.join(os.path.dirname(sys.executable), "pip.exe" if sys.platform == "win32" else "pip")],
+
+		            # this should be our last resort since it might fail thanks to using pip programmatically like
+		            # that is not officially supported or sanctioned by the pip developers
 		            [sys.executable, "-c", "import sys; sys.argv = ['pip'] + sys.argv[1:]; import pip; pip.main()"]]
 
 		for command in commands:

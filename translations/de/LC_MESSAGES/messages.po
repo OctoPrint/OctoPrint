@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-03-19 13:41+0100\n"
-"PO-Revision-Date: 2018-03-19 13:42+0100\n"
+"POT-Creation-Date: 2018-03-23 15:23+0100\n"
+"PO-Revision-Date: 2018-03-23 15:25+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -623,6 +623,10 @@ msgstr "Profil entfernen"
 #: src/octoprint/plugins/discovery/__init__.py:688
 msgid "Without this plugin your OctoPrint instance will no longer be discoverable on the network via Bonjour and uPnP."
 msgstr "Ohne dieses Plugin wird deine OctoPrint Instanz nicht mehr in deinem Netzwerk mittels Bonjour oder uPnP automatisch auffindbar sein."
+
+#: src/octoprint/plugins/logging/__init__.py:204
+msgid "Without this plugin you will no longer be able to retrieve OctoPrint's logs or modify the current logging levels through the web interface."
+msgstr "Ohne dieses Plugin kannst du OctoPrints Logfiles nicht mehr über das Webinterface herunterladen und auch die aktuellen Loglevel modifizieren."
 
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:1
 msgid "Logs"
