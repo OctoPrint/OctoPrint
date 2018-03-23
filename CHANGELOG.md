@@ -1,5 +1,22 @@
 # OctoPrint Changelog
 
+## 1.3.7rc2 (2018-03-23)
+
+### Bugfixes
+
+  * [#1951](http://github.com/foosel/OctoPrint/issues/1951) - Fixed plugins being able to modify internal state data (e.g. progress, job), causing concurrent modification and resulting run time errors in the printer state processing.
+  * [#2494](https://github.com/foosel/OctoPrint/issues/2494) - Fixed `undefined` values not saving in the settings. 
+  * [#2499](https://github.com/foosel/OctoPrint/issues/2499) - Fixed communication error notification lacking the actual error message.
+  * [#2501](https://github.com/foosel/OctoPrint/issues/2501) - Fixed a bug causing log downloads to fail with an HTTP 500 error.
+  * [#2506](https://github.com/foosel/OctoPrint/issues/2506) - Fixed `printer.get_current_data` and `printer.get_current_job` returning `frozendict` instead of `dict` instances, causing issues with plugins relying on being able to modify the returned data (e.g. [dattas/OctoPrint-DetailedProgress#26](https://github.com/dattas/OctoPrint-DetailedProgress/issues/26)).
+  * [#2508](https://github.com/foosel/OctoPrint/issues/2508) - Fixed HTTP 500 error on `/api/slicing` in case of an unconfigured slicer.
+  * Have `OctoPrintJsonEncoder` fall back to regular flask JSON encoder, otherwise we might not be able to serialize some data types we need to be able to serialize.
+  * Use `pkg_resources` to determine pip version during environment check instead of `import pip; pip.__version__` since the latter causes issues with pip version 9.0.2. In the same spirit make `pip.main` approach of calling `pip` in the PipCaller the last resort during auto detection, only after trying `pip` or `pip.exe` inside the same folder as the Python executable.
+  * Use `octoprint.util.monotonic_time` instead of `monotonic.monotonic` in comm layer.
+  * Fixed timelapse not stopping on print failure due to firmware error due to missing `PrintFailed` event.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc1...1.3.7rc2))
+
 ## 1.3.7rc1 (2018-03-19)
 
 ### Improvements
