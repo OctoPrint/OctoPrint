@@ -911,7 +911,7 @@ class MachineCom(object):
 				if not cmd:
 					return False
 
-		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold:
+		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold and not force:
 			try:
 				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
