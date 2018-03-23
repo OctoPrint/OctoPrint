@@ -1092,7 +1092,12 @@ System
 
 Use the following settings to add custom system commands to the "System" dropdown within OctoPrint's top bar.
 
-Commands consist of a name, an action identifier, the commandline to execute and an optional confirmation message to
+Commands consist of a ``name`` shown to the user, an ``action`` identifier used by the code and the actual
+``command`` including any argument needed for its execution.
+By default OctoPrint blocks until the command has returned so that the exit code can be used to show a success
+or failure message; use the flag ``async: true`` for commands that don't return.
+
+Optionally you can add a confirmation message to
 display before actually executing the command (should be set to False if a confirmation dialog is not desired).
 
 The following example defines a command for shutting down the system under Linux. It assumes that the user under which
