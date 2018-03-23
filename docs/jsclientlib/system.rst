@@ -5,7 +5,7 @@
 
 .. note::
 
-   All methods here require that the used API token or a the existing browser session
+   All methods here require that the used API token or the existing browser session
    has admin rights.
 
 .. js:function:: OctoPrintClient.system.getCommands(opts)
@@ -35,4 +35,4 @@
 .. seealso::
 
    :ref:`System API <sec-api-system>`
-       Documentation of the underlying system API
+       Documentation of the underlying system API.

@@ -1,0 +1,7 @@
+<p><strong>{{ _('Warning!') }}</strong></p>
+<!-- ko foreach: warnings -->
+<p class="printer_safety_warning">
+    <span data-bind="text: message"></span><br>
+    <a target="_blank" rel="noreferrer noopener" data-bind="attr: {href: 'https://faq.octoprint.org/warning-' + type}">{{ _('Learn more...') }}</a>
+</p>
+<!-- /ko -->

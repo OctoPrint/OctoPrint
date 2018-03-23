@@ -1863,7 +1863,7 @@ class SlicerPlugin(OctoPrintPlugin):
 
 	def get_slicer_profiles(self, profile_path):
 		"""
-		Fetch all :class:`~octoprint.slicing.SlicingProfile`s stored for this slicer.
+		Fetch all :class:`~octoprint.slicing.SlicingProfile` stored for this slicer.
 
 		For compatibility reasons with existing slicing plugins this method defaults to returning profiles parsed from
 		.profile files in the plugin's ``profile_path``, utilizing the :func:`SlicingPlugin.get_slicer_profile` method

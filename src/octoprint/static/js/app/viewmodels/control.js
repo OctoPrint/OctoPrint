@@ -226,7 +226,7 @@ $(function() {
                 }
             }
 
-            if (control.hasOwnProperty("command") && !control.hasOwnProperty("additionalClasses")) {
+            if (!control.hasOwnProperty("additionalClasses")) {
                 control.additionalClasses = "";
             }
 

@@ -532,6 +532,10 @@ class MachineCom(object):
 		)
 		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
 		self._error_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.error")
+		self._atcommand_hooks = dict(
+			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
+			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")
+		)
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -907,7 +911,7 @@ class MachineCom(object):
 				if not cmd:
 					return False
 
-		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold:
+		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold and not force:
 			try:
 				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
@@ -1674,6 +1678,8 @@ class MachineCom(object):
 						if name and "malyan" in name.lower() and ver:
 							firmware_name = name.strip() + " " + ver.strip()
 
+					eventManager().fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=data))
+
 					if not self._firmware_info_received and firmware_name:
 						firmware_name = firmware_name.strip()
 						self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
@@ -2412,7 +2418,7 @@ class MachineCom(object):
 				self._logger.exception("Unexpected error while reading from serial port")
 				self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
 				if isinstance(ex, serial.SerialException):
-					self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+					self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 					               level=logging.ERROR)
 				self._errorValue = get_exception_string()
 				self.close(is_error=True)
@@ -2942,16 +2948,24 @@ class MachineCom(object):
 			parameters = split[1]
 		else:
 			atcommand = split[0]
-			parameters = None
+			parameters = ""
 
 		atcommand = atcommand[1:]
 
+		# send it through the phase specific handlers provided by plugins
+		for name, hook in self._atcommand_hooks[phase].items():
+			try:
+				hook(self, phase, atcommand, parameters, tags=tags)
+			except:
+				self._logger.exception("Error while processing hook {} for phase {} and command {}:".format(name, phase, atcommand))
+
+		# trigger built-in handler if available
 		handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)
 		if callable(handler):
 			try:
 				handler(atcommand, parameters, tags=tags)
 			except:
-				self._logger.exception("Error in handler for phase {} and command {} atcommand".format(phase, atcommand))
+				self._logger.exception("Error in handler for phase {} and command {}".format(phase, atcommand))
 
 	##~~ actual sending via serial
 
@@ -3004,7 +3018,7 @@ class MachineCom(object):
 						self._logger.exception("Unexpected error while writing to serial port")
 						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 						if isinstance(ex, serial.SerialException):
-							self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+							self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 							               level=logging.ERROR)
 						self._errorValue = get_exception_string()
 						self.close(is_error=True)
@@ -3014,7 +3028,7 @@ class MachineCom(object):
 					self._logger.exception("Unexpected error while writing to serial port")
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					if isinstance(ex, serial.SerialException):
-						self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+						self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
 						               level=logging.ERROR)
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
@@ -3264,19 +3278,22 @@ class MachineCom(object):
 
 	## atcommands
 
-	def _atcommand_pause_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_pause_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:afterPrintPaused" in tags:
 			self.setPause(True, tags={"trigger:atcommand_pause"})
 
-	def _atcommand_cancel_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_cancel_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:afterPrintCancelled" in tags:
 			self.cancelPrint(tags={"trigger:atcommand_cancel"})
 	_atcommand_abort_queuing = _atcommand_cancel_queuing
 
-	def _atcommand_resume_queuing(self, *args, **kwargs):
-		tags = kwargs.get("tags", set())
+	def _atcommand_resume_queuing(self, command, parameters, tags=None, *args, **kwargs):
+		if tags is None:
+			tags = set()
 		if not "script:beforePrintResumed" in tags:
 			self.setPause(False, tags={"trigger:atcommand_resume"})
 

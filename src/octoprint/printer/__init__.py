@@ -430,6 +430,14 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def log_lines(self, *lines):
+		"""
+		Logs the provided lines to the printer log and serial.log
+		Args:
+			*lines: the lines to log
+		"""
+		pass
+
 	def get_state_string(self, *args, **kwargs):
 		"""
 		Returns:

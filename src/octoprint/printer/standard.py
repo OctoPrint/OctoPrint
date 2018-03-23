@@ -531,6 +531,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# for further processing
 		self._comm.cancelPrint(tags=kwargs.get("tags", set()) | {"trigger:printer.cancel_print"})
 
+	def log_lines(self, *lines):
+		serial_logger = logging.getLogger("SERIAL")
+		self.on_comm_log("\n".join(lines))
+		for line in lines:
+			serial_logger.debug(line)
+
 	def get_state_string(self, state=None, *args, **kwargs):
 		if self._comm is None:
 			return "Offline"

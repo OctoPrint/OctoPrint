@@ -46,6 +46,8 @@ $(function() {
 
         self.previousIsOperational = undefined;
 
+        self.refreshVisible = ko.observable(true);
+
         self.requestData = function() {
             OctoPrint.connection.getSettings()
                 .done(self.fromResponse);
@@ -150,6 +152,14 @@ $(function() {
         };
 
         self.onStartup = function() {
+            var connectionTab = $("#connection");
+            connectionTab.on("show", function() {
+                self.refreshVisible(true);
+            });
+            connectionTab.on("hide", function() {
+                self.refreshVisible(false);
+            });
+
             self.requestData();
         };
 

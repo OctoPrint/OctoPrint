@@ -408,6 +408,45 @@ octoprint.comm.protocol.action
    :param str action: The parsed out action command, so for a ``line`` like ``// action:some_command`` this will be
        ``some_command``
 
+.. _sec-plugins-hook-comm-protocol-atcommand-phase:
+
+octoprint.comm.protocol.atcommand.<phase>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This describes actually two hooks:
+
+  * ``octoprint.comm.protocol.atcommand.queuing``
+  * ``octoprint.comm.protocol.atcommand.sending``
+
+.. py:function:: protocol_atcommandphase_hook(comm_instance, phase, command, parameters, tags=None, *args, **kwargs)
+
+   Trigger on :ref:`@ commands <sec-features-atcommands>` as they progress through the ``queuing`` and ``sending``
+   phases of the comm layer. See :ref:`the gcode phase hook <sec-plugins-hook-comm-protocol-gcode-phase>` for a
+   detailed description of each of these phases.
+
+   Hook handlers may use this to react to arbitrary :ref:`@ commands <sec-features-atcommands>` included in GCODE files
+   streamed to the printer or sent as part of GCODE scripts, through the API or plugins.
+
+   Please note that these hooks do not allow to rewrite, suppress or expand @ commands, they are merely callbacks to
+   trigger the *actual execution* of whatever functionality lies behind a given @ command, similar to
+   :ref:`the action command hook <sec-plugins-hook-comm-protocol-action>`.
+
+   **Example**
+
+   Pause the print on ``@wait`` (this mirrors the implementation of the built-in ``@pause`` command, just with a
+   different name).
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_atcommand.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_atcommand.py>`__
+
+   :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str phase: The current phase in the command progression, either ``queuing`` or ``sending``. Will always
+       match the ``<phase>`` of the hook.
+   :param str cmd: The @ command without the leading @
+   :param str parameters: Any parameters provided to the @ command. If none were provided this will be an empty string.
+
 .. _sec-plugins-hook-comm-protocol-gcode-phase:
 
 octoprint.comm.protocol.gcode.<phase>
@@ -569,7 +608,7 @@ octoprint.comm.protocol.gcode.received
 .. py:function:: gcode_received_hook(comm_instance, line, *args, **kwargs)
 
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
-   version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
+   version of it. If the handler returns None, processing will be aborted and the communication layer will get an
    empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
    ``return`` statement is used or just nothing is returned explicitly from the handler.
 
@@ -812,7 +851,7 @@ octoprint.filemanager.preprocessor
 
    ``file_object`` will be a subclass of :class:`~octoprint.filemanager.util.AbstractFileWrapper`. Handlers may
    access the raw data of the file via :func:`~octoprint.filemanager.util.AbstractFileWrapper.stream`, e.g.
-   to wrap it further. Handlers which do not wish to handle the `file_object`
+   to wrap it further. Handlers which do not wish to handle the `file_object` should just return it untouched.
 
    **Example**
 
@@ -857,7 +896,7 @@ octoprint.printer.factory
 
    If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
 
-   If no of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
+   If none of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
    class will be instantiated.
 
    :param dict components: System components to use for printer instance initialization
@@ -959,7 +998,7 @@ octoprint.server.http.routes
          that allows delivery of the requested resource as attachment and access validation through an optional callback.
       :class:`~octoprint.server.util.tornado.UrlForwardHandler`
          `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
-         requests to a preconfigured url and returns the response.
+         requests to a preconfigured URL and returns the response.
 
    :param list server_routes: read-only list of the currently configured server routes
    :return: a list of 3-tuples with additional routes as defined above
@@ -1102,7 +1141,7 @@ octoprint.users.factory
 
    If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
 
-   If no of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
    entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
    :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
    file ``~/.octoprint/users.yaml``.

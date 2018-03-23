@@ -128,7 +128,7 @@ Rendered timelapse
    * - ``date``
      - 1
      - string
-     - Formatted timestamp of the the timelapse creation date
+     - Formatted timestamp of the timelapse creation date
    * - ``url``
      - 1
      - string
@@ -162,7 +162,7 @@ Unrendered timelapse
    * - ``date``
      - 1
      - string
-     - Formatted timestamp of the the timelapse job creation date
+     - Formatted timestamp of the timelapse job creation date
    * - ``recording``
      - 1
      - bool
