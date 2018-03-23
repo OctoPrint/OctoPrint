@@ -11,6 +11,7 @@ thanks to everyone who contributed!
   * Andrew Moorby
   * Arnljot Arntsen
   * BEEVERYCREATIVE
+  * Boris Hussein
   * Brad Jackson
   * Brian E. Tyler
   * Christian Petropolis
@@ -54,4 +55,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 1188 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1199 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

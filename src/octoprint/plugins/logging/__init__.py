@@ -11,6 +11,7 @@ from octoprint.server import NO_CONTENT, admin_permission
 from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 
 from flask import request, jsonify, url_for, make_response
+from flask_babel import gettext
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest
 import yaml
@@ -200,4 +201,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 __plugin_name__ = "Logging"
 __plugin_author__ = "Shawn Bruce, based on work by Gina Häußge and Marc Hannappel"
 __plugin_description__ = "Provides access to OctoPrint's logs and logging configuration."
+__plugin_disabling_discouraged__ = gettext("Without this plugin you will no longer be able to retrieve "
+                                           "OctoPrint's logs or modify the current logging levels through "
+                                           "the web interface.")
 __plugin_implementation__ = LoggingPlugin()

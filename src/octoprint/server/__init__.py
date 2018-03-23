@@ -1441,6 +1441,8 @@ class Server(object):
 	def _setup_login_manager(self):
 		util.flask.fix_flask_login_remote_address()
 
+		global loginManager
+
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user

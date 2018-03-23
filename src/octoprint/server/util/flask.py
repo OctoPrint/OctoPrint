@@ -1421,4 +1421,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 class OctoPrintJsonEncoder(flask.json.JSONEncoder):
 	def default(self, obj):
-		return JsonEncoding.encode(obj)
+		try:
+			return JsonEncoding.encode(obj)
+		except TypeError:
+			return flask.json.JSONEncoder.default(self, obj)

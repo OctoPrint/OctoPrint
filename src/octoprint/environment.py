@@ -83,8 +83,8 @@ class EnvironmentDetector(object):
 
 		# try to find pip version
 		try:
-			import pip
-			result["pip"] = pip.__version__
+			import pkg_resources
+			result["pip"] = pkg_resources.get_distribution("pip").version
 		except:
 			self._logger.exception("Error detecting pip version")
 
