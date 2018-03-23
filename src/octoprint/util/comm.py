@@ -382,7 +382,7 @@ class MachineCom(object):
 		self._baudrateDetectRetry = 0
 		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
-		self._command_queue = TypedQueue()
+		self._command_queue = CommandQueue()
 		self._currentZ = None
 		self._currentF = None
 		self._heatupWaitStartTime = None
@@ -1622,7 +1622,7 @@ class MachineCom(object):
 
 				# process resends
 				elif lower_line.startswith("resend") or lower_line.startswith("rs"):
-					self._handleResendRequest(line)
+					self._handle_resend_request(line)
 					handled = True
 
 				# process timeouts
@@ -2002,23 +2002,27 @@ class MachineCom(object):
 				                     self.STATE_PAUSED,
 				                     self.STATE_TRANSFERING_FILE):
 					if line == "start": # exact match, to be on the safe side
-						if self._state in (self.STATE_OPERATIONAL,):
-							message = "Printer sent 'start' while already operational. External reset? " \
-							          "Resetting line numbers to be on the safe side"
-							self._log(message)
-							self._logger.warn(message)
-							self._onExternalReset()
+						with self.job_put_on_hold():
+							idle = self._state in (self.STATE_OPERATIONAL,)
+							if idle:
+								message = "Printer sent 'start' while already operational. External reset? " \
+								          "Resetting line numbers to be on the safe side"
+								self._log(message)
+								self._logger.warn(message)
 
-						else:
-							verb = "streaming to SD" if self.isStreaming() else "printing"
-							message = "Printer sent 'start' while {}. External reset? " \
-							          "Aborting job since printer lost state.".format(verb)
-							self._log(message)
-							self._logger.warn(message)
-							self.cancelPrint(disable_log_position=True)
-							self._onExternalReset()
+								self._on_external_reset()
 
-						eventManager().fire(Events.PRINTER_RESET)
+							else:
+								verb = "streaming to SD" if self.isStreaming() else "printing"
+								message = "Printer sent 'start' while {}. External reset? " \
+								          "Aborting job since printer lost state.".format(verb)
+								self._log(message)
+								self._logger.warn(message)
+
+								self._on_external_reset()
+								self.cancelPrint(disable_log_position=True)
+
+							eventManager().fire(Events.PRINTER_RESET, payload=dict(idle=idle))
 
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
@@ -2291,7 +2295,19 @@ class MachineCom(object):
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
-	def _onExternalReset(self):
+	def _on_external_reset(self):
+		# hold queue processing, clear queues and acknowledgements, reset line number and last lines
+		with self._send_queue.blocked():
+			self._clear_to_send.clear(completely=True)
+			with self._command_queue.blocked():
+				self._command_queue.clear()
+			self._send_queue.clear()
+
+			with self._line_mutex:
+				self._currentLine = 0
+				self._lastLines.clear()
+
+		self.sayHello(tags={"trigger:comm.on_external_reset"})
 		self.resetLineNumbers(tags={"trigger:comm.on_external_reset"})
 
 		if self._temperature_autoreporting:
@@ -2620,13 +2636,19 @@ class MachineCom(object):
 
 				self._logger.debug("Command \"{}\" from file not enqueued, doing another iteration".format(line))
 
-	def _handleResendRequest(self, line):
+	def _handle_resend_request(self, line):
 		try:
 			lineToResend = parse_resend_line(line)
 			if lineToResend is None:
 				return False
 
-			if self._resendDelta is None and lineToResend == self._currentLine:
+			if self._resendDelta is None and lineToResend == self._currentLine == 1:
+				# We probably just handled a resend and this request originates from lines sent before that
+				self._logger.info("Got a resend request for line 1 which is also our current line. It looks "
+				                  "like we just handled a reset and this is a left over of this")
+				return False
+
+			elif self._resendDelta is None and lineToResend == self._currentLine:
 				# We don't expect to have an active resend request and the printer is requesting a resend of
 				# a line we haven't yet sent.
 				#
@@ -2647,7 +2669,7 @@ class MachineCom(object):
 			if lastCommError is not None \
 					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
 					and lineToResend == self._lastResendNumber \
-					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
+					and self._resendDelta is not None and self._currentResendCount < resendDelta:
 				self._logger.info("Ignoring resend request for line %d, that still originates from lines we sent "
 				                   "before we got the first resend request" % lineToResend)
 				self._currentResendCount += 1
@@ -3782,11 +3804,51 @@ class SpecialStreamingGcodeFileInformation(StreamingGcodeFileInformation):
 			return None
 		return line
 
+class CommandQueue(TypedQueue):
+	def __init__(self, *args, **kwargs):
+		TypedQueue.__init__(self, *args, **kwargs)
+		self._unblocked = threading.Event()
+		self._unblocked.set()
+
+	def block(self):
+		self._unblocked.clear()
+
+	def unblock(self):
+		self._unblocked.set()
+
+	@contextlib.contextmanager
+	def blocked(self):
+		self.block()
+		try:
+			yield
+		finally:
+			self.unblock()
+
+	def get(self, *args, **kwargs):
+		self._unblocked.wait()
+		return TypedQueue.get(self, *args, **kwargs)
+
+	def put(self, *args, **kwargs):
+		self._unblocked.wait()
+		return TypedQueue.put(self, *args, **kwargs)
+
+	def clear(self):
+		cleared = []
+		while True:
+			try:
+				cleared.append(TypedQueue.get(self, False))
+				TypedQueue.task_done(self)
+			except queue.Empty:
+				break
+		return cleared
 
 class SendQueue(PrependableQueue):
 
 	def __init__(self, maxsize=0):
 		PrependableQueue.__init__(self, maxsize=maxsize)
+
+		self._unblocked = threading.Event()
+		self._unblocked.set()
 
 		self._resend_queue = PrependableQueue()
 		self._send_queue = PrependableQueue()
@@ -3803,15 +3865,42 @@ class SendQueue(PrependableQueue):
 		with self.mutex:
 			self._resend_active = resend_active
 
+	def block(self):
+		self._unblocked.clear()
+
+	def unblock(self):
+		self._unblocked.set()
+
+	@contextlib.contextmanager
+	def blocked(self):
+		self.block()
+		try:
+			yield
+		finally:
+			self.unblock()
+
 	def prepend(self, item, item_type=None, target=None, block=True, timeout=None):
+		self._unblocked.wait()
 		PrependableQueue.prepend(self, (item, item_type, target), block=block, timeout=timeout)
 
 	def put(self, item, item_type=None, target=None, block=True, timeout=None):
+		self._unblocked.wait()
 		PrependableQueue.put(self, (item, item_type, target), block=block, timeout=timeout)
 
 	def get(self, block=True, timeout=None):
+		self._unblocked.wait()
 		item, _, _ = PrependableQueue.get(self, block=block, timeout=timeout)
 		return item
+
+	def clear(self):
+		cleared = []
+		while True:
+			try:
+				cleared.append(PrependableQueue.get(self, False))
+				PrependableQueue.task_done(self)
+			except queue.Empty:
+				break
+		return cleared
 
 	def _put(self, item):
 		_, item_type, target = item

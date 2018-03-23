@@ -218,6 +218,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         });
     };
 
+    self._printerErrorCancelNotification = undefined;
+    self._printerErrorDisconnectNotification = undefined;
+    self._printerResetNotification = undefined;
     self._onEvent = function(event) {
         self._ifInitialized(function() {
             var type = event.data["type"];
@@ -226,7 +229,10 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
             if (type === "PrintCancelling" && payload.firmwareError) {
-                new PNotify({
+                if (self._printerErrorCancelNotification !== undefined) {
+                    self._printerErrorCancelNotification.remove();
+                }
+                self._printerErrorCancelNotification = new PNotify({
                     title: gettext("Error reported by printer"),
                     text: _.sprintf(gettext("Your printer's firmware reported an error. Due to that the ongoing print job will be cancelled. Reported error: %(firmwareError)s"), payload),
                     type: "error",
@@ -271,7 +277,10 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 }
 
                 if (title && text) {
-                    new PNotify({
+                    if (self._printerErrorDisconnectNotification !== undefined) {
+                        self._printerErrorDisconnectNotification.remove();
+                    }
+                    self._printerErrorDisconnectNotification = new PNotify({
                             title: title,
                             text: text,
                             type: "error",
@@ -279,9 +288,23 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     });
                 }
             } else if (type === "PrinterReset") {
-                new PNotify({
+                var severity = undefined,
+                    text = undefined;
+                if (payload.idle) {
+                    text = gettext("It looks like your printer reset while a connection was active. If this was intentional you may safely ignore this message. Otherwise you should investigate why your printer reset itself, since this will interrupt prints and also file transfers to your printer's SD.");
+                    severity = "alert";
+                } else {
+                    text = gettext("It looks like your printer reset while a connection was active. Due to this the ongoing job was aborted. If this was intentional you may safely ignore this message. Otherwise you should investigate why your printer reset itself, since this will interrupt prints and also file transfers to your printer's SD.");
+                    severity = "error";
+                }
+
+                if (self._printerResetNotification !== undefined) {
+                    self._printerResetNotification.remove();
+                }
+                self._printerResetNotification = new PNotify({
                     title: gettext("Printer reset detected"),
-                    text: gettext("It looks like your printer reset while a connection was active. If this was intentional you may safely ignore this message. Otherwise you should investigate why your printer reset itself, since this will interrupt prints and also file transfers to your printer's SD."),
+                    text: text,
+                    type: severity,
                     hide: false
                 });
             }

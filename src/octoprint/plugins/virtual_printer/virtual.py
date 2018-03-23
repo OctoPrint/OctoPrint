@@ -168,72 +168,73 @@ class VirtualPrinter(object):
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
 
 	def _reset(self):
-		self._clearQueue(self.incoming)
-		self._clearQueue(self.outgoing)
-		self._clearQueue(self.buffered)
+		with self._incoming_lock:
+			self._relative = True
+			self._lastX = 0.0
+			self._lastY = 0.0
+			self._lastZ = 0.0
+			self._lastE = [0.0] * self.extruderCount
+			self._lastF = 200
 
-		self._relative = True
-		self._lastX = 0.0
-		self._lastY = 0.0
-		self._lastZ = 0.0
-		self._lastE = [0.0] * self.extruderCount
-		self._lastF = 200
+			self._unitModifier = 1
+			self._feedrate_multiplier = 100
+			self._flowrate_multiplier = 100
 
-		self._unitModifier = 1
-		self._feedrate_multiplier = 100
-		self._flowrate_multiplier = 100
-
-		self._sdCardReady = True
-		self._sdPrinting = False
-		if self._sdPrinter:
+			self._sdCardReady = True
 			self._sdPrinting = False
-			self._sdPrintingSemaphore.set()
-		self._sdPrinter = None
-		self._selectedSdFile = None
-		self._selectedSdFileSize = None
-		self._selectedSdFilePos = None
+			if self._sdPrinter:
+				self._sdPrinting = False
+				self._sdPrintingSemaphore.set()
+			self._sdPrinter = None
+			self._selectedSdFile = None
+			self._selectedSdFileSize = None
+			self._selectedSdFilePos = None
 
-		if self._writingToSdHandle:
-			try:
-				self._writingToSdHandle.close()
-			except:
-				pass
-		self._writingToSd = False
-		self._writingToSdHandle = None
-		self._newSdFilePos = None
+			if self._writingToSdHandle:
+				try:
+					self._writingToSdHandle.close()
+				except:
+					pass
+			self._writingToSd = False
+			self._writingToSdHandle = None
+			self._newSdFilePos = None
 
-		self._heatingUp = False
+			self._heatingUp = False
 
-		self.currentLine = 0
-		self.lastN = 0
+			self.currentLine = 0
+			self.lastN = 0
 
-		self._debug_awol = False
-		self._debug_sleep = None
-		self._sleepAfterNext.clear()
-		self._sleepAfter.clear()
+			self._debug_awol = False
+			self._debug_sleep = None
+			self._sleepAfterNext.clear()
+			self._sleepAfter.clear()
 
-		self._dont_answer = False
+			self._dont_answer = False
 
-		self._debug_drop_connection = False
+			self._debug_drop_connection = False
 
-		self._killed = False
+			self._killed = False
 
-		self._triggerResendAt100 = True
-		self._triggerResendWithTimeoutAt105 = True
-		self._triggerResendWithMissingLinenoAt110 = True
-		self._triggerResendWithChecksumMismatchAt115 = True
+			self._triggerResendAt100 = True
+			self._triggerResendWithTimeoutAt105 = True
+			self._triggerResendWithMissingLinenoAt110 = True
+			self._triggerResendWithChecksumMismatchAt115 = True
 
-		if self._temperature_reporter is not None:
-			self._temperature_reporter.cancel()
-			self._temperature_reporter = None
+			if self._temperature_reporter is not None:
+				self._temperature_reporter.cancel()
+				self._temperature_reporter = None
 
-		if self._sdstatus_reporter is not None:
-			self._sdstatus_reporter.cancel()
-			self._sdstatus_reporter = None
+			if self._sdstatus_reporter is not None:
+				self._sdstatus_reporter.cancel()
+				self._sdstatus_reporter = None
 
-		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
-			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
-				self._send(item + "\n")
+			self._clearQueue(self.incoming)
+			self._clearQueue(self.outgoing)
+			self._clearQueue(self.buffered)
+
+			if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
+				for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+					self._send(item + "\n")
 
 	@property
 	def timeout(self):
