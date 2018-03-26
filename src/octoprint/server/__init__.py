@@ -1314,25 +1314,13 @@ class Server(object):
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		if self._settings.getBoolean(["feature", "legacyPluginAssets"]):
-			# TODO remove again in 1.3.8
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces Bundle instances"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = Bundle(*assets, filters=filters)
-				return result
-
-		else:
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
-				return result
-
+		def js_bundles_for_plugins(collection, filters=None):
+			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
+			result = OrderedDict()
+			for plugin, assets in collection.items():
+				if len(assets):
+					result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
+			return result
 
 		js_core = dynamic_core_assets["js"] + \
 		    all_assets_for_plugins(dynamic_plugin_assets["bundled"]["js"]) + \

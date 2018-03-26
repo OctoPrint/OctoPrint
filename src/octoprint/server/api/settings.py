@@ -122,8 +122,7 @@ def getSettings():
 			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
 			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
 			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
-			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
-			"legacyPluginAssets": s.getBoolean(["feature", "legacyPluginAssets"])
+			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -358,7 +357,6 @@ def _saveSettings(data):
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
-		if "legacyPluginAssets" in data["feature"]: s.setBoolean(["feature", "legacyPluginAssets"], data["feature"]["legacyPluginAssets"])
 		if "autoUppercaseBlacklist" in data["feature"] and isinstance(data["feature"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["feature", "autoUppercaseBlacklist"], data["feature"]["autoUppercaseBlacklist"])
 
 	if "serial" in data.keys():

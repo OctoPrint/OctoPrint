@@ -238,8 +238,7 @@ default_settings = {
 		"modelSizeDetection": True,
 		"printCancelConfirmation": True,
 		"autoUppercaseBlacklist": ["M117"],
-		"g90InfluencesExtruder": False,
-		"legacyPluginAssets": False # TODO remove again in 1.3.8
+		"g90InfluencesExtruder": False
 	},
 	"folder": {
 		"uploads": None,

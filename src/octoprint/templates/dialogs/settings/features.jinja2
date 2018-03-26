@@ -2,20 +2,6 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_legacyPluginAssets" id="settings-legacyPluginAssets"> {{ _('Enable legacy plugin asset bundling') }} <span class="label label-info">Compatibility</span>
-                <span class="help-block">{% trans url="https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/" %}
-                    Enable this, save and restart your server if you are running into issues with plugins with OctoPrint
-                    1.3.6 or later that used to work with OctoPrint up to version 1.3.5. See <a href="{{ url }}">here</a>
-                    for details on why this is happening. Note that this legacy flag will be removed in a future
-                    OctoPrint version (currently planned for 1.3.8), so urge the authors of affected plugins to push
-                    an update with a fix.
-                {% endtrans %}</span>
-            </label>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_temperatureGraph" id="settings-featureTemperatureGraph"> {{ _('Enable Temperature Graph') }}
             </label>
         </div>
