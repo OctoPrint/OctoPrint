@@ -7,9 +7,9 @@
         <div class="back-path"><small class="muted">{{ _('Currently in') }} <span data-bind="text: currentPath"></span></small></div>
     </div>
 
-    <!-- ko slimScrolledForeach: {data: filesAndFolders, slimscroll: {height: "306px", size: "10px", distance: 0, railVisible: true, alwaysVisible: true, scrollBy: "102px"} } -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }, css: $data.type"></div>
-    <!-- /ko -->
+    <div class="scroll-wrapper" data-bind="foreach: filesAndFolders">
+        <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }, css: $data.type"></div>
+    </div>
 
     <script type="text/html" id="files_template_machinecode">
         <div class="title clickable" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: display"></div>

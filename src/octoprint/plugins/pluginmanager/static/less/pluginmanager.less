@@ -23,13 +23,6 @@ table {
 }
 
 #settings_plugin_pluginmanager_repositorydialog {
-  .slimScrollDiv {
-    @scrollBar: 10px;
-
-    margin-bottom: 20px;
-    padding-right: @scrollBar + 2px;
-  }
-
   h4 {
     position: relative;
 
@@ -75,14 +68,15 @@ table {
   }
 
   #settings_plugin_pluginmanager_repositorydialog_list {
-    overflow: hidden;
     width: auto;
     height: 300px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding-right: 2px;
 
     .entry {
       border-bottom: 1px solid #ddd;
       padding: 5px;
-      padding-right: 10px;
     }
   }
 }
