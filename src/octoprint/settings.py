@@ -91,7 +91,7 @@ default_settings = {
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
-			"detection": 0.5,
+			"detection": 1,
 			"connection": 10,
 			"communication": 30,
 			"communicationBusy": 3,
@@ -100,7 +100,8 @@ default_settings = {
 			"temperatureAutoreport": 2,
 			"sdStatus": 1,
 			"sdStatusAutoreport": 1,
-			"resendOk": .5
+			"resendOk": .5,
+			"baudrateDetectionPause": 1.0
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,
