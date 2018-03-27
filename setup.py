@@ -19,10 +19,7 @@ INSTALL_REQUIRES = [
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
 	"werkzeug>=0.8.3,<0.9",
-	"tornado==4.0.2", # pinned for now, we need to migrate to a newer tornado, but due
-	                  # to some voodoo needed to get large streamed uploads and downloads
-	                  # to work that is probably not completely straightforward and therefore
-	                  # something for post-1.3.0-stable release
+	"tornado>=5.0.1,<6",
 	"sockjs-tornado>=1.0.3,<1.1",
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",

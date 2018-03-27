@@ -222,7 +222,7 @@ class Server(object):
 		pluginManager = self._plugin_manager
 
 		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		util.sockjs.fix_tornado5_compatibility()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
