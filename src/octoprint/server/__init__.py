@@ -792,7 +792,8 @@ class Server(object):
 		timer.start()
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, OctoPrintJsonEncoder
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, \
+			OctoPrintFlaskResponse, OctoPrintJsonEncoder, OctoPrintSessionInterface
 
 		s = settings()
 
@@ -827,6 +828,7 @@ class Server(object):
 		OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
 		app.request_class = OctoPrintFlaskRequest
 		app.response_class = OctoPrintFlaskResponse
+		app.session_interface = OctoPrintSessionInterface()
 
 		@app.before_request
 		def before_request():
