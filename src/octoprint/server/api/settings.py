@@ -424,7 +424,16 @@ def _saveSettings(data):
 		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
-		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
+		if "profiles" in data["temperature"]:
+			result = []
+			for profile in data["temperature"]["profiles"]:
+				try:
+					profile["bed"] = int(profile["bed"])
+					profile["extruder"] = int(profile["extruder"])
+				except ValueError:
+					pass
+				result.append(profile)
+			s.set(["temperature", "profiles"], result)
 		if "cutoff" in data["temperature"]:
 			try:
 				cutoff = int(data["temperature"]["cutoff"])

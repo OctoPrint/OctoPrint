@@ -729,6 +729,23 @@ $(function() {
                         });
                         return result;
                     }
+                },
+                temperature: {
+                    profiles: function() {
+                        var result = [];
+                        _.each(self.temperature_profiles(), function(profile) {
+                            try {
+                                result.push({
+                                    name: profile.name,
+                                    extruder: Math.floor(_.isNumber(profile.extruder) ? profile.extruder : parseInt(profile.extruder)),
+                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed))
+                                });
+                            } catch (ex) {
+                                // ignore
+                            }
+                        });
+                        return result;
+                    }
                 }
             };
 
