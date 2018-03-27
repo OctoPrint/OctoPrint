@@ -164,7 +164,8 @@ default_settings = {
 			"schemeFallback": None,
 			"hostFallback": None,
 			"serverFallback": None,
-			"portFallback": None
+			"portFallback": None,
+			"trustedDownstream": []
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB

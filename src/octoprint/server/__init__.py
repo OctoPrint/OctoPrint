@@ -617,7 +617,15 @@ class Server(object):
 		self._stop_intermediary_server()
 
 		# initialize and bind the server
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
+		trusted_downstream = self._settings.get(["server", "reverseProxy", "trustedDownstream"])
+		if not isinstance(trusted_downstream, list):
+			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
+			trusted_downstreams = []
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
+		                                             max_body_sizes=max_body_sizes,
+		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                                             xheaders=True,
+		                                             trusted_downstream=trusted_downstream)
 		self._server.listen(self._port, address=self._host)
 
 		### From now on it's ok to launch subprocesses again
