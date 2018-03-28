@@ -2913,7 +2913,9 @@ class MachineCom(object):
 					modified = True
 				else:
 					new_results.append((command, command_type, gcode, subcode, tags))
-					modified = True
+			else:
+				new_results.append((command, command_type, gcode, subcode, tags))
+
 		if modified:
 			if not new_results:
 				# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
