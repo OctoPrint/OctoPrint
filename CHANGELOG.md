@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.3.7rc3 (2018-03-29)
+
+### Bugfixes
+
+  * [#2524](https://github.com/foosel/OctoPrint/issues/2524) Ignore `wait` while job is on hold.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc2...1.3.7rc3))
+
 ## 1.3.7rc2 (2018-03-23)
 
 ### Bugfixes

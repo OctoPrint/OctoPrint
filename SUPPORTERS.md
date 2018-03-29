@@ -10,7 +10,6 @@ thanks to everyone who contributed!
   * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
-  * BEEVERYCREATIVE
   * Boris Hussein
   * Brad Jackson
   * Brian E. Tyler
@@ -34,6 +33,7 @@ thanks to everyone who contributed!
   * Kazuhiro Ogura
   * Kodama Inc. 
   * Makespace Madrid
+  * Mark Walker
   * Martin Beattie
   * Michael Aumock
   * Miles Flavel
@@ -55,4 +55,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 1199 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1214 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
