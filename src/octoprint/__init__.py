@@ -198,7 +198,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 			},
 			"handlers": {
 				"console": {
-					"class": "logging.StreamHandler",
+					"class": "octoprint.logging.handlers.OctoPrintStreamHandler",
 					"level": "DEBUG",
 					"formatter": "simple",
 					"stream": "ext://sys.stdout"

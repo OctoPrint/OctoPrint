@@ -146,6 +146,16 @@
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
+                        <div class="control-group" title="{{ _('Time to wait after opening the serial connection before starting baudrate detection') }}">
+                            <label class="control-label" for="settings-serialTimeoutBaudrateDetectionPause">{{ _('Initial baudrate detection pause') }}</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutBaudrateDetectionPause" id="settings-serialTimeoutBaudrateDetectionPause">
+                                    <span class="add-on">s</span>
+                                </div>
+                                <span class="help-block">{{ _('Some controllers need a bit of a breather before baudrate detection after initial connect. If baudrate detection fails due to a hanging controller, try increasing this value.') }}</span>
+                            </div>
+                        </div>
                         <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while idle. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
                             <label class="control-label" for="settings-serialMaxTimeoutsIdle">{{ _('Max. consecutive timeouts while idle') }}</label>
                             <div class="controls">

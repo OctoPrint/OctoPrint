@@ -75,6 +75,8 @@ def loginFromApiKeyRequestHandler():
 	if not loginUser(user):
 		return _flask.make_response("Invalid API key", 403)
 
+	_flask.g.login_via_apikey = True
+
 
 def loginFromAuthorizationHeaderRequestHandler():
 	"""

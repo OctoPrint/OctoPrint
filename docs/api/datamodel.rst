@@ -280,13 +280,12 @@ Folders
    * - ``children``
      - 0..*
      - Array of :ref:`File information items <sec-api-datamodel-files-file>`
-     - Contained children for entries of type ``folder``. Will only include children in subfolders in recursive
-       listings. Not present in non recursive listings, this might be revisited in the future.
+     - Contained children for entries of type ``folder``. On non recursive listings only present on first level
+       sub folders!
    * - ``size``
      - 0..1
      - Number
-     - The size of all files contained in the folder and its subfolders. Not present in non recursive listings, this might
-       be revisited in the future.
+     - The size of all files contained in the folder and its subfolders. Not present in non recursive listings!
 
 Files
 '''''

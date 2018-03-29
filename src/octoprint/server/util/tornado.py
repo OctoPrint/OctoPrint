@@ -695,7 +695,8 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	def handle_stream(self, stream, address):
 		context = tornado.httpserver._HTTPRequestContext(stream, address,
-		                                                 self.protocol)
+		                                                 self.protocol,
+		                                                 self.trusted_downstream)
 		conn = CustomHTTP1ServerConnection(stream, self.conn_params, context)
 		self._connections.add(conn)
 		conn.start_serving(self)
@@ -742,6 +743,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 	"""
 
 	def __init__(self, stream, is_client, params=None, context=None):
+		if params is None:
+			params = CustomHTTP1ConnectionParameters()
+
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re

@@ -418,7 +418,7 @@ class MachineCom(object):
 		self._printerProfileManager = printerProfileManager
 		self._state = self.STATE_NONE
 		self._serial = None
-		self._baudrateDetectList = baudrateList()
+		self._baudrateDetectList = []
 		self._baudrateDetectRetry = 0
 		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
@@ -1414,10 +1414,15 @@ class MachineCom(object):
 
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
-			self._serial.timeout = 0.01
 			try_hello = False
-			self._log("Starting baud rate detection")
+			self._log("Starting baud rate detection...")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
+
+			# Some controllers (e.g. Original Prusa) don't appear to like too fast serial interaction after
+			# open, so let's wait a bit before the first baudrate detection step
+			time.sleep(settings().getFloat(["serial", "timeout", "baudrateDetectionPause"]))
+
+			self._perform_baudrate_detection_step(init=True)
 		else:
 			self._changeState(self.STATE_CONNECTING)
 
@@ -1428,9 +1433,6 @@ class MachineCom(object):
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
 		supportWait = settings().getBoolean(["serial", "supportWait"])
-
-		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
-		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
 
 		# enqueue the "hello command" first thing
 		if try_hello:
@@ -1544,7 +1546,7 @@ class MachineCom(object):
 				handled = False
 
 				# process oks
-				if line.startswith("ok") or (self.isPrinting() and supportWait and line == "wait"):
+				if line.startswith("ok") or (self.isPrinting() and not self.job_on_hold and supportWait and line == "wait"):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
@@ -1874,30 +1876,8 @@ class MachineCom(object):
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
 					if line == '' or time.time() > self._timeout:
-						if self._baudrateDetectRetry > 0:
-							self._serial.timeout = detection_timeout
-							self._baudrateDetectRetry -= 1
-							self._serial.write('\n')
-							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self.sayHello(tags={"trigger:baudrate_detection",})
-						elif len(self._baudrateDetectList) > 0:
-							baudrate = self._baudrateDetectList.pop(0)
-							try:
-								self._serial.baudrate = baudrate
-								if self._serial.timeout != connection_timeout:
-									self._serial.timeout = connection_timeout
-								self._log("Trying baudrate: %d" % (baudrate))
-								self._baudrateDetectRetry = 5
-								self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
-								self._serial.write('\n')
-								self.sayHello(tags={"trigger:baudrate_detection",})
-							except:
-								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
-								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
-						else:
-							error_text = "No more baudrates to test, and no suitable baudrate found."
-							self._trigger_error(error_text, "autodetect_baudrate")
-					elif 'start' in line or 'ok' in line:
+						self._perform_baudrate_detection_step()
+					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
 						if 'start' in line:
 							self._clear_to_send.set()
@@ -2042,6 +2022,43 @@ class MachineCom(object):
 			self._logger.info(message)
 			self._log(message + " " + general_message)
 			self._clear_to_send.set()
+
+	def _perform_baudrate_detection_step(self, init=False):
+		if init:
+			timeout = settings().getFloat(["serial", "timeout", "connection"])
+			self._baudrateDetectList = baudrateList()
+		else:
+			timeout = settings().getFloat(["serial", "timeout", "detection"])
+
+		if self._baudrateDetectRetry > 0:
+			if self._serial.timeout != timeout:
+				self._serial.timeout = timeout
+			self._timeout = time.time() + timeout
+
+			self._log("Baudrate test retry #{}".format(5 - self._baudrateDetectRetry))
+			self._baudrateDetectRetry -= 1
+			self._do_send_without_checksum("", log=False) # new line to reset things
+			self.sayHello(tags={"trigger:baudrate_detection", })
+
+		elif len(self._baudrateDetectList) > 0:
+			baudrate = self._baudrateDetectList.pop(0)
+			try:
+				self._serial.baudrate = baudrate
+				if self._serial.timeout != timeout:
+					self._serial.timeout = timeout
+				self._timeout = time.time() + timeout
+
+				self._log("Trying baudrate: {}".format(baudrate))
+				self._baudrateDetectRetry = 4
+				self._do_send_without_checksum("", log=False) # new line to reset things
+				self.sayHello(tags={"trigger:baudrate_detection", })
+			except:
+				self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
+				self._logger.exception("Unexpected error while setting baudrate {}".format(baudrate))
+
+		else:
+			error_text = "No more baudrates to test, and no suitable baudrate found."
+			self._trigger_error(error_text, "autodetect_baudrate")
 
 	def _finish_heatup(self):
 		if self._heatupWaitStartTime:
@@ -2285,7 +2302,7 @@ class MachineCom(object):
 			if baudrate == 0:
 				baudrates = baudrateList()
 				serial_obj = serial.Serial(str(port),
-				                           115200 if 115200 in baudrates else baudrates[0],
+				                           baudrates[0],
 				                           timeout=read_timeout,
 				                           writeTimeout=10000, # TODO 1.3.8 rename to write_timeout for pyserial >= 3.x
 				                           parity=serial.PARITY_ODD)
@@ -2914,7 +2931,9 @@ class MachineCom(object):
 					modified = True
 				else:
 					new_results.append((command, command_type, gcode, subcode, tags))
-					modified = True
+			else:
+				new_results.append((command, command_type, gcode, subcode, tags))
+
 		if modified:
 			if not new_results:
 				# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
@@ -2985,11 +3004,12 @@ class MachineCom(object):
 		command_to_send = command_to_send + "*" + str(checksum)
 		self._do_send_without_checksum(command_to_send)
 
-	def _do_send_without_checksum(self, cmd):
+	def _do_send_without_checksum(self, cmd, log=True):
 		if self._serial is None:
 			return
 
-		self._log("Send: " + str(cmd))
+		if log:
+			self._log("Send: " + str(cmd))
 
 		cmd += "\n"
 		written = 0

@@ -143,7 +143,6 @@ $(function() {
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
-        self.feature_legacyPluginAssets = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -159,6 +158,7 @@ $(function() {
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
+        self.serial_timeoutBaudrateDetectionPause = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
@@ -726,6 +726,23 @@ $(function() {
                         _.each(observables, function(observable) {
                             var script = observable.substring(prefix.length);
                             result[script] = self[observable]();
+                        });
+                        return result;
+                    }
+                },
+                temperature: {
+                    profiles: function() {
+                        var result = [];
+                        _.each(self.temperature_profiles(), function(profile) {
+                            try {
+                                result.push({
+                                    name: profile.name,
+                                    extruder: Math.floor(_.isNumber(profile.extruder) ? profile.extruder : parseInt(profile.extruder)),
+                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed))
+                                });
+                            } catch (ex) {
+                                // ignore
+                            }
                         });
                         return result;
                     }

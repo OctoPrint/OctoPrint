@@ -934,7 +934,7 @@ Use the following settings to configure the server:
 
      # Settings if OctoPrint is running behind a reverse proxy (haproxy, nginx, apache, ...).
      # These are necessary in order to make OctoPrint generate correct external URLs so
-     # that AJAX requests and download URLs work.
+     # that AJAX requests and download URLs work, and so that client IPs are read correctly.
      reverseProxy:
 
        # The request header from which to determine the URL prefix under which OctoPrint
@@ -967,6 +967,14 @@ Use the following settings to configure the server:
        # than OctoPrint itself but can't configure said reverse proxy to send a host HTTP header
        # (X-Forwarded-Host by default, see above) with forwarded requests.
        hostFallback:
+
+       # List of trusted downstream servers for which to ignore the IP address when trying to determine
+       # the connecting client's IP address. If you have OctoPrint behind more than one reverse proxy
+       # you should add their IPs here so that they won't be interpreted as the client's IP. One reverse
+       # proxy will be handled correctly by default.
+       trustedDownstream:
+       - 192.168.1.254
+       - 192.168.23.42
 
      # Settings for file uploads to OctoPrint, such as maximum allowed file size and
      # header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in
