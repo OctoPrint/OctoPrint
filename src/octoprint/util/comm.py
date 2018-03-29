@@ -1543,7 +1543,7 @@ class MachineCom(object):
 				handled = False
 
 				# process oks
-				if line.startswith("ok") or (self.isPrinting() and supportWait and line == "wait"):
+				if line.startswith("ok") or (self.isPrinting() and not self.job_on_hold and supportWait and line == "wait"):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
