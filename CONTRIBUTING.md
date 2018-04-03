@@ -275,22 +275,11 @@ all requested information or your ticket will be closed.
 
 ### Where can I find which version and branch I'm on?
 
-You can find out all of them by taking a look into the lower left corner of the
-OctoPrint UI:
-
-![Current version and git branch info in OctoPrint's UI](http://i.imgur.com/HyHMlY2.png)
-
-If you don't have access to the UI you can find out that information via the
-command line as well. Either `octoprint --version` or `python setup.py version`
-in OctoPrint's folder will tell you the version of OctoPrint you are running
-(note: if it doesn't then you are running a version older than 1.1.0,
-*upgrade now*). A `git branch` in your OctoPrint installation folder will mark
-the branch you are on with a little *. `git rev-parse HEAD` will tell you the
-current commit.
+Please refer to [this FAQ entry](https://discourse.octoprint.org/t/how-can-i-find-out-the-version-of-octoprint-or-octopi-i-am-running/204/1).
 
 ### Where can I find those log files you keep talking about?
 
-Please refer to [this FAQ entry](https://discourse.octoprint.org/t/where-can-i-find-octoprints-log-files/299).
+Please refer to [this FAQ entry](https://discourse.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299/1).
 
 ### Where can I find my browser's error console?
 
@@ -483,6 +472,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-11-22: Added note on how to run the unit tests
   * 2018-03-15: Link to new community forum and some clarifications re bug
     reporting
+  * 2018-03-29: "Where to find version numbers" is now located on the FAQ 
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

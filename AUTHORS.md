@@ -87,6 +87,7 @@ date of first contribution):
   * [Josh Major](https://github.com/astateofblank)
   * ["alex-gh"](https://github.com/alex-gh)
   * [Bernd Zeimetz](https://github.com/bzed)
+  * [Daniele Forsi](https://github.com/dforsi)
   * [Ganey](https://github.com/ganey)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
