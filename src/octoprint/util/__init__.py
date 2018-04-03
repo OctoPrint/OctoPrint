@@ -979,7 +979,7 @@ def thaw_frozendict(obj):
 	# only true love can thaw a frozen dict
 	letitgo = dict()
 	for key, value in obj.items():
-		if isinstance(value, frozendict.frozendict):
+		if isinstance(value, (dict, frozendict.frozendict)):
 			letitgo[key] = thaw_frozendict(value)
 		else:
 			letitgo[key] = copy.deepcopy(value)
