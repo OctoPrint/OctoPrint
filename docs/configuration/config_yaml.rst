@@ -893,7 +893,7 @@ Use the following settings to configure the serial connection to the printer:
      supportResendsWithoutOk: false
 
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
-     # the responds skips on the ok)
+     # the response skips on the ok)
      triggerOkForM29: true
 
      capabilities:
