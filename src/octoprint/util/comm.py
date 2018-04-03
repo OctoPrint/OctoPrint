@@ -1003,7 +1003,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		self._heatupWaitStartTime = None
+		self._heatupWaitStartTime = None if not self._heating else time.time()
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
@@ -1631,7 +1631,7 @@ class MachineCom(object):
 					if not disable_external_heatup_detection and not self._temperature_autoreporting \
 							and not line.strip().startswith("ok") and not self._heating \
 							and self._firmware_info_received:
-						self._logger.debug("Externally triggered heatup detected")
+						self._logger.info("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
 
@@ -2043,9 +2043,10 @@ class MachineCom(object):
 			self._clear_to_send.set()
 
 	def _finish_heatup(self):
-		if self._heatupWaitStartTime:
-			self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
-			self._heatupWaitStartTime = None
+		if self._heating:
+			if self._heatupWaitStartTime:
+				self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+				self._heatupWaitStartTime = None
 			self._heating = False
 
 	def _continue_sending(self):
