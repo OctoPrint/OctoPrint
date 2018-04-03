@@ -57,15 +57,7 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 
 
 class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
-
 	def send_message(self, msg, stats=True, binary=False):
-		"""Send or queue outgoing message
-
-		`msg`
-		    Message to send
-		`stats`
-		    If set to True, will update statistics after operation completes
-		"""
 		self.send_jsonified(json.dumps(sockjs.tornado.util.bytes_to_str(msg),
 		                               separators=(',', ':'),
 		                               default=JsonEncoding.encode),
@@ -74,7 +66,8 @@ class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
 
 class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
-		session = JsonEncodingSessionWrapper(session)
+		if isinstance(session, sockjs.tornado.session.Session):
+			session = JsonEncodingSessionWrapper(session)
 
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 

@@ -223,6 +223,7 @@ class Server(object):
 
 		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
+		util.tornado.fix_json_encode()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
