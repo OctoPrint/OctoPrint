@@ -96,7 +96,7 @@ default_settings = {
 			"communication": 30,
 			"temperature": 5,
 			"temperatureTargetSet": 2,
-			"temperatureAutoreport": 2,
+			"temperatureAutoreport": 0,
 			"sdStatus": 1
 		},
 		"maxCommunicationTimeouts": {
