@@ -472,7 +472,7 @@ Upload file or create folder
    :form select:     Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
                      to ``false``. Ignored when creating a folder.
    :form print:      Whether to start printing the file directly after upload (``true``) or not (``false``). If set, ``select``
-                     is implicitely ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
+                     is implicitly ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
    :form userdata:   [Optional] An optional string that if specified will be interpreted as JSON and then saved along
                      with the file as metadata (metadata key ``userdata``). Ignored when creating a folder.
    :form foldername: The name of the folder to create. Ignored when uploading a file.

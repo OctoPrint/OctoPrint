@@ -184,7 +184,7 @@ class StorageInterface(object):
 
 	def copy_folder(self, source, destination):
 		"""
-		Copys the folder ``source`` to ``destination``
+		Copies the folder ``source`` to ``destination``
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
@@ -233,7 +233,7 @@ class StorageInterface(object):
 
 	def copy_file(self, source, destination):
 		"""
-		Copys the file ``source`` to ``destination``
+		Copies the file ``source`` to ``destination``
 
 		:param string source: path to the source file
 		:param string destination: path to destination

@@ -189,7 +189,7 @@
        A boolean value, specifies whether to immediately start printing the file after the upload
        completes (true) or not (false, default)
    userdata
-       An optional object or a serialized JSON string of additional user supplised data to associate with
+       An optional object or a serialized JSON string of additional user supplied data to associate with
        the uploaded file.
 
    See :ref:`Upload file or create folder <sec-api-fileops-uploadfile>` for more details on the file upload API and
