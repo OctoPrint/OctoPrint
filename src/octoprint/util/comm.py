@@ -851,7 +851,6 @@ class MachineCom(object):
 			self._monitoring_active = False
 			self._send_queue_active = False
 
-		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
 			if not is_error:
 				self.sendGcodeScript("beforePrinterDisconnected")
@@ -884,6 +883,7 @@ class MachineCom(object):
 				self._logger.exception("Error while trying to close serial port")
 				is_error = True
 
+			# if we are printing, this will also make sure of firing PRINT_FAILED
 			if is_error:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
@@ -894,9 +894,6 @@ class MachineCom(object):
 
 		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
-
-		if printing:
-			self._callback.on_comm_print_job_failed()
 
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
@@ -1004,7 +1001,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		self._heatupWaitStartTime = None
+		self._heatupWaitStartTime = None if not self._heating else time.time()
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
@@ -1634,7 +1631,7 @@ class MachineCom(object):
 					if not disable_external_heatup_detection and not self._temperature_autoreporting \
 							and not line.strip().startswith("ok") and not self._heating \
 							and self._firmware_info_received:
-						self._logger.debug("Externally triggered heatup detected")
+						self._logger.info("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
 
@@ -2061,9 +2058,10 @@ class MachineCom(object):
 			self._trigger_error(error_text, "autodetect_baudrate")
 
 	def _finish_heatup(self):
-		if self._heatupWaitStartTime:
-			self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
-			self._heatupWaitStartTime = None
+		if self._heating:
+			if self._heatupWaitStartTime:
+				self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+				self._heatupWaitStartTime = None
 			self._heating = False
 
 	def _continue_sending(self):

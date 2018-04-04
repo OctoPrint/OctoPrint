@@ -1,5 +1,15 @@
 # OctoPrint Changelog
 
+## 1.3.7rc4 (2018-04-04)
+
+### Bugfixes
+
+  * [#2536](https://github.com/foosel/OctoPrint/issues/2536) - Fix a wrong state tracking when starting an SD print through the controller, causing a disconnect due to a timeout.
+  * [#2544](https://github.com/foosel/OctoPrint/issues/2544) - Fix an exception when connecting to the raw websocket at `/sockjs/websocket` (instead of `/sockjs/<server_id>/<session_id>/websocket`).
+  * [#2546](https://github.com/foosel/OctoPrint/issues/2546) - Fix the `PRINT_FAILED` event getting triggered twice on print failure due to disconnect
+  
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc3...1.3.7rc4))
+
 ## 1.3.7rc3 (2018-03-29)
 
 ### Bugfixes

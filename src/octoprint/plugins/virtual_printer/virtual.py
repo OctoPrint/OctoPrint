@@ -29,6 +29,7 @@ class VirtualPrinter(object):
 	prepare_ok_regex = re.compile("prepare_ok (.*)")
 	send_regex = re.compile("send (.*)")
 	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
+	start_sd_regex = re.compile("start_sd (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -265,6 +266,10 @@ class VirtualPrinter(object):
 		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
+
+			if self._heatingUp:
+				time.sleep(1)
+				continue
 
 			try:
 				data = self.incoming.get(timeout=0.01)
@@ -729,6 +734,13 @@ class VirtualPrinter(object):
 			sleep_after_next <str:command> <int:seconds>
 			| Sleeps <seconds> s after execution of next <command>
 
+			# SD printing
+			
+			start_sd <str:file>
+			| Start printing file <file> from SD
+			cancel_sd
+			| Cancels an ongoing SD print
+
 			# Misc
 
 			send <str:message>
@@ -765,6 +777,13 @@ class VirtualPrinter(object):
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
+		elif data == "cancel_sd":
+			if self._sdPrinting and self._sdPrinter:
+				self._pauseSdPrint()
+				self._sdPrinting = False
+				self._sdPrintingSemaphore.set()
+				self._sdPrinter.join()
+				self._finishSdPrint()
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -774,6 +793,7 @@ class VirtualPrinter(object):
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 				send_match = VirtualPrinter.send_regex.match(data)
 				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
+				start_sd_match = VirtualPrinter.start_sd_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -802,6 +822,9 @@ class VirtualPrinter(object):
 				elif set_ambient_match is not None:
 					self._ambient_temperature = float(set_ambient_match.group(1))
 					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
+				elif start_sd_match is not None:
+					self._selectSdFile(start_sd_match.group(1))
+					self._startSdPrint()
 			except:
 				pass
 
@@ -953,7 +976,7 @@ class VirtualPrinter(object):
 		matchE = re.search("E([0-9.]+)", line)
 		matchF = re.search("F([0-9.]+)", line)
 
-		duration = 0
+		duration = 0.0
 		if matchF is not None:
 			try:
 				self._lastF = float(matchF.group(1))
@@ -1022,6 +1045,7 @@ class VirtualPrinter(object):
 				pass
 
 		if duration:
+			duration *= 0.1
 			if duration > self._read_timeout:
 				slept = 0
 				while duration - slept > self._read_timeout and not self._killed:
@@ -1119,9 +1143,9 @@ class VirtualPrinter(object):
 
 					# set target temps
 					if 'M104' in line or 'M109' in line:
-						self._parseHotendCommand(line)
+						self._parseHotendCommand(line, wait='M109' in line)
 					elif 'M140' in line or 'M190' in line:
-						self._parseBedCommand(line)
+						self._parseBedCommand(line, wait='M190' in line)
 					elif line.startswith("G0") or line.startswith("G1") or line.startswith("G2") or line.startswith("G3"):
 						# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
 						self.buffered.put(line)
@@ -1130,6 +1154,9 @@ class VirtualPrinter(object):
 			if self.outgoing is not None:
 				raise
 
+		self._finishSdPrint()
+
+	def _finishSdPrint(self):
 		if not self._killed:
 			self._sdPrintingSemaphore.clear()
 			self._selectedSdFilePos = 0

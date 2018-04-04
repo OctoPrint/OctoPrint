@@ -6,8 +6,6 @@ thanks to everyone who contributed!
 
 ## Patreon Patrons
 
-  * 3D Moniak
-  * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
   * Boris Hussein
@@ -32,6 +30,7 @@ thanks to everyone who contributed!
   * Kale Stedman
   * Kazuhiro Ogura
   * Kodama Inc. 
+  * LulzBot®
   * Makespace Madrid
   * Mark Walker
   * Martin Beattie
@@ -55,4 +54,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 1214 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1217 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
