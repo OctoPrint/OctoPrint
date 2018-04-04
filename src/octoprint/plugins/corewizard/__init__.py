@@ -114,6 +114,11 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			s().set(["server", "onlineCheck", "enabled"], True)
 			s().save()
 		
+		#check if the temperatureAutoreport is enabled empty (enabled), if not set to 0(disabled)
+		if s().get(["serial", "timeout", "temperatureAutoreport"]) is None:
+			s().set(["serial", "timeout", "temperatureAutoreport"], 0.0)
+			s().save()
+
 
 		result = dict()
 
