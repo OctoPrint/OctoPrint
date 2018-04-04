@@ -850,7 +850,6 @@ class MachineCom(object):
 			self._monitoring_active = False
 			self._send_queue_active = False
 
-		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
 			if not is_error:
 				self.sendGcodeScript("beforePrinterDisconnected")
@@ -883,6 +882,7 @@ class MachineCom(object):
 				self._logger.exception("Error while trying to close serial port")
 				is_error = True
 
+			# if we are printing, this will also make sure of firing PRINT_FAILED
 			if is_error:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
@@ -893,9 +893,6 @@ class MachineCom(object):
 
 		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
-
-		if printing:
-			self._callback.on_comm_print_job_failed()
 
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
