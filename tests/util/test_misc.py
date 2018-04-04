@@ -52,6 +52,7 @@ class MiscTestCase(unittest.TestCase):
 		(frozendict(a=1, b=2, c=frozendict(c1=1, c2=2)), dict(a=1, b=2, c=dict(c1=1, c2=2))),
 		(dict(a=1, b=2, c=3), dict(a=1, b=2, c=3)),
 		(dict(a=1, b=2, c=frozendict(c1=1, c2=2)), dict(a=1, b=2, c=dict(c1=1, c2=2))),
+		(dict(a=1, b=2, c=dict(c1=1, c2=2, c3=frozendict(c11=11, c12=12))), dict(a=1, b=2, c=dict(c1=1, c2=2, c3=dict(c11=11, c12=12))))
 	)
 	@ddt.unpack
 	def test_unfreeze_frozendict(self, input, expected):
