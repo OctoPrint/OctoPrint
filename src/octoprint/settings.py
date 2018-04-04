@@ -91,7 +91,7 @@ default_settings = {
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
-			"detection": 0.5,
+			"detection": 1,
 			"connection": 10,
 			"communication": 30,
 			"communicationBusy": 3,
@@ -100,7 +100,8 @@ default_settings = {
 			"temperatureAutoreport": 2,
 			"sdStatus": 1,
 			"sdStatusAutoreport": 1,
-			"resendOk": .5
+			"resendOk": .5,
+			"baudrateDetectionPause": 1.0
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,
@@ -163,7 +164,8 @@ default_settings = {
 			"schemeFallback": None,
 			"hostFallback": None,
 			"serverFallback": None,
-			"portFallback": None
+			"portFallback": None,
+			"trustedDownstream": []
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
@@ -237,8 +239,7 @@ default_settings = {
 		"modelSizeDetection": True,
 		"printCancelConfirmation": True,
 		"autoUppercaseBlacklist": ["M117"],
-		"g90InfluencesExtruder": False,
-		"legacyPluginAssets": False # TODO remove again in 1.3.8
+		"g90InfluencesExtruder": False
 	},
 	"folder": {
 		"uploads": None,
@@ -923,7 +924,8 @@ class Settings(object):
 			self._migrate_gcode_scripts,
 			self._migrate_core_system_commands,
 			self._migrate_serial_features,
-			self._migrate_resend_without_ok
+			self._migrate_resend_without_ok,
+			self._migrate_string_temperature_profile_values
 		)
 
 		for migrate in migrators:
@@ -935,6 +937,8 @@ class Settings(object):
 	def _migrate_gcode_scripts(self, config):
 		"""
 		Migrates an old development version of gcode scripts to the new template based format.
+
+		Added in 1.2.0
 		"""
 
 		dirty = False
@@ -959,6 +963,8 @@ class Settings(object):
 	def _migrate_printer_parameters(self, config):
 		"""
 		Migrates the old "printer > parameters" data structure to the new printer profile mechanism.
+
+		Added in 1.2.0
 		"""
 		default_profile = config["printerProfiles"]["defaultProfile"] if "printerProfiles" in config and "defaultProfile" in config["printerProfiles"] else dict()
 		dirty = False
@@ -1024,6 +1030,8 @@ class Settings(object):
 		"""
 		Migrates the old "server > baseUrl" and "server > scheme" configuration entries to
 		"server > reverseProxy > prefixFallback" and "server > reverseProxy > schemeFallback".
+
+		Added in 1.2.0
 		"""
 		if "server" in config.keys() and ("baseUrl" in config["server"] or "scheme" in config["server"]):
 			prefix = ""
@@ -1051,6 +1059,8 @@ class Settings(object):
 		"""
 		Migrates the old event configuration format of type "events > gcodeCommandTrigger" and
 		"event > systemCommandTrigger" to the new events format.
+
+		Added in 1.2.0
 		"""
 		if "events" in config.keys() and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
 			self._logger.info("Migrating config (event subscriptions)...")
@@ -1146,6 +1156,8 @@ class Settings(object):
 
 		If server commands for action is not yet set, migrates command. Otherwise only
 		deletes definition from custom system commands.
+
+		Added in 1.3.0
 		"""
 		changed = False
 
@@ -1192,6 +1204,8 @@ class Settings(object):
 		Migrates feature flags identified as serial specific from the feature to the serial config tree and vice versa.
 
 		If a flag already exists in the target tree, only deletes the copy in the source tree.
+
+		Added in 1.3.7
 		"""
 		changed = False
 
@@ -1235,6 +1249,8 @@ class Settings(object):
 		Migrates supportResendsWithoutOk flag from boolean to ("always", "detect", "never") value range.
 
 		True gets migrated to "always", False to "detect" (which is the new default).
+
+		Added in 1.3.7
 		"""
 		if "serial" in config and "supportResendsWithoutOk" in config["serial"] \
 				and config["serial"]["supportResendsWithoutOk"] not in ("always", "detect", "never"):
@@ -1244,6 +1260,28 @@ class Settings(object):
 			else:
 				config["serial"]["supportResendsWithoutOk"] = "detect"
 			return True
+		return False
+
+	def _migrate_string_temperature_profile_values(self, config):
+		"""
+		Migrates/fixes temperature profile wrongly saved with strings instead of ints as temperature values.
+
+		Added in 1.3.8
+		"""
+		if "temperature" in config and "profiles" in config["temperature"]:
+			profiles = config["temperature"]["profiles"]
+			if any(map(lambda x: not isinstance(x.get("extruder", 0), int) or not isinstance(x.get("bed", 0), int),
+			           profiles)):
+				result = []
+				for profile in profiles:
+					try:
+						profile["extruder"] = int(profile["extruder"])
+						profile["bed"] = int(profile["bed"])
+					except ValueError:
+						pass
+					result.append(profile)
+				config["temperature"]["profiles"] = result
+				return True
 		return False
 
 	def backup(self, suffix, path=None):

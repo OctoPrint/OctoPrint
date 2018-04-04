@@ -214,7 +214,9 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 __plugin_name__ = "Logging"
 __plugin_author__ = "Shawn Bruce, based on work by Gina Häußge and Marc Hannappel"
 __plugin_description__ = "Provides access to OctoPrint's logs and logging configuration."
-
+__plugin_disabling_discouraged__ = gettext("Without this plugin you will no longer be able to retrieve "
+                                           "OctoPrint's logs or modify the current logging levels through "
+                                           "the web interface.")
 def __plugin_load__():
 	global __plugin_implementation__
 	__plugin_implementation__ = LoggingPlugin()

@@ -153,7 +153,8 @@ class StorageInterface(object):
 		                        from root of base folder
 		:param function filter: a filter that matches the files that are to be returned, may be left out in which case no
 		                        filtering will take place
-		:param bool recursive:  will also step into sub folders for building the complete list if set to True
+		:param bool recursive:  will also step into sub folders for building the complete list if set to True, otherwise will only
+		                        do one step down into sub folders to be able to populate the ``children``.
 		:return: a dictionary mapping entry names to entry data that represents the whole file list
 		"""
 		raise NotImplementedError()
@@ -1277,7 +1278,7 @@ class LocalFileStorage(StorageInterface):
 		if metadata_dirty:
 			self._save_metadata(path, metadata)
 
-	def _list_folder(self, path, base="", entry_filter=None, recursive=True, **kwargs):
+	def _list_folder(self, path, base="", entry_filter=None, recursive=True, include_children=True, **kwargs):
 		if entry_filter is None:
 			entry_filter = kwargs.get("filter", None)
 
@@ -1385,8 +1386,14 @@ class LocalFileStorage(StorageInterface):
 						sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
 						                               recursive=recursive)
 						entry_data["children"] = sub_result
+					elif include_children:
+						sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
+						                               recursive=False, include_children=False)
+						entry_data["children"] = sub_result
 
 					if not entry_filter or entry_filter(entry_name, entry_data):
+						# only add folders passing the optional filter
+
 						def get_size():
 							total_size = 0
 							for element in entry_data["children"].values():
@@ -1395,7 +1402,6 @@ class LocalFileStorage(StorageInterface):
 
 							return total_size
 
-						# only add folders passing the optional filter
 						extended_entry_data = dict()
 						extended_entry_data.update(entry_data)
 						if recursive:

@@ -26,6 +26,22 @@ import octoprint.util
 
 
 
+def fix_json_encode():
+	"""
+	This makes tornado.escape.json_encode use octoprint.util.JsonEncoding.encode as fallback in order to allow
+	serialization of globally registered types like frozendict and others.
+	"""
+
+	from octoprint.util.json import JsonEncoding
+	import json
+
+	def fixed_json_encode(value):
+		return json.dumps(value, default=JsonEncoding.encode).replace("</", "<\\/")
+
+	import tornado.escape
+	tornado.escape.json_encode = fixed_json_encode
+
+
 #~~ More sensible logging
 
 
@@ -695,7 +711,8 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	def handle_stream(self, stream, address):
 		context = tornado.httpserver._HTTPRequestContext(stream, address,
-		                                                 self.protocol)
+		                                                 self.protocol,
+		                                                 self.trusted_downstream)
 		conn = CustomHTTP1ServerConnection(stream, self.conn_params, context)
 		self._connections.add(conn)
 		conn.start_serving(self)
@@ -742,6 +759,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 	"""
 
 	def __init__(self, stream, is_client, params=None, context=None):
+		if params is None:
+			params = CustomHTTP1ConnectionParameters()
+
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re

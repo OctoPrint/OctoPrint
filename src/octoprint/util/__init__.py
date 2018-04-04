@@ -21,6 +21,8 @@ from functools import wraps
 import warnings
 import contextlib
 import collections
+import frozendict
+import copy
 
 try:
 	import queue
@@ -1034,6 +1036,20 @@ except RuntimeError:
 	# no source of monotonic time available, nothing left but using time.time *cringe*
 	import time
 	monotonic_time = time.time
+
+
+def thaw_frozendict(obj):
+	if not isinstance(obj, (dict, frozendict.frozendict)):
+		raise ValueError("obj must be a dict or frozendict instance")
+
+	# only true love can thaw a frozen dict
+	letitgo = dict()
+	for key, value in obj.items():
+		if isinstance(value, (dict, frozendict.frozendict)):
+			letitgo[key] = thaw_frozendict(value)
+		else:
+			letitgo[key] = copy.deepcopy(value)
+	return letitgo
 
 
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):

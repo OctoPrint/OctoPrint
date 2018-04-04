@@ -30,6 +30,100 @@ import wrapt
 import json
 
 
+def fix_tornado5_compatibility():
+	"""
+	Monkey patches sockjs tornado dependency to fix tornado 5.x compatibility
+
+	See https://github.com/mrjoes/sockjs-tornado/issues/113 for reason.
+
+	We need to first patch StatsCollector since that also gets used by SockJSRouter.
+	"""
+
+	import sockjs.tornado.router
+	import sockjs.tornado.stats
+	from tornado import ioloop, version_info
+
+	def fixed_stats_init(self, io_loop):
+		### Copied from sockjs.tornado.stats.StatsCollector.__init__
+
+		# Sessions
+		self.sess_active = 0
+
+		# Avoid circular reference
+		self.sess_transports = dict()
+
+		# Connections
+		self.conn_active = 0
+		self.conn_ps = sockjs.tornado.stats.MovingAverage()
+
+		# Packets
+		self.pack_sent_ps = sockjs.tornado.stats.MovingAverage()
+		self.pack_recv_ps = sockjs.tornado.stats.MovingAverage()
+
+		self._callback = ioloop.PeriodicCallback(self._update,
+		                                         1000)
+		self._callback.start()
+
+	sockjs.tornado.stats.StatsCollector.__init__ = fixed_stats_init
+
+	def fixed_router_init(self, connection, prefix="", user_settings=dict(), io_loop=None, session_kls=None):
+		### Copied from sockjs.tornado.router.SockJSRouter.__init__
+
+		# TODO: Version check
+		if version_info[0] < 2:
+			raise Exception('sockjs-tornado requires Tornado 2.0 or higher.')
+
+		# Store connection class
+		self._connection = connection
+
+		# Initialize io_loop
+		self.io_loop = io_loop or ioloop.IOLoop.instance()
+
+		# Settings
+		self.settings = sockjs.tornado.router.DEFAULT_SETTINGS.copy()
+		if user_settings:
+			self.settings.update(user_settings)
+
+		self.websockets_enabled = 'websocket' not in self.settings['disabled_transports']
+		self.cookie_needed = self.settings['jsessionid']
+
+		# Sessions
+		self._session_kls = session_kls if session_kls else sockjs.tornado.router.session.Session
+		self._sessions = sockjs.tornado.router.sessioncontainer.SessionContainer()
+
+		check_interval = self.settings['session_check_interval'] * 1000
+		self._sessions_cleanup = ioloop.PeriodicCallback(self._sessions.expire,
+		                                                 check_interval)
+		self._sessions_cleanup.start()
+
+		# Stats
+		self.stats = sockjs.tornado.stats.StatsCollector(self.io_loop)
+
+		# Initialize URLs
+		base = prefix + r'/[^/.]+/(?P<session_id>[^/.]+)'
+
+		# Generate global handler URLs
+		self._transport_urls = [('%s/%s$' % (base, p[0]), p[1], dict(server=self))
+		                        for p in sockjs.tornado.router.GLOBAL_HANDLERS]
+
+		for k, v in sockjs.tornado.router.TRANSPORTS.items():
+			if k in self.settings['disabled_transports']:
+				continue
+
+			# Only version 1 is supported
+			self._transport_urls.append(
+				(r'%s/%s$' % (base, k),
+				 v,
+				 dict(server=self))
+			)
+
+		# Generate static URLs
+		self._transport_urls.extend([('%s%s' % (prefix, k), v, dict(server=self))
+		                             for k, v in sockjs.tornado.router.STATIC_HANDLERS.items()])
+
+	sockjs.tornado.router.SockJSRouter.__init__ = fixed_router_init
+
+
 class ThreadSafeSession(sockjs.tornado.session.Session):
 	def __init__(self, conn, server, session_id, expiry=None):
 		sockjs.tornado.session.Session.__init__(self, conn, server, session_id, expiry=expiry)
@@ -59,15 +153,7 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 
 
 class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
-
 	def send_message(self, msg, stats=True, binary=False):
-		"""Send or queue outgoing message
-
-		`msg`
-		    Message to send
-		`stats`
-		    If set to True, will update statistics after operation completes
-		"""
 		self.send_jsonified(json.dumps(sockjs.tornado.util.bytes_to_str(msg),
 		                               separators=(',', ':'),
 		                               default=JsonEncoding.encode),
@@ -78,7 +164,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
                              octoprint.printer.PrinterCallback,
                              LoginStatusListener):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, groupManager, eventManager, pluginManager, session):
-		session = JsonEncodingSessionWrapper(session)
+		if isinstance(session, sockjs.tornado.session.Session):
+			session = JsonEncodingSessionWrapper(session)
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)

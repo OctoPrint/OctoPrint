@@ -499,6 +499,14 @@ class OctoPrintFlaskResponse(flask.Response):
 		flask.Response.set_cookie(self, key, expires=0, max_age=0, path=path, domain=domain)
 
 
+class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
+
+	def save_session(self, app, session, response):
+		if flask.g.get("login_via_apikey", False):
+			return
+		return super(OctoPrintSessionInterface, self).save_session(app, session, response)
+
+
 #~~ passive login helper
 
 def passive_login():
@@ -1422,4 +1430,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 class OctoPrintJsonEncoder(flask.json.JSONEncoder):
 	def default(self, obj):
-		return JsonEncoding.encode(obj)
+		try:
+			return JsonEncoding.encode(obj)
+		except TypeError:
+			return flask.json.JSONEncoder.default(self, obj)

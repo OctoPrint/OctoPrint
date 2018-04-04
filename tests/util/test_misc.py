@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import unittest
 import ddt
+from frozendict import frozendict
 
 import octoprint.util
 
@@ -45,3 +46,25 @@ class MiscTestCase(unittest.TestCase):
 	def test_utmify(self, link, kwargs, expected):
 		actual = octoprint.util.utmify(link, **kwargs)
 		self.assertEqual(actual, expected)
+
+	@ddt.data(
+		(frozendict(a=1, b=2, c=3), dict(a=1, b=2, c=3)),
+		(frozendict(a=1, b=2, c=frozendict(c1=1, c2=2)), dict(a=1, b=2, c=dict(c1=1, c2=2))),
+		(dict(a=1, b=2, c=3), dict(a=1, b=2, c=3)),
+		(dict(a=1, b=2, c=frozendict(c1=1, c2=2)), dict(a=1, b=2, c=dict(c1=1, c2=2))),
+		(dict(a=1, b=2, c=dict(c1=1, c2=2, c3=frozendict(c11=11, c12=12))), dict(a=1, b=2, c=dict(c1=1, c2=2, c3=dict(c11=11, c12=12))))
+	)
+	@ddt.unpack
+	def test_unfreeze_frozendict(self, input, expected):
+		result = octoprint.util.thaw_frozendict(input)
+		self.assertIsInstance(result, dict)
+		self.assertDictEqual(result, expected)
+
+	@ddt.data(None, "invalid", 3, [1, 2], (3, 4))
+	def test_unfreeze_frozendict_invalid(self, input):
+		try:
+			octoprint.util.thaw_frozendict(input)
+			self.fail("expected ValueError")
+		except ValueError:
+			# expected
+			pass

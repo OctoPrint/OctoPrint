@@ -302,10 +302,7 @@ $(function() {
                 var entryElement = self.getEntryElement({path: focus.path, origin: focus.location});
                 if (entryElement) {
                     // scroll to uploaded element
-                    var entryOffset = entryElement.offsetTop;
-                    self.listElement.slimScroll({
-                        scrollTo: entryOffset + "px"
-                    });
+                    self.listElement.scrollTop(entryElement.offsetTop);
 
                     // highlight uploaded element
                     var element = $(entryElement);
@@ -815,7 +812,7 @@ $(function() {
                 }
             });
 
-            self.listElement = $(".gcode_files");
+            self.listElement = $("#files").find(".scroll-wrapper");
 
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {

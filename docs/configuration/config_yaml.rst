@@ -893,7 +893,7 @@ Use the following settings to configure the serial connection to the printer:
      supportResendsWithoutOk: false
 
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
-     # the responds skips on the ok)
+     # the response skips on the ok)
      triggerOkForM29: true
 
      capabilities:
@@ -934,7 +934,7 @@ Use the following settings to configure the server:
 
      # Settings if OctoPrint is running behind a reverse proxy (haproxy, nginx, apache, ...).
      # These are necessary in order to make OctoPrint generate correct external URLs so
-     # that AJAX requests and download URLs work.
+     # that AJAX requests and download URLs work, and so that client IPs are read correctly.
      reverseProxy:
 
        # The request header from which to determine the URL prefix under which OctoPrint
@@ -967,6 +967,14 @@ Use the following settings to configure the server:
        # than OctoPrint itself but can't configure said reverse proxy to send a host HTTP header
        # (X-Forwarded-Host by default, see above) with forwarded requests.
        hostFallback:
+
+       # List of trusted downstream servers for which to ignore the IP address when trying to determine
+       # the connecting client's IP address. If you have OctoPrint behind more than one reverse proxy
+       # you should add their IPs here so that they won't be interpreted as the client's IP. One reverse
+       # proxy will be handled correctly by default.
+       trustedDownstream:
+       - 192.168.1.254
+       - 192.168.23.42
 
      # Settings for file uploads to OctoPrint, such as maximum allowed file size and
      # header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in
@@ -1092,7 +1100,12 @@ System
 
 Use the following settings to add custom system commands to the "System" dropdown within OctoPrint's top bar.
 
-Commands consist of a name, an action identifier, the commandline to execute and an optional confirmation message to
+Commands consist of a ``name`` shown to the user, an ``action`` identifier used by the code and the actual
+``command`` including any argument needed for its execution.
+By default OctoPrint blocks until the command has returned so that the exit code can be used to show a success
+or failure message; use the flag ``async: true`` for commands that don't return.
+
+Optionally you can add a confirmation message to
 display before actually executing the command (should be set to False if a confirmation dialog is not desired).
 
 The following example defines a command for shutting down the system under Linux. It assumes that the user under which

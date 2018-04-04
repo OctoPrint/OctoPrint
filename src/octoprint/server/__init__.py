@@ -244,6 +244,8 @@ class Server(object):
 		pluginManager = self._plugin_manager
 
 		# monkey patch some stuff
+		util.sockjs.fix_tornado5_compatibility()
+		util.tornado.fix_json_encode()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -675,7 +677,15 @@ class Server(object):
 		self._stop_intermediary_server()
 
 		# initialize and bind the server
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
+		trusted_downstream = self._settings.get(["server", "reverseProxy", "trustedDownstream"])
+		if not isinstance(trusted_downstream, list):
+			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
+			trusted_downstreams = []
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
+		                                             max_body_sizes=max_body_sizes,
+		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                                             xheaders=True,
+		                                             trusted_downstream=trusted_downstream)
 		self._server.listen(self._port, address=self._host)
 
 		### From now on it's ok to launch subprocesses again
@@ -843,7 +853,7 @@ class Server(object):
 
 	def _setup_app(self, app):
 		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, \
-			OctoPrintFlaskResponse, OctoPrintJsonEncoder
+			OctoPrintFlaskResponse, OctoPrintJsonEncoder, OctoPrintSessionInterface
 
 		s = settings()
 
@@ -880,6 +890,7 @@ class Server(object):
 		OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
 		app.request_class = OctoPrintFlaskRequest
 		app.response_class = OctoPrintFlaskResponse
+		app.session_interface = OctoPrintSessionInterface()
 
 		@app.before_request
 		def before_request():
@@ -1375,25 +1386,13 @@ class Server(object):
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		if self._settings.getBoolean(["feature", "legacyPluginAssets"]):
-			# TODO remove again in 1.3.8
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces Bundle instances"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = Bundle(*assets, filters=filters)
-				return result
-
-		else:
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
-				return result
-
+		def js_bundles_for_plugins(collection, filters=None):
+			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
+			result = OrderedDict()
+			for plugin, assets in collection.items():
+				if len(assets):
+					result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
+			return result
 
 		js_core = dynamic_core_assets["js"] + \
 		    all_assets_for_plugins(dynamic_plugin_assets["bundled"]["js"]) + \
@@ -1500,6 +1499,10 @@ class Server(object):
 		assets.register("less_app", less_app_bundle)
 
 	def _setup_login_manager(self):
+		util.flask.fix_flask_login_remote_address()
+
+		global loginManager
+
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user

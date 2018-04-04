@@ -29,6 +29,7 @@ class VirtualPrinter(object):
 	prepare_ok_regex = re.compile("prepare_ok (.*)")
 	send_regex = re.compile("send (.*)")
 	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
+	start_sd_regex = re.compile("start_sd (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -102,10 +103,12 @@ class VirtualPrinter(object):
 		self._selectedSdFile = None
 		self._selectedSdFileSize = None
 		self._selectedSdFilePos = None
+
 		self._writingToSd = False
 		self._writingToSdHandle = None
 		self._newSdFilePos = None
-		self._heatupThread = None
+
+		self._heatingUp = False
 
 		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
 		self._supportM112 = settings().getBoolean(["devel", "virtualPrinter", "supportM112"])
@@ -164,6 +167,74 @@ class VirtualPrinter(object):
 		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
 
+	def _reset(self):
+		self._clearQueue(self.incoming)
+		self._clearQueue(self.outgoing)
+		self._clearQueue(self.buffered)
+
+		self._relative = True
+		self._lastX = 0.0
+		self._lastY = 0.0
+		self._lastZ = 0.0
+		self._lastE = [0.0] * self.extruderCount
+		self._lastF = 200
+
+		self._unitModifier = 1
+		self._feedrate_multiplier = 100
+		self._flowrate_multiplier = 100
+
+		self._sdCardReady = True
+		self._sdPrinting = False
+		if self._sdPrinter:
+			self._sdPrinting = False
+			self._sdPrintingSemaphore.set()
+		self._sdPrinter = None
+		self._selectedSdFile = None
+		self._selectedSdFileSize = None
+		self._selectedSdFilePos = None
+
+		if self._writingToSdHandle:
+			try:
+				self._writingToSdHandle.close()
+			except:
+				pass
+		self._writingToSd = False
+		self._writingToSdHandle = None
+		self._newSdFilePos = None
+
+		self._heatingUp = False
+
+		self.currentLine = 0
+		self.lastN = 0
+
+		self._debug_awol = False
+		self._debug_sleep = None
+		self._sleepAfterNext.clear()
+		self._sleepAfter.clear()
+
+		self._dont_answer = False
+
+		self._debug_drop_connection = False
+
+		self._killed = False
+
+		self._triggerResendAt100 = True
+		self._triggerResendWithTimeoutAt105 = True
+		self._triggerResendWithMissingLinenoAt110 = True
+		self._triggerResendWithChecksumMismatchAt115 = True
+
+		if self._temperature_reporter is not None:
+			self._temperature_reporter.cancel()
+			self._temperature_reporter = None
+
+		if self._sdstatus_reporter is not None:
+			self._sdstatus_reporter.cancel()
+			self._sdstatus_reporter = None
+
+		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
+			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+				self._send(item + "\n")
+
 	@property
 	def timeout(self):
 		return self._read_timeout
@@ -182,9 +253,10 @@ class VirtualPrinter(object):
 		self._logger.debug("Setting write timeout to {}s".format(value))
 		self._write_timeout = value
 
-	def _clearQueue(self, queue):
+	def _clearQueue(self, q):
 		try:
-			while queue.get(block=False):
+			while q.get(block=False):
+				q.task_done()
 				continue
 		except queue.Empty:
 			pass
@@ -194,6 +266,10 @@ class VirtualPrinter(object):
 		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
+
+			if self._heatingUp:
+				time.sleep(1)
+				continue
 
 			try:
 				data = self.incoming.get(timeout=0.01)
@@ -294,7 +370,7 @@ class VirtualPrinter(object):
 				continue
 
 			# shortcut for writing to SD
-			if self._writingToSdHandle is not None and not "M29" in data:
+			if self._writingToSd and self._writingToSdHandle is not None and not "M29" in data:
 				self._writingToSdHandle.write(data)
 				self._sendOk()
 				continue
@@ -658,10 +734,19 @@ class VirtualPrinter(object):
 			sleep_after_next <str:command> <int:seconds>
 			| Sleeps <seconds> s after execution of next <command>
 
+			# SD printing
+			
+			start_sd <str:file>
+			| Start printing file <file> from SD
+			cancel_sd
+			| Cancels an ongoing SD print
+
 			# Misc
 
 			send <str:message>
 			| Sends back <message>
+			reset
+			| Simulates a reset. Internal state will be lost.
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -683,6 +768,8 @@ class VirtualPrinter(object):
 			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "reset":
+			self._reset()
 		elif data == "mintemp_error":
 			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
@@ -690,6 +777,13 @@ class VirtualPrinter(object):
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
+		elif data == "cancel_sd":
+			if self._sdPrinting and self._sdPrinter:
+				self._pauseSdPrint()
+				self._sdPrinting = False
+				self._sdPrintingSemaphore.set()
+				self._sdPrinter.join()
+				self._finishSdPrint()
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -699,6 +793,7 @@ class VirtualPrinter(object):
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 				send_match = VirtualPrinter.send_regex.match(data)
 				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
+				start_sd_match = VirtualPrinter.start_sd_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -727,6 +822,9 @@ class VirtualPrinter(object):
 				elif set_ambient_match is not None:
 					self._ambient_temperature = float(set_ambient_match.group(1))
 					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
+				elif start_sd_match is not None:
+					self._selectSdFile(start_sd_match.group(1))
+					self._startSdPrint()
 			except:
 				pass
 
@@ -764,6 +862,7 @@ class VirtualPrinter(object):
 	def _startSdPrint(self):
 		if self._selectedSdFile is not None:
 			if self._sdPrinter is None:
+				self._sdPrinting = True
 				self._sdPrinter = threading.Thread(target=self._sdPrintingWorker)
 				self._sdPrinter.start()
 		self._sdPrintingSemaphore.set()
@@ -877,7 +976,7 @@ class VirtualPrinter(object):
 		matchE = re.search("E([0-9.]+)", line)
 		matchF = re.search("F([0-9.]+)", line)
 
-		duration = 0
+		duration = 0.0
 		if matchF is not None:
 			try:
 				self._lastF = float(matchF.group(1))
@@ -946,6 +1045,7 @@ class VirtualPrinter(object):
 				pass
 
 		if duration:
+			duration *= 0.1
 			if duration > self._read_timeout:
 				slept = 0
 				while duration - slept > self._read_timeout and not self._killed:
@@ -1025,7 +1125,7 @@ class VirtualPrinter(object):
 		try:
 			with open(self._selectedSdFile, "r") as f:
 				for line in iter(f.readline, ""):
-					if self._killed:
+					if self._killed or not self._sdPrinting:
 						break
 
 					# reset position if requested by client
@@ -1038,12 +1138,14 @@ class VirtualPrinter(object):
 
 					# if we are paused, wait for unpausing
 					self._sdPrintingSemaphore.wait()
+					if self._killed or not self._sdPrinting:
+						break
 
 					# set target temps
 					if 'M104' in line or 'M109' in line:
-						self._parseHotendCommand(line)
+						self._parseHotendCommand(line, wait='M109' in line)
 					elif 'M140' in line or 'M190' in line:
-						self._parseBedCommand(line)
+						self._parseBedCommand(line, wait='M190' in line)
 					elif line.startswith("G0") or line.startswith("G1") or line.startswith("G2") or line.startswith("G3"):
 						# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
 						self.buffered.put(line)
@@ -1052,9 +1154,13 @@ class VirtualPrinter(object):
 			if self.outgoing is not None:
 				raise
 
+		self._finishSdPrint()
+
+	def _finishSdPrint(self):
 		if not self._killed:
 			self._sdPrintingSemaphore.clear()
 			self._selectedSdFilePos = 0
+			self._sdPrinting = False
 			self._sdPrinter = None
 			self._output("Done printing file")
 
@@ -1063,6 +1169,7 @@ class VirtualPrinter(object):
 		delay = 1
 		last_busy = time.time()
 
+		self._heatingUp = True
 		try:
 			if heater.startswith("tool"):
 				toolNum = int(heater[len("tool"):])
@@ -1074,7 +1181,7 @@ class VirtualPrinter(object):
 			else:
 				return
 
-			while not self._killed and test():
+			while not self._killed and self._heatingUp and test():
 				self._simulateTemps(delta=delta)
 				self._output(output())
 				if self._sendBusy and time.time() - last_busy >= self._busyInterval:
@@ -1084,6 +1191,8 @@ class VirtualPrinter(object):
 		except AttributeError:
 			if self.outgoing is not None:
 				raise
+		finally:
+			self._heatingUp = False
 
 	def _deleteSdFile(self, filename):
 		if filename.startswith("/"):
@@ -1245,6 +1354,10 @@ class CharCountingQueue(queue.Queue):
 		queue.Queue.__init__(self, maxsize=maxsize)
 		self._size = 0
 		self._name = name
+
+	def clear(self):
+		with self.mutex:
+			self.queue.clear()
 
 	def put(self, item, block=True, timeout=None, partial=False):
 		self.not_full.acquire()
