@@ -151,7 +151,7 @@ appearance or to modify the order and presence of the various UI components:
 
          # order of settings, if settings plugins are registered gets extended internally by
          # section_plugins and all settings plugins
-         settings
+         settings:
          - section_printer
          - serial
          - printerprofiles
