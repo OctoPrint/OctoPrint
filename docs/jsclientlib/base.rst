@@ -417,7 +417,7 @@
 
    Creates a custom exception class. ``name`` may be either a function in which case it will be used
    as constructor for the new exception class, or a string, in which case a constructor with proper
-   ``name``, ``message`` and ``stack`` attributes will be created. The class hierarchy will be propery
+   ``name``, ``message`` and ``stack`` attributes will be created. The class hierarchy will be properly
    setup to subclass ``Error``.
 
    **Example:**
