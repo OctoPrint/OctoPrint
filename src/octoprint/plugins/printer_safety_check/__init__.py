@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.events import Events
-from octoprint.server import user_permission
+from octoprint.access.permissions import Permissions
 
 import flask
 from flask_babel import gettext
@@ -65,9 +65,19 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	##~~ SimpleApiPlugin API
 
 	def on_api_get(self, request):
-		if not user_permission.can():
+		if not Permissions.PLUGIN_PRINTER_SAFETY_CHECK_DISPLAY.can():
 			return flask.make_response("Insufficient rights", 403)
 		return flask.jsonify(self._warnings)
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="DISPLAY",
+			     name="Display printer safety warnings",
+			     description=gettext("Allows to see printer safety warnings"),
+			     roles=["display"])
+		]
 
 	##~~ Helpers
 
@@ -107,4 +117,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
                                            "issue and inform you about that fact.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = PrinterSafetyCheckPlugin()
+__plugin_hooks__ = {
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+}
 

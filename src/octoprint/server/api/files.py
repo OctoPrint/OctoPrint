@@ -89,7 +89,7 @@ def _create_etag(path, filter, recursive, lm=None):
 
 
 @api.route("/files", methods=["GET"])
-@Permissions.FILES_ACCESS.require(403)
+@Permissions.FILES_LIST.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
@@ -110,7 +110,7 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
-@Permissions.FILES_ACCESS.require(403)
+@Permissions.FILES_LIST.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
@@ -260,7 +260,7 @@ def _isBusy(target, path):
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
-@Permissions.UPLOAD.require(403)
+@Permissions.FILES_UPLOAD.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
 	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
@@ -284,7 +284,7 @@ def uploadGcodeFile(target):
 			return make_response("SD card support is disabled", 404)
 
 		sd = target == FileDestinations.SDCARD
-		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues and Permissions.SELECT.can()
+		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues and Permissions.FILES_SELECT.can()
 		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues and Permissions.PRINT.can()
 
 		if sd:
@@ -456,7 +456,7 @@ def uploadGcodeFile(target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["GET"])
-@Permissions.DOWNLOAD.require(403)
+@Permissions.FILES_DOWNLOAD.require(403)
 def readGcodeFile(target, filename):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -493,7 +493,7 @@ def gcodeFileCommand(filename, target):
 		return response
 
 	if command == "select":
-		with Permissions.SELECT.require(403):
+		with Permissions.FILES_SELECT.require(403):
 			if not _verifyFileExists(target, filename):
 				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
@@ -661,7 +661,7 @@ def gcodeFileCommand(filename, target):
 			return make_response("No analysis possible for {} on {}".format(filename, target), 400)
 
 	elif command == "copy" or command == "move":
-		with Permissions.UPLOAD.require(403):
+		with Permissions.FILES_UPLOAD.require(403):
 			# Copy and move are only possible on local storage
 			if not target in [FileDestinations.LOCAL]:
 				return make_response("Unsupported target for {}: {}".format(command, target), 400)
@@ -738,7 +738,7 @@ def gcodeFileCommand(filename, target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
-@Permissions.DELETE.require(403)
+@Permissions.FILES_DELETE.require(403)
 @restricted_access
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):

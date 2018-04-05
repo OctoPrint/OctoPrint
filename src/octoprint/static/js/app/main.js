@@ -121,6 +121,28 @@ $(function() {
             exports.onBrowserVisibilityChange = function(callback) {
                 browserVisibilityCallbacks.push(callback);
             };
+            exports.updateTab = function() {
+                var tabs = $('#tabs');
+
+                var hashtag = window.location.hash;
+                if (hashtag) {
+                    var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
+                    if (selectedTab.length) {
+                        selectedTab.tab("show");
+                        return;
+                    }
+                }
+
+                var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
+                if (firstTab.length) {
+                    var firstHash = firstTab[0].hash;
+                    if (firstHash !== exports.selectedTab) {
+                        firstTab.tab("show");
+                    } else {
+                        window.location.hash = firstHash;
+                    }
+                }
+            };
 
             return exports;
         })();
@@ -512,13 +534,13 @@ $(function() {
         var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onAfterTabChange(current, previous);
 
             // make sure we also update the hash but stick to the current scroll position
@@ -526,19 +548,6 @@ $(function() {
             window.location.hash = current;
             $('html,body').scrollTop(scrollmem);
         });
-
-        onTabChange(OCTOPRINT_INITIAL_TAB);
-        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
-
-        var changeTab = function() {
-            var hashtag = window.location.hash;
-            if (!hashtag) return;
-
-            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
-            if (tab) {
-                tab.tab("show");
-            }
-        };
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -673,12 +682,8 @@ $(function() {
             });
 
             $(window).on("hashchange", function() {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             });
-
-            if (window.location.hash !== "") {
-                changeTab();
-            }
 
             log.info("Application startup complete");
 
@@ -687,6 +692,7 @@ $(function() {
             // startup complete
             callViewModels(allViewModels, "onStartupComplete");
             setOnViewModels(allViewModels, "_startupComplete", true);
+            OctoPrint.coreui.updateTab();
         };
 
         var fetchSettings = function() {

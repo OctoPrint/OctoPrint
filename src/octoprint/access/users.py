@@ -1156,25 +1156,6 @@ class SessionUser(wrapt.ObjectProxy):
 	def __repr__(self):
 		return "SessionUser({!r},session={},created={})".format(self.__wrapped__, self.session, self.created)
 
-##~~ DummyUser object to use when accessControl is disabled
-
-class DummyUser(User):
-	def __init__(self, groups):
-		User.__init__(self, "dummy", "", True, [], groups)
-
-	def check_password(self, passwordHash):
-		return True
-
-
-class DummyIdentity(Identity):
-	def __init__(self):
-		Identity.__init__(self, "dummy")
-
-
-def dummy_identity_loader():
-	return DummyIdentity()
-
-
 ##~~ Apiuser object to use when global api key is used to access the API
 
 class ApiUser(User):

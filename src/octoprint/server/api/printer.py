@@ -323,6 +323,7 @@ def printerSdCommand():
 
 
 @api.route("/printer/sd", methods=["GET"])
+@restricted_access
 @Permissions.STATUS.require(403)
 def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -396,6 +397,7 @@ def printerCommand():
 	return NO_CONTENT
 
 @api.route("/printer/command/custom", methods=["GET"])
+@restricted_access
 @Permissions.CONTROL.require(403)
 def getCustomControls():
 	# TODO: document me

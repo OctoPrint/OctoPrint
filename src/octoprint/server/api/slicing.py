@@ -11,6 +11,7 @@ from werkzeug.exceptions import BadRequest
 from octoprint.server import slicingManager
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.server.api import api, NO_CONTENT
+from octoprint.access.permissions import Permissions
 
 from octoprint.settings import settings as s, valid_boolean_trues
 
@@ -53,7 +54,7 @@ def _etag(configured, lm=None):
 		hash.update(slicer)
 		hash.update(str(slicer_impl.is_slicer_configured()))
 		hash.update(str(slicer == default_slicer))
-	
+
 	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
@@ -63,6 +64,7 @@ def _etag(configured, lm=None):
 @with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("configured", "false") in valid_boolean_trues, lm=lm),
                             lastmodified_factory=lambda: _lastmodified(request.values.get("configured", "false") in valid_boolean_trues),
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
+@Permissions.SLICE.require(403)
 def slicingListAll():
 	from octoprint.filemanager import get_extensions
 
@@ -101,6 +103,8 @@ def slicingListAll():
 	return jsonify(result)
 
 @api.route("/slicing/<string:slicer>/profiles", methods=["GET"])
+@restricted_access
+@Permissions.SLICE.require(403)
 def slicingListSlicerProfiles(slicer):
 	configured = False
 	if "configured" in request.values and request.values["configured"] in valid_boolean_trues:
@@ -112,6 +116,8 @@ def slicingListSlicerProfiles(slicer):
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
+@restricted_access
+@Permissions.SLICE.require(403)
 def slicingGetSlicerProfile(slicer, name):
 	try:
 		profile = slicingManager.load_profile(slicer, name, require_configured=False)
@@ -126,6 +132,7 @@ def slicingGetSlicerProfile(slicer, name):
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PUT"])
 @restricted_access
+@Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
@@ -161,6 +168,7 @@ def slicingAddSlicerProfile(slicer, name):
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PATCH"])
 @restricted_access
+@Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
@@ -204,6 +212,7 @@ def slicingPatchSlicerProfile(slicer, name):
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])
 @restricted_access
+@Permissions.SETTINGS.require(403)
 def slicingDelSlicerProfile(slicer, name):
 	try:
 		slicingManager.delete_profile(slicer, name)

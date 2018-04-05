@@ -62,6 +62,8 @@ def add_group():
 
 
 @api.route("/access/groups/<groupname>", methods=["GET"])
+@restricted_access
+@Permissions.SETTINGS.require(403)
 def get_group(groupname):
 	group = groupManager.find_group(groupname)
 	if group is not None:

@@ -22,24 +22,24 @@ USER_GROUP = "Users"
 DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
                             Permissions.CONNECTION,
                             Permissions.WEBCAM,
-                            Permissions.UPLOAD,
-                            Permissions.DOWNLOAD,
-                            Permissions.DELETE,
-                            Permissions.SELECT,
+                            Permissions.FILES_UPLOAD,
+                            Permissions.FILES_DOWNLOAD,
+                            Permissions.FILES_DELETE,
+                            Permissions.FILES_SELECT,
                             Permissions.PRINT,
-                            Permissions.TERMINAL,
+                            Permissions.MONITOR_TERMINAL,
                             Permissions.CONTROL,
                             Permissions.SLICE,
-                            Permissions.TIMELAPSE,
+                            Permissions.TIMELAPSE_LIST,
                             Permissions.TIMELAPSE_ADMIN]
 """Default user permissions are the legacy permissions from before 1.4.0"""
 
 GUEST_GROUP = "Guests"
 DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
                              Permissions.WEBCAM,
-                             Permissions.DOWNLOAD,
-                             Permissions.TIMELAPSE,
-                             Permissions.TERMINAL]
+                             Permissions.FILES_DOWNLOAD,
+                             Permissions.TIMELAPSE_LIST,
+                             Permissions.MONITOR_TERMINAL]
 """Default guest permissions are the legacy permissions from before 1.4.0"""
 
 

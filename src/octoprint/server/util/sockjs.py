@@ -163,6 +163,11 @@ class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
 class PrinterStateConnection(sockjs.tornado.SockJSConnection,
                              octoprint.printer.PrinterCallback,
                              LoginStatusListener):
+
+	_emit_permissions = {"connected": [],
+	                     "reauthRequired": [],
+	                     "*": [Permissions.STATUS]}
+
 	def __init__(self, printer, fileManager, analysisQueue, userManager, groupManager, eventManager, pluginManager, session):
 		if isinstance(session, sockjs.tornado.session.Session):
 			session = JsonEncodingSessionWrapper(session)
@@ -260,7 +265,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
 				if not len(parts) == 2:
 					raise ValueError()
 			except ValueError:
-				self._logger.warn("Got invalid auto message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
+				self._logger.warn("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
 			else:
 				user_id, user_session = parts
 				user = self._userManager.find_user(userid=user_id, session=user_session)
@@ -268,7 +273,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
 				if user is not None:
 					self._user = user
 					self._reregister()
-					self._logger.info("User {} logged in on the socket".format(user.get_name()))
+					self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(), self._remoteAddress))
 				else:
 					self._user = AnonymousUser([self._groupManager.guest_group])
 					self._reregister()
@@ -433,9 +438,6 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection,
 	def _sendReauthRequired(self, reason):
 		self._emit("reauthRequired", payload=dict(reason=reason))
 
-	_emit_permissions = {"connected": [],
-	                     "reauthRequired": [],
-	                     "*": [Permissions.STATUS]}
 	def _emit(self, type, payload=None, permissions=None):
 		if payload is None:
 			payload = dict()

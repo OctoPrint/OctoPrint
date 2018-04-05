@@ -40,7 +40,8 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@Permissions.PRINTERPROFILES_ACCESS.require(403)
+@restricted_access
+@Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
@@ -101,6 +102,7 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
+@restricted_access
 @Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)

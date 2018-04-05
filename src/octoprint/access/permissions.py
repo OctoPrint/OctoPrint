@@ -11,7 +11,7 @@ from flask_babel import gettext
 from flask_principal import Permission, PermissionDenied, RoleNeed, Need
 
 from functools import wraps
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 from past.builtins import basestring
 
@@ -19,15 +19,23 @@ from past.builtins import basestring
 class OctoPrintPermission(Permission):
 	@classmethod
 	def convert_needs_to_dict(cls, needs):
-		ret_needs = dict()
+		ret_needs = defaultdict(list)
 		for need in needs:
-			if need.method not in ret_needs:
-				ret_needs[need.method] = []
-
 			if need.value not in ret_needs[need.method]:
 				ret_needs[need.method].append(need.value)
-
 		return ret_needs
+
+	@classmethod
+	def convert_to_needs(cls, needs):
+		result = []
+		for need in needs:
+			if isinstance(need, Need):
+				result.append(need)
+			elif isinstance(need, Permission):
+				result += need.needs
+			elif isinstance(need, basestring):
+				result.append(RoleNeed(need))
+		return result
 
 	def __init__(self, name, description, *needs, **kwargs):
 		self._name = name
@@ -36,7 +44,7 @@ class OctoPrintPermission(Permission):
 
 		self._key = None
 
-		Permission.__init__(self, *[RoleNeed(x) if not isinstance(x, Need) else x for x in needs])
+		Permission.__init__(self, *self.convert_to_needs(needs))
 
 	def as_dict(self):
 		return dict(
@@ -81,12 +89,10 @@ class OctoPrintPermission(Permission):
 		return p
 
 	def __repr__(self):
-		needs = []
-		for need in sorted(self.needs):
-			if need.method == 'role':
-				needs.append("RoleNeed('{0}')".format(need.value))
-
-		return '{}("{}", "{}", {})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
+		return '{}({!r}, {!r}, {})'.format(self.__class__.__name__,
+		                                   self.get_name(),
+		                                   self.get_description(),
+		                                   ', '.join(map(repr, self.needs)))
 
 	def __hash__(self):
 		return self.get_name().__hash__()
@@ -285,75 +291,97 @@ class Permissions(object):
 	                                             gettext("Allows to gather status information, e.g. job progress, "
 	                                                     "printer state, temperatures, ..."),
 	                                             RoleNeed("status"))
+
 	CONNECTION             = OctoPrintPermission("Connection",
-	                                             gettext("Allows to connect to and disconnect and from a printer"),
+	                                             gettext("Allows to connect to and disconnect from a printer"),
 	                                             RoleNeed("connection"))
+
 	WEBCAM                 = OctoPrintPermission("Webcam",
 	                                             gettext("Allows to watch the webcam stream"),
 	                                             RoleNeed("webcam"))
+
 	SYSTEM                 = OctoPrintPermission("System",
 	                                             gettext("Allows to run system commands, e.g. restart OctoPrint, "
 	                                                     "shutdown or reboot the system"),
-	                                             RoleNeed("system"))
-	UPLOAD                 = OctoPrintPermission("Upload",
+	                                             RoleNeed("system"),
+	                                             dangerous=True)
+
+	FILES_LIST             = OctoPrintPermission("File List",
+	                                             gettext("Allows to retrieve a list of all uploaded files, including"
+	                                                     "their metadata (e.g. date, file size, analysis results, ...)"),
+	                                             RoleNeed("files_list"))
+	FILES_UPLOAD           = OctoPrintPermission("File Upload",
 	                                             gettext("Allows users to upload new files"),
-	                                             RoleNeed("upload"))
-	DOWNLOAD               = OctoPrintPermission("Download",
+	                                             RoleNeed("files_upload"))
+	FILES_DOWNLOAD         = OctoPrintPermission("File Download",
 	                                             gettext("Allows users to download files. The GCODE viewer is "
 	                                                     "affected by this as well."),
-	                                             RoleNeed("download"))
-	GCODE_VIEWER           = OctoPrintPermission("GCODE viewer",
-	                                             gettext("Allowed access to the GCODE viewer. Includes the \"Download\""
-	                                                     "permission."),
-	                                             RoleNeed("gcodeviewer"), RoleNeed("download"))
-	DELETE                 = OctoPrintPermission("Delete",
+	                                             RoleNeed("files_download"), FILES_LIST)
+	FILES_DELETE           = OctoPrintPermission("File Delete",
 	                                             gettext("Allows users to delete files"),
-	                                             RoleNeed("delete_file"))
-	SELECT                 = OctoPrintPermission("Select",
+	                                             RoleNeed("files_delete"), FILES_LIST)
+	FILES_SELECT           = OctoPrintPermission("File Select",
 	                                             gettext("Allows to select a file for printing"),
-	                                             RoleNeed("select"))
+	                                             RoleNeed("files_select"), FILES_LIST)
+
 	PRINT                  = OctoPrintPermission("Print",
-	                                             gettext("Allows to start a print job. Includes the \"Select\" "
+	                                             gettext("Allows to start, pause and cancel a print job. Includes the \"Select\" "
 	                                                     "permission"),
-	                                             RoleNeed("print"), RoleNeed("select"))
-	TERMINAL               = OctoPrintPermission("Terminal",
+	                                             RoleNeed("print"), FILES_SELECT)
+
+	GCODE_VIEWER           = OctoPrintPermission("GCODE viewer",
+	                                             gettext("Allows access to the GCODE viewer. Includes the \"File Download\""
+	                                                     "permission."),
+	                                             RoleNeed("gcodeviewer"), FILES_DOWNLOAD)
+
+	MONITOR_TERMINAL       = OctoPrintPermission("Terminal",
 	                                             gettext("Allows to watch the terminal tab but not to send commands "
 	                                                     "to the printer from it"),
-	                                             RoleNeed("terminal"))
+	                                             RoleNeed("monitor_terminal"))
+
 	CONTROL                = OctoPrintPermission("Control",
-	                                             gettext("Allows to control of the printer by using the control tab or "
-	                                                     "sending commands through the terminal. Includes the "
-	                                                     "\"Terminal\" permission"),
-	                                             RoleNeed("control"), RoleNeed("terminal"))
+	                                             gettext("Allows to control of the printer by using the temperature controls,"
+	                                                     "the control tab or sending commands through the terminal."),
+	                                             RoleNeed("control"))
+
 	SLICE                  = OctoPrintPermission("Slice",
 	                                             gettext("Allows to slice files"),
 	                                             RoleNeed("slice"))
-	TIMELAPSE              = OctoPrintPermission("Timelapse",
+
+	TIMELAPSE_LIST         = OctoPrintPermission("Timelapse List",
+	                                             gettext("Allows to list timelapse videos"),
+	                                             RoleNeed("timelapse_list"))
+	TIMELAPSE_DOWNLOAD     = OctoPrintPermission("Timelapse Download",
 	                                             gettext("Allows to download timelapse videos"),
-	                                             RoleNeed("timelapse"))
+	                                             RoleNeed("timelapse_download"))
+	TIMELAPSE_DELETE       = OctoPrintPermission("Timelapse Delete",
+	                                             gettext("TODO"),
+	                                             RoleNeed("timelapse_delete"))
 	TIMELAPSE_ADMIN        = OctoPrintPermission("Timelapse Admin",
-	                                             gettext("Allows to change the timelapse settings, remove timelapses,"
-	                                                     "render unrendered timelapses. Includes the \"Timelapse\""
-	                                                     "permission"),
-	                                             RoleNeed("timelapse_admin"), RoleNeed("timelapse"))
+	                                             gettext("Allows to change the timelapse settings and"
+	                                                     "render unrendered timelapses. Includes the \"Timelapse List\","
+	                                                     "\"Timelapse Delete\" and \"Timelapse Download\" permissions"),
+	                                             RoleNeed("timelapse_admin"), TIMELAPSE_LIST, TIMELAPSE_DOWNLOAD)
+
 	SETTINGS               = OctoPrintPermission("Settings",
 	                                             gettext("Allows to manage settings"),
-	                                             RoleNeed("settings"))
+	                                             RoleNeed("settings"),
+	                                             dangerous=True)
+
+	# TODO move to Logging plugin
 	LOGS                   = OctoPrintPermission("Logs",
-	                                             gettext("Allows to download and remove logs"),
+	                                             gettext("Allows to list, download and delete logs"),
 	                                             RoleNeed("logs"))
 
-	CONTROL_ACCESS         = CombinedOctoPrintPermission.from_permissions("Control Access",
-	                                                                      CONTROL, WEBCAM)
-	CONNECTION_ACCESS      = CombinedOctoPrintPermission.from_permissions("Connection Access",
-	                                                                      CONNECTION, STATUS)
-	FILES_ACCESS           = CombinedOctoPrintPermission.from_permissions("Files Access",
-	                                                                      UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT,
+	CONTROL_ACCESS         = CombinedOctoPrintPermission.from_permissions("Full Control Access",
+	                                                                      CONTROL, MONITOR_TERMINAL, WEBCAM)
+	FILES_ACCESS           = CombinedOctoPrintPermission.from_permissions("Full Files Access",
+	                                                                      FILES_UPLOAD, FILES_DOWNLOAD, FILES_DELETE, FILES_SELECT, PRINT,
 	                                                                      SLICE)
 	PRINTERPROFILES_ACCESS = CombinedOctoPrintPermission.from_permissions("Printerprofiles Access",
 	                                                                      CONNECTION, SETTINGS)
-	TIMELAPSE_ACCESS       = CombinedOctoPrintPermission.from_permissions("Timelapse Access",
-	                                                                      TIMELAPSE, TIMELAPSE_ADMIN)
+	TIMELAPSE_ACCESS       = CombinedOctoPrintPermission.from_permissions("Full Timelapse Access",
+	                                                                      TIMELAPSE_LIST, TIMELAPSE_ADMIN)
 
 
 class PermissionAlreadyExists(Exception):

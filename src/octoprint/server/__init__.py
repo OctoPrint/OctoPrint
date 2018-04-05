@@ -9,7 +9,7 @@ import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
 from flask_assets import Environment, Bundle
 from babel import Locale
@@ -555,8 +555,8 @@ class Server(object):
 
 		##~~ Permission validators
 
-		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.TIMELAPSE))
-		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.DOWNLOAD))
+		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST))
+		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.FILES_DOWNLOAD))
 		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.LOGS))
 		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.WEBCAM))
 
@@ -1516,11 +1516,25 @@ class Server(object):
 			def anonymous_user_factory():
 				return users.AnonymousUser([groupManager.guest_group])
 			loginManager.anonymous_user = anonymous_user_factory # TODO: remove in 1.5.0
+
 		else:
-			def dummy_user_factory():
-				return users.DummyUser([groupManager.admin_group])
-			loginManager.anonymous_user = dummy_user_factory
-			principals.identity_loaders.appendleft(users.dummy_identity_loader)
+			class AdminUser(users.User):
+				def __init__(self):
+					users.User.__init__(self, "admin", "", True, [], [groupManager.admin_group])
+
+				def check_password(self, passwordHash):
+					return True
+
+			class AdminIdentity(Identity):
+				def __init__(self):
+					Identity.__init__(self, "admin")
+
+			def admin_identity_loader():
+				return AdminIdentity()
+
+			loginManager.anonymous_user = AdminUser
+			principals.identity_loaders.appendleft(admin_identity_loader)
+
 		loginManager.init_app(app, add_context_processor=False)
 
 	def _start_intermediary_server(self):

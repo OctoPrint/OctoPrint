@@ -73,10 +73,11 @@ def _etag(unrendered, lm=None):
 	return hash.hexdigest()
 
 @api.route("/timelapse", methods=["GET"])
+@restricted_access
 @with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("unrendered", "false") in valid_boolean_trues, lm=lm),
                             lastmodified_factory=lambda: _lastmodified(request.values.get("unrendered", "false") in valid_boolean_trues),
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@Permissions.TIMELAPSE.require(403)
+@Permissions.TIMELAPSE_LIST.require(403)
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 	config = _config_for_timelapse(timelapse)
@@ -121,14 +122,15 @@ def getTimelapseData():
 
 
 @api.route("/timelapse/<filename>", methods=["GET"])
-@Permissions.TIMELAPSE.require(403)
+@restricted_access
+@Permissions.TIMELAPSE_DOWNLOAD.require(403)
 def downloadTimelapse(filename):
 	return redirect_to_tornado(request, url_for("index") + "downloads/timelapse/" + filename)
 
 
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
-@Permissions.TIMELAPSE_ADMIN.require(403)
+@Permissions.TIMELAPSE_DELETE.require(403)
 def deleteTimelapse(filename):
 	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4", "m4v", "mkv"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
@@ -145,7 +147,7 @@ def deleteTimelapse(filename):
 
 @api.route("/timelapse/unrendered/<name>", methods=["DELETE"])
 @restricted_access
-@Permissions.TIMELAPSE_ADMIN.require(403)
+@Permissions.TIMELAPSE_DELETE.require(403)
 def deleteUnrenderedTimelapse(name):
 	octoprint.timelapse.delete_unrendered_timelapse(name)
 	return NO_CONTENT

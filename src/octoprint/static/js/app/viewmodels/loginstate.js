@@ -6,7 +6,7 @@ $(function() {
         self.loginPass = ko.observable("");
         self.loginRemember = ko.observable(false);
 
-        self.loggedIn = ko.observable(false);
+        self.loggedIn = ko.observable(undefined);
         self.username = ko.observable(undefined);
         self.userneeds = ko.observable(undefined);
         self.isAdmin = ko.observable(false);
@@ -61,7 +61,7 @@ $(function() {
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.updateCurrentUserData(response);
-                    if (!currentLoggedIn) {
+                    if (!currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
                         log.info("User " + response.name + " logged in");
                     }
@@ -71,11 +71,12 @@ $(function() {
                 } else {
                     self.loggedIn(false);
                     self.updateCurrentUserData(response);
-                    if (currentLoggedIn) {
+                    if (currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedOut");
                         log.info("User logged out");
                     }
                 }
+                OctoPrint.coreui.updateTab();
             };
 
             if (self.startupDeferred !== undefined) {
@@ -114,7 +115,7 @@ $(function() {
         self.login = function(u, p, r, notifications) {
             var username = u || self.loginUser();
             var password = p || self.loginPass();
-            var remember = (r != undefined ? r : self.loginRemember());
+            var remember = (r !== undefined ? r : self.loginRemember());
             notifications = notifications !== false;
 
             return OctoPrint.browser.login(username, password, remember)
@@ -241,20 +242,20 @@ $(function() {
         };
 
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////
-        //                                                                                             //
-        // hasPermission: checks if the currently logged in user has a specific permission             //
-        //                This check is performed by testing if the necessary needs set is available   //
-        //                                                                                             //
-        /////////////////////////////////////////////////////////////////////////////////////////////////
-        //                                                                                             //
-        // Possible function call and what it returns:                                                 //
-        //                                                                                             //
-        // loginState.hasPermission(access.permissions.SETTINGS)                                       //
-        // - Returns true if the currently logged in user has SETTINGS permission                      //
-        //                                                                                             //
-        /////////////////////////////////////////////////////////////////////////////////////////////////
         self.hasPermission = function(permission) {
+            /**
+             * Checks if the currently logged in user has a specific permission.
+             *
+             * This check is performed by testing if the necessary needs set is available.
+             *
+             * Example:
+             *
+             *     loginState.hasPermission(access.permissions.SETTINGS)
+             *
+             * @param permission the permission to check for
+             * @returns true if the user has the specified permission, false otherwise
+             * @type {boolean}
+             */
             var userneeds = self.userneeds();
             if (userneeds === undefined || permission === undefined)
                 return false;
@@ -270,11 +271,73 @@ $(function() {
             });
         };
 
-        // Knockout wrapper for the hasPermission function
+        self.hasAnyPermission = function() {
+            /**
+             * Checks if the currently logged in user has any of the specified permissions.
+             *
+             * Uses hasPermission for that.
+             *
+             * Example:
+             *
+             *   loginState.hasAnyPermission(access.permission.CONTROL, access.permission.MONITOR_TERMINAL)
+             *
+             * @returns true if the user has any of the specified permissions, false otherwise
+             * @type {boolean}
+             */
+            var result = false;
+            _.each(arguments, function(permission) {
+                result = result || self.hasPermission(permission);
+            });
+            return result;
+        };
+
+        self.hasAllPermissions = function() {
+            /**
+             * Checks if the currently logged in user has all of the specified permissions.
+             *
+             * Uses hasPermission for that.
+             *
+             * Example:
+             *
+             *   loginState.hasAnyPermission(access.permission.CONTROL, access.permission.MONITOR_TERMINAL)
+             *
+             * @returns true if the user has all of the specified permissions, false otherwise
+             * @type {boolean}
+             */
+            var result = true;
+            _.each(arguments, function(permission) {
+                result = result && self.hasPermission(permission);
+            });
+            return result;
+        };
+
         self.hasPermissionKo = function(permission) {
+            /**
+             * Knockout wrapper for hasPermission
+             */
             return ko.pureComputed(function() {
                 return self.hasPermission(permission);
-            }).extend({ notify: 'always' });
+            }).extend({ notify: "always" });
+        };
+
+        self.hasAnyPermissionKo = function() {
+            /**
+              Knockout wrapper for hasAnyPermission
+             */
+            var permissions = arguments;
+            return ko.pureComputed(function() {
+                return self.hasAnyPermission.apply(null, permissions);
+            }).extend({ notify: "always" });
+        };
+
+        self.hasAllPermissionsKo = function() {
+            /**
+             * Knockout wrapper for hasAllPermissions
+             */
+            var permissions = arguments;
+            return ko.pureComputed(function() {
+                return self.hasAllPermissions.apply(null, permissions);
+            });
         };
     }
 
