@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import uuid
-from sockjs.tornado import SockJSRouter
+from octoprint.vendor.sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
 from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
@@ -241,7 +241,6 @@ class Server(object):
 		pluginManager = self._plugin_manager
 
 		# monkey patch a bunch of stuff
-		util.sockjs.fix_tornado5_compatibility()
 		util.tornado.fix_json_encode()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 

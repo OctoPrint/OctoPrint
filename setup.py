@@ -20,7 +20,8 @@ INSTALL_REQUIRES = [
 	                    # version, hence we need to pin to a lower version for now. See #1697
 	"werkzeug>=0.8.3,<0.9",
 	"tornado>=5.0.1,<6",
-	"sockjs-tornado>=1.0.3,<1.1",
+	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
+	                               # vendored one
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",
 	"Flask-Principal>=0.3.5,<0.4",
