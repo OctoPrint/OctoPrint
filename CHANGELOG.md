@@ -1,45 +1,11 @@
 # OctoPrint Changelog
 
-## 1.3.7rc4 (2018-04-04)
-
-### Bugfixes
-
-  * [#2536](https://github.com/foosel/OctoPrint/issues/2536) - Fix a wrong state tracking when starting an SD print through the controller, causing a disconnect due to a timeout.
-  * [#2544](https://github.com/foosel/OctoPrint/issues/2544) - Fix an exception when connecting to the raw websocket at `/sockjs/websocket` (instead of `/sockjs/<server_id>/<session_id>/websocket`).
-  * [#2546](https://github.com/foosel/OctoPrint/issues/2546) - Fix the `PRINT_FAILED` event getting triggered twice on print failure due to disconnect
-  
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc3...1.3.7rc4))
-
-## 1.3.7rc3 (2018-03-29)
-
-### Bugfixes
-
-  * [#2524](https://github.com/foosel/OctoPrint/issues/2524) Ignore `wait` while job is on hold.
-
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc2...1.3.7rc3))
-
-## 1.3.7rc2 (2018-03-23)
-
-### Bugfixes
-
-  * [#1951](http://github.com/foosel/OctoPrint/issues/1951) - Fixed plugins being able to modify internal state data (e.g. progress, job), causing concurrent modification and resulting run time errors in the printer state processing.
-  * [#2494](https://github.com/foosel/OctoPrint/issues/2494) - Fixed `undefined` values not saving in the settings. 
-  * [#2499](https://github.com/foosel/OctoPrint/issues/2499) - Fixed communication error notification lacking the actual error message.
-  * [#2501](https://github.com/foosel/OctoPrint/issues/2501) - Fixed a bug causing log downloads to fail with an HTTP 500 error.
-  * [#2506](https://github.com/foosel/OctoPrint/issues/2506) - Fixed `printer.get_current_data` and `printer.get_current_job` returning `frozendict` instead of `dict` instances, causing issues with plugins relying on being able to modify the returned data (e.g. [dattas/OctoPrint-DetailedProgress#26](https://github.com/dattas/OctoPrint-DetailedProgress/issues/26)).
-  * [#2508](https://github.com/foosel/OctoPrint/issues/2508) - Fixed HTTP 500 error on `/api/slicing` in case of an unconfigured slicer.
-  * Have `OctoPrintJsonEncoder` fall back to regular flask JSON encoder, otherwise we might not be able to serialize some data types we need to be able to serialize.
-  * Use `pkg_resources` to determine pip version during environment check instead of `import pip; pip.__version__` since the latter causes issues with pip version 9.0.2. In the same spirit make `pip.main` approach of calling `pip` in the PipCaller the last resort during auto detection, only after trying `pip` or `pip.exe` inside the same folder as the Python executable.
-  * Use `octoprint.util.monotonic_time` instead of `monotonic.monotonic` in comm layer.
-  * Fixed timelapse not stopping on print failure due to firmware error due to missing `PrintFailed` event.
-
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7rc1...1.3.7rc2))
-
-## 1.3.7rc1 (2018-03-19)
+## 1.3.7 (2018-04-09)
 
 ### Improvements
 
   * [#324](https://github.com/foosel/OctoPrint/issues/324) & [#2414](https://github.com/foosel/OctoPrint/issues/2414) - Native support for the following [@ commands](http://docs.octoprint.org/en/maintenance/features/atcommands.html): `@pause` (pauses the print), `@resume` (resumes the print), `@cancel` or `@abort` (cancels the print). More commands can be added through the plugin hooks [`octoprint.comm.protocol.atcommand.*`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-comm-protocol-atcommand-phase).
+  * [#1951](http://github.com/foosel/OctoPrint/issues/1951) - Fixed plugins being able to modify internal state data (e.g. progress, job), causing concurrent modification and resulting run time errors in the printer state processing.
   * [#2208](https://github.com/foosel/OctoPrint/issues/2208) - New plugin hook [`octoprint.comm.protocol.gcode.error`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-comm-protocol-gcode-error) to allow plugins to override OctoPrint's handling of `Error:`/`!!` messages reported by the firmware. Can be used to "downgrade" errors that aren't actually fatal errors that make the printer halt.
   * [#2213](https://github.com/foosel/OctoPrint/issues/2213) - Made sure to prevent accidental configuration of a temperature cutoff value less than 1min for the temperature graph.
   * [#2250](https://github.com/foosel/OctoPrint/pull/2250) - Added [`octoprint.util.ResettableTimer`](http://docs.octoprint.org/en/maintenance/modules/util.html#octoprint.util.ResettableTimer) helper class.
@@ -50,6 +16,7 @@
       * Firmware must send a "File opened: ..." message on start of the print
       * Firmware must respond to an immediately sent `M27` with `SD printing byte <current>/<total>`
       * Firmware must stay responsive during ongoing print to allow for regular M27 polls (or push those automatically) or M25 to pause/cancel the print through OctoPrint.
+      * Firmware must send `Done printing file` or respond to `M27` with `Not SD printing` when SD printing finishes (either due to being done or to having been cancelled by the user).
   * [#2362](https://github.com/foosel/OctoPrint/issues/2362) - Added option to configure timelapse snapshot timeout.
   * [#2367](https://github.com/foosel/OctoPrint/issues/2367) - Added support for `//action:cancel` action command.
   * [#2378](https://github.com/foosel/OctoPrint/issues/2378) - Made GCODE viewer gracefully handle GCODE subcodes.
@@ -104,11 +71,37 @@
   * [#2426](https://github.com/foosel/OctoPrint/issues/2426) - Made resend logging to `octoprint.log` unicode safe
   * [#2442](https://github.com/foosel/OctoPrint/issues/2442) - Don't even import disabled plugins, use a dummy entry for them just like for backlisted plugins. More resilience against misbehaving plugins.
   * [#2461](https://github.com/foosel/OctoPrint/issues/2461) - Fixed OctoPrint not properly disconnecting in case of a firmware error.
+  * [#2494](https://github.com/foosel/OctoPrint/issues/2494) - Fixed `undefined` values not saving in the settings. 
+  * [#2499](https://github.com/foosel/OctoPrint/issues/2499) (regression) - Fixed communication error notification lacking the actual error message.
+  * [#2501](https://github.com/foosel/OctoPrint/issues/2501) (regression) - Fixed a bug causing log downloads to fail with an HTTP 500 error.
+  * [#2506](https://github.com/foosel/OctoPrint/issues/2506) (regression) - Fixed `printer.get_current_data` and `printer.get_current_job` returning `frozendict` instead of `dict` instances, causing issues with plugins relying on being able to modify the returned data (e.g. [dattas/OctoPrint-DetailedProgress#26](https://github.com/dattas/OctoPrint-DetailedProgress/issues/26)).
+  * [#2508](https://github.com/foosel/OctoPrint/issues/2508) (regression) - Fixed HTTP 500 error on `/api/slicing` in case of an unconfigured slicer.
+  * [#2524](https://github.com/foosel/OctoPrint/issues/2524) - Ignore `wait` while job is on hold.
+  * [#2536](https://github.com/foosel/OctoPrint/issues/2536) - Fix a wrong state tracking when starting an SD print through the controller, causing a disconnect due to a timeout.
+  * [#2544](https://github.com/foosel/OctoPrint/issues/2544) (regression) - Fix an exception when connecting to the raw websocket at `/sockjs/websocket` (instead of `/sockjs/<server_id>/<session_id>/websocket`).
+  * [#2546](https://github.com/foosel/OctoPrint/issues/2546) (regression) - Fix the `PRINT_FAILED` event getting triggered twice on print failure due to disconnect
+  * Use `pkg_resources` to determine pip version during environment check instead of `import pip; pip.__version__` since the latter causes issues with pip version 9.0.2. In the same spirit make `pip.main` approach of calling `pip` in the PipCaller the last resort during auto detection, only after trying `pip` or `pip.exe` inside the same folder as the Python executable.
+  * Use `octoprint.util.monotonic_time` instead of `monotonic.monotonic` in comm layer.
+  * Fixed timelapse not stopping on print failure due to firmware error due to missing `PrintFailed` event.
   * Announcement Plugin: Fixed a missing line break in case of more than three announcements in a notification.
   * Docs: Documentation for printer profile related bits and pieces
   * Docs: Various fixes of typos and grammar.
+  * Have `OctoPrintJsonEncoder` fall back to regular flask JSON encoder, otherwise we might not be able to serialize some data types we need to be able to serialize. (regression)
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6...1.3.7rc1))
+### Known bugs
+
+  * [#2547](https://github.com/foosel/OctoPrint/issues/2547) - Error during processing of afterPrintJobDone script will trigger PRINT_FAILED event even though PRINT_DONE event was already triggered 
+
+### More Information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.6...1.3.7)
+  * Release Candidates:
+    * [1.3.7rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.7rc1)
+    * [1.3.7rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.7rc2)
+    * [1.3.7rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.7rc3)
+    * [1.3.7rc4](https://github.com/foosel/OctoPrint/releases/tag/1.3.7rc4)
+    * A special **Thank you!** to everyone who reported back on these release candidates this time: 
+      [aaronkeck](https://github.com/aaronkeck), [akurz42](https://github.com/akurz42), [andrivet](https://github.com/andrivet), [anthonyst91](https://github.com/anthonyst91), [arhi](https://github.com/arhi), [b-morgan](https://github.com/b-morgan), [BryanSmithDev](https://github.com/BryanSmithDev), [chippypilot](https://github.com/chippypilot), [ChrisHeerschap](https://github.com/ChrisHeerschap), [Crowlord](https://github.com/Crowlord), [dforsi](https://github.com/dforsi), [drdelaney](https://github.com/drdelaney), [FormerLurker](https://github.com/FormerLurker), [goeland86](https://github.com/goeland86), [inspiredbylife](https://github.com/inspiredbylife), [jbjones27](https://github.com/jbjones27), [jesasi](https://github.com/jesasi), [jneilliii](https://github.com/jneilliii), [JohnOCFII](https://github.com/JohnOCFII), [kantlivelong](https://github.com/kantlivelong), [lnx13](https://github.com/lnx13), [makaper](https://github.com/makaper), [markwal](https://github.com/markwal), [MiquelAdell](https://discourse.octoprint.org/u/MiquelAdell), [ml0w](https://github.com/ml0w), [mmotley999](https://github.com/mmotley999), [mrhanman](https://github.com/mrhanman), [SCiunczyk](https://github.com/SCiunczyk), [tdub415](https://github.com/tdub415), [tedder42](https://discourse.octoprint.org/u/tedder42), [thatjoshguy](https://github.com/thatjoshguy), [wescrockett](https://github.com/wescrockett)
 
 ## 1.3.6 (2017-12-12)
 
