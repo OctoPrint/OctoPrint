@@ -3547,7 +3547,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		with self._handle_mutex:
 			if self._handle is None:
-				raise ValueError("File %s is not open for reading" % self._filename)
+				self._logger.warn(u"File {} is not open for reading".format(self._filename))
+				return None, None, None
 
 			try:
 				offsets = self._offsets_callback() if self._offsets_callback is not None else None
