@@ -1554,7 +1554,11 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self.isSdPrinting() and not self.job_on_hold and now > self._ok_timeout)) \
+				elif ((line == "" and now > self._timeout) or (self.isPrinting()
+				                                               and not self.isSdPrinting()
+				                                               and not self.job_on_hold
+				                                               and not self._long_running_command
+				                                               and not self._heating and now > self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
@@ -3543,7 +3547,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		with self._handle_mutex:
 			if self._handle is None:
-				raise ValueError("File %s is not open for reading" % self._filename)
+				self._logger.warn(u"File {} is not open for reading".format(self._filename))
+				return None, None, None
 
 			try:
 				offsets = self._offsets_callback() if self._offsets_callback is not None else None

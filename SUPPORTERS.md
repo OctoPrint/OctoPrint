@@ -23,6 +23,7 @@ thanks to everyone who contributed!
   * günter weber
   * James Seigel
   * Jeff Moe
+  * Jeff Renfer
   * Jefferson Hunt
   * Jeremiah Avery
   * Josh Daniels
@@ -54,4 +55,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 1217 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1233 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
