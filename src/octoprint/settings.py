@@ -147,7 +147,7 @@ default_settings = {
 		"triggerOkForM29": True
 	},
 	"server": {
-		"host": "0.0.0.0",
+		"host": None,
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,

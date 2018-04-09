@@ -151,7 +151,7 @@ appearance or to modify the order and presence of the various UI components:
 
          # order of settings, if settings plugins are registered gets extended internally by
          # section_plugins and all settings plugins
-         settings
+         settings:
          - section_printer
          - serial
          - printerprofiles
@@ -454,7 +454,7 @@ the estimation of the left print time during an active job utilizes this section
 .. code-block:: yaml
 
    estimation:
-     # Parameters for the print time estmation during an ongoing print job
+     # Parameters for the print time estimation during an ongoing print job
      printTime:
        # Until which percentage to do a weighted mixture of statistical duration (analysis or
        # past prints) with the result from the calculated estimate if that's already available.
