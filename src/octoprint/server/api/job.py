@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from flask import request, make_response, jsonify
 
-from octoprint.server import printer, NO_CONTENT
+from octoprint.server import printer, NO_CONTENT, current_user
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 from octoprint.server.api import api
 import octoprint.util as util
@@ -34,14 +34,16 @@ def controlJob():
 
 	tags = {"source:api", "api:job"}
 
+	user = current_user._get_current_object()
+
 	if command == "start":
 		if activePrintjob:
 			return make_response("Printer already has an active print job, did you mean 'restart'?", 409)
-		printer.start_print(tags=tags)
+		printer.start_print(tags=tags, user=user)
 	elif command == "restart":
 		if not printer.is_paused():
 			return make_response("Printer does not have an active print job or is not paused", 409)
-		printer.start_print(tags=tags)
+		printer.start_print(tags=tags, user=user)
 	elif command == "pause":
 		if not activePrintjob:
 			return make_response("Printer is neither printing nor paused, 'pause' command cannot be performed", 409)
@@ -67,5 +69,6 @@ def jobState():
 	return jsonify({
 		"job": currentData["job"],
 		"progress": currentData["progress"],
-		"state": currentData["state"]["text"]
+		"state": currentData["state"]["text"],
+		"printingUser": currentData["printingUser"],
 	})

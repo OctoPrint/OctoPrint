@@ -65,6 +65,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._state = None
 
+		self._printingUser = None
+
 		self._currentZ = None
 
 		self._printAfterSelect = False
@@ -418,7 +420,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.commands("M221 S%d" % factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
-	def select_file(self, path, sd, printAfterSelect=False, pos=None, *args, **kwargs):
+	def select_file(self, path, sd, printAfterSelect=False, user=None, pos=None, *args, **kwargs):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
@@ -436,6 +438,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._fileManager.delete_recovery_data()
 
 		self._printAfterSelect = printAfterSelect
+		self._printingUser = user
 		self._posAfterSelect = pos
 		self._comm.selectFile("/" + path if sd else path, sd,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.select_file"})
@@ -460,7 +463,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		return self._comm.getFilePosition()
 
-	def start_print(self, pos=None, *args, **kwargs):
+	def start_print(self, pos=None, user=None, *args, **kwargs):
 		"""
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -493,6 +496,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._lastProgressReport = None
 		self._updateProgressData()
 		self._setCurrentZ(None)
+		self._setPrintingUser(user)
 		self._comm.startPrint(pos=pos,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
@@ -995,6 +999,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                                           lastPrintTime=lastPrintTime,
 			                                           filament=filament))
 
+	def _setPrintingUser(self, user):
+		self._stateMonitor.set_printing_user(user)
+
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.get_current_data()
@@ -1130,7 +1137,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		if self._printAfterSelect:
 			self._printAfterSelect = False
-			self.start_print(pos=self._posAfterSelect)
+			self.start_print(pos=self._posAfterSelect, user=self._printingUser)
 
 	def on_comm_print_job_started(self):
 		payload = self._payload_for_print_job_event()
@@ -1142,6 +1149,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def on_comm_print_job_done(self):
 		self._fileManager.delete_recovery_data()
+		self._setPrintingUser(None)
 
 		payload = self._payload_for_print_job_event()
 		if payload:
@@ -1175,6 +1183,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 
 	def on_comm_print_job_failed(self):
+		self._setPrintingUser(None)
+
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
@@ -1189,6 +1199,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_print_job_cancelled(self):
 		self._setCurrentZ(None)
 		self._updateProgressData()
+		self._setPrintingUser(None)
 
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
@@ -1322,6 +1333,7 @@ class StateMonitor(object):
 		self._current_z = None
 		self._offsets = dict()
 		self._progress = None
+		self._printing_user = None
 
 		self._progress_dirty = False
 
@@ -1339,12 +1351,13 @@ class StateMonitor(object):
 			return self._on_get_progress()
 		return self._progress
 
-	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None):
+	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None, printing_user=None):
 		self.set_state(state)
 		self.set_job_data(job_data)
 		self.set_progress(progress)
 		self.set_current_z(current_z)
 		self.set_temp_offsets(offsets)
+		self.set_printing_user(printing_user)
 
 	def add_temperature(self, temperature):
 		self._on_add_temperature(temperature)
@@ -1369,6 +1382,10 @@ class StateMonitor(object):
 
 	def set_job_data(self, job_data):
 		self._job_data = job_data
+		self._change_event.set()
+
+	def set_printing_user(self, user):
+		self._printing_user = user.get_name() if user is not None else None
 		self._change_event.set()
 
 	def trigger_progress_update(self):
@@ -1415,7 +1432,8 @@ class StateMonitor(object):
 			"job": self._job_data,
 			"currentZ": self._current_z,
 			"progress": self._progress,
-			"offsets": self._offsets
+			"offsets": self._offsets,
+			"printingUser": self._printing_user,
 		}
 
 
