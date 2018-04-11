@@ -23,12 +23,24 @@ Learn more at https://faq.octoprint.org/warning-{warning_type}
 
 """
 
-ANETA8_FIRMWARE_NAME = "ANET_A8_".lower()
-ANYCUBIC_AUTHOR = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
+# Anet A8
+ANETA8_M115_TEST = lambda name, data: name and name.lower().startswith("anet_a8_")
+
+# Anycubic MEGA
+ANYCUBIC_AUTHOR1 = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
+ANYCUBIC_AUTHOR2 = "| Author: (**Jolly, xxxxxxxx.CO.**)".lower()
+ANYCUBIC_RECEIVED_TEST = lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower() or ANYCUBIC_AUTHOR2 in line.lower())
+
+# Creality CR-10s
+CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
+CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
+
+# Malyan M200 aka Monoprice Select Mini
+MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
 
 SAFETY_CHECKS = {
-	"firmware-unsafe": dict(m115=(lambda name, data: name and name.lower().startswith(ANETA8_FIRMWARE_NAME),),
-	                        received=(lambda line: line and ANYCUBIC_AUTHOR in line.lower(),),
+	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST),
+	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST),
 	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
 	                                u"thermal runaway protection). This is a fire risk.")
 }
