@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, url_for
 
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT
+from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT, current_user
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
@@ -316,6 +316,8 @@ def uploadGcodeFile(target):
 
 		reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
+		user = current_user._get_current_object()
+
 		def fileProcessingFinished(filename, absFilename, destination):
 			"""
 			Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
@@ -340,7 +342,7 @@ def uploadGcodeFile(target):
 			exact file is already selected, such reloading it.
 			"""
 			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or reselect):
-				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
+				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect, user)
 
 		try:
 			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload,
@@ -485,6 +487,8 @@ def gcodeFileCommand(filename, target):
 	if response is not None:
 		return response
 
+	user = current_user._get_current_object()
+
 	if command == "select":
 		if not _verifyFileExists(target, filename):
 			return make_response("File not found on '%s': %s" % (target, filename), 404)
@@ -505,7 +509,7 @@ def gcodeFileCommand(filename, target):
 			sd = True
 		else:
 			filenameToSelect = fileManager.path_on_disk(target, filename)
-		printer.select_file(filenameToSelect, sd, printAfterLoading)
+		printer.select_file(filenameToSelect, sd, printAfterLoading, user)
 
 	elif command == "slice":
 		if not _verifyFileExists(target, filename):
@@ -608,7 +612,7 @@ def gcodeFileCommand(filename, target):
 					sd = True
 				else:
 					filenameToSelect = fileManager.path_on_disk(target, path)
-				printer.select_file(filenameToSelect, sd, print_after_slicing)
+				printer.select_file(filenameToSelect, sd, print_after_slicing, user)
 
 		try:
 			fileManager.slice(slicer, target, filename, target, full_path,
