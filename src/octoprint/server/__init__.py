@@ -490,7 +490,7 @@ class Server(object):
 		## Tornado initialization starts here
 
 		ioloop = IOLoop()
-		ioloop.install()
+		ioloop.make_current()
 
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
 		                            session_kls=util.sockjs.ThreadSafeSession)
@@ -760,7 +760,9 @@ class Server(object):
 		except (KeyboardInterrupt, SystemExit):
 			pass
 		except:
-			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report "
+			                   "this including reproduction steps, octoprint.log and the stacktrace below in "
+			                   "OctoPrint's bugtracker. Thanks!")
 			self._logger.exception("Stacktrace follows:")
 
 	def _create_socket_connection(self, session):

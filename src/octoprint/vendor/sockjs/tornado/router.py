@@ -91,7 +91,7 @@ class SockJSRouter(object):
         self._connection = connection
 
         # Initialize io_loop
-        self.io_loop = io_loop or ioloop.IOLoop.instance()
+        self.io_loop = io_loop or ioloop.IOLoop.current()
 
         # Settings
         self.settings = DEFAULT_SETTINGS.copy()
