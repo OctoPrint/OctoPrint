@@ -581,7 +581,7 @@ Profile
    * - ``axes``
      - 0..1
      - Object
-     - Description of the printer's axes properties, one entry each for ``x``, ``y``, ``z`` and ``e`` holding maxium speed
+     - Description of the printer's axes properties, one entry each for ``x``, ``y``, ``z`` and ``e`` holding maximum speed
        and whether this axis is inverted or not.
    * - ``axes.{axis}.speed``
      - 0..1

@@ -410,8 +410,8 @@ Now look at that!
 Settings Galore: How to make parts of your plugin user adjustable
 -----------------------------------------------------------------
 
-Remember that Wikipedia link we added to our little link in the navigation bar? It links to the english Wikipedia. But
-what if we want to allow our users to adjust that according to their wishes, e.g. to link to the german language node
+Remember that Wikipedia link we added to our little link in the navigation bar? It links to the English Wikipedia. But
+what if we want to allow our users to adjust that according to their wishes, e.g. to link to the German language node
 about "Hello World" programs instead?
 
 To allow your users to customized the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
@@ -509,7 +509,7 @@ section doesn't yet exist in the file, create it):
    # [...]
 
 Restart OctoPrint. Not only should the URL displayed in the log file have changed, but also the link should now (after
-a proper shift-reload) point to the german Wikipedia node about "Hello World" programs::
+a proper shift-reload) point to the German Wikipedia node about "Hello World" programs::
 
    2015-01-30 11:47:18,634 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://de.wikipedia.org/wiki/Hallo-Welt-Programm)
 

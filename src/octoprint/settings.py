@@ -147,7 +147,7 @@ default_settings = {
 		"triggerOkForM29": True
 	},
 	"server": {
-		"host": "0.0.0.0",
+		"host": None,
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
@@ -407,7 +407,7 @@ default_settings = {
 			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
 			"preparedOks": [],
 			"okFormatString": "ok",
-			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",
+			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
 			"m115ReportCapabilities": False,
 			"capabilities": {
 				"AUTOREPORT_TEMP": True,

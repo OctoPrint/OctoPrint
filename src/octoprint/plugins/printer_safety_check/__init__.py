@@ -23,8 +23,26 @@ Learn more at https://faq.octoprint.org/warning-{warning_type}
 
 """
 
+# Anet A8
+ANETA8_M115_TEST = lambda name, data: name and name.lower().startswith("anet_a8_")
+
+# Anycubic MEGA
+ANYCUBIC_AUTHOR1 = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
+ANYCUBIC_AUTHOR2 = "| Author: (**Jolly, xxxxxxxx.CO.**)".lower()
+ANYCUBIC_RECEIVED_TEST = lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower() or ANYCUBIC_AUTHOR2 in line.lower())
+
+# Creality CR-10s
+CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
+CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
+
+# Malyan M200 aka Monoprice Select Mini
+MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
+
 SAFETY_CHECKS = {
-	"firmware-unsafe": (lambda name, data: name and name.lower().startswith("anet_a8_"),)
+	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST),
+	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST),
+	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
+	                                u"thermal runaway protection). This is a fire risk.")
 }
 
 class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
@@ -35,6 +53,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._warnings = dict()
+		self._scan_received = True
 
 	##~~ TemplatePlugin API
 
@@ -58,7 +77,8 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_event(self, event, payload):
 		if event == Events.FIRMWARE_DATA:
-			self._analyze_firmware_data(payload.get("name"), payload.get("data"))
+			self._run_checks("m115", payload.get("name"), payload.get("data"))
+			self._scan_received = False
 		elif event == Events.DISCONNECTED:
 			self._reset_warnings()
 
@@ -68,6 +88,13 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		if not Permissions.PLUGIN_PRINTER_SAFETY_CHECK_DISPLAY.can():
 			return flask.make_response("Insufficient rights", 403)
 		return flask.jsonify(self._warnings)
+
+	##~~ GCODE received hook handler
+
+	def on_gcode_received(self, comm_instance, line, *args, **kwargs):
+		if self._scan_received:
+			self._run_checks("received", line)
+		return line
 
 	# Additional permissions hook
 
@@ -81,20 +108,26 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	##~~ Helpers
 
-	def _analyze_firmware_data(self, name, data):
+	def _run_checks(self, check_type, *args, **kwargs):
 		changes = False
 
-		for warning_type, checks in SAFETY_CHECKS.items():
-			if any(x(name, data) for x in checks):
-				message = u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
-				          u"thermal runaway protection). This is a fire risk."
-				self._log_to_terminal(TERMINAL_SAFETY_WARNING.format(message="\n".join(textwrap.wrap(message, 75)),
-				                                                     warning_type=warning_type))
-				self._warnings[warning_type] = message
+		for warning_type, check_data in SAFETY_CHECKS.items():
+			checks = check_data.get(check_type)
+			message = check_data.get("message")
+			if not checks or not message:
+				continue
+
+			if any(x(*args, **kwargs) for x in checks):
+				self._register_warning(warning_type, message)
 				changes = True
 
 		if changes:
 			self._ping_clients()
+
+	def _register_warning(self, warning_type, message):
+		self._log_to_terminal(TERMINAL_SAFETY_WARNING.format(message="\n".join(textwrap.wrap(message, 75)),
+		                                                     warning_type=warning_type))
+		self._warnings[warning_type] = message
 
 	def _reset_warnings(self):
 		self._warnings.clear()
@@ -118,6 +151,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = PrinterSafetyCheckPlugin()
 __plugin_hooks__ = {
+	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
 

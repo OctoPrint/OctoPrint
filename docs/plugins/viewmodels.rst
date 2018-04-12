@@ -56,9 +56,9 @@ Example:
            // more of your view model's implementation
        }
 
-       // we don't explicitely declare a name property here
+       // we don't explicitly declare a name property here
        // our view model will be registered under "myCustomViewModel" (implicit
-       // name derived from contructor name) and "yourCustomViewModel" (explicitely
+       // name derived from constructor name) and "yourCustomViewModel" (explicitly
        // provided as additional name)
        OCTOPRINT_VIEWMODELS.push({
            construct: MyCustomViewModel,

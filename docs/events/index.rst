@@ -207,8 +207,8 @@ FolderAdded
 
    Payload:
      * ``storage``: the storage's identifier
-     * ``path``: the folders's path within its storage location
-     * ``name``: the folders's name
+     * ``path``: the folder's path within its storage location
+     * ``name``: the folder's name
 
    .. note::
 
@@ -220,8 +220,8 @@ FolderRemoved
 
    Payload:
      * ``storage``: the storage's identifier
-     * ``path``: the folders's path within its storage location
-     * ``name``: the folders's name
+     * ``path``: the folder's path within its storage location
+     * ``name``: the folder's name
 
    .. note::
 

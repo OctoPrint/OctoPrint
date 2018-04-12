@@ -85,7 +85,7 @@
 .. js:function:: OctoPrintClient.socket.onRateTooHigh(measured, maximum)
 
    Called by the socket client when the last measured round trip time was higher than the
-   current upper procesisng limit, indicating that the messages are now processed slower than
+   current upper processing limit, indicating that the messages are now processed slower than
    the current rate requires and a slower rate might be necessary.
 
    Can be overwritten with custom handler methods. The default implementation will call
