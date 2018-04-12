@@ -499,7 +499,7 @@ class FilebasedUserManager(UserManager):
 	def _migrate_roles_to_groups(self, roles):
 		# If admin is inside the roles, just return admin group
 		if "admin" in roles:
-			return [self._group_manager.admin_group]
+			return [self._group_manager.admin_group, self._group_manager.user_group]
 		else:
 			return [self._group_manager.user_group]
 
