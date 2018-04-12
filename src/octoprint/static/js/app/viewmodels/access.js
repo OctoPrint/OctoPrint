@@ -327,6 +327,7 @@ $(function() {
             self.currentGroup = ko.observable(self.emptyGroup);
 
             self.editor = {
+                key: ko.observable(undefined),
                 name: ko.observable(undefined),
                 description: ko.observable(undefined),
                 permissions: ko.observableArray([]),
@@ -361,7 +362,7 @@ $(function() {
                     return;
 
                 oldValue.forEach(function (p) {
-                    delete self[p.name.toUpperCase()];
+                    delete self[p.key.toUpperCase()];
                 });
             }, null, "beforeChange");
 
@@ -382,7 +383,7 @@ $(function() {
 
                     // if the permission has no need sets do not register it.
                     if (needs.length > 0) {
-                        self.registerGroup(g.name.toUpperCase(), needs);
+                        self.registerGroup(g.key.toUpperCase(), needs);
                     }
                 });
             });
@@ -398,6 +399,7 @@ $(function() {
             self.currentGroup.subscribe(function(newValue) {
                 if (newValue === undefined) {
                     // group add
+                    self.editor.key(undefined);
                     self.editor.name(undefined);
                     self.editor.description(undefined);
                     self.editor.permissions([]);
@@ -407,6 +409,7 @@ $(function() {
                     self.editor.confirm = self.confirmAddGroup
                 } else {
                     // group update
+                    self.editor.key(newValue.key);
                     self.editor.name(newValue.name);
                     self.editor.description(newValue.description);
                     self.editor.permissions(newValue.permissions.slice(0));
@@ -428,9 +431,9 @@ $(function() {
                 var lookup = {};
                 var defaults = [];
                 _.each(response.groups, function(group) {
-                    lookup[group.name] = group;
+                    lookup[group.key] = group;
                     if (group.default) {
-                        defaults.push(group.name);
+                        defaults.push(group.key);
                     }
                 });
                 self.lookup = lookup;
@@ -444,6 +447,7 @@ $(function() {
 
             self.confirmAddGroup = function() {
                 var group = {
+                    key: self.editor.name().toLowerCase().replace(/[^a-z0-9_ ]/g, "").replace(/ /g, "_"),
                     name: self.editor.name(),
                     description: self.editor.description(),
                     permissions: self.editor.permissions(),
@@ -468,7 +472,7 @@ $(function() {
             self.confirmEditGroup = function() {
                 var group = self.currentGroup();
 
-                var data = { name: group.name };
+                var data = { key: group.key, name: group.name };
 
                 if (group.description !== self.editor.description()) {
                     data.description = self.editor.description();
@@ -520,7 +524,7 @@ $(function() {
                     message: _.sprintf(gettext("You are about to delete the group \"%(name)s\"."), {name: group.name}),
                     proceed: gettext("Delete"),
                     onproceed: function() {
-                        OctoPrint.access.groups.delete(group.name).done(function(response) {
+                        OctoPrint.access.groups.delete(group.key).done(function(response) {
                             self.fromResponse(response);
                             access.users.requestData();
                         });
@@ -635,8 +639,11 @@ $(function() {
             if (data.groups === undefined)
                 return "";
 
-            data.groups.sort();
-            return data.groups.join(", ");
+            var mappedGroups = _.filter(_.map(data.groups, function(g) { return access.groups.lookup[g] }), function(g) { return g !== undefined });
+            mappedGroups.sort(access.groupComparator);
+            return _.map(mappedGroups, function(g) {
+                return g.name;
+            }).join(", ");
         };
 
         // Maps the permission names into a comma separated list

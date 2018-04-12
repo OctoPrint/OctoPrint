@@ -45,13 +45,13 @@
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
-                <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Group name') }}</label>
+                <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Name') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="disable: !$root.access.groups.editor.new(), value: $root.access.groups.editor.name" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="disable: !$root.access.groups.editor.new(), textInput: $root.access.groups.editor.name" required>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Group description') }}</label>
+                <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Description') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editor.description">
                 </div>

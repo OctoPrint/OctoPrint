@@ -1,12 +1,10 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask_login import UserMixin, AnonymousUserMixin
-from flask_principal import Identity
 from werkzeug.local import LocalProxy
 import hashlib
 import os
@@ -16,6 +14,8 @@ import wrapt
 import time
 
 import logging
+
+# noinspection PyCompatibility
 from builtins import range, bytes
 
 from octoprint.settings import settings
@@ -239,7 +239,7 @@ class UserManager(GroupChangeListener, object):
 		return False
 
 	def on_group_removed(self, group):
-		self._logger.debug("Group {} got removed, removing from all users".format(group.get_name()))
+		self._logger.debug("Group {} got removed, removing from all users".format(group.key))
 		self.remove_groups_from_users([group])
 
 	def on_group_permissions_changed(self, group, added=None, removed=None):
@@ -504,7 +504,7 @@ class FilebasedUserManager(UserManager):
 			return [self._group_manager.user_group]
 
 	def _refresh_groups(self, user):
-		user._groups = self._to_groups(*map(lambda g: g.get_name(), user.groups))
+		user._groups = self._to_groups(*map(lambda g: g.key, user.groups))
 
 	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
@@ -769,7 +769,7 @@ class FilebasedUserManager(UserManager):
 		              [Permissions.find(permission) for permission in permissions])
 
 	def _from_groups(self, *groups):
-		return [group.get_name() for group in groups]
+		return [group.key for group in groups]
 
 	def _from_permissions(self, *permissions):
 		return [permission.key for permission in permissions]
@@ -888,7 +888,7 @@ class User(UserMixin):
 			"name": self._username,
 			"active": bool(self.is_active),
 			"permissions": map(lambda p: p.key, self._permissions),
-			"groups": map(lambda g: g.get_name(), self._groups),
+			"groups": map(lambda g: g.key, self._groups),
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
 			"apikey": self._apikey,
 			"settings": self._settings,
@@ -1039,21 +1039,24 @@ class User(UserMixin):
 	@property
 	def needs(self):
 		needs = set()
-		permissions = self.permissions
-		for group in self.groups:
-			if group is not None:
-				permissions += group.permissions
 
-		for permission in permissions:
+		for permission in self.permissions:
 			if permission is not None:
 				needs = needs.union(permission.needs)
+
+		for group in self.groups:
+			if group is not None:
+				needs = needs.union(group.needs)
 
 		return needs
 
 	def has_permission(self, permission):
+		return self.has_needs(*permission.needs)
+
+	def has_needs(self, *needs):
 		if Permissions.ADMIN in self._permissions:
 			return True
-		return permission.needs.issubset(self.needs)
+		return set(needs).issubset(self.needs)
 
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=True,admin=%r,permissions=%s,groups=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._permissions, self._groups)

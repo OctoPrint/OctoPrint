@@ -48,11 +48,15 @@
     };
 
     OctoPrintAccessGroupsClient.prototype.add = function (group, opts) {
+        if (!group.key) {
+            throw new OctoPrintClient.InvalidArgumentError("group key must be set");
+        }
         if (!group.name) {
-            throw new OctoPrintClient.InvalidArgumentError("group name need to be set");
+            throw new OctoPrintClient.InvalidArgumentError("group name must be set");
         }
 
         var data = {
+            key: group.key,
             name: group.name,
             description: group.description,
             permissions: group.permissions,
@@ -62,17 +66,17 @@
         return this.base.postJson(this.url(), data, opts);
     };
 
-    OctoPrintAccessGroupsClient.prototype.get = function (name, opts) {
-        if (!name) {
-            throw new OctoPrintClient.InvalidArgumentError("group name must be set");
+    OctoPrintAccessGroupsClient.prototype.get = function (key, opts) {
+        if (!key) {
+            throw new OctoPrintClient.InvalidArgumentError("group key must be set");
         }
 
-        return this.base.get(this.url(name), opts);
+        return this.base.get(this.url(key), opts);
     };
 
     OctoPrintAccessGroupsClient.prototype.update = function (group, opts) {
-        if (!group.name) {
-            throw new OctoPrintClient.InvalidArgumentError("group name must be set");
+        if (!group.key) {
+            throw new OctoPrintClient.InvalidArgumentError("group key must be set");
         }
 
         var data = {
@@ -80,15 +84,15 @@
             permissions: group.permissions,
             default: group.default
         };
-        return this.base.putJson(this.url(group.name), data, opts);
+        return this.base.putJson(this.url(group.key), data, opts);
     };
 
-    OctoPrintAccessGroupsClient.prototype.delete = function (name, opts) {
-        if (!name) {
-            throw new OctoPrintClient.InvalidArgumentError("group name must be set");
+    OctoPrintAccessGroupsClient.prototype.delete = function (key, opts) {
+        if (!key) {
+            throw new OctoPrintClient.InvalidArgumentError("group key must be set");
         }
 
-        return this.base.delete(this.url(name), opts);
+        return this.base.delete(this.url(key), opts);
     };
 
     //~~ users client api

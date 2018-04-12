@@ -44,38 +44,41 @@ def add_group():
 	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
+	if not "key" in data:
+		return make_response("Missing mandatory key field", 400)
 	if not "name" in data:
 		return make_response("Missing mandatory name field", 400)
 	if not "permissions" in data:
 		return make_response("Missing mandatory permissions field", 400)
 
+	key = data["key"]
 	name = data["name"]
 	description = data.get("description", "")
 	permissions = data["permissions"]
 	default = data.get("default", False)
 
 	try:
-		groupManager.add_group(name, description=description, permissions=permissions, default=default)
+		groupManager.add_group(key, name, description=description, permissions=permissions, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return get_groups()
 
 
-@api.route("/access/groups/<groupname>", methods=["GET"])
+@api.route("/access/groups/<key>", methods=["GET"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def get_group(groupname):
-	group = groupManager.find_group(groupname)
+def get_group(key):
+	group = groupManager.find_group(key)
 	if group is not None:
 		return jsonify(group)
 	else:
 		abort(404)
 
 
-@api.route("/access/groups/<groupname>", methods=["PUT"])
+@api.route("/access/groups/<key>", methods=["PUT"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def update_group(groupname):
+def update_group(key):
 	if "application/json" not in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
@@ -96,7 +99,7 @@ def update_group(groupname):
 		if "description" in data:
 			kwargs["description"] = data["description"]
 
-		groupManager.update_group(groupname, **kwargs)
+		groupManager.update_group(key, **kwargs)
 
 		return get_groups()
 	except groups.GroupCantBeChanged:
@@ -105,12 +108,12 @@ def update_group(groupname):
 		abort(404)
 
 
-@api.route("/access/groups/<groupname>", methods=["DELETE"])
+@api.route("/access/groups/<key>", methods=["DELETE"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def remove_group(groupname):
+def remove_group(key):
 	try:
-		groupManager.remove_group(groupname)
+		groupManager.remove_group(key)
 		return get_groups()
 	except groups.UnknownGroup:
 		abort(404)

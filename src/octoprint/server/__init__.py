@@ -67,17 +67,17 @@ connectivityChecker = None
 principals = Principal(app)
 
 import octoprint.access.permissions as permissions
+import octoprint.access.groups as groups
 
-# we set admin_permission to Permissions.ADMIN
+# we set admin_permission to a GroupPermission with the default admin group
 admin_permission = util.variable_deprecated("admin_permission has been deprecated, "
                                             "please use individual Permissions instead",
-                                            since="1.4.0")(permissions.Permissions.SETTINGS)
+                                            since="1.4.0")(groups.GroupPermission(groups.ADMIN_GROUP))
 
-# we set user_permission to Permissions.STATUS, since that's the minimal permission a logged in user should
-# probably have
+# we set user_permission to a GroupPermission with the default user group
 user_permission = util.variable_deprecated("user_permission has been deprecated, "
                                            "please use individual Permissions instead",
-                                           since="1.4.0")(permissions.Permissions.STATUS)
+                                           since="1.4.0")(groups.GroupPermission(groups.USER_GROUP))
 
 # only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
