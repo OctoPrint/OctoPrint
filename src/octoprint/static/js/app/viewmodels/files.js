@@ -276,6 +276,20 @@ $(function() {
 
             self.allItems(files);
 
+            // Sanity check file list - see #2572
+            var nonrecursive = false;
+            _.each(files, function(file) {
+                if (file.type === "folder" && file.children === undefined) {
+                    nonrecursive = true;
+                }
+            });
+            if (nonrecursive) {
+                log.error("At least one folder doesn't have a 'children' element defined. That means the file list request " +
+                    "wasn't actually made with 'recursive=true' in the query.\n\n" +
+                    "This can happen on wrong reverse proxy configs that " +
+                    "swallow up query parameters, see https://github.com/foosel/OctoPrint/issues/2572");
+            }
+
             if (!switchToPath) {
                 var currentPath = self.currentPath();
                 if (currentPath === undefined) {
@@ -318,6 +332,11 @@ $(function() {
         };
 
         self.changeFolder = function(data) {
+            if (data.children === undefined) {
+                log.error("Can't switch to folder '" + data.path + "', no children available");
+                return;
+            }
+
             self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
             self.highlightCurrentFilename();
