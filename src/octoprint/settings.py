@@ -238,7 +238,7 @@ default_settings = {
 		"pollWatched": False,
 		"modelSizeDetection": True,
 		"printCancelConfirmation": True,
-		"autoUppercaseBlacklist": ["M117"],
+		"autoUppercaseBlacklist": ["M117", "M118"],
 		"g90InfluencesExtruder": False
 	},
 	"folder": {

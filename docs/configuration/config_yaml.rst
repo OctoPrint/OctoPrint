@@ -560,6 +560,7 @@ Use the following settings to enable or disable OctoPrint features:
      # Defaults to only M117.
      autoUppercaseBlacklist:
      - M117
+     - M118
 
 .. _sec-configuration-config_yaml-folder:
 
