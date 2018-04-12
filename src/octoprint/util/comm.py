@@ -192,7 +192,7 @@ Groups will be as follows:
   * ``value``: reported position value
 """
 
-regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
+regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):\s*")
 """Regex to use for splitting M115 responses."""
 
 regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
@@ -1663,7 +1663,7 @@ class MachineCom(object):
 							pass
 
 				##~~ firmware name & version
-				elif "NAME:" in line:
+				elif "NAME:" in line or line.startswith("NAME."):
 					# looks like a response to M115
 					data = parse_firmware_line(line)
 					firmware_name = data.get("FIRMWARE_NAME")
@@ -1673,7 +1673,11 @@ class MachineCom(object):
 						# report its firmware name properly in response to M115. Wonderful - why stick to established
 						# protocol when you can do your own thing, right?
 						#
-						# Example: NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
+						# Examples:
+						#
+						#     NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
+						#     NAME. Malyan	VER: 3.8	MODEL: M100	HW: HB02
+						#     NAME. Malyan VER: 3.7 MODEL: M300 HW: HG01
 						#
 						# We do a bit of manual fiddling around here to circumvent that issue and get ourselves a
 						# reliable firmware name (NAME + VER) out of the Malyan M115 response.
@@ -4014,10 +4018,16 @@ def parse_firmware_line(line):
 	    dict: a dictionary with the parsed data
 	"""
 
+	if line.startswith("NAME."):
+		# Good job Malyan. Why use a : when you can also just use a ., right? Let's revert that.
+		line = list(line)
+		line[4] = ":"
+		line = "".join(line)
+
 	result = dict()
 	split_line = regex_firmware_splitter.split(line.strip())[1:] # first entry is empty start of trimmed string
 	for key, value in chunks(split_line, 2):
-		result[key] = value
+		result[key] = value.strip()
 	return result
 
 def parse_capability_line(line):

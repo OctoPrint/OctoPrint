@@ -403,7 +403,7 @@ default_settings = {
 			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
 			"preparedOks": [],
 			"okFormatString": "ok",
-			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",
+			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
 			"m115ReportCapabilities": False,
 			"capabilities": {
 				"AUTOREPORT_TEMP": True,

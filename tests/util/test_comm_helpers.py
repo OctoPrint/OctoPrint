@@ -259,7 +259,20 @@ class TestCommHelpers(unittest.TestCase):
 
 	@data(
 		("KEY1:Value 1 FIRMWARE_NAME:Some Firmware With Spaces KEY2:Value 2",
-		 dict(KEY1="Value 1", KEY2="Value 2", FIRMWARE_NAME="Some Firmware With Spaces"))
+		 dict(KEY1="Value 1", KEY2="Value 2", FIRMWARE_NAME="Some Firmware With Spaces")),
+		("NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02",
+		 dict(NAME="Malyan", VER="2.9", MODEL="M200", HW="HA02")),
+		("NAME. Malyan	VER: 3.8	MODEL: M100	HW: HB02",
+		 dict(NAME="Malyan", VER="3.8", MODEL="M100", HW="HB02")),
+		("NAME. Malyan VER: 3.7 MODEL: M300 HW: HG01",
+		 dict(NAME="Malyan", VER="3.7", MODEL="M300", HW="HG01")),
+		("FIRMWARE_NAME:Marlin 1.1.0 From Archive SOURCE_CODE_URL:http:// ... PROTOCOL_VERSION:1.0 MACHINE_TYPE:www.cxsw3d.com EXTRUDER_COUNT:1 UUID:00000000-0000-0000-0000-000000000000",
+		 dict(FIRMWARE_NAME="Marlin 1.1.0 From Archive", 
+		      SOURCE_CODE_URL="http:// ...", 
+		      PROTOCOL_VERSION="1.0", 
+		      MACHINE_TYPE="www.cxsw3d.com", 
+		      EXTRUDER_COUNT="1", 
+		      UUID="00000000-0000-0000-0000-000000000000"))
 	)
 	@unpack
 	def test_parse_firmware_line(self, line, expected):
