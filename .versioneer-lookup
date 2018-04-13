@@ -11,6 +11,7 @@
 master
 meta/.*
 rc/.*
+hotfix/.*
 prerelease
 
 # neither should disconnected checkouts, e.g. 'git checkout <tag>'
