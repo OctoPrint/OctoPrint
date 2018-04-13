@@ -744,21 +744,32 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			printTime = self._comm.getPrintTime()
 			cleanedPrintTime = self._comm.getCleanedPrintTime()
 
-		statisticalTotalPrintTime = None
-		statisticalTotalPrintTimeType = None
-		with self._selectedFileMutex:
-			if self._selectedFile and "estimatedPrintTime" in self._selectedFile \
-					and self._selectedFile["estimatedPrintTime"]:
-				statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
-				statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
-
-		printTimeLeft, printTimeLeftOrigin = self._estimatePrintTimeLeft(progress, printTime, cleanedPrintTime, statisticalTotalPrintTime, statisticalTotalPrintTimeType)
-
 		if progress is not None:
 			progress_int = int(progress * 100)
 			if self._lastProgressReport != progress_int:
 				self._lastProgressReport = progress_int
 				self._reportPrintProgressToPlugins(progress_int)
+
+			if progress == 0:
+				printTimeLeft = None
+				printTimeLeftOrigin = None
+			elif progress == 1.0:
+				printTimeLeft = 0
+				printTimeLeftOrigin = None
+			else:
+				statisticalTotalPrintTime = None
+				statisticalTotalPrintTimeType = None
+				with self._selectedFileMutex:
+					if self._selectedFile and "estimatedPrintTime" in self._selectedFile \
+							and self._selectedFile["estimatedPrintTime"]:
+						statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
+						statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
+
+				printTimeLeft, printTimeLeftOrigin = self._estimatePrintTimeLeft(progress,
+				                                                                 printTime,
+				                                                                 cleanedPrintTime,
+				                                                                 statisticalTotalPrintTime,
+				                                                                 statisticalTotalPrintTimeType)
 
 		return self._dict(completion=progress * 100 if progress is not None else None,
 		                  filepos=filepos,
