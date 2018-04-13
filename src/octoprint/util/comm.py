@@ -22,55 +22,6 @@ import logging
 
 import serial
 
-# TODO 1.3.8 remove after pyserial upgrade to 3.4
-try:
-	serial.Timeout(0)
-except AttributeError:
-	# pyserial < 3.2: add backported Timeout abstraction, slightly modified since we have monotonic available
-
-	from octoprint.util import monotonic_time
-	class _Timeout(object):
-		def __init__(self, duration):
-			"""Initialize a timeout with given duration"""
-			self.is_infinite = (duration is None)
-			self.is_non_blocking = (duration == 0)
-			self.duration = duration
-			if duration is not None:
-				self.target_time = monotonic_time() + duration
-			else:
-				self.target_time = None
-
-		def expired(self):
-			"""Return a boolean, telling if the timeout has expired"""
-			return self.target_time is not None and self.time_left() <= 0
-
-		def time_left(self):
-			"""Return how many seconds are left until the timeout expires"""
-			if self.is_non_blocking:
-				return 0
-			elif self.is_infinite:
-				return None
-			else:
-				delta = self.target_time - monotonic_time()
-				if delta > self.duration:
-					# clock jumped, recalculate
-					self.target_time = monotonic_time() + self.duration
-					return self.duration
-				else:
-					return max(0, delta)
-
-		def restart(self, duration):
-			"""\
-			Restart a timeout, only supported if a timeout was already set up
-			before.
-			"""
-			self.duration = duration
-			self.target_time = monotonic_time() + duration
-
-	serial.Timeout = _Timeout
-	del _Timeout
-
-
 import wrapt
 
 import octoprint.plugin
@@ -2309,13 +2260,13 @@ class MachineCom(object):
 				serial_obj = serial.Serial(str(port),
 				                           baudrates[0],
 				                           timeout=read_timeout,
-				                           writeTimeout=10000, # TODO 1.3.8 rename to write_timeout for pyserial >= 3.x
+				                           write_timeout=10000,
 				                           parity=serial.PARITY_ODD)
 			else:
 				serial_obj = serial.Serial(str(port),
 				                           baudrate,
 				                           timeout=read_timeout,
-				                           writeTimeout=10000, # TODO 1.3.8 rename to write_timeout for pyserial >= 3.x
+				                           write_timeout=10000,
 				                           parity=serial.PARITY_ODD)
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
@@ -4343,7 +4294,7 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 
 		while True:
 			# make sure we always read everything that is waiting
-			data += bytearray(self.read(self.inWaiting())) # TODO 1.3.8 migrate to in_waiting after pyserial upgrade to 3.4
+			data += bytearray(self.read(self.in_waiting))
 
 			# check for terminator, if it's there we have found our line
 			termpos = data.find(terminator)
