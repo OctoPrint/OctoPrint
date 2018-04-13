@@ -20,7 +20,8 @@ INSTALL_REQUIRES = [
 	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
-	"sockjs-tornado>=1.0.3,<1.1",
+	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
+	                               # vendored one
 	"PyYAML>=3.12,<3.13",
 	"Flask-Login>=0.4,<0.5",
 	"Flask-Principal>=0.4,<0.5",
@@ -37,7 +38,8 @@ INSTALL_REQUIRES = [
 	"pkginfo>=1.4.1,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.6.0,<2.7",
-	"psutil>=5.4.1,<6",
+	"psutil==5.4.3", # 5.4.4 introduced a breaking change concerning installing under non current
+	                 # setuptools versions. Pinning to 5.4.3 for now to work around this.
 	"Click>=6.7,<6.8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",

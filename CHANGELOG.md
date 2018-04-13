@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.3.8 (2018-04-13)
+
+### Bug fixes
+
+  * [#2577](https://github.com/foosel/OctoPrint/issues/2577) - Pin `psutil` dependency to version 5.4.3 since 5.4.4 as released today introduces a breaking change.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.7...1.3.8))
+
 ## 1.3.7 (2018-04-09)
 
 ### Improvements
