@@ -18,11 +18,11 @@ prerelease
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.3.8
+# maintenance is currently the branch for preparation of maintenance release 1.3.9
 # so are any fix/... and improve/... branches
-maintenance 1.3.8 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
-fix/.* 1.3.8 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
-improve/.* 1.3.8 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
+maintenance 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
+fix/.* 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
+improve/.* 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.3.7rc5
 # so is regressionfix/...
