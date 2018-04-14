@@ -91,6 +91,14 @@
         return params;
     };
 
+    var replaceUndefinedWithNull = function(key, value) {
+        if (value === undefined) {
+            return null;
+        } else {
+            return value;
+        }
+    };
+
     OctoPrintClient.prototype.getBaseUrl = function() {
         var url = this.options.baseurl;
         if (!_.endsWith(url, "/")) {
@@ -165,7 +173,7 @@
     };
 
     OctoPrintClient.prototype.postJson = function(url, data, opts) {
-        return this.post(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.post(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.put = function(url, data, opts) {
@@ -173,7 +181,7 @@
     };
 
     OctoPrintClient.prototype.putJson = function(url, data, opts) {
-        return this.put(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.put(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.patch = function(url, data, opts) {
@@ -181,7 +189,7 @@
     };
 
     OctoPrintClient.prototype.patchJson = function(url, data, opts) {
-        return this.patch(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.patch(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.delete = function(url, opts) {

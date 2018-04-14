@@ -558,7 +558,7 @@ class SlicingManager(object):
 			raise SlicerNotConfigured(slicer)
 
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
-		return self.get_slicer(slicer).get_slicer_profiles(slicer_profile_path)
+		return self.get_slicer(slicer, require_configured=False).get_slicer_profiles(slicer_profile_path)
 
 	def profiles_last_modified(self, slicer):
 		"""
@@ -575,7 +575,7 @@ class SlicingManager(object):
 			raise UnknownSlicer(slicer)
 
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
-		return self.get_slicer(slicer).get_slicer_profiles_lastmodified(slicer_profile_path)
+		return self.get_slicer(slicer, require_configured=False).get_slicer_profiles_lastmodified(slicer_profile_path)
 
 	def get_slicer_profile_path(self, slicer):
 		"""

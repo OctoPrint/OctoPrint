@@ -27,6 +27,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self.updateItems = function(items) {
+        if (items === undefined) items = [];
         self.allItems = items;
         self.allSize(items.length);
         self._updateItems();
@@ -911,15 +912,12 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
  * and is optimized to check for value changes, not key updates.
  */
 function hasDataChanged(data, oldData) {
-    if (data == undefined) {
+    // noinspection EqualityComparisonWithCoercionJS
+    if (data == oldData && data == undefined) {
         return false;
     }
 
-    if (oldData == undefined) {
-        return true;
-    }
-
-    if (_.isPlainObject(data)) {
+    if (_.isPlainObject(data) && _.isPlainObject(oldData)) {
         return _.any(_.keys(data), function(key) {return hasDataChanged(data[key], oldData[key]);});
     } else {
         return !_.isEqual(data, oldData);
@@ -956,10 +954,12 @@ function hasDataChanged(data, oldData) {
  * and is optimized to check for value changes, not key updates.
  */
 function getOnlyChangedData(data, oldData) {
+    // noinspection EqualityComparisonWithCoercionJS
     if (data == undefined) {
         return {};
     }
 
+    // noinspection EqualityComparisonWithCoercionJS
     if (oldData == undefined) {
         return data;
     }
@@ -972,17 +972,20 @@ function getOnlyChangedData(data, oldData) {
         var retval = {};
         _.forOwn(root, function(value, key) {
             var oldValue = undefined;
+            // noinspection EqualityComparisonWithCoercionJS
             if (oldRoot != undefined && oldRoot.hasOwnProperty(key)) {
                 oldValue = oldRoot[key];
             }
             if (_.isPlainObject(value)) {
+                // noinspection EqualityComparisonWithCoercionJS
                 if (oldValue == undefined) {
                     retval[key] = value;
                 } else if (hasDataChanged(value, oldValue)) {
                     retval[key] = f(value, oldValue);
                 }
             } else {
-                if (!_.isEqual(value, oldValue)) {
+                // noinspection EqualityComparisonWithCoercionJS
+                if (!(value == oldValue && value == undefined) && !_.isEqual(value, oldValue)) {
                     retval[key] = value;
                 }
             }

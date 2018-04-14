@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-03-19 13:41+0100\n"
-"PO-Revision-Date: 2018-03-19 13:42+0100\n"
+"POT-Creation-Date: 2018-04-03 17:40+0200\n"
+"PO-Revision-Date: 2018-04-03 17:40+0200\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -623,6 +623,10 @@ msgstr "Profil entfernen"
 #: src/octoprint/plugins/discovery/__init__.py:688
 msgid "Without this plugin your OctoPrint instance will no longer be discoverable on the network via Bonjour and uPnP."
 msgstr "Ohne dieses Plugin wird deine OctoPrint Instanz nicht mehr in deinem Netzwerk mittels Bonjour oder uPnP automatisch auffindbar sein."
+
+#: src/octoprint/plugins/logging/__init__.py:204
+msgid "Without this plugin you will no longer be able to retrieve OctoPrint's logs or modify the current logging levels through the web interface."
+msgstr "Ohne dieses Plugin kannst du OctoPrints Logfiles nicht mehr über das Webinterface herunterladen und auch die aktuellen Loglevel modifizieren."
 
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:1
 msgid "Logs"
@@ -1532,8 +1536,8 @@ msgstr "OctoPrint Release Channel"
 
 #: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/releaseChannel.jinja2:5
 #, python-format
-msgid "Make sure you have read <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"Using Release Channels\"</a> before switching to a release channel other than \"Stable\""
-msgstr "Stelle sicher, dass du <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"Using Release Channels\"</a> gelesen hast, bevor du einen anderen Release Channel als \"Stable\" auswählst."
+msgid "Make sure you have read <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"How to use the release channels to help test release candidates\"</a> before switching to a release channel other than \"Stable\""
+msgstr "Stelle sicher, dass du <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"How to use the release channels to help test release candidates\"</a> gelesen hast, bevor du einen anderen Release Channel als \"Stable\" auswählst."
 
 #: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/versionTracking.jinja2:2
 msgid "OctoPrint version tracking"

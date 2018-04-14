@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import uuid
-from sockjs.tornado import SockJSRouter
+from octoprint.vendor.sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
 from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
@@ -71,6 +71,7 @@ import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
 import octoprint.util
+import octoprint.util.net
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
@@ -160,7 +161,7 @@ def unauthorized_user():
 
 class Server(object):
 	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
-	             event_manager=None, host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False,
+	             event_manager=None, host=None, port=None, debug=False, safe_mode=False, allow_root=False,
 	             octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
@@ -217,12 +218,30 @@ class Server(object):
 		debug = self._debug
 		safe_mode = self._safe_mode
 
+		if self._host is None:
+			host = self._settings.get(["server", "host"])
+			if host is None:
+				if octoprint.util.net.HAS_V6:
+					host = "::"
+				else:
+					host = "0.0.0.0"
+
+			self._host = host
+
+		if ":" in self._host and not octoprint.util.net.HAS_V6:
+			raise RuntimeError("IPv6 host address {!r} configured but system doesn't support IPv6".format(self._host))
+
+		if self._port is None:
+			self._port = self._settings.getInt(["server", "port"])
+			if self._port is None:
+				self._port = 5000
+
 		self._logger = logging.getLogger(__name__)
 		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
 		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		util.tornado.fix_json_encode()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -470,13 +489,8 @@ class Server(object):
 
 		## Tornado initialization starts here
 
-		if self._host is None:
-			self._host = self._settings.get(["server", "host"])
-		if self._port is None:
-			self._port = self._settings.getInt(["server", "port"])
-
 		ioloop = IOLoop()
-		ioloop.install()
+		ioloop.make_current()
 
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
 		                            session_kls=util.sockjs.ThreadSafeSession)
@@ -617,8 +631,18 @@ class Server(object):
 		self._stop_intermediary_server()
 
 		# initialize and bind the server
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
-		self._server.listen(self._port, address=self._host)
+		trusted_downstream = self._settings.get(["server", "reverseProxy", "trustedDownstream"])
+		if not isinstance(trusted_downstream, list):
+			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
+			trusted_downstreams = []
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
+		                                             max_body_sizes=max_body_sizes,
+		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                                             xheaders=True,
+		                                             trusted_downstream=trusted_downstream)
+		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
+		                                                                                    # only listens on v4 & v6
+		                                                                                    # if we use None as address
 
 		### From now on it's ok to launch subprocesses again
 
@@ -663,7 +687,8 @@ class Server(object):
 
 		# prepare our after startup function
 		def on_after_startup():
-			self._logger.info("Listening on http://%s:%d" % (self._host, self._port))
+			self._logger.info("Listening on http://{}:{}".format(self._host if not ":" in self._host else "[" + self._host + "]",
+			                                                     self._port))
 
 			if safe_mode and self._settings.getBoolean(["server", "startOnceInSafeMode"]):
 				self._logger.info("Server started successfully in safe mode as requested from config, removing flag")
@@ -735,7 +760,9 @@ class Server(object):
 		except (KeyboardInterrupt, SystemExit):
 			pass
 		except:
-			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report "
+			                   "this including reproduction steps, octoprint.log and the stacktrace below in "
+			                   "OctoPrint's bugtracker. Thanks!")
 			self._logger.exception("Stacktrace follows:")
 
 	def _create_socket_connection(self, session):
@@ -784,7 +811,8 @@ class Server(object):
 		timer.start()
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, OctoPrintJsonEncoder
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, \
+			OctoPrintFlaskResponse, OctoPrintJsonEncoder, OctoPrintSessionInterface
 
 		s = settings()
 
@@ -819,6 +847,7 @@ class Server(object):
 		OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
 		app.request_class = OctoPrintFlaskRequest
 		app.response_class = OctoPrintFlaskResponse
+		app.session_interface = OctoPrintSessionInterface()
 
 		@app.before_request
 		def before_request():
@@ -1314,25 +1343,13 @@ class Server(object):
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		if self._settings.getBoolean(["feature", "legacyPluginAssets"]):
-			# TODO remove again in 1.3.8
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces Bundle instances"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = Bundle(*assets, filters=filters)
-				return result
-
-		else:
-			def js_bundles_for_plugins(collection, filters=None):
-				"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
-				result = OrderedDict()
-				for plugin, assets in collection.items():
-					if len(assets):
-						result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
-				return result
-
+		def js_bundles_for_plugins(collection, filters=None):
+			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
+			result = OrderedDict()
+			for plugin, assets in collection.items():
+				if len(assets):
+					result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
+			return result
 
 		js_core = dynamic_core_assets["js"] + \
 		    all_assets_for_plugins(dynamic_plugin_assets["bundled"]["js"]) + \
@@ -1441,6 +1458,8 @@ class Server(object):
 	def _setup_login_manager(self):
 		util.flask.fix_flask_login_remote_address()
 
+		global loginManager
+
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
@@ -1459,15 +1478,10 @@ class Server(object):
 		import BaseHTTPServer
 		import SimpleHTTPServer
 		import threading
+		import socket
 
 		host = self._host
 		port = self._port
-		if host is None:
-			host = self._settings.get(["server", "host"])
-		if port is None:
-			port = self._settings.getInt(["server", "port"])
-
-		self._logger.debug("Starting intermediary server on {}:{}".format(host, port))
 
 		class IntermediaryServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 			def __init__(self, rules=None, *args, **kwargs):
@@ -1524,9 +1538,27 @@ class Server(object):
 
 		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
 
-		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port),
-		                                                      lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),
-		                                                      bind_and_activate=False)
+		class HTTPServerV6(BaseHTTPServer.HTTPServer):
+			address_family = socket.AF_INET6
+
+			def __init__(self, *args, **kwargs):
+				BaseHTTPServer.HTTPServer.__init__(self, *args, **kwargs)
+
+				# make sure to enable dual stack mode, otherwise the socket might only listen on IPv6
+				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 0)
+
+		if ":" in host:
+			# v6
+			ServerClass = HTTPServerV6
+		else:
+			# v4
+			ServerClass = BaseHTTPServer.HTTPServer
+
+		self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
+
+		self._intermediary_server = ServerClass((host, port),
+		                                        lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),
+		                                        bind_and_activate=False)
 
 		# if possible, make sure our socket's port descriptor isn't handed over to subprocesses
 		from octoprint.util.platform import set_close_exec

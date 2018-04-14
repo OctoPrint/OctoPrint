@@ -19,18 +19,16 @@ INSTALL_REQUIRES = [
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
 	"werkzeug>=0.8.3,<0.9",
-	"tornado==4.0.2", # pinned for now, we need to migrate to a newer tornado, but due
-	                  # to some voodoo needed to get large streamed uploads and downloads
-	                  # to work that is probably not completely straightforward and therefore
-	                  # something for post-1.3.0-stable release
-	"sockjs-tornado>=1.0.3,<1.1",
+	"tornado>=5.0.1,<6",
+	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
+	                               # vendored one
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",
 	"Flask-Principal>=0.3.5,<0.4",
 	"Flask-Babel>=0.9,<0.10",
 	"Flask-Assets>=0.10,<0.11",
 	"markdown>=2.6.4,<2.7",
-	"pyserial>=2.7,<3.5",
+	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
 	"sarge>=0.1.4,<0.2",
@@ -40,7 +38,8 @@ INSTALL_REQUIRES = [
 	"pkginfo>=1.2.1,<1.3",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.4.2,<2.5",
-	"psutil>=5.4.1,<6",
+	"psutil==5.4.3", # 5.4.4 introduced a breaking change concerning installing under non current
+	                 # setuptools versions. Pinning to 5.4.3 for now to work around this.
 	"Click>=6.2,<6.3",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",

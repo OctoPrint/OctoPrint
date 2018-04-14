@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-03-16 13:18+0100\n"
-"PO-Revision-Date: 2018-03-16 14:07+0100\n"
+"POT-Creation-Date: 2018-04-03 17:40+0200\n"
+"PO-Revision-Date: 2018-04-03 17:40+0200\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -576,7 +576,7 @@ msgstr "Vorhandene Datei überschreiben"
 #: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:53
 msgid "\n"
 "            You can import your existing profile <code>.ini</code> files from <strong>Cura 15.04.x or older</strong>\n"
-"            here. Anything but those are <strong>not supported</strong>. That especiallymeans that <code>.json</code>\n"
+"            here. Anything but those are <strong>not supported</strong>. That especially means that <code>.json</code>\n"
 "            profiles from Cura 15.06.x and <code>.curaprofile</code> profiles from Cura 2.x will not work, and neither\n"
 "            will custom Cura profile formats that third party tools like e.g. Repetier create.\n"
 "        "
@@ -623,6 +623,10 @@ msgstr "Profil entfernen"
 #: src/octoprint/plugins/discovery/__init__.py:688
 msgid "Without this plugin your OctoPrint instance will no longer be discoverable on the network via Bonjour and uPnP."
 msgstr "Ohne dieses Plugin wird deine OctoPrint Instanz nicht mehr in deinem Netzwerk mittels Bonjour oder uPnP automatisch auffindbar sein."
+
+#: src/octoprint/plugins/logging/__init__.py:204
+msgid "Without this plugin you will no longer be able to retrieve OctoPrint's logs or modify the current logging levels through the web interface."
+msgstr "Ohne dieses Plugin kannst du OctoPrints Logfiles nicht mehr über das Webinterface herunterladen und auch die aktuellen Loglevel modifizieren."
 
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:1
 msgid "Logs"
@@ -1196,6 +1200,22 @@ msgstr "Abbruch"
 msgid "Save"
 msgstr "Speichern"
 
+#: src/octoprint/plugins/printer_safety_check/__init__.py:44
+msgid "Printer Safety Warning"
+msgstr "Druckersicherheitswarnung"
+
+#: src/octoprint/plugins/printer_safety_check/__init__.py:105
+msgid "Without this plugin OctoPrint will no longer be able to check if the printer it is connected to has a known safetyissue and inform you about that fact."
+msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, dich über bekannte Sicherheitsprobleme mit verbundenen Druckern zu informieren."
+
+#: src/octoprint/plugins/printer_safety_check/templates/printer_safety_check_sidebar.jinja2:1
+msgid "Warning!"
+msgstr "Warnung!"
+
+#: src/octoprint/plugins/printer_safety_check/templates/printer_safety_check_sidebar.jinja2:5
+msgid "Learn more..."
+msgstr "Mehr erfahren..."
+
 #: src/octoprint/plugins/softwareupdate/__init__.py:570
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:1
 msgid "Software Update"
@@ -1516,8 +1536,8 @@ msgstr "OctoPrint Release Channel"
 
 #: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/releaseChannel.jinja2:5
 #, python-format
-msgid "Make sure you have read <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"Using Release Channels\"</a> before switching to a release channel other than \"Stable\""
-msgstr "Stelle sicher, dass du <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"Using Release Channels\"</a> gelesen hast, bevor du einen anderen Release Channel als \"Stable\" auswählst."
+msgid "Make sure you have read <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"How to use the release channels to help test release candidates\"</a> before switching to a release channel other than \"Stable\""
+msgstr "Stelle sicher, dass du <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"How to use the release channels to help test release candidates\"</a> gelesen hast, bevor du einen anderen Release Channel als \"Stable\" auswählst."
 
 #: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/versionTracking.jinja2:2
 msgid "OctoPrint version tracking"
@@ -1840,7 +1860,7 @@ msgid "off"
 msgstr "Aus"
 
 #: src/octoprint/static/js/app/helpers.js:654
-#: src/octoprint/static/js/app/viewmodels/connection.js:133
+#: src/octoprint/static/js/app/viewmodels/connection.js:135
 msgid "Are you sure?"
 msgstr "Bist Du sicher?"
 
@@ -1902,19 +1922,19 @@ msgid "Connect"
 msgstr "Verbinden"
 
 #: src/octoprint/static/js/app/viewmodels/connection.js:44
-#: src/octoprint/static/js/app/viewmodels/connection.js:142
+#: src/octoprint/static/js/app/viewmodels/connection.js:144
 msgid "Disconnect"
 msgstr "Trennen"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:134
+#: src/octoprint/static/js/app/viewmodels/connection.js:136
 msgid "<p><strong>You are about to disconnect from the printer while a print is in progress.</strong></p><p>Disconnecting while a print is in progress will prevent OctoPrint from completing the print. If you're printing from an SD card attached directly to the printer, any attempt to restart OctoPrint or reconnect to the printer could interrupt the print.<p>"
 msgstr "<p><strong>Du bist im Begriff, die Verbindung zu deinem Drucker zu trennen während ein Druck läuft.</strong></p><p>Das Trennen der Verbindung während eines Drucks wird OctoPrint daran hindern, diesen zu vollenden. Falls du von der SD deines Druckers druckst, könnte jeglicher Versuch, OctoPrint neuzustarten oder erneut mit dem Drucker zu verbinden den Druck unterbrechen.<p>"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:140
+#: src/octoprint/static/js/app/viewmodels/connection.js:142
 msgid "Are you sure you want to disconnect from the printer?"
 msgstr "Bist Du sicher, dass du die Verbindung zum Drucker trennen willst?"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:141
+#: src/octoprint/static/js/app/viewmodels/connection.js:143
 msgid "Stay Connected"
 msgstr "Verbunden bleiben"
 
