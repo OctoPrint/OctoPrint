@@ -16,6 +16,7 @@ try:
 except ImportError:
 	import Queue as queue
 import requests
+import re
 
 import octoprint.util as util
 
@@ -811,7 +812,40 @@ class TimelapseRenderJob(object):
 		with self.render_job_lock:
 			try:
 				self._notify_callback("start", output)
-				p = sarge.run(command_str, stdout=sarge.Capture(), stderr=sarge.Capture())
+				p = sarge.run(command_str, stdout=sarge.Capture(), stderr=sarge.Capture(), async=True)
+
+				self._logger.debug("Parsing ffmpeg output")
+
+				# Compile regex to make it faster
+				duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+				current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
+				duration_s = ""
+
+				# Sarge sometimes doesn't populate commands fast enough, so we check if the command exists first, then poll the thread
+				while len(p.commands) == 0 or p.commands[0].poll() is None:
+					line = p.stderr.readline()
+
+					# We should be checking time more often, so try it first
+					time = current_regex.search(line)
+					if time is not None:
+						current_s = self._parsetime(*time.groups())
+
+						progress = current_s / float(duration_s) * 100
+
+						# Update progress bar
+						for callback in _update_callbacks:
+							try:
+								callback.sendRenderProgress(progress)
+							except:
+								self._logger.exception("Exception while pushing render progress")
+
+					else:
+						duration = duration_regex.search(line)
+						if duration is not None:
+							duration_s = self._parsetime(*duration.groups())
+
+				self._logger.debug("Done with parsing")
+
 				if p.returncode == 0:
 					self._notify_callback("success", output)
 				else:
@@ -825,6 +859,10 @@ class TimelapseRenderJob(object):
 				self._notify_callback("fail", output, reason="unknown")
 			finally:
 				self._notify_callback("always", output)
+
+	@staticmethod
+	def _parsetime(hours, minutes, seconds):
+		return (int(hours) * 60 + int(minutes)) * 60 + int(seconds)
 
 	@classmethod
 	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, hflip=False, vflip=False,
@@ -854,7 +892,7 @@ class TimelapseRenderJob(object):
 		logger = logging.getLogger(__name__)
 
 		command = [
-			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
+			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
 			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
 			'-f', 'vob']
 

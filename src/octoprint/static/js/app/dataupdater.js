@@ -218,6 +218,15 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         });
     };
 
+    self._onRenderProgress = function(event) {
+        self._ifInitialized(function() {
+            var data = event.data;
+            callViewModels(self.allViewModels, "onRenderProgress", [
+                data["progress"]
+            ]);
+        });
+    };
+
     self._onEvent = function(event) {
         self._ifInitialized(function() {
             var type = event.data["type"];
@@ -347,6 +356,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         .onMessage("history", self._onHistoryData)
         .onMessage("current", self._onCurrentData)
         .onMessage("slicingProgress", self._onSlicingProgress)
+        .onMessage("renderProgress", self._onRenderProgress)
         .onMessage("event", self._onEvent)
         .onMessage("timelapse", self._onTimelapse)
         .onMessage("plugin", self._onPluginMessage);

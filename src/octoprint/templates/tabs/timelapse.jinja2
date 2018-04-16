@@ -90,6 +90,15 @@
     </form>
 </div>
 
+<h1>{{ _('Timelapse Render Progress') }}</h1>
+
+<div id="render_progress" class="progress progress-text-centered">
+    <span class="progress-text-back" data-bind="text: renderProgressText"></span>
+    <div class="bar">
+        <span class="progress-text-front" data-bind="copyWidth: ':parent :parent', text: renderProgressText"></span>
+    </div>
+</div>
+
 <h1>{{ _('Finished Timelapses') }}</h1>
 
 <div class="pull-right">

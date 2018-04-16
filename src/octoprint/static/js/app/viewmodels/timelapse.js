@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
 
+        self.renderProgressBar = undefined;
         self.timelapsePopup = undefined;
 
         self.defaultFps = 25;
@@ -19,6 +20,7 @@ $(function() {
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
 
+        self.renderProgressText = ko.observable();
         self.serverConfig = ko.observable();
 
         self.persist = ko.observable(false);
@@ -475,6 +477,16 @@ $(function() {
                 text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
                 hide: false
             });
+
+            self.renderProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.renderProgressBar.css("width", "0%");
+            self.renderProgressText(_.sprintf(gettext("Rendering %(movie_prefix)s..."), payload));
+        };
+
+        self.onRenderProgress = function(percentage) {
+            self.renderProgressBar.css("width", percentage + "%");
         };
 
         self.onEventMovieFailed = function(payload) {
@@ -498,6 +510,13 @@ $(function() {
                 type: "error",
                 hide: false
             });
+
+            self.renderProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.renderProgressBar
+                .css("width", "0%");
+            self.renderProgressText("");
         };
 
         self.onEventMovieDone = function(payload) {
@@ -514,10 +533,20 @@ $(function() {
                 }
             });
             self.requestData();
+
+            self.renderProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.renderProgressBar
+                .css("width", "0%");
+            self.renderProgressText("");
         };
 
         self.onStartup = function() {
             self.requestData();
+
+            self.renderProgress = $("#render_progress");
+            self.renderProgressBar = $(".bar", self.renderProgress);
         };
     }
 
