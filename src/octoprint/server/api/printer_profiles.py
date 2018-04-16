@@ -51,8 +51,11 @@ def printerProfilesAdd():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -124,8 +127,11 @@ def printerProfilesUpdate(identifier):
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:

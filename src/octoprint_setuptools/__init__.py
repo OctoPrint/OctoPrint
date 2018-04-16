@@ -50,6 +50,22 @@ def recursively_handle_files(directory, file_matcher, folder_matcher=None, folde
 	return applied_handler
 
 
+def has_requirement(requirement, requirements):
+	if requirement is None or requirements is None:
+		return False
+
+	assert isinstance(requirement, basestring)
+	assert isinstance(requirements, (list, tuple))
+	assert all(map(lambda x: x is not None and isinstance(x, basestring), requirements))
+
+	requirement = requirement.lower()
+	requirements = [r.lower() for r in requirements]
+	compat = [requirement.lower() + c for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")]
+
+	return requirement in requirements or \
+	       any(any(r.startswith(c) for c in compat) for r in requirements)
+
+
 class CleanCommand(_clean):
 	user_options = _clean.user_options + [("orig", None, "behave like original clean command"),
 	                                      ("noeggs", None, "don't clean up eggs"),
@@ -479,7 +495,7 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 		requires = ["OctoPrint"]
 	if not isinstance(requires, list):
 		raise ValueError("requires must be a list")
-	if "OctoPrint" not in requires:
+	if not has_requirement("OctoPrint", requires):
 		requires = ["OctoPrint"] + list(requires)
 
 	if extra_requires is None:

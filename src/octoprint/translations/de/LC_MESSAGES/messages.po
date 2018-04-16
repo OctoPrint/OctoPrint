@@ -576,7 +576,7 @@ msgstr "Vorhandene Datei überschreiben"
 #: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:53
 msgid "\n"
 "            You can import your existing profile <code>.ini</code> files from <strong>Cura 15.04.x or older</strong>\n"
-"            here. Anything but those are <strong>not supported</strong>. That especiallymeans that <code>.json</code>\n"
+"            here. Anything but those are <strong>not supported</strong>. That especially means that <code>.json</code>\n"
 "            profiles from Cura 15.06.x and <code>.curaprofile</code> profiles from Cura 2.x will not work, and neither\n"
 "            will custom Cura profile formats that third party tools like e.g. Repetier create.\n"
 "        "

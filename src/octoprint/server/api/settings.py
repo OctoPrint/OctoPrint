@@ -39,7 +39,7 @@ def _etag(lm=None):
 	for key in sorted(plugin_settings.keys()):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
-	if current_user is not None and not current_user.is_anonymous():
+	if current_user is not None and not current_user.is_anonymous:
 		roles = sorted(current_user.roles)
 	else:
 		roles = []
@@ -122,8 +122,7 @@ def getSettings():
 			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
 			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
 			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
-			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
-			"legacyPluginAssets": s.getBoolean(["feature", "legacyPluginAssets"])
+			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -140,6 +139,7 @@ def getSettings():
 			"timeoutTemperatureAutoreport": s.getFloat(["serial", "timeout", "temperatureAutoreport"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"timeoutSdStatusAutoreport": s.getFloat(["serial", "timeout", "sdStatusAutoreport"]),
+			"timeoutBaudrateDetectionPause": s.getFloat(["serial", "timeout", "baudrateDetectionPause"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
@@ -281,8 +281,11 @@ def setSettings():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not isinstance(data, dict):
@@ -357,7 +360,6 @@ def _saveSettings(data):
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
-		if "legacyPluginAssets" in data["feature"]: s.setBoolean(["feature", "legacyPluginAssets"], data["feature"]["legacyPluginAssets"])
 		if "autoUppercaseBlacklist" in data["feature"] and isinstance(data["feature"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["feature", "autoUppercaseBlacklist"], data["feature"]["autoUppercaseBlacklist"])
 
 	if "serial" in data.keys():
@@ -373,6 +375,7 @@ def _saveSettings(data):
 		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"])
 		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "timeoutSdStatusAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatusAutoreport"], data["serial"]["timeoutSdStatusAutoreport"])
+		if "timeoutBaudrateDetectionPause" in data["serial"]: s.setFloat(["serial", "timeout", "baudrateDetectionPause"], data["serial"]["timeoutBaudrateDetectionPause"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
@@ -424,7 +427,16 @@ def _saveSettings(data):
 		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
-		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
+		if "profiles" in data["temperature"]:
+			result = []
+			for profile in data["temperature"]["profiles"]:
+				try:
+					profile["bed"] = int(profile["bed"])
+					profile["extruder"] = int(profile["extruder"])
+				except ValueError:
+					pass
+				result.append(profile)
+			s.set(["temperature", "profiles"], result)
 		if "cutoff" in data["temperature"]:
 			try:
 				cutoff = int(data["temperature"]["cutoff"])

@@ -817,8 +817,8 @@ SockJS.prototype._connect = function() {
       }
     }
 
-    // calculate timeout based on RTO and round trips. Default to 5s
-    var timeoutMs = (this._rto * Transport.roundTrips) || 5000;
+    // calculate timeout based on RTO and round trips, compensate for potential nagle. Default to 5s.
+    var timeoutMs = (this._rto * Transport.roundTrips + 300) || 5000;
     this._transportTimeoutId = setTimeout(this._transportTimeout.bind(this), timeoutMs);
     debug('using timeout', timeoutMs);
 

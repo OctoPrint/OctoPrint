@@ -7,11 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import datetime
-import stat
 import mimetypes
-import email
-import time
 import re
 
 import tornado
@@ -28,35 +24,6 @@ import tornado.util
 
 import octoprint.util
 
-
-#~~ Monkey patching
-
-
-def fix_ioloop_scheduling():
-	"""
-	This monkey patches tornado's :meth:``tornado.ioloop.PeriodicCallback._schedule_next`` method so it no longer
-	blocks for long times on slow machines (RPi) when the system time happens to change by a large amount (e.g. due to
-	the first ever contact to an NTP server).
-
-	Patch by @nosyjoe on Github. See this PR against tornado: https://github.com/tornadoweb/tornado/pull/1290
-	"""
-
-	import math
-
-	# patched implementation taken from PR
-	def _schedule_next(self):
-		if self._running:
-			current_time = self.io_loop.time()
-
-			if self._next_timeout <= current_time:
-				callback_time_sec = self.callback_time / 1000.0
-				self._next_timeout += (math.floor((current_time - self._next_timeout) / callback_time_sec) + 1) * callback_time_sec
-
-			self._timeout = self.io_loop.add_timeout(self._next_timeout, self._run)
-
-	# replace original implementation with patched version
-	import tornado.ioloop
-	tornado.ioloop.PeriodicCallback._schedule_next = _schedule_next
 
 
 def fix_json_encode():
@@ -610,7 +577,8 @@ class WsgiInputContainer(object):
 		if not data:
 			raise Exception("WSGI app did not call start_response")
 
-		status_code = int(data["status"].split()[0])
+		status_code, reason = data["status"].split(" ", 1)
+		status_code = int(status_code)
 		headers = data["headers"]
 		header_set = set(k.lower() for (k, v) in headers)
 		body = tornado.escape.utf8(body)
@@ -628,13 +596,12 @@ class WsgiInputContainer(object):
 			headers.append((header, value))
 		headers = [(header, value) for header, value in headers if not header.lower() in self.removed_headers]
 
-		parts = [tornado.escape.utf8("HTTP/1.1 " + data["status"] + "\r\n")]
+		start_line = tornado.httputil.ResponseStartLine("HTTP/1.1", status_code, reason)
+		header_obj = tornado.httputil.HTTPHeaders()
 		for key, value in headers:
-			parts.append(tornado.escape.utf8(key) + b": " + tornado.escape.utf8(value) + b"\r\n")
-		parts.append(b"\r\n")
-		parts.append(body)
-		request.write(b"".join(parts))
-		request.finish()
+			header_obj.add(key, value)
+		request.connection.write_headers(start_line, header_obj, chunk=body)
+		request.connection.finish()
 		self._log(status_code, request)
 
 	@staticmethod
@@ -669,22 +636,22 @@ class WsgiInputContainer(object):
 			host = request.host
 			port = 443 if request.protocol == "https" else 80
 		environ = {
-		"REQUEST_METHOD": request.method,
-		"SCRIPT_NAME": "",
-		"PATH_INFO": to_wsgi_str(tornado.escape.url_unescape(
-			request.path, encoding=None, plus=False)),
-		"QUERY_STRING": request.query,
-		"REMOTE_ADDR": request.remote_ip,
-		"SERVER_NAME": host,
-		"SERVER_PORT": str(port),
-		"SERVER_PROTOCOL": request.version,
-		"wsgi.version": (1, 0),
-		"wsgi.url_scheme": request.protocol,
-		"wsgi.input": request_body,
-		"wsgi.errors": sys.stderr,
-		"wsgi.multithread": False,
-		"wsgi.multiprocess": True,
-		"wsgi.run_once": False,
+			"REQUEST_METHOD": request.method,
+			"SCRIPT_NAME": "",
+			"PATH_INFO": to_wsgi_str(tornado.escape.url_unescape(
+				request.path, encoding=None, plus=False)),
+			"QUERY_STRING": request.query,
+			"REMOTE_ADDR": request.remote_ip,
+			"SERVER_NAME": host,
+			"SERVER_PORT": str(port),
+			"SERVER_PROTOCOL": request.version,
+			"wsgi.version": (1, 0),
+			"wsgi.url_scheme": request.protocol,
+			"wsgi.input": request_body,
+			"wsgi.errors": sys.stderr,
+			"wsgi.multithread": False,
+			"wsgi.multiprocess": True,
+			"wsgi.run_once": False,
 		}
 		if "Content-Type" in request.headers:
 			environ["CONTENT_TYPE"] = request.headers.pop("Content-Type")
@@ -705,7 +672,7 @@ class WsgiInputContainer(object):
 			log_method = access_log.error
 		request_time = 1000.0 * request.request_time()
 		summary = request.method + " " + request.uri + " (" + \
-				  request.remote_ip + ")"
+		          request.remote_ip + ")"
 		log_method("%d %s %.2fms", status_code, summary, request_time)
 
 
@@ -728,36 +695,25 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	``default_max_body_size`` is the default maximum body size to apply if no specific one from ``max_body_sizes`` matches.
 	"""
+	def __init__(self, *args, **kwargs):
+		pass
 
-	def __init__(self, request_callback, no_keep_alive=False, io_loop=None,
-				 xheaders=False, ssl_options=None, protocol=None,
-				 decompress_request=False,
-				 chunk_size=None, max_header_size=None,
-				 idle_connection_timeout=None, body_timeout=None,
-				 max_body_sizes=None, default_max_body_size=None, max_buffer_size=None):
-		self.request_callback = request_callback
-		self.no_keep_alive = no_keep_alive
-		self.xheaders = xheaders
-		self.protocol = protocol
-		self.conn_params = CustomHTTP1ConnectionParameters(
-			decompress=decompress_request,
-			chunk_size=chunk_size,
-			max_header_size=max_header_size,
-			header_timeout=idle_connection_timeout or 3600,
-			max_body_sizes=max_body_sizes,
-			default_max_body_size=default_max_body_size,
-			body_timeout=body_timeout)
-		tornado.tcpserver.TCPServer.__init__(self, io_loop=io_loop, ssl_options=ssl_options,
-						   max_buffer_size=max_buffer_size,
-						   read_chunk_size=chunk_size)
-		self._connections = set()
+	def initialize(self, *args, **kwargs):
+		default_max_body_size = kwargs.pop("default_max_body_size", None)
+		max_body_sizes = kwargs.pop("max_body_sizes", None)
+
+		tornado.httpserver.HTTPServer.initialize(self, *args, **kwargs)
+
+		additional = dict(default_max_body_size=default_max_body_size,
+		                  max_body_sizes=max_body_sizes)
+		self.conn_params = CustomHTTP1ConnectionParameters.from_stock_params(self.conn_params, **additional)
 
 
 	def handle_stream(self, stream, address):
 		context = tornado.httpserver._HTTPRequestContext(stream, address,
-									  self.protocol)
-		conn = CustomHTTP1ServerConnection(
-			stream, self.conn_params, context)
+		                                                 self.protocol,
+		                                                 self.trusted_downstream)
+		conn = CustomHTTP1ServerConnection(stream, self.conn_params, context)
 		self._connections.add(conn)
 		conn.start_serving(self)
 
@@ -774,7 +730,7 @@ class CustomHTTP1ServerConnection(tornado.http1connection.HTTP1ServerConnection)
 		try:
 			while True:
 				conn = CustomHTTP1Connection(self.stream, False,
-									   self.params, self.context)
+				                             self.params, self.context)
 				request_delegate = delegate.start_request(self, conn)
 				try:
 					ret = yield conn.read_response(request_delegate)
@@ -803,6 +759,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 	"""
 
 	def __init__(self, stream, is_client, params=None, context=None):
+		if params is None:
+			params = CustomHTTP1ConnectionParameters()
+
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re
@@ -818,8 +777,13 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		current request exceeds the individual max content length, the request processing is aborted and an
 		``HTTPInputError`` is raised.
 		"""
-		content_length = headers.get("Content-Length")
 		if "Content-Length" in headers:
+			if "Transfer-Encoding" in headers:
+				# Response cannot contain both Content-Length and
+				# Transfer-Encoding headers.
+				# http://tools.ietf.org/html/rfc7230#section-3.3.3
+				raise tornado.httputil.HTTPInputError(
+					"Response with both Transfer-Encoding and Content-Length")
 			if "," in headers["Content-Length"]:
 				# Proxies sometimes cause Content-Length headers to get
 				# duplicated.  If all the values are identical then we can
@@ -830,9 +794,14 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 						"Multiple unequal Content-Lengths: %r" %
 						headers["Content-Length"])
 				headers["Content-Length"] = pieces[0]
-			content_length = int(headers["Content-Length"])
 
-			content_length = int(content_length)
+			try:
+				content_length = int(headers["Content-Length"])
+			except ValueError:
+				# Handles non-integer Content-Length value.
+				raise tornado.httputil.HTTPInputError(
+					"Only integer Content-Length is allowed: %s" % headers["Content-Length"])
+
 			max_content_length = self._get_max_content_length(self._request_start_line.method, self._request_start_line.path)
 			if max_content_length is not None and 0 <= max_content_length < content_length:
 				raise tornado.httputil.HTTPInputError("Content-Length too long")
@@ -884,9 +853,20 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 	"""
 
 	def __init__(self, *args, **kwargs):
-		tornado.http1connection.HTTP1ConnectionParameters.__init__(self, args, kwargs)
-		self.max_body_sizes = kwargs["max_body_sizes"] if "max_body_sizes" in kwargs else list()
-		self.default_max_body_size = kwargs["default_max_body_size"] if "default_max_body_size" in kwargs else None
+		max_body_sizes = kwargs.pop("max_body_sizes", list())
+		default_max_body_size = kwargs.pop("default_max_body_size", None)
+
+		tornado.http1connection.HTTP1ConnectionParameters.__init__(self, *args, **kwargs)
+
+		self.max_body_sizes = max_body_sizes
+		self.default_max_body_size = default_max_body_size
+
+	@classmethod
+	def from_stock_params(cls, other, **additional):
+		kwargs = dict(other.__dict__)
+		for key, value in additional.items():
+			kwargs[key] = value
+		return cls(**kwargs)
 
 #~~ customized large response handler
 

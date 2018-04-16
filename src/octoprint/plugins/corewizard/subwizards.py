@@ -74,9 +74,9 @@ class AclSubwizard(object):
 		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.hasBeenCustomized():
 			abort(404)
 
-		data = request.values
-		if hasattr(request, "json") and request.json:
-			data = request.json
+		data = request.get_json()
+		if data is None:
+			data = request.values
 
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \

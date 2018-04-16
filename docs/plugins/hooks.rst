@@ -66,7 +66,7 @@ the general type of script for which to look for additions ("gcode") and the scr
 return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
 care to add prefix and suffix as necessary after a small round of preprocessing.
 
-Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/OctoPrint/OctoPrint-SoftwareUpdate>`_
+Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/foosel/OctoPrint/tree/master/src/octoprint/plugins/softwareupdate>`_
 declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
 to register themselves with the Software Update Plugin by returning their own update check configuration.
 
@@ -1151,3 +1151,35 @@ octoprint.users.factory
    :return: The ``userManager`` instance to use globally.
    :rtype: UserManager subclass or None
 
+
+.. _sec-plugins-hook-timelapse-capture-pre:
+
+octoprint.timelapse.capture.pre
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_pre_hook(filename)
+
+   Perform specific actions prior to capturing a timelapse frame.
+
+   ``filename`` will be the future path of the frame to be saved.
+
+   :param str filename: The future path of the frame to be saved.
+   :return: None
+   :rtype: None
+
+.. _sec-plugins-hook-timelapse-capture-post:
+
+octoprint.timelapse.capture.post
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_post_hook(filename, success)
+
+   Perform specific actions after capturing a timelapse frame.
+
+   ``filename`` will be the path of the frame that should have been saved.
+   ``sucesss`` indicates whether the capture was successful or not.
+
+   :param str filename: The path of the frame that should have been saved.
+   :param boolean success: Indicates whether the capture was successful or not.
+   :return: None
+   :rtype: None

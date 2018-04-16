@@ -7,10 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import threading
-import sockjs.tornado
-import sockjs.tornado.session
-import sockjs.tornado.proto
-import sockjs.tornado.util
+import octoprint.vendor.sockjs.tornado
+import octoprint.vendor.sockjs.tornado.session
+import octoprint.vendor.sockjs.tornado.proto
+import octoprint.vendor.sockjs.tornado.util
 import time
 
 import octoprint.timelapse
@@ -28,9 +28,9 @@ import wrapt
 import json
 
 
-class ThreadSafeSession(sockjs.tornado.session.Session):
+class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
 	def __init__(self, conn, server, session_id, expiry=None):
-		sockjs.tornado.session.Session.__init__(self, conn, server, session_id, expiry=expiry)
+		octoprint.vendor.sockjs.tornado.session.Session.__init__(self, conn, server, session_id, expiry=expiry)
 
 	def set_handler(self, handler, start_heartbeat=True):
 		if getattr(handler, "__orig_send_pack", None) is None:
@@ -44,10 +44,10 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 			handler.send_pack = send_pack
 			setattr(handler, "__orig_send_pack", orig_send_pack)
 
-		return sockjs.tornado.session.Session.set_handler(self, handler, start_heartbeat=start_heartbeat)
+		return octoprint.vendor.sockjs.tornado.session.Session.set_handler(self, handler, start_heartbeat=start_heartbeat)
 
 	def remove_handler(self, handler):
-		result = sockjs.tornado.session.Session.remove_handler(self, handler)
+		result = octoprint.vendor.sockjs.tornado.session.Session.remove_handler(self, handler)
 
 		if getattr(handler, "__orig_send_pack", None) is not None:
 			handler.send_pack = getattr(handler, "__orig_send_pack")
@@ -58,18 +58,18 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 
 class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
 	def send_message(self, msg, stats=True, binary=False):
-		self.send_jsonified(json.dumps(sockjs.tornado.util.bytes_to_str(msg),
+		self.send_jsonified(json.dumps(octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg),
 		                               separators=(',', ':'),
 		                               default=JsonEncoding.encode),
 		                    stats)
 
 
-class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
+class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
-		if isinstance(session, sockjs.tornado.session.Session):
+		if isinstance(session, octoprint.vendor.sockjs.tornado.session.Session):
 			session = JsonEncodingSessionWrapper(session)
 
-		sockjs.tornado.SockJSConnection.__init__(self, session)
+		octoprint.vendor.sockjs.tornado.SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)
 

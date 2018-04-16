@@ -75,6 +75,7 @@ date of first contribution):
   * [Mathias Rangel Wulff](https://github.com/mathiasrw)
   * [Clemens Niemeyer](https://github.com/clemniem)
   * ["I-am-me"](https://github.com/I-am-me)
+  * [J-J Heinonen](https://github.com/jammi)
   * [Noah Martin](https://github.com/noahsmartin)
   * [Eyal Soha](https://github.com/eyal0)
   * [Greg Hulands](https://github.com/ghulands)
@@ -87,6 +88,8 @@ date of first contribution):
   * [Josh Major](https://github.com/astateofblank)
   * ["alex-gh"](https://github.com/alex-gh)
   * [Bernd Zeimetz](https://github.com/bzed)
+  * [Daniele Forsi](https://github.com/dforsi)
+  * [Ganey](https://github.com/ganey)
   * [Zachary Nofzinger](https://github.com/ZachNo)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by

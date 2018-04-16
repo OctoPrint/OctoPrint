@@ -27,6 +27,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self.updateItems = function(items) {
+        if (items === undefined) items = [];
         self.allItems = items;
         self.allSize(items.length);
         self._updateItems();

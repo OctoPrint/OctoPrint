@@ -155,7 +155,7 @@
         </form>
 
         <div data-bind="visible: repositoryAvailable()">
-            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="slimScrolledForeach: {data: repositoryplugins.paginatedItems, slimscroll: {height: '306px', size: '10px', distance: 0, railVisible: true, alwaysVisible: true, scrollBy: '102px'} }">
+            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                 <div class="entry">
                     <div class="row-fluid">
                         <div class="span9">
@@ -245,57 +245,64 @@
         <form class="form-horizontal">
             <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
-            <legend>{{ _('Plugin repository configuration') }}</legend>
+            <fieldset>
+                <legend>{{ _('Plugin repository configuration') }}</legend>
 
-            <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Repository URL') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_repositoryUrl">
-                </div>
-            </div>
-            <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Repository cache TTL') }}</label>
-                <div class="controls">
-                    <div class="input-append">
-                        <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
-                        <span class="add-on">min</span>
+                <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
+                    <label class="control-label">{{ _('Repository URL') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: config_repositoryUrl">
                     </div>
                 </div>
-            </div>
-
-            <legend>{{ _('Notices configuration') }}</legend>
-
-            <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Notices URL') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_noticesUrl">
-                </div>
-            </div>
-            <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Notices cache TTL') }}</label>
-                <div class="controls">
-                    <div class="input-append">
-                        <input type="number" class="input-mini" data-bind="value: config_noticesTtl">
-                        <span class="add-on">min</span>
+                <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.') }}">
+                    <label class="control-label">{{ _('Repository cache TTL') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
+                            <span class="add-on">min</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </fieldset>
 
-            <legend>{{ _('pip configuration') }}</legend>
+            <fieldset>
+                <legend>{{ _('Notices configuration') }}</legend>
 
-            <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Additional arguments') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
+                <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.') }}">
+                    <label class="control-label">{{ _('Notices URL') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: config_noticesUrl">
+                    </div>
                 </div>
-            </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the use of the <code>--user</code> flag with <code>pip install</code>') }}
-                    </label>
+                <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.') }}">
+                    <label class="control-label">{{ _('Notices cache TTL') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" class="input-mini" data-bind="value: config_noticesTtl">
+                            <span class="add-on">min</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>{{ _('pip configuration') }}</legend>
+
+                <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
+                    <label class="control-label">{{ _('Additional arguments') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the use of the <code>--user</code> flag with <code>pip install</code>') }}
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
         </form>
     </div>
     <div class="modal-footer">

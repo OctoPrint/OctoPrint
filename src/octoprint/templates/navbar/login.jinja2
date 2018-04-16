@@ -6,6 +6,7 @@
     <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }" onsubmit="return false; // this gets overwritten on view model bind">
         <label for="login_user">{{ _('Username') }}</label>
         <input type="text" id="login_user" name="username" data-bind="valueWithInit: loginState.loginUser" placeholder="{{ _('Username') }}" autocapitalize="none" autocorrect="off">
+        <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" target="_blank" rel="noreferrer noopener" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
         <label for="login_pass">{{ _('Password') }}</label>
         <input type="password" id="login_pass" name="password" data-bind="valueWithInit: loginState.loginPass" placeholder="{{ _('Password') }}">
         <label class="checkbox">

@@ -1443,7 +1443,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 	   Make sure to protect sensitive information stored by your plugin that only logged in administrators (or users)
 	   should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
-	   return its settings on the REST API even to anonymous clients, but will filter out fields it know are restricted,
+	   return its settings on the REST API even to anonymous clients, but will filter out fields it knows are restricted,
 	   therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
 	"""
 
@@ -1527,8 +1527,8 @@ class SettingsPlugin(OctoPrintPlugin):
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():

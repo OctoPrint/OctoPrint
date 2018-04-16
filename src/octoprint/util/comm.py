@@ -192,7 +192,7 @@ Groups will be as follows:
   * ``value``: reported position value
 """
 
-regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
+regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):\s*")
 """Regex to use for splitting M115 responses."""
 
 regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
@@ -215,6 +215,7 @@ def serialList():
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
 			   + glob.glob("/dev/cuaU*") \
+			   + glob.glob("/dev/ttyS*") \
 			   + glob.glob("/dev/rfcomm*")
 
 	additionalPorts = settings().get(["serial", "additionalPorts"])
@@ -417,7 +418,7 @@ class MachineCom(object):
 		self._printerProfileManager = printerProfileManager
 		self._state = self.STATE_NONE
 		self._serial = None
-		self._baudrateDetectList = baudrateList()
+		self._baudrateDetectList = []
 		self._baudrateDetectRetry = 0
 		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
@@ -908,7 +909,7 @@ class MachineCom(object):
 				if not cmd:
 					return False
 
-		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold:
+		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold and not force:
 			try:
 				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
@@ -1410,10 +1411,15 @@ class MachineCom(object):
 
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
-			self._serial.timeout = 0.01
 			try_hello = False
-			self._log("Starting baud rate detection")
+			self._log("Starting baud rate detection...")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
+
+			# Some controllers (e.g. Original Prusa) don't appear to like too fast serial interaction after
+			# open, so let's wait a bit before the first baudrate detection step
+			time.sleep(settings().getFloat(["serial", "timeout", "baudrateDetectionPause"]))
+
+			self._perform_baudrate_detection_step(init=True)
 		else:
 			self._changeState(self.STATE_CONNECTING)
 
@@ -1424,9 +1430,6 @@ class MachineCom(object):
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
 		supportWait = settings().getBoolean(["serial", "supportWait"])
-
-		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
-		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
 
 		# enqueue the "hello command" first thing
 		if try_hello:
@@ -1660,7 +1663,7 @@ class MachineCom(object):
 							pass
 
 				##~~ firmware name & version
-				elif "NAME:" in line:
+				elif "NAME:" in line or line.startswith("NAME."):
 					# looks like a response to M115
 					data = parse_firmware_line(line)
 					firmware_name = data.get("FIRMWARE_NAME")
@@ -1670,7 +1673,11 @@ class MachineCom(object):
 						# report its firmware name properly in response to M115. Wonderful - why stick to established
 						# protocol when you can do your own thing, right?
 						#
-						# Example: NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
+						# Examples:
+						#
+						#     NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
+						#     NAME. Malyan	VER: 3.8	MODEL: M100	HW: HB02
+						#     NAME. Malyan VER: 3.7 MODEL: M300 HW: HG01
 						#
 						# We do a bit of manual fiddling around here to circumvent that issue and get ourselves a
 						# reliable firmware name (NAME + VER) out of the Malyan M115 response.
@@ -1874,30 +1881,8 @@ class MachineCom(object):
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
 					if line == '' or time.time() > self._timeout:
-						if self._baudrateDetectRetry > 0:
-							self._serial.timeout = detection_timeout
-							self._baudrateDetectRetry -= 1
-							self._serial.write('\n')
-							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self.sayHello(tags={"trigger:baudrate_detection",})
-						elif len(self._baudrateDetectList) > 0:
-							baudrate = self._baudrateDetectList.pop(0)
-							try:
-								self._serial.baudrate = baudrate
-								if self._serial.timeout != connection_timeout:
-									self._serial.timeout = connection_timeout
-								self._log("Trying baudrate: %d" % (baudrate))
-								self._baudrateDetectRetry = 5
-								self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
-								self._serial.write('\n')
-								self.sayHello(tags={"trigger:baudrate_detection",})
-							except:
-								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
-								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
-						else:
-							error_text = "No more baudrates to test, and no suitable baudrate found."
-							self._trigger_error(error_text, "autodetect_baudrate")
-					elif 'start' in line or 'ok' in line:
+						self._perform_baudrate_detection_step()
+					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
 						if 'start' in line:
 							self._clear_to_send.set()
@@ -2043,6 +2028,43 @@ class MachineCom(object):
 			self._log(message + " " + general_message)
 			self._clear_to_send.set()
 
+	def _perform_baudrate_detection_step(self, init=False):
+		if init:
+			timeout = settings().getFloat(["serial", "timeout", "connection"])
+			self._baudrateDetectList = baudrateList()
+		else:
+			timeout = settings().getFloat(["serial", "timeout", "detection"])
+
+		if self._baudrateDetectRetry > 0:
+			if self._serial.timeout != timeout:
+				self._serial.timeout = timeout
+			self._timeout = time.time() + timeout
+
+			self._log("Baudrate test retry #{}".format(5 - self._baudrateDetectRetry))
+			self._baudrateDetectRetry -= 1
+			self._do_send_without_checksum("", log=False) # new line to reset things
+			self.sayHello(tags={"trigger:baudrate_detection", })
+
+		elif len(self._baudrateDetectList) > 0:
+			baudrate = self._baudrateDetectList.pop(0)
+			try:
+				self._serial.baudrate = baudrate
+				if self._serial.timeout != timeout:
+					self._serial.timeout = timeout
+				self._timeout = time.time() + timeout
+
+				self._log("Trying baudrate: {}".format(baudrate))
+				self._baudrateDetectRetry = 4
+				self._do_send_without_checksum("", log=False) # new line to reset things
+				self.sayHello(tags={"trigger:baudrate_detection", })
+			except:
+				self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
+				self._logger.exception("Unexpected error while setting baudrate {}".format(baudrate))
+
+		else:
+			error_text = "No more baudrates to test, and no suitable baudrate found."
+			self._trigger_error(error_text, "autodetect_baudrate")
+
 	def _finish_heatup(self):
 		if self._heating:
 			if self._heatupWaitStartTime:
@@ -2110,7 +2132,7 @@ class MachineCom(object):
 
 	def _poll_temperature(self):
 		"""
-		Polls the temperature after the temperature timeout, re-enqueues itself.
+		Polls the temperature.
 
 		If the printer is not operational, capable of auto-reporting temperatures, closing the connection, not printing
 		from sd, busy with a long running command or heating, no poll will be done.
@@ -2121,7 +2143,7 @@ class MachineCom(object):
 
 	def _poll_sd_status(self):
 		"""
-		Polls the sd printing status after the sd status timeout, re-enqueues itself.
+		Polls the sd printing status.
 
 		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
 		command or heating, no poll will be done.
@@ -2286,7 +2308,7 @@ class MachineCom(object):
 			if baudrate == 0:
 				baudrates = baudrateList()
 				serial_obj = serial.Serial(str(port),
-				                           115200 if 115200 in baudrates else baudrates[0],
+				                           baudrates[0],
 				                           timeout=read_timeout,
 				                           writeTimeout=10000, # TODO 1.3.8 rename to write_timeout for pyserial >= 3.x
 				                           parity=serial.PARITY_ODD)
@@ -2988,11 +3010,12 @@ class MachineCom(object):
 		command_to_send = command_to_send + "*" + str(checksum)
 		self._do_send_without_checksum(command_to_send)
 
-	def _do_send_without_checksum(self, cmd):
+	def _do_send_without_checksum(self, cmd, log=True):
 		if self._serial is None:
 			return
 
-		self._log("Send: " + str(cmd))
+		if log:
+			self._log("Send: " + str(cmd))
 
 		cmd += "\n"
 		written = 0
@@ -3995,10 +4018,16 @@ def parse_firmware_line(line):
 	    dict: a dictionary with the parsed data
 	"""
 
+	if line.startswith("NAME."):
+		# Good job Malyan. Why use a : when you can also just use a ., right? Let's revert that.
+		line = list(line)
+		line[4] = ":"
+		line = "".join(line)
+
 	result = dict()
 	split_line = regex_firmware_splitter.split(line.strip())[1:] # first entry is empty start of trimmed string
 	for key, value in chunks(split_line, 2):
-		result[key] = value
+		result[key] = value.strip()
 	return result
 
 def parse_capability_line(line):
