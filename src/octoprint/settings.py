@@ -119,7 +119,7 @@ default_settings = {
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
-		"logPositionOnCancel": True,
+		"logPositionOnCancel": False,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"neverSendChecksum": False,
