@@ -101,7 +101,8 @@ default_settings = {
 			"sdStatus": 1,
 			"sdStatusAutoreport": 1,
 			"resendOk": .5,
-			"baudrateDetectionPause": 1.0
+			"baudrateDetectionPause": 1.0,
+			"positionLogWait": 10.0,
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,

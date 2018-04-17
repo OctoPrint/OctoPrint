@@ -143,6 +143,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="control-group" title="{{ _('Time after which to consider a position query on pause or cancel to have failed') }}">
+                    <label class="control-label" for="settings-serialTimeoutPositionLogWait">{{ _('Position query timeout') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutPositionLogWait" id="settings-serialTimeoutPositionLogWait">
+                            <span class="add-on">s</span>
+                        </div>
+                    </div>
+                </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">

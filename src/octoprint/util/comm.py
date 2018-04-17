@@ -36,7 +36,7 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
-	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks
+	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer
 
 try:
 	import _winreg
@@ -513,6 +513,11 @@ class MachineCom(object):
 
 		self._record_pause_data = False
 		self._record_cancel_data = False
+
+		self._pause_position_timer = None
+		self._pause_mutex = threading.RLock()
+		self._cancel_position_timer = None
+		self._cancel_mutex = threading.RLock()
 
 		self._log_position_on_pause = settings().getBoolean(["serial", "logPositionOnPause"])
 		self._log_position_on_cancel = settings().getBoolean(["serial", "logPositionOnCancel"])
@@ -1090,14 +1095,26 @@ class MachineCom(object):
 		self._currentFile = None
 		self._callback.on_comm_file_selected(None, None, False)
 
-	def _cancel_preparation_done(self):
-		self._recordFilePosition()
-		self._callback.on_comm_print_job_cancelled()
+	def _cancel_preparation_failed(self):
+		timeout = self._timeout_intervals.get("positionLogWait", 10.0)
+		self._log("Did not receive parseable position data from printer within {}s, continuing without it".format(timeout))
+		self._cancel_preparation_done()
 
-		def finalize():
-			self._changeState(self.STATE_OPERATIONAL)
-		self.sendCommand(SendQueueMarker(finalize))
-		self._continue_sending()
+	def _cancel_preparation_done(self, check_timer=True):
+		with self._cancel_mutex:
+			if self._cancel_position_timer is not None:
+				self._cancel_position_timer.cancel()
+				self._cancel_position_timer = None
+			elif check_timer:
+				return
+
+			self._recordFilePosition()
+			self._callback.on_comm_print_job_cancelled()
+
+			def finalize():
+				self._changeState(self.STATE_OPERATIONAL)
+			self.sendCommand(SendQueueMarker(finalize))
+			self._continue_sending()
 
 	def cancelPrint(self, firmware_error=None, disable_log_position=False, tags=None, external_sd=False):
 		if not self.isOperational():
@@ -1120,7 +1137,16 @@ class MachineCom(object):
 			# because we do this only after our M114 has been answered
 			# by the firmware
 			self._record_cancel_data = True
-			self.sendCommand("M114", tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
+
+			with self._cancel_mutex:
+				if self._cancel_position_timer is not None:
+					self._cancel_position_timer.cancel()
+				self._cancel_position_timer = ResettableTimer(self._timeout_intervals.get("positionLogWait", 10.0),
+				                                              self._cancel_preparation_done)
+				self._cancel_position_timer.daemon = True
+				self._cancel_position_timer.start()
+			self.sendCommand("M114", tags=tags | {"trigger:comm.cancel",
+												  "trigger:record_position"})
 
 		self._callback.on_comm_print_job_cancelling(firmware_error=firmware_error)
 
@@ -1139,18 +1165,33 @@ class MachineCom(object):
 						pass
 
 			if self._log_position_on_cancel and not disable_log_position:
-				self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
+				self.sendCommand("M400",
+								 on_sent=_on_M400_sent,
+								 tags=tags | {"trigger:comm.cancel",
+											  "trigger:record_position"})
 				self._continue_sending()
 			else:
-				self._cancel_preparation_done()
+				self._cancel_preparation_done(check_timer=False)
 
-	def _pause_preparation_done(self):
-		self._callback.on_comm_print_job_paused()
+	def _pause_preparation_failed(self):
+		timeout = self._timeout_intervals.get("positionLogWait", 10.0)
+		self._log("Did not receive parseable position data from printer within {}s, continuing without it".format(timeout))
+		self._pause_preparation_done()
 
-		def finalize():
-			self._changeState(self.STATE_PAUSED)
-		self.sendCommand(SendQueueMarker(finalize))
-		self._continue_sending()
+	def _pause_preparation_done(self, check_timer=True):
+		with self._pause_mutex:
+			if self._pause_position_timer is not None:
+				self._pause_position_timer.cancel()
+				self._pause_position_timer = None
+			elif check_timer:
+				return
+
+			self._callback.on_comm_print_job_paused()
+
+			def finalize():
+				self._changeState(self.STATE_PAUSED)
+			self.sendCommand(SendQueueMarker(finalize))
+			self._continue_sending()
 
 	def setPause(self, pause, tags=None):
 		if self.isStreaming():
@@ -1202,13 +1243,28 @@ class MachineCom(object):
 					# because we do this only after our M114 has been answered
 					# by the firmware
 					self._record_pause_data = True
-					self.sendCommand("M114", tags=tags | {"trigger:comm.set_pause", "trigger:pause", "trigger:record_position"})
+
+					with self._pause_mutex:
+						if self._pause_position_timer is not None:
+							self._pause_position_timer.cancel()
+							self._pause_position_timer = None
+						self._pause_position_timer = ResettableTimer(self._timeout_intervals.get("positionLogWait", 10.0),
+						                                             self._pause_preparation_failed)
+						self._pause_position_timer.daemon = True
+						self._pause_position_timer.start()
+					self.sendCommand("M114", tags=tags | {"trigger:comm.set_pause",
+														  "trigger:pause",
+														  "trigger:record_position"})
 
 				if self._log_position_on_pause:
-					self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.set_pause", "trigger:pause", "trigger:record_position"})
+					self.sendCommand("M400",
+									 on_sent=_on_M400_sent,
+									 tags=tags | {"trigger:comm.set_pause",
+												  "trigger:pause",
+												  "trigger:record_position"})
 					self._continue_sending()
 				else:
-					self._pause_preparation_done()
+					self._pause_preparation_done(check_timer=False)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -3238,6 +3294,10 @@ class MachineCom(object):
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
 
+	def _gcode_M114_queued(self, *args, **kwargs):
+		self._reset_position_timers()
+	_gcode_M114_sent = _gcode_M114_queued
+
 	def _gcode_G4_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		# we are intending to dwell for a period of time, increase the timeout to match
 		p_match = regexes_parameters["floatP"].search(cmd)
@@ -3254,6 +3314,12 @@ class MachineCom(object):
 
 	def _validate_tool(self, tool):
 		return tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"] and not tool in self._knownInvalidTools
+
+	def _reset_position_timers(self):
+		if self._cancel_position_timer:
+			self._cancel_position_timer.reset()
+		if self._pause_position_timer:
+			self._pause_position_timer.reset()
 
 	## atcommands
 
