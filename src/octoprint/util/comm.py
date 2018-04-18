@@ -1140,6 +1140,7 @@ class MachineCom(object):
 
 			if self._log_position_on_cancel and not disable_log_position:
 				self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
+				self._continue_sending()
 			else:
 				self._cancel_preparation_done()
 
@@ -1205,6 +1206,7 @@ class MachineCom(object):
 
 				if self._log_position_on_pause:
 					self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.set_pause", "trigger:pause", "trigger:record_position"})
+					self._continue_sending()
 				else:
 					self._pause_preparation_done()
 
