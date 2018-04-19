@@ -336,7 +336,10 @@ $(function() {
                     if (!response.result) {
                         showMessageDialog({
                             title: errorTitle,
-                            message: errorText
+                            message: errorText,
+                            onclose: function() {
+                                self.testWebcamSnapshotUrlBusy(false);
+                            }
                         });
                         return;
                     }
