@@ -433,15 +433,15 @@ class FilebasedUserManager(UserManager):
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
 
-					groups = []
+					groups = {self._group_manager.user_group}  # the user group is mandatory for all logged in users
 					if "groups" in attributes:
-						groups = attributes["groups"]
+						groups |= set(attributes["groups"])
 
 					# migrate from roles to permissions
 					if "roles" in attributes and not "permissions" in attributes:
 						self._logger.info("Migrating user {} to new granular permission system".format(name))
 
-						groups.extend(self._migrate_roles_to_groups(attributes["roles"]))
+						groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
 						self._dirty = True
 
 					apikey = None
@@ -1001,7 +1001,7 @@ class User(UserMixin):
 
 		dirty = False
 		for group in groups:
-			if group not in self._groups:
+			if group.is_toggleable() and group not in self._groups:
 				self._groups.append(group)
 				dirty = True
 
@@ -1016,7 +1016,7 @@ class User(UserMixin):
 
 		dirty = False
 		for group in groups:
-			if group in self._groups:
+			if group.is_toggleable() and group in self._groups:
 				self._groups.remove(group)
 				dirty = True
 

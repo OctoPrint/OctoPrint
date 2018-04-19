@@ -89,16 +89,18 @@ class GroupManager(object):
 		               save=False)
 		self.add_group(USER_GROUP,
 		               "Users",
-		               "Logged in users",
+		               "All logged in users",
 		               DEFAULT_USER_PERMISSIONS,
 		               default=True,
 		               removable=False,
+		               toggleable=False,
 		               save=False)
 		self.add_group(GUEST_GROUP,
 		               "Guests",
-		               "Logged out guests",
+		               "Anyone who is not currently logged in",
 		               DEFAULT_GUEST_PERMISSIONS,
 		               removable=False,
+		               toggleable=False,
 		               save=False)
 
 	def register_listener(self, listener):
@@ -107,7 +109,7 @@ class GroupManager(object):
 	def unregister_listener(self, listener):
 		self._group_change_listeners.remove(listener)
 
-	def add_group(self, key, name, description, permissions, default=False, removable=True, changeable=True, save=True, notify=True):
+	def add_group(self, key, name, description, permissions, default=False, removable=True, changeable=True, toggleable=True, save=True, notify=True):
 		pass
 
 	def update_group(self, key, description=None, permissions=None, default=None, save=True, notify=True):
@@ -228,7 +230,7 @@ class FilebasedGroupManager(GroupManager):
 		return self._groups.get(key)
 
 	def add_group(self, key, name, description, permissions, default=False, removable=True,
-	              changeable=True, overwrite=False, notify=True, save=True):
+	              changeable=True, toggleable=True, overwrite=False, notify=True, save=True):
 		if key in self._groups.keys() and not overwrite:
 			raise GroupAlreadyExists(key)
 
@@ -243,7 +245,8 @@ class FilebasedGroupManager(GroupManager):
 		              permissions=permissions,
 		              default=default,
 		              changeable=changeable,
-		              removable=removable)
+		              removable=removable,
+		              toggleable=toggleable)
 		self._groups[key] = group
 
 		if save:
@@ -334,7 +337,7 @@ class GroupCantBeChanged(Exception):
 
 
 class Group(object):
-	def __init__(self, key, name, description="", permissions=None, default=False, removable=True, changeable=True):
+	def __init__(self, key, name, description="", permissions=None, default=False, removable=True, changeable=True, toggleable=True):
 		self._key = key
 		self._name = name
 		self._description = description
@@ -342,6 +345,7 @@ class Group(object):
 		self._default = default
 		self._removable = removable
 		self._changeable = changeable
+		self._toggleable = toggleable
 
 	def as_dict(self):
 		from octoprint.access.permissions import OctoPrintPermission
@@ -353,7 +357,8 @@ class Group(object):
 			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
 			default=self._default,
 			removable=self._removable,
-			changeable=self._changeable
+			changeable=self._changeable,
+			toggleable=self._toggleable
 		)
 
 	@property
@@ -374,6 +379,9 @@ class Group(object):
 
 	def is_removeable(self):
 		return self._removable
+
+	def is_toggleable(self):
+		return self._toggleable
 
 	def add_permissions_to_group(self, permissions):
 		"""Adds a list of permissions to a group"""
