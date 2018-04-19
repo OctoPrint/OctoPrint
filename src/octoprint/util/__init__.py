@@ -849,6 +849,38 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 	except:
 		return False
 
+def parse_mime_type(mime):
+	import cgi
+
+	if not mime or not isinstance(mime, basestring):
+		raise ValueError("mime must be a non empty str or unicode")
+
+	mime, params = cgi.parse_header(mime)
+
+	if mime == "*":
+		mime = "*/*"
+
+	parts = mime.split("/") if "/" in mime else None
+	if not parts or len(parts) != 2:
+		raise ValueError("mime must be a mime type of format type/subtype")
+
+	mime_type, mime_subtype = parts
+	return mime_type.strip(), mime_subtype.strip(), params
+
+def mime_type_matches(mime, other):
+	if not isinstance(mime, tuple):
+		mime = parse_mime_type(mime)
+	if not isinstance(other, tuple):
+		other = parse_mime_type(other)
+
+	mime_type, mime_subtype, _ = mime
+	other_type, other_subtype, _ = other
+
+	type_matches = (mime_type == other_type or mime_type == "*" or other_type == "*")
+	subtype_matches = (mime_subtype == other_subtype or mime_subtype == "*" or other_subtype == "*")
+
+	return type_matches and subtype_matches
+
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
 	if os.path.exists(filename):

@@ -65,6 +65,12 @@ Test paths or URLs
          from the URL check will be returned as part of the check result as well. ``json`` will attempt
          to parse the response as json and return the parsed result. ``true`` or ``bytes`` will base64 encode the body
          and return that.
+       * ``content_type_whitelist``: Optional array of supported content types. If set and the URL returns a content
+         type not included in this list, the test will fail. E.g. ``["image/*", "text/plain"]``.
+       * ``content_type_blacklist``: Optional array of unsupported content types. If set and the URL returns a content
+         type included in this list, the test wil fail. E.g. ``["video/*"]``. Can be used together with ``content_type_whitelist``
+         to further limit broader content type definition, e.g. by putting ``image/*`` into the whitelist, but disallowing
+         PNG by including ``image/png`` on the blacklist.
 
      The ``url`` command returns :http:statuscode:`200` with a :ref:`URL test result <sec-api-util-datamodel-urltestresult>`
      when the test could be performed. The status code of the response does NOT reflect the

@@ -339,6 +339,8 @@ def utilTestPath():
 		timeout = 3.0
 		valid_ssl = True
 		check_status = [status_ranges["normal"]]
+		content_type_whitelist = None
+		content_type_blacklist = None
 
 		if "timeout" in data:
 			try:
@@ -366,34 +368,57 @@ def utilTestPath():
 						if code is not None:
 							check_status.append([code])
 
+		if "content_type_whitelist" in data:
+			if not isinstance(data["content_type_whitelist"], (list, tuple)):
+				return make_response("content_type_whitelist must be a list of mime types")
+			content_type_whitelist = map(util.parse_mime_type, data["content_type_whitelist"])
+		if "content_type_blacklist" in data:
+			if not isinstance(data["content_type_whitelist"], (list, tuple)):
+				return make_response("content_type_blacklist must be a list of mime types")
+			content_type_blacklist = map(util.parse_mime_type, data["content_type_blacklist"])
+
+		response_result = None
+		outcome = True
+		status = 0
 		try:
-			response = requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl)
-			status = response.status_code
+			with requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True) as response:
+				status = response.status_code
+				outcome = outcome and any(map(lambda x: status in x, check_status))
+				content_type = response.headers.get("content-type")
+
+				response_result = dict(headers=dict(response.headers),
+				                       content_type=content_type)
+
+				parsed_content_type = util.parse_mime_type(content_type)
+				in_whitelist = content_type_whitelist is None or any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
+				in_blacklist = content_type_blacklist is not None and any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_blacklist))
+
+				if not in_whitelist or in_blacklist:
+					# we don't support this content type
+					response.close()
+					outcome = False
+
+				elif "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
+					if data["response"] == "json":
+						content = response.json()
+
+					else:
+						import base64
+						content = base64.standard_b64encode(response.content)
+
+					response_result["content"] = content
 		except:
-			status = 0
+			logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
+			outcome = False
 
 		result = dict(
 			url=url,
 			status=status,
-			result=any(map(lambda x: status in x, check_status))
+			result=outcome
 		)
+		if response_result:
+			result["response"] = response_result
 
-		if "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
-
-			import base64
-			content = base64.standard_b64encode(response.content)
-
-			if data["response"] == "json":
-				try:
-					content = response.json()
-				except:
-					logging.getLogger(__name__).exception("Couldn't convert response to json")
-					result["result"] = False
-
-			result["response"] = dict(
-				headers=dict(response.headers),
-				content=content
-			)
 		return jsonify(**result)
 
 	elif command == "server":
