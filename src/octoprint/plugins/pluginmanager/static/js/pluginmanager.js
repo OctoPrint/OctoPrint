@@ -1075,16 +1075,12 @@ $(function() {
             self.settings = self.settingsViewModel.settings;
         };
 
-        self.onUserLoggedIn = function(user) {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             if (self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 self.requestData({eval_notices: true});
             } else {
-                self.onUserLoggedOut();
+                self._resetNotifications();
             }
-        };
-
-        self.onUserLoggedOut = function() {
-            self._resetNotifications();
         };
 
         self.onEventConnectivityChanged = function(payload) {

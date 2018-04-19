@@ -603,10 +603,8 @@ $(function() {
         self.onSettingsShown = self.requestData;
         self.onStartup = self.requestData;
 
-        self.onUserLoggedIn = function() {
-            if (self.loginState.hasPermission(self.access.permissions.PRINTERPROFILES_ACCESS)){
-                self.requestData();
-            }
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            self.requestData();
         }
     }
 

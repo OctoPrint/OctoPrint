@@ -58,12 +58,16 @@ $(function() {
         self.fromResponse = function(response) {
             var process = function() {
                 var currentLoggedIn = self.loggedIn();
+                var currentNeeds = self.userneeds();
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.updateCurrentUserData(response);
                     if (!currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
                         log.info("User " + response.name + " logged in");
+                    } else if (!_.isEqual(currentNeeds, self.userneeds())) {
+                        callViewModels(self.allViewModels, "onUserPermissionsChanged");
+                        log.info("User needs for " + response.name + " changed");
                     }
                     if (response.session) {
                         OctoPrint.socket.sendAuth(response.name, response.session);
@@ -74,6 +78,9 @@ $(function() {
                     if (currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedOut");
                         log.info("User logged out");
+                    } else if (!_.isEqual(currentNeeds, self.userneeds())) {
+                        callViewModels(self.allViewModels, "onUserPermissionsChanged");
+                        log.info("User needs for guest changed");
                     }
                 }
                 OctoPrint.coreui.updateTab();

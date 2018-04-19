@@ -788,11 +788,7 @@ $(function() {
             self._printerProfileUpdated();
         };
 
-        self.onUserLoggedIn = function() {
-            self.initOrUpdate();
-        };
-
-        self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.initOrUpdate();
         };
 

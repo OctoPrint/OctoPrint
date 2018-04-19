@@ -220,6 +220,11 @@ onUserLoggedIn(user)
 onUserLoggedOut()
    Called when a user gets logged out of the web app.
 
+onUserPermissionsChanged(user)
+   Called when a change in the permissions of the current user is detected. The user data of the just logged in user
+   will be provided as only parameter. Note that this may also be triggered for not logged in guests if the guest
+   group is modified. In this case ``user`` will be undefined.
+
 onTabChange(next, current)
    Called before the main tab view switches to a new tab, so `before` the new tab becomes visible. Called with the
    next (changed to) and current (still visible) tab's hash (e.g. ``#control``). Note that ``current`` might be undefined

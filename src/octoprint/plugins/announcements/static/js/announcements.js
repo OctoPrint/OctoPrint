@@ -318,12 +318,12 @@ $(function() {
             self.settings.show("settings_plugin_announcements");
         };
 
-        self.onUserLoggedIn = function() {
-            self.retrieveData();
-        };
-
-        self.onUserLoggedOut = function() {
-            self.hideAnnouncements();
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) {
+                self.hideAnnouncements();
+            } else {
+                self.retrieveData();
+            }
         };
 
         self.onStartup = function() {

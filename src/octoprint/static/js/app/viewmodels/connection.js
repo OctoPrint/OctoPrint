@@ -174,7 +174,7 @@ $(function() {
             self.openOrCloseOnStateChange(true);
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
         };
     }

@@ -826,12 +826,7 @@ $(function() {
             }
         };
 
-        self.onUserLoggedIn = function(user) {
-            self.updateButtons();
-            self.requestData();
-        };
-
-        self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.updateButtons();
             self.requestData();
         };

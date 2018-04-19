@@ -672,7 +672,7 @@ $(function() {
             access.permissions.initialize();
         };
 
-        access.onUserLoggedIn = function(user) {
+        access.onUserPermissionsChanged = access.onUserLoggedIn = access.onUserLoggedOut = function(user) {
             if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
                 access.groups.requestData();
                 access.users.requestData();

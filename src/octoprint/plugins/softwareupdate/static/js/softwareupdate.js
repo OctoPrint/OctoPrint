@@ -173,14 +173,12 @@ $(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
         });
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             if (self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK)) {
                 self.performCheck();
+            } else {
+                self._closePopup();
             }
-        };
-
-        self.onUserLoggedOut = function() {
-            self._closePopup();
         };
 
         self._showPopup = function(options, eventListeners, singleButtonNotify) {

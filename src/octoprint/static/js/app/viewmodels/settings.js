@@ -1006,17 +1006,11 @@ $(function() {
             self.requestData();
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             // we might have other user rights now, refresh (but only if startup has fully completed)
             if (!self._startupComplete) return;
             self.requestData();
         };
-
-        self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
