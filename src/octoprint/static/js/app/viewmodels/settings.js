@@ -159,6 +159,7 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
         self.serial_timeoutBaudrateDetectionPause = ko.observable(undefined);
+        self.serial_timeoutPositionLogWait = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
