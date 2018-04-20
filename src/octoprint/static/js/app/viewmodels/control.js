@@ -358,7 +358,7 @@ $(function() {
             return span + " " + offset;
         };
 
-        self.onStartup = function () {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
         };
 

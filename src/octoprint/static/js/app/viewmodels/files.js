@@ -896,8 +896,6 @@ $(function() {
             self.printerState.isSdReady.subscribe(evaluateDropzones);
             self.isPrinting.subscribe(evaluateDropzones);
             evaluateDropzones();
-
-            self.requestData();
         };
 
         self.onEventUpdatedFiles = function(payload) {

@@ -355,10 +355,10 @@ class Permissions(object):
 	                                             gettext("Allows to download timelapse videos"),
 	                                             RoleNeed("timelapse_download"))
 	TIMELAPSE_DELETE       = OctoPrintPermission("Timelapse Delete",
-	                                             gettext("TODO"),
+	                                             gettext("Allows to delete timelapse videos and unrendered timelapses"),
 	                                             RoleNeed("timelapse_delete"))
 	TIMELAPSE_ADMIN        = OctoPrintPermission("Timelapse Admin",
-	                                             gettext("Allows to change the timelapse settings and"
+	                                             gettext("Allows to change the timelapse settings and delete or "
 	                                                     "render unrendered timelapses. Includes the \"Timelapse List\","
 	                                                     "\"Timelapse Delete\" and \"Timelapse Download\" permissions"),
 	                                             RoleNeed("timelapse_admin"), TIMELAPSE_LIST, TIMELAPSE_DOWNLOAD)
