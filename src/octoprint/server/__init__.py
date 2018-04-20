@@ -20,7 +20,10 @@ from collections import defaultdict, OrderedDict
 from builtins import bytes, range
 from past.builtins import basestring
 
-from octoprint import util
+import octoprint.util
+import octoprint.util.net
+
+from octoprint.server import util
 from octoprint.util.json import JsonEncoding
 
 import os
@@ -70,14 +73,14 @@ import octoprint.access.permissions as permissions
 import octoprint.access.groups as groups
 
 # we set admin_permission to a GroupPermission with the default admin group
-admin_permission = util.variable_deprecated("admin_permission has been deprecated, "
-                                            "please use individual Permissions instead",
-                                            since="1.4.0")(groups.GroupPermission(groups.ADMIN_GROUP))
+admin_permission = octoprint.util.variable_deprecated("admin_permission has been deprecated, "
+                                                      "please use individual Permissions instead",
+                                                      since="1.4.0")(groups.GroupPermission(groups.ADMIN_GROUP))
 
 # we set user_permission to a GroupPermission with the default user group
-user_permission = util.variable_deprecated("user_permission has been deprecated, "
-                                           "please use individual Permissions instead",
-                                           since="1.4.0")(groups.GroupPermission(groups.USER_GROUP))
+user_permission = octoprint.util.variable_deprecated("user_permission has been deprecated, "
+                                                     "please use individual Permissions instead",
+                                                     since="1.4.0")(groups.GroupPermission(groups.USER_GROUP))
 
 # only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
@@ -90,8 +93,6 @@ import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
-import octoprint.util
-import octoprint.util.net
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
@@ -1534,7 +1535,7 @@ class Server(object):
 		if userManager.enabled:
 			def anonymous_user_factory():
 				return users.AnonymousUser([groupManager.guest_group])
-			loginManager.anonymous_user = anonymous_user_factory # TODO: remove in 1.5.0
+			loginManager.anonymous_user = anonymous_user_factory
 
 		else:
 			class AdminUser(users.User):
