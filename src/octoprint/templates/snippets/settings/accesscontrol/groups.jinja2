@@ -14,7 +14,7 @@
             <span data-bind="text: name"></span><br>
             <small class="muted" data-bind="text: description"></small>
         </td>
-        <td class="settings_groups_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
+        <td class="settings_groups_permissions"><small><span data-bind="text: $root.access.permissionList($data)"></span></small></td>
         <td class="settings_groups_actions">
             <a href="#" class="fa fa-pencil" title="{{ _('Update group') }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.removeGroup($data); }"></a>
         </td>

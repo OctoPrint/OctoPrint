@@ -194,9 +194,19 @@ class FilebasedGroupManager(GroupManager):
 					tracked_permissions = data.get("tracked", list())
 
 					for key, attributes in groups.items():
-						if key in self._groups and not self._groups[key].is_changable():
-							# group is already there (from the defaults most likely) and may not be changed -> bail
-							continue
+						if key in self._groups:
+							# group is already there (from the defaults most likely)
+							if not self._groups[key].is_changable():
+								# group may not be changed -> bail
+								continue
+
+							removable = self._groups[key].is_removable()
+							changeable = self._groups[key].is_changable()
+							toggleable = self._groups[key].is_toggleable()
+						else:
+							removable = True
+							changeable = True
+							toggleable = True
 
 						permissions = self._to_permissions(*attributes.get("permissions", []))
 						default_permissions = self.default_permissions_for_group(key)
@@ -208,9 +218,9 @@ class FilebasedGroupManager(GroupManager):
 						                          description=attributes.get("description", ""),
 						                          permissions=permissions,
 						                          default=attributes.get("default", False),
-						                          removable=attributes.get("removable",
-						                                                   not attributes.get("specialGroup", False)),
-						                          changeable=attributes.get("changeable", True))
+						                          removable=removable,
+						                          changeable=changeable,
+						                          toggleable=toggleable)
 			except:
 				self._logger.exception("Error while loading groups from file {}".format(self._groupfile))
 
@@ -225,9 +235,7 @@ class FilebasedGroupManager(GroupManager):
 				name=group._name,
 				description=group._description,
 				permissions=self._from_permissions(*group._permissions),
-				default=group._default,
-				removable=group.is_removeable(),
-				changeable=group.is_changable()
+				default=group._default
 			)
 
 		data = dict(groups=groups,
