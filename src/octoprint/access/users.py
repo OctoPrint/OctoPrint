@@ -59,7 +59,7 @@ class UserManager(GroupChangeListener, object):
 	def login_user(self, user):
 		self._cleanup_sessions()
 
-		if user is None:
+		if user is None or user.is_anonymous:
 			return
 
 		if isinstance(user, LocalProxy):
@@ -88,7 +88,7 @@ class UserManager(GroupChangeListener, object):
 		return user
 
 	def logout_user(self, user):
-		if user is None:
+		if user is None or user.is_anonymous:
 			return
 
 		if isinstance(user, LocalProxy):
@@ -1119,6 +1119,9 @@ class AnonymousUser(AnonymousUserMixin, User):
 		return {
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs)
 		}
+
+	def __repr__(self):
+		return "AnonymousUser(groups=%s)" % self._groups
 
 
 class SessionUser(wrapt.ObjectProxy):
