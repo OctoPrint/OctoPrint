@@ -15,6 +15,8 @@ from collections import OrderedDict, defaultdict
 
 from past.builtins import basestring
 
+from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP
+
 
 class OctoPrintPermission(Permission):
 	@classmethod
@@ -41,6 +43,7 @@ class OctoPrintPermission(Permission):
 		self._name = name
 		self._description = description
 		self._dangerous = kwargs.pop("dangerous", False) == True
+		self._default_groups = kwargs.pop("default_groups", [])
 
 		self._key = None
 
@@ -51,6 +54,7 @@ class OctoPrintPermission(Permission):
 			key=self.key,
 			name=self.get_name(),
 			dangerous=self._dangerous,
+			default_groups=self._default_groups,
 			description=self.get_description(),
 			needs=self.convert_needs_to_dict(self.needs)
 		)
@@ -62,6 +66,10 @@ class OctoPrintPermission(Permission):
 	@key.setter
 	def key(self, value):
 		self._key = value
+
+	@property
+	def default_groups(self):
+		return self._default_groups
 
 	def get_name(self):
 		return self._name
@@ -285,20 +293,24 @@ class Permissions(object):
 	ADMIN                  = OctoPrintPermission("Admin",
 	                                             gettext("Admin is allowed to do everything"),
 	                                             RoleNeed("admin"),
-	                                             dangerous=True)
+	                                             dangerous=True,
+	                                             default_groups=[ADMIN_GROUP])
 
 	STATUS                 = OctoPrintPermission("Status",
 	                                             gettext("Allows to gather status information, e.g. job progress, "
 	                                                     "printer state, temperatures, ..."),
-	                                             RoleNeed("status"))
+	                                             RoleNeed("status"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 
 	CONNECTION             = OctoPrintPermission("Connection",
 	                                             gettext("Allows to connect to and disconnect from a printer"),
-	                                             RoleNeed("connection"))
+	                                             RoleNeed("connection"),
+	                                             default_groups=[USER_GROUP])
 
 	WEBCAM                 = OctoPrintPermission("Webcam",
 	                                             gettext("Allows to watch the webcam stream"),
-	                                             RoleNeed("webcam"))
+	                                             RoleNeed("webcam"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 
 	SYSTEM                 = OctoPrintPermission("System",
 	                                             gettext("Allows to run system commands, e.g. restart OctoPrint, "
@@ -309,59 +321,73 @@ class Permissions(object):
 	FILES_LIST             = OctoPrintPermission("File List",
 	                                             gettext("Allows to retrieve a list of all uploaded files, including"
 	                                                     "their metadata (e.g. date, file size, analysis results, ...)"),
-	                                             RoleNeed("files_list"))
+	                                             RoleNeed("files_list"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 	FILES_UPLOAD           = OctoPrintPermission("File Upload",
 	                                             gettext("Allows users to upload new files"),
-	                                             RoleNeed("files_upload"))
+	                                             RoleNeed("files_upload"),
+	                                             default_groups=[USER_GROUP])
 	FILES_DOWNLOAD         = OctoPrintPermission("File Download",
 	                                             gettext("Allows users to download files. The GCODE viewer is "
 	                                                     "affected by this as well."),
-	                                             RoleNeed("files_download"), FILES_LIST)
+	                                             RoleNeed("files_download"), FILES_LIST,
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 	FILES_DELETE           = OctoPrintPermission("File Delete",
 	                                             gettext("Allows users to delete files"),
-	                                             RoleNeed("files_delete"), FILES_LIST)
+	                                             RoleNeed("files_delete"), FILES_LIST,
+	                                             default_groups=[USER_GROUP])
 	FILES_SELECT           = OctoPrintPermission("File Select",
 	                                             gettext("Allows to select a file for printing"),
-	                                             RoleNeed("files_select"), FILES_LIST)
+	                                             RoleNeed("files_select"), FILES_LIST,
+	                                             default_groups=[USER_GROUP])
 
 	PRINT                  = OctoPrintPermission("Print",
 	                                             gettext("Allows to start, pause and cancel a print job. Includes the \"Select\" "
 	                                                     "permission"),
-	                                             RoleNeed("print"), FILES_SELECT)
+	                                             RoleNeed("print"), FILES_SELECT,
+	                                             default_groups=[USER_GROUP])
 
 	GCODE_VIEWER           = OctoPrintPermission("GCODE viewer",
 	                                             gettext("Allows access to the GCODE viewer. Includes the \"File Download\""
 	                                                     "permission."),
-	                                             RoleNeed("gcodeviewer"), FILES_DOWNLOAD)
+	                                             RoleNeed("gcodeviewer"), FILES_DOWNLOAD,
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 
 	MONITOR_TERMINAL       = OctoPrintPermission("Terminal",
 	                                             gettext("Allows to watch the terminal tab but not to send commands "
 	                                                     "to the printer from it"),
-	                                             RoleNeed("monitor_terminal"))
+	                                             RoleNeed("monitor_terminal"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 
 	CONTROL                = OctoPrintPermission("Control",
 	                                             gettext("Allows to control of the printer by using the temperature controls,"
 	                                                     "the control tab or sending commands through the terminal."),
-	                                             RoleNeed("control"))
+	                                             RoleNeed("control"),
+	                                             default_groups=[USER_GROUP])
 
 	SLICE                  = OctoPrintPermission("Slice",
 	                                             gettext("Allows to slice files"),
-	                                             RoleNeed("slice"))
+	                                             RoleNeed("slice"),
+	                                             default_groups=[USER_GROUP])
 
 	TIMELAPSE_LIST         = OctoPrintPermission("Timelapse List",
 	                                             gettext("Allows to list timelapse videos"),
-	                                             RoleNeed("timelapse_list"))
+	                                             RoleNeed("timelapse_list"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 	TIMELAPSE_DOWNLOAD     = OctoPrintPermission("Timelapse Download",
 	                                             gettext("Allows to download timelapse videos"),
-	                                             RoleNeed("timelapse_download"))
+	                                             RoleNeed("timelapse_download"),
+	                                             default_groups=[USER_GROUP, GUEST_GROUP])
 	TIMELAPSE_DELETE       = OctoPrintPermission("Timelapse Delete",
 	                                             gettext("Allows to delete timelapse videos and unrendered timelapses"),
-	                                             RoleNeed("timelapse_delete"))
+	                                             RoleNeed("timelapse_delete"),
+	                                             default_groups=[USER_GROUP])
 	TIMELAPSE_ADMIN        = OctoPrintPermission("Timelapse Admin",
 	                                             gettext("Allows to change the timelapse settings and delete or "
 	                                                     "render unrendered timelapses. Includes the \"Timelapse List\","
 	                                                     "\"Timelapse Delete\" and \"Timelapse Download\" permissions"),
-	                                             RoleNeed("timelapse_admin"), TIMELAPSE_LIST, TIMELAPSE_DOWNLOAD)
+	                                             RoleNeed("timelapse_admin"), TIMELAPSE_LIST, TIMELAPSE_DOWNLOAD,
+	                                             default_groups=[USER_GROUP])
 
 	SETTINGS               = OctoPrintPermission("Settings",
 	                                             gettext("Allows to manage settings"),

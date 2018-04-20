@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.events import Events
+from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 
 import flask
@@ -103,7 +104,8 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 			dict(key="DISPLAY",
 			     name="Display printer safety warnings",
 			     description=gettext("Allows to see printer safety warnings"),
-			     roles=["display"])
+			     roles=["display"],
+			     default_groups=[USER_GROUP])
 		]
 
 	##~~ Helpers

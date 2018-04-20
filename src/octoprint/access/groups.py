@@ -15,14 +15,13 @@ from past.builtins import basestring
 
 from octoprint.settings import settings
 from octoprint.util import atomic_write
+from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from flask_principal import Need, Permission
 
-ADMIN_GROUP = "admins"
 DEFAULT_ADMIN_PERMISSIONS = [Permissions.ADMIN]
 """Default admin permissions are the legacy permissions from before 1.4.0"""
 
-USER_GROUP = "users"
 DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
                             Permissions.CONNECTION,
                             Permissions.WEBCAM,
@@ -38,7 +37,6 @@ DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
                             Permissions.TIMELAPSE_ADMIN]
 """Default user permissions are the legacy permissions from before 1.4.0"""
 
-GUEST_GROUP = "guests"
 DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
                              Permissions.WEBCAM,
                              Permissions.FILES_DOWNLOAD,
@@ -58,6 +56,14 @@ class GroupPermission(Permission):
 
 
 class GroupManager(object):
+	@classmethod
+	def default_permissions_for_group(cls, group):
+		result = []
+		for permission in Permissions.all():
+			if group in permission.default_groups:
+				result.append(permission)
+		return result
+
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 		self._group_change_listeners = []
@@ -83,14 +89,14 @@ class GroupManager(object):
 		self.add_group(ADMIN_GROUP,
 		               "Admins",
 		               "Administrators",
-		               DEFAULT_ADMIN_PERMISSIONS,
+		               self.default_permissions_for_group(ADMIN_GROUP),
 		               changeable=False,
 		               removable=False,
 		               save=False)
 		self.add_group(USER_GROUP,
 		               "Users",
 		               "All logged in users",
-		               DEFAULT_USER_PERMISSIONS,
+		               self.default_permissions_for_group(USER_GROUP),
 		               default=True,
 		               removable=False,
 		               toggleable=False,
@@ -98,7 +104,7 @@ class GroupManager(object):
 		self.add_group(GUEST_GROUP,
 		               "Guests",
 		               "Anyone who is not currently logged in",
-		               DEFAULT_GUEST_PERMISSIONS,
+		               self.default_permissions_for_group(GUEST_GROUP),
 		               removable=False,
 		               toggleable=False,
 		               save=False)
@@ -179,14 +185,28 @@ class FilebasedGroupManager(GroupManager):
 			try:
 				with open(self._groupfile, "r") as f:
 					data = yaml.safe_load(f)
-					for key, attributes in data.items():
+
+					if not "groups" in data:
+						groups = data
+						data = dict(groups=groups)
+
+					groups = data.get("groups", dict())
+					tracked_permissions = data.get("tracked", list())
+
+					for key, attributes in groups.items():
 						if key in self._groups and not self._groups[key].is_changable():
 							# group is already there (from the defaults most likely) and may not be changed -> bail
 							continue
 
+						permissions = self._to_permissions(*attributes.get("permissions", []))
+						default_permissions = self.default_permissions_for_group(key)
+						for permission in default_permissions:
+							if not permission.key in tracked_permissions and not permission in permissions:
+								permissions.append(permission)
+
 						self._groups[key] = Group(key, attributes.get("name", ""),
 						                          description=attributes.get("description", ""),
-						                          permissions=self._to_permissions(*attributes.get("permissions", [])),
+						                          permissions=permissions,
 						                          default=attributes.get("default", False),
 						                          removable=attributes.get("removable",
 						                                                   not attributes.get("specialGroup", False)),
@@ -198,10 +218,10 @@ class FilebasedGroupManager(GroupManager):
 		if self._groupfile is None or not self._dirty and not force:
 			return
 
-		data = dict()
+		groups = dict()
 		for key in self._groups.keys():
 			group = self._groups[key]
-			data[key] = dict(
+			groups[key] = dict(
 				name=group._name,
 				description=group._description,
 				permissions=self._from_permissions(*group._permissions),
@@ -209,6 +229,9 @@ class FilebasedGroupManager(GroupManager):
 				removable=group.is_removeable(),
 				changeable=group.is_changable()
 			)
+
+		data = dict(groups=groups,
+		            tracked=[x.key for x in Permissions.all()])
 
 		with atomic_write(self._groupfile, "wb", permissions=0o600, max_permissions=0o666) as f:
 			import yaml

@@ -1696,6 +1696,7 @@ class Server(object):
 			roles = definition["roles"]
 			description = definition.get("description", "")
 			dangerous = definition.get("dangerous", False) == True
+			default_groups = definition.get("default_groups", [])
 
 			key = permission_key(plugin_info.key, definition)
 			setattr(octoprint.access.permissions.Permissions,
@@ -1704,6 +1705,7 @@ class Server(object):
 			                                  description,
 			                                  plugin=plugin_info.key,
 			                                  dangerous=dangerous,
+			                                  default_groups=default_groups,
 			                                  *[permission_role(plugin_info.key, role) for role in roles]))
 
 			self._logger.debug("Added new permission from plugin {}: {}".format(plugin_info.key, key))
@@ -1723,12 +1725,14 @@ class Server(object):
 
 			key = permission_key(plugin_info.key, definition)
 			dangerous = definition.get("dangerous", False) == True
+			default_groups = definition.get("default_groups", [])
 			setattr(octoprint.access.permissions.Permissions,
 			        key,
 			        CombinedPluginOctoPrintPermission.from_permissions(permission_name(plugin_info.name, definition),
 			                                                           description=definition.get("description", ""),
 			                                                           plugin=plugin_info.key,
 			                                                           dangerous=dangerous,
+			                                                           default_groups=default_groups
 			                                                           *resolved))
 
 			self._logger.debug("Added new permission from plugin {}: {}".format(plugin_info.key, key))

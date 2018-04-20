@@ -25,6 +25,7 @@ from flask_babel import gettext
 
 from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
 from octoprint.server import VERSION, REVISION, BRANCH
+from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
@@ -83,7 +84,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			dict(key="CHECK",
 			     name="Check",
 			     description=gettext("Allows to check for software updates"),
-			     roles=["check"]),
+			     roles=["check"],
+			     default_groups=[USER_GROUP]),
 			dict(key="UPDATE",
 			     name="Update",
 			     description=gettext("Allows to perform software updates"),
