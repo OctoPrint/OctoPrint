@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response, url_for
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request, with_revalidation_checking
+from octoprint.server.util.flask import require_firstrun, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
 from octoprint.access.permissions import Permissions
@@ -259,7 +259,7 @@ def _isBusy(target, path):
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
 
 @api.route("/files/<string:target>", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.FILES_UPLOAD.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
@@ -473,7 +473,7 @@ def readGcodeFile(target, filename):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.FILES_ACCESS.require(403)
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
@@ -738,8 +738,8 @@ def gcodeFileCommand(filename, target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
+@require_firstrun
 @Permissions.FILES_DELETE.require(403)
-@restricted_access
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
 		return make_response("File/Folder not found on '%s': %s" % (target, filename), 404)

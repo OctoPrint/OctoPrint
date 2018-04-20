@@ -17,7 +17,7 @@ import octoprint.plugin
 from octoprint.server import NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
+from octoprint.server.util.flask import require_firstrun, get_json_command_from_request, passive_login
 from octoprint.access.permissions import Permissions
 
 
@@ -73,7 +73,7 @@ def pluginData(name):
 #~~ commands for plugins
 
 @api.route("/plugin/<string:name>", methods=["POST"])
-@restricted_access
+@require_firstrun
 def pluginCommand(name):
 	api_plugins = octoprint.plugin.plugin_manager().get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.SimpleApiPlugin)
 
@@ -169,13 +169,12 @@ def wizardFinish():
 
 
 @api.route("/state", methods=["GET"])
-@restricted_access
+@require_firstrun
 def apiPrinterState():
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
 
 @api.route("/version", methods=["GET"])
-@restricted_access
 def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
@@ -226,7 +225,6 @@ def login():
 
 
 @api.route("/logout", methods=["POST"])
-@restricted_access
 def logout():
 	# logout from user manager...
 	_logout(current_user)
@@ -247,7 +245,7 @@ def _logout(user):
 
 
 @api.route("/util/test", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.ADMIN.require(403)
 def utilTestPath():
 	valid_commands = dict(

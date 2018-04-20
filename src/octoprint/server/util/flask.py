@@ -1132,11 +1132,29 @@ def restricted_access(func):
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
+		return require_firstrun(flask_login.login_required(func))(*args, **kwargs)
+
+	return decorated_view
+
+
+def require_firstrun(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has been
+	done for OctoPrint's Access Control.
+
+	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
+	flag from the settings being set to True and the userManager not indicating
+	that it's user database has been customized from default), the decorator
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (
+				octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
-		return flask_login.login_required(func)(*args, **kwargs)
+		return func(*args, **kwargs)
 
 	return decorated_view
 

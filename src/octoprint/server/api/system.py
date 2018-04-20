@@ -16,12 +16,12 @@ from octoprint.settings import settings as s
 
 from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access, get_remote_address
+from octoprint.server.util.flask import require_firstrun, get_remote_address
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
 
 @api.route("/system", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.SYSTEM.require(403)
 def performSystemAction():
 	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
@@ -37,7 +37,7 @@ def performSystemAction():
 
 
 @api.route("/system/commands", methods=["GET"])
-@restricted_access
+@require_firstrun
 @Permissions.SYSTEM.require(403)
 def retrieveSystemCommands():
 	return jsonify(core=_to_client_specs(_get_core_command_specs()),
@@ -45,7 +45,7 @@ def retrieveSystemCommands():
 
 
 @api.route("/system/commands/<string:source>", methods=["GET"])
-@restricted_access
+@require_firstrun
 @Permissions.SYSTEM.require(403)
 def retrieveSystemCommandsForSource(source):
 	if source == "core":
@@ -59,7 +59,7 @@ def retrieveSystemCommandsForSource(source):
 
 
 @api.route("/system/commands/<string:source>/<string:command>", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.SYSTEM.require(403)
 def executeSystemCommand(source, command):
 	logger = logging.getLogger(__name__)

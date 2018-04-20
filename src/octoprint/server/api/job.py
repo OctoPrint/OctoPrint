@@ -8,12 +8,12 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, make_response, jsonify
 
 from octoprint.server import printer, NO_CONTENT
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request
+from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
 from octoprint.server.api import api
 from octoprint.access.permissions import Permissions
 
 @api.route("/job", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.PRINT.require(403)
 def controlJob():
 	if not printer.is_operational():

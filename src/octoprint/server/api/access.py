@@ -14,7 +14,7 @@ import octoprint.access.users as users
 
 from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import require_firstrun
 from octoprint.access.permissions import Permissions
 
 #~~ permission api
@@ -26,14 +26,14 @@ def get_permissions():
 #~~ group api
 
 @api.route("/access/groups", methods=["GET"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def get_groups():
 	return jsonify(groups=map(lambda g: g.as_dict(), groupManager.groups))
 
 
 @api.route("/access/groups", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def add_group():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -65,7 +65,7 @@ def add_group():
 
 
 @api.route("/access/groups/<key>", methods=["GET"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def get_group(key):
 	group = groupManager.find_group(key)
@@ -76,7 +76,7 @@ def get_group(key):
 
 
 @api.route("/access/groups/<key>", methods=["PUT"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def update_group(key):
 	if "application/json" not in request.headers["Content-Type"]:
@@ -109,7 +109,7 @@ def update_group(key):
 
 
 @api.route("/access/groups/<key>", methods=["DELETE"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def remove_group(key):
 	try:
@@ -123,7 +123,7 @@ def remove_group(key):
 #~~ user api
 
 @api.route("/access/users", methods=["GET"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def get_users():
 	if not userManager.enabled:
@@ -133,7 +133,7 @@ def get_users():
 
 
 @api.route("/access/users", methods=["POST"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def add_user():
 	if not userManager.enabled:
@@ -172,7 +172,7 @@ def add_user():
 
 
 @api.route("/access/users/<username>", methods=["GET"])
-@restricted_access
+@require_firstrun
 def get_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -188,7 +188,7 @@ def get_user(username):
 
 
 @api.route("/access/users/<username>", methods=["PUT"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def update_user(username):
 	if not userManager.enabled:
@@ -228,7 +228,7 @@ def update_user(username):
 
 
 @api.route("/access/users/<username>", methods=["DELETE"])
-@restricted_access
+@require_firstrun
 @Permissions.SETTINGS.require(403)
 def remove_user(username):
 	if not userManager.enabled:
@@ -242,7 +242,7 @@ def remove_user(username):
 
 
 @api.route("/access/users/<username>/password", methods=["PUT"])
-@restricted_access
+@require_firstrun
 def change_password_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -273,7 +273,7 @@ def change_password_for_user(username):
 
 
 @api.route("/access/users/<username>/settings", methods=["GET"])
-@restricted_access
+@require_firstrun
 def get_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -287,7 +287,7 @@ def get_settings_for_user(username):
 		return make_response("Unknown user: %s" % username, 404)
 
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
-@restricted_access
+@require_firstrun
 def change_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -310,7 +310,7 @@ def change_settings_for_user(username):
 		return make_response("Unknown user: %s" % username, 404)
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
-@restricted_access
+@require_firstrun
 def delete_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -326,7 +326,7 @@ def delete_apikey_for_user(username):
 
 
 @api.route("/access/users/<username>/apikey", methods=["POST"])
-@restricted_access
+@require_firstrun
 def generate_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
