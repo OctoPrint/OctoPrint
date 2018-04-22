@@ -180,3 +180,46 @@ class TimelapseTest(unittest.TestCase):
 			raise ValueError("files must be either dict or list/tuple")
 
 		return result
+
+	def test_ffmpeg_parse(self):
+
+		# Test strings
+		noChange1Str = "  built on Jan  7 2014 22:07:02 with gcc 4.8.2 (GCC)"
+		durationStr = "  Duration: 00:00:18.60, start: 0.000000, bitrate: "
+		noChange2Str = "0: Video: mpeg2video, yuv420p, 640x480, q=2-31, 10000 kb/s, 90k tbn, 25 tbc"
+		progress1Str = "frame=  134 fps=0.0 q=1.6 size=    1528kB time=00:00:05.28 bitrate=2370.7kbits/s dup=80 drop=0  "
+		progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 "
+
+		expectedProgress = 0
+
+		# Callback mock
+		class test_callback:
+			def sendRenderProgress(self, progress):
+				self.assertAlmostEqual(progress, expectedProgress, 3)
+
+		# Register mock callback
+		octoprint.timelapse.register_callback(test_callback)
+
+		r = octoprint.timelapse.TimelapseRenderJob("", "", "", "")
+		self.assertEqual(r._duration_i, 0)
+
+		r._process_ffmpeg_output(noChange1Str)
+		self.assertEqual(r._duration_i, 0)
+
+		r._process_ffmpeg_output(progress1Str)
+		self.assertEqual(r._duration_i, 0)
+
+		r._process_ffmpeg_output(durationStr)
+		self.assertEqual(r._duration_i, 18)
+
+		r._process_ffmpeg_output(noChange2Str)
+		self.assertEqual(r._duration_i, 18)
+
+		expectedProgress = 27.777
+		r._process_ffmpeg_output(progress1Str)
+		self.assertEqual(r._duration_i, 18)
+
+		expectedProgress = 55.555
+		r._process_ffmpeg_output(progress2Str)
+		self.assertEqual(r._duration_i, 18)
+
