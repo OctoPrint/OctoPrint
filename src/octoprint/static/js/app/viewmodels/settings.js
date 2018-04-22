@@ -886,6 +886,13 @@ $(function() {
             firstRequest.resolve();
         };
 
+        self.cancelData = function () {
+            // revert unsaved changes
+            self.fromResponse(self.lastReceivedSettings);
+
+            self.hide();
+        }
+
         self.saveData = function (data, successCallback, setAsSending) {
             var options;
             if (_.isPlainObject(successCallback)) {
