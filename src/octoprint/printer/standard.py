@@ -425,19 +425,22 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._validateJob(path, sd)
 
+		origin = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
+		path_on_disk = self._fileManager.path_on_disk(origin, path)
+		path_in_storage = self._fileManager.path_in_storage(origin, path_on_disk)
+
 		recovery_data = self._fileManager.get_recovery_data()
 		if recovery_data:
 			# clean up recovery data if we just selected a different file than is logged in that
-			expected_origin = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
 			actual_origin = recovery_data.get("origin", None)
 			actual_path = recovery_data.get("path", None)
 
-			if actual_origin is None or actual_path is None or actual_origin != expected_origin or actual_path != path:
+			if actual_origin is None or actual_path is None or actual_origin != origin or actual_path != path_in_storage:
 				self._fileManager.delete_recovery_data()
 
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
-		self._comm.selectFile("/" + path if sd else path, sd,
+		self._comm.selectFile("/" + path if sd else path_on_disk, sd,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.select_file"})
 		self._updateProgressData()
 		self._setCurrentZ(None)
