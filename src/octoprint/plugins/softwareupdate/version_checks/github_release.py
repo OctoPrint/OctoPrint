@@ -293,7 +293,7 @@ def get_latest(target, check, custom_compare=None, online=True):
 			commitishes = dict((x["branch"], x.get("commitish", [x["branch"]])) for x in prerelease_branches)
 			commitish = commitishes.get(prerelease_channel, [prerelease_channel])
 
-	force_base = check.get("force_base", True)
+	force_base = check.get("force_base", False)
 	compare_type = _get_sanitized_compare_type(check.get("release_compare", "python"),
 	                                           custom=custom_compare)
 
