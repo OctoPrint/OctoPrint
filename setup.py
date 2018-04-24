@@ -74,9 +74,6 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
-
-		# PyPi upload related
-		"pypandoc"
 	],
 
 	# Dependencies for developing OctoPrint plugins
@@ -93,6 +90,13 @@ DEPENDENCY_LINKS = []
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+def read_file_contents(path):
+	import codecs
+	with codecs.open(path, encoding="utf-8") as f:
+		return f.read()
 
 def data_copy_build_py_factory(files, baseclass):
 	class data_copy_build_py(baseclass):
@@ -149,45 +153,49 @@ def params():
 	version = versioneer.get_version()
 	cmdclass = get_cmdclass()
 
-	description = "A snappy web interface for 3D printers"
-	long_description = open("README.md").read()
+	description = "The snappy web interface for your 3D printer"
+	long_description = read_file_contents(os.path.join(here, "README.md"))
+	long_description_content_type = "text/markdown"
 
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
 	setup_requires = SETUP_REQUIRES
 
-	try:
-		import pypandoc
-		setup_requires += ["setuptools-markdown"]
-		long_description_markdown_filename = "README.md"
-		del pypandoc
-	except:
-		pass
-
 	classifiers = [
-		"Development Status :: 4 - Beta",
+		"Development Status :: 5 - Production/Stable",
 		"Environment :: Web Environment",
 		"Framework :: Flask",
+		"Intended Audience :: Developers",
 		"Intended Audience :: Education",
 		"Intended Audience :: End Users/Desktop",
 		"Intended Audience :: Manufacturing",
+		"Intended Audience :: Other Audience",
 		"Intended Audience :: Science/Research",
 		"License :: OSI Approved :: GNU Affero General Public License v3",
 		"Natural Language :: English",
+		"Natural Language :: German",
 		"Operating System :: OS Independent",
+		"Programming Language :: Python",
+		"Programming Language :: Python :: 2",
 		"Programming Language :: Python :: 2.7",
+		"Programming Language :: Python :: Implementation :: CPython",
 		"Programming Language :: JavaScript",
-		"Topic :: Internet :: WWW/HTTP",
-		"Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-		"Topic :: Internet :: WWW/HTTP :: WSGI",
 		"Topic :: Printing",
-		"Topic :: System :: Networking :: Monitoring"
+		"Topic :: System :: Monitoring"
 	]
 	author = "Gina Häußge"
-	author_email = "osd@foosel.net"
-	url = "http://octoprint.org"
-	license = "AGPLv3"
+	author_email = "gina@octoprint.org"
+	url = "https://octoprint.org"
+	license = "GNU Affero General Public License v3"
+	keywords = "3dprinting 3dprinter 3d-printing 3d-printer octoprint"
+
+	project_urls={
+		"Community Forum": "https://discourse.octoprint.org",
+		"Bug Reports": "https://github.com/foosel/OctoPrint/issues",
+		"Source": "https://github.com/foosel/OctoPrint",
+		"Funding": "https://donate.octoprint.org"
+	}
 
 	packages = find_packages(where="src")
 	package_dir = {

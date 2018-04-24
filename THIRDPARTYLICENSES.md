@@ -71,7 +71,6 @@
   * [ddt](https://github.com/txels/ddt): MIT
   * [mock](https://github.com/testing-cabal/mock): BSD
   * [nose](http://pythonhosted.org/nose/): LGPL
-  * [pypandoc](https://github.com/bebraw/pypandoc): MIT
   * [Sphinx](http://sphinx-doc.org/): BSD
   * [sphinxcontrib-httpdomain](https://bitbucket.org/birkenfeld/sphinx-contrib/src/default/httpdomain/): BSD
   * [sphinxcontrib-mermad](https://github.com/mgaitan/sphinxcontrib-mermaid): BSD
