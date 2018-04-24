@@ -549,6 +549,7 @@ class MachineCom(object):
 		self._sdFileList = False
 		self._sdFiles = []
 		self._sdFileToSelect = None
+		self._sdFileToSelectUser = None
 		self._ignore_select = False
 		self._manualStreaming = False
 
@@ -1071,7 +1072,7 @@ class MachineCom(object):
 
 			self.sendCommand("M28 %s" % remoteFilename, tags=tags | {"trigger:comm.start_file_transfer",})
 			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
-			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
+			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize(), user=self._currentFile.getUser())
 
 	def cancelFileTransfer(self, tags=None):
 		if not self.isOperational() or not self.isStreaming():
@@ -1111,7 +1112,7 @@ class MachineCom(object):
 				self.refreshSdFiles(tags={"trigger:comm.finish_file_transfer",})
 			self._sendCommand(SendQueueMarker(finalize))
 
-	def selectFile(self, filename, sd, tags=None):
+	def selectFile(self, filename, sd, user=None, tags=None):
 		if self.isBusy():
 			return
 
@@ -1127,17 +1128,21 @@ class MachineCom(object):
 				filename = filename[1:]
 
 			self._sdFileToSelect = filename
+			self._sdFileToSelectUser = user
 			self.sendCommand("M23 %s" % filename, tags=tags | {"trigger:comm.select_file",})
 		else:
-			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
-			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
+			self._currentFile = PrintingGcodeFileInformation(filename,
+			                                                 offsets_callback=self.getOffsets,
+			                                                 current_tool_callback=self.getCurrentTool,
+			                                                 user=user)
+			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False, user=user)
 
 	def unselectFile(self):
 		if self.isBusy():
 			return
 
 		self._currentFile = None
-		self._callback.on_comm_file_selected(None, None, False)
+		self._callback.on_comm_file_selected(None, None, False, user=None)
 
 	def _cancel_preparation_done(self):
 		self._recordFilePosition()
@@ -1809,14 +1814,18 @@ class MachineCom(object):
 					else:
 						name = "Unknown"
 						size = 0
+					user = None
 
 					expected = False
 					if self._sdFileToSelect:
 						expected = True
 						name = self._sdFileToSelect
-						self._sdFileToSelect = None
+						user = self._sdFileToSelectUser
 
-					self._currentFile = PrintingSdFileInformation(name, size)
+					self._sdFileToSelect = None
+					self._sdFileToSelectUser = None
+
+					self._currentFile = PrintingSdFileInformation(name, size, user=user)
 
 					if not expected:
 						# It doesn't look like we expected this, so it might be that someone just started a print
@@ -1828,7 +1837,10 @@ class MachineCom(object):
 						self._ignore_select = False
 					elif self._currentFile is not None and self.isSdFileSelected():
 						# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-						self._callback.on_comm_file_selected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
+						self._callback.on_comm_file_selected(self._currentFile.getFilename(),
+						                                     self._currentFile.getFilesize(),
+						                                     True,
+						                                     user=self._currentFile.getUser())
 				elif 'Writing to file' in line and self.isStreaming():
 					self._changeState(self.STATE_PRINTING)
 				elif 'Done printing file' in line and self.isSdPrinting():
@@ -3370,7 +3382,7 @@ class MachineComPrintCallback(object):
 	def on_comm_z_change(self, newZ):
 		pass
 
-	def on_comm_file_selected(self, filename, filesize, sd):
+	def on_comm_file_selected(self, filename, filesize, sd, user=None):
 		pass
 
 	def on_comm_sd_state_change(self, sdReady):
@@ -3379,7 +3391,7 @@ class MachineComPrintCallback(object):
 	def on_comm_sd_files(self, files):
 		pass
 
-	def on_comm_file_transfer_started(self, filename, filesize):
+	def on_comm_file_transfer_started(self, filename, filesize, user=None):
 		pass
 
 	def on_comm_file_transfer_done(self, filename):
@@ -3406,9 +3418,10 @@ class PrintingFileInformation(object):
 
 	checksum = True
 
-	def __init__(self, filename):
+	def __init__(self, filename, user=None):
 		self._logger = logging.getLogger(__name__)
 		self._filename = filename
+		self._user = user
 		self._pos = 0
 		self._size = None
 		self._start_time = None
@@ -3428,6 +3441,9 @@ class PrintingFileInformation(object):
 
 	def getFileLocation(self):
 		return FileDestinations.LOCAL
+
+	def getUser(self):
+		return self._user
 
 	def getProgress(self):
 		"""
@@ -3468,8 +3484,8 @@ class PrintingSdFileInformation(PrintingFileInformation):
 
 	checksum = False
 
-	def __init__(self, filename, size):
-		PrintingFileInformation.__init__(self, filename)
+	def __init__(self, filename, size, user=None):
+		PrintingFileInformation.__init__(self, filename, user=user)
 		self._size = size
 
 	def getFileLocation(self):
@@ -3505,8 +3521,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 	that the file is closed in case of an error.
 	"""
 
-	def __init__(self, filename, offsets_callback=None, current_tool_callback=None):
-		PrintingFileInformation.__init__(self, filename)
+	def __init__(self, filename, offsets_callback=None, current_tool_callback=None, user=None):
+		PrintingFileInformation.__init__(self, filename, user=user)
 
 		self._handle = None
 		self._handle_mutex = threading.RLock()
@@ -3607,8 +3623,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		pass
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
-	def __init__(self, path, localFilename, remoteFilename):
-		PrintingGcodeFileInformation.__init__(self, path)
+	def __init__(self, path, localFilename, remoteFilename, user=None):
+		PrintingGcodeFileInformation.__init__(self, path, user=user)
 		self._localFilename = localFilename
 		self._remoteFilename = remoteFilename
 
@@ -4407,7 +4423,7 @@ def upload_cli():
 			self._target = target
 			self._state = None
 
-		def on_comm_file_transfer_started(self, filename, filesize):
+		def on_comm_file_transfer_started(self, filename, filesize, user=None):
 			# transfer started, report
 			logger.info("Started file transfer of {}, size {}B".format(filename, filesize))
 			self.started = True

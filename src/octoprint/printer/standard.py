@@ -65,8 +65,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._state = None
 
-		self._printingUser = None
-
 		self._currentZ = None
 
 		self._printAfterSelect = False
@@ -115,7 +113,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                    estimatedPrintTime=None,
 			                    lastPrintTime=None,
 			                    filament=self._dict(length=None,
-			                                        volume=None)),
+			                                        volume=None),
+			                    user=None),
 			progress=self._dict(completion=None,
 			                    filepos=None,
 			                    printTime=None,
@@ -176,14 +175,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if self._selectedFile:
 				self._setJobData(self._selectedFile["filename"],
 								 self._selectedFile["filesize"],
-								 self._selectedFile["sd"])
+								 self._selectedFile["sd"],
+								 self._selectedFile["user"])
 
 	def _on_event_MetadataStatisticsUpdated(self, event, data):
 		with self._selectedFileMutex:
 			if self._selectedFile:
 				self._setJobData(self._selectedFile["filename"],
 				                 self._selectedFile["filesize"],
-				                 self._selectedFile["sd"])
+				                 self._selectedFile["sd"],
+				                 self._selectedFile["user"])
 
 	#~~ progress plugin reporting
 
@@ -438,9 +439,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._fileManager.delete_recovery_data()
 
 		self._printAfterSelect = printAfterSelect
-		self._printingUser = user
 		self._posAfterSelect = pos
 		self._comm.selectFile("/" + path if sd else path, sd,
+		                      user=user,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.select_file"})
 		self._updateProgressData()
 		self._setCurrentZ(None)
@@ -916,7 +917,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not os.path.isfile(path_on_disk):
 			raise InvalidFileLocation("{} does not exist in local storage, cannot select for printing".format(filename))
 
-	def _setJobData(self, filename, filesize, sd):
+	def _setJobData(self, filename, filesize, sd, user=None):
 		with self._selectedFileMutex:
 			if filename is not None:
 				if sd:
@@ -933,7 +934,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					"filename": path_in_storage,
 					"filesize": filesize,
 					"sd": sd,
-					"estimatedPrintTime": None
+					"estimatedPrintTime": None,
+					"user": user
 				}
 			else:
 				self._selectedFile = None
@@ -946,7 +948,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				                                           estimatedPrintTime=None,
 				                                           averagePrintTime=None,
 				                                           lastPrintTime=None,
-				                                           filament=None))
+				                                           filament=None,
+				                                           user=None))
 				return
 
 			estimatedPrintTime = None
@@ -997,10 +1000,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                                           estimatedPrintTime=estimatedPrintTime,
 			                                           averagePrintTime=averagePrintTime,
 			                                           lastPrintTime=lastPrintTime,
-			                                           filament=filament))
-
-	def _setPrintingUser(self, user):
-		self._stateMonitor.set_printing_user(user)
+			                                           filament=filament,
+			                                           user=user))
 
 	def _sendInitialStateUpdate(self, callback):
 		try:
@@ -1124,7 +1125,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sdFilelistAvailable.set()
 
-	def on_comm_file_selected(self, full_path, size, sd):
+	def on_comm_file_selected(self, full_path, size, sd, user=None):
 		if full_path is not None:
 			payload = self._payload_for_print_job_event(location=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 			                                            print_job_file=full_path)
@@ -1132,7 +1133,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			eventManager().fire(Events.FILE_DESELECTED)
 
-		self._setJobData(full_path, size, sd)
+		self._setJobData(full_path, size, sd, user=user)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 		if self._printAfterSelect:
@@ -1239,10 +1240,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-	def on_comm_file_transfer_started(self, filename, filesize):
+	def on_comm_file_transfer_started(self, filename, filesize, user=None):
 		self._sdStreaming = True
 
-		self._setJobData(filename, filesize, True)
+		self._setJobData(filename, filesize, True, user=user)
 		self._updateProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
@@ -1333,7 +1334,6 @@ class StateMonitor(object):
 		self._current_z = None
 		self._offsets = dict()
 		self._progress = None
-		self._printing_user = None
 
 		self._progress_dirty = False
 
@@ -1351,13 +1351,12 @@ class StateMonitor(object):
 			return self._on_get_progress()
 		return self._progress
 
-	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None, printing_user=None):
+	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None):
 		self.set_state(state)
 		self.set_job_data(job_data)
 		self.set_progress(progress)
 		self.set_current_z(current_z)
 		self.set_temp_offsets(offsets)
-		self.set_printing_user(printing_user)
 
 	def add_temperature(self, temperature):
 		self._on_add_temperature(temperature)
@@ -1382,10 +1381,6 @@ class StateMonitor(object):
 
 	def set_job_data(self, job_data):
 		self._job_data = job_data
-		self._change_event.set()
-
-	def set_printing_user(self, user):
-		self._printing_user = user
 		self._change_event.set()
 
 	def trigger_progress_update(self):
@@ -1432,8 +1427,7 @@ class StateMonitor(object):
 			"job": self._job_data,
 			"currentZ": self._current_z,
 			"progress": self._progress,
-			"offsets": self._offsets,
-			"printingUser": self._printing_user,
+			"offsets": self._offsets
 		}
 
 
