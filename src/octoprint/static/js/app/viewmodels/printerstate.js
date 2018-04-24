@@ -170,7 +170,8 @@ $(function() {
 
         self.userString = ko.pureComputed(function() {
             var user = self.user();
-            return user ? user : "-";
+            var file = self.filename();
+            return (user ? user : (file ? "-" : ""));
         });
 
         self.fromCurrentData = function(data) {
