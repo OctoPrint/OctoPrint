@@ -38,6 +38,7 @@ $(function() {
         self.printTimeLeftOrigin = ko.observable(undefined);
         self.sd = ko.observable(undefined);
         self.timelapse = ko.observable(undefined);
+        self.user = ko.observable(undefined);
 
         self.busyFiles = ko.observableArray([]);
 
@@ -167,6 +168,11 @@ $(function() {
             }
         });
 
+        self.userString = ko.pureComputed(function() {
+            var user = self.user();
+            return user ? user : "-";
+        });
+
         self.fromCurrentData = function(data) {
             self._fromData(data);
         };
@@ -244,6 +250,8 @@ $(function() {
                 });
             }
             self.filament(result);
+
+            self.user(data.user);
         };
 
         self._processProgressData = function(data) {
