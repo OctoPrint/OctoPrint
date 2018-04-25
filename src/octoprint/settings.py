@@ -410,7 +410,7 @@ default_settings = {
 				"AUTOREPORT_TEMP": True,
 				"AUTOREPORT_SD_STATUS": True
 			},
-			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e.c} Count: A:{a} B:{b} C:{c}",
+			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
 			"ambientTemperature": 21.3,
 			"errors": {
 				"checksum_mismatch": "Checksum mismatch",
