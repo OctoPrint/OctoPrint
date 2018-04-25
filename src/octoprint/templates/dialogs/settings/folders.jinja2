@@ -26,7 +26,7 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" for="settings-watchedLogs">{{ _('Watched Folder') }}</label>
+        <label class="control-label" for="settings-folderWatched">{{ _('Watched Folder') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: folder_watched" id="settings-folderWatched">
         </div>
@@ -44,15 +44,15 @@
     <p>{{ _('If the free disk space falls below these thresholds, OctoPrint will warn the user.') }}</p>
 
     <div class="control-group" title="{{ ('Threshold after which to warn about the remaining free space on disk.') }}">
-        <label class="control-label" for="settings.serverDiskusageWarning">{{ _('Warning') }}</label>
+        <label class="control-label" for="settings-serverDiskusageWarning">{{ _('Warning') }}</label>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_warning_str">
+            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_warning_str" id="settings-serverDiskusageWarning">
         </div>
     </div>
     <div class="control-group" title="{{ ('Threshold after which to consider remaining free space on disk as critical.') }}">
-        <label class="control-label" for="settings.serverDiskusageCritical">{{ _('Critical') }}</label>
+        <label class="control-label" for="settings-serverDiskusageCritical">{{ _('Critical') }}</label>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_critical_str">
+            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_critical_str" id="settings-serverDiskusageCritical">
         </div>
     </div>
 
