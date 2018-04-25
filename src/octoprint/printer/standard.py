@@ -500,7 +500,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._lastProgressReport = None
 		self._updateProgressData()
 		self._setCurrentZ(None)
-		self._setPrintingUser(user)
 		self._comm.startPrint(pos=pos,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
@@ -1152,7 +1151,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		if self._printAfterSelect:
 			self._printAfterSelect = False
-			self.start_print(pos=self._posAfterSelect, user=self._printingUser)
+			self.start_print(pos=self._posAfterSelect, user=user)
 
 	def on_comm_print_job_started(self):
 		payload = self._payload_for_print_job_event()
@@ -1164,7 +1163,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def on_comm_print_job_done(self):
 		self._fileManager.delete_recovery_data()
-		self._setPrintingUser(None)
 
 		payload = self._payload_for_print_job_event()
 		if payload:
@@ -1198,8 +1196,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 
 	def on_comm_print_job_failed(self):
-		self._setPrintingUser(None)
-
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
@@ -1214,7 +1210,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_print_job_cancelled(self):
 		self._setCurrentZ(None)
 		self._updateProgressData()
-		self._setPrintingUser(None)
 
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
