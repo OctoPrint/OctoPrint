@@ -1604,8 +1604,9 @@ class LocalFileStorage(StorageInterface):
 			counter += 1
 			self._metadata_locks[path] = (counter, lock)
 
-			yield lock
+		yield lock
 
+		with self._metadata_lock_mutex:
 			counter = self._metadata_locks[path][0]
 			counter -= 1
 			if counter <= 0:
