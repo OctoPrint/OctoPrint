@@ -2370,8 +2370,11 @@ class MachineCom(object):
 
 		return False
 
-	_recoverable_communication_errors    = ("no line number with checksum",)
+	_recoverable_communication_errors    = ("no line number with checksum",
+	                                        "missing linenumber")
 	_resend_request_communication_errors = ("line number", # since this error class get's checked after recoverable
+	                                                       # communication errors, we can use this broad term here
+	                                        "linenumber",  # since this error class get's checked after recoverable
 	                                                       # communication errors, we can use this broad term here
 	                                        "checksum",    # since this error class get's checked after recoverable
 	                                                       # communication errors, we can use this broad term here
