@@ -59,7 +59,7 @@ $(function() {
 
         self.requestData = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
-            if (!loginState.isAdmin()) return;
+            if (!self.loginState.isAdmin()) return;
 
             OctoPrint.users.list()
                 .done(self.fromResponse);
@@ -188,7 +188,7 @@ $(function() {
             if (!user) {
                 throw OctoPrint.InvalidArgumentError("user must be set");
             }
-            if (!loginState.isAdmin()) return $.Deferred().reject("You are not authorized to perform this action").promise();
+            if (!self.loginState.isAdmin()) return $.Deferred().reject("You are not authorized to perform this action").promise();
 
             return OctoPrint.users.add(user)
                 .done(self.fromResponse);
@@ -198,7 +198,7 @@ $(function() {
             if (!user) {
                 throw OctoPrint.InvalidArgumentError("user must be set");
             }
-            if (!loginState.isAdmin()) return $.Deferred().reject("You are not authorized to perform this action").promise();
+            if (!self.loginState.isAdmin()) return $.Deferred().reject("You are not authorized to perform this action").promise();
 
             if (user.name === self.loginState.username()) {
                 // we do not allow to delete ourselves
