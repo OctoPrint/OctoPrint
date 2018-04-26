@@ -1478,20 +1478,25 @@ class Server(object):
 		loginManager.init_app(app, add_context_processor=False)
 
 	def _start_intermediary_server(self):
-		import BaseHTTPServer
-		import SimpleHTTPServer
+		try:
+			# noinspection PyCompatibility
+			from http.server import HTTPServer, BaseHTTPRequestHandler
+		except ImportError:
+			# noinspection PyCompatibility
+			from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+
 		import threading
 		import socket
 
 		host = self._host
 		port = self._port
 
-		class IntermediaryServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+		class IntermediaryServerHandler(BaseHTTPRequestHandler):
 			def __init__(self, rules=None, *args, **kwargs):
 				if rules is None:
 					rules = []
 				self.rules = rules
-				SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
+				BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
 			def do_GET(self):
 				request_path = self.path
@@ -1541,11 +1546,11 @@ class Server(object):
 
 		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
 
-		class HTTPServerV6(BaseHTTPServer.HTTPServer):
+		class HTTPServerV6(HTTPServer):
 			address_family = socket.AF_INET6
 
 			def __init__(self, *args, **kwargs):
-				BaseHTTPServer.HTTPServer.__init__(self, *args, **kwargs)
+				HTTPServer.__init__(self, *args, **kwargs)
 
 				# make sure to enable dual stack mode, otherwise the socket might only listen on IPv6
 				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 0)
@@ -1555,7 +1560,7 @@ class Server(object):
 			ServerClass = HTTPServerV6
 		else:
 			# v4
-			ServerClass = BaseHTTPServer.HTTPServer
+			ServerClass = HTTPServer
 
 		self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
 
