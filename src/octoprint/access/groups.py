@@ -196,12 +196,12 @@ class FilebasedGroupManager(GroupManager):
 					for key, attributes in groups.items():
 						if key in self._groups:
 							# group is already there (from the defaults most likely)
-							if not self._groups[key].is_changable():
+							if not self._groups[key].is_changeable():
 								# group may not be changed -> bail
 								continue
 
 							removable = self._groups[key].is_removable()
-							changeable = self._groups[key].is_changable()
+							changeable = self._groups[key].is_changeable()
 							toggleable = self._groups[key].is_toggleable()
 						else:
 							removable = True
@@ -293,7 +293,7 @@ class FilebasedGroupManager(GroupManager):
 		if group is None:
 			raise UnknownGroup(key)
 
-		if not group.is_removeable():
+		if not group.is_removable():
 			raise GroupUnremovable(key)
 
 		del self._groups[key]
@@ -310,7 +310,7 @@ class FilebasedGroupManager(GroupManager):
 		if group is None:
 			raise UnknownGroup(key)
 
-		if not group.is_changable():
+		if not group.is_changeable():
 			raise GroupCantBeChanged(key)
 
 		if description is not None and description != group.get_description():
@@ -405,10 +405,10 @@ class Group(object):
 	def is_default(self):
 		return self._default
 
-	def is_changable(self):
+	def is_changeable(self):
 		return self._changeable
 
-	def is_removeable(self):
+	def is_removable(self):
 		return self._removable
 
 	def is_toggleable(self):
@@ -416,7 +416,7 @@ class Group(object):
 
 	def add_permissions_to_group(self, permissions):
 		"""Adds a list of permissions to a group"""
-		if not self.is_changable():
+		if not self.is_changeable():
 			raise GroupCantBeChanged(self.key)
 
 		# Make sure the permissions variable is of type list
@@ -435,7 +435,7 @@ class Group(object):
 
 	def remove_permissions_from_group(self, permissions):
 		"""Removes a list of permissions from a group"""
-		if not self.is_changable():
+		if not self.is_changeable():
 			raise GroupCantBeChanged(self.key)
 
 		# Make sure the permissions variable is of type list
@@ -454,7 +454,7 @@ class Group(object):
 
 	def change_default(self, default):
 		"""Changes the default flag of a Group"""
-		if not self.is_changable():
+		if not self.is_changeable():
 			raise GroupCantBeChanged(self.key)
 
 		self._default = default
