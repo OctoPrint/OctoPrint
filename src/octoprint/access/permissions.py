@@ -13,6 +13,7 @@ from flask_principal import Permission, PermissionDenied, RoleNeed, Need
 from functools import wraps
 from collections import OrderedDict, defaultdict
 
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP
@@ -31,6 +32,7 @@ class OctoPrintPermission(Permission):
 	def convert_to_needs(cls, needs):
 		result = []
 		for need in needs:
+			# noinspection PyCompatibility
 			if isinstance(need, Need):
 				result.append(need)
 			elif isinstance(need, Permission):
@@ -117,39 +119,6 @@ class PluginOctoPrintPermission(OctoPrintPermission):
 
 	def as_dict(self):
 		result = OctoPrintPermission.as_dict(self)
-		result["plugin"] = self.plugin
-		return result
-
-
-class CombinedOctoPrintPermission(OctoPrintPermission):
-
-	def as_dict(self):
-		result = OctoPrintPermission.as_dict(self)
-		result["combined"] = True
-		return result
-
-	@classmethod
-	def from_permissions(cls, name, *permissions, **kwargs):
-		if len(permissions) == 0:
-			return None
-
-		description = kwargs.pop("description", "")
-
-		permission = cls(name, description, *permissions[0].needs, **kwargs)
-		for p in permissions[1:]:
-			permission = permission.union(p)
-
-		return permission
-
-
-class CombinedPluginOctoPrintPermission(CombinedOctoPrintPermission):
-
-	def __init__(self, *args, **kwargs):
-		self.plugin = kwargs.pop("plugin", None)
-		CombinedOctoPrintPermission.__init__(self, *args, **kwargs)
-
-	def as_dict(self):
-		result = CombinedOctoPrintPermission.as_dict(self)
 		result["plugin"] = self.plugin
 		return result
 
@@ -252,12 +221,6 @@ class PermissionsMetaClass(type):
 
 	def filter(cls, cb):
 		return filter(cb, cls.all())
-
-	def regular(cls):
-		return cls.filter(lambda x: not isinstance(x, CombinedOctoPrintPermission))
-
-	def combined(cls):
-		return cls.filter(lambda x: isinstance(x, CombinedOctoPrintPermission))
 
 	def find(cls, p, filter=None):
 		key = None
@@ -394,20 +357,6 @@ class Permissions(object):
 	                                             RoleNeed("settings"),
 	                                             dangerous=True)
 
-	# TODO move to Logging plugin
-	LOGS                   = OctoPrintPermission("Logs",
-	                                             gettext("Allows to list, download and delete logs"),
-	                                             RoleNeed("logs"))
-
-	CONTROL_ACCESS         = CombinedOctoPrintPermission.from_permissions("Full Control Access",
-	                                                                      CONTROL, MONITOR_TERMINAL, WEBCAM)
-	FILES_ACCESS           = CombinedOctoPrintPermission.from_permissions("Full Files Access",
-	                                                                      FILES_UPLOAD, FILES_DOWNLOAD, FILES_DELETE, FILES_SELECT, PRINT,
-	                                                                      SLICE)
-	PRINTERPROFILES_ACCESS = CombinedOctoPrintPermission.from_permissions("Printerprofiles Access",
-	                                                                      CONNECTION, SETTINGS)
-	TIMELAPSE_ACCESS       = CombinedOctoPrintPermission.from_permissions("Full Timelapse Access",
-	                                                                      TIMELAPSE_LIST, TIMELAPSE_ADMIN)
 
 
 class PermissionAlreadyExists(Exception):

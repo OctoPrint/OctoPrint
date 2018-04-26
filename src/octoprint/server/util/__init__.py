@@ -99,7 +99,7 @@ def loginUser(user, remember=False):
 	Returns: (bool) True if the login succeeded, False otherwise
 
 	"""
-	if user is not None and user.is_active() and flask_login.login_user(user, remember=remember):
+	if user is not None and user.is_active and flask_login.login_user(user, remember=remember):
 		flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                      identity=flask_principal.Identity(user.get_id()))
 		return True
@@ -189,7 +189,7 @@ def get_user_for_apikey(apikey):
 				return flask_login.current_user
 		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
-			return ApiUser(octoprint.server.groupManager.admin_group)
+			return ApiUser([octoprint.server.groupManager.admin_group])
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:

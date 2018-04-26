@@ -35,7 +35,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 	def get_additional_permissions(self):
 		return [
 			dict(key="MANAGE",
-			     name="Logging manangement",
+			     name="Logging management",
 			     description=gettext("Allows to download and delete log files and list and set log levels."),
 			     roles=["manage"])
 		]

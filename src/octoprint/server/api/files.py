@@ -474,7 +474,6 @@ def readGcodeFile(target, filename):
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @require_firstrun
-@Permissions.FILES_ACCESS.require(403)
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -650,15 +649,16 @@ def gcodeFileCommand(filename, target):
 			return r
 
 	elif command == "analyse":
-		if not _verifyFileExists(target, filename):
-			return make_response("File not found on '%s': %s" % (target, filename), 404)
+		with Permissions.FILES_UPLOAD.require(403):
+			if not _verifyFileExists(target, filename):
+				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-		printer_profile = None
-		if "printerProfile" in data and data["printerProfile"]:
-			printer_profile = data["printerProfile"]
+			printer_profile = None
+			if "printerProfile" in data and data["printerProfile"]:
+				printer_profile = data["printerProfile"]
 
-		if not fileManager.analyse(target, filename, printer_profile_id=printer_profile):
-			return make_response("No analysis possible for {} on {}".format(filename, target), 400)
+			if not fileManager.analyse(target, filename, printer_profile_id=printer_profile):
+				return make_response("No analysis possible for {} on {}".format(filename, target), 400)
 
 	elif command == "copy" or command == "move":
 		with Permissions.FILES_UPLOAD.require(403):

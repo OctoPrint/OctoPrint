@@ -55,7 +55,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			     name="Manage announcement subscriptions",
 			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
 			                         "permission"),
-			     roles=["manage", "read"])
+			     roles=["manage"],
+			     permissions=["PLUGIN_ANNOUNCEMENTS_READ"])
 		]
 
 	# StartupPlugin

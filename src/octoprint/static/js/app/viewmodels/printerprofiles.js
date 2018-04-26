@@ -456,7 +456,7 @@ $(function() {
         };
 
         self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.PRINTERPROFILES_ACCESS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
 
