@@ -1459,7 +1459,12 @@ class Server(object):
 		global loginManager
 
 		loginManager = LoginManager()
-		loginManager.session_protection = "strong"
+
+		# "strong" is incompatible to remember me, see maxcountryman/flask-login#156. It also causes issues with
+		# clients toggling between IPv4 and IPv6 client addresses due to names being resolved one way or the other as
+		# at least observed on a Win10 client targeting "localhost", resolved as both "127.0.0.1" and "::1"
+		loginManager.session_protection = "basic"
+
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
 
