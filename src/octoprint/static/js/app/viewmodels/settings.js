@@ -3,9 +3,12 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
+        self.access = parameters[1];
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
+
+        // TODO: remove in upcoming version, this is only for backwards compatibility
+        self.users = parameters[4];
 
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
@@ -105,6 +108,7 @@ $(function() {
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
         self.api_enabled = ko.observable(undefined);
+        self.api_keyEnforced = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
 
@@ -1023,22 +1027,16 @@ $(function() {
             self.requestData();
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             // we might have other user rights now, refresh (but only if startup has fully completed)
             if (!self._startupComplete) return;
             self.requestData();
         };
-
-        self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SettingsViewModel,
-        dependencies: ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
 });

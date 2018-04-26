@@ -10,7 +10,7 @@ import base64
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
-from octoprint.users import ApiUser
+from octoprint.access.users import ApiUser
 
 from octoprint.util import deprecated
 from octoprint.plugin import plugin_manager
@@ -28,7 +28,7 @@ from . import watchdog
 
 def enforceApiKeyRequestHandler():
 	"""
-	``before_request`` handler for blueprints which makes sure an API key is provided
+	``before_request`` handler for blueprints which makes sure an API key is provided if configured as such
 	"""
 
 	import octoprint.server
@@ -43,7 +43,7 @@ def enforceApiKeyRequestHandler():
 
 	apikey = get_api_key(_flask.request)
 
-	if apikey is None:
+	if apikey is None and settings().getBoolean(["api", "keyEnforced"]):
 		return _flask.make_response("No API key provided", 403)
 
 	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
@@ -99,7 +99,7 @@ def loginUser(user, remember=False):
 	Returns: (bool) True if the login succeeded, False otherwise
 
 	"""
-	if user is not None and user.is_active() and flask_login.login_user(user, remember=remember):
+	if user is not None and user.is_active and flask_login.login_user(user, remember=remember):
 		flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                      identity=flask_principal.Identity(user.get_id()))
 		return True
@@ -181,12 +181,17 @@ def optionsAllowOrigin(request):
 
 def get_user_for_apikey(apikey):
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
+		if apikey == octoprint.server.UI_API_KEY:
+			import flask_login
+			if octoprint.server.userManager.enabled:
+				return octoprint.server.userManager.find_user(session=flask_login.current_user.session)
+			else:
+				return flask_login.current_user
+		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
-			return ApiUser()
-
+			return ApiUser([octoprint.server.groupManager.admin_group])
 		if octoprint.server.userManager.enabled:
-			user = octoprint.server.userManager.findUser(apikey=apikey)
+			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:
 				# user key was used
 				return user

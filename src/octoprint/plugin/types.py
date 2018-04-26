@@ -1483,6 +1483,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		from flask_login import current_user
 		import copy
+		
+		from octoprint.access.permissions import Permissions
 
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
@@ -1528,7 +1530,7 @@ class SettingsPlugin(OctoPrintPlugin):
 						node[key] = None
 
 		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
+		                  admin=lambda: current_user is not None and current_user.has_permission(Permissions.SETTINGS),
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():
@@ -1604,8 +1606,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
 
-		Override this in your plugin's implementation to restrict whether a path should only be returned to logged in
-		users & admins, only to admins, or never on the REST API.
+		Override this in your plugin's implementation to restrict whether a path should only be returned to users with
+		the SETTINGS permission, any logged in users, or never on the REST API.
 
 		Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
 		the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``

@@ -23,14 +23,14 @@ from . import version_checks, updaters, exceptions, util, cli
 
 from flask_babel import gettext
 
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.server import VERSION, REVISION, BRANCH
+from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
-
 ##~~ Plugin
-
 
 class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.SettingsPlugin,
@@ -76,6 +76,22 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="CHECK",
+			     name="Check",
+			     description=gettext("Allows to check for software updates"),
+			     roles=["check"],
+			     default_groups=[USER_GROUP]),
+			dict(key="UPDATE",
+			     name="Update",
+			     description=gettext("Allows to perform software updates"),
+			     roles=["update"],
+			     dangerous=True)
+		]
 
 	def on_startup(self, host, port):
 		console_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), maxBytes=2*1024*1024)
@@ -472,7 +488,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	#~~ BluePrint API
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
-	@restricted_access
+	@require_firstrun
+	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
 		if "check" in flask.request.values:
 			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
@@ -528,8 +545,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
@@ -1027,7 +1044,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						# we force an exact version & python unequality check, to be able to downgrade
 						result["force_exact_version"] = True
 						result["release_compare"] = "python_unequal"
-
 					elif check.get("pip", None):
 						# we force python unequality check for pip installs, to be able to downgrade
 						result["release_compare"] = "python_unequal"
@@ -1159,7 +1175,8 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli.commands
+		"octoprint.cli.commands": cli.commands,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}
 
 

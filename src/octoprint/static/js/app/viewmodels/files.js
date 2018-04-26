@@ -7,6 +7,7 @@ $(function() {
         self.printerState = parameters[2];
         self.slicing = parameters[3];
         self.printerProfiles=parameters[4];
+        self.access = parameters[5];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -76,8 +77,7 @@ $(function() {
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
-            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() !== ""
-                && !self.addingFolder();
+            return self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) && self.addFolderName() && self.addFolderName().trim() !== "" && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
@@ -159,11 +159,11 @@ $(function() {
         });
 
         self.isLoadActionPossible = ko.pureComputed(function() {
-            return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
+            return self.loginState.hasPermission(self.access.permissions.FILES_SELECT) && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
         self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
-            return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
+            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && self.isLoadActionPossible();
         });
 
         self.printerState.filepath.subscribe(function(newValue) {
@@ -211,6 +211,10 @@ $(function() {
         self._focus = undefined;
         self._switchToPath = undefined;
         self.requestData = function(params) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_LIST)) {
+                return;
+            }
+
             var focus, switchToPath, force;
 
             if (_.isObject(params)) {
@@ -245,6 +249,10 @@ $(function() {
             return self._otherRequestInProgress = OctoPrint.files.list(true, force)
                 .done(function(response) {
                     self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
+                })
+                .fail(function() {
+                    self.allItems(undefined);
+                    self.listHelper.updateItems([]);
                 })
                 .always(function() {
                     self._otherRequestInProgress = undefined;
@@ -361,6 +369,8 @@ $(function() {
         };
 
         self.showAddFolderDialog = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) return;
+
             if (self.addFolderDialog) {
                 self.addFolderName("");
                 self.addFolderDialog.modal("show");
@@ -368,6 +378,8 @@ $(function() {
         };
 
         self.addFolder = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) return;
+
             var name = self.addFolderName();
 
             // "local" only for now since we only support local and sdcard,
@@ -400,6 +412,8 @@ $(function() {
         };
 
         self.removeFolder = function(folder, event) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
+
             if (!folder) {
                 return;
             }
@@ -423,6 +437,8 @@ $(function() {
         };
 
         self.loadFile = function(data, printAfterLoad) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_SELECT)) return;
+
             if (!data) {
                 return;
             }
@@ -440,6 +456,8 @@ $(function() {
         };
 
         self.removeFile = function(file, event) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
+
             if (!file) {
                 return;
             }
@@ -452,6 +470,8 @@ $(function() {
         };
 
         self.sliceFile = function(file) {
+            if (!self.loginState.hasPermission(self.access.permissions.SLICE)) return;
+
             if (!file) {
                 return;
             }
@@ -460,14 +480,17 @@ $(function() {
         };
 
         self.initSdCard = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.initSd();
         };
 
         self.releaseSdCard = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.releaseSd();
         };
 
         self.refreshSdFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.refreshSd();
         };
 
@@ -575,19 +598,25 @@ $(function() {
             } else {
                 busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
             }
-            return self.loginState.isUser() && !busy;
+            return self.loginState.hasPermission(self.access.permissions.FILES_DELETE) && !busy;
         };
 
-        self.enableSelect = function(data, printAfterSelect) {
-            return self.enablePrint(data) && !self.listHelper.isSelected(data);
+        self.enableSelect = function(data) {
+            return self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data);
         };
 
         self.enablePrint = function(data) {
-            return self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         };
 
+        self.enableSelectAndPrint = function(data, printAfterSelect) {
+            var isLoadAndPrintActionPossible = self.isLoadAndPrintActionPossible();
+            return isLoadAndPrintActionPossible && !self.listHelper.isSelected(data);
+        };
+
+
         self.enableSlicing = function(data) {
-            return self.loginState.isUser() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+            return self.loginState.hasPermission(self.access.permissions.SLICE) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -783,18 +812,23 @@ $(function() {
             return recursiveSearch(path.split("/"), root);
         };
 
-        self.onUserLoggedIn = function(user) {
-            self.uploadButton.fileupload("enable");
-            if (self.uploadSdButton) {
-                self.uploadSdButton.fileupload("enable");
+        self.updateButtons = function() {
+            if (self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) {
+                self.uploadButton.fileupload("enable");
+                if (self.uploadSdButton) {
+                    self.uploadSdButton.fileupload("enable");
+                }
+            } else {
+                self.uploadButton.fileupload("disable");
+                if (self.uploadSdButton) {
+                    self.uploadSdButton.fileupload("disable");
+                }
             }
         };
 
-        self.onUserLoggedOut = function() {
-            self.uploadButton.fileupload("disable");
-            if (self.uploadSdButton) {
-                self.uploadSdButton.fileupload("disable");
-            }
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            self.updateButtons();
+            self.requestData();
         };
 
         self.onStartup = function() {
@@ -852,18 +886,16 @@ $(function() {
             self.dropOverlay.on('drop', self._forceEndDragNDrop);
 
             function evaluateDropzones() {
-                var enableLocal = self.loginState.isUser();
+                var enableLocal = self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD);
                 var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady() && !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);
                 self._setDropzone("sdcard", enableSd);
             }
-            self.loginState.isUser.subscribe(evaluateDropzones);
+            self.loginState.currentUser.subscribe(evaluateDropzones);
             self.printerState.isSdReady.subscribe(evaluateDropzones);
             self.isPrinting.subscribe(evaluateDropzones);
             evaluateDropzones();
-
-            self.requestData();
         };
 
         self.onEventUpdatedFiles = function(payload) {
@@ -1186,7 +1218,7 @@ $(function() {
         construct: FilesViewModel,
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
-        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
+        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "accessViewModel"],
         elements: ["#files_wrapper", "#add_folder_dialog"]
     });
 });

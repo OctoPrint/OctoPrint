@@ -10,6 +10,7 @@
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
     var CONFIG_LOGFILESPERPAGE = 10;
     var CONFIG_USERSPERPAGE = 10;
+    var CONFIG_GROUPSPERPAGE = 10;
     var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
     var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
     var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
@@ -25,13 +26,17 @@
     // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
     var SOCKJS_CLOSE_NORMAL = 1000;
 
+    // only needed if API keys are enforced, only provides anonymous access on its own
     var UI_API_KEY = "{{ uiApiKey|e }}";
+
     var VERSION = "{{ version.number|e }}";
     var DISPLAY_VERSION = "{{ version.display|e }}";
     var BRANCH = "{{ version.branch|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
     var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
+
+    var PERMISSIONS = {{ permissions|tojson }};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];

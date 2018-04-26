@@ -1499,7 +1499,8 @@ class PluginManager(object):
 	def register_message_receiver(self, client):
 		"""
 		Registers a ``client`` for receiving plugin messages. The ``client`` needs to be a callable accepting two
-		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself).
+		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself), and one
+		optional keyword argument, ``permissions`` (an optional list of permissions to test against).
 		"""
 
 		if client is None:
@@ -1511,20 +1512,25 @@ class PluginManager(object):
 		Unregisters a ``client`` for receiving plugin messages.
 		"""
 
-		self.registered_clients.remove(client)
+		try:
+			self.registered_clients.remove(client)
+		except ValueError:
+			# not registered
+			pass
 
-	def send_plugin_message(self, plugin, data):
+	def send_plugin_message(self, plugin, data, permissions=None):
 		"""
 		Sends ``data`` in the name of ``plugin`` to all currently registered message receivers by invoking them
-		with the two arguments.
+		with the three arguments.
 
 		Arguments:
 		    plugin (str): The sending plugin's identifier.
 		    data (object): The message.
+		    permissions (list): A list of permissions to test against in the client.
 		"""
 
 		for client in self.registered_clients:
-			try: client(plugin, data)
+			try: client(plugin, data, permissions=permissions)
 			except: self.logger.exception("Exception while sending plugin data to client")
 
 	def _sort_hooks(self, hook):

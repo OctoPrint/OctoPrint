@@ -311,8 +311,11 @@ default_settings = {
 	"accessControl": {
 		"enabled": True,
 		"salt": None,
-		"userManager": "octoprint.users.FilebasedUserManager",
+		"userManager": "octoprint.access.users.FilebasedUserManager",
+		"groupManager": "octoprint.access.groups.FilebasedGroupManager",
+		"permissionManager": "octoprint.access.permissions.PermissionManager",
 		"userfile": None,
+		"groupfile": None,
 		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": None,
@@ -330,6 +333,7 @@ default_settings = {
 	},
 	"api": {
 		"enabled": True,
+		"keyEnforced": False,
 		"key": None,
 		"allowCrossOrigin": False,
 		"apps": {}

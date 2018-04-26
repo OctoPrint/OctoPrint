@@ -11,8 +11,8 @@ import octoprint.plugin
 import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.access.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os
@@ -98,6 +98,22 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		# set a maximum body size of 50 MB for plugin archive uploads
 		return [("POST", r"/upload_archive", 50 * 1024 * 1024)]
 
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="MANAGE",
+			     name="Manage plugins",
+			     description=gettext("Allows to enable, disable and uninstall installed plugins."),
+			     roles=["manage"]),
+			dict(key="INSTALL",
+			     name="Install new plugins",
+			     description=gettext("Allows to install new plugins. Includes the \"Manage plugins\" permission."),
+			     roles=["install"],
+			     permissions=["PLUGIN_PLUGINMANAGER_MANAGE"],
+			     dangerous=True)
+		]
+
 	##~~ StartupPlugin
 
 	def on_after_startup(self):
@@ -167,8 +183,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	##~~ BlueprintPlugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
 	def upload_archive(self):
 		import flask
 
@@ -222,7 +238,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		}
 
 	def on_api_get(self, request):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		from octoprint.server import safe_mode
@@ -276,7 +292,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
 
 	def on_api_command(self, command, data):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		if self._printer.is_printing() or self._printer.is_paused():
@@ -284,6 +300,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("Printer is currently printing or paused", 409)
 
 		if command == "install":
+			if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
+				return make_response("Insufficient rights", 403)
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
@@ -964,6 +982,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		            versions=notification.get("versions", []),
 		            important=notification.get("important", False))
 
+
+
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
@@ -977,5 +997,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
-		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types
+		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}

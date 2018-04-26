@@ -89,6 +89,7 @@ $(function() {
         self.settingsViewModel = parameters[1];
         self.printerState = parameters[2];
         self.systemViewModel = parameters[3];
+        self.access = parameters[4];
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
@@ -425,7 +426,7 @@ $(function() {
         };
 
         self.requestData = function(options) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -449,7 +450,7 @@ $(function() {
         };
 
         self.togglePlugin = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -509,7 +510,7 @@ $(function() {
         };
 
         self.installFromRepository = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
 
@@ -521,7 +522,7 @@ $(function() {
         };
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
 
@@ -583,7 +584,7 @@ $(function() {
         };
 
         self.uninstallPlugin = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -614,7 +615,7 @@ $(function() {
         };
 
         self.refreshRepository = function() {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
             self.requestData({refresh_repo: true});
@@ -1074,16 +1075,12 @@ $(function() {
             self.settings = self.settingsViewModel.settings;
         };
 
-        self.onUserLoggedIn = function(user) {
-            if (user.admin) {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            if (self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 self.requestData({eval_notices: true});
             } else {
-                self.onUserLoggedOut();
+                self._resetNotifications();
             }
-        };
-
-        self.onUserLoggedOut = function() {
-            self._resetNotifications();
         };
 
         self.onEventConnectivityChanged = function(payload) {
@@ -1126,7 +1123,7 @@ $(function() {
                 return;
             }
 
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -1166,7 +1163,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PluginManagerViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "accessViewModel"],
         elements: ["#settings_plugin_pluginmanager"]
     });
 });

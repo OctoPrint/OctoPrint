@@ -121,6 +121,28 @@ $(function() {
             exports.onBrowserVisibilityChange = function(callback) {
                 browserVisibilityCallbacks.push(callback);
             };
+            exports.updateTab = function() {
+                var tabs = $('#tabs');
+
+                var hashtag = window.location.hash;
+                if (hashtag) {
+                    var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
+                    if (selectedTab.length) {
+                        selectedTab.tab("show");
+                        return;
+                    }
+                }
+
+                var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
+                if (firstTab.length) {
+                    var firstHash = firstTab[0].hash;
+                    if (firstHash !== exports.selectedTab) {
+                        firstTab.tab("show");
+                    } else {
+                        window.location.hash = firstHash;
+                    }
+                }
+            };
 
             return exports;
         })();
@@ -512,13 +534,13 @@ $(function() {
         var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onAfterTabChange(current, previous);
 
             // make sure we also update the hash but stick to the current scroll position
@@ -526,19 +548,6 @@ $(function() {
             window.location.hash = current;
             $('html,body').scrollTop(scrollmem);
         });
-
-        onTabChange(OCTOPRINT_INITIAL_TAB);
-        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
-
-        var changeTab = function() {
-            var hashtag = window.location.hash;
-            if (!hashtag) return;
-
-            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
-            if (tab) {
-                tab.tab("show");
-            }
-        };
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -559,8 +568,16 @@ $(function() {
             throw new Error("settingsViewModel is missing, can't run UI");
         }
 
+        if (!_.has(viewModelMap, "accessViewModel") || !viewModelMap["accessViewModel"].permissions) {
+            throw new Error("accessViewmodel is missing or incomplete, can't run UI");
+        }
+
         if (!_.has(viewModelMap, "loginStateViewModel")) {
             throw new Error("loginStateViewModel is missing, can't run UI");
+        }
+
+        if (!_.has(viewModelMap, "uiStateViewModel")) {
+            throw new Error("uiStateViewModel is missing, can't run UI");
         }
 
         var bindViewModels = function() {
@@ -658,10 +675,6 @@ $(function() {
             callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
-            // startup complete
-            callViewModels(allViewModels, "onStartupComplete");
-            setOnViewModels(allViewModels, "_startupComplete", true);
-
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
@@ -669,14 +682,17 @@ $(function() {
             });
 
             $(window).on("hashchange", function() {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             });
 
-            if (window.location.hash !== "") {
-                changeTab();
-            }
-
             log.info("Application startup complete");
+
+            viewModelMap["uiStateViewModel"].loading(false);
+
+            // startup complete
+            callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
+            OctoPrint.coreui.updateTab();
         };
 
         var fetchSettings = function() {
@@ -733,6 +749,9 @@ $(function() {
          */
 
         var onServerConnect = function() {
+            // Initialize our permissions
+            viewModelMap["accessViewModel"].permissions.initialize();
+
             // Always perform a passive login on server (re)connect. No need for
             // onServerConnect/onServerReconnect on the LoginStateViewModel with this in place.
             return viewModelMap["loginStateViewModel"].requestData()

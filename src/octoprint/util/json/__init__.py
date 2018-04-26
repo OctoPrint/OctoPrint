@@ -17,6 +17,13 @@ class JsonEncoding(object):
 		cls.encoders[type] = encoder
 
 	@classmethod
+	def remove_encoder(cls, type):
+		try:
+			del cls.encoders[type]
+		except KeyError:
+			pass
+
+	@classmethod
 	def encode(cls, obj):
 		for type, encoder in cls.encoders.items():
 			if isinstance(obj, type):
