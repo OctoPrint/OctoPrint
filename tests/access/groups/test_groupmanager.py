@@ -33,9 +33,9 @@ def group_manager_with_temp_file():
 class GroupManagerTestCase(unittest.TestCase):
 	def test_add_remove_group(self):
 		with group_manager_with_temp_file() as group_manager:
-			group_manager.add_group("Fancy Group", "My Fancy New Group", permissions=[TEST_PERMISSION_1],
+			group_manager.add_group("fancy", "Fancy Group", "My Fancy New Group", permissions=[TEST_PERMISSION_1],
 			                        save=False)
-			self.assertIsNotNone(group_manager.find_group("Fancy Group"))
+			self.assertIsNotNone(group_manager.find_group("fancy"))
 
-			group_manager.remove_group("Fancy Group")
-			self.assertIsNone(group_manager.find_group("Fancy Group"))
+			group_manager.remove_group("fancy")
+			self.assertIsNone(group_manager.find_group("fancy"))
