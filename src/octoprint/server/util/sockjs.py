@@ -21,7 +21,7 @@ import octoprint.plugin
 from octoprint.events import Events
 from octoprint.settings import settings
 from octoprint.access.permissions import Permissions
-from octoprint.access.users import LoginStatusListener, AnonymousUser
+from octoprint.access.users import LoginStatusListener
 from octoprint.util.json import JsonEncoding
 
 import octoprint.printer
@@ -98,7 +98,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._pluginManager = pluginManager
 
 		self._remoteAddress = None
-		self._user = AnonymousUser([self._groupManager.guest_group])
+		self._user = self._userManager.anonymous_user_factory()
 
 		self._throttleFactor = 1
 		self._lastCurrent = 0
@@ -122,6 +122,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
 		self._userManager.register_login_status_listener(self)
+		self._groupManager.register_listener(self)
 
 		plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
 		template_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin))
@@ -149,7 +150,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._register()
 
 	def on_close(self):
-		self._user = AnonymousUser([self._groupManager.guest_group])
+		self._user = self._userManager.anonymous_user_factory()
+		self._groupManager.unregister_listener(self)
 		self._userManager.unregister_login_status_listener(self)
 
 		self._unregister()
@@ -182,7 +184,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 					self._reregister()
 					self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(), self._remoteAddress))
 				else:
-					self._user = AnonymousUser([self._groupManager.guest_group])
+					self._user = self._userManager.anonymous_user_factory()
 					self._reregister()
 					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
 
@@ -198,7 +200,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
 
 	def on_printer_send_current_data(self, data):
-		if not self._user or not self._user.has_permission(Permissions.STATUS):
+		if not self._user.has_permission(Permissions.STATUS):
 			return
 
 		# make sure we rate limit the updates according to our throttle factor
@@ -271,23 +273,28 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			self._temperatureBacklog.append(data)
 
 	def on_user_logged_out(self, user):
-		if self._user and user.get_id() == self._user.get_id() and hasattr(user, "session") and user.session == self._user.session:
+		if user.get_id() == self._user.get_id() and hasattr(user, "session") and user.session == self._user.session:
 			self._logger.info("User {} logged out, logging out on socket".format(user.get_id()))
-			self._user = AnonymousUser([self._groupManager.guest_group])
+			self._user = self._userManager.anonymous_user_factory()
 			self._reregister()
 			self._sendReauthRequired("logout")
 
 	def on_user_modified(self, user):
-		if self._user and user.get_id() == self._user.get_id():
+		if user.get_id() == self._user.get_id():
 			self._reregister()
 			self._sendReauthRequired("modified")
 
 	def on_user_removed(self, userid):
-		if self._user and self._user.get_id() == userid:
+		if self._user.get_id() == userid:
 			self._logger.info("User {} deleted, logging out on socket".format(userid))
-			self._user = AnonymousUser([self._groupManager.guest_group])
+			self._user = self._userManager.anonymous_user_factory()
 			self._reregister()
 			self._sendReauthRequired("removed")
+
+	def on_group_permissions_changed(self, group, added=None, removed=None):
+		if self._user.is_anonymous and group == self._groupManager.guest_group:
+			self._reregister()
+			self._sendReauthRequired("modified")
 
 	def _onEvent(self, event, payload):
 		self.sendEvent(event, payload)
@@ -295,7 +302,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 	def _register(self):
 		"""Register this socket with the system if STATUS permission is available."""
 
-		if not self._user or not self._user.has_permission(Permissions.STATUS):
+		if not self._user.has_permission(Permissions.STATUS):
 			return
 
 		# printer

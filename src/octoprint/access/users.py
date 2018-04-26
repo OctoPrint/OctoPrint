@@ -42,6 +42,12 @@ class UserManager(GroupChangeListener, object):
 	def unregister_login_status_listener(self, listener):
 		self._login_status_listeners.remove(listener)
 
+	def anonymous_user_factory(self):
+		if self.enabled:
+			return AnonymousUser([self._group_manager.guest_group])
+		else:
+			return AdminUser([self._group_manager.admin_group])
+
 	@property
 	def enabled(self):
 		return self._enabled
@@ -63,6 +69,7 @@ class UserManager(GroupChangeListener, object):
 			return
 
 		if isinstance(user, LocalProxy):
+			# noinspection PyProtectedMember
 			user = user._get_current_object()
 
 		if not isinstance(user, User):
@@ -1109,7 +1116,7 @@ class AnonymousUser(AnonymousUserMixin, User):
 
 	@property
 	def is_active(self):
-		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: False)
+		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
 	def check_password(self, passwordHash):
 		return True
@@ -1162,8 +1169,14 @@ class SessionUser(wrapt.ObjectProxy):
 	def __repr__(self):
 		return "SessionUser({!r},session={},created={})".format(self.__wrapped__, self.session, self.created)
 
-##~~ Apiuser object to use when global api key is used to access the API
+##~~ User object to use when global api key is used to access the API
 
 class ApiUser(User):
 	def __init__(self, groups):
 		User.__init__(self, "_api", "", True, [], groups)
+
+##~~ User object to use when access control is disabled
+
+class AdminUser(User):
+	def __init__(self, groups):
+		User.__init__(self, "_admin", "", True, [], groups)

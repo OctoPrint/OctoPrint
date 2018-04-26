@@ -114,7 +114,7 @@ LANGUAGES = set()
 def on_identity_loaded(sender, identity):
 	user = load_user(identity.id)
 	if user is None:
-		return
+		user = userManager.anonymous_user_factory()
 
 	identity.provides.add(UserNeed(user.get_id()))
 	for need in user.needs:
@@ -144,14 +144,11 @@ def on_user_logged_out(sender, user=None):
 
 
 def load_user(id):
-	if id is None:
-		return users.AnonymousUser([groupManager.guest_group])
+	if id is None or not userManager.enabled:
+		return None
 
 	if id == "_api":
 		return users.ApiUser([groupManager.admin_group])
-
-	if not userManager.enabled:
-		return users.DummyUser([groupManager.admin_group])
 
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
@@ -1527,33 +1524,11 @@ class Server(object):
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
+		loginManager.anonymous_user = userManager.anonymous_user_factory
 
 		# login users authenticated by basic auth
 		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
 			loginManager.request_callback = load_user_from_request
-
-		if userManager.enabled:
-			def anonymous_user_factory():
-				return users.AnonymousUser([groupManager.guest_group])
-			loginManager.anonymous_user = anonymous_user_factory
-
-		else:
-			class AdminUser(users.User):
-				def __init__(self):
-					users.User.__init__(self, "admin", "", True, [], [groupManager.admin_group])
-
-				def check_password(self, passwordHash):
-					return True
-
-			class AdminIdentity(Identity):
-				def __init__(self):
-					Identity.__init__(self, "admin")
-
-			def admin_identity_loader():
-				return AdminIdentity()
-
-			loginManager.anonymous_user = AdminUser
-			principals.identity_loaders.appendleft(admin_identity_loader)
 
 		loginManager.init_app(app, add_context_processor=False)
 

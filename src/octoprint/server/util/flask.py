@@ -33,6 +33,7 @@ import octoprint.plugin
 from octoprint.util import DefaultOrderedDict
 from octoprint.util.json import JsonEncoding
 
+from werkzeug.local import LocalProxy
 from werkzeug.contrib.cache import BaseCache
 
 from past.builtins import basestring
@@ -510,18 +511,27 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager.enabled:
-		user = octoprint.server.userManager.login_user(flask_login.current_user)
-	else:
-		user = flask_login.current_user
+	user = flask_login.current_user
 
-	if user is not None and not user.is_anonymous and user.is_active:
+	if isinstance(user, LocalProxy):
+		# noinspection PyProtectedMember
+		user = user._get_current_object()
+
+	def login(u):
 		# login known user
+		if not u.is_anonymous:
+			u = octoprint.server.userManager.login_user(u)
+		flask_login.login_user(u)
 		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
-		                                      identity=flask_principal.Identity(user.get_id()))
-		if hasattr(user, "session"):
-			flask.session["usersession.id"] = user.session
-		flask.g.user = user
+		                                      identity=flask_principal.Identity(u.get_id()))
+		if hasattr(u, "session"):
+			flask.session["usersession.id"] = u.session
+		flask.g.user = u
+		return u
+
+	if user is not None and user.is_active:
+		# login known user
+		user = login(user)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
@@ -538,20 +548,11 @@ def passive_login():
 				autologin_user = octoprint.server.userManager.find_user(autologinAs)
 				if autologin_user is not None and user.is_active:
 					autologin_user = octoprint.server.userManager.login_user(autologin_user)
-					flask.session["usersession.id"] = user.session
-					flask.g.user = user
-
-					flask_login.login_user(user)
-					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
-					                                      identity=flask_principal.Identity(user.get_id()))
-
-					user = autologin_user
+					user = login(autologin_user)
 		except:
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	if user is None:
-		user = octoprint.access.users.AnonymousUser([octoprint.server.groupManager.guest_group])
 	return flask.jsonify(user)
 
 
