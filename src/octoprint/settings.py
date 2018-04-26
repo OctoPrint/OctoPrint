@@ -101,7 +101,8 @@ default_settings = {
 			"sdStatus": 1,
 			"sdStatusAutoreport": 1,
 			"resendOk": .5,
-			"baudrateDetectionPause": 1.0
+			"baudrateDetectionPause": 1.0,
+			"positionLogWait": 10.0,
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,
@@ -119,7 +120,7 @@ default_settings = {
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
-		"logPositionOnCancel": True,
+		"logPositionOnCancel": False,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"neverSendChecksum": False,
@@ -409,6 +410,7 @@ default_settings = {
 				"AUTOREPORT_TEMP": True,
 				"AUTOREPORT_SD_STATUS": True
 			},
+			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
 			"ambientTemperature": 21.3,
 			"errors": {
 				"checksum_mismatch": "Checksum mismatch",

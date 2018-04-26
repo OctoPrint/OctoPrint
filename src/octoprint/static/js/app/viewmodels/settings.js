@@ -159,6 +159,7 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
         self.serial_timeoutBaudrateDetectionPause = ko.observable(undefined);
+        self.serial_timeoutPositionLogWait = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
@@ -330,23 +331,36 @@ $(function() {
                 method: "GET",
                 response: "bytes",
                 timeout: self.webcam_snapshotTimeout(),
-                validSsl: self.webcam_snapshotSslValidation()
+                validSsl: self.webcam_snapshotSslValidation(),
+                content_type_whitelist: ["image/*"]
             })
                 .done(function(response) {
                     if (!response.result) {
+                        if (response.status && response.response && response.response.content_type) {
+                            // we could contact the server, but something else was wrong, probably the mime type
+                            errorText = gettext("Could retrieve the snapshot URL, but it didn't look like an " +
+                                                "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
+                                                "double check that the URL is returning static images, not multipart data " +
+                                                "or videos.");
+                            errorText = _.sprintf(errorText, {content_type: response.response.content_type});
+                        }
+
                         showMessageDialog({
                             title: errorTitle,
-                            message: errorText
+                            message: errorText,
+                            onclose: function() {
+                                self.testWebcamSnapshotUrlBusy(false);
+                            }
                         });
                         return;
                     }
 
                     var content = response.response.content;
-                    var mimeType = "image/jpeg";
+                    var contentType = response.response.content_type
 
-                    var headers = response.response.headers;
-                    if (headers && headers["content-type"]) {
-                        mimeType = headers["content-type"].split(";")[0];
+                    var mimeType = "image/jpeg";
+                    if (contentType) {
+                        mimeType = contentType.split(";")[0];
                     }
 
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
@@ -885,6 +899,13 @@ $(function() {
 
             firstRequest.resolve();
         };
+
+        self.cancelData = function () {
+            // revert unsaved changes
+            self.fromResponse(self.lastReceivedSettings);
+
+            self.hide();
+        }
 
         self.saveData = function (data, successCallback, setAsSending) {
             var options;
