@@ -621,6 +621,8 @@ class Settings(object):
 
 		self._script_env = self._init_script_templating()
 
+		self._sanity_check_folders()
+
 	def _init_basedir(self, basedir):
 		if basedir is not None:
 			self._basedir = basedir
@@ -628,7 +630,16 @@ class Settings(object):
 			self._basedir = _default_basedir(_APPNAME)
 
 		if not os.path.isdir(self._basedir):
-			os.makedirs(self._basedir)
+			try:
+				os.makedirs(self._basedir)
+			except:
+				self._logger.fatal("Could not create basefolder at {}. This is a fatal error, OctoPrint "
+				                   "can't run without a writable base folder.".format(self._basedir), exc_info=1)
+				raise
+
+	def _sanity_check_folders(self):
+		for folder in default_settings["folder"].keys():
+			self.getBaseFolder(folder, log_error=True)
 
 	def _get_default_folder(self, type):
 		folder = default_settings["folder"][type]
@@ -1477,7 +1488,7 @@ class Settings(object):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 
-	def getBaseFolder(self, type, create=True):
+	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False):
 		if type not in default_settings["folder"].keys() + ["base"]:
 			return None
 
@@ -1485,17 +1496,33 @@ class Settings(object):
 			return self._basedir
 
 		folder = self.get(["folder", type])
+		default_folder = self._get_default_folder(type)
 		if folder is None:
-			folder = self._get_default_folder(type)
+			folder = default_folder
 
-		if not os.path.exists(folder):
-			if create:
-				os.makedirs(folder)
+		try:
+			_validate_folder(folder, create=create, writable=True, log_error=log_error)
+		except:
+			if folder != default_folder and allow_fallback:
+				if log_error:
+					self._logger.error("Invalid configured {} folder at {}, attempting to "
+					                   "fall back on default folder at {}".format(type,
+					                                                              folder,
+					                                                              default_folder))
+				_validate_folder(default_folder, create=create, writable=True, log_error=log_error)
+				folder = default_folder
+
+				try:
+					del self._config["folder"][type]
+					if not len(self._config["folder"]):
+						del self._config["folder"]
+					self._dirty = True
+					self._dirty_time = time.time()
+					self.save()
+				except KeyError:
+					pass
 			else:
-				raise IOError("No such folder: {}".format(folder))
-		elif os.path.isfile(folder):
-			# hardening against misconfiguration, see #1953
-			raise IOError("Expected a folder at {} but found a file instead".format(folder))
+				raise
 
 		return folder
 
@@ -1661,7 +1688,7 @@ class Settings(object):
 		else:
 			self.set(path, False, **kwargs)
 
-	def setBaseFolder(self, type, path, force=False):
+	def setBaseFolder(self, type, path, force=False, validate=True):
 		if type not in default_settings["folder"].keys():
 			return None
 
@@ -1674,6 +1701,9 @@ class Settings(object):
 			self._dirty = True
 			self._dirty_time = time.time()
 		elif (path != currentPath and path != defaultPath) or force:
+			if validate:
+				_validate_folder(path)
+
 			if not "folder" in self._config.keys():
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
@@ -1713,3 +1743,39 @@ def _default_basedir(applicationName):
 		return os.path.join(os.environ["APPDATA"], applicationName)
 	else:
 		return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))
+
+
+def _validate_folder(folder, create=True, writable=True, log_error=False):
+	logger = logging.getLogger(__name__)
+
+	if not os.path.exists(folder):
+		if create:
+			try:
+				os.makedirs(folder)
+			except:
+				if log_error:
+					logger.exception("Could not create {}".format(folder))
+				raise IOError("Folder for type {} at {} does not exist and creation failed".format(type, folder))
+		else:
+			raise IOError("No such folder: {}".format(folder))
+	elif os.path.isfile(folder):
+		# hardening against misconfiguration, see #1953
+		raise IOError("Expected a folder at {} but found a file instead".format(folder))
+
+	elif writable:
+		# make sure we can also write into the folder
+		error = "Folder at {} doesn't appear to be writable, please fix its permissions".format(folder)
+		if not os.access(folder, os.W_OK):
+			raise IOError(error)
+		else:
+			# try to write a file to the folder - on network shares that might be the only reliable way
+			# to determine whether things are *actually* writable
+			testfile = os.path.join(folder, ".testballoon.txt")
+			try:
+				with open(testfile, "wb") as f:
+					f.write("test")
+				os.remove(testfile)
+			except:
+				if log_error:
+					logger.exception("Could not write test file to {}".format(folder))
+				raise IOError(error)

@@ -290,7 +290,9 @@ def setSettings():
 		return make_response("Malformed request, need settings dictionary, "
 		                     "got a {} instead: {!r}".format(type(data).__name__, data), 400)
 
-	_saveSettings(data)
+	response = _saveSettings(data)
+	if response:
+		return response
 	return getSettings()
 
 
@@ -317,6 +319,16 @@ def _saveSettings(data):
 
 	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
 	# is changed, added or removed here
+
+	if "folder" in data.keys():
+		try:
+			if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
+			if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
+			if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
+			if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
+			if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
+		except IOError:
+			return make_response("One of the configured folders is invalid", 400)
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
@@ -417,13 +429,6 @@ def _saveSettings(data):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
-
-	if "folder" in data.keys():
-		if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
-		if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-		if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-		if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
-		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]:
