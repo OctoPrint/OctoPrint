@@ -326,7 +326,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._loadPageSizeFromLocalStorage = function() {
         if (self._initializeLocalStorage) {
-            self.pageSize(localStorage[self.storageIds.pageSize]);
+            self.pageSize(parseInt(localStorage[self.storageIds.pageSize]));
         }
     }
 
