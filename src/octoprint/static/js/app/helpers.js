@@ -1,4 +1,4 @@
-function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize) {
     var self = this;
 
     self.listType = listType;
@@ -7,6 +7,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.defaultSorting = defaultSorting;
     self.defaultFilters = defaultFilters;
     self.exclusiveFilters = exclusiveFilters;
+    self.defaultPageSize = defaultPageSize;
 
     self.searchFunction = undefined;
 
@@ -14,7 +15,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.allSize = ko.observable(0);
 
     self.items = ko.observableArray([]);
-    self.pageSize = ko.observable(filesPerPage);
+    self.pageSize = ko.observable(self.defaultPageSize);
     self.currentPage = ko.observable(0);
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
@@ -23,6 +24,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.storageIds = {
         "currentSorting": self.listType + "." + "currentSorting",
         "currentFilters": self.listType + "." + "currentFilters",
+        "pageSize": self.listType + "." + "pageSize",
     };
 
     //~~ item handling
@@ -314,21 +316,37 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     };
 
+    self._savePageSizeToLocalStorage = function(pageSize) {
+        if (self._initializeLocalStorage()) {
+            localStorage[self.storageIds.pageSize] = pageSize;
+        }
+    }
+
+    self.pageSize.subscribe(self._savePageSizeToLocalStorage);
+
+    self._loadPageSizeFromLocalStorage = function() {
+        if (self._initializeLocalStorage) {
+            self.pageSize(localStorage[self.storageIds.pageSize]);
+        }
+    }
+
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
             return false;
 
-        if (localStorage[self.storageIds.currentSorting] !== undefined && localStorage[self.storageIds.currentFilters] !== undefined && JSON.parse(localStorage[self.storageIds.currentFilters]) instanceof Array)
+        if (localStorage[self.storageIds.currentSorting] !== undefined && localStorage[self.storageIds.currentFilters] !== undefined && JSON.parse(localStorage[self.storageIds.currentFilters]) instanceof Array && localStorage[self.storageIds.pageSize] !== undefined)
             return true;
 
         localStorage[self.storageIds.currentSorting] = self.defaultSorting;
         localStorage[self.storageIds.currentFilters] = JSON.stringify(self.defaultFilters);
+        localStorage[self.storageIds.pageSize] = self.defaultPageSize;
 
         return true;
     };
 
     self._loadCurrentFiltersFromLocalStorage();
     self._loadCurrentSortingFromLocalStorage();
+    self._loadPageSizeFromLocalStorage();
 }
 
 function formatSize(bytes) {
