@@ -140,6 +140,7 @@ def getSettings():
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"timeoutSdStatusAutoreport": s.getFloat(["serial", "timeout", "sdStatusAutoreport"]),
 			"timeoutBaudrateDetectionPause": s.getFloat(["serial", "timeout", "baudrateDetectionPause"]),
+			"timeoutPositionLogWait": s.getFloat(["serial", "timeout", "positionLogWait"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
@@ -289,7 +290,9 @@ def setSettings():
 		return make_response("Malformed request, need settings dictionary, "
 		                     "got a {} instead: {!r}".format(type(data).__name__, data), 400)
 
-	_saveSettings(data)
+	response = _saveSettings(data)
+	if response:
+		return response
 	return getSettings()
 
 
@@ -316,6 +319,16 @@ def _saveSettings(data):
 
 	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
 	# is changed, added or removed here
+
+	if "folder" in data.keys():
+		try:
+			if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
+			if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
+			if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
+			if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
+			if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
+		except IOError:
+			return make_response("One of the configured folders is invalid", 400)
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
@@ -373,6 +386,7 @@ def _saveSettings(data):
 		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "timeoutSdStatusAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatusAutoreport"], data["serial"]["timeoutSdStatusAutoreport"])
 		if "timeoutBaudrateDetectionPause" in data["serial"]: s.setFloat(["serial", "timeout", "baudrateDetectionPause"], data["serial"]["timeoutBaudrateDetectionPause"])
+		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
@@ -415,13 +429,6 @@ def _saveSettings(data):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
-
-	if "folder" in data.keys():
-		if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
-		if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-		if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-		if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
-		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]:

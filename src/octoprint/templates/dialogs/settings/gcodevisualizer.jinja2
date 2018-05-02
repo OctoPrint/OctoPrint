@@ -7,10 +7,10 @@
         </div>
     </div>
     <div class="control-group" title="{{ _('Maximum size the GCodeViewer autoloads the file for preview') }}">
-        <label class="control-label" for="settings-gcodeviewer">{{ _('GCode Visualizer file size threshold') }}</label>
+        <label class="control-label" for="settings-featureSizeThreshold">{{ _('GCode Visualizer file size threshold') }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="text" class="input-mini text-right" data-bind="value: feature_sizeThreshold_str">
+                <input type="text" class="input-mini text-right" data-bind="value: feature_sizeThreshold_str" id="settings-featureSizeThreshold">
             </div>
             <span class="help-inline">{{ _('on desktop')}}</span>
         </div>

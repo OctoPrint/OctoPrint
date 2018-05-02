@@ -1,34 +1,54 @@
 <form class="form-horizontal">
     <h3>{{ _('Folders') }}</h3>
 
-    <div class="control-group">
+    <div class="control-group" data-bind="css: {error: testFolderConfigBroken.uploads, success: testFolderConfigOk.uploads}">
         <label class="control-label" for="settings-folderUploads">{{ _('Upload Folder') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: folder_uploads" id="settings-folderUploads">
+            <div class="input-append input-block-level">
+                <input type="text" data-bind="value: folder_uploads" id="settings-folderUploads">
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('uploads'); }, enable: folder_uploads() && !testFolderConfigBusy(), css: {disabled: !folder_uploads() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+            </div>
+            <span class="help-block" data-bind="visible: testFolderConfigBroken.uploads() || testFolderConfigOk.uploads(), text: testFolderConfigText.uploads"></span>
         </div>
     </div>
-    <div class="control-group">
+    <div class="control-group" data-bind="css: {error: testFolderConfigBroken.timelapse, success: testFolderConfigOk.timelapse}">
         <label class="control-label" for="settings-folderTimelapse">{{ _('Timelapse Folder') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: folder_timelapse" id="settings-folderTimelapse">
+            <div class="input-append input-block-level">
+                <input type="text" class="input-block-level" data-bind="value: folder_timelapse" id="settings-folderTimelapse">
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapse'); }, enable: folder_timelapse() && !testFolderConfigBusy(), css: {disabled: !folder_timelapse() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+            </div>
+            <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapse() || testFolderConfigOk.timelapse(), text: testFolderConfigText.timelapse"></span>
         </div>
     </div>
-    <div class="control-group">
+    <div class="control-group" data-bind="css: {error: testFolderConfigBroken.timelapseTmp, success: testFolderConfigOk.timelapseTmp}">
         <label class="control-label" for="settings-folderTimelapseTemp">{{ _('Timelapse Temp Folder') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: folder_timelapseTmp" id="settings-folderTimelapseTemp">
+            <div class="input-append input-block-level">
+                <input type="text" data-bind="value: folder_timelapseTmp" id="settings-folderTimelapseTemp">
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapseTmp'); }, enable: folder_timelapseTmp() && !testFolderConfigBusy(), css: {disabled: !folder_timelapseTmp() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+            </div>
+            <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapseTmp() || testFolderConfigOk.timelapseTmp(), text: testFolderConfigText.timelapseTmp"></span>
         </div>
     </div>
-    <div class="control-group">
+    <div class="control-group" data-bind="css: {error: testFolderConfigBroken.logs, success: testFolderConfigOk.logs}">
         <label class="control-label" for="settings-folderLogs">{{ _('Logs Folder') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: folder_logs" id="settings-folderLogs">
+            <div class="input-append input-block-level">
+                <input type="text" data-bind="value: folder_logs" id="settings-folderLogs">
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('logs'); }, enable: folder_logs() && !testFolderConfigBusy(), css: {disabled: !folder_logs() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+            </div>
+            <span class="help-block" data-bind="visible: testFolderConfigBroken.logs() || testFolderConfigOk.logs(), text: testFolderConfigText.logs"></span>
         </div>
     </div>
-    <div class="control-group">
-        <label class="control-label" for="settings-watchedLogs">{{ _('Watched Folder') }}</label>
+    <div class="control-group" data-bind="css: {error: testFolderConfigBroken.watched, success: testFolderConfigOk.watched}">
+        <label class="control-label" for="settings-folderWatched">{{ _('Watched Folder') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: folder_watched" id="settings-folderWatched">
+            <div class="input-append input-block-level">
+                <input type="text" data-bind="value: folder_watched" id="settings-folderWatched">
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('watched'); }, enable: folder_watched() && !testFolderConfigBusy(), css: {disabled: !folder_watched() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+            </div>
+            <span class="help-block" data-bind="visible: testFolderConfigBroken.watched() || testFolderConfigOk.watched(), text: testFolderConfigText.watched"></span>
         </div>
     </div>
     <div class="control-group">
@@ -44,15 +64,15 @@
     <p>{{ _('If the free disk space falls below these thresholds, OctoPrint will warn the user.') }}</p>
 
     <div class="control-group" title="{{ ('Threshold after which to warn about the remaining free space on disk.') }}">
-        <label class="control-label" for="settings.serverDiskusageWarning">{{ _('Warning') }}</label>
+        <label class="control-label" for="settings-serverDiskusageWarning">{{ _('Warning') }}</label>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_warning_str">
+            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_warning_str" id="settings-serverDiskusageWarning">
         </div>
     </div>
     <div class="control-group" title="{{ ('Threshold after which to consider remaining free space on disk as critical.') }}">
-        <label class="control-label" for="settings.serverDiskusageCritical">{{ _('Critical') }}</label>
+        <label class="control-label" for="settings-serverDiskusageCritical">{{ _('Critical') }}</label>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_critical_str">
+            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_critical_str" id="settings-serverDiskusageCritical">
         </div>
     </div>
 

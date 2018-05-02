@@ -30,6 +30,14 @@ Test paths or URLs
          existence but also whether it is of the specified type. Optional.
        * ``check_access``: A list of any of ``r``, ``w`` and ``x``. If present it will also
          be checked if OctoPrint has read, write, execute permissions on the specified path.
+       * ``allow_create_dir``: If ``check_type`` is provided and set to ``dir``, this will allow
+         OctoPrint to create the target ``path`` as a directory if it doesn't yet exist to allow
+         for further tests.
+       * ``check_writable_dir``: If ``check_type`` is provided and set to ``dir``, this will
+         check that the provided ``path`` is a writable directory. OctoPrint not only check if the
+         permissions on the directory allow for writing but also attempt to write (and delete) a
+         small test file ``.testballoon.txt`` to the directory to test if writing is actually
+         possible.
 
      The ``path`` command returns a :http:statuscode:`200` with a :ref:`path test result <sec-api-util-datamodel-pathtestresult>`
      when the test could be performed. The status code of the response does NOT reflect the
@@ -65,6 +73,12 @@ Test paths or URLs
          from the URL check will be returned as part of the check result as well. ``json`` will attempt
          to parse the response as json and return the parsed result. ``true`` or ``bytes`` will base64 encode the body
          and return that.
+       * ``content_type_whitelist``: Optional array of supported content types. If set and the URL returns a content
+         type not included in this list, the test will fail. E.g. ``["image/*", "text/plain"]``.
+       * ``content_type_blacklist``: Optional array of unsupported content types. If set and the URL returns a content
+         type included in this list, the test wil fail. E.g. ``["video/*"]``. Can be used together with ``content_type_whitelist``
+         to further limit broader content type definition, e.g. by putting ``image/*`` into the whitelist, but disallowing
+         PNG by including ``image/png`` on the blacklist.
 
      The ``url`` command returns :http:statuscode:`200` with a :ref:`URL test result <sec-api-util-datamodel-urltestresult>`
      when the test could be performed. The status code of the response does NOT reflect the
@@ -272,19 +286,23 @@ Test paths or URLs
         "result": true
       }
 
-   :json command:      The command to execute, currently either ``path`` or ``url``
-   :json path:         ``path`` command only: the path to test
-   :json check_type:   ``path`` command only: the type of path to test for, either ``file`` or ``dir``
-   :json check_access: ``path`` command only: a list of access permissions to check for
-   :json url:          ``url`` command only: the URL to test
-   :json status:       ``url`` command only: one or more expected status codes
-   :json method:       ``url`` command only: the HTTP method to use for the check
-   :json timeout:      ``url`` and ``server`` commands only: the timeout for the test request
-   :json response:     ``url`` command only: whether to include response data and if so in what form
-   :json host:         ``server`` command only: the server to test
-   :json port:         ``server`` command only: the port to test
-   :json protocol:     ``server`` command only: the protocol to test
-   :statuscode 200:    No error occurred
+   :json command:            The command to execute, currently either ``path`` or ``url``
+   :json path:               ``path`` command only: the path to test
+   :json check_type:         ``path`` command only: the type of path to test for, either ``file`` or ``dir``
+   :json check_access:       ``path`` command only: a list of access permissions to check for
+   :json allow_create_dir:   ``path`` command and ``checktype`` of ``dir`` only: whether to allow creation of the
+                             directory if it doesn't yet exist (``true``) or not (``false``, default)
+   :json check_writable_dir: ``path`` command and ``checktype`` of ``dir`` only: whether to test if the directory
+                             is writable by also trying to create a test file in it (``true``) or not (``false``, default)
+   :json url:                ``url`` command only: the URL to test
+   :json status:             ``url`` command only: one or more expected status codes
+   :json method:             ``url`` command only: the HTTP method to use for the check
+   :json timeout:            ``url`` and ``server`` commands only: the timeout for the test request
+   :json response:           ``url`` command only: whether to include response data and if so in what form
+   :json host:               ``server`` command only: the server to test
+   :json port:               ``server`` command only: the port to test
+   :json protocol:           ``server`` command only: the protocol to test
+   :statuscode 200:          No error occurred
 
 .. _sec-api-util-datamodel:
 

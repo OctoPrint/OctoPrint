@@ -1,6 +1,9 @@
 <span title="{{ _('Current printer state') }}">{{ _('State') }}</span>: <strong data-bind="text: stateString"></strong><br>
 <hr>
 <span title="{{ _('Name of file currently selected for printing') }}">{{ _('File') }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
+<!-- ko if: userString -->
+<span title="{{ _('User who selected this file for printing') }}">{{ _('User') }}</span>: <strong data-bind="text: userString"></strong><br>
+<!-- /ko -->
 <span title="{{ _('Current timelapse configuration') }}">{{ _('Timelapse') }}</span>: <strong data-bind="text: timelapseString"></strong><br>
 <!-- ko foreach: filament -->
 <span data-bind="text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>

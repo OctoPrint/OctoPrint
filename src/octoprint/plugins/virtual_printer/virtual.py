@@ -529,19 +529,19 @@ class VirtualPrinter(object):
 			self._busyInterval = interval
 
 	def _gcode_M114(self, data):
-		if settings().getBoolean(["devel", "virtualPrinter", "reprapfwM114"]):
-			output = "X:{} Y:{} Z:{} {}".format(self._lastX,
-			                                    self._lastY,
-			                                    self._lastZ,
-			                                    " ".join(["E{}:{}".format(num, self._lastE[self.currentExtruder]) for num in range(self.extruderCount)]))
-		else:
-			output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX,
-			                                                            self._lastY,
-			                                                            self._lastZ,
-			                                                            self._lastE[self.currentExtruder],
-			                                                            int(self._lastX*100),
-			                                                            int(self._lastY*100),
-			                                                            int(self._lastZ*100))
+		m114FormatString = settings().get(["devel", "virtualPrinter", "m114FormatString"])
+		e = dict((index, value) for index, value in enumerate(self._lastE))
+		e["current"] = self._lastE[self.currentExtruder]
+		e["all"] = " ".join(["E{}:{}".format(num, self._lastE[self.currentExtruder]) for num in range(self.extruderCount)])
+		output = m114FormatString.format(x=self._lastX,
+										 y=self._lastY,
+										 z=self._lastZ,
+										 e=e,
+										 f=self._lastF,
+										 a=int(self._lastX*100),
+										 b=int(self._lastY*100),
+										 c=int(self._lastZ*100))
+
 		if not self._okBeforeCommandOutput:
 			ok = self._ok()
 			if ok:
@@ -735,7 +735,7 @@ class VirtualPrinter(object):
 			| Sleeps <seconds> s after execution of next <command>
 
 			# SD printing
-			
+
 			start_sd <str:file>
 			| Start printing file <file> from SD
 			cancel_sd
