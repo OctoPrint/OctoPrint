@@ -5,7 +5,11 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import unittest
-import mock
+
+try:
+	import unittest.mock as mock
+except ImportError:
+	import mock
 
 import os
 import time
@@ -185,41 +189,40 @@ class TimelapseTest(unittest.TestCase):
 
 		# Test strings
 		noChange1Str = "  built on Jan  7 2014 22:07:02 with gcc 4.8.2 (GCC)"
-		durationStr = "  Duration: 00:00:18.60, start: 0.000000, bitrate: "
+		durationStr = "  Duration: 00:00:18.60, start: 0.000000, bitrate: " # 18s duration
 		noChange2Str = "0: Video: mpeg2video, yuv420p, 640x480, q=2-31, 10000 kb/s, 90k tbn, 25 tbc"
-		progress1Str = "frame=  134 fps=0.0 q=1.6 size=    1528kB time=00:00:05.28 bitrate=2370.7kbits/s dup=80 drop=0  "
-		progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 "
-
-		expectedProgress = 0
+		progress1Str = "frame=  134 fps=0.0 q=1.6 size=    1528kB time=00:00:05.28 bitrate=2370.7kbits/s dup=80 drop=0  " # 5s elapsed
+		expectedProgress1 = 5.0 / 18.0
+		progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 " # 10s elapsed
+		expectedProgress2 = 10.0 / 18.0
 
 		# Callback mock
-		class test_callback:
-			def sendRenderProgress(self, progress):
-				self.assertAlmostEqual(progress, expectedProgress, 3)
+		callback = mock.MagicMock()
+		callback.sendRenderProgress = mock.MagicMock()
 
 		# Register mock callback
-		octoprint.timelapse.register_callback(test_callback)
+		octoprint.timelapse.register_callback(callback)
 
 		r = octoprint.timelapse.TimelapseRenderJob("", "", "", "")
-		self.assertEqual(r._duration_i, 0)
+		self.assertEqual(r._parsed_duration, 0)
 
 		r._process_ffmpeg_output(noChange1Str)
-		self.assertEqual(r._duration_i, 0)
+		self.assertEqual(r._parsed_duration, 0)
 
 		r._process_ffmpeg_output(progress1Str)
-		self.assertEqual(r._duration_i, 0)
+		self.assertEqual(r._parsed_duration, 0)
 
 		r._process_ffmpeg_output(durationStr)
-		self.assertEqual(r._duration_i, 18)
+		self.assertEqual(r._parsed_duration, 18)
 
 		r._process_ffmpeg_output(noChange2Str)
-		self.assertEqual(r._duration_i, 18)
+		self.assertEqual(r._parsed_duration, 18)
 
-		expectedProgress = 27.777
 		r._process_ffmpeg_output(progress1Str)
-		self.assertEqual(r._duration_i, 18)
+		self.assertEqual(r._parsed_duration, 18)
+		callback.sendRenderProgress.assert_called_with(expectedProgress1)
 
-		expectedProgress = 55.555
 		r._process_ffmpeg_output(progress2Str)
-		self.assertEqual(r._duration_i, 18)
+		self.assertEqual(r._parsed_duration, 18)
+		callback.sendRenderProgress.assert_called_with(expectedProgress2)
 

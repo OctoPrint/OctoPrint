@@ -47,6 +47,10 @@ current_render_job = None
 _capture_format = "{prefix}-%d.jpg"
 _output_format = "{prefix}.mpg"
 
+# ffmpeg progress regexes
+_ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
+
 # old capture format, needed to delete old left-overs from
 # versions <1.2.9
 _old_capture_format_re = re.compile("^tmp_\d{5}.jpg$")
@@ -786,9 +790,8 @@ class TimelapseRenderJob(object):
 
 		self._thread = None
 		self._logger = logging.getLogger(__name__)
-		self._duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
-		self._current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
-		self._duration_i = 0
+
+		self._parsed_duration = 0
 
 	def process(self):
 		"""Processes the job."""
@@ -866,22 +869,22 @@ class TimelapseRenderJob(object):
 	def _process_ffmpeg_output(self, *lines):
 		for line in lines:
 			# We should be getting the time more often, so try it first
-			time = self._current_regex.search(line)
-			if time is not None and self._duration_i is not 0:
-				current_s = self._convert_time(*time.groups())
-				progress = current_s / float(self._duration_i) * 100
+			current_time = _ffmpeg_current_regex.search(line)
+			if current_time is not None and self._parsed_duration is not 0:
+				current_s = self._convert_time(*current_time.groups())
+				progress = current_s / float(self._parsed_duration) * 100
 
 				# Update progress bar
 				for callback in _update_callbacks:
 					try:
 						callback.sendRenderProgress(progress)
-					except:
+					except Exception as ex:
 						self._logger.exception("Exception while pushing render progress")
 
 			else:
-				duration = self._duration_regex.search(line)
+				duration = _ffmpeg_duration_regex.search(line)
 				if duration is not None:
-					self._duration_i = self._convert_time(*duration.groups())
+					self._parsed_duration = self._convert_time(*duration.groups())
 
 	@staticmethod
 	def _convert_time(hours, minutes, seconds):
