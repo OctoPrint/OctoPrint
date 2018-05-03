@@ -1611,8 +1611,13 @@ class InstalledEntryPoint(pkginfo.Installed):
 
 			project = pkg_resources.to_filename(pkg_resources.safe_name(self.entry_point.dist.project_name))
 
-			package_pattern = '%s*.egg-info' % package
-			project_pattern = '%s*.egg-info' % project
+			# pip 10+
+			package_pattern_dist = "{}*.dist-info".format(package)
+			project_pattern_dist = "{}*.dist-info".format(project)
+
+			# older pip
+			package_pattern_egg = "{}*.egg-info".format(package)
+			project_pattern_egg = "{}*.egg-info".format(project)
 
 			file = getattr(self.package, '__file__', None)
 			if file is not None:
@@ -1624,23 +1629,32 @@ class InstalledEntryPoint(pkginfo.Installed):
 				for entry in sys.path:
 					if file.startswith(entry):
 						_add_candidate(opj(entry, 'EGG-INFO')) # egg?
-						for pattern in (package_pattern, project_pattern): # dist-installed?
+						for pattern in (package_pattern_dist,
+						                project_pattern_dist,
+						                package_pattern_egg,
+						                project_pattern_egg): # dist-installed?
 							_add_candidate(opj(entry, pattern))
 
 				dir, name = os.path.split(self.package.__file__)
-				for pattern in (package_pattern, project_pattern):
+				for pattern in (package_pattern_dist,
+				                project_pattern_dist,
+				                package_pattern_egg,
+				                project_pattern_egg):
 					_add_candidate(opj(dir, pattern))
 					_add_candidate(opj(dir, '..', pattern))
 
 				for candidate in candidates:
 					if os.path.isdir(candidate):
-						path = opj(candidate, 'PKG-INFO')
+						paths = [opj(candidate, 'METADATA'), # pip 10+
+						         opj(candidate, 'PKG-INFO')]
 					else:
-						path = candidate
-					if os.path.exists(path):
-						with open(path) as f:
-							return f.read()
-		warnings.warn('No PKG-INFO found for package: %s' % self.package_name)
+						paths = [candidate,]
+
+					for path in paths:
+						if os.path.exists(path):
+							with open(path) as f:
+								return f.read()
+		warnings.warn('No package metadata found for package: {}'.format(self.package_name))
 
 
 class Plugin(object):
