@@ -154,9 +154,12 @@ def delete_unrendered_timelapse(name):
 					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
 
-def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
+def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
 	capture_dir = settings().getBaseFolder("timelapse_tmp")
 	output_dir = settings().getBaseFolder("timelapse")
+
+	if fps is None:
+		fps = settings().getInt(["webcam", "timelapse", "fps"])
 	threads = settings().get(["webcam", "ffmpegThreads"])
 
 	job = TimelapseRenderJob(capture_dir, output_dir, name,
