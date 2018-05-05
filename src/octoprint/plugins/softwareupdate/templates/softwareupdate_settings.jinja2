@@ -17,7 +17,7 @@
 {% endtrans %}</div>
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showSoftwareUpdateSettings(); }" title="{{ _('Software Update Configuration') }}"><i class="fa fa-wrench"></i></button>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Current versions') }}</h3>
@@ -72,7 +72,7 @@
 <div id="settings_plugin_softwareupdate_configurationdialog" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Software Update Configuration') }}</h3>
+        <h3>{{ _('Plugin Configuration') }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
@@ -115,3 +115,4 @@
         <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>
+

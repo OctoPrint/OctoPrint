@@ -213,7 +213,7 @@ $(function() {
             }
         };
 
-        self.showSoftwareUpdateSettings = function() {
+        self.showPluginSettings = function() {
             self._copyConfig();
             self.configurationDialog.modal();
         };
