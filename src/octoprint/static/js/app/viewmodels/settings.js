@@ -168,6 +168,7 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_blockM0M1 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
         self.serial_sdRelativePath =  ko.observable(undefined);

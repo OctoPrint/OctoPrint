@@ -145,7 +145,8 @@ default_settings = {
 		},
 
 		# command specific flags
-		"triggerOkForM29": True
+		"triggerOkForM29": True,
+		"blockM0M1": True
 	},
 	"server": {
 		"host": None,

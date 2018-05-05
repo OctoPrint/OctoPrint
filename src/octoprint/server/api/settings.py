@@ -150,6 +150,7 @@ def getSettings():
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
 			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"blockM0M1": s.getBoolean(["serial", "blockM0M1"]),
 			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
 			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
 			"supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
@@ -395,6 +396,7 @@ def _saveSettings(data):
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
+		if "blockM0M1" in data["serial"]: s.setBoolean(["serial", "blockM0M1"], data["serial"]["blockM0M1"])
 		if "supportResendsWithoutOk" in data["serial"]:
 			value = data["serial"]["supportResendsWithoutOk"]
 			if value in ("always", "detect", "never"):
