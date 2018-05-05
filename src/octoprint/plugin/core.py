@@ -750,7 +750,7 @@ class PluginManager(object):
 						continue
 
 					kwargs = dict(module_name=module_name, version=version)
-					package_name = None
+					package_name = entry_point.dist.project_name
 					try:
 						entry_point_metadata = EntryPointMetadata(entry_point)
 					except:
@@ -763,7 +763,6 @@ class PluginManager(object):
 							url=entry_point_metadata.home_page,
 							license=entry_point_metadata.license
 						))
-						package_name = entry_point_metadata.name
 
 					plugin = self._import_plugin_from_module(key, **kwargs)
 					if plugin:
