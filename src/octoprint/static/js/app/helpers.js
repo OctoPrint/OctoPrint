@@ -676,8 +676,12 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     }
 
     var title = options.title || gettext("Are you sure?");
+
     var message = options.message || "";
     var question = options.question || gettext("Are you sure you want to proceed?");
+
+    var html = options.html;
+
     var cancel = options.cancel || gettext("Cancel");
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
@@ -686,7 +690,12 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
-    var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
+    var modalBody;
+    if (html) {
+        modalBody = $(html);
+    } else {
+        modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
+    }
 
     var cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + '</a>')
         .attr("data-dismiss", "modal")
