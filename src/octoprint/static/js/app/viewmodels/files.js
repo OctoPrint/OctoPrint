@@ -8,6 +8,7 @@ $(function() {
         self.slicing = parameters[3];
         self.printerProfiles=parameters[4];
 
+        self.filesListVisible = ko.observable(true);
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
@@ -802,9 +803,11 @@ $(function() {
                 var files = $("#files");
                 if (files.hasClass("in")) {
                     files.removeClass("overflow_visible");
+                    self.filesListVisible(false);
                 } else {
                     setTimeout(function() {
                         files.addClass("overflow_visible");
+                        self.filesListVisible(true);
                     }, 100);
                 }
             });
