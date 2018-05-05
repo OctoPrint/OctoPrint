@@ -540,17 +540,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		json_data = flask.request.json
 
-		if "check" in json_data:
-			check_targets = map(lambda x: x.strip(), json_data["check"])
+		if "targets" in json_data:
+			targets = map(lambda x: x.strip(), json_data["targets"])
 		else:
-			check_targets = None
+			targets = None
 
 		if "force" in json_data and json_data["force"] in octoprint.settings.valid_boolean_trues:
 			force = True
 		else:
 			force = False
 
-		to_be_checked, checks = self.perform_updates(check_targets=check_targets, force=force)
+		to_be_checked, checks = self.perform_updates(targets=targets, force=force)
 		return flask.jsonify(dict(order=to_be_checked, checks=checks))
 
 	#~~ Asset API
@@ -771,12 +771,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_dirty = True
 		return information, update_available, update_possible, online, error
 
-	def perform_updates(self, check_targets=None, force=False):
+	def perform_updates(self, force=False, **kwargs):
 		"""
 		Performs the updates for the given check_targets. Will update all possible targets by default.
 
-		:param check_targets: an iterable defining the targets to update, if not supplied defaults to all targets
+		:param targets: an iterable defining the targets to update, if not supplied defaults to all targets
 		"""
+
+		targets = kwargs.get("targets", kwargs.get("check_targets", None))
 
 		checks = self._get_configured_checks()
 		populated_checks = dict()
@@ -788,9 +790,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			except:
 				self._logger.exception("Error while populating check prior to update for target {}".format(target))
 
-		if check_targets is None:
-			check_targets = populated_checks.keys()
-		to_be_updated = sorted(set(check_targets) & set(populated_checks.keys()))
+		if targets is None:
+			targets = populated_checks.keys()
+		to_be_updated = sorted(set(targets) & set(populated_checks.keys()))
 		if "octoprint" in to_be_updated:
 			to_be_updated.remove("octoprint")
 			tmp = ["octoprint"] + to_be_updated
