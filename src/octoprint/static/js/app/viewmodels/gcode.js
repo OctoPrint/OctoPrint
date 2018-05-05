@@ -46,6 +46,7 @@ $(function() {
         self.renderer_zoomOnModel = ko.observable(false);
         self.renderer_showMoves = ko.observable(true);
         self.renderer_showRetracts = ko.observable(true);
+        self.renderer_showPrinthead = ko.observable(true);
         self.renderer_showBoundingBox = ko.observable(false);
         self.renderer_showFullSize = ko.observable(false);
         self.renderer_extrusionWidthEnabled = ko.observable(false);
@@ -73,6 +74,7 @@ $(function() {
                 centerViewport: self.renderer_centerViewport(),
                 showMoves: self.renderer_showMoves(),
                 showRetracts: self.renderer_showRetracts(),
+                showHead: self.renderer_showPrinthead(),
                 showBoundingBox: self.renderer_showBoundingBox(),
                 showFullSize: self.renderer_showFullSize(),
                 extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
@@ -116,6 +118,7 @@ $(function() {
         self.renderer_zoomOnModel.subscribe(self.rendererOptionUpdated);
         self.renderer_showMoves.subscribe(self.rendererOptionUpdated);
         self.renderer_showRetracts.subscribe(self.rendererOptionUpdated);
+        self.renderer_showPrinthead.subscribe(self.rendererOptionUpdated);
         self.renderer_showBoundingBox.subscribe(self.rendererOptionUpdated);
         self.renderer_showFullSize.subscribe(self.rendererOptionUpdated);
         self.renderer_extrusionWidthEnabled.subscribe(self.rendererOptionUpdated);
@@ -332,6 +335,7 @@ $(function() {
             self.renderer_zoomOnModel(false);
             self.renderer_showMoves(true);
             self.renderer_showRetracts(true);
+            self.renderer_showPrinthead(true);
             self.renderer_showBoundingBox(false);
             self.renderer_showFullSize(false);
             self.renderer_extrusionWidthEnabled(false);
@@ -702,6 +706,7 @@ $(function() {
             current["zoomOnModel"] = self.renderer_zoomOnModel();
             current["showMoves"] = self.renderer_showMoves();
             current["showRetracts"] = self.renderer_showRetracts();
+            current["showPrinthead"] = self.renderer_showPrinthead();
             current["showPrevious"] = self.renderer_showPrevious();
             current["showNext"] = self.renderer_showNext();
             current["showFullsize"] = self.renderer_showFullSize();
@@ -733,6 +738,7 @@ $(function() {
             if (current["zoomOnModel"] !== undefined) self.renderer_zoomOnModel(current["zoomOnModel"]) ;
             if (current["showMoves"] !== undefined) self.renderer_showMoves(current["showMoves"]) ;
             if (current["showRetracts"] !== undefined) self.renderer_showRetracts(current["showRetracts"]) ;
+            if (current["showPrinthead"] !== undefined) self.renderer_showPrinthead(current["showPrinthead"]);
             if (current["showPrevious"] !== undefined) self.renderer_showPrevious(current["showPrevious"]) ;
             if (current["showNext"] !== undefined) self.renderer_showNext(current["showNext"]) ;
             if (current["showFullsize"] !== undefined) self.renderer_showFullSize(current["showFullsize"]) ;
