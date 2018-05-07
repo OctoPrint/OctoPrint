@@ -616,6 +616,7 @@ Settings pertaining to the server side GCODE analysis implementation.
 
 .. code-block:: yaml
 
+gcodeAnalysis:
    # Maximum number of extruders to support/to sanity check for
    maxExtruders: 10
 
@@ -635,6 +636,7 @@ Settings pertaining to the built in GCODE Viewer.
 
 .. code-block:: yaml
 
+ gcodeViewer:
    # Whether to enable the GCODE viewer in the UI
    enabled: true
 
