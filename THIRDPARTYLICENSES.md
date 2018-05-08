@@ -6,7 +6,7 @@
   * [Babel JavaScript Support](https://github.com/mitsuhiko/babel/blob/master/contrib/babel.js): BSD
   * [Bootstrap](http://getbootstrap.com/): Apache License 2.0
   * [Bootstrap Modal](http://jschr.github.io/bootstrap-modal/): Apache License 2.0
-  * [Bootstrap Slider Knockout Bindings](https://github.com/cosminstefanxp/bootstrap-slider-knockout-binding): MIT
+  * [Bootstrap Slider Knockout Binding](https://github.com/cosminstefanxp/bootstrap-slider-knockout-binding): MIT
   * [Bootstrap Slider](http://seiyria.com/bootstrap-slider/): Apache License 2.0
   * [Bootstrap Tabdrop](http://www.eyecon.ro/bootstrap-tabdrop): Apache License 2.0
   * [Detect Mobile Browser](http://detectmobilebrowsers.com/): Public Domain
@@ -36,6 +36,8 @@
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
   * [chainmap](https://bitbucket.org/jeunice/chainmap): Python
   * [Click](http://click.pocoo.org/): BSD
+  * [dateutil](https://dateutil.readthedocs.io/): BSD
+  * [emoji](https://github.com/carpedm20/emoji/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
   * [Flask](http://flask.pocoo.org/): BSD
   * [Flask-Assets](http://github.com/miracle2k/flask-assets): BSD
@@ -44,6 +46,8 @@
   * [Flask-Markdown](http://github.com/dcolish/flask-markdown): BSD
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
   * [future](https://python-future.org/): MIT
+  * [futures](https://github.com/agronholm/pythonfutures): Python
+  * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
   * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
@@ -60,13 +64,14 @@
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
   * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
+  * [wrapt](http://wrapt.readthedocs.org/): BSD
 
 ## Development (testing, documentation generation, etc)
 
   * [ddt](https://github.com/txels/ddt): MIT
   * [mock](https://github.com/testing-cabal/mock): BSD
   * [nose](http://pythonhosted.org/nose/): LGPL
-  * [pypandoc](https://github.com/bebraw/pypandoc): MIT
   * [Sphinx](http://sphinx-doc.org/): BSD
   * [sphinxcontrib-httpdomain](https://bitbucket.org/birkenfeld/sphinx-contrib/src/default/httpdomain/): BSD
+  * [sphinxcontrib-mermad](https://github.com/mgaitan/sphinxcontrib-mermaid): BSD
   * [sphinx_rtd_theme](https://github.com/snide/sphinx_rtd_theme/): BSD

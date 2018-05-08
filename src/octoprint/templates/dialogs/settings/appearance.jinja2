@@ -22,7 +22,7 @@
     <div class="control-group" title="">
         <label class="control-label" for="settings-appearanceLanguages">{{ _('Language Packs') }}</label>
         <div class="controls">
-            <button class="btn" data-bind="click: showTranslationManager">{{ _('Manage...') }}</button>
+            <button class="btn" data-bind="click: showTranslationManager" id="settings-appearanceLanguages">{{ _('Manage...') }}</button>
         </div>
     </div>
     <div class="control-group" title="">
@@ -61,7 +61,7 @@
         <h4>{{ _('Available Language Packs') }}</h4>
 
         <div data-bind="visible: languagePacksAvailable()">
-            <div id="settings_appearance_managelanguagesdialog_list" data-bind="slimScrolledForeach: translations.paginatedItems" style="height: 300px">
+            <div id="settings_appearance_managelanguagesdialog_list" data-bind="foreach: translations.paginatedItems">
                 <div class="entry">
                     <strong><a href="#" class="fa" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fa fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
                     <div class="packs">

@@ -62,10 +62,11 @@ Save settings
 
       {
         "api": {
-          "enabled": true,
-          // ...
+          "enabled": true
         },
-        // ...
+        "appearance": {
+          "color": "black"
+        }
       }
 
 .. _sec-api-settings-generateapikey:
@@ -105,7 +106,7 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
    * - ``api.key``
      - Only maps to ``api.key`` in ``config.yaml`` if request is sent with admin rights, set to ``n/a`` otherwise.
        Starting with OctoPrint 1.3.3 setting this field via :ref:`the API <sec-api-settings-save>` is not possible,
-       only :ref:`regenerting it <sec-api-settings-generateapikey>` is supported. Setting a custom value is only
+       only :ref:`regenerating it <sec-api-settings-generateapikey>` is supported. Setting a custom value is only
        possible through `config.yaml`.
    * - ``api.allowCrossOrigin``
      -

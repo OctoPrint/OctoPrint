@@ -16,7 +16,8 @@ from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer
 from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.access.permissions import Permissions
 
 import octoprint.plugin
 import octoprint.util
@@ -40,7 +41,7 @@ def _etag(lm=None):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
 	if current_user is not None and not current_user.is_anonymous:
-		roles = sorted(current_user.roles)
+		roles = sorted(current_user.permissions)
 	else:
 		roles = []
 
@@ -83,7 +84,8 @@ def getSettings():
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"]) if admin_permission.can() else None,
+			"keyEnforced": s.getBoolean(["api", "keyEnforced"]),
+			"key": s.get(["api", "key"]) if Permissions.ADMIN.can() else None,
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
@@ -101,6 +103,8 @@ def getSettings():
 			"streamRatio": s.get(["webcam", "streamRatio"]),
 			"streamTimeout": s.getInt(["webcam", "streamTimeout"]),
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
+			"snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
+			"snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
 			"ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
@@ -114,23 +118,13 @@ def getSettings():
 			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
 			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
-			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
-			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
-			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
-			"sdRelativePath": s.getBoolean(["feature", "sdRelativePath"]),
-			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
-			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
-			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
-			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
 			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
-			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
 			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
-			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"]),
 			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
-			"blockWhileDwelling": s.getBoolean(["feature", "blockWhileDwelling"]),
-			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"])
+			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
+			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -141,10 +135,14 @@ def getSettings():
 			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
 			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"timeoutCommunicationBusy": s.getFloat(["serial", "timeout", "communicationBusy"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
 			"timeoutTemperatureTargetSet": s.getFloat(["serial", "timeout", "temperatureTargetSet"]),
 			"timeoutTemperatureAutoreport": s.getFloat(["serial", "timeout", "temperatureAutoreport"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
+			"timeoutSdStatusAutoreport": s.getFloat(["serial", "timeout", "sdStatusAutoreport"]),
+			"timeoutBaudrateDetectionPause": s.getFloat(["serial", "timeout", "baudrateDetectionPause"]),
+			"timeoutPositionLogWait": s.getFloat(["serial", "timeout", "positionLogWait"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
@@ -154,10 +152,26 @@ def getSettings():
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
 			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
-			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
+			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
+			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
+			"supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
+			"waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
+			"alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
+			"neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
+			"sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
+			"sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
+			"swallowOkAfterResend": s.getBoolean(["serial", "swallowOkAfterResend"]),
+			"repetierTargetTemp": s.getBoolean(["serial", "repetierTargetTemp"]),
+			"externalHeatupDetection": s.getBoolean(["serial", "externalHeatupDetection"]),
+			"ignoreIdenticalResends": s.getBoolean(["serial", "ignoreIdenticalResends"]),
+			"firmwareDetection": s.getBoolean(["serial", "firmwareDetection"]),
+			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
-			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"])
+			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
+			"capAutoreportTemp": s.getBoolean(["serial", "capabilities", "autoreport_temp"]),
+			"capAutoreportSdStatus": s.getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
+			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -168,7 +182,9 @@ def getSettings():
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"]),
-			"cutoff": s.getInt(["temperature", "cutoff"])
+			"cutoff": s.getInt(["temperature", "cutoff"]),
+			"sendAutomatically": s.getBoolean(["temperature", "sendAutomatically"]),
+			"sendAutomaticallyAfter": s.getInt(["temperature", "sendAutomaticallyAfter"], min=0, max=30),
 		},
 		"system": {
 			"actions": s.get(["system", "actions"]),
@@ -184,6 +200,8 @@ def getSettings():
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
+				"beforeToolChange": None,
+				"afterToolChange": None,
 				"snippets": dict()
 			}
 		},
@@ -196,6 +214,17 @@ def getSettings():
 			"diskspace": {
 				"warning": s.getInt(["server", "diskspace", "warning"]),
 				"critical": s.getInt(["server", "diskspace", "critical"])
+			},
+			"onlineCheck": {
+				"enabled": s.getBoolean(["server", "onlineCheck", "enabled"]),
+				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
+				"host": s.get(["server", "onlineCheck", "host"]),
+				"port": s.getInt(["server", "onlineCheck", "port"])
+			},
+			"pluginBlacklist": {
+				"enabled": s.getBoolean(["server", "pluginBlacklist", "enabled"]),
+				"url": s.get(["server", "pluginBlacklist", "url"]),
+				"ttl": int(s.getInt(["server", "pluginBlacklist", "ttl"]) / 60)
 			}
 		}
 	}
@@ -248,8 +277,8 @@ def _get_plugin_settings():
 
 
 @api.route("/settings", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def setSettings():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
@@ -271,16 +300,16 @@ def setSettings():
 
 
 @api.route("/settings/apikey", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def generateApiKey():
 	apikey = settings().generateApiKey()
 	return jsonify(apikey=apikey)
 
 
 @api.route("/settings/apikey", methods=["DELETE"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def deleteApiKey():
 	settings().deleteApiKey()
 	return NO_CONTENT
@@ -296,6 +325,7 @@ def _saveSettings(data):
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
+		if "keyEnforced" in data["api"]: s.setBoolean(["api", "keyEnforced"], data["api"]["keyEnforced"])
 		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 	if "appearance" in data.keys():
@@ -313,6 +343,8 @@ def _saveSettings(data):
 		if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in ("16:9", "4:3"): s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
 		if "streamTimeout" in data["webcam"]: s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
 		if "snapshotUrl" in data["webcam"]: s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
+		if "snapshotTimeout" in data["webcam"]: s.setInt(["webcam", "snapshotTimeout"], data["webcam"]["snapshotTimeout"])
+		if "snapshotSslValidation" in data["webcam"]: s.setBoolean(["webcam", "snapshotSslValidation"], data["webcam"]["snapshotSslValidation"])
 		if "ffmpegPath" in data["webcam"]: s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 		if "bitrate" in data["webcam"]: s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
 		if "ffmpegThreads" in data["webcam"]: s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
@@ -326,23 +358,13 @@ def _saveSettings(data):
 		if "sizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
 		if "mobileSizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"]: s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
-		if "waitForStart" in data["feature"]: s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
-		if "alwaysSendChecksum" in data["feature"]: s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
-		if "neverSendChecksum" in data["feature"]: s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"]: s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
-		if "sdRelativePath" in data["feature"]: s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
-		if "sdAlwaysAvailable" in data["feature"]: s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
-		if "swallowOkAfterResend" in data["feature"]: s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
-		if "repetierTargetTemp" in data["feature"]: s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
-		if "externalHeatupDetection" in data["feature"]: s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
 		if "keyboardControl" in data["feature"]: s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
-		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
-		if "firmwareDetection" in data["feature"]: s.setBoolean(["feature", "firmwareDetection"], data["feature"]["firmwareDetection"])
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
-		if "blockWhileDwelling" in data["feature"]: s.setBoolean(["feature", "blockWhileDwelling"], data["feature"]["blockWhileDwelling"])
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
+		if "autoUppercaseBlacklist" in data["feature"] and isinstance(data["feature"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["feature", "autoUppercaseBlacklist"], data["feature"]["autoUppercaseBlacklist"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -351,10 +373,14 @@ def _saveSettings(data):
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
 		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
 		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"])
 		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
 		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"])
 		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
+		if "timeoutSdStatusAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatusAutoreport"], data["serial"]["timeoutSdStatusAutoreport"])
+		if "timeoutBaudrateDetectionPause" in data["serial"]: s.setFloat(["serial", "timeout", "baudrateDetectionPause"], data["serial"]["timeoutBaudrateDetectionPause"])
+		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
@@ -363,10 +389,29 @@ def _saveSettings(data):
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
-		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
+		if "supportResendsWithoutOk" in data["serial"]:
+			value = data["serial"]["supportResendsWithoutOk"]
+			if value in ("always", "detect", "never"):
+				s.set(["serial", "supportResendsWithoutOk"], value)
+		if "waitForStart" in data["serial"]: s.setBoolean(["serial", "waitForStartOnConnect"], data["serial"]["waitForStart"])
+		if "alwaysSendChecksum" in data["serial"]: s.setBoolean(["serial", "alwaysSendChecksum"], data["serial"]["alwaysSendChecksum"])
+		if "neverSendChecksum" in data["serial"]: s.setBoolean(["serial", "neverSendChecksum"], data["serial"]["neverSendChecksum"])
+		if "sdRelativePath" in data["serial"]: s.setBoolean(["serial", "sdRelativePath"], data["serial"]["sdRelativePath"])
+		if "sdAlwaysAvailable" in data["serial"]: s.setBoolean(["serial", "sdAlwaysAvailable"], data["serial"]["sdAlwaysAvailable"])
+		if "swallowOkAfterResend" in data["serial"]: s.setBoolean(["serial", "swallowOkAfterResend"], data["serial"]["swallowOkAfterResend"])
+		if "repetierTargetTemp" in data["serial"]: s.setBoolean(["serial", "repetierTargetTemp"], data["serial"]["repetierTargetTemp"])
+		if "externalHeatupDetection" in data["serial"]: s.setBoolean(["serial", "externalHeatupDetection"], data["serial"]["externalHeatupDetection"])
+		if "ignoreIdenticalResends" in data["serial"]: s.setBoolean(["serial", "ignoreIdenticalResends"], data["serial"]["ignoreIdenticalResends"])
+		if "firmwareDetection" in data["serial"]: s.setBoolean(["serial", "firmwareDetection"], data["serial"]["firmwareDetection"])
+		if "blockWhileDwelling" in data["serial"]: s.setBoolean(["serial", "blockWhileDwelling"], data["serial"]["blockWhileDwelling"])
+		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
+		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
 		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
 		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
+		if "capAutoreportTemp" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_temp"], data["serial"]["capAutoreportTemp"])
+		if "capAutoreportSdStatus" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_sdstatus"], data["serial"]["capAutoreportSdStatus"])
+		if "capBusyProtocol" in data["serial"]: s.setBoolean(["serial", "capabilities", "busy_protocol"], data["serial"]["capBusyProtocol"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"]: s.setBoolean(["serial", "log"], data["serial"]["log"])
@@ -387,8 +432,25 @@ def _saveSettings(data):
 		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
-		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
-		if "cutoff" in data["temperature"]: s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
+		if "profiles" in data["temperature"]:
+			result = []
+			for profile in data["temperature"]["profiles"]:
+				try:
+					profile["bed"] = int(profile["bed"])
+					profile["extruder"] = int(profile["extruder"])
+				except ValueError:
+					pass
+				result.append(profile)
+			s.set(["temperature", "profiles"], result)
+		if "cutoff" in data["temperature"]:
+			try:
+				cutoff = int(data["temperature"]["cutoff"])
+				if cutoff > 1:
+					s.setInt(["temperature", "cutoff"], cutoff)
+			except ValueError:
+				pass
+		if "sendAutomatically" in data["temperature"]: s.setBoolean(["temperature", "sendAutomatically"], data["temperature"]["sendAutomatically"])
+		if "sendAutomaticallyAfter" in data["temperature"]: s.setInt(["temperature", "sendAutomaticallyAfter"], data["temperature"]["sendAutomaticallyAfter"], min=0, max=30)
 
 	if "terminalFilters" in data.keys():
 		s.set(["terminalFilters"], data["terminalFilters"])
@@ -412,6 +474,25 @@ def _saveSettings(data):
 		if "diskspace" in data["server"]:
 			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
 			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
+		if "onlineCheck" in data["server"]:
+			if "enabled" in data["server"]["onlineCheck"]: s.setBoolean(["server", "onlineCheck", "enabled"], data["server"]["onlineCheck"]["enabled"])
+			if "interval" in data["server"]["onlineCheck"]:
+				try:
+					interval = int(data["server"]["onlineCheck"]["interval"])
+					s.setInt(["server", "onlineCheck", "interval"], interval*60)
+				except ValueError:
+					pass
+			if "host" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "host"], data["server"]["onlineCheck"]["host"])
+			if "port" in data["server"]["onlineCheck"]: s.setInt(["server", "onlineCheck", "port"], data["server"]["onlineCheck"]["port"])
+		if "pluginBlacklist" in data["server"]:
+			if "enabled" in data["server"]["pluginBlacklist"]: s.setBoolean(["server", "pluginBlacklist", "enabled"], data["server"]["pluginBlacklist"]["enabled"])
+			if "url" in data["server"]["pluginBlacklist"]: s.set(["server", "pluginBlacklist", "url"], data["server"]["pluginBlacklist"]["url"])
+			if "ttl" in data["server"]["pluginBlacklist"]:
+				try:
+					ttl = int(data["server"]["pluginBlacklist"]["ttl"])
+					s.setInt(["server", "pluginBlacklist", "ttl"], ttl * 60)
+				except ValueError:
+					pass
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

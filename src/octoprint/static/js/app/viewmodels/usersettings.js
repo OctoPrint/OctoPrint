@@ -3,7 +3,9 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
+        self.access = parameters[1];
+
+        self.users = self.access.users;
 
         self.userSettingsDialog = undefined;
 
@@ -25,7 +27,7 @@ $(function() {
             self.access_apikey(undefined);
             self.interface_language("_default");
 
-            if (newUser != undefined) {
+            if (newUser !== undefined) {
                 self.access_apikey(newUser.apikey);
                 if (newUser.settings.hasOwnProperty("interface") && newUser.settings.interface.hasOwnProperty("language")) {
                     self.interface_language(newUser.settings.interface.language);
@@ -34,18 +36,30 @@ $(function() {
         });
 
         self.passwordMismatch = ko.pureComputed(function() {
-            return self.access_password() != self.access_repeatedPassword();
+            return self.access_password() !== self.access_repeatedPassword();
         });
 
         self.show = function(user) {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            if (user == undefined) {
+            if (user === undefined) {
                 user = self.loginState.currentUser();
             }
 
-            self.currentUser(user);
-            self.userSettingsDialog.modal("show");
+            var process = function(user) {
+                self.currentUser(user);
+                self.userSettingsDialog.modal("show");
+            };
+
+            // make sure we have the current user data, see #2534
+            OctoPrint.access.users.get(user.name)
+                .done(function(data) {
+                    process(data);
+                })
+                .fail(function() {
+                    log.warn("Could not fetch current user data, proceeding with client side data copy");
+                    process(user);
+                });
         };
 
         self.save = function() {
@@ -67,6 +81,10 @@ $(function() {
                     self.userSettingsDialog.modal("hide");
                     self.loginState.reloadUser();
                 });
+        };
+
+        self.copyApikey = function() {
+            copyToClipboard(self.access_apikey());
         };
 
         self.generateApikey = function() {
@@ -100,7 +118,7 @@ $(function() {
         };
 
         self.updateSettings = function(username, settings) {
-            return OctoPrint.users.saveSettings(username, settings);
+            return OctoPrint.access.users.saveSettings(username, settings);
         };
 
         self.saveEnabled = function() {
@@ -122,9 +140,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UserSettingsViewModel,
-        ["loginStateViewModel", "usersViewModel"],
-        ["#usersettings_dialog"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UserSettingsViewModel,
+        dependencies: ["loginStateViewModel", "accessViewModel"],
+        elements: ["#usersettings_dialog"]
+    });
 });

@@ -20,7 +20,7 @@ development environment::
   $ virtualenv venv
   [...]
   $ source venv/bin/activate
-  (venv) $ pip install -e .[develop]
+  (venv) $ pip install -e .[develop,plugins]
   [...]
   (venv) $ octoprint --help
   Usage: octoprint [OPTIONS] COMMAND [ARGS]...
@@ -134,14 +134,15 @@ as a simple python file following the naming convention ``<plugin identifier>.py
 ``~/.octoprint/plugins`` folder. You already know how that works. But let's say you have more than just a simple plugin
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
 so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
-best way possible, meaning we want to make our plugin a fully installable python module that your users will be able to
+best way possible, meaning we want to make our plugin a fully installable Python module that your users will be able to
 install directly via `OctoPrint's built-in Plugin Manager <https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager>`_
 or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
-So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins here,
-so we'll first need to install that::
+So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins
+here. This should already be installed if you used the ``plugins`` extra while installing OctoPrint.  However,
+you may install it with::
 
-   (venv) $ pip install cookiecutter
+   (venv) $ pip install "cookiecutter>=1.4,<1.7"
 
 Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
 
@@ -281,7 +282,7 @@ of information now defined twice:
    plugin_version = "1.0.0"
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
 
-The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
+The nice thing about our plugin now being a proper Python package is that OctoPrint can and will access the metadata defined
 within ``setup.py``! So, we don't really need to define all this data twice. Remove ``__plugin_name__``, ``__plugin_version__``
 and ``__plugin_description__`` from ``__init__.py``:
 
@@ -409,8 +410,8 @@ Now look at that!
 Settings Galore: How to make parts of your plugin user adjustable
 -----------------------------------------------------------------
 
-Remember that Wikipedia link we added to our little link in the navigation bar? It links to the english Wikipedia. But
-what if we want to allow our users to adjust that according to their wishes, e.g. to link to the german language node
+Remember that Wikipedia link we added to our little link in the navigation bar? It links to the English Wikipedia. But
+what if we want to allow our users to adjust that according to their wishes, e.g. to link to the German language node
 about "Hello World" programs instead?
 
 To allow your users to customized the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
@@ -508,7 +509,7 @@ section doesn't yet exist in the file, create it):
    # [...]
 
 Restart OctoPrint. Not only should the URL displayed in the log file have changed, but also the link should now (after
-a proper shift-reload) point to the german Wikipedia node about "Hello World" programs::
+a proper shift-reload) point to the German Wikipedia node about "Hello World" programs::
 
    2015-01-30 11:47:18,634 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://de.wikipedia.org/wiki/Hallo-Welt-Programm)
 
@@ -819,12 +820,10 @@ Put something like the following into ``helloworld.css``:
 .. code-block:: css
    :linenos:
 
-   #tab_plugin_helloworld {
-     iframe {
-       width: 100%;
-       height: 600px;
-       border: 1px solid #808080;
-     }
+   #tab_plugin_helloworld iframe {
+     width: 100%;
+     height: 600px;
+     border: 1px solid #808080;
    }
 
 Don't forget to remove the ``style`` attribute from the ``iframe`` tag in ``helloworld_tab.jinja2``:

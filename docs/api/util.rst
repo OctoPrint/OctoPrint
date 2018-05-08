@@ -38,13 +38,15 @@ Test paths or URLs
    .. _sec-api-util-test-url:
 
    url
-     Tests whether a provided url responds. Request method and expected status codes can
+     Tests whether a provided URL responds. Request method and expected status codes can
      optionally be specified as well. Supported parameters are:
 
-       * ``url``: The url to test. Mandatory.
+       * ``url``: The URL to test. Mandatory.
        * ``method``: The request method to use for the test. Optional, defaults to ``HEAD``.
        * ``timeout``: A timeout for the request, in seconds. If no reply from the tested URL has been
          received within this time frame, the check will be considered a failure. Optional, defaults to 3 seconds.
+       * ``validSsl``: Whether to validate the SSL connection if the ``url`` happens to be an HTTPS URL or not. Optional,
+         defaults to ``True``.
        * ``status``: The status code(s) or named status range(s) to test for. Can be either a single
          value or a list of either HTTP status codes or any of the following named status ranges:
 
@@ -63,10 +65,31 @@ Test paths or URLs
          from the URL check will be returned as part of the check result as well. ``json`` will attempt
          to parse the response as json and return the parsed result. ``true`` or ``bytes`` will base64 encode the body
          and return that.
+       * ``content_type_whitelist``: Optional array of supported content types. If set and the URL returns a content
+         type not included in this list, the test will fail. E.g. ``["image/*", "text/plain"]``.
+       * ``content_type_blacklist``: Optional array of unsupported content types. If set and the URL returns a content
+         type included in this list, the test wil fail. E.g. ``["video/*"]``. Can be used together with ``content_type_whitelist``
+         to further limit broader content type definition, e.g. by putting ``image/*`` into the whitelist, but disallowing
+         PNG by including ``image/png`` on the blacklist.
 
      The ``url`` command returns :http:statuscode:`200` with a :ref:`URL test result <sec-api-util-datamodel-urltestresult>`
      when the test could be performed. The status code of the response does NOT reflect the
      test result!
+
+   .. _sec-api-util-test-server:
+
+   server
+     Tests whether a provided server identified by host and port can be reached. Protocol can optionally be specified
+     as well. Supported parameters are:
+
+       * ``host``: The host to test. IP or host name. Mandatory.
+       * ``port``: The port to test. Integer. Mandatory.
+       * ``protocol``: The protocol to test with. ``tcp`` or ``udp``. Optional, defaults to ``tcp``.
+       * ``timeout``: A timeout for the test, in seconds. If no successful connection to the server could be established
+         within this time frame, the check will be considered a failure. Optional, defaults to 3.05 seconds.
+
+     The ``server`` command returns :http:statuscode:`200` with a :ref:`Server test result <sec-api-util-datamodel-servertestresult>`
+     when the test could be performed. The status code of the response does NOT reflect the test result!
 
    Requires admin rights.
 
@@ -226,6 +249,35 @@ Test paths or URLs
         }
       }
 
+   **Example 6**
+
+   Test whether a server is reachable on a given port via TCP.
+
+   .. sourcecode:: http
+
+      POST /api/util/test HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "command": "server",
+        "host": "8.8.8.8",
+        "port": 53
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "host": "8.8.8.8",
+        "port": 53,
+        "protocol": "tcp",
+        "result": true
+      }
+
    :json command:      The command to execute, currently either ``path`` or ``url``
    :json path:         ``path`` command only: the path to test
    :json check_type:   ``path`` command only: the type of path to test for, either ``file`` or ``dir``
@@ -233,8 +285,11 @@ Test paths or URLs
    :json url:          ``url`` command only: the URL to test
    :json status:       ``url`` command only: one or more expected status codes
    :json method:       ``url`` command only: the HTTP method to use for the check
-   :json timeout:      ``url`` command only: the timeout for the HTTP request
+   :json timeout:      ``url`` and ``server`` commands only: the timeout for the test request
    :json response:     ``url`` command only: whether to include response data and if so in what form
+   :json host:         ``server`` command only: the server to test
+   :json port:         ``server`` command only: the port to test
+   :json protocol:     ``server`` command only: the protocol to test
    :statuscode 200:    No error occurred
 
 .. _sec-api-util-datamodel:
@@ -243,6 +298,9 @@ Data model
 ==========
 
 .. _sec-api-util-datamodel-pathtestresult:
+
+Path test result
+----------------
 
 .. list-table::
    :widths: 15 5 10 30
@@ -275,6 +333,9 @@ Data model
 
 .. _sec-api-util-datamodel-urltestresult:
 
+URL test result
+---------------
+
 .. list-table::
    :widths: 15 5 10 30
    :header-rows: 1
@@ -306,3 +367,33 @@ Data model
      - object
      - A dictionary with all headers of the checked URL's response. Only present if ``response`` in the
        request was set.
+
+.. _sec-api-util-datamodel-servertestresult:
+
+Server test result
+------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``host``
+     - 1
+     - string
+     - The host that was tested.
+   * - ``port``
+     - 1
+     - int
+     - The port that was tested
+   * - ``protocol``
+     - 1
+     - string
+     - The protocol that was tested, ``tcp`` or ``udp``
+   * - ``result``
+     - 1
+     - bool
+     - ``true`` if the check passed.

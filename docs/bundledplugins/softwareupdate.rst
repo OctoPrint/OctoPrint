@@ -14,14 +14,14 @@ First Steps
 
 Out of the box the Software Update Plugin will be able to notify you of any
 updates that might be available for your OctoPrint installation or any plugins
-that registered themselves with it. In order to also be able to update
-your OctoPrint installation, you'll need to configure
-at least OctoPrint's checkout folder, and you also should
-configure the restart commands for OctoPrint and the whole server.
+that registered themselves with it. In order for automatic restarts after updates
+to work, you should configure the restart commands for OctoPrint and the whole server.
 
-For configuring the plugin you'll need to go into OctoPrint's Settings Dialog, navigate to the
-Software Upda.. _section therein and once you are there click on the little wrench icon in the
-upper right corner.
+Out of the box the plugin should already be ready to update your OctoPrint installation to current
+stable release versions, but you can also switch to one of the available release candidate channels
+or outright git commit tracking via the plugin's configuration dialog. To open this dialog, fire up OctoPrint's
+Settings Dialog, navigate to the Software Update section therein and once you are there click on the little
+wrench icon in the upper right corner.
 
 .. _fig-bundledplugins-softwareupdate-plugin-configuration:
 .. figure:: ../images/bundledplugins-softwareupdate-plugin-configuration.png
@@ -32,36 +32,21 @@ upper right corner.
 
 There you can adjust the following settings:
 
-  * **OctoPrint checkout folder**: This should be the path to OctoPrint's git checkout folder (``/home/pi/OctoPrint``
-    for OctoPi or `manual installs following the Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_).
-    This must be set to allow updating from within OctoPrint
-
-    .. note::
-
-       OctoPi releases 0.12.0 and later ship with this already setup for you.
-
-    .. note::
-
-       **OctoPi 0.11.0 users**: Please also take a look at
-       `the note at the very end of this FAQ entry <https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-update-the-octoprint-installation-on-my-octopi-image>`_.
-       Due to a little issue in that OctoPi release 0.11.0 you might have to fix
-       the URL your OctoPrint checkout is using for updating. This can easily be
-       done by SSHing into your OctoPi instance and doing this::
-
-           cd ~/OctoPrint
-           git remote set-url origin https://github.com/foosel/OctoPrint.git
-
   * **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
     select "Release" here which is also the default, unless you are a developer.
-  * **OctoPrint Release Channel**: The release channel of OctoPrint to track for updates. If you only want stable versions,
+  * **OctoPrint Release Channel** (if tracking releases): The release channel of OctoPrint to track for updates. If you only want stable versions,
     select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
     candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
     "Stable". `Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`_.
+  * **OctoPrint checkout folder** (if tracking git commits): This must be the path to OctoPrint's git checkout folder
+    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_).
+    Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
+    want to be able to update against some bleeding edge git branch.
   * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
     for the various components registered with the plugin, so that they don't have to be queried from the internet every time
     you load the page. Defaults to 24h, you usually shouldn't need to change that value.
 
-More settings are available by :ref:`editing the correspondi.. _section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
+More settings are available by :ref:`editing the corresponding section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
 That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
@@ -71,9 +56,9 @@ Command line usage
 ------------------
 
 The functionality of the Software Update Plugin is also available on OctoPrint's command line interface under the
-``plugins`` sub command. It's is possible to check for updates via ``octoprint plugins softwareupdate:check``
-and to apply available updates via ``octoprint plugins softwareupdate:update``. Please the corresponding
-``--help`` pages on details:
+``plugins`` sub command. It's possible to check for updates via ``octoprint plugins softwareupdate:check``
+and to apply available updates via ``octoprint plugins softwareupdate:update``. Please see the corresponding
+``--help`` pages for details:
 
 .. code-block:: none
 
@@ -132,30 +117,29 @@ Configuring the Plugin
 
 .. code-block:: yaml
 
-    plugins:
-      softwareupdate:
-        # the time-to-live of the version cache, in minutes
-        cache_ttl: 60
+   plugins:
+     softwareupdate:
+       # the time-to-live of the version cache, in minutes
+       cache_ttl: 60
 
-        # configured version check and update methods
-        checks:
-          # "octoprint" is reserved for OctoPrint
-          octoprint:
-            # this defines an version check that will check against releases
-            # published on OctoPrint's Github repository and an update method
-            # utilizing an (included) update script that will be run on
-            # OctoPrint's checkout folder
-            type: github_release
-            user: foosel
-            repo: OctoPrint
-            update_script: '{python} "/path/to/octoprint-update.py" --python="{python}" "{folder}" "{target}"'
-            update_folder: /path/to/octoprint/checkout/folder
+       # configured version check and update methods
+       checks:
+         # "octoprint" is reserved for OctoPrint
+         octoprint:
+           # this defines a version check that will check against releases
+           # published on OctoPrint's Github repository and pip as update method
+           # against the release archives on Github - this is the default
+           type: github_release
+           user: foosel
+           repo: OctoPrint
+           method: pip
+           pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
 
-          # further checks may be define here
+         # further checks may be defined here
 
-        # pip command, if another one than the automatically detected one should be
-        # used - should normally NOT be necessary and hence set
-        pip_command: /path/to/pip
+       # pip command, if another one than the automatically detected one should be
+       # used - should normally NOT be necessary and hence set
+       pip_command: /path/to/pip
 
 .. _sec-bundledplugins-softwareupdate-configuration-versionchecks:
 
@@ -198,6 +182,13 @@ Version checks
     * ``branch``: Branch of the Bitbucket repository to check, defaults to
       ``master`` if not set.
     * ``current``: Current commit hash. Will be updated automatically.
+    * ``api_user``: (mandatory only for private repositories) Bitbucket user name (not email address).
+      Requires ``api_password`` to be set. Hint: This is used for the check only. For the actual
+      download you might register your public SSH key as access key for the according repo and
+      configure this as pip URL in ``config.yaml``: ``git+ssh://git@bitbucket.org/my_user/my_repo.git@{target_version}``
+    * ``api_password``: (mandatory only for private repositories) App password. Requires
+      ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
+      a new app password. App passwords are user specific on Bitbucket.
 
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:
@@ -218,9 +209,20 @@ Version checks
     :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. Additional config
     parameters:
 
-    * ``python_checker``: (mandatory) A python callable which returns version
+    * ``python_checker``: (mandatory) A Python callable which returns version
       information and whether the current version is up-to-date or not, see
       below for details.
+
+  * ``always_current``: Always reports that no update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``current_version``: Version to report for both local and remote version.
+
+  * ``never_current``: Always reports that an update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``local_version``: Current local version. Defaults to ``1.0.0``.
+    * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
 
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
@@ -239,8 +241,37 @@ Update methods
     ``update_folder`` setting or if the ``git_commit`` check is used its
     ``checkout_folder`` setting.
   * ``python_updater``: Can only be specified by plugins through the
-    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A python callable
+    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
     which performs the update, see below for details.
+  * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
+    a countdown in the meantime. Useful for debugging software update mechanisms
+    during development.
+
+.. note::
+
+   To allow default configurations for multiple update methods, if more than one of
+   the above update method specific settings is set the one to use can be selected
+   by setting the property ``method`` to the method specific setting in question.
+
+   **Example**
+
+   The following example defines both ``pip`` and ``update_script``. By setting to
+   ``method`` to ``pip``, the Software Update plugin is instructed to use that as
+   update method.
+
+   .. code-block:: yaml
+
+      plugins:
+        softwareupdate:
+          checks:
+            octoprint:
+              type: github_release
+              user: foosel
+              repo: OctoPrint
+              method: pip
+              pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+              update_script: '{python} "/path/to/octoprint-update.py" --python="{python}" "{folder}" "{target}"'
+              checkout_folder: /path/to/octoprint/checkout/folder
 
 .. _sec-bundledplugins-softwareupdate-configuration-patterns:
 
@@ -261,6 +292,7 @@ plugin itself):
            user: foosel
            repo: OctoPrint
            branch: devel
+           method: update_script
            update_folder: /home/pi/OctoPrint
 
 Plugin installed via pip and hosted on Github under

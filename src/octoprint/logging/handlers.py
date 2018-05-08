@@ -6,10 +6,30 @@ import os
 import re
 import time
 
+# noinspection PyCompatibility
+import concurrent.futures
+
+
+class AsyncLogHandlerMixin(logging.Handler):
+	def __init__(self, *args, **kwargs):
+		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+		super(AsyncLogHandlerMixin, self).__init__(*args, **kwargs)
+
+	def emit(self, record):
+		try:
+			self._executor.submit(self._emit, record)
+		except:
+			self.handleError(record)
+
+	def _emit(self, record):
+		# noinspection PyUnresolvedReferences
+		super(AsyncLogHandlerMixin, self).emit(record)
+
+
 class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
 
 	def __init__(self, *args, **kwargs):
-		logging.handlers.TimedRotatingFileHandler.__init__(self, *args, **kwargs)
+		super(CleaningTimedRotatingFileHandler, self).__init__(*args, **kwargs)
 
 		# clean up old files on handler start
 		if self.backupCount > 0:
@@ -17,7 +37,7 @@ class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
 				os.remove(s)
 
 
-class OctoPrintLogHandler(CleaningTimedRotatingFileHandler):
+class OctoPrintLogHandler(AsyncLogHandlerMixin, CleaningTimedRotatingFileHandler):
 	rollover_callbacks = []
 
 	@classmethod
@@ -25,32 +45,33 @@ class OctoPrintLogHandler(CleaningTimedRotatingFileHandler):
 		cls.rollover_callbacks.append((callback, args, kwargs))
 
 	def doRollover(self):
-		CleaningTimedRotatingFileHandler.doRollover(self)
+		super(OctoPrintLogHandler, self).doRollover()
 
-		for rcb in self.__class__.rollover_callbacks:
+		for rcb in self.rollover_callbacks:
 			callback, args, kwargs = rcb
 			callback(*args, **kwargs)
 
 
-class SerialLogHandler(logging.handlers.RotatingFileHandler):
+class OctoPrintStreamHandler(AsyncLogHandlerMixin, logging.StreamHandler):
+	pass
 
-	_do_rollover = False
-	_suffix_template = "%Y-%m-%d_%H-%M-%S"
-	_file_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
+
+class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler):
+
+	do_rollover = False
+	suffix_template = "%Y-%m-%d_%H-%M-%S"
+	file_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
 
 	@classmethod
 	def on_open_connection(cls):
-		cls._do_rollover = True
+		cls.do_rollover = True
 
 	def __init__(self, *args, **kwargs):
-		logging.handlers.RotatingFileHandler.__init__(self, *args, **kwargs)
+		super(SerialLogHandler, self).__init__(*args, **kwargs)
 		self.cleanupFiles()
 
-	def emit(self, record):
-		logging.handlers.RotatingFileHandler.emit(self, record)
-
 	def shouldRollover(self, record):
-		return self.__class__._do_rollover
+		return type(self).do_rollover
 
 	def getFilesToDelete(self):
 		"""
@@ -64,7 +85,7 @@ class SerialLogHandler(logging.handlers.RotatingFileHandler):
 		for fileName in fileNames:
 			if fileName[:plen] == prefix:
 				suffix = fileName[plen:]
-				if self.__class__._file_pattern.match(suffix):
+				if type(self).file_pattern.match(suffix):
 					result.append(os.path.join(dirName, fileName))
 		result.sort()
 		if len(result) < self.backupCount:
@@ -88,7 +109,7 @@ class SerialLogHandler(logging.handlers.RotatingFileHandler):
 		if os.path.exists(self.baseFilename):
 			# figure out creation date/time to use for file suffix
 			t = time.localtime(os.stat(self.baseFilename).st_mtime)
-			dfn = self.baseFilename + "." + time.strftime(self.__class__._suffix_template, t)
+			dfn = self.baseFilename + "." + time.strftime(type(self).suffix_template, t)
 			if os.path.exists(dfn):
 				os.remove(dfn)
 			os.rename(self.baseFilename, dfn)
@@ -98,8 +119,8 @@ class SerialLogHandler(logging.handlers.RotatingFileHandler):
 			self.stream = self._open()
 
 class RecordingLogHandler(logging.Handler):
-	def __init__(self, target=None, level=logging.NOTSET):
-		logging.Handler.__init__(self, level=level)
+	def __init__(self, target=None, *args, **kwargs):
+		super(RecordingLogHandler, self).__init__(*args, **kwargs)
 		self._buffer = []
 		self._target = target
 
@@ -133,6 +154,7 @@ class RecordingLogHandler(logging.Handler):
 		return len(self._buffer)
 
 
+# noinspection PyAbstractClass
 class CombinedLogHandler(logging.Handler):
 	def __init__(self, *handlers):
 		logging.Handler.__init__(self)

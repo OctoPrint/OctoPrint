@@ -18,6 +18,20 @@ class UnknownUpdateType(Exception):
 class UnknownCheckType(Exception):
 	pass
 
+class NetworkError(Exception):
+	def __init__(self, message=None, cause=None):
+		Exception.__init__(self)
+		self.message = message
+		self.cause = cause
+
+	def __str__(self):
+		if self.message is not None:
+			return self.message
+		elif self.cause is not None:
+			return "NetworkError caused by {}".format(self.cause)
+		else:
+			return "NetworkError"
+
 class UpdateError(Exception):
 	def __init__(self, message, data):
 		self.message = message
@@ -35,3 +49,8 @@ class RestartFailed(Exception):
 class ConfigurationInvalid(Exception):
 	pass
 
+class CannotCheckOffline(Exception):
+	pass
+
+class CannotUpdateOffline(Exception):
+	pass

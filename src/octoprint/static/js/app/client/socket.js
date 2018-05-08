@@ -85,6 +85,10 @@
         this.sendMessage("throttle", this.rateThrottleFactor);
     };
 
+    OctoPrintSocketClient.prototype.sendAuth = function(userId, session) {
+        this.sendMessage("auth", userId + ":" + session);
+    };
+
     OctoPrintSocketClient.prototype.sendMessage = function(type, payload) {
         var data = {};
         data[type] = payload;
@@ -106,6 +110,7 @@
         var onOpen = function() {
             self.reconnecting = false;
             self.reconnectTrial = 0;
+            self.onConnected();
         };
 
         var onClose = function(e) {
@@ -116,6 +121,8 @@
             if (self.onReconnectAttempt(self.reconnectTrial)) {
                 return;
             }
+
+            self.onDisconnected(e.code);
 
             if (self.reconnectTrial < self.options.timeouts.length) {
                 var timeout = self.options.timeouts[self.reconnectTrial];
@@ -160,6 +167,8 @@
 
     OctoPrintSocketClient.prototype.onReconnectAttempt = function(trial) {};
     OctoPrintSocketClient.prototype.onReconnectFailed = function() {};
+    OctoPrintSocketClient.prototype.onConnected = function() {};
+    OctoPrintSocketClient.prototype.onDisconnected = function(code) {};
 
     OctoPrintSocketClient.prototype.onRateTooLow = function(measured, minimum) {
         this.increaseRate();

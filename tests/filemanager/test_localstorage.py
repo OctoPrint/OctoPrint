@@ -79,6 +79,13 @@ class LocalStorageTest(unittest.TestCase):
 
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
 
+	def test_add_file_with_display(self):
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, display=u"bp_cäse.stl")
+		stl_metadata = self.storage.get_metadata(stl_name)
+
+		self.assertIsNotNone(stl_metadata)
+		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), stl_metadata)
+
 	def test_add_file_with_web(self):
 		import time
 		href = "http://www.example.com"
@@ -183,6 +190,48 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertIsNotNone(copied_metadata)
 		self.assertDictEqual(before_stl_metadata, copied_metadata)
 
+	def test_copy_file_new_display(self):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+		try:
+			self.storage.copy_file("bp_case.stl", u"bp_cäse.stl")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
+
+	def test_move_file_new_display(self):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+
+		before_metadata = self.storage.get_metadata("bp_case.stl")
+		self.storage.move_file("bp_case.stl", u"bp_cäse.stl")
+		after_metadata = self.storage.get_metadata("bp_case.stl")
+
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
+
+		self.assertIsNotNone(before_metadata)
+		self.assertIsNotNone(after_metadata)
+		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), after_metadata)
+
+	@data("copy_file", "move_file")
+	def test_copy_move_file_different_display(self, operation):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL, display=u"bp_cäse.stl")
+
+		before_metadata = self.storage.get_metadata("bp_case.stl")
+		getattr(self.storage, operation)("bp_case.stl", "test.stl")
+		after_metadata = self.storage.get_metadata("test.stl")
+
+		self.assertIsNotNone(before_metadata)
+		self.assertIsNotNone(after_metadata)
+		self.assertNotIn("display", after_metadata)
+
+	@data("copy_file", "move_file")
+	def test_copy_move_file_same(self, operation):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+		try:
+			getattr(self.storage, operation)("bp_case.stl", "bp_case.stl")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
+
 	@data("copy_file", "move_file")
 	def test_copy_move_file_missing_source(self, operation):
 		try:
@@ -216,6 +265,12 @@ class LocalStorageTest(unittest.TestCase):
 	def test_add_folder(self):
 		self._add_and_verify_folder("test", "test")
 
+	def test_add_folder_with_display(self):
+		self._add_and_verify_folder("test", "test", display=u"täst")
+		metadata = self.storage.get_metadata("test")
+		self.assertIsNotNone(metadata)
+		self.assertDictContainsSubset(dict(display=u"täst"), metadata)
+
 	def test_add_subfolder(self):
 		folder_name = self._add_and_verify_folder("folder with some spaces", "folder_with_some_spaces")
 		subfolder_name = self._add_and_verify_folder((folder_name, "subfolder"), folder_name + "/subfolder")
@@ -247,12 +302,16 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertFalse(os.path.exists(os.path.join(self.basefolder, empty_folder)))
 		self.assertFalse(os.path.isdir(os.path.join(self.basefolder, empty_folder)))
 
-	def test_remove_folder_with_metadata(self):
-		content_folder = self._add_and_verify_folder("content", "content")
-		other_stl_name = self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
-		self.storage.remove_file(other_stl_name)
+	def test_remove_folder_with_display(self):
+		self._add_folder("folder", display=u"földer")
 
-		self.storage.remove_folder(content_folder, recursive=False)
+		before_metadata = self.storage.get_metadata("folder")
+		self.storage.remove_folder("folder")
+		after_metadata = self.storage.get_metadata("folder")
+
+		self.assertIsNotNone(before_metadata)
+		self.assertDictEqual(before_metadata, dict(display=u"földer"))
+		self.assertIsNone(after_metadata)
 
 	def test_copy_folder(self):
 		self._add_folder("source")
@@ -267,7 +326,7 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "source", "crazyradio.stl")))
 		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination")))
 		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination", "copied")))
-		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.json")))
 		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", "crazyradio.stl")))
 
 		self.assertIsNotNone(source_metadata)
@@ -288,13 +347,53 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertFalse(os.path.isfile(os.path.join(self.basefolder, "source", "crazyradio.stl")))
 		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination")))
 		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination", "copied")))
-		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.json")))
 		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", "crazyradio.stl")))
 
 		self.assertIsNotNone(before_source_metadata)
 		self.assertIsNone(after_source_metadata)
 		self.assertIsNotNone(copied_metadata)
 		self.assertDictEqual(before_source_metadata, copied_metadata)
+
+	def test_copy_folder_new_display(self):
+		self._add_folder("folder")
+		try:
+			self.storage.copy_folder("folder", u"földer")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
+
+	def test_move_folder_new_display(self):
+		self._add_folder("folder")
+
+		before_metadata = self.storage.get_metadata("folder")
+		self.storage.move_folder("folder", u"földer")
+		after_metadata = self.storage.get_metadata("folder")
+
+		self.assertIsNone(before_metadata)
+		self.assertIsNotNone(after_metadata)
+		self.assertDictEqual(after_metadata, dict(display=u"földer"))
+
+	@data("copy_folder", "move_folder")
+	def test_copy_move_folder_different_display(self, operation):
+		self._add_folder("folder", display=u"földer")
+
+		before_metadata = self.storage.get_metadata("folder")
+		getattr(self.storage, operation)("folder", "test")
+		after_metadata = self.storage.get_metadata("test")
+
+		self.assertIsNotNone(before_metadata)
+		self.assertDictEqual(before_metadata, dict(display=u"földer"))
+		self.assertIsNone(after_metadata)
+
+	@data("copy_folder", "move_folder")
+	def test_copy_move_folder_same(self, operation):
+		self._add_folder("folder")
+		try:
+			getattr(self.storage, operation)("folder", "folder")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
 
 	@data("copy_folder", "move_folder")
 	def test_copy_move_folder_missing_source(self, operation):
@@ -524,13 +623,51 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEqual(expected_path, actual_path)
 		self.assertEqual(expected_name, actual_name)
 
-	def _add_and_verify_file(self, path, expected_path, file_object, links=None, overwrite=False):
+	@data(
+		(u"test", u"test"),
+		(u"\u2764", u"red_heart"),
+		(u"\u2764\ufe00", u"red_heart")
+	)
+	@unpack
+	def test_slugify(self, input, expected):
+		output = LocalFileStorage._slugify(input)
+		self.assertEqual(output, expected)
+
+	def _add_and_verify_file(self, path, expected_path, file_object, links=None, overwrite=False, display=None):
 		"""Adds a file to the storage and verifies the sanitized path."""
-		sanitized_path = self._add_file(path, file_object, links=links, overwrite=overwrite)
+		sanitized_path = self._add_file(path, file_object, links=links, overwrite=overwrite, display=display)
 		self.assertEqual(expected_path, sanitized_path)
 		return sanitized_path
 
-	def _add_file(self, path, file_object, links=None, overwrite=False):
+	def test_migrate_metadata_to_json(self):
+		metadata = {
+			"test.gco": {
+				"hash": "aabbccddeeff",
+				"links": [],
+				"notes": []
+			}
+		}
+		yaml_path = os.path.join(self.basefolder, ".metadata.yaml")
+		json_path = os.path.join(self.basefolder, ".metadata.json")
+
+		# prepare
+		import yaml
+		with open(yaml_path, "wb") as f:
+			yaml.safe_dump(metadata, f)
+
+		# migrate
+		self.storage._migrate_metadata(self.basefolder)
+
+		# verify
+		self.assertTrue(os.path.exists(json_path))
+		self.assertTrue(os.path.exists(yaml_path)) # TODO 1.3.10 change to assertFalse
+
+		import json
+		with open(json_path) as f:
+			json_metadata = json.load(f)
+		self.assertDictEqual(metadata, json_metadata)
+
+	def _add_file(self, path, file_object, links=None, overwrite=False, display=None):
 		"""
 		Adds a file to the storage.
 
@@ -539,7 +676,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		Returns sanitized path.
 		"""
-		sanitized_path = self.storage.add_file(path, file_object, links=links, allow_overwrite=overwrite)
+		sanitized_path = self.storage.add_file(path, file_object, links=links, allow_overwrite=overwrite, display=display)
 
 		split_path = sanitized_path.split("/")
 		if len(split_path) == 1:
@@ -550,7 +687,7 @@ class LocalStorageTest(unittest.TestCase):
 			folder_path = os.path.join(self.basefolder, os.path.join(*split_path[:-1]))
 
 		self.assertTrue(os.path.isfile(file_path))
-		self.assertTrue(os.path.isfile(os.path.join(folder_path, ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(os.path.join(folder_path, ".metadata.json")))
 
 		metadata = self.storage.get_metadata(sanitized_path)
 		self.assertIsNotNone(metadata)
@@ -565,13 +702,13 @@ class LocalStorageTest(unittest.TestCase):
 
 		return sanitized_path
 
-	def _add_and_verify_folder(self, path, expected_path):
+	def _add_and_verify_folder(self, path, expected_path, display=None):
 		"""Adds a folder to the storage and verifies sanitized path."""
-		sanitized_path = self._add_folder(path)
+		sanitized_path = self._add_folder(path, display=display)
 		self.assertEqual(expected_path, sanitized_path)
 		return sanitized_path
 
-	def _add_folder(self, path):
+	def _add_folder(self, path, display=None):
 		"""
 		Adds a folder to the storage.
 
@@ -579,7 +716,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		Returns sanitized path.
 		"""
-		sanitized_path = self.storage.add_folder(path)
+		sanitized_path = self.storage.add_folder(path, display=display)
 		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, os.path.join(*sanitized_path.split("/")))))
 		return sanitized_path
 

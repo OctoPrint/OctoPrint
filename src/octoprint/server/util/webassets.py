@@ -12,6 +12,8 @@ try:
 except:
 	import urlparse
 
+from webassets.bundle import Bundle
+from webassets.merge import MemoryHunk, BaseHunk
 from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
 import webassets.filter.cssrewrite.urlpath as urlpath
@@ -96,5 +98,55 @@ class JsDelimiterBundler(Filter):
 	options = {}
 
 	def input(self, _in, out, **kwargs):
+		source = kwargs.get("source", "n/a")
+
+		out.write("// source: " + source + "\n")
 		out.write(_in.read())
 		out.write("\n;\n")
+
+
+class ChainedHunk(BaseHunk):
+	def __init__(self, *hunks):
+		self._hunks = hunks
+
+	def mtime(self):
+		pass
+
+	def data(self):
+		result = u""
+		for hunk in self._hunks:
+			if isinstance(hunk, tuple) and len(hunk) == 2:
+				hunk, f = hunk
+			else:
+				f = lambda x: x
+			result += f(hunk.data())
+		return result
+
+
+_PLUGIN_BUNDLE_WRAPPER_PREFIX = \
+u"""// JS assets for plugin {plugin}
+(function () {{
+    try {{
+        """
+_PLUGIN_BUNDLE_WRAPPER_SUFFIX = \
+u"""
+    }} catch (error) {{
+        log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
+    }}
+}})();
+"""
+class JsPluginBundle(Bundle):
+	def __init__(self, plugin, *args, **kwargs):
+		Bundle.__init__(self, *args, **kwargs)
+		self.plugin = plugin
+
+	def _merge_and_apply(self, ctx, output, force, parent_debug=None,
+	                     parent_filters=None, extra_filters=None,
+	                     disable_cache=None):
+		hunk = Bundle._merge_and_apply(self, ctx, output, force, parent_debug=parent_debug,
+		                               parent_filters=parent_filters, extra_filters=extra_filters,
+		                               disable_cache=disable_cache)
+
+		return ChainedHunk(MemoryHunk(_PLUGIN_BUNDLE_WRAPPER_PREFIX.format(plugin=self.plugin)),
+		                   (hunk, lambda x: x.replace("\n", "\n        ")),
+		                   MemoryHunk(_PLUGIN_BUNDLE_WRAPPER_SUFFIX.format(plugin=self.plugin)))

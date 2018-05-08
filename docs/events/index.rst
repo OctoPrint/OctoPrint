@@ -110,6 +110,14 @@ ClientClosed
 
      * ``remoteAddress``: the remote address (IP) of the client that disconnected
 
+ConnectivityChanged
+   The server's internet connectivity changed
+
+   Payload:
+
+     * ``old``: Old connectivity value (true for online, false for offline)
+     * ``new``: New connectivity value (true for online, false for offline)
+
 Printer communication
 ---------------------
 
@@ -199,8 +207,8 @@ FolderAdded
 
    Payload:
      * ``storage``: the storage's identifier
-     * ``path``: the folders's path within its storage location
-     * ``name``: the folders's name
+     * ``path``: the folder's path within its storage location
+     * ``name``: the folder's name
 
    .. note::
 
@@ -212,8 +220,8 @@ FolderRemoved
 
    Payload:
      * ``storage``: the storage's identifier
-     * ``path``: the folders's path within its storage location
-     * ``name``: the folders's name
+     * ``path``: the folder's path within its storage location
+     * ``name``: the folder's name
 
    .. note::
 
@@ -229,7 +237,7 @@ UpdatedFiles
 
        .. deprecated:: 1.2.0
 
-          The ``gcode`` modification type has been superceeded by ``printables``. It is currently still available for
+          The ``gcode`` modification type has been superseded by ``printables``. It is currently still available for
           reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
           be removed with 1.4.0.
 
@@ -257,7 +265,7 @@ MetadataAnalysisFinished
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the file's origin storage location
-     * ``result``: the analysis result -- this is a python object currently only available for internal use
+     * ``result``: the analysis result -- this is a Python object currently only available for internal use
 
    .. deprecated:: 1.3.0
 
@@ -355,8 +363,18 @@ PrintDone
 
       Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
+PrintCancelling
+   The print is about to be cancelled.
+
+   Payload:
+
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``firmwareError``: the firmware error that caused cancelling the print job, if any
+
 PrintCancelled
-   The print has been cancelled via the cancel button.
+   The print has been cancelled.
 
    Payload:
 
@@ -476,6 +494,15 @@ PositionUpdate
      * ``e``: e coordinate, parsed from response
      * ``t``: last tool selected *through OctoPrint*
      * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
+
+ToolChange
+   A tool change command was sent to the printer. The payload contains the former current tool index and the
+   new current tool index.
+
+   Payload:
+
+     * ``old``: old tool index
+     * ``new``: new tool index
 
 Timelapses
 ----------

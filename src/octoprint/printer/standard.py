@@ -17,6 +17,8 @@ import time
 
 from past.builtins import basestring
 
+from frozendict import frozendict
+
 from octoprint import util as util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
@@ -73,6 +75,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._logger = logging.getLogger(__name__)
 
+		self._dict = frozendict if settings().getBoolean(["devel", "useFrozenDictForPrinterState"]) else dict
+
 		self._analysis_queue = analysisQueue
 		self._file_manager = fileManager
 		self._printer_profile_manager = printerProfileManager
@@ -101,6 +105,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._sdStreaming = False
 		self._sd_filelist_available = threading.Event()
 		self._streamingFinishedCallback = None
+		self._streamingFailedCallback = None
 
 		self._sd_ready = False
 		self._sd_files = []
@@ -127,24 +132,24 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			on_add_message=self._send_add_message_callbacks
 		)
 		self._state_monitor.reset(
-			state={"text": self.get_state_string(), "flags": self._get_state_flags()},
-			job_data={
-				"file": {
-					"name": None,
-					"path": None,
-					"size": None,
-					"origin": None,
-					"date": None
-				},
-				"estimatedPrintTime": None,
-				"lastPrintTime": None,
-				"filament": {
-					"length": None,
-					"volume": None
-				}
-			},
-			progress={"completion": None, "filepos": None, "printTime": None, "printTimeLeft": None},
-			current_z=None
+			state=self._dict(text=self.get_state_string(), flags=self._get_state_flags()),
+			job_data=self._dict(file=self._dict(name=None,
+			                                    path=None,
+			                                    size=None,
+			                                    origin=None,
+			                                    date=None),
+			                    estimatedPrintTime=None,
+			                    lastPrintTime=None,
+			                    filament=self._dict(length=None,
+			                                        volume=None),
+			                    user=None),
+			progress=self._dict(completion=None,
+			                    filepos=None,
+			                    printTime=None,
+			                    printTimeLeft=None,
+			                    printTimeOrigin=None),
+			current_z=None,
+			offsets=self._dict()
 		)
 
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
@@ -152,36 +157,50 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	#~~ handling of PrinterCallbacks
 
-	def register_callback(self, callback):
+	def register_callback(self, callback, *args, **kwargs):
 		if not isinstance(callback, PrinterCallback):
 			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
-
 		self._callbacks.append(callback)
-		self._send_initial_state_update(callback)
+		self._sendInitialStateUpdate(callback)
 
-	def unregister_callback(self, callback):
-		if callback in self._callbacks:
+	def unregister_callback(self, callback, *args, **kwargs):
+		try:
 			self._callbacks.remove(callback)
+		except ValueError:
+			# not registered
+			pass
+
+	def send_initial_callback(self, callback):
+		if callback in self._callbacks:
+			self._send_initial_state_update(callback)
 
 	def send_add_temperature_callbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.on_printer_add_temperature(data)
-			except: self._logger.exception("Exception while adding temperature data point")
+			try:
+				callback.on_printer_add_temperature(data)
+			except:
+				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback))
 
 	def _send_add_log_callbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.on_printer_add_log(data)
-			except: self._logger.exception("Exception while adding communication log entry")
+			try:
+				callback.on_printer_add_log(data)
+			except:
+				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback))
 
 	def _send_add_message_callbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.on_printer_add_message(data)
-			except: self._logger.exception("Exception while adding printer message")
+			try:
+				callback.on_printer_add_message(data)
+			except:
+				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback))
 
 	def _send_current_data_callbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.on_printer_send_current_data(copy.deepcopy(data))
-			except: self._logger.exception("Exception while pushing current data")
+			try:
+				callback.on_printer_send_current_data(copy.deepcopy(data))
+			except:
+				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback))
 
 	#~~ callback from metadata analysis event
 
@@ -232,6 +251,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if not profile:
 			profile = self._printer_profile_manager.get_default()["id"]
 		self._printer_profile_manager.select(profile)
+		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
+			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
 
 		selected_transport = kwargs.get("transport")
 		if not selected_transport:
@@ -267,7 +289,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._protocol.connect(self._transport, transport_kwargs=transport_connect_kwargs)
 
-	def disconnect(self):
+	def disconnect(self, *args, **kwargs):
 		"""
 		 Closes the connection to the printer.
 		"""
@@ -283,7 +305,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self.unselect_job()
 		eventManager().fire(Events.DISCONNECTED)
 
-	def get_transport(self):
+	def get_transport(self, *args, **kwargs):
 
 		if self._comm is None:
 			return None
@@ -291,13 +313,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		return self._comm.getTransport()
 	getTransport = util.deprecated("getTransport has been renamed to get_transport", since="1.2.0-dev-590", includedoc="Replaced by :func:`get_transport`")
 
-	def fake_ack(self):
+	def job_on_hold(self, blocking=True, *args, **kwargs):
+		if self._comm is None:
+			raise RuntimeError("No connection to the printer")
+		return self._comm.job_put_on_hold(blocking=blocking)
+
+	def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
+		if self._comm is None:
+			raise RuntimeError("No connection to the printer")
+		return self._comm.set_job_on_hold(value, blocking=blocking)
+
+	def fake_ack(self, *args, **kwargs):
 		if self._protocol is None:
 			return
 
 		self._protocol.repair()
 
-	def commands(self, commands):
+	def commands(self, commands, *args, **kwargs):
 		"""
 		Sends one or more gcode commands to the printer.
 		"""
@@ -309,7 +341,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._protocol.send_commands(*commands)
 
-	def script(self, name, context=None, must_be_set=True):
+	def script(self, name, context=None, must_be_set=True, *args, **kwargs):
 		if self._protocol is None:
 			return
 
@@ -317,7 +349,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			raise ValueError("name must be set")
 
 		# TODO
-		#result = self._comm.sendGcodeScript(name, replacements=context)
+		#result = self._comm.sendGcodeScript(name,
+		                                    replacements=context,
+		                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
 		#if not result:
 		#	if must_be_set:
 		#		raise UnknownScript(name)
@@ -342,7 +376,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		kwargs[axis] = amount
 		self._protocol.move(**kwargs)
 
-	def home(self, axes):
+	def home(self, axes, *args, **kwargs):
 		if not isinstance(axes, (list, tuple)):
 			if isinstance(axes, (str, unicode)):
 				axes = [axes]
@@ -356,7 +390,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		kwargs = dict((axes, True) for axes in validated_axes)
 		self._protocol.home(**kwargs)
 
-	def extrude(self, amount):
+	def extrude(self, amount, *args, **kwargs):
 		if not isinstance(amount, (int, long, float)):
 			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
@@ -364,14 +398,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		extrusion_speed = printer_profile["axes"]["e"]["speed"]
 		self._protocol.move(e=amount, feedrate=extrusion_speed, relative=True)
 
-	def change_tool(self, tool):
+	def change_tool(self, tool, *args, **kwargs):
 		if not PrinterInterface.valid_tool_regex.match(tool):
 			raise ValueError("tool must match \"tool[0-9]+\": {tool}".format(tool=tool))
 
 		tool_num = int(tool[len("tool"):])
-		self._protocol.change_tool(tool_num)
+		self._protocol.change_tool(tool_num, tags=kwargs.get("tags", set()) | {"trigger:printer.change_tool"})
 
-	def set_temperature(self, heater, value):
+	def set_temperature(self, heater, value, *args, **kwargs):
 		if not PrinterInterface.valid_heater_regex.match(heater):
 			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
 
@@ -391,7 +425,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		elif heater == "bed":
 			self._protocol.set_bed_temperature(value, wait=False)
 
-	def set_temperature_offset(self, offsets=None):
+	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
 			offsets = dict()
 
@@ -411,7 +445,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		# TODO
 		#self._comm.setTemperatureOffset(offsets)
-		#self._stateMonitor.set_temp_offsets(offsets)
+		#self._setOffsets(self._comm.getOffsets())
 
 	def _convert_rate_value(self, factor, min=0, max=200):
 		if not isinstance(factor, (int, float, long)):
@@ -425,15 +459,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		return factor
 
-	def feed_rate(self, factor):
+	def feed_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=50, max=200)
-		self._protocol.set_feedrate_multiplier(factor)
+		self._protocol.set_feedrate_multiplier(factor,
+		              tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
 
-	def flow_rate(self, factor):
+	def flow_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=75, max=125)
-		self._protocol.set_extrusion_multiplier(factor)
+		self._protocol.set_extrusion_multiplier(factor,
+		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
-	def select_job(self, job, start_printing=False, pos=None):
+	def select_job(self, job, start_printing=False, user=None, pos=None, *args, **kwargs):
 		self._update_job(job)
 		self._reset_progress_data()
 
@@ -468,7 +504,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")(unselect_job)
 
-	def start_print(self, pos=None):
+	def start_print(self, pos=None, user=None, *args, **kwargs):
 		"""
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -480,9 +516,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._update_progress_data()
 		self._setCurrentZ(None)
 
-		self._protocol.process(self._job.job, position=pos)
+		self._protocol.process(self._job.job, position=pos,
+		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
-	def pause_print(self):
+	def pause_print(self, *args, **kwargs):
 		"""
 		Pause the current job.
 		"""
@@ -492,7 +529,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			return
 		self._protocol.pause_processing()
 
-	def resume_print(self):
+	def resume_print(self, *args, **kwargs):
 		"""
 		Resume the current job.
 		"""
@@ -530,7 +567,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._protocol.cancel_processing(error=error)
 
-	def get_state_string(self, state=None):
+	def log_lines(self, *lines):
+		serial_logger = logging.getLogger("SERIAL")
+		self.on_comm_log("\n".join(lines))
+		for line in lines:
+			serial_logger.debug(line)
+
+	def get_state_string(self, state=None, *args, **kwargs):
 		if self._protocol is None:
 			return "Offline"
 		else:
@@ -559,7 +602,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		return "Unknown state ({})".format(self._protocol.state)
 
-	def get_state_id(self, state=None):
+	def get_state_id(self, state=None, *args, **kwargs):
 		if self._comm is None:
 			return "OFFLINE"
 		else:
@@ -579,14 +622,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			elif state == ProtocolState.DISCONNECTED_WITH_ERROR:
 				return "CLOSED_WITH_ERROR"
 
-	def get_current_data(self):
-		return self._state_monitor.get_current_data()
+	def get_current_data(self, *args, **kwargs):
+		return util.thaw_frozendict(self._state_monitor.get_current_data())
 
 	def get_current_job(self):
 		data = self._state_monitor.get_current_data()
-		return data["job"]
+		return util.thaw_frozendict(data["job"])
 
-	def get_current_temperatures(self):
+	def get_current_temperatures(self, *args, **kwargs):
 		# TODO
 		#if self._comm is not None:
 		#	offsets = self._comm.getOffsets()
@@ -601,10 +644,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			                   offset=offsets.get(key, 0))
 		return result
 
-	def get_temperature_history(self):
+	def get_temperature_history(self, *args, **kwargs):
 		return self._temperature_history
 
-	def get_current_connection(self):
+	def get_current_connection(self, *args, **kwargs):
 		if self._transport is None:
 			return "Closed", None, None, None
 
@@ -616,25 +659,31 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	def is_connected(self):
 		return self._protocol is not None and self._protocol.state in (ProtocolState.CONNECTED, ProtocolState.PRINTING, ProtocolState.PAUSED)
 
-	def is_closed_or_error(self):
+	def is_closed_or_error(self, *args, **kwargs):
 		return self._protocol is None or self._protocol.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR)
 
-	def is_operational(self):
+	def is_operational(self, *args, **kwargs):
 		return not self.is_closed_or_error()
 
-	def is_printing(self):
+	def is_printing(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.PRINTING
 
-	def is_paused(self):
+	def is_cancelling(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isCancelling()
+
+	def is_pausing(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isPausing()
+
+	def is_paused(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.PAUSED
 
-	def is_error(self):
+	def is_error(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.DISCONNECTED_WITH_ERROR
 
-	def is_ready(self):
+	def is_ready(self, *args, **kwargs):
 		return self.is_operational() and not self._protocol.state in (ProtocolState.PRINTING, ProtocolState.PAUSED)
 
-	def is_sd_ready(self):
+	def is_sd_ready(self, *args, **kwargs):
 		if not settings().getBoolean(["feature", "sdSupport"]) or self._protocol is None:
 			return False
 		else:
@@ -642,51 +691,57 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	#~~ sd file handling
 
-	def get_sd_files(self):
+	def get_sd_files(self, *args, **kwargs):
 		if not self.is_connected() or not self.is_sd_ready():
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._sd_files)
 
-	def add_sd_file(self, filename, absolutePath, streamingFinishedCallback):
+	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 		# TODO
 
-		#if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-		#	self._logger.error("No connection to printer or printer is busy")
-		#	return
+		# if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
+		# 	self._logger.error("No connection to printer or printer is busy")
+		# 	return
 
-		#self._streamingFinishedCallback = streamingFinishedCallback
+		# self._streamingFinishedCallback = on_success
+		# self._streamingFailedCallback = on_failure
 
-		#self.refresh_sd_files(blocking=True)
-		#existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
+		# self.refresh_sd_files(blocking=True)
+		# existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
-		#remoteName = util.get_dos_filename(filename, existing_filenames=existingSdFiles, extension="gco")
-		#self._time_estimation_data = TimeEstimationHelper()
-		#self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
+		# if valid_file_type(filename, "gcode"):
+		# 	remoteName = util.get_dos_filename(filename,
+		# 	                                   existing_filenames=existingSdFiles,
+		# 	                                   extension="gco",
+		# 	                                   whitelisted_extensions=["gco", "g"])
+		# else:
+		# 	# probably something else added through a plugin, use it's basename as-is
+		# 	remoteName = os.path.basename(filename)
+		# self._timeEstimationData = TimeEstimationHelper()
+		# self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
+		#                              special=not valid_file_type(filename, "gcode"),
+		#                              tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
 
-		#self._setJobData(filename, filesize, True)
-		#self._setProgressData(0.0, 0, 0, None)
-		#self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
-
-		#return remoteName
+		# return remoteName
 
 		return "foo"
 
-	def delete_sd_file(self, filename):
+	def delete_sd_file(self, filename, *args, **kwargs):
 		if not self._protocol or not self.is_sd_ready():
 			return
-		self._protocol.delete_file("/" + filename)
+		self._protocol.delete_file("/" + filename, tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"})
 
-	def init_sd_card(self):
+	def init_sd_card(self, *args, **kwargs):
 		if not self._protocol or self.is_sd_ready():
 			return
-		self._protocol.init_file_storage()
+		self._protocol.init_file_storage(tags=kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"})
 
-	def release_sd_card(self):
+	def release_sd_card(self, *args, **kwargs):
 		if not self._protocol or not self.is_sd_ready():
 			return
-		self._protocol.eject_file_storage()
+		self._protocol.eject_file_storage(tags=kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"})
 
-	def refresh_sd_files(self, blocking=False):
+	def refresh_sd_files(self, blocking=False, *args, **kwargs):
 		"""
 		Refreshes the list of file stored on the SD card attached to printer (if available and printer communication
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
@@ -695,18 +750,27 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if self.is_connected() or not self.is_sd_ready():
 			return
 		self._sd_filelist_available.clear()
-		self._protocol.list_files()
+		self._protocol.list_files(tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"})
 		if blocking:
-			self._sd_filelist_available.wait(10000)
+			self._sd_filelist_available.wait(kwargs.get("timeout", 10000))
 
 	#~~ state monitoring
+
+	def _setOffsets(self, offsets):
+		self._stateMonitor.set_temp_offsets(offsets)
 
 	def _setCurrentZ(self, currentZ):
 		self._current_z = currentZ
 		self._state_monitor.set_current_z(self._current_z)
 
-	def _set_state(self, state):
-		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
+	def _set_state(self, state, state_string=None):
+		if state_string is None:
+			state_string = self.get_state_string()
+
+		self._state = state
+
+		self._state_monitor.set_state(self._dict(text=state_string,
+		                                         flags=self._get_state_flags()))
 
 		payload = dict(
 			state_id=self.get_state_id(state),
@@ -757,7 +821,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self._state_monitor.set_progress(dict(completion=None,
 			                                      filepos=None,
 			                                      printTime=None,
-			                                      printTimeLeft=None))
+			                                      printTimeLeft=None,
+			                                      printTimeLeftOrigin=None))
 			return
 
 		estimated_total_print_time = self._estimate_total_for_job()
@@ -851,7 +916,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			except:
 				pass
 			else:
-				if "analysis" in file_data:
+				if "display" in fileData:
+						display_name = fileData["display"]
+					if "analysis" in file_data:
 					if "estimatedPrintTime" in file_data["analysis"]:
 						analysis_total = file_data["analysis"]["estimatedPrintTime"]
 					if "filament" in file_data["analysis"].keys():
@@ -891,11 +958,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			                 messages=list(self._messages)))
 			callback.on_printer_send_initial_data(data)
 		except:
-			self._logger.exception("Error while trying to send inital state update")
+			self._logger.exception("Error while trying to send initial state update")
 
 	def _get_state_flags(self):
 		return dict(operational=self.is_operational(),
 		            printing=self.is_printing(),
+		            cancelling=self.is_cancelling(),
+		            pausing=self.is_pausing(),
 		            closedOrError=self.is_closed_or_error(),
 		            error=self.is_error(),
 		            paused=self.is_paused(),
@@ -943,6 +1012,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self.disconnect()
 			self._setCurrentZ(None)
 			self._update_progress_data()
+			self._setOffsets(None)
+			self._addTemperatureData()
 			self._update_job()
 			self._printer_profile_manager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
@@ -1028,7 +1099,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		# TODO include position in payload if available
 		payload = job.event_payload()
-		eventManager().fire(Events.PRINT_FAILED, payload)
+		if payload:
+			eventManager().fire(Events.PRINT_FAILED, payload)
+
+	def on_comm_print_job_cancelling(self, firmware_error=None):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			if firmware_error:
+				payload["firmwareError"] = firmware_error
+			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
 	def on_job_cancelled(self, job):
 		if job != self._job.job:
@@ -1045,12 +1124,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-			self._file_manager.log_print(self._get_origin_for_job(),
-			                             self._job.job.name,
-			                             time.time(),
-			                             payload["time"],
-			                             False,
-			                             self._printer_profile_manager.get_current_or_default()["id"])
+			def finalize():self._file_manager.log_print(self._get_origin_for_job(),
+			                            self._job.job.name,
+			                            time.time(),
+			                            payload["time"],
+			                            False,
+			                            self._printer_profile_manager.get_current_or_default()["id"])
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	#~~ comm.MachineComPrintCallback implementation
@@ -1084,7 +1163,7 @@ class StateMonitor(object):
 		self._state = None
 		self._job_data = None
 		self._current_z = None
-		self._offsets = {}
+		self._offsets = dict()
 		self._progress = None
 
 		self._progress_dirty = False
@@ -1103,11 +1182,12 @@ class StateMonitor(object):
 			return self._on_get_progress()
 		return self._progress
 
-	def reset(self, state=None, job_data=None, progress=None, current_z=None):
+	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None):
 		self.set_state(state)
 		self.set_job_data(job_data)
 		self.set_progress(progress)
 		self.set_current_z(current_z)
+		self.set_temp_offsets(offsets)
 
 	def add_temperature(self, temperature):
 		self._on_add_temperature(temperature)
@@ -1146,6 +1226,8 @@ class StateMonitor(object):
 			self._change_event.set()
 
 	def set_temp_offsets(self, offsets):
+		if offsets is None:
+			offsets = dict()
 		self._offsets = offsets
 		self._change_event.set()
 

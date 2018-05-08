@@ -164,7 +164,7 @@ class SocketClient(object):
 		If no timeout is provided, the method will block until the connection could
 		be re-established.
 
-		If disconnect is set to ``True`` will disconnect the socket explictly
+		If disconnect is set to ``True`` will disconnect the socket explicitly
 		first if it is currently connected.
 
 		Arguments:

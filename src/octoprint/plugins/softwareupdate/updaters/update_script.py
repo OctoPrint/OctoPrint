@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import sys
 import logging
 
-from ..exceptions import ConfigurationInvalid, UpdateError
+from ..exceptions import ConfigurationInvalid, UpdateError, CannotUpdateOffline
 
 from octoprint.util.commandline import CommandlineCaller, CommandlineError
 
@@ -36,7 +36,7 @@ def _get_caller(log_cb=None):
 	return caller
 
 
-def can_perform_update(target, check):
+def can_perform_update(target, check, online=True):
 	import os
 	script_configured = bool("update_script" in check and check["update_script"])
 
@@ -47,11 +47,14 @@ def can_perform_update(target, check):
 		folder = check["checkout_folder"]
 	folder_configured = bool(folder and os.path.isdir(folder))
 
-	return script_configured and folder_configured
+	return script_configured and folder_configured and (online or check.get("offline", False))
 
 
-def perform_update(target, check, target_version, log_cb=None):
+def perform_update(target, check, target_version, log_cb=None, online=True):
 	logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.update_script")
+
+	if not online and not check("offline", False):
+		raise CannotUpdateOffline()
 
 	if not can_perform_update(target, check):
 		raise ConfigurationInvalid("checkout_folder and update_folder are missing for update target %s, one is needed" % target)

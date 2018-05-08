@@ -39,7 +39,7 @@ Rerunning the wizard
 --------------------
 
 In case Access Control was disabled in the configuration wizard, it is
-possibly to re-run it by editing ``config.yaml`` [#f1]_ and setting ``firstRun``
+possible to re-run it by editing ``config.yaml`` [#f1]_ and setting ``firstRun``
 in the ``server`` section and ``enabled`` in the ``accessControl`` section to
 ``true``:
 

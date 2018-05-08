@@ -7,20 +7,22 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import os
 import threading
+import logging
 
 from flask import request, jsonify, url_for, make_response
-from werkzeug.utils import secure_filename
 
 import octoprint.timelapse
 import octoprint.util as util
 from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer
-from octoprint.server.util.flask import redirect_to_tornado, restricted_access, get_json_command_from_request, with_revalidation_checking
+from octoprint.server.util.flask import redirect_to_tornado, require_firstrun, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 
 from octoprint.server import NO_CONTENT
+from octoprint.access.permissions import Permissions
 
+_DATA_FORMAT_VERSION = "v2"
 
 #~~ timelapse handling
 
@@ -35,13 +37,13 @@ def _config_for_timelapse(timelapse):
 		return dict(type="zchange",
 		            postRoll=timelapse.post_roll,
 		            fps=timelapse.fps,
-		            retractionZHop=timelapse.retraction_zhop)
+		            retractionZHop=timelapse.retraction_zhop,
+		            minDelay=timelapse.min_delay)
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		return dict(type="timed",
 		            postRoll=timelapse.post_roll,
 		            fps=timelapse.fps,
-		            interval=timelapse.interval,
-		            capturePostRoll=timelapse.capture_post_roll)
+		            interval=timelapse.interval)
 	else:
 		return dict(type="off")
 
@@ -66,6 +68,7 @@ def _etag(unrendered, lm=None):
 	hash = hashlib.sha1()
 	hash.update(str(lm))
 	hash.update(repr(config))
+	hash.update(repr(_DATA_FORMAT_VERSION))
 
 	return hash.hexdigest()
 
@@ -73,6 +76,8 @@ def _etag(unrendered, lm=None):
 @with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("unrendered", "false") in valid_boolean_trues, lm=lm),
                             lastmodified_factory=lambda: _lastmodified(request.values.get("unrendered", "false") in valid_boolean_trues),
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
+@require_firstrun
+@Permissions.TIMELAPSE_LIST.require(403)
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 	config = _config_for_timelapse(timelapse)
@@ -117,30 +122,40 @@ def getTimelapseData():
 
 
 @api.route("/timelapse/<filename>", methods=["GET"])
+@require_firstrun
+@Permissions.TIMELAPSE_DOWNLOAD.require(403)
 def downloadTimelapse(filename):
 	return redirect_to_tornado(request, url_for("index") + "downloads/timelapse/" + filename)
 
 
 @api.route("/timelapse/<filename>", methods=["DELETE"])
-@restricted_access
+@require_firstrun
+@Permissions.TIMELAPSE_DELETE.require(403)
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4"]):
+	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4", "m4v", "mkv"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
-			os.remove(full_path)
+			try:
+				os.remove(full_path)
+			except Exception as ex:
+				logging.getLogger(__file__).exception("Error deleting timelapse file {}".format(full_path))
+				return make_response("Unexpected error: {}".format(ex), 500)
+
 	return getTimelapseData()
 
 
 @api.route("/timelapse/unrendered/<name>", methods=["DELETE"])
-@restricted_access
+@require_firstrun
+@Permissions.TIMELAPSE_DELETE.require(403)
 def deleteUnrenderedTimelapse(name):
 	octoprint.timelapse.delete_unrendered_timelapse(name)
 	return NO_CONTENT
 
 
 @api.route("/timelapse/unrendered/<name>", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def processUnrenderedTimelapseCommand(name):
 	# valid file commands, dict mapping command name to mandatory parameters
 	valid_commands = {
@@ -160,7 +175,8 @@ def processUnrenderedTimelapseCommand(name):
 
 
 @api.route("/timelapse", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def setTimelapseConfig():
 	data = request.get_json(silent=True)
 	if data is None:
@@ -207,17 +223,6 @@ def setTimelapseConfig():
 				else:
 					return make_response("Invalid value for interval: %d" % interval, 400)
 
-		if "capturePostRoll" in data:
-			try:
-				capturePostRoll = bool(data["capturePostRoll"])
-			except ValueError:
-				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"], 400)
-			else:
-				if capturePostRoll >= 0:
-					config["options"]["capturePostRoll"] = capturePostRoll
-				else:
-					return make_response("Invalid value for capturePostRoll: %d" % capturePostRoll, 400)
-
 		if "retractionZHop" in data:
 			try:
 				retractionZHop = float(data["retractionZHop"])
@@ -227,8 +232,18 @@ def setTimelapseConfig():
 				if retractionZHop >= 0:
 					config["options"]["retractionZHop"] = retractionZHop
 				else:
-					return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop, 400)
+					return make_response("Invalid value for retraction Z-Hop: %f" % retractionZHop, 400)
 
+		if "minDelay" in data:
+			try:
+				minDelay = float(data["minDelay"])
+			except ValueError:
+				return make_response("Invalid value for minimum delay: %r" % data["minDelay"], 400)
+			else:
+				if minDelay > 0:
+					config["options"]["minDelay"] = minDelay
+				else:
+					return make_response("Invalid value for minimum delay: %f" % minDelay, 400)
 
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
 			octoprint.timelapse.configure_timelapse(config, True)

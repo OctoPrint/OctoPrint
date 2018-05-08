@@ -25,11 +25,51 @@ import tornado.util
 import octoprint.util
 
 
+
+def fix_json_encode():
+	"""
+	This makes tornado.escape.json_encode use octoprint.util.JsonEncoding.encode as fallback in order to allow
+	serialization of globally registered types like frozendict and others.
+	"""
+
+	from octoprint.util.json import JsonEncoding
+	import json
+
+	def fixed_json_encode(value):
+		return json.dumps(value, default=JsonEncoding.encode).replace("</", "<\\/")
+
+	import tornado.escape
+	tornado.escape.json_encode = fixed_json_encode
+
+
+#~~ More sensible logging
+
+
+class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
+
+	LOG_REQUEST = False
+
+	def log_exception(self, typ, value, tb, *args, **kwargs):
+		if isinstance(value, tornado.web.HTTPError):
+			if value.log_message:
+				format = "%d %s: " + value.log_message
+				args = ([value.status_code, self._request_summary()] +
+				        list(value.args))
+				tornado.web.gen_log.warning(format, *args)
+		else:
+			if self.LOG_REQUEST:
+				tornado.web.app_log.error("Uncaught exception %s\n%r", self._request_summary(),
+				                          self.request, exc_info=(typ, value, tb))
+			else:
+				tornado.web.app_log.error("Uncaught exception %s", self._request_summary(),
+				                          exc_info=(typ, value, tb))
+
+
 #~~ WSGI middleware
 
 
 @tornado.web.stream_request_body
-class UploadStorageFallbackHandler(tornado.web.RequestHandler):
+class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 	"""
 	A ``RequestHandler`` similar to ``tornado.web.FallbackHandler`` which fetches any files contained in the request bodies
 	of content type ``multipart``, stores them in temporary files and supplies the ``fallback`` with the file's ``name``,
@@ -150,7 +190,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			if self.is_multipart():
 				if not self._bytes_left:
 					# we don't support requests without a content-length
-					raise tornado.web.HTTPError(400, log_message="No Content-Length supplied")
+					raise tornado.web.HTTPError(411, log_message="No Content-Length supplied")
 
 				# extract the multipart boundary
 				fields = self._content_type.split(";")
@@ -671,7 +711,8 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	def handle_stream(self, stream, address):
 		context = tornado.httpserver._HTTPRequestContext(stream, address,
-		                                                 self.protocol)
+		                                                 self.protocol,
+		                                                 self.trusted_downstream)
 		conn = CustomHTTP1ServerConnection(stream, self.conn_params, context)
 		self._connections.add(conn)
 		conn.start_serving(self)
@@ -718,6 +759,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 	"""
 
 	def __init__(self, stream, is_client, params=None, context=None):
+		if params is None:
+			params = CustomHTTP1ConnectionParameters()
+
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re
@@ -827,7 +871,7 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 #~~ customized large response handler
 
 
-class LargeResponseHandler(tornado.web.StaticFileHandler):
+class LargeResponseHandler(RequestlessExceptionLoggingMixin, tornado.web.StaticFileHandler):
 	"""
 	Customized `tornado.web.StaticFileHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#tornado.web.StaticFileHandler>`_
 	that allows delivery of the requested resource as attachment and access and request path validation through
@@ -858,7 +902,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
-	               access_validation=None, path_validation=None, etag_generator=None,
+	               access_validation=None, path_validation=None, etag_generator=None, name_generator=None,
 	               mime_type_guesser=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
@@ -866,6 +910,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 		self._access_validation = access_validation
 		self._path_validation = path_validation
 		self._etag_generator = etag_generator
+		self._name_generator = name_generator
 		self._mime_type_guesser = mime_type_guesser
 
 	def get(self, path, include_body=True):
@@ -882,7 +927,15 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
+			filename = None
+			if callable(self._name_generator):
+				filename = self._name_generator(path)
+			if filename is None:
+				filename = os.path.basename(path)
+
+			filename = tornado.escape.url_escape(filename, plus=False)
+			self.set_header("Content-Disposition", "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(filename,
+			                                                                                                 filename))
 
 		if not self._allow_client_caching:
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
@@ -908,10 +961,11 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 		import stat
 		return os.stat(abspath)[stat.ST_MTIME]
 
+
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 
-class UrlProxyHandler(tornado.web.RequestHandler):
+class UrlProxyHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
 	requests to a preconfigured url and returns the response. Allows delivery of the requested content as attachment
@@ -1004,7 +1058,7 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 		return "%s%s" % (self._basename, extension)
 
 
-class StaticDataHandler(tornado.web.RequestHandler):
+class StaticDataHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
 	def initialize(self, data="", content_type="text/plain"):
 		self.data = data
 		self.content_type = content_type
@@ -1015,6 +1069,26 @@ class StaticDataHandler(tornado.web.RequestHandler):
 		self.write(self.data)
 		self.flush()
 		self.finish()
+
+
+class DeprecatedEndpointHandler(tornado.web.RequestHandler):
+	def initialize(self, url):
+		self._url = url
+		self._logger = logging.getLogger(__name__)
+
+	def _handle_method(self, *args, **kwargs):
+		to_url = self._url.format(*args)
+		self._logger.info("Redirecting deprecated endpoint {} to {}".format(self.request.path, to_url))
+		self.redirect(to_url, permanent=True)
+
+	# make all http methods trigger _handle_method
+	get = _handle_method
+	post = _handle_method
+	put = _handle_method
+	patch = _handle_method
+	delete = _handle_method
+	head = _handle_method
+	options = _handle_method
 
 
 class GlobalHeaderTransform(tornado.web.OutputTransform):
@@ -1053,7 +1127,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
-def access_validation_factory(app, login_manager, validator):
+def access_validation_factory(app, login_manager, validator, permission):
 	"""
 	Creates an access validation wrapper using the supplied validator.
 
@@ -1073,7 +1147,7 @@ def access_validation_factory(app, login_manager, validator):
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
 			login_manager.reload_user()
-			validator(flask.request)
+			validator(flask.request, permission)
 	return f
 
 def path_validation_factory(path_filter, status_code=404):

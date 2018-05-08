@@ -15,12 +15,16 @@ from .. import exceptions
 logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip")
 console_logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip.console")
 
+_ALREADY_INSTALLED = "Requirement already satisfied (use --upgrade to upgrade)"
+_POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
+_POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
+
 _pip_callers = dict()
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
-def can_perform_update(target, check):
+def can_perform_update(target, check, online=True):
 	pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
-	return "pip" in check and pip_caller is not None and pip_caller.available
+	return "pip" in check and pip_caller is not None and pip_caller.available and (online or check.get("offline", False))
 
 def _get_pip_caller(command=None):
 	key = command
@@ -35,10 +39,17 @@ def _get_pip_caller(command=None):
 
 	return _pip_callers[key]
 
-def perform_update(target, check, target_version, log_cb=None):
+def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
 	pip_command = None
 	if "pip_command" in check:
 		pip_command = check["pip_command"]
+
+	pip_working_directory = None
+	if "pip_cwd" in check:
+		pip_working_directory = check["pip_cwd"]
+
+	if not online and not check.get("offline", False):
+		raise exceptions.CannotUpdateOffline()
 
 	pip_caller = _get_pip_caller(command=pip_command)
 	if pip_caller is None:
@@ -53,6 +64,9 @@ def perform_update(target, check, target_version, log_cb=None):
 	def _log_stderr(*lines):
 		_log(lines, prefix="!", stream="stderr")
 
+	def _log_message(*lines):
+		_log(lines, prefix="#", stream="message")
+
 	def _log(lines, prefix=None, stream=None):
 		if log_cb is None:
 			return
@@ -63,23 +77,48 @@ def perform_update(target, check, target_version, log_cb=None):
 		pip_caller.on_log_stdout = _log_stdout
 		pip_caller.on_log_stderr = _log_stderr
 
-	install_arg = check["pip"].format(target_version=target_version)
+	install_arg = check["pip"].format(target_version=target_version, target=target_version)
 
 	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
-	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
+	pip_args = ["install", install_arg]
+	pip_kwargs = dict()
+	if pip_working_directory is not None:
+		pip_kwargs.update(cwd=pip_working_directory)
 
 	if "dependency_links" in check and check["dependency_links"]:
 		pip_args += ["--process-dependency-links"]
 
-	returncode, stdout, stderr = pip_caller.execute(*pip_args)
+	returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
 	if returncode != 0:
-		raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
+		# This could be caused by an issue with pip/setuptools: If something (target or dependency of target) was
+		# installed as an egg at an earlier date (e.g. thanks to just running python setup.py install), pip install
+		# will throw an error after updating that something to a newer (non-egg) version since it will still have
+		# the egg on its sys.path and expect to read data from it. Running the exact same command a second time
+		# solved this during hunt for a workaround, so this is what we'll now do if it indeed looks like this
+		# specific problem
+		def is_egg_problem(line):
+			return (_POTENTIAL_EGG_PROBLEM_POSIX in line or _POTENTIAL_EGG_PROBLEM_WINDOWS in line) and ".egg" in line
 
-	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
-	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+		if any(map(lambda x: is_egg_problem(x), stderr)) or any(map(lambda x: is_egg_problem(x), stdout)):
+			_log_message(u"This looks like an error caused by a specific issue in upgrading Python \"eggs\"",
+			             u"via current versions of pip.",
+			             u"Performing a second install attempt as a work around.")
+			returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
+			if returncode != 0:
+				raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
+		else:
+			raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
 
-	returncode, stdout, stderr = pip_caller.execute(*pip_args)
-	if returncode != 0:
-		raise exceptions.UpdateError("Error while executing pip install --force-reinstall", (stdout, stderr))
+	if not force and any(map(lambda x: x.strip().startswith(_ALREADY_INSTALLED) and (install_arg in x or install_arg in x.lower()), stdout)):
+		_log_message(u"Looks like we were already installed in this version. Forcing a reinstall.")
+		force = True
+
+	if force:
+		logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+		pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+
+		returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
+		if returncode != 0:
+			raise exceptions.UpdateError("Error while executing pip install --force-reinstall", (stdout, stderr))
 
 	return "ok"

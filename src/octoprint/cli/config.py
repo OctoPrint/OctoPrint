@@ -9,7 +9,7 @@ import click
 import logging
 
 from octoprint import init_settings, FatalStartupError
-from octoprint.cli import pass_octoprint_ctx, standard_options, bulk_options, get_ctx_obj_option
+from octoprint.cli import standard_options, bulk_options, get_ctx_obj_option
 
 import yaml
 import json
@@ -54,7 +54,7 @@ def config(ctx):
 		ctx.obj.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
-		click.echo("There was a fatal error initializing the client.", err=True)
+		click.echo("There was a fatal error initializing the settings manager.", err=True)
 		ctx.exit(-1)
 
 
@@ -70,7 +70,6 @@ def config(ctx):
               help="Interpret value as int")
 @click.option("--json", "as_json", is_flag=True,
               help="Parse value from json")
-@pass_octoprint_ctx
 @click.pass_context
 def set_command(ctx, path, value, as_bool, as_float, as_int, as_json):
 	"""Sets a config path to the provided value."""
@@ -163,7 +162,6 @@ def insert_value_command(ctx, path, index, value, as_json=False):
 @click.argument("path", type=click.STRING)
 @click.argument("value", type=click.STRING)
 @click.option("--json", "as_json", is_flag=True)
-@pass_octoprint_ctx
 @click.pass_context
 def remove_value_command(ctx, path, value, as_json=False):
 	"""Removes value from list at config path."""
@@ -216,3 +214,28 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 		output = pprint.pformat(value)
 
 	click.echo(output)
+
+
+@config.command(name="effective")
+@click.option("--json", "as_json", is_flag=True,
+              help="Output value formatted as JSON")
+@click.option("--yaml", "as_yaml", is_flag=True,
+              help="Output value formatted as YAML")
+@click.option("--raw", "as_raw", is_flag=True,
+              help="Output value as raw string representation")
+@standard_options(hidden=True)
+@click.pass_context
+def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
+		"""Retrieves the full effective config."""
+		value = ctx.obj.settings.effective
+
+		if as_json:
+				output = json.dumps(value)
+		elif as_yaml:
+				output = yaml.safe_dump(value, default_flow_style=False, indent="	", allow_unicode=True)
+		elif as_raw:
+				output = value
+		else:
+				output = pprint.pformat(value)
+
+		click.echo(output)

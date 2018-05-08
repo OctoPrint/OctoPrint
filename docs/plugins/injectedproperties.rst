@@ -45,11 +45,13 @@ An overview of these properties follows.
   OctoPrint's application session manager, an instance of :class:`octoprint.server.util.flask.AppSessionManager`.
 ``self._user_manager``
   OctoPrint's user manager, an instance of :class:`octoprint.users.UserManager`.
+``self._connectivity_checker``
+  OctoPrint's connectivity checker, an instance of :class:`octoprint.util.ConnectivityChecker`.
 
 .. seealso::
 
    :class:`~octoprint.plugin.core.Plugin` and :class:`~octoprint.plugin.types.OctoPrintPlugin`
-       Class documentation also containing the properties shared among all mixing implementations.
+       Class documentation also containing the properties shared among all mixin implementations.
 
    :ref:`Available Mixins <sec-plugins-mixins-available>`
        Some mixin types trigger the injection of additional properties.

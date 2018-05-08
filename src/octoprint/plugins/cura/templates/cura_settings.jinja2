@@ -16,7 +16,7 @@
 
 {% include "snippets/settings/cura/profiles.jinja2" %}
 
-<button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+<button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }"><i class="fa fa-plus"></i> {{ _('Import Profile...') }}</button>
 
 <div style="clear: both">
     <small>{% trans %}For more information on configuration and usage please <a href="{{ plugin_cura_homepage }}" target="_blank">see the Plugin's homepage</a>.{% endtrans %}</small>

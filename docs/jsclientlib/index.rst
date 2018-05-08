@@ -14,7 +14,7 @@ If you are using it from a web page hosted on OctoPrint as a Jinja2 template, yo
 methods to embed it instead of manually entering the URL, in order to have OctoPrint take care of setting the
 correct URL prefix:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <!--
      full client library or all individual files, depending
@@ -32,10 +32,10 @@ correct URL prefix:
    -->
    <script type="text/javascript" src="{{ url_for("static", filename="js/app/client/<component>.js") }}"></script>
 
-Regardless of which way you use to include the library, you'll also need to make sure you included JQuery and lodash,
+Regardless of which way you use to include the library, you'll also need to make sure you included jQuery and lodash,
 because the library depends on those to be available (as ``$`` and ``_``). You can embed those like this:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
@@ -45,7 +45,7 @@ number of components, make sure to at the very least include that one to be able
 
 When you import the client library as described above, a global variable ``OctoPrint`` will become available, which is
 a prepared instance of the ``OctoPrintClient`` class the library assembles from registered components. You can directly
-used that singular ``OctoPrint`` instance if you only need to talk to one OctoPrint server:
+use that singular ``OctoPrint`` instance if you only need to talk to one OctoPrint server:
 
 .. code-block:: javascript
 

@@ -33,13 +33,12 @@ $(function() {
         };
 
         self.showTab = function(tab) {
-            $("a[href=#" + tab + "]", self.aboutTabs).tab("show");
+            $('a[href="#' + tab + '"]', self.aboutTabs).tab("show");
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        AboutViewModel,
-        [],
-        ["#about_dialog", "#footer_about"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: AboutViewModel,
+        elements: ["#about_dialog", "#footer_about"]
+    });
 });

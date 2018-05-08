@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self._createToolEntry = function () {
             return {
@@ -43,7 +44,7 @@ $(function() {
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
         self.keycontrolPossible = ko.pureComputed(function () {
-            return self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
+            return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && !$.browser.mobile;
         });
         self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
@@ -123,6 +124,10 @@ $(function() {
         };
 
         self.requestData = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) {
+                return;
+            }
+
             OctoPrint.control.getCustomControls()
                 .done(function(response) {
                     self._fromResponse(response);
@@ -226,6 +231,10 @@ $(function() {
                 }
             }
 
+            if (!control.hasOwnProperty("additionalClasses")) {
+                control.additionalClasses = "";
+            }
+
             control.processed = true;
             return control;
         };
@@ -234,7 +243,7 @@ $(function() {
             if (data.hasOwnProperty("enabled")) {
                 return data.enabled(data);
             } else {
-                return self.isOperational() && self.loginState.isUser();
+                return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.isOperational();
             }
         };
 
@@ -349,7 +358,7 @@ $(function() {
             return span + " " + offset;
         };
 
-        self.onStartup = function () {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
         };
 
@@ -402,6 +411,8 @@ $(function() {
         };
 
         self.onWebcamLoaded = function() {
+            if (self.webcamLoaded()) return;
+
             log.debug("Webcam stream loaded");
             self.webcamLoaded(true);
             self.webcamError(false);
@@ -552,9 +563,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        ControlViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#control"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: ControlViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#control", "#control_link"]
+    });
 });

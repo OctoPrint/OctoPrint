@@ -37,22 +37,22 @@
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
-                        <input type="checkbox" data-bind="checked: profileMakeDefault"> {{ _('Make default profile') }}
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileMakeDefault, enable: fieldsEnabled() && !profileFirst(), css: {disabled: !fieldsEnabled() || profileFirst()}"> {{ _('Make default profile') }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
-                        <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileAllowOverwrite, enable: fieldsEnabled() && !profileFirst(), css: {disabled: !fieldsEnabled() || profileFirst()}"> {{ _('Overwrite existing file') }}
                     </label>
                 </div>
             </div>
         </form>
         <small>{% trans %}
             You can import your existing profile <code>.ini</code> files from <strong>Cura 15.04.x or older</strong>
-            here. Anything but those are <strong>not supported</strong>. That especiallymeans that <code>.json</code>
+            here. Anything but those are <strong>not supported</strong>. That especially means that <code>.json</code>
             profiles from Cura 15.06.x and <code>.curaprofile</code> profiles from Cura 2.x will not work, and neither
             will custom Cura profile formats that third party tools like e.g. Repetier create.
         {% endtrans %}</small>

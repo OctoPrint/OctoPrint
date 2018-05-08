@@ -29,11 +29,12 @@
             <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
         </td>
         <td class="settings_plugin_softwareupdate_column_information">
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
+            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
             <small class="muted">
-                {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
-                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
-                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
+                <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
+                <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
+                <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
+                <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
             </small>
         </td>
     </tr>
@@ -75,8 +76,8 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
@@ -99,7 +100,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="enable: enable_configSave, css: {disabled: !enable_configSave()}, click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
     </div>
 </div>
 
@@ -108,7 +109,7 @@
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span></pre>
+        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span></pre>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>

@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self.timelapsePopup = undefined;
 
@@ -10,14 +11,16 @@ $(function() {
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
-        self.defaultCapturePostRoll = true;
+        self.defaultMinDelay = 5.0;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
         self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
-        self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
+        self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+
+        self.serverConfig = ko.observable();
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -42,17 +45,16 @@ $(function() {
         });
 
         self.timelapseTypeSelected = ko.pureComputed(function() {
-            return ("off" != self.timelapseType());
+            return ("off" !== self.timelapseType());
         });
         self.intervalInputEnabled = ko.pureComputed(function() {
-            return ("timed" == self.timelapseType());
+            return ("timed" === self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
-            return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
+            return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN) && self.isDirty() && self.isOperational() && !self.isPrinting();
         });
-
-        self.isOperational.subscribe(function() {
-            self.requestData();
+        self.resetButtonEnabled = ko.pureComputed(function() {
+            return self.saveButtonEnabled() && self.serverConfig() !== undefined;
         });
 
         self.timelapseType.subscribe(function() {
@@ -70,7 +72,7 @@ $(function() {
         self.timelapseRetractionZHop.subscribe(function(newValue) {
             self.isDirty(true);
         });
-        self.timelapseCapturePostRoll.subscribe(function() {
+        self.timelapseMinDelay.subscribe(function() {
             self.isDirty(true);
         });
         self.persist.subscribe(function() {
@@ -87,7 +89,7 @@ $(function() {
                     if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
                     return 0;
                 },
-                "creation": function(a, b) {
+                "date": function(a, b) {
                     // sorts descending
                     if (a["date"] > b["date"]) return -1;
                     if (a["date"] < b["date"]) return 1;
@@ -140,6 +142,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_LIST))
+                return;
+
             OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
@@ -157,33 +162,38 @@ $(function() {
             }
 
             // timelapse config
+            self.fromConfig(response.config);
+            self.serverConfig(response.config);
+        };
+
+        self.fromConfig = function(config) {
             self.timelapseType(config.type);
 
-            if (config.type == "timed" && config.interval != undefined && config.interval > 0) {
+            if (config.type === "timed" && config.interval !== undefined && config.interval > 0) {
                 self.timelapseTimedInterval(config.interval);
             } else {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
-            if (config.type == "timed" && config.capturePostRoll != undefined){
-                self.timelapseCapturePostRoll(config.capturePostRoll);
-            } else {
-                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
-            }
-
-            if (config.type == "zchange" && config.retractionZHop != undefined && config.retractionZHop > 0) {
+            if (config.type === "zchange" && config.retractionZHop !== undefined && config.retractionZHop > 0) {
                 self.timelapseRetractionZHop(config.retractionZHop);
             } else {
                 self.timelapseRetractionZHop(self.defaultRetractionZHop);
             }
 
-            if (config.postRoll != undefined && config.postRoll >= 0) {
+            if (config.type === "zchange" && config.minDelay !== undefined && config.minDelay >= 0) {
+                self.timelapseMinDelay(config.minDelay);
+            } else {
+                self.timelapseMinDelay(self.defaultMinDelay);
+            }
+
+            if (config.postRoll !== undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
                 self.timelapsePostRoll(self.defaultPostRoll);
             }
 
-            if (config.fps != undefined && config.fps > 0) {
+            if (config.fps !== undefined && config.fps > 0) {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
@@ -224,11 +234,24 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.delete(filename)
                     .done(function() {
                         self.markedForFileDeletion.remove(filename);
                         self.requestData()
+                    })
+                    .fail(function(jqXHR) {
+                        var html = "<p>" + _.sprintf(gettext("Failed to remove timelapse %(name)s.</p><p>Please consult octoprint.log for details.</p>"), {name: filename});
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + jqXHR.responseText + '</pre>');
+                        new PNotify({
+                            title: gettext("Could not remove timelapse"),
+                            text: html,
+                            type: "error",
+                            hide: false
+                        });
                     });
             };
 
@@ -237,6 +260,9 @@ $(function() {
         };
 
         self.removeMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForFileDeletion(), "files")
                     .done(function() {
@@ -261,6 +287,9 @@ $(function() {
         };
 
         self.removeUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.deleteUnrendered(name)
                     .done(function() {
@@ -274,6 +303,9 @@ $(function() {
         };
 
         self.removeMarkedUnrendered = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForUnrenderedDeletion(), "unrendered")
                     .done(function() {
@@ -288,7 +320,7 @@ $(function() {
         self._bulkRemove = function(files, type) {
             var title, message, handler;
 
-            if (type == "files") {
+            if (type === "files") {
                 title = gettext("Deleting timelapse files");
                 message = _.sprintf(gettext("Deleting %(count)d timelapse files..."), {count: files.length});
                 handler = function(filename) {
@@ -296,11 +328,13 @@ $(function() {
                         .done(function() {
                             deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
                         })
-                        .fail(function() {
-                            deferred.notify(_.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename}), false);
+                        .fail(function(jqXHR) {
+                            var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                            var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                            deferred.notify(short, long, false);
                         });
                 }
-            } else if (type == "unrendered") {
+            } else if (type === "unrendered") {
                 title = gettext("Deleting unrendered timelapses");
                 message = _.sprintf(gettext("Deleting %(count)d unrendered timelapses..."), {count: files.length});
                 handler = function(filename) {
@@ -343,11 +377,17 @@ $(function() {
         };
 
         self.renderUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN))
+                return;
+
             OctoPrint.timelapse.renderUnrendered(name)
                 .done(self.requestData);
         };
 
         self.save = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN))
+                return;
+
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
@@ -355,17 +395,22 @@ $(function() {
                 "save": self.persist()
             };
 
-            if (self.timelapseType() == "timed") {
+            if (self.timelapseType() === "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
-                payload["capturePostRoll"] = self.timelapseCapturePostRoll();
             }
 
-            if (self.timelapseType() == "zchange") {
+            if (self.timelapseType() === "zchange") {
                 payload["retractionZHop"] = self.timelapseRetractionZHop();
+                payload["minDelay"] = self.timelapseMinDelay();
             }
 
             OctoPrint.timelapse.saveConfig(payload)
                 .done(self.fromResponse);
+        };
+
+        self.reset = function() {
+            if (self.serverConfig() === undefined) return;
+            self.fromConfig(self.serverConfig());
         };
 
         self.displayTimelapsePopup = function(options) {
@@ -376,7 +421,7 @@ $(function() {
             _.extend(options, {
                 callbacks: {
                     before_close: function(notice) {
-                        if (self.timelapsePopup == notice) {
+                        if (self.timelapsePopup === notice) {
                             self.timelapsePopup = undefined;
                         }
                     }
@@ -457,7 +502,7 @@ $(function() {
         self.onEventMovieFailed = function(payload) {
             var title, html;
 
-            if (payload.reason == "no_frames") {
+            if (payload.reason === "no_frames") {
                 title = gettext("Cannot render timelapse");
                 html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"), payload) + "</p>";
             } else if (payload.reason = "returncode") {
@@ -484,7 +529,7 @@ $(function() {
                 type: "success",
                 callbacks: {
                     before_close: function(notice) {
-                        if (self.timelapsePopup == notice) {
+                        if (self.timelapsePopup === notice) {
                             self.timelapsePopup = undefined;
                         }
                     }
@@ -493,14 +538,14 @@ $(function() {
             self.requestData();
         };
 
-        self.onStartup = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
-        };
+        }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        TimelapseViewModel,
-        ["loginStateViewModel"],
-        "#timelapse"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TimelapseViewModel,
+        dependencies: ["loginStateViewModel", "accessViewModel"],
+        elements: ["#timelapse", "#timelapse_link"]
+    });
 });

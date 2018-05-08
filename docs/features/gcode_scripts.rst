@@ -66,27 +66,44 @@ Context
 
 All GCODE scripts have access to the following template variables through the template context:
 
-  * ``printer_profile``: The currently selected Printer Profile, including
+  * ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
     information such as the extruder count, the build volume size, the filament diameter etc.
-  * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!)
+  * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
+    Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
+    current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
+    position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
+  * ``last_temperature``: Last actual and target temperature reported for all available tools and if available the
+    heated bed. This is a dictionary of key-value pairs. The keys are the indices of the available tools (``0``, ``1``,
+    ...) and ``b`` for the heated bed. The values are a dictionary consisting of ``actual`` and ``target`` keys mapped
+    to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
+    present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
+    note that ``actual`` and ``target`` might be ``None``.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
+  * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
 
 There are a few additional template variables available for the following specific scripts:
 
   * ``afterPrintPaused`` and ``beforePrintResumed``
 
-    * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. Consists
-      of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and current tool
-      ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no position could be
-      retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
+    * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. See
+      ``last_position`` above for the structure to expect here.
+
+      **Please note:** This will not be available if you disable
+      "Log position on pause" under Settings > Serial > Advanced options!
+    * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
+      for the structure to expect here.
 
   * ``afterPrintCancelled``
 
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
-      Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
-      current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
-      position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
+      See ``last_position`` above for the structure to expect here.
+
+      **Please note:** This will not be available if you disable
+      "Log position on cancel" under Settings > Serial > Advanced options!
+    * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
+      for the structure to expect here.
+
 
 .. warning::
 
@@ -130,7 +147,7 @@ Out of the box, OctoPrint defaults to the following script setup for ``afterPrin
 
    ;disable all heaters
    {% snippet 'disable_hotends' %}
-   [% snippet 'disable_bed' %}
+   {% snippet 'disable_bed' %}
 
    ;disable fan
    M106 S0
@@ -157,6 +174,75 @@ As you can see, the ``disable_hotends`` and ``disable_bed`` snippets utilize the
 ``printer_profile`` context variable in order to iterate through all available
 extruders and set their temperature to 0, and to also set the bed temperature
 to 0 if a heated bed is configured.
+
+.. _sec-features-gcode_scripts-examples:
+
+Examples
+--------
+
+.. _sec-features-gcode_scripts-examples-more_nifty_pause_and_resume:
+
+More nifty pause and resume
+...........................
+
+If you do not have a multi-extruder setup, aren't printing from SD and have "Log position on pause" enabled under
+Settings > Serial > Advanced options, the following ``afterPrintPaused`` and
+``beforePrintResumed`` scripts might be interesting for you. With something like them in place, OctoPrint will move your print head
+out of the way to a safe rest position (here ``G1 X0 Y0``, you might want to adjust that) on pause and move it back
+to the persisted pause position on resume, making sure to also reset the extruder and feedrate.
+
+.. code-block:: jinja
+   :caption: ``afterPrintPaused`` script
+
+   {% if pause_position.x is not none %}
+   ; relative XYZE
+   G91
+   M83
+
+   ; retract filament, move Z slightly upwards
+   G1 Z+5 E-5 F4500
+
+   ; absolute XYZE
+   M82
+   G90
+
+   ; move to a safe rest position, adjust as necessary
+   G1 X0 Y0
+   {% endif %}
+
+.. code-block:: jinja
+   :caption: ``beforePrintResumed`` script
+
+   {% if pause_position.x is not none %}
+   ; relative extruder
+   M83
+
+   ; prime nozzle
+   G1 E-5 F4500
+   G1 E5 F4500
+   G1 E5 F4500
+
+   ; absolute E
+   M82
+
+   ; absolute XYZ
+   G90
+
+   ; reset E
+   G92 E{{ pause_position.e }}
+
+   ; move back to pause position XYZ
+   G1 X{{ pause_position.x }} Y{{ pause_position.y }} Z{{ pause_position.z }} F4500
+
+   ; reset to feed rate before pause if available
+   {% if pause_position.f is not none %}G1 F{{ pause_position.f }}{% endif %}
+   {% endif %}
+
+.. warning::
+
+   As mentioned in the warning above and the description of the example itself, this will *only* work if you are
+   not printing from SD and not using multiple extruders since OctoPrint will only then be able to track the
+   necessary position data and print parameters due to firmware limitations.
 
 .. seealso::
 

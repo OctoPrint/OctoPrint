@@ -3,37 +3,9 @@
 :mod:`OctoPrintClient.logs`
 ---------------------------
 
-.. note::
+Log file management (and logging configuration) was moved into a bundled plugin in OctoPrint 1.3.7. Refer to
+:ref:`the Logging's plugins JS Client Library <sec-bundledplugins-logging-jsclientlib>` for the JS Client documentation.
 
-   All methods here require that the used API token or a the existing browser session
-   has admin rights.
-
-.. js:function:: OctoPrintClient.logs.list(opts)
-
-   Retrieves a list of log files.
-
-   See :ref:`Retrieve a list of available log files <sec-api-logs-list>` for details.
-
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
-
-.. js:function:: OctoPrintClient.logs.delete(path, opts)
-
-   Deletes the specified log ``path``.
-
-   See :ref:`Delete a specific log file <sec-api-logs-delete>` for details.
-
-   :param string path: The path to the log file to delete
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
-
-.. js:function:: OctoPrintClient.logs.download(path, opts)
-
-   Downloads the specified log ``file``.
-
-   See :js:func:`OctoPrint.download` for more details on the underlying library download mechanism.
-
-   :param string path: The path to the log file to download
-   :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
-
+The former module ``OctoPrintClient.logs`` and its methods are marked as deprecated but still work for now. New
+client implementations should directly use the new module provided by the bundled plugin. Existing implementations
+should adapt their used module as soon as possible.

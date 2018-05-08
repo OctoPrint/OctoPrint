@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self.channels = new ItemListHelper(
             "plugin.announcements.channels",
@@ -40,7 +41,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = data.enabled ? "fa fa-circle" : "fa fa-circle-o";
+            var icon = data.enabled ? "fa fa-toggle-on" : "fa fa-toggle-off";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -54,8 +55,20 @@ $(function() {
             return !data.forced;
         };
 
+        self.cleanedLink = function(data) {
+            // Strips any query parameters from the link and returns it
+            var link = data.link;
+            if (!link) return link;
+
+            var queryPos = link.indexOf("?");
+            if (queryPos !== -1) {
+                link = link.substr(0, queryPos);
+            }
+            return link;
+        };
+
         self.markRead = function(channel, until) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels/" + channel;
 
@@ -77,7 +90,7 @@ $(function() {
         };
 
         self.toggleChannel = function(channel) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_MANAGE)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels/" + channel;
 
@@ -102,7 +115,7 @@ $(function() {
         };
 
         self.retrieveData = function(force) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels";
             if (force) {
@@ -120,7 +133,7 @@ $(function() {
         };
 
         self.fromResponse = function(data) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
 
             var currentTab = $("li.active a", self.announcementDialogTabs).attr("href");
 
@@ -141,7 +154,7 @@ $(function() {
         };
 
         self.showAnnouncementDialog = function(channel) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
 
             // lazy load images that still need lazy-loading
             $("#plugin_announcements_dialog_content article img").lazyload();
@@ -178,7 +191,7 @@ $(function() {
         };
 
         self.displayAnnouncements = function(channels) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
 
             var displayLimit = self.settings.settings.plugins.announcements.display_limit();
             var maxLength = self.settings.settings.plugins.announcements.summary_limit();
@@ -244,7 +257,7 @@ $(function() {
                 text += "</ul>";
 
                 if (rest) {
-                    text += gettext(_.sprintf("... and %(rest)d more.", {rest: rest}));
+                    text += "<p>"  + gettext(_.sprintf("... and %(rest)d more.", {rest: rest})) + "</p>";
                 }
 
                 text += "<small>" + gettext("You can edit your announcement subscriptions under Settings > Announcements.") + "</small>";
@@ -305,25 +318,30 @@ $(function() {
             self.settings.show("settings_plugin_announcements");
         };
 
-        self.onUserLoggedIn = function() {
-            self.retrieveData();
-        };
-
-        self.onUserLoggedOut = function() {
-            self.hideAnnouncements();
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) {
+                self.hideAnnouncements();
+            } else {
+                self.retrieveData();
+            }
         };
 
         self.onStartup = function() {
             self.announcementDialog = $("#plugin_announcements_dialog");
             self.announcementDialogContent = $("#plugin_announcements_dialog_content");
             self.announcementDialogTabs = $("#plugin_announcements_dialog_tabs");
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.retrieveData();
         }
+
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        AnnouncementsViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: AnnouncementsViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
+    });
 });

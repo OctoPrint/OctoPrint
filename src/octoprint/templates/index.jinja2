@@ -14,7 +14,8 @@
         {% include 'initscript.jinja2' %}
     </head>
     <body>
-        <div class="page-container">
+        <div class="page-container" id="page-container-main" style="display: none" data-bind="visible: visible">
+            <!-- ko allowBindings: false -->
             <div id="navbar" class="navbar navbar-static-top">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
                     <div class="container">
@@ -43,7 +44,7 @@
                 <div class="row">
                     <!-- Sidebar -->
                     {% if templates.sidebar.order %}
-                    <div class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
+                    <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
                         {% for key in templates.sidebar.order %}
                             {% set entry, data = templates.sidebar.entries[key] %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -82,7 +83,7 @@
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}_link"
-                                    class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                    class="{% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
                                     {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                         >
@@ -92,7 +93,7 @@
                             {% endfor %}
                         </ul>
 
-                        <div class="tab-content">
+                        <div id="tabs_content" class="tab-content">
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -110,15 +111,14 @@
                     {% endif %}
                 </div>
                 <div class="footer">
-                    <ul class="pull-left muted">
+                    <ul id="footer_version" class="pull-left muted">
                         <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version|e }}</span></small></li>
                     </ul>
-                    <ul class="pull-right">
-                        <li><a href="http://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="fa fa-github"></i> {{ _('Sourcecode') }}</a></li>
-                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Documentation') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="fa fa-flag"></i> {{ _('Bugs and Requests') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
+                    <ul id="footer_links" class="pull-right">
+                        <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
+                        <li><a href="https://discourse.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-users"></i> {{ _('Forum') }}</a></li>
+                        <li><a href="https://faq.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
+                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Docs') }}</a></li>
                         <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>
@@ -131,6 +131,7 @@
             {% include 'dialogs/wizard.jinja2' %}
             {% include 'dialogs/about.jinja2' %}
             {% include 'dialogs/files.jinja2' %}
+            {% include 'dialogs/temperature.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->
@@ -146,7 +147,36 @@
             {% endfor %}
             <!-- End of generic plugin template files -->
 
-            {% include 'javascripts.jinja2' %}
+            <!-- /ko -->
         </div>
+
+        <div id="page-container-loading" data-bind="visible: loading">
+            <div class="wrapper">
+                <div class="outer">
+                    <div class="inner">
+                        <div class="content">
+                            <i class="fa fa-spinner fa-spin fa-4x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" id="page-container-needlogin" style="display: none" data-bind="visible: needlogin">
+            <form class="form-signin">
+                <h2 class="form-signin-heading">{{ _('Please log in') }}</h2>
+
+                <div class="alert alert-error" style="display: none" data-bind="visible: login_error, text: login_error"></div>
+
+                <input type="text" data-bind="value: login_username" class="input-block-level" placeholder="{{ _('Username') }}">
+                <input type="password" data-bind="value: login_password" class="input-block-level" placeholder="{{ _('Password') }}">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="value: login_remember"> {{ _('Remember me') }}
+                </label>
+                <button class="btn btn-block btn-large btn-primary" type="submit" data-bind="click: login">{{ _('Log in') }}</button>
+            </form>
+        </div>
+
+        {% include 'javascripts.jinja2' %}
     </body>
 </html>

@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
+
 from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -8,25 +9,31 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import tornado.web
 import flask
+import flask.json
 import flask_login
 import flask_principal
 import flask_assets
 import webassets.updater
 import webassets.utils
 import functools
-import contextlib
 import time
 import uuid
 import threading
 import logging
 import netaddr
 import os
+import collections
 
 from octoprint.settings import settings
+from octoprint.util import deprecated
 import octoprint.server
-import octoprint.users
+import octoprint.access.users
 import octoprint.plugin
 
+from octoprint.util import DefaultOrderedDict
+from octoprint.util.json import JsonEncoding
+
+from werkzeug.local import LocalProxy
 from werkzeug.contrib.cache import BaseCache
 
 from past.builtins import basestring
@@ -231,26 +238,19 @@ def fix_webassets_filtertool():
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
-# TODO: Remove compatibility layer in OctoPrint 1.5.0
-def deprecate_flaskext():
-	import flask
-	import importlib
+def fix_flask_login_remote_address():
+	def fixed_get_remote_addr():
+		"""Backported from https://github.com/maxcountryman/flask-login/pull/217"""
 
-	class FlaskExtDeprecator(object):
+		from flask import request
+		address = request.headers.get('X-Forwarded-For', request.remote_addr)
+		if address is not None:
+			# An 'X-Forwarded-For' header includes a comma separated list of the
+			# addresses, the first address being the actual remote address.
+			address = address.encode('utf-8').split(b',')[0].strip()
+		return address
 
-		def __getattr__(self, item):
-			old_name = "flask.ext.{}".format(item)
-			new_name = "flask_{}".format(item)
-			module = importlib.import_module(new_name)
-
-			from warnings import warn
-			message = "The {old} import is deprecated in Flask versions >= 0.11, which OctoPrint now uses. " + \
-			          "Import {new} instead. This compatibility layer will be removed in OctoPrint 1.5.0."
-			warn(DeprecationWarning(message.format(old=old_name, new=new_name)), stacklevel=2)
-
-			return module
-
-	flask.ext = FlaskExtDeprecator()
+	flask_login._get_remote_addr = fixed_get_remote_addr
 
 #~~ WSGI environment wrapper for reverse proxying
 
@@ -476,9 +476,12 @@ class OctoPrintFlaskRequest(flask.Request):
 
 		We need this because cookies are not port-specific and we don't want to overwrite our
 		session and other cookies from one OctoPrint instance on our machine with those of another
-		one who happens to listen on the same address albeit a different port.
+		one who happens to listen on the same address albeit a different port or script root.
 		"""
-		return "_P" + self.server_port
+		result = "_P" + self.server_port
+		if self.script_root:
+			return result + "_R" + self.script_root.replace("/", "|")
+		return result
 
 
 class OctoPrintFlaskResponse(flask.Response):
@@ -497,20 +500,39 @@ class OctoPrintFlaskResponse(flask.Response):
 		flask.Response.set_cookie(self, key, expires=0, max_age=0, path=path, domain=domain)
 
 
+class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
+
+	def save_session(self, app, session, response):
+		if flask.g.get("login_via_apikey", False):
+			return
+		return super(OctoPrintSessionInterface, self).save_session(app, session, response)
+
+
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager.enabled:
-		user = octoprint.server.userManager.login_user(flask_login.current_user)
-	else:
-		user = flask_login.current_user
+	user = flask_login.current_user
 
-	if user is not None and not user.is_anonymous:
-		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
-		if hasattr(user, "get_session"):
-			flask.session["usersession.id"] = user.get_session()
-		flask.g.user = user
-		return flask.jsonify(user.asDict())
+	if isinstance(user, LocalProxy):
+		# noinspection PyProtectedMember
+		user = user._get_current_object()
+
+	def login(u):
+		# login known user
+		if not u.is_anonymous:
+			u = octoprint.server.userManager.login_user(u)
+		flask_login.login_user(u)
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+		                                      identity=flask_principal.Identity(u.get_id()))
+		if hasattr(u, "session"):
+			flask.session["usersession.id"] = u.session
+		flask.g.user = u
+		return u
+
+	if user is not None and user.is_active:
+		# login known user
+		user = login(user)
+
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
@@ -523,19 +545,15 @@ def passive_login():
 		try:
 			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
-				user = octoprint.server.userManager.findUser(autologinAs)
-				if user is not None:
-					user = octoprint.server.userManager.login_user(user)
-					flask.session["usersession.id"] = user.get_session()
-					flask.g.user = user
-					flask_login.login_user(user)
-					flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
-					return flask.jsonify(user.asDict())
+				autologin_user = octoprint.server.userManager.find_user(autologinAs)
+				if autologin_user is not None and user.is_active:
+					autologin_user = octoprint.server.userManager.login_user(autologin_user)
+					user = login(autologin_user)
 		except:
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	return "", 204
+	return flask.jsonify(user)
 
 
 #~~ cache decorator for cacheable views
@@ -1034,36 +1052,29 @@ def add_no_max_age_response_headers(response):
 
 #~~ access validators for use with tornado
 
+def permission_validator(request, permission):
+	"""
+	Validates that the given request is made by an authorized user, identified either by API key or existing Flask
+	session.
 
+	Must be executed in an existing Flask request context!
+
+	:param request: The Flask request object
+	:param request: The required permission
+	"""
+
+	user = _get_flask_user_from_request(request)
+	if user is None or not user.is_authenticated or not user.has_permission(permission):
+		raise tornado.web.HTTPError(403)
+
+@deprecated("admin_validator is deprecated, please use new permission_validator", since="")
 def admin_validator(request):
-	"""
-	Validates that the given request is made by an admin user, identified either by API key or existing Flask
-	session.
+	from octoprint.access.permissions import Permissions
+	return permission_validator(request, Permissions.ADMIN)
 
-	Must be executed in an existing Flask request context!
-
-	:param request: The Flask request object
-	"""
-
-	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated or not user.is_admin:
-		raise tornado.web.HTTPError(403)
-
-
+@deprecated("user_validator is deprecated, please use new permission_validator", since="")
 def user_validator(request):
-	"""
-	Validates that the given request is made by an authenticated user, identified either by API key or existing Flask
-	session.
-
-	Must be executed in an existing Flask request context!
-
-	:param request: The Flask request object
-	"""
-
-	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated:
-		raise tornado.web.HTTPError(403)
-
+	return True
 
 def _get_flask_user_from_request(request):
 	"""
@@ -1122,11 +1133,46 @@ def restricted_access(func):
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
+		return require_firstrun(flask_login.login_required(func))(*args, **kwargs)
+
+	return decorated_view
+
+
+def require_firstrun(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has been
+	done for OctoPrint's Access Control.
+
+	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
+	flag from the settings being set to True and the userManager not indicating
+	that it's user database has been customized from default), the decorator
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (
+				octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
-		return flask_login.login_required(func)(*args, **kwargs)
+		return func(*args, **kwargs)
+
+	return decorated_view
+
+
+def firstrun_only_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has _not_ been
+	done for OctoPrint's Access Control. Otherwise it
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		# if OctoPrint has been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
+			return func(*args, **kwargs)
+		else:
+			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
 
 	return decorated_view
 
@@ -1213,8 +1259,7 @@ def get_json_command_from_request(request, valid_commands):
 
 	data = request.get_json()
 	if data is None:
-		return make_response("Malformed JSON body in request", 400)
-
+		return None, None, make_response("Malformed JSON body or wrong content-type in request", 400)
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)
 
@@ -1307,6 +1352,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/bindings/toggle.js',
 		'js/app/bindings/togglecontent.js',
 		'js/app/bindings/valuewithinit.js',
+		'js/app/viewmodels/access.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
@@ -1321,8 +1367,8 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/temperature.js',
 		'js/app/viewmodels/terminal.js',
 		'js/app/viewmodels/timelapse.js',
+		'js/app/viewmodels/uistate.js',
 		'js/app/viewmodels/users.js',
-		'js/app/viewmodels/log.js',
 		'js/app/viewmodels/usersettings.js',
 		'js/app/viewmodels/wizard.js',
 		'js/app/viewmodels/about.js'
@@ -1348,8 +1394,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
-	assets = dict(bundled=dict(js=[], css=[], less=[]),
-	              external=dict(js=[], css=[], less=[]))
+	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
+	                           css=DefaultOrderedDict(list),
+	                           less=DefaultOrderedDict(list)),
+	              external=dict(js=DefaultOrderedDict(list),
+	                            css=DefaultOrderedDict(list),
+	                            less=DefaultOrderedDict(list)))
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
@@ -1375,13 +1425,13 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			for asset in all_assets["js"]:
 				if not asset_exists("js", asset):
 					continue
-				assets[asset_key]["js"].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key]["js"][name].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
 				if not asset_exists(preferred_stylesheet, asset):
 					continue
-				assets[asset_key][preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key][preferred_stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
@@ -1390,7 +1440,16 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				for asset in all_assets[stylesheet]:
 					if not asset_exists(stylesheet, asset):
 						continue
-					assets[asset_key][stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+					assets[asset_key][stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets
+
+##~~ JSON encoding
+
+class OctoPrintJsonEncoder(flask.json.JSONEncoder):
+	def default(self, obj):
+		try:
+			return JsonEncoding.encode(obj)
+		except TypeError:
+			return flask.json.JSONEncoder.default(self, obj)

@@ -10,6 +10,7 @@ import logging
 import os
 import pylru
 import shutil
+import re
 
 try:
 	from os import scandir, walk
@@ -22,9 +23,12 @@ from copy import deepcopy
 
 from past.builtins import basestring
 
+from emoji import demojize
+from slugify import Slugify
+
 import octoprint.filemanager
 
-from octoprint.util import is_hidden_path
+from octoprint.util import is_hidden_path, to_unicode
 
 class StorageInterface(object):
 	"""
@@ -149,12 +153,13 @@ class StorageInterface(object):
 		                        from root of base folder
 		:param function filter: a filter that matches the files that are to be returned, may be left out in which case no
 		                        filtering will take place
-		:param bool recursive:  will also step into sub folders for building the complete list if set to True
+		:param bool recursive:  will also step into sub folders for building the complete list if set to True, otherwise will only
+		                        do one step down into sub folders to be able to populate the ``children``.
 		:return: a dictionary mapping entry names to entry data that represents the whole file list
 		"""
 		raise NotImplementedError()
 
-	def add_folder(self, path, ignore_existing=True):
+	def add_folder(self, path, ignore_existing=True, display=None):
 		"""
 		Adds a folder as ``path``
 
@@ -162,6 +167,7 @@ class StorageInterface(object):
 
 		:param string path:          the path of the new folder
 		:param bool ignore_existing: if set to True, no error will be raised if the folder to be added already exists
+		:param unicode display:      display name of the folder
 		:return: the sanitized name of the new folder to be used for future references to the folder
 		"""
 		raise NotImplementedError()
@@ -171,14 +177,14 @@ class StorageInterface(object):
 		Removes the folder at ``path``
 
 		:param string path:    the path of the folder to remove
-		:param bool recursive: if set to True, contained folders and files will also be removed, otherwise and error will
-		                       be raised if the folder is not empty (apart from ``.metadata.yaml``) when it's to be removed
+		:param bool recursive: if set to True, contained folders and files will also be removed, otherwise an error will
+		                       be raised if the folder is not empty (apart from any metadata files) when it's to be removed
 		"""
 		raise NotImplementedError()
 
 	def copy_folder(self, source, destination):
 		"""
-		Copys the folder ``source`` to ``destination``
+		Copies the folder ``source`` to ``destination``
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
@@ -198,7 +204,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False, display=None):
 		"""
 		Adds the file ``file_object`` as ``path``
 
@@ -209,6 +215,7 @@ class StorageInterface(object):
 		:param list links:             any links to add with the file
 		:param bool allow_overwrite:   if set to True no error will be raised if the file already exists and the existing file
 		                               and its metadata will just be silently overwritten
+		:param unicode display:        display name of the file
 		:return: the sanitized name of the file to be used for future references to it
 		"""
 		raise NotImplementedError()
@@ -226,7 +233,7 @@ class StorageInterface(object):
 
 	def copy_file(self, source, destination):
 		"""
-		Copys the file ``source`` to ``destination``
+		Copies the file ``source`` to ``destination``
 
 		:param string source: path to the source file
 		:param string destination: path to destination
@@ -334,6 +341,23 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def canonicalize(self, path):
+		"""
+		Canonicalizes the given ``path``. The ``path`` may consist of both folder and file name, the underlying
+		implementation must separate those if necessary.
+
+		By default, this calls :func:`~octoprint.filemanager.StorageInterface.sanitize`, which also takes care
+		of stripping any invalid characters.
+
+		Args:
+			path: the path to canonicalize
+
+		Returns:
+			a 2-tuple containing the canonicalized path and file name
+
+		"""
+		return self.sanitize(path)
+
 	def sanitize(self, path):
 		"""
 		Sanitizes the given ``path``, stripping it of all invalid characters. The ``path`` may consist of both
@@ -410,6 +434,7 @@ class StorageError(Exception):
 	INVALID_DESTINATION = "invalid_destination"
 	DOES_NOT_EXIST = "does_not_exist"
 	ALREADY_EXISTS = "already_exists"
+	SOURCE_EQUALS_DESTINATION = "source_equals_destination"
 	NOT_EMPTY = "not_empty"
 
 	def __init__(self, message, code=None, cause=None):
@@ -426,11 +451,27 @@ class LocalFileStorage(StorageInterface):
 	"""
 	The ``LocalFileStorage`` is a storage implementation which holds all files, folders and metadata on disk.
 
-	Metadata is managed inside ``.metadata.yaml`` files in the respective folders, indexed by the sanitized filenames
+	Metadata is managed inside ``.metadata.json`` files in the respective folders, indexed by the sanitized filenames
 	stored within the folder. Metadata access is managed through an LRU cache to minimize access overhead.
 
 	This storage type implements :func:`path_on_disk`.
 	"""
+
+	_UNICODE_VARIATIONS = re.compile(u"[\uFE00-\uFE0F]")
+
+	@classmethod
+	def _no_unicode_variations(cls, text):
+		return cls._UNICODE_VARIATIONS.sub(u"", text)
+
+	_SLUGIFY = Slugify()
+	_SLUGIFY.safe_chars = "-_.()[] "
+
+	@classmethod
+	def _slugify(cls, text):
+		text = to_unicode(text)
+		text = cls._no_unicode_variations(text)
+		text = demojize(text, delimiters=(u"", u""))
+		return cls._SLUGIFY(text)
 
 	def __init__(self, basefolder, create=False):
 		"""
@@ -442,7 +483,7 @@ class LocalFileStorage(StorageInterface):
 		"""
 		self._logger = logging.getLogger(__name__)
 
-		self.basefolder = os.path.realpath(os.path.abspath(basefolder))
+		self.basefolder = os.path.realpath(os.path.abspath(to_unicode(basefolder)))
 		if not os.path.exists(self.basefolder) and create:
 			os.makedirs(self.basefolder)
 		if not os.path.exists(self.basefolder) or not os.path.isdir(self.basefolder):
@@ -453,10 +494,6 @@ class LocalFileStorage(StorageInterface):
 		self._metadata_locks = dict()
 
 		self._metadata_cache = pylru.lrucache(10)
-
-		from slugify import Slugify
-		self._slugify = Slugify()
-		self._slugify.safe_chars = "-_.()[] "
 
 		self._old_metadata = None
 		self._initialize_metadata()
@@ -535,7 +572,7 @@ class LocalFileStorage(StorageInterface):
 			path = os.path.join(self.basefolder, path)
 
 		def last_modified_for_path(p):
-			metadata = os.path.join(p, ".metadata.yaml")
+			metadata = os.path.join(p, ".metadata.json")
 			if os.path.exists(metadata):
 				return max(os.stat(p).st_mtime, os.stat(metadata).st_mtime)
 			else:
@@ -564,17 +601,22 @@ class LocalFileStorage(StorageInterface):
 
 	def list_files(self, path=None, filter=None, recursive=True):
 		if path:
-			path = self.sanitize_path(path)
+			path = self.sanitize_path(to_unicode(path))
 			base = self.path_in_storage(path)
 			if base:
-				base += "/"
+				base += u"/"
 		else:
 			path = self.basefolder
-			base = ""
+			base = u""
 		return self._list_folder(path, base=base, entry_filter=filter, recursive=recursive)
 
-	def add_folder(self, path, ignore_existing=True):
-		path, name = self.sanitize(path)
+	def add_folder(self, path, ignore_existing=True, display=None):
+		display_path, display_name = self.canonicalize(path)
+		path = self.sanitize_path(display_path)
+		name = self.sanitize_name(display_name)
+
+		if display is not None:
+			display_name = display
 
 		folder_path = os.path.join(path, name)
 		if os.path.exists(folder_path):
@@ -582,6 +624,11 @@ class LocalFileStorage(StorageInterface):
 				raise StorageError("{name} does already exist in {path}".format(**locals()), code=StorageError.ALREADY_EXISTS)
 		else:
 			os.mkdir(folder_path)
+
+		if display_name != name:
+			metadata = self._get_metadata_entry(path, name, default=dict())
+			metadata["display"] = display_name
+			self._update_metadata_entry(path, name, metadata)
 
 		return self.path_in_storage((path, name))
 
@@ -594,7 +641,7 @@ class LocalFileStorage(StorageInterface):
 
 		empty = True
 		for entry in scandir(folder_path):
-			if entry.name == ".metadata.yaml":
+			if entry.name == ".metadata.json" or entry.name == ".metadata.yaml":
 				continue
 			empty = False
 			break
@@ -605,12 +652,15 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
-		self._delete_metadata(folder_path)
+		self._remove_metadata_entry(path, name)
 
-	def _get_source_destination_data(self, source, destination):
+	def _get_source_destination_data(self, source, destination, must_not_equal=False):
 		"""Prepares data dicts about source and destination for copy/move."""
 		source_path, source_name = self.sanitize(source)
-		destination_path, destination_name = self.sanitize(destination)
+
+		destination_canon_path, destination_canon_name = self.canonicalize(destination)
+		destination_path = self.sanitize_path(destination_canon_path)
+		destination_name = self.sanitize_name(destination_canon_name)
 
 		source_fullpath = os.path.join(source_path, source_name)
 		destination_fullpath = os.path.join(destination_path, destination_name)
@@ -620,45 +670,88 @@ class LocalFileStorage(StorageInterface):
 
 		if not os.path.isdir(destination_path):
 			raise StorageError("Destination path {} does not exist or is not a folder".format(destination_path), code=StorageError.INVALID_DESTINATION)
-		if os.path.exists(destination_fullpath):
+		if os.path.exists(destination_fullpath) and source_fullpath != destination_fullpath:
 			raise StorageError("{} does already exist in {}".format(destination_name, destination_path), code=StorageError.INVALID_DESTINATION)
+
+		source_meta = self._get_metadata_entry(source_path, source_name)
+		if source_meta:
+			source_display = source_meta.get("display", source_name)
+		else:
+			source_display = source_name
+
+		if (must_not_equal or source_display == destination_canon_name) and source_fullpath == destination_fullpath:
+			raise StorageError("Source {} and destination {} are the same folder".format(source_path, destination_path), code=StorageError.SOURCE_EQUALS_DESTINATION)
 
 		source_data = dict(
 			path=source_path,
 			name=source_name,
+			display=source_display,
 			fullpath=source_fullpath,
 		)
 		destination_data = dict(
 			path=destination_path,
 			name=destination_name,
+			display=destination_canon_name,
 			fullpath=destination_fullpath,
 		)
 		return source_data, destination_data
 
+	def _set_display_metadata(self, destination_data, source_data=None):
+		if source_data and destination_data["name"] == source_data["name"] and source_data["name"] != source_data["display"]:
+			display = source_data["display"]
+		elif destination_data["name"] != destination_data["display"]:
+			display = destination_data["display"]
+		else:
+			display = None
+
+		destination_meta = self._get_metadata_entry(destination_data["path"], destination_data["name"],
+		                                            default=dict())
+		if display:
+			destination_meta["display"] = display
+			self._update_metadata_entry(destination_data["path"], destination_data["name"], destination_meta)
+		elif "display" in destination_meta:
+			del destination_meta["display"]
+			self._update_metadata_entry(destination_data["path"], destination_data["name"], destination_meta)
+
 	def copy_folder(self, source, destination):
-		source_data, destination_data = self._get_source_destination_data(source, destination)
+		source_data, destination_data = self._get_source_destination_data(source, destination, must_not_equal=True)
 
 		try:
 			shutil.copytree(source_data["fullpath"], destination_data["fullpath"])
 		except Exception as e:
 			raise StorageError("Could not copy %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
+		self._set_display_metadata(destination_data, source_data=source_data)
+
 		return self.path_in_storage(destination_data["fullpath"])
 
 	def move_folder(self, source, destination):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
+
+		# only a display rename? Update that and bail early
+		if source_data["fullpath"] == destination_data["fullpath"]:
+			self._set_display_metadata(destination_data)
+			return self.path_in_storage(destination_data["fullpath"])
 
 		try:
 			shutil.move(source_data["fullpath"], destination_data["fullpath"])
 		except Exception as e:
 			raise StorageError("Could not move %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
+		self._set_display_metadata(destination_data, source_data=source_data)
+		self._remove_metadata_entry(source_data["path"], source_data["name"])
 		self._delete_metadata(source_data["fullpath"])
 
 		return self.path_in_storage(destination_data["fullpath"])
 
-	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
-		path, name = self.sanitize(path)
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False, display=None):
+		display_path, display_name = self.canonicalize(path)
+		path = self.sanitize_path(display_path)
+		name = self.sanitize_name(display_name)
+
+		if display:
+			display_name = display
+
 		if not octoprint.filemanager.valid_file_type(name):
 			raise StorageError("{name} is an unrecognized file type".format(**locals()), code=StorageError.INVALID_FILE)
 
@@ -670,6 +763,7 @@ class LocalFileStorage(StorageInterface):
 
 		# make sure folders exist
 		if not os.path.exists(path):
+			# TODO persist display names of path segments!
 			os.makedirs(path)
 
 		# save the file
@@ -678,9 +772,19 @@ class LocalFileStorage(StorageInterface):
 		# save the file's hash to the metadata of the folder
 		file_hash = self._create_hash(file_path)
 		metadata = self._get_metadata_entry(path, name, default=dict())
+		metadata_dirty = False
 		if not "hash" in metadata or metadata["hash"] != file_hash:
 			# hash changed -> throw away old metadata
-			self._update_metadata_entry(path, name, dict(hash=file_hash))
+			metadata = dict(hash=file_hash)
+			metadata_dirty = True
+
+		if not "display" in metadata and display_name != name:
+			# display name is not the same as file name -> store in metadata
+			metadata["display"] = display_name
+			metadata_dirty = True
+
+		if metadata_dirty:
+			self._update_metadata_entry(path, name, metadata)
 
 		# process any links that were also provided for adding to the file
 		if not links:
@@ -713,7 +817,7 @@ class LocalFileStorage(StorageInterface):
 		self._remove_metadata_entry(path, name)
 
 	def copy_file(self, source, destination):
-		source_data, destination_data = self._get_source_destination_data(source, destination)
+		source_data, destination_data = self._get_source_destination_data(source, destination, must_not_equal=True)
 
 		try:
 			shutil.copy2(source_data["fullpath"], destination_data["fullpath"])
@@ -722,11 +826,17 @@ class LocalFileStorage(StorageInterface):
 
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"])
+		self._set_display_metadata(destination_data, source_data=source_data)
 
 		return self.path_in_storage(destination_data["fullpath"])
 
 	def move_file(self, source, destination, allow_overwrite=False):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
+
+		# only a display rename? Update that and bail early
+		if source_data["fullpath"] == destination_data["fullpath"]:
+			self._set_display_metadata(destination_data)
+			return self.path_in_storage(destination_data["fullpath"])
 
 		try:
 			shutil.move(source_data["fullpath"], destination_data["fullpath"])
@@ -736,6 +846,7 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"],
 		                          delete_source=True)
+		self._set_display_metadata(destination_data, source_data=source_data)
 
 		return self.path_in_storage(destination_data["fullpath"])
 
@@ -777,7 +888,7 @@ class LocalFileStorage(StorageInterface):
 
 	def remove_history(self, path, index):
 		path, name = self.sanitize(path)
-		self._update_history(name, path, index)
+		self._delete_history(name, path, index)
 
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
 		path, name = self.sanitize(path)
@@ -815,14 +926,15 @@ class LocalFileStorage(StorageInterface):
 		self._save_metadata(path, metadata)
 
 	def split_path(self, path):
-		split = path.split("/")
+		path = to_unicode(path)
+		split = path.split(u"/")
 		if len(split) == 1:
-			return "", split[0]
+			return u"", split[0]
 		else:
 			return self.join_path(*split[:-1]), split[-1]
 
 	def join_path(self, *path):
-		return "/".join(path)
+		return u"/".join(map(to_unicode, path))
 
 	def sanitize(self, path):
 		"""
@@ -839,24 +951,30 @@ class LocalFileStorage(StorageInterface):
 		hence be returned at second position. If you only need to convert a folder path, be sure to
 		include a trailing slash for a string ``path`` or an empty last element for a list ``path``.
 		"""
-		name = None
-		if isinstance(path, (str, unicode, basestring)):
-			if path.startswith(self.basefolder):
-				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, "/")
-			path = path.split("/")
-		if isinstance(path, (list, tuple)):
-			if len(path) == 1:
-				name = path[0]
-				path = "/"
-			else:
-				name = path[-1]
-				path = "/" + self.join_path(*path[:-1])
-		if not path:
-			path = "/"
 
+		path, name = self.canonicalize(path)
 		name = self.sanitize_name(name)
 		path = self.sanitize_path(path)
+		return path, name
+
+	def canonicalize(self, path):
+		name = None
+		if isinstance(path, basestring):
+			path = to_unicode(path)
+			if path.startswith(self.basefolder):
+				path = path[len(self.basefolder):]
+			path = path.replace(os.path.sep, u"/")
+			path = path.split(u"/")
+		if isinstance(path, (list, tuple)):
+			if len(path) == 1:
+				name = to_unicode(path[0])
+				path = u""
+			else:
+				name = to_unicode(path[-1])
+				path = self.join_path(*map(to_unicode, path[:-1]))
+		if not path:
+			path = u""
+
 		return path, name
 
 	def sanitize_name(self, name):
@@ -865,14 +983,16 @@ class LocalFileStorage(StorageInterface):
 		slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
 		``(``, and ``)`` as is.
 		"""
+		name = to_unicode(name)
+
 		if name is None:
 			return None
 
-		if "/" in name or "\\" in name:
+		if u"/" in name or u"\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		result = self._slugify(name).replace(" ", "_")
-		if result and result != "." and result != ".." and result[0] == ".":
+		result = self._slugify(name).replace(u" ", u"_")
+		if result and result != u"." and result != u".." and result[0] == u".":
 			# hidden files under *nix
 			result = result[1:]
 		return result
@@ -883,12 +1003,15 @@ class LocalFileStorage(StorageInterface):
 		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
 		absolute path including leading ``basefolder`` path.
 		"""
-		if path[0] == "/":
-			path = path[1:]
-		elif path[0] == "." and path[1] == "/":
-			path = path[2:]
+		path = to_unicode(path)
 
-		path_elements = path.split("/")
+		if len(path):
+			if path[0] == u"/":
+				path = path[1:]
+			elif path[0] == u"." and path[1] == u"/":
+				path = path[2:]
+
+		path_elements = path.split(u"/")
 		joined_path = self.basefolder
 		for path_element in path_elements:
 			joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
@@ -898,6 +1021,7 @@ class LocalFileStorage(StorageInterface):
 		return path
 
 	def _sanitize_entry(self, entry, path, entry_path):
+		entry = to_unicode(entry)
 		sanitized = self.sanitize_name(entry)
 		if sanitized != entry:
 			# entry is not sanitized yet, let's take care of that
@@ -907,16 +1031,16 @@ class LocalFileStorage(StorageInterface):
 			counter = 1
 			while os.path.exists(sanitized_path):
 				counter += 1
-				sanitized = self.sanitize_name("{}_({}){}".format(sanitized_name, counter, sanitized_ext))
+				sanitized = self.sanitize_name(u"{}_({}){}".format(sanitized_name, counter, sanitized_ext))
 				sanitized_path = os.path.join(path, sanitized)
 
 			try:
 				shutil.move(entry_path, sanitized_path)
 
-				self._logger.info("Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
+				self._logger.info(u"Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
 				return sanitized, sanitized_path
 			except:
-				self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
+				self._logger.exception(u"Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
 				raise
 
 		return entry, entry_path
@@ -925,10 +1049,11 @@ class LocalFileStorage(StorageInterface):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
 		if isinstance(path, (str, unicode, basestring)):
+			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, "/")
-		if path.startswith("/"):
+			path = path.replace(os.path.sep, u"/")
+		if path.startswith(u"/"):
 			path = path[1:]
 
 		return path
@@ -1005,7 +1130,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				print_time = float(print_time)
 			except:
-				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.yaml: {!r}".format(name, path, print_time))
+				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
 				continue
 
 			if not printer_profile in former_print_times:
@@ -1168,7 +1293,7 @@ class LocalFileStorage(StorageInterface):
 		if metadata_dirty:
 			self._save_metadata(path, metadata)
 
-	def _list_folder(self, path, base="", entry_filter=None, recursive=True, **kwargs):
+	def _list_folder(self, path, base="", entry_filter=None, recursive=True, include_children=True, **kwargs):
 		if entry_filter is None:
 			entry_filter = kwargs.get("filter", None)
 
@@ -1184,7 +1309,7 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			try:
-				entry_name = entry.name
+				entry_name = entry_display = entry.name
 				entry_path = entry.path
 				entry_is_file = entry.is_file()
 				entry_is_dir = entry.is_dir()
@@ -1197,6 +1322,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
 				if entry_name != new_entry_name or entry_path != new_entry_path:
+					entry_display = to_unicode(entry_name)
 					entry_name = new_entry_name
 					entry_path = new_entry_path
 					entry_stat = os.stat(entry_path)
@@ -1206,67 +1332,101 @@ class LocalFileStorage(StorageInterface):
 
 			path_in_location = entry_name if not base else base + entry_name
 
-			# file handling
-			if entry_is_file:
-				type_path = octoprint.filemanager.get_file_type(entry_name)
-				if not type_path:
-					# only supported extensions
-					continue
-				else:
-					file_type = type_path[0]
+			try:
+				# file handling
+				if entry_is_file:
+					type_path = octoprint.filemanager.get_file_type(entry_name)
+					if not type_path:
+						# only supported extensions
+						continue
+					else:
+						file_type = type_path[0]
 
-				if entry_name in metadata and isinstance(metadata[entry_name], dict):
-					entry_data = metadata[entry_name]
-				else:
-					entry_data = self._add_basic_metadata(path, entry_name, save=False, metadata=metadata)
-					metadata_dirty = True
+					if entry_name in metadata and isinstance(metadata[entry_name], dict):
+						entry_metadata = metadata[entry_name]
+						if not "display" in entry_metadata and entry_display != entry_name:
+							metadata[entry_name]["display"] = entry_display
+							entry_metadata["display"] = entry_display
+							metadata_dirty = True
+					else:
+						entry_metadata = self._add_basic_metadata(path, entry_name,
+						                                          display_name=entry_display,
+						                                          save=False,
+						                                          metadata=metadata)
+						metadata_dirty = True
 
-				# TODO extract model hash from source if possible to recreate link
+					# TODO extract model hash from source if possible to recreate link
 
-				if not entry_filter or entry_filter(entry_name, entry_data):
-					# only add files passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_data)
-					extended_entry_data["name"] = entry_name
-					extended_entry_data["path"] = path_in_location
-					extended_entry_data["type"] = file_type
-					extended_entry_data["typePath"] = type_path
-					stat = entry_stat
-					if stat:
-						extended_entry_data["size"] = stat.st_size
-						extended_entry_data["date"] = int(stat.st_mtime)
+					if not entry_filter or entry_filter(entry_name, entry_metadata):
+						# only add files passing the optional filter
+						extended_entry_data = dict()
+						extended_entry_data.update(entry_metadata)
+						extended_entry_data["name"] = entry_name
+						extended_entry_data["display"] = entry_metadata.get("display", entry_name)
+						extended_entry_data["path"] = path_in_location
+						extended_entry_data["type"] = file_type
+						extended_entry_data["typePath"] = type_path
+						stat = entry_stat
+						if stat:
+							extended_entry_data["size"] = stat.st_size
+							extended_entry_data["date"] = int(stat.st_mtime)
 
-					result[entry_name] = extended_entry_data
+						result[entry_name] = extended_entry_data
 
-			# folder recursion
-			elif entry_is_dir:
-				entry_data = dict(
-					name=entry_name,
-					path=path_in_location,
-					type="folder",
-					type_path=["folder"]
-				)
-				if recursive:
-					sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
-					                               recursive=recursive)
-					entry_data["children"] = sub_result
+				# folder recursion
+				elif entry_is_dir:
+					if entry_name in metadata and isinstance(metadata[entry_name], dict):
+						entry_metadata = metadata[entry_name]
+						if not "display" in entry_metadata and entry_display != entry_name:
+							metadata[entry_name]["display"] = entry_display
+							entry_metadata["display"] = entry_display
+							metadata_dirty = True
+					elif entry_name != entry_display:
+						entry_metadata = self._add_basic_metadata(path, entry_name,
+						                                          display_name=entry_display,
+						                                          save=False,
+						                                          metadata=metadata)
+						metadata_dirty = True
+					else:
+						entry_metadata = dict()
 
-				if not entry_filter or entry_filter(entry_name, entry_data):
-					def get_size():
-						total_size = 0
-						for element in entry_data["children"].values():
-							if "size" in element:
-								total_size += element["size"]
-
-						return total_size
-
-					# only add folders passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_data)
+					entry_data = dict(
+						name=entry_name,
+						display=entry_metadata.get("display", entry_name),
+						path=path_in_location,
+						type="folder",
+						typePath=["folder"]
+					)
 					if recursive:
-						extended_entry_data["size"] = get_size()
+						sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
+						                               recursive=recursive)
+						entry_data["children"] = sub_result
+					elif include_children:
+						sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
+						                               recursive=False, include_children=False)
+						entry_data["children"] = sub_result
 
-					result[entry_name] = extended_entry_data
+					if not entry_filter or entry_filter(entry_name, entry_data):
+						# only add folders passing the optional filter
+
+						def get_size():
+							total_size = 0
+							for element in entry_data["children"].values():
+								if "size" in element:
+									total_size += element["size"]
+
+							return total_size
+
+						extended_entry_data = dict()
+						extended_entry_data.update(entry_data)
+						if recursive:
+							extended_entry_data["size"] = get_size()
+
+						result[entry_name] = extended_entry_data
+			except:
+				# So something went wrong somewhere while processing this file entry - log that and continue
+				self._logger.exception("Error while processing entry {}".format(entry_path))
+				continue
 
 		# TODO recreate links if we have metadata less entries
 
@@ -1276,22 +1436,33 @@ class LocalFileStorage(StorageInterface):
 
 		return result
 
-	def _add_basic_metadata(self, path, entry, additional_metadata=None, save=True, metadata=None):
+	def _add_basic_metadata(self, path, entry, display_name=None, additional_metadata=None, save=True, metadata=None):
 		if additional_metadata is None:
 			additional_metadata = dict()
 
 		if metadata is None:
 			metadata = self._get_metadata(path)
 
-		entry_data = dict(
-			hash=self._create_hash(os.path.join(path, entry)),
-			links=[],
-			notes=[]
-		)
+		entry_path = os.path.join(path, entry)
 
-		if path == self.basefolder and self._old_metadata is not None and entry in self._old_metadata and "gcodeAnalysis" in self._old_metadata[entry]:
-			# if there is still old metadata available and that contains an analysis for this file, use it!
-			entry_data["analysis"] = self._old_metadata[entry]["gcodeAnalysis"]
+		if os.path.isfile(entry_path):
+			entry_data = dict(
+				hash=self._create_hash(os.path.join(path, entry)),
+				links=[],
+				notes=[]
+			)
+			if path == self.basefolder and self._old_metadata is not None and entry in self._old_metadata and "gcodeAnalysis" in self._old_metadata[entry]:
+				# if there is still old metadata available and that contains an analysis for this file, use it!
+				entry_data["analysis"] = self._old_metadata[entry]["gcodeAnalysis"]
+
+		elif os.path.isdir(entry_path):
+			entry_data = dict()
+
+		else:
+			return
+
+		if display_name is not None and not display_name == entry:
+			entry_data["display"] = display_name
 
 		entry_data.update(additional_metadata)
 		metadata[entry] = entry_data
@@ -1342,7 +1513,7 @@ class LocalFileStorage(StorageInterface):
 			metadata[name] = data
 			self._save_metadata(path, metadata)
 
-	def _copy_metadata_entry(self, source_path, source_name, destination_path, destination_name, delete_source=False):
+	def _copy_metadata_entry(self, source_path, source_name, destination_path, destination_name, delete_source=False, updates=None):
 		with self._get_metadata_lock(source_path):
 			source_data = self._get_metadata_entry(source_path, source_name, default=dict())
 			if not source_data:
@@ -1350,6 +1521,9 @@ class LocalFileStorage(StorageInterface):
 
 			if delete_source:
 				self._remove_metadata_entry(source_path, source_name)
+
+		if updates is not None:
+			source_data.update(updates)
 
 		with self._get_metadata_lock(destination_path):
 			self._update_metadata_entry(destination_path, destination_name, source_data)
@@ -1359,41 +1533,80 @@ class LocalFileStorage(StorageInterface):
 			if path in self._metadata_cache:
 				return deepcopy(self._metadata_cache[path])
 
-			metadata_path = os.path.join(path, ".metadata.yaml")
+			self._migrate_metadata(path)
+
+			metadata_path = os.path.join(path, ".metadata.json")
 			if os.path.exists(metadata_path):
 				with open(metadata_path) as f:
 					try:
-						import yaml
-						metadata = yaml.safe_load(f)
+						import json
+						metadata = json.load(f)
 					except:
-						self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
+						self._logger.exception("Error while reading .metadata.json from {path}".format(**locals()))
 					else:
-						self._metadata_cache[path] = deepcopy(metadata)
-						return metadata
+						if isinstance(metadata, dict):
+							self._metadata_cache[path] = deepcopy(metadata)
+							return metadata
 			return dict()
 
 	def _save_metadata(self, path, metadata):
 		with self._get_metadata_lock(path):
-			metadata_path = os.path.join(path, ".metadata.yaml")
+			metadata_path = os.path.join(path, ".metadata.json")
 			try:
-				import yaml
+				import json
 				with atomic_write(metadata_path) as f:
-					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
+					json.dump(metadata, f, indent=4, separators=(",", ": "))
 			except:
-				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
+				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
 			else:
 				self._metadata_cache[path] = deepcopy(metadata)
 
 	def _delete_metadata(self, path):
 		with self._get_metadata_lock(path):
-			metadata_path = os.path.join(path, ".metadata.yaml")
-			if os.path.exists(metadata_path):
-				try:
-					os.remove(metadata_path)
-				except:
-					self._logger.exception("Error while deleting .metadata.yaml from {path}".format(**locals()))
+			metadata_files = (".metadata.json", ".metadata.yaml")
+			for metadata_file in metadata_files:
+				metadata_path = os.path.join(path, metadata_file)
+				if os.path.exists(metadata_path):
+					try:
+						os.remove(metadata_path)
+					except:
+						self._logger.exception("Error while deleting {metadata_file} from {path}".format(**locals()))
 			if path in self._metadata_cache:
 				del self._metadata_cache[path]
+
+	def _migrate_metadata(self, path):
+		# we switched to json in 1.3.9 - if we still have yaml here, migrate it now
+		import yaml
+		import json
+
+		with self._get_metadata_lock(path):
+			metadata_path_yaml = os.path.join(path, ".metadata.yaml")
+			metadata_path_json = os.path.join(path, ".metadata.json")
+
+			if not os.path.exists(metadata_path_yaml):
+				# nothing to migrate
+				return
+
+			if os.path.exists(metadata_path_json):
+				# already migrated
+				# TODO 1.3.10 Remove ".metadata.yaml" files
+				return
+
+			with open(metadata_path_yaml) as f:
+				try:
+					metadata = yaml.safe_load(f)
+				except:
+					self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
+					return
+
+			if not isinstance(metadata, dict):
+				# looks invalid, ignore it
+				return
+
+			with atomic_write(metadata_path_json) as f:
+				json.dump(metadata, f, indent=4, separators=(",", ": "))
+
+			# TODO 1.3.10 Remove ".metadata.yaml" files
 
 	@contextmanager
 	def _get_metadata_lock(self, path):
@@ -1406,8 +1619,9 @@ class LocalFileStorage(StorageInterface):
 			counter += 1
 			self._metadata_locks[path] = (counter, lock)
 
-			yield lock
+		yield lock
 
+		with self._metadata_lock_mutex:
 			counter = self._metadata_locks[path][0]
 			counter -= 1
 			if counter <= 0:

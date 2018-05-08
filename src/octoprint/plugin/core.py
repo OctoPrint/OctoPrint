@@ -31,9 +31,13 @@ import os
 import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
+import fnmatch
+import inspect
 
 import pkg_resources
 import pkginfo
+
+from past.builtins import basestring
 
 try:
 	from os import scandir
@@ -56,7 +60,7 @@ class PluginInfo(object):
 	Arguments:
 	    key (str): Identifier of the plugin
 	    location (str): Installation folder of the plugin
-	    instance (module): Plugin module instance
+	    instance (module): Plugin module instance - this may be ``None`` if the plugin has been blacklisted!
 	    name (str): Human readable name of the plugin
 	    version (str): Version of the plugin
 	    description (str): Description of the plugin
@@ -133,12 +137,14 @@ class PluginInfo(object):
 	attr_disable = '__plugin_disable__'
 	""" Module attribute which to call when disabling the plugin. """
 
-	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
+	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None, parsed_metadata=None):
 		self.key = key
 		self.location = location
 		self.instance = instance
 		self.origin = None
 		self.enabled = True
+		self.blacklisted = False
+		self.forced_disabled = False
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
@@ -151,10 +157,17 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
+		self._logger = logging.getLogger(__name__)
+
+		self._cached_parsed_metadata = parsed_metadata
+
 	def validate(self, phase, additional_validators=None):
 		result = True
 
-		if phase == "before_load":
+		if phase == "before_import":
+			result = not self.forced_disabled and not self.blacklisted and result
+
+		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
 			if hasattr(self.instance, self.__class__.attr_init):
 				if not hasattr(self.instance, self.__class__.attr_load):
@@ -188,7 +201,7 @@ class PluginInfo(object):
 
 		if additional_validators is not None:
 			for validator in additional_validators:
-				result = result and validator(phase, self)
+				result = validator(phase, self) and result
 
 		return result
 
@@ -200,7 +213,7 @@ class PluginInfo(object):
 
 	def long_str(self, show_bundled=False, bundled_strs=(" [B]", ""),
 	             show_location=False, location_str=" - {location}",
-	             show_enabled=False, enabled_strs=("* ", "  ")):
+	             show_enabled=False, enabled_strs=("* ", "  ", "X ")):
 		"""
 		Long string representation of the plugin's information. Will return a string of the format ``<enabled><str(self)><bundled><location>``.
 
@@ -208,8 +221,8 @@ class PluginInfo(object):
 		The will be filled from ``enabled_str``, ``bundled_str`` and ``location_str`` as follows:
 
 		``enabled_str``
-		    a 2-tuple, the first entry being the string to insert when the plugin is enabled, the second
-		    entry the string to insert when it is not.
+		    a 3-tuple, the first entry being the string to insert when the plugin is enabled, the second
+		    entry the string to insert when it is not, the third entry the string when it is blacklisted.
 		``bundled_str``
 		    a 2-tuple, the first entry being the string to insert when the plugin is bundled, the second
 		    entry the string to insert when it is not.
@@ -229,7 +242,7 @@ class PluginInfo(object):
 		    str: The long string representation of the plugin as described above
 		"""
 		if show_enabled:
-			ret = enabled_strs[0] if self.enabled else enabled_strs[1]
+			ret = enabled_strs[2] if self.blacklisted else (enabled_strs[0] if self.enabled else enabled_strs[1])
 		else:
 			ret = ""
 
@@ -283,7 +296,9 @@ class PluginInfo(object):
 		Returns:
 		    str: Name of the plugin, fallback is the plugin's identifier.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_name, defaults=(self._name, self.key))
+		return self._get_instance_attribute(self.__class__.attr_name,
+		                                    defaults=(self._name, self.key),
+		                                    incl_metadata=True)
 
 	@property
 	def description(self):
@@ -295,7 +310,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Description of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
+		return self._get_instance_attribute(self.__class__.attr_description,
+		                                    default=self._description,
+		                                    incl_metadata=True)
 
 	@property
 	def disabling_discouraged(self):
@@ -319,7 +336,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Version of the plugin.
 		"""
-		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=self._version)
+		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version,
+		                                                                                    default=self._version,
+		                                                                                    incl_metadata=True)
 
 	@property
 	def author(self):
@@ -330,7 +349,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Author of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_author, default=self._author)
+		return self._get_instance_attribute(self.__class__.attr_author,
+		                                    default=self._author,
+		                                    incl_metadata=True)
 
 	@property
 	def url(self):
@@ -341,7 +362,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Website URL for the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
+		return self._get_instance_attribute(self.__class__.attr_url,
+		                                    default=self._url,
+		                                    incl_metadata=True)
 
 	@property
 	def license(self):
@@ -352,7 +375,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: License of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_license, default=self._license)
+		return self._get_instance_attribute(self.__class__.attr_license,
+		                                    default=self._license,
+		                                    incl_metadata=True)
 
 	@property
 	def hooks(self):
@@ -443,14 +468,78 @@ class PluginInfo(object):
 		"""
 		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
-	def _get_instance_attribute(self, attr, default=None, defaults=None):
-		if not hasattr(self.instance, attr):
-			if defaults is not None:
+	def _get_instance_attribute(self, attr, default=None, defaults=None, incl_metadata=False):
+		if self.instance is None or not hasattr(self.instance, attr):
+			if incl_metadata and attr in self.parsed_metadata:
+				return self.parsed_metadata[attr]
+
+			elif defaults is not None:
 				for value in defaults:
+					if callable(value):
+						value = value()
 					if value is not None:
 						return value
+
 			return default
+
 		return getattr(self.instance, attr)
+
+	@property
+	def parsed_metadata(self):
+		if self._cached_parsed_metadata is None:
+			self._cached_parsed_metadata = self._parse_metadata()
+		return self._cached_parsed_metadata
+
+	def _parse_metadata(self):
+		result = dict()
+
+		path = self.location
+		if not path:
+			return result
+
+		if os.path.isdir(path):
+			path = os.path.join(self.location, "__init__.py")
+
+		if not os.path.isfile(path):
+			return result
+
+		if not path.endswith(".py"):
+			# we only support parsing plain text source files
+			return result
+
+		self._logger.debug("Parsing plugin metadata for {} from AST of {}".format(self.key, path))
+
+		try:
+			import ast
+
+			with open(path, "rb") as f:
+				root = ast.parse(f.read())
+
+			assignments = filter(lambda x: isinstance(x, ast.Assign) and x.targets,
+			                     root.body)
+
+			def extract_target_ids(node):
+				return map(lambda x: x.id,
+				           filter(lambda x: isinstance(x, ast.Name), node.targets))
+
+			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
+			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
+				for a in reversed(assignments):
+					targets = extract_target_ids(a)
+					if key in targets:
+						if isinstance(a.value, ast.Str):
+							result[key] = a.value.s
+
+						elif isinstance(a.value, ast.Call) and hasattr(a.value, "func") \
+								and a.value.func.id == "gettext" and a.value.args \
+								and isinstance(a.value.args[0], ast.Str):
+							result[key] = a.value.args[0].s
+
+						break
+		except:
+			pass
+
+		return result
 
 
 class PluginManager(object):
@@ -461,26 +550,29 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None,
-	             plugin_disabled_list=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None,
-	             plugin_validators=None):
+	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
+	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
+	             plugin_obsolete_hooks=None, plugin_validators=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
 			logging_prefix = ""
 		if plugin_folders is None:
 			plugin_folders = []
-		if plugin_types is None:
-			plugin_types = []
+		if plugin_bases is None:
+			plugin_bases = []
 		if plugin_entry_points is None:
 			plugin_entry_points = []
 		if plugin_disabled_list is None:
 			plugin_disabled_list = []
+		if plugin_blacklist is None:
+			plugin_blacklist = []
 
 		self.plugin_folders = plugin_folders
-		self.plugin_types = plugin_types
+		self.plugin_bases = plugin_bases
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
+		self.plugin_blacklist = plugin_blacklist
 		self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
 		self.plugin_obsolete_hooks = plugin_obsolete_hooks
 		self.plugin_validators = plugin_validators
@@ -542,60 +634,84 @@ class PluginManager(object):
 		if existing is None:
 			existing = dict(self.plugins)
 
-		result = dict()
+		result = OrderedDict()
 		if self.plugin_folders:
-			result.update(self._find_plugins_from_folders(self.plugin_folders, existing, ignored_uninstalled=ignore_uninstalled))
+			try:
+				result.update(self._find_plugins_from_folders(self.plugin_folders,
+				                                              existing,
+				                                              ignored_uninstalled=ignore_uninstalled))
+			except:
+				self.logger.exception("Error fetching plugins from folders")
 		if self.plugin_entry_points:
 			existing.update(result)
-			result.update(self._find_plugins_from_entry_points(self.plugin_entry_points, existing, ignore_uninstalled=ignore_uninstalled))
+			try:
+				result.update(self._find_plugins_from_entry_points(self.plugin_entry_points,
+				                                                   existing,
+				                                                   ignore_uninstalled=ignore_uninstalled))
+			except:
+				self.logger.exception("Error fetching plugins from entry points")
 		return result
 
 	def _find_plugins_from_folders(self, folders, existing, ignored_uninstalled=True):
-		result = dict()
+		result = OrderedDict()
 
 		for folder in folders:
-			flagged_readonly = False
-			if isinstance(folder, (list, tuple)):
-				if len(folder) == 2:
-					folder, flagged_readonly = folder
-				else:
-					continue
-			actual_readonly = not os.access(folder, os.W_OK)
-
-			if not os.path.exists(folder):
-				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
-				continue
-
-			for entry in scandir(folder):
-				if entry.is_dir() and os.path.isfile(os.path.join(entry.path, "__init__.py")):
-					key = entry.name
-				elif entry.is_file() and entry.name.endswith(".py"):
-					key = entry.name[:-3] # strip off the .py extension
-					if key.startswith("__"):
-						# might be an __init__.py in our plugins folder, or something else we don't want
-						# to handle
+			try:
+				flagged_readonly = False
+				if isinstance(folder, (list, tuple)):
+					if len(folder) == 2:
+						folder, flagged_readonly = folder
+					else:
 						continue
-				else:
+				actual_readonly = not os.access(folder, os.W_OK)
+
+				if not os.path.exists(folder):
+					self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 					continue
 
-				if key in existing or key in result or (ignored_uninstalled and key in self.marked_plugins["uninstalled"]):
-					# plugin is already defined, ignore it
-					continue
+				for entry in scandir(folder):
+					try:
+						if entry.is_dir():
+							init_py = os.path.join(entry.path, "__init__.py")
+							init_pyc = os.path.join(entry.path, "__init__.pyc")
 
-				plugin = self._import_plugin_from_module(key, folder=folder)
-				if plugin:
-					plugin.origin = FolderOrigin("folder", folder)
-					plugin.managable = not flagged_readonly and not actual_readonly
-					plugin.bundled = flagged_readonly
+							if not os.path.isfile(init_py) and not os.path.isfile(init_pyc):
+								# neither does exist, we ignore this
+								continue
 
-					plugin.enabled = False
+							key = entry.name
 
-					result[key] = plugin
+						elif entry.is_file():
+							key, ext = os.path.splitext(entry.name)
+							if ext not in (".py", ".pyc") or key.startswith("__"):
+								# neither py nor pyc, or starts with __ (like __init__), we ignore this
+								continue
+
+						else:
+							# whatever this is, we ignore it
+							continue
+
+						if key in existing or key in result or (ignored_uninstalled and key in self.marked_plugins["uninstalled"]):
+							# plugin is already defined, ignore it
+							continue
+
+						bundled = flagged_readonly
+
+						plugin = self._import_plugin_from_module(key, folder=folder, bundled=bundled)
+						if plugin:
+							plugin.origin = FolderOrigin("folder", folder)
+							plugin.managable = not flagged_readonly and not actual_readonly
+							plugin.enabled = False
+							result[key] = plugin
+					except:
+						self.logger.exception("Error processing folder entry {!r} from folder {}".format(entry, folder))
+			except:
+				self.logger.exception("Error processing folder {}".format(folder))
 
 		return result
 
 	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
-		result = dict()
+		result = OrderedDict()
 
 		# let's make sure we have a current working set ...
 		working_set = pkg_resources.WorkingSet()
@@ -612,55 +728,69 @@ class PluginManager(object):
 		if not isinstance(groups, (list, tuple)):
 			groups = [groups]
 
-		for group in groups:
-			for entry_point in working_set.iter_entry_points(group=group, name=None):
-				key = entry_point.name
-				module_name = entry_point.module_name
-				version = entry_point.dist.version
-
-				if key in existing or key in result or (ignore_uninstalled and key in self.marked_plugins["uninstalled"]):
-					# plugin is already defined or marked as uninstalled, ignore it
-					continue
-
-				kwargs = dict(module_name=module_name, version=version)
-				package_name = None
+		def wrapped(gen):
+			# to protect against some issues in installed packages that make iteration over entry points
+			# fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
+			for entry in gen:
 				try:
-					module_pkginfo = InstalledEntryPoint(entry_point)
+					yield entry
 				except:
-					self.logger.exception("Something went wrong while retrieving package info data for module %s" % module_name)
-				else:
-					kwargs.update(dict(
-						name=module_pkginfo.name,
-						summary=module_pkginfo.summary,
-						author=module_pkginfo.author,
-						url=module_pkginfo.home_page,
-						license=module_pkginfo.license
-					))
-					package_name = module_pkginfo.name
+					self.logger.exception("Something went wrong while processing the entry points of a package in the "
+					                      "Python environment - broken entry_points.txt in some package?")
 
-				plugin = self._import_plugin_from_module(key, **kwargs)
-				if plugin:
-					plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+		for group in groups:
+			for entry_point in wrapped(working_set.iter_entry_points(group=group, name=None)):
+				try:
+					key = entry_point.name
+					module_name = entry_point.module_name
+					version = entry_point.dist.version
 
-					# plugin is manageable if its location is writable and OctoPrint
-					# is either not running from a virtual env or the plugin is
-					# installed in that virtual env - the virtual env's pip will not
-					# allow us to uninstall stuff that is installed outside
-					# of the virtual env, so this check is necessary
-					plugin.managable = os.access(plugin.location, os.W_OK) \
-					                   and (not self._python_virtual_env
-					                        or is_sub_path_of(plugin.location, self._python_prefix)
-											or is_editable_install(self._python_install_dir,
-																   package_name,
-																   module_name,
-																   plugin.location))
+					if key in existing or key in result or (ignore_uninstalled and key in self.marked_plugins["uninstalled"]):
+						# plugin is already defined or marked as uninstalled, ignore it
+						continue
 
-					plugin.enabled = False
-					result[key] = plugin
+					kwargs = dict(module_name=module_name, version=version)
+					package_name = None
+					try:
+						module_pkginfo = InstalledEntryPoint(entry_point)
+					except:
+						self.logger.exception("Something went wrong while retrieving package info data for module %s" % module_name)
+					else:
+						kwargs.update(dict(
+							name=module_pkginfo.name,
+							summary=module_pkginfo.summary,
+							author=module_pkginfo.author,
+							url=module_pkginfo.home_page,
+							license=module_pkginfo.license
+						))
+						package_name = module_pkginfo.name
+
+					plugin = self._import_plugin_from_module(key, **kwargs)
+					if plugin:
+						plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+						plugin.enabled = False
+
+						# plugin is manageable if its location is writable and OctoPrint
+						# is either not running from a virtual env or the plugin is
+						# installed in that virtual env - the virtual env's pip will not
+						# allow us to uninstall stuff that is installed outside
+						# of the virtual env, so this check is necessary
+						plugin.managable = os.access(plugin.location, os.W_OK) \
+						                   and (not self._python_virtual_env
+						                        or is_sub_path_of(plugin.location, self._python_prefix)
+						                        or is_editable_install(self._python_install_dir,
+						                                               package_name,
+						                                               module_name,
+						                                               plugin.location))
+
+						result[key] = plugin
+				except:
+					self.logger.exception("Error processing entry point {!r} for group {}".format(entry_point, group))
 
 		return result
 
-	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
+	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None,
+	                               author=None, url=None, license=None, bundled=False):
 		# TODO error handling
 		try:
 			if folder:
@@ -673,8 +803,41 @@ class PluginManager(object):
 			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
-		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
-		if plugin is None:
+		# Create a simple dummy entry first ...
+		plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author,
+		                    url=url, license=license)
+		plugin.bundled = bundled
+
+		if self._is_plugin_disabled(key):
+			self.logger.info("Plugin {} is disabled.".format(plugin))
+			plugin.forced_disabled = True
+
+		if self._is_plugin_blacklisted(key) or (plugin.version is not None and self._is_plugin_version_blacklisted(key, plugin.version)):
+			self.logger.warn("Plugin {} is blacklisted.".format(plugin))
+			plugin.blacklisted = True
+
+		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
+			return plugin
+
+		# ... then create and return the real one
+		return self._import_plugin(key, *module,
+		                           name=name, version=version, summary=summary, author=author, url=url,
+		                           license=license, bundled=bundled, parsed_metadata=plugin.parsed_metadata)
+
+	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
+		try:
+			instance = imp.load_module(key, f, filename, description)
+			plugin = PluginInfo(key, filename, instance,
+			                    name=name,
+			                    version=version,
+			                    description=summary,
+			                    author=author,
+			                    url=url,
+			                    license=license,
+			                    parsed_metadata=parsed_metadata)
+			plugin.bundled = bundled
+		except:
+			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
 		if plugin.check():
@@ -683,17 +846,21 @@ class PluginManager(object):
 			self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
 			return None
 
-
-	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
-		try:
-			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
-		except:
-			self.logger.exception("Error loading plugin {key}".format(key=key))
-			return None
-
 	def _is_plugin_disabled(self, key):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
+
+	def _is_plugin_blacklisted(self, key):
+		return key in self.plugin_blacklist
+
+	def _is_plugin_version_blacklisted(self, key, version):
+		def matches_plugin(entry):
+			if isinstance(entry, (tuple, list)) and len(entry) == 2:
+				entry_key, entry_version = entry
+				return entry_key == key and entry_version == version
+			return False
+
+		return any(map(lambda entry: matches_plugin(entry),
+		               self.plugin_blacklist))
 
 	def reload_plugins(self, startup=False, initialize_implementations=True, force_reload=None):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(
@@ -709,7 +876,8 @@ class PluginManager(object):
 		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
-				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
+				if not plugin.blacklisted and not plugin.forced_disabled:
+					self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
 			except PluginNeedsRestart:
 				pass
 			except PluginLifecycleException as e:
@@ -722,7 +890,10 @@ class PluginManager(object):
 		# 2nd pass: enabling those plugins that need enabling
 		for name, plugin in plugins.items():
 			try:
-				if plugin.loaded and not self._is_plugin_disabled(name):
+				if plugin.loaded and not plugin.forced_disabled:
+					if plugin.blacklisted:
+						self.logger.warn("Plugin {} is blacklisted. Not enabling it.".format(plugin))
+						continue
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
 				pass
@@ -776,7 +947,6 @@ class PluginManager(object):
 			plugin.load()
 			plugin.validate("after_load", additional_validators=self.plugin_validators)
 			self.on_plugin_loaded(name, plugin)
-
 			plugin.loaded = True
 
 			self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
@@ -910,9 +1080,9 @@ class PluginManager(object):
 
 		# evaluate registered implementation
 		if plugin.implementation:
-			for plugin_type in self.plugin_types:
-				if isinstance(plugin.implementation, plugin_type):
-					self.plugin_implementations_by_type[plugin_type].append((name, plugin.implementation))
+			mixins = self.mixins_matching_bases(plugin.implementation.__class__, *self.plugin_bases)
+			for mixin in mixins:
+				self.plugin_implementations_by_type[mixin].append((name, plugin.implementation))
 
 			self.plugin_implementations[name] = plugin.implementation
 
@@ -935,9 +1105,10 @@ class PluginManager(object):
 			if name in self.plugin_implementations:
 				del self.plugin_implementations[name]
 
-			for plugin_type in self.plugin_types:
+			mixins = self.mixins_matching_bases(plugin.implementation.__class__, *self.plugin_bases)
+			for mixin in mixins:
 				try:
-					self.plugin_implementations_by_type[plugin_type].remove((name, plugin.implementation))
+					self.plugin_implementations_by_type[mixin].remove((name, plugin.implementation))
 				except ValueError:
 					# that's ok, the plugin was just not registered for the type
 					pass
@@ -946,45 +1117,118 @@ class PluginManager(object):
 		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
-		if not plugin.implementation:
-			return False
-
-		return isinstance(plugin.implementation, RestartNeedingPlugin)
+		return self.has_any_of_mixins(plugin, RestartNeedingPlugin)
 
 	def has_restart_needing_hooks(self, plugin):
-		if not plugin.hooks:
-			return False
-
-		hooks = plugin.hooks.keys()
-		for hook in hooks:
-			if self.is_restart_needing_hook(hook):
-				return True
-		return False
+		return self.has_any_of_hooks(plugin, self.plugin_restart_needing_hooks)
 
 	def has_obsolete_hooks(self, plugin):
-		if not plugin.hooks:
-			return False
-
-		hooks = plugin.hooks.keys()
-		for hook in hooks:
-			if self.is_obsolete_hook(hook):
-				return True
-		return False
+		return self.has_any_of_hooks(plugin, self.plugin_obsolete_hooks)
 
 	def is_restart_needing_hook(self, hook):
-		if self.plugin_restart_needing_hooks is None:
-			return False
-
-		for h in self.plugin_restart_needing_hooks:
-			if hook.startswith(h):
-				return True
-
-		return False
+		return self.hook_matches_hooks(hook, self.plugin_restart_needing_hooks)
 
 	def is_obsolete_hook(self, hook):
-		if self.plugin_obsolete_hooks is None:
+		return self.hook_matches_hooks(hook, self.plugin_obsolete_hooks)
+
+	@staticmethod
+	def has_any_of_hooks(plugin, *hooks):
+		"""
+		Tests if the ``plugin`` contains any of the provided ``hooks``.
+
+		Uses :func:`octoprint.plugin.core.PluginManager.hook_matches_hooks`.
+
+		Args:
+			plugin: plugin to test hooks for
+			*hooks: hooks to test against
+
+		Returns:
+			(bool): True if any of the plugin's hooks match the provided hooks,
+			        False otherwise.
+		"""
+
+		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
+			hooks = hooks[0]
+
+		hooks = filter(lambda hook: hook is not None, hooks)
+		if not hooks:
 			return False
-		return hook in self.plugin_obsolete_hooks
+		if not plugin or not plugin.hooks:
+			return False
+
+		plugin_hooks = plugin.hooks.keys()
+
+		return any(map(lambda hook: PluginManager.hook_matches_hooks(hook, *hooks),
+		               plugin_hooks))
+
+	@staticmethod
+	def hook_matches_hooks(hook, *hooks):
+		"""
+		Tests if ``hook`` matches any of the provided ``hooks`` to test for.
+
+		``hook`` is expected to be an exact hook name.
+
+		``hooks`` is expected to be a list containing one or more hook names or
+		patterns. That can be either an exact hook name or an
+		:func:`fnmatch.fnmatch` pattern.
+
+		Args:
+			hook: the hook to test
+			hooks: the hook name patterns to test against
+
+		Returns:
+			(bool): True if the ``hook`` matches any of the ``hooks``, False otherwise.
+
+		"""
+
+		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
+			hooks = hooks[0]
+
+		hooks = filter(lambda hook: hook is not None, hooks)
+		if not hooks:
+			return False
+		if not hook:
+			return False
+
+		return any(map(lambda h: fnmatch.fnmatch(hook, h),
+		               hooks))
+
+	@staticmethod
+	def mixins_matching_bases(klass, *bases):
+		result = set()
+		for c in inspect.getmro(klass):
+			if c == klass or c in bases:
+				# ignore the exact class and our bases
+				continue
+			if issubclass(c, bases):
+				result.add(c)
+		return result
+
+	@staticmethod
+	def has_any_of_mixins(plugin, *mixins):
+		"""
+		Tests if the ``plugin`` has an implementation implementing any
+		of the provided ``mixins``.
+
+		Args:
+			plugin: plugin for which to check the implementation
+			*mixins: mixins to test against
+
+		Returns:
+			(bool): True if the plugin's implementation implements any of the
+			        provided mixins, False otherwise.
+		"""
+
+		if mixins and len(mixins) == 1 and isinstance(mixins[0], (list, tuple)):
+			mixins = mixins[0]
+
+		mixins = filter(lambda mixin: mixin is not None, mixins)
+		if not mixins:
+			return False
+		if not plugin or not plugin.implementation:
+			return False
+
+		return isinstance(plugin.implementation, tuple(mixins))
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None, additional_pre_inits=None, additional_post_inits=None):
 		for name, plugin in self.enabled_plugins.items():
@@ -1083,7 +1327,7 @@ class PluginManager(object):
 
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True,
-	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!"),
+	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!", "#"),
 	                    only_to_handler=None):
 		all_plugins = self.enabled_plugins.values() + self.disabled_plugins.values()
 
@@ -1255,7 +1499,8 @@ class PluginManager(object):
 	def register_message_receiver(self, client):
 		"""
 		Registers a ``client`` for receiving plugin messages. The ``client`` needs to be a callable accepting two
-		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself).
+		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself), and one
+		optional keyword argument, ``permissions`` (an optional list of permissions to test against).
 		"""
 
 		if client is None:
@@ -1267,20 +1512,25 @@ class PluginManager(object):
 		Unregisters a ``client`` for receiving plugin messages.
 		"""
 
-		self.registered_clients.remove(client)
+		try:
+			self.registered_clients.remove(client)
+		except ValueError:
+			# not registered
+			pass
 
-	def send_plugin_message(self, plugin, data):
+	def send_plugin_message(self, plugin, data, permissions=None):
 		"""
 		Sends ``data`` in the name of ``plugin`` to all currently registered message receivers by invoking them
-		with the two arguments.
+		with the three arguments.
 
 		Arguments:
 		    plugin (str): The sending plugin's identifier.
 		    data (object): The message.
+		    permissions (list): A list of permissions to test against in the client.
 		"""
 
 		for client in self.registered_clients:
-			try: client(plugin, data)
+			try: client(plugin, data, permissions=permissions)
 			except: self.logger.exception("Exception while sending plugin data to client")
 
 	def _sort_hooks(self, hook):
@@ -1425,6 +1675,13 @@ class Plugin(object):
 	   :class:`PluginManager` concatenated with :attr:`_identifier`. Injected by the plugin core system upon
 	   initialization of the implementation.
 	"""
+
+	def __init__(self):
+		self._identifier = None
+		self._plugin_name = None
+		self._plugin_version = None
+		self._basefolder = None
+		self._logger = None
 
 	def initialize(self):
 		"""

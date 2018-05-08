@@ -530,6 +530,13 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 	def test_cookie_suffix(self):
 		request = OctoPrintFlaskRequest(standard_environ)
 		self.assertEquals("_P5000", request.cookie_suffix)
+	
+	def test_cookie_suffix_with_root(self):
+		script_root_environ = dict(standard_environ)
+		script_root_environ["SCRIPT_NAME"] = "/path/to/octoprint"
+		
+		request = OctoPrintFlaskRequest(script_root_environ)
+		self.assertEquals("_P5000_R|path|to|octoprint", request.cookie_suffix)
 
 	def test_cookies(self):
 		environ = dict(standard_environ)
@@ -561,8 +568,10 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 	def test_cookie_set_and_delete(self, path, scriptroot):
 		environ = dict(standard_environ)
 
+		expected_suffix = "_P5000"
 		if scriptroot is not None:
 			environ.update(dict(SCRIPT_NAME=scriptroot))
+			expected_suffix += "_R" + scriptroot.replace("/", "|")
 
 		request = OctoPrintFlaskRequest(environ)
 
@@ -586,7 +595,7 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 				response.set_cookie("some_key", "some_value", **kwargs)
 
 				# set_cookie should have key and path values adjusted
-				set_cookie_mock.assert_called_once_with(response, "some_key_P5000", "some_value", path=expected_path_set)
+				set_cookie_mock.assert_called_once_with(response, "some_key" + expected_suffix, "some_value", path=expected_path_set)
 
 			# test delete_cookie
 			with mock.patch("flask.Response.set_cookie") as set_cookie_mock:

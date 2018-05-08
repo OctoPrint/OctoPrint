@@ -16,11 +16,13 @@ from flask import request, g, url_for, make_response, render_template, send_from
 
 import octoprint.plugin
 
-from octoprint.server import app, userManager, pluginManager, gettext, \
+from octoprint.server import app, userManager, groupManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
+from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
+from octoprint.util import to_unicode
 
 import re
 import base64
@@ -347,13 +349,12 @@ def index():
 		filtered_templates = _filter_templates(_templates[locale], default_template_filter)
 
 		wizard = wizard_active(filtered_templates)
-		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
+		accesscontrol_active = enable_accesscontrol and userManager.has_been_customized()
 
 		render_kwargs = _get_render_kwargs(filtered_templates,
 		                                   _plugin_names,
 		                                   _plugin_vars,
 		                                   now)
-
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -421,6 +422,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 	first_run = settings().getBoolean(["server", "firstRun"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+	permissions = [permission.as_dict() for permission in Permissions.all()]
 	extensions = map(lambda ext: ".{}".format(ext), get_all_extensions())
 
 	#~~ prepare full set of template vars for rendering
@@ -433,6 +435,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
+		permissions=permissions,
 		supportedExtensions=extensions
 	)
 	render_kwargs.update(plugin_vars)
@@ -460,13 +463,26 @@ def _process_templates():
 	)
 
 	# sorting orders
+	def wizard_key_extractor(d, k):
+		if d[1].get("_key", None) == "plugin_corewizard_acl":
+			# Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
+			# that require to access APIs to function will run into errors since those APIs won't work before ACL
+			# has been configured. See also #2140
+			return u"0:{}".format(to_unicode(d[0]))
+		elif d[1].get("mandatory", False):
+			# Other mandatory steps come before the optional ones
+			return u"1:{}".format(to_unicode(d[0]))
+		else:
+			# Finally everything else
+			return u"2:{}".format(to_unicode(d[0]))
+
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
 		sidebar=dict(add="append", key="name"),
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
-		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
+		wizard=dict(add="append", key="name", key_extractor=wizard_key_extractor),
 		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
@@ -513,27 +529,27 @@ def _process_templates():
 	# navbar
 
 	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin"),
-		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"),
+		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", classes=["dropdown"], styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SYSTEM)", custom_bindings=False),
 		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False),
 	)
 
 	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isUser")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2"))
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.CONNECTION)", template_header="sidebar/connection_header.jinja2")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.STATUS)")),
+		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.FILES_LIST)"))
 	)
 
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
-		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
-		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
-		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
-		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL)")),
+		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.WEBCAM, access.permissions.CONTROL)")),
+		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.GCODE_VIEWER)")),
+		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.MONITOR_TERMINAL)")),
+		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_LIST)"))
 	)
 
 	# settings dialog
@@ -559,7 +575,6 @@ def _process_templates():
 		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
 		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
-		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
 		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
 

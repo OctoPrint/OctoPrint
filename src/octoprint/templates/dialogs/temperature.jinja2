@@ -1,0 +1,34 @@
+<div id="change_offset_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: changingOffset.title"></h3>
+    </div>
+    <div class="modal-body">
+        <p data-bind="text: changingOffset.description"></p>
+        <form class="form-horizontal" data-bind="submit: confirmChangeOffset">
+            <div class="control-group">
+                <label class="control-label">{{ _('Current Offset') }}</label>
+                <div class="controls">
+                    <label class="control-text" data-bind="html: changingOffset.offset() + ' &deg;C'"></label>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('New Offset') }}</label>
+                <div class="controls">
+                    <div class="input-prepend input-append">
+                        <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementChangeOffset" title="{{ _('-1') }}"><i class="fa fa-minus"></i></button>
+                        <input type="number" min="-50" max="50" class="input-mini input-nospin" style="width: 30px" data-bind="value: changingOffset.newOffset, event: { focus: function(d, e) {$root.handleFocus(e, 'target', changingOffset.item);}, keyup: function(d, e) {$root.handleEnter(e, 'offset', changingOffset.item);} }">
+                        <span class="add-on">&deg;C</span>
+                        <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementChangeOffset" title="{{ _('+1') }}"><i class="fa fa-plus"></i></button>
+                    </div>
+                    <button type="button" class="btn" data-bind="click: $root.deleteChangeOffset" title="{{ _('Delete Offset') }}"><i class="fa fa-trash"></i></button>
+                    <span class="help-block">{{ _('Hint: Hitting <kbd>Enter</kbd> in the input field will also submit the form') }}</span>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="javascript:void(0)" class="btn btn-primary" data-bind="click: confirmChangeOffset">{{ _('Save') }}</a>
+    </div>
+</div>

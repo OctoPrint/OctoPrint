@@ -1,7 +1,7 @@
-<div class="control-group" data-bind="visible: config_availableCheckTypes().length > 0 && config_checkType() == 'github_release'">
+<div class="control-group" data-bind="visible: config_availableReleaseChannels().length && config_checkType() === 'github_release'">
     <label class="control-label">{{ _('OctoPrint Release Channel') }}</label>
     <div class="controls">
         <select data-bind="value: config_releaseChannel, options: config_availableReleaseChannels, optionsText: 'name', optionsValue: 'key'"></select>
-        <span class="help-inline">{{ _('Make sure you have read <a href="%(url)s" target="_blank" rel="noreferrer noopener">"Using Release Channels"</a> before switching to a release channel other than "Stable"', url="https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels") }}</span>
+        <span class="help-inline">{{ _('Make sure you have read <a href="%(url)s" target="_blank" rel="noreferrer noopener">"How to use the release channels to help test release candidates"</a> before switching to a release channel other than "Stable"', url="https://faq.octoprint.org/using-release-channels") }}</span>
     </div>
 </div>

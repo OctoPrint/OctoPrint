@@ -20,17 +20,17 @@ from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
 
-from octoprint.server import admin_permission
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import require_firstrun
 
 from octoprint.plugin import plugin_manager
+from octoprint.access.permissions import Permissions
 
 from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def getInstalledLanguagePacks():
 	translation_folder = settings().getBaseFolder("translations")
 	if not os.path.exists(translation_folder):
@@ -87,8 +87,8 @@ def getInstalledLanguagePacks():
 	return jsonify(language_packs=result)
 
 @api.route("/languages", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def uploadLanguagePack():
 	input_name = "file"
 	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
@@ -115,8 +115,8 @@ def uploadLanguagePack():
 	return getInstalledLanguagePacks()
 
 @api.route("/languages/<string:locale>/<string:pack>", methods=["DELETE"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
 
 	if pack == "_core":

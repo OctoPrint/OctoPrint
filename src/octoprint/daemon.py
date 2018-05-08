@@ -6,7 +6,7 @@ Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon
 """
 
 from __future__ import absolute_import, division, print_function
-import sys, os, time, signal, io
+import sys, os, time, signal
 
 class Daemon:
 	"""

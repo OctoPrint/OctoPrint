@@ -56,9 +56,9 @@ Example:
            // more of your view model's implementation
        }
 
-       // we don't explicitely declare a name property here
+       // we don't explicitly declare a name property here
        // our view model will be registered under "myCustomViewModel" (implicit
-       // name derived from contructor name) and "yourCustomViewModel" (explicitely
+       // name derived from constructor name) and "yourCustomViewModel" (explicitly
        // provided as additional name)
        OCTOPRINT_VIEWMODELS.push({
            construct: MyCustomViewModel,
@@ -125,7 +125,7 @@ gcodeFilesViewModel
 logViewModel
    View model for the logfile settings dialog.
 loginStateViewModel
-   View model for the current loginstate of the user, very interesting for plugins that need to
+   View model for the current login state of the user, very interesting for plugins that need to
    evaluate the current login state or information about the current user, e.g. associated roles.
 navigationViewModel
    View model for the navigation bar.
@@ -168,7 +168,7 @@ OctoPrint's web application will call several callbacks on all registered view m
 Those are listed below:
 
 onStartup()
-   Called when the first initialization has been done: All view models are constructed and hence their dependencies
+   Called when the first initialization has been done. All view models are constructed and hence their dependencies
    resolved, no bindings have been done yet.
 
 onBeforeBinding()
@@ -210,7 +210,7 @@ onDataUpdaterPluginMessage(plugin, message)
    Called when a plugin message is pushed from the server with the identifier of the calling plugin as first
    and the actual message as the second parameter. Note that the latter might be a full fledged object, depending
    on the plugin sending the message. You can use this method to asynchronously push data from your plugin's server
-   component to it's frontend component.
+   component to its frontend component.
 
 onUserLoggedIn(user)
    Called when a user gets logged into the web app, either passively (upon initial load of the page due to a valid
@@ -219,6 +219,11 @@ onUserLoggedIn(user)
 
 onUserLoggedOut()
    Called when a user gets logged out of the web app.
+
+onUserPermissionsChanged(user)
+   Called when a change in the permissions of the current user is detected. The user data of the just logged in user
+   will be provided as only parameter. Note that this may also be triggered for not logged in guests if the guest
+   group is modified. In this case ``user`` will be undefined.
 
 onTabChange(next, current)
    Called before the main tab view switches to a new tab, so `before` the new tab becomes visible. Called with the
@@ -298,6 +303,138 @@ on your view model, taking a list of all bound view models:
            elements: ["#some_div", "#some_other_div"]
        });
    })
+
+.. _sec-plugins-viewmodels-livecycle:
+
+Lifecycle diagrams
+------------------
+
+.. _sec-plugins-viewmodels-startup:
+
+Web interface startup
+~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   sequenceDiagram
+      participant Main
+      participant DataUpdater
+      participant LoginStateViewModel
+      participant SettingsViewModel
+      participant UiStateViewModel
+
+      Note over DataUpdater: connectCallback = undefined
+      Note over UiStateViewModel: loaded = false
+
+      activate Main
+
+      Main->>+DataUpdater: connect
+      Note right of DataUpdater: initialized = false
+      DataUpdater-->>Main: ok
+      deactivate Main
+      DataUpdater->>DataUpdater: asynchronous connect to server...
+      activate DataUpdater
+      Note right of DataUpdater: store any callbacks instead of triggering (e.g. onServerConnect, fromHistoryData, fromCurrentData, ...)
+      DataUpdater-X+Main: done
+      deactivate DataUpdater
+      deactivate DataUpdater
+
+      Main->>+DataUpdater: connectCallback = onServerConnect
+      Note right of DataUpdater: connectCallback = onServerConnect
+      DataUpdater-->>-Main: ok
+      Main->>+Main: onServerConnect
+      Main->>+LoginStateViewModel: passiveLogin
+      LoginStateViewModel-->>Main: ok
+      Main-->>Main: ok
+      deactivate Main
+      deactivate Main
+
+      LoginStateViewModel->>+LoginStateViewModel: asynchronous passive login
+      Note over Main,UiStateViewModel: Session available!
+      LoginStateViewModel-X+Main: done
+      deactivate LoginStateViewModel
+      deactivate LoginStateViewModel
+
+      Main->>+DataUpdater: initialized
+      Note right of DataUpdater: initialized = true
+      DataUpdater->DataUpdater: trigger stored callbacks
+      DataUpdater-->>-Main: ok
+
+      Main->>+Main: fetchSettings
+      Note right of Main: trigger onStartup
+
+      Main->>+SettingsViewModel: requestData
+      SettingsViewModel-->>Main: ok
+      deactivate Main
+      deactivate Main
+
+      SettingsViewModel->>+SettingsViewModel: asynchronous settings fetch
+      Note over Main,UiStateViewModel: Settings available!
+      SettingsViewModel-X+Main: done
+      deactivate SettingsViewModel
+      deactivate SettingsViewModel
+
+      Main->>+Main: bindViewModels
+
+      loop for each view model
+          Main->Main: trigger onBeforeBinding
+          Main->Main: trigger onBoundTo
+          Main->Main: trigger onAfterBinding
+      end
+
+      Main->Main: trigger onAllBound
+      opt User is logged in
+         Main->>+LoginStateViewModel: onAllBound
+         LoginStateViewModel->LoginStateViewModel: trigger onUserLoggedIn
+         LoginStateViewModel-->>-Main: ok
+      end
+
+      Main->>+UiStateViewModel: loaded
+      Note right of UiStateViewModel: loaded = true
+      UiStateViewModel-->>-Main: ok
+
+      Main->Main: trigger onStartupComplete
+      deactivate Main
+      deactivate Main
+
+
+.. _sec-plugins-viewmodels-reconnect:
+
+Web interface reconnect
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   sequenceDiagram
+      participant onServerConnect
+      participant DataUpdater
+      participant LoginStateViewModel
+
+      activate DataUpdater
+      DataUpdater->>DataUpdater: call connectCallback
+      DataUpdater->>+onServerConnect: call
+      onServerConnect-->>DataUpdater: ok
+      deactivate DataUpdater
+
+      onServerConnect->>+LoginStateViewModel: passiveLogin
+      LoginStateViewModel-->>onServerConnect: ok
+      deactivate onServerConnect
+      LoginStateViewModel->>+LoginStateViewModel: asynchronous passive login
+      Note over onServerConnect,LoginStateViewModel: Session available!
+      opt User is logged in
+         LoginStateViewModel->LoginStateViewModel: trigger onUserLoggedIn
+      end
+
+      activate onServerConnect
+      LoginStateViewModel-XonServerConnect: done
+      deactivate LoginStateViewModel
+      deactivate LoginStateViewModel
+
+      onServerConnect->>+DataUpdater: initialized
+      DataUpdater->DataUpdater: trigger stored callbacks
+      DataUpdater-->>onServerConnect: ok
+      deactivate DataUpdater
+      deactivate onServerConnect
 
 .. seealso::
 

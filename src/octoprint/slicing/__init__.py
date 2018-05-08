@@ -147,7 +147,7 @@ class SlicingManager(object):
 	def slicing_enabled(self):
 		"""
 		Returns:
-		    boolean: True if there is at least one configured slicer available, False otherwise.
+		    (boolean) True if there is at least one configured slicer available, False otherwise.
 		"""
 		return len(self.configured_slicers) > 0
 
@@ -155,7 +155,7 @@ class SlicingManager(object):
 	def registered_slicers(self):
 		"""
 		Returns:
-		    list of str: Identifiers of all available slicers.
+		    (list of str) Identifiers of all available slicers.
 		"""
 		return self._slicers.keys()
 
@@ -163,7 +163,7 @@ class SlicingManager(object):
 	def configured_slicers(self):
 		"""
 		Returns:
-		    list of str: Identifiers of all available configured slicers.
+		    (list of str) Identifiers of all available configured slicers.
 		"""
 		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
 
@@ -173,7 +173,7 @@ class SlicingManager(object):
 		Retrieves the default slicer.
 
 		Returns:
-		    str: The identifier of the default slicer or ``None`` if the default slicer is not registered in the
+		    (str) The identifier of the default slicer or ``None`` if the default slicer is not registered in the
 		        system.
 		"""
 		slicer_name = settings().get(["slicing", "defaultSlicer"])
@@ -378,6 +378,10 @@ class SlicingManager(object):
 		If it's a :class:`dict`, a new :class:`SlicingProfile` instance will be created with the supplied meta data and
 		the profile data as the :attr:`~SlicingProfile.data` attribute.
 
+		.. note::
+
+		   If the profile is the first profile to be saved for the slicer, it will automatically be marked as default.
+
 		Arguments:
 		    slicer (str): Identifier of the slicer for which to save the ``profile``.
 		    name (str): Identifier under which to save the ``profile``.
@@ -414,6 +418,8 @@ class SlicingManager(object):
 			if description is not None:
 				profile.description = description
 
+		first_profile = len(self.all_profiles(slicer, require_configured=False)) == 0
+
 		path = self.get_profile_path(slicer, name)
 		is_overwrite = os.path.exists(path)
 
@@ -426,6 +432,10 @@ class SlicingManager(object):
 		               profile=name)
 		event = octoprint.events.Events.SLICING_PROFILE_MODIFIED if is_overwrite else octoprint.events.Events.SLICING_PROFILE_ADDED
 		octoprint.events.eventManager().fire(event, payload)
+
+		if first_profile:
+			# enforce the first profile we add for this slicer  is set as default
+			self.set_default_profile(slicer, name)
 
 		return profile
 
@@ -547,16 +557,8 @@ class SlicingManager(object):
 		if require_configured and not slicer in self.configured_slicers:
 			raise SlicerNotConfigured(slicer)
 
-		profiles = dict()
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
-		for entry in scandir(slicer_profile_path):
-			if not entry.name.endswith(".profile") or octoprint.util.is_hidden_path(entry.name):
-				# we are only interested in profiles and no hidden files
-				continue
-
-			profile_name = entry.name[:-len(".profile")]
-			profiles[profile_name] = self._load_profile_from_path(slicer, entry.path, require_configured=require_configured)
-		return profiles
+		return self.get_slicer(slicer, require_configured=False).get_slicer_profiles(slicer_profile_path)
 
 	def profiles_last_modified(self, slicer):
 		"""
@@ -573,9 +575,7 @@ class SlicingManager(object):
 			raise UnknownSlicer(slicer)
 
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
-		lms = [os.stat(slicer_profile_path).st_mtime]
-		lms += [os.stat(entry.path).st_mtime for entry in scandir(slicer_profile_path) if entry.name.endswith(".profile")]
-		return max(lms)
+		return self.get_slicer(slicer, require_configured=False).get_slicer_profiles_lastmodified(slicer_profile_path)
 
 	def get_slicer_profile_path(self, slicer):
 		"""

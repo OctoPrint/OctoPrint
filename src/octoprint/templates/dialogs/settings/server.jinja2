@@ -4,4 +4,14 @@
     {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
     {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
     {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+
+    <h3>{{ _('Connectivity check') }}</h3>
+
+    {% include "snippets/settings/server/serverOnlineCheckDescription.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheck.jinja2" %}
+
+    <h3>{{ _('Plugin blacklist processing') }}</h3>
+
+    {% include "snippets/settings/server/serverPluginBlacklistDescription.jinja2" %}
+    {% include "snippets/settings/server/serverPluginBlacklist.jinja2" %}
 </form>

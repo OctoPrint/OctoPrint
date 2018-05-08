@@ -91,6 +91,14 @@
         return params;
     };
 
+    var replaceUndefinedWithNull = function(key, value) {
+        if (value === undefined) {
+            return null;
+        } else {
+            return value;
+        }
+    };
+
     OctoPrintClient.prototype.getBaseUrl = function() {
         var url = this.options.baseurl;
         if (!_.endsWith(url, "/")) {
@@ -103,9 +111,11 @@
         additional = additional || {};
 
         var headers = $.extend({}, additional);
-        headers["X-Api-Key"] = this.options.apikey;
 
-        if (this.options.locale !== undefined) {
+        if (this.options.apikey) {
+            headers["X-Api-Key"] = this.options.apikey;
+        }
+        if (this.options.locale) {
             headers["X-Locale"] = this.options.locale;
         }
 
@@ -165,7 +175,7 @@
     };
 
     OctoPrintClient.prototype.postJson = function(url, data, opts) {
-        return this.post(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.post(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.put = function(url, data, opts) {
@@ -173,7 +183,7 @@
     };
 
     OctoPrintClient.prototype.putJson = function(url, data, opts) {
-        return this.put(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.put(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.patch = function(url, data, opts) {
@@ -181,7 +191,7 @@
     };
 
     OctoPrintClient.prototype.patchJson = function(url, data, opts) {
-        return this.patch(url, JSON.stringify(data), contentTypeJson(opts));
+        return this.patch(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
     };
 
     OctoPrintClient.prototype.delete = function(url, opts) {
@@ -326,6 +336,24 @@
     };
 
     OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException("InvalidArgumentError");
+
+    OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
+        return function() {
+            console.warn(deprecatedFct + " is deprecated, please use the new " + newFct + " function instead");
+            return fn.apply(this, arguments);
+        };
+    };
+
+    OctoPrintClient.deprecatedMethod = function(object, oldNamespace, oldFct, newNamespace, newFct, fn) {
+        object[oldFct] = OctoPrintClient.deprecated(oldNamespace + "." + oldFct, newNamespace + "." + newFct, fn);
+    };
+
+    OctoPrintClient.deprecatedVariable = function(object, oldNamespace, oldVar, newNamespace, newVar, getter, setter) {
+        Object.defineProperty(object, oldVar, {
+            get: function() { return OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, getter)(); },
+            set: function(val) { OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, setter)(val); }
+        });
+    };
 
     return OctoPrintClient;
 });

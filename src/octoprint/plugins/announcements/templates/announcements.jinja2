@@ -27,7 +27,7 @@
                             <h3><a data-bind="text: $data.title, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a> <small data-bind="text: formatTimeAgo($data.published), attr: {title: formatDate($data.published)}"></small></h3>
                             <div class="content" data-bind="html: $data.summary"></div>
                             <div class="actions">
-                                <span class="articlelink"><small><a data-bind="text: $data.link, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
+                                <span class="articlelink"><small><a data-bind="text: $root.cleanedLink($data), attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
                                 <span class="markread"><small><a href="javascript:void(0)" data-bind="click: function() { $root.markRead($parent.key, $data.published) }"><i class="fa fa-eye"></i> {{ _('Mark as last read') }}</a></small></span>
                             </div>
                         </article>

@@ -23,10 +23,6 @@ table {
 }
 
 #settings_plugin_pluginmanager_repositorydialog {
-  .slimScrollDiv {
-    margin-bottom: 20px;
-  }
-
   h4 {
     position: relative;
 
@@ -72,23 +68,20 @@ table {
   }
 
   #settings_plugin_pluginmanager_repositorydialog_list {
-    overflow: hidden;
     width: auto;
     height: 300px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding-right: 2px;
 
     .entry {
       border-bottom: 1px solid #ddd;
       padding: 5px;
-      padding-right: 10px;
     }
   }
 }
 
 #settings_plugin_pluginmanager_workingdialog_output {
-  span {
-    display: block;
-  }
-
   .message {
     font-weight: bold;
   }

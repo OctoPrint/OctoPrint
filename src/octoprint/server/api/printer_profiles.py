@@ -14,15 +14,15 @@ from werkzeug.exceptions import BadRequest
 from past.builtins import basestring
 
 from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
-from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
+from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError
+from octoprint.access.permissions import Permissions
 
 def _lastmodified():
 	return printerProfileManager.last_modified
-
 
 def _etag(lm=None):
 	if lm is None:
@@ -40,12 +40,15 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
+@require_firstrun
+@Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerprofiles", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
@@ -99,6 +102,8 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
+@require_firstrun
+@Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
 	if profile is None:
@@ -107,7 +112,8 @@ def printerProfilesGet(identifier):
 		return jsonify(_convert_profile(profile))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
-@restricted_access
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
 	current_profile = printerProfileManager.get_current()
 	if current_profile and current_profile["id"] == identifier:
@@ -121,7 +127,8 @@ def printerProfilesDelete(identifier):
 	return NO_CONTENT
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
-@restricted_access
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)

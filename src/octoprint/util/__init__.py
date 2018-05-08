@@ -1,11 +1,10 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 """
-This module bundles commonly used utility methods or helper classes that are used in multiple places withing
+This module bundles commonly used utility methods or helper classes that are used in multiple places within
 OctoPrint's source code.
 """
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -22,6 +21,9 @@ from functools import wraps
 import warnings
 import contextlib
 import collections
+import frozendict
+import copy
+
 try:
 	import queue
 except ImportError:
@@ -52,6 +54,35 @@ def warning_decorator_factory(warning_type):
 		return decorator
 	return specific_warning
 
+
+def warning_factory(warning_type):
+	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
+		def decorator(o):
+			def wrapper(f):
+				def new(*args, **kwargs):
+					warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
+					return f(*args, **kwargs)
+				return new
+
+			output = o.__class__.__new__(o.__class__, o)
+
+			unwrappable_names = ("__weakref__", "__class__", "__dict__", "__doc__", "__str__", "__unicode__", "__repr__", "__getattribute__", "__setattr__")
+			for method_name in dir(o):
+				if method_name in unwrappable_names: continue
+
+				setattr(output, method_name, wrapper(getattr(o, method_name)))
+
+			if includedoc is not None and since is not None:
+				docstring = "\n.. deprecated:: {since}\n   {message}\n\n".format(since=since, message=includedoc)
+				if extenddoc and hasattr(wrapper, "__doc__") and wrapper.__doc__ is not None:
+					docstring = wrapper.__doc__ + "\n" + docstring
+					wrapper.__doc__ = docstring
+
+			return output
+		return decorator
+	return specific_warning
+
+
 deprecated = warning_decorator_factory(DeprecationWarning)
 """
 A decorator for deprecated methods. Logs a deprecation warning via Python's `:mod:`warnings` module including the
@@ -73,6 +104,24 @@ Arguments:
 
 Returns:
     function: The wrapped function with the deprecation warnings in place.
+"""
+
+variable_deprecated = warning_factory(DeprecationWarning)
+"""
+A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
+supplied ``message``. The call stack level used (for adding the source location of the offending call to the
+warning) can be overridden using the optional ``stacklevel`` parameter. 
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
 """
 
 pending_deprecation = warning_decorator_factory(PendingDeprecationWarning)
@@ -97,6 +146,25 @@ Arguments:
 Returns:
     function: The wrapped function with the deprecation warnings in place.
 """
+
+variable_pending_deprecation = warning_factory(PendingDeprecationWarning)
+"""
+A decorator for variables pending deprecation. Logs a pending deprecation warning via Python's `:mod:`warnings` module
+including the supplied ``message``. The call stack level used (for adding the source location of the offending call to
+the warning) can be overridden using the optional ``stacklevel`` parameter.
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
+"""
+
 
 def get_formatted_size(num):
 	"""
@@ -174,8 +242,6 @@ def get_class(name):
 	"""
 	Retrieves the class object for a given fully qualified class name.
 
-	Taken from http://stackoverflow.com/a/452981/2028598.
-
 	Arguments:
 	    name (string): The fully qualified class name, including all modules separated by ``.``
 
@@ -183,15 +249,17 @@ def get_class(name):
 	    type: The class if it could be found.
 
 	Raises:
-	    AttributeError: The class could not be found.
+	    ImportError
 	"""
 
-	parts = name.split(".")
-	module = ".".join(parts[:-1])
-	m = __import__(module)
-	for comp in parts[1:]:
-		m = getattr(m, comp)
-	return m
+	import importlib
+
+	mod_name, cls_name = name.rsplit(".", 1)
+	m = importlib.import_module(mod_name)
+	try:
+		return getattr(m, cls_name)
+	except AttributeError:
+		raise ImportError("No module named " + name)
 
 
 def get_exception_string():
@@ -460,7 +528,7 @@ def is_running_from_source():
 	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
 
 
-def dict_merge(a, b):
+def dict_merge(a, b, leaf_merger=None):
 	"""
 	Recursively deep-merges two dictionaries.
 
@@ -479,10 +547,24 @@ def dict_merge(a, b):
 	    True
 	    >>> dict_merge(None, None) == dict()
 	    True
+	    >>> def leaf_merger(a, b):
+	    ...     if isinstance(a, list) and isinstance(b, list):
+	    ...         return a + b
+	    ...     raise ValueError()
+	    >>> result = dict_merge(dict(l1=[3, 4], l2=[1], a="a"), dict(l1=[1, 2], l2="foo", b="b"), leaf_merger=leaf_merger)
+	    >>> result.get("l1") == [3, 4, 1, 2]
+	    True
+	    >>> result.get("l2") == "foo"
+	    True
+	    >>> result.get("a") == "a"
+	    True
+	    >>> result.get("b") == "b"
+	    True
 
 	Arguments:
 	    a (dict): The dictionary to merge ``b`` into
 	    b (dict): The dictionary to merge into ``a``
+	    leaf_merger (callable): An optional callable to use to merge leaves (non-dict values)
 
 	Returns:
 	    dict: ``b`` deep-merged into ``a``
@@ -500,9 +582,20 @@ def dict_merge(a, b):
 	result = deepcopy(a)
 	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
-			result[k] = dict_merge(result[k], v)
+			result[k] = dict_merge(result[k], v, leaf_merger=leaf_merger)
 		else:
-			result[k] = deepcopy(v)
+			merged = None
+			if k in result and callable(leaf_merger):
+				try:
+					merged = leaf_merger(result[k], v)
+				except ValueError:
+					# can't be merged by leaf merger
+					pass
+
+			if merged is None:
+				merged = deepcopy(v)
+
+			result[k] = merged
 	return result
 
 
@@ -713,6 +806,51 @@ def dict_filter(dictionary, filter_function):
 	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
 
 
+# Source: http://stackoverflow.com/a/6190500/562769
+class DefaultOrderedDict(collections.OrderedDict):
+	def __init__(self, default_factory=None, *a, **kw):
+
+		if default_factory is not None and not callable(default_factory):
+			raise TypeError('first argument must be callable')
+		collections.OrderedDict.__init__(self, *a, **kw)
+		self.default_factory = default_factory
+
+	def __getitem__(self, key):
+		try:
+			return collections.OrderedDict.__getitem__(self, key)
+		except KeyError:
+			return self.__missing__(key)
+
+	def __missing__(self, key):
+		if self.default_factory is None:
+			raise KeyError(key)
+		self[key] = value = self.default_factory()
+		return value
+
+	def __reduce__(self):
+		if self.default_factory is None:
+			args = tuple()
+		else:
+			args = self.default_factory,
+		return type(self), args, None, None, self.items()
+
+	def copy(self):
+		return self.__copy__()
+
+	def __copy__(self):
+		return type(self)(self.default_factory, self)
+
+	def __deepcopy__(self, memo):
+		import copy
+		return type(self)(self.default_factory,
+		                  copy.deepcopy(self.items()))
+
+	# noinspection PyMethodOverriding
+	def __repr__(self):
+		return 'OrderedDefaultDict(%s, %s)' % (self.default_factory,
+		                                       collections.OrderedDict.__repr__(self))
+
+
 class Object(object):
 	pass
 
@@ -735,22 +873,79 @@ def interface_addresses(family=None):
 				if not ifaddress["addr"].startswith("169.254."):
 					yield ifaddress["addr"]
 
-def address_for_client(host, port):
+def address_for_client(host, port, timeout=3.05):
 	"""
 	Determines the address of the network interface on this host needed to connect to the indicated client host and port.
 	"""
 
-	import socket
-
 	for address in interface_addresses():
 		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect((host, port))
-			return address
+			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
+				return address
 		except:
 			continue
 
+def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
+	"""
+	Checks if a server is reachable
+
+	Args:
+		host (str): host to check against
+		port (int): port to check against
+		timeout (float): timeout for check
+		proto (str): ``tcp`` or ``udp``
+		source (str): optional, socket used for check will be bound against this address if provided
+
+	Returns:
+		boolean: True if a connection to the server could be opened, False otherwise
+	"""
+
+	import socket
+
+	if proto not in ("tcp", "udp"):
+		raise ValueError("proto must be either 'tcp' or 'udp'")
+
+	try:
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM)
+		sock.settimeout(timeout)
+		if source is not None:
+			sock.bind((source, 0))
+		sock.connect((host, port))
+		return True
+	except:
+		return False
+
+def parse_mime_type(mime):
+	import cgi
+
+	if not mime or not isinstance(mime, basestring):
+		raise ValueError("mime must be a non empty str or unicode")
+
+	mime, params = cgi.parse_header(mime)
+
+	if mime == "*":
+		mime = "*/*"
+
+	parts = mime.split("/") if "/" in mime else None
+	if not parts or len(parts) != 2:
+		raise ValueError("mime must be a mime type of format type/subtype")
+
+	mime_type, mime_subtype = parts
+	return mime_type.strip(), mime_subtype.strip(), params
+
+def mime_type_matches(mime, other):
+	if not isinstance(mime, tuple):
+		mime = parse_mime_type(mime)
+	if not isinstance(other, tuple):
+		other = parse_mime_type(other)
+
+	mime_type, mime_subtype, _ = mime
+	other_type, other_subtype, _ = other
+
+	type_matches = (mime_type == other_type or mime_type == "*" or other_type == "*")
+	subtype_matches = (mime_subtype == other_subtype or mime_subtype == "*" or other_subtype == "*")
+
+	return type_matches and subtype_matches
 
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
@@ -821,8 +1016,10 @@ def is_hidden_path(path):
 		# we define a None path as not hidden here
 		return False
 
+	path = to_unicode(path)
+
 	filename = os.path.basename(path)
-	if filename.startswith("."):
+	if filename.startswith(u"."):
 		# filenames starting with a . are hidden
 		return True
 
@@ -831,7 +1028,7 @@ def is_hidden_path(path):
 		# attribute via the windows api
 		try:
 			import ctypes
-			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
 			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
 			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
 		except (AttributeError, AssertionError):
@@ -839,6 +1036,86 @@ def is_hidden_path(path):
 
 	# if we reach that point, the path is not hidden
 	return False
+
+
+try:
+	from glob import escape
+	glob_escape = escape
+except ImportError:
+	# no glob.escape - we need to implement our own
+	_glob_escape_check = re.compile("([*?[])")
+	_glob_escape_check_bytes = re.compile(b"([*?[])")
+
+	def glob_escape(pathname):
+		"""
+		Ported from Python 3.4
+
+		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
+		"""
+
+		drive, pathname = os.path.splitdrive(pathname)
+		if isinstance(pathname, bytes):
+			pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
+		else:
+			pathname = _glob_escape_check.sub(r"[\1]", pathname)
+		return drive + pathname
+
+
+try:
+	import monotonic
+	monotonic_time = monotonic.monotonic
+except RuntimeError:
+	# no source of monotonic time available, nothing left but using time.time *cringe*
+	import time
+	monotonic_time = time.time
+
+
+def thaw_frozendict(obj):
+	if not isinstance(obj, (dict, frozendict.frozendict)):
+		raise ValueError("obj must be a dict or frozendict instance")
+
+	# only true love can thaw a frozen dict
+	letitgo = dict()
+	for key, value in obj.items():
+		if isinstance(value, (dict, frozendict.frozendict)):
+			letitgo[key] = thaw_frozendict(value)
+		else:
+			letitgo[key] = copy.deepcopy(value)
+	return letitgo
+
+
+def utmify(link, source=None, medium=None, name=None, term=None, content=None):
+	if source is None:
+		return link
+
+	from collections import OrderedDict
+	try:
+		import urlparse
+		from urllib import urlencode
+	except ImportError:
+		# python 3
+		import urllib.parse as urlparse
+		from urllib.parse import urlencode
+
+	# inspired by https://stackoverflow.com/a/2506477
+	parts = list(urlparse.urlparse(link))
+
+	# parts[4] is the url query
+	query = OrderedDict(urlparse.parse_qs(parts[4]))
+
+	query["utm_source"] = source
+	if medium is not None:
+		query["utm_medium"] = medium
+	if name is not None:
+		query["utm_name"] = name
+	if term is not None:
+		query["utm_term"] = term
+	if content is not None:
+		query["utm_content"] = content
+
+	parts[4] = urlencode(query, doseq=True)
+
+	return urlparse.urlunparse(parts)
 
 
 class RepeatedTimer(threading.Thread):
@@ -973,16 +1250,106 @@ class RepeatedTimer(threading.Thread):
 		if callable(self.on_finish):
 			self.on_finish()
 
+class ResettableTimer(threading.Thread):
+	"""
+	This class represents an action that should be run after a specified amount of time. It is similar to python's
+	own :class:`threading.Timer` class, with the addition of being able to reset the counter to zero.
+
+	ResettableTimers are started, as with threads, by calling their ``start()`` method. The timer can be stopped (in
+	between runs) by calling the :func:`cancel` method. Resetting the counter can be done with the :func:`reset` method.
+
+	For example:
+
+	.. code-block:: python
+
+	   def hello():
+	       print("Ran hello() at {}").format(time.time())
+
+	   t = ResettableTimers(60.0, hello)
+	   t.start()
+	   print("Started at {}").format(time.time())
+	   time.sleep(30)
+	   t.reset()
+	   print("Reset at {}").format(time.time())
+
+	Arguments:
+	    interval (float or callable): The interval before calling ``function``, in seconds. Can also be a callable
+	        returning the interval to use, in case the interval is not static.
+	    function (callable): The function to call.
+	    args (list or tuple): The arguments for the ``function`` call. Defaults to an empty list.
+	    kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
+	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
+	    on_reset (callable): Callback to call when the timer is reset.
+	"""
+
+	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+		threading.Thread.__init__(self)
+		self._event = threading.Event()
+		self._mutex = threading.Lock()
+		self.is_reset = True
+
+		if args is None:
+			args = []
+		if kwargs is None:
+			kwargs = dict()
+
+		self.interval = interval
+		self.function = function
+		self.args = args
+		self.kwargs = kwargs
+		self.on_cancelled = on_cancelled
+		self.on_reset = on_reset
+
+
+	def run(self):
+		while self.is_reset:
+			with self._mutex:
+				self.is_reset = False
+			self._event.wait(self.interval)
+
+		if not self._event.isSet():
+			self.function(*self.args, **self.kwargs)
+		with self._mutex:
+			self._event.set()
+
+	def cancel(self):
+		with self._mutex:
+			self._event.set()
+
+		if callable(self.on_cancelled):
+			self.on_cancelled()
+
+	def reset(self, interval=None):
+		with self._mutex:
+			if interval:
+				self.interval = interval
+
+			self.is_reset = True
+			self._event.set()
+			self._event.clear()
+
+		if callable(self.on_reset):
+			self.on_reset()
+
 
 class CountedEvent(object):
 
 	def __init__(self, value=0, maximum=None, **kwargs):
 		self._counter = 0
 		self._max = kwargs.get("max", maximum)
-		self._mutex = threading.Lock()
+		self._mutex = threading.RLock()
 		self._event = threading.Event()
 
 		self._internal_set(value)
+
+	@property
+	def is_set(self):
+		return self._event.is_set
+
+	@property
+	def counter(self):
+		with self._mutex:
+			return self._counter
 
 	def set(self):
 		with self._mutex:
@@ -999,8 +1366,13 @@ class CountedEvent(object):
 		self._event.wait(timeout)
 
 	def blocked(self):
-		with self._mutex:
-			return self._counter == 0
+		return self.counter == 0
+
+	def acquire(self, blocking=1):
+		return self._mutex.acquire(blocking=blocking)
+
+	def release(self):
+		return self._mutex.release()
 
 	def _internal_set(self, value):
 		self._counter = value
@@ -1046,18 +1418,57 @@ class InvariantContainer(object):
 		return self._data.__iter__()
 
 
-class TypedQueue(queue.Queue):
+class PrependableQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
 		queue.Queue.__init__(self, maxsize=maxsize)
+
+	def prepend(self, item, block=True, timeout=True):
+		from time import time as _time
+
+		self.not_full.acquire()
+		try:
+			if self.maxsize > 0:
+				if not block:
+					if self._qsize() == self.maxsize:
+						raise queue.Full
+				elif timeout is None:
+					while self._qsize() >= self.maxsize:
+						self.not_full.wait()
+				elif timeout < 0:
+					raise ValueError("'timeout' must be a non-negative number")
+				else:
+					endtime = _time() + timeout
+					while self._qsize() == self.maxsize:
+						remaining = endtime - _time()
+						if remaining <= 0.0:
+							raise queue.Full
+						self.not_full.wait(remaining)
+			self._prepend(item)
+			self.unfinished_tasks += 1
+			self.not_empty.notify()
+		finally:
+			self.not_full.release()
+
+	def _prepend(self, item):
+		self.queue.appendleft(item)
+
+
+class TypedQueue(PrependableQueue):
+
+	def __init__(self, maxsize=0):
+		PrependableQueue.__init__(self, maxsize=maxsize)
 		self._lookup = set()
 
 	def put(self, item, item_type=None, *args, **kwargs):
-		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+		PrependableQueue.put(self, (item, item_type), *args, **kwargs)
 
 	def get(self, *args, **kwargs):
-		item, _ = queue.Queue.get(self, *args, **kwargs)
+		item, _ = PrependableQueue.get(self, *args, **kwargs)
 		return item
+
+	def prepend(self, item, item_type=None, *args, **kwargs):
+		PrependableQueue.prepend(self, (item, item_type), *args, **kwargs)
 
 	def _put(self, item):
 		_, item_type = item
@@ -1067,10 +1478,10 @@ class TypedQueue(queue.Queue):
 			else:
 				self._lookup.add(item_type)
 
-		queue.Queue._put(self, item)
+		PrependableQueue._put(self, item)
 
 	def _get(self):
-		item = queue.Queue._get(self)
+		item = PrependableQueue._get(self)
 		_, item_type = item
 
 		if item_type is not None:
@@ -1078,6 +1489,15 @@ class TypedQueue(queue.Queue):
 
 		return item
 
+	def _prepend(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		PrependableQueue._prepend(self, item)
 
 class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):
@@ -1190,3 +1610,151 @@ class protectedkeydict(collections.MutableMapping):
 				value = copy.copy(value)
 
 			return value
+
+class ConnectivityChecker(object):
+	"""
+	Regularly checks for online connectivity.
+
+	Tries to open a connection to the provided ``host`` and ``port`` every ``interval``
+	seconds and sets the ``online`` status accordingly.
+	"""
+
+	def __init__(self, interval, host, port, enabled=True, on_change=None):
+		self._interval = interval
+		self._host = host
+		self._port = port
+		self._enabled = enabled
+		self._on_change = on_change
+
+		self._logger = logging.getLogger(__name__ + ".connectivity_checker")
+
+		# we initialize the online flag to True if we are not enabled (we don't know any better
+		# but these days it's probably a sane default)
+		self._online = not self._enabled
+
+		self._check_worker = None
+		self._check_mutex = threading.RLock()
+
+		self._run()
+
+	@property
+	def online(self):
+		"""Current online status, True if online, False if offline."""
+		with self._check_mutex:
+			return self._online
+
+	@property
+	def host(self):
+		"""DNS host to query."""
+		with self._check_mutex:
+			return self._host
+
+	@host.setter
+	def host(self, value):
+		with self._check_mutex:
+			self._host = value
+
+	@property
+	def port(self):
+		"""DNS port to query."""
+		with self._check_mutex:
+			return self._port
+
+	@port.setter
+	def port(self, value):
+		with self._check_mutex:
+			self._port = value
+
+	@property
+	def interval(self):
+		"""Interval between consecutive automatic checks."""
+		return self._interval
+
+	@interval.setter
+	def interval(self, value):
+		self._interval = value
+
+	@property
+	def enabled(self):
+		"""Whether the check is enabled or not."""
+		return self._enabled
+
+	@enabled.setter
+	def enabled(self, value):
+		with self._check_mutex:
+			old_enabled = self._enabled
+			self._enabled = value
+
+			if not self._enabled:
+				if self._check_worker is not None:
+					self._check_worker.cancel()
+
+				old_value = self._online
+				self._online = True
+
+				if old_value != self._online:
+					self._trigger_change(old_value, self._online)
+
+			elif self._enabled and not old_enabled:
+				self._run()
+
+	def check_immediately(self):
+		"""Check immediately and return result."""
+		with self._check_mutex:
+			self._perform_check()
+			return self.online
+
+	def _run(self):
+		from octoprint.util import RepeatedTimer
+
+		if not self._enabled:
+			return
+
+		if self._check_worker is not None:
+			self._check_worker.cancel()
+
+		self._check_worker = RepeatedTimer(self._interval, self._perform_check,
+		                                   run_first=True)
+		self._check_worker.start()
+
+	def _perform_check(self):
+		if not self._enabled:
+			return
+
+		with self._check_mutex:
+			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
+
+			old_value = self._online
+			self._online = server_reachable(self._host, port=self._port)
+
+			if old_value != self._online:
+				self._trigger_change(old_value, self._online)
+
+	def _trigger_change(self, old_value, new_value):
+		self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
+		                                                              "online" if new_value else "offline"))
+		if callable(self._on_change):
+			self._on_change(old_value, new_value)
+
+
+class CaseInsensitiveSet(collections.Set):
+	"""
+	Basic case insensitive set
+
+	Any str or unicode values will be stored and compared in lower case. Other value types are left as-is.
+	"""
+
+	def __init__(self, *args):
+		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+
+	def __contains__(self, item):
+		if isinstance(item, (str, unicode)):
+			return item.lower() in self.data
+		else:
+			return item in self.data
+
+	def __iter__(self):
+		return iter(self.data)
+
+	def __len__(self):
+		return len(self.data)

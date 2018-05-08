@@ -37,7 +37,7 @@ Besides that, OctoPrint also provides a :ref:`full state report of the printer <
    OctoPrint's internal webserver is single threaded and can only handle one request at a time. This is
    not a problem generally since asynchronous programming allows to just have one request which is waiting for
    data from a long running backend operation to sleep while handling other requests. The internal framework
-   used for providing the REST API though, Flask, is based on WSGI, which is synchrounous in nature. This means
+   used for providing the REST API though, Flask, is based on WSGI, which is synchronous in nature. This means
    that it is impossible to wait in a non blocking wait while handling a request on the REST API. So in order to
    return the response of a command sent to the printer, the single thread of the webserver would have to be blocked
    by the API while the response wasn't available yet. Which in turn would mean that the whole web server would
@@ -149,6 +149,8 @@ Retrieve the current printer state
             "operational": true,
             "paused": false,
             "printing": false,
+            "cancelling": false,
+            "pausing": false,
             "sdReady": true,
             "error": false,
             "ready": true,
@@ -179,6 +181,8 @@ Retrieve the current printer state
             "operational": true,
             "paused": false,
             "printing": false,
+            "cancelling": false,
+            "pausing": false,
             "sdReady": true,
             "error": false,
             "ready": true,
@@ -213,7 +217,7 @@ Issue a print head command
      * ``z``: Optional. Amount/coordinate to jog print head on z axis, must be a valid number corresponding to the distance to travel in mm.
      * ``absolute``: Optional. Boolean value specifying whether to move relative to current position (provided
        axes values are relative amounts) or to absolute position (provided axes values are coordinates)
-     * ``speed``: Optiona. Speed at which to move. If not provided, minimum speed for all selected axes from printer
+     * ``speed``: Optional. Speed at which to move. If not provided, minimum speed for all selected axes from printer
        profile will be used. If provided but ``false``, no speed parameter will be appended to the command. Otherwise
        interpreted as an integer signifying the speed in mm/s, to append to the command.
 
@@ -223,7 +227,7 @@ Issue a print head command
      * ``axes``: A list of axes which to home, valid values are one or more of ``x``, ``y``, ``z``.
 
    feedrate
-     Changes the feedrate factor to apply to the movement's of the axes.
+     Changes the feedrate factor to apply to the movements of the axes.
 
      * ``factor``: The new factor, percentage as integer or float (percentage divided by 100) between 50 and 200%.
 

@@ -6,21 +6,19 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
-import netaddr
-import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
 from flask_login import login_user, logout_user, current_user
 from flask_principal import Identity, identity_changed, AnonymousIdentity
 
-import octoprint.util as util
-import octoprint.users
+import octoprint.access.users
 import octoprint.server
 import octoprint.plugin
-from octoprint.server import admin_permission, NO_CONTENT
+from octoprint.server import NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
+from octoprint.server.util.flask import require_firstrun, get_json_command_from_request, passive_login
+from octoprint.access.permissions import Permissions
 
 
 #~~ init api blueprint, including sub modules
@@ -33,8 +31,8 @@ from . import connection as api_connection
 from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse
+from . import access as api_access
 from . import users as api_users
-from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles
 from . import languages as api_languages
@@ -47,6 +45,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
 api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
@@ -74,7 +73,7 @@ def pluginData(name):
 #~~ commands for plugins
 
 @api.route("/plugin/<string:name>", methods=["POST"])
-@restricted_access
+@require_firstrun
 def pluginCommand(name):
 	api_plugins = octoprint.plugin.plugin_manager().get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.SimpleApiPlugin)
 
@@ -89,7 +88,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not current_user.is_admin:
+	if api_plugin.is_api_adminonly() and not Permissions.ADMIN.can():
 		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -105,7 +104,7 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
 		abort(403)
 
 	seen_wizards = s().get(["server", "seenWizards"])
@@ -129,7 +128,7 @@ def wizardState():
 
 @api.route("/setup/wizard", methods=["POST"])
 def wizardFinish():
-	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
 		abort(403)
 
 	data = dict()
@@ -170,13 +169,12 @@ def wizardFinish():
 
 
 @api.route("/state", methods=["GET"])
-@restricted_access
+@require_firstrun
 def apiPrinterState():
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
 
 @api.route("/version", methods=["GET"])
-@restricted_access
 def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
@@ -205,49 +203,55 @@ def login():
 		if "usersession.id" in session:
 			_logout(current_user)
 
-		user = octoprint.server.userManager.findUser(username)
+		user = octoprint.server.userManager.find_user(username)
 		if user is not None:
-			if octoprint.server.userManager.checkPassword(username, password):
+			if octoprint.server.userManager.check_password(username, password):
+				if not user.is_active:
+					return make_response(("Your account is deactivated", 403, []))
+
 				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
-					session["usersession.id"] = user.get_session()
+					session["usersession.id"] = user.session
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-				return jsonify(user.asDict())
+				return jsonify(user)
 		return make_response(("User unknown or password incorrect", 401, []))
 
 	elif "passive" in data:
 		return passive_login()
-	return NO_CONTENT
+
+	return make_response("Neither user and pass attributes nor passive flag present", 400)
 
 
 @api.route("/logout", methods=["POST"])
-@restricted_access
 def logout():
-	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
-	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
-
+	# logout from user manager...
 	_logout(current_user)
+
+	# ... and from flask login (and principal)
 	logout_user()
 
-	return NO_CONTENT
+	return jsonify(octoprint.access.users.AnonymousUser([octoprint.server.groupManager.guest_group]))
+
 
 def _logout(user):
 	if "usersession.id" in session:
 		del session["usersession.id"]
 	octoprint.server.userManager.logout_user(user)
 
+
+#~~ Test utils
+
+
 @api.route("/util/test", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.ADMIN.require(403)
 def utilTestPath():
 	valid_commands = dict(
 		path=["path"],
-		url=["url"]
+		url=["url"],
+		server=["host", "port"]
 	)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -334,13 +338,19 @@ def utilTestPath():
 		url = data["url"]
 		method = data.get("method", "HEAD")
 		timeout = 3.0
+		valid_ssl = True
 		check_status = [status_ranges["normal"]]
+		content_type_whitelist = None
+		content_type_blacklist = None
 
 		if "timeout" in data:
 			try:
 				timeout = float(data["timeout"])
 			except:
-				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]))
+				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+
+		if "validSsl" in data:
+			valid_ssl = data["validSsl"] in valid_boolean_trues
 
 		if "status" in data:
 			request_status = data["status"]
@@ -359,33 +369,84 @@ def utilTestPath():
 						if code is not None:
 							check_status.append([code])
 
+		if "content_type_whitelist" in data:
+			if not isinstance(data["content_type_whitelist"], (list, tuple)):
+				return make_response("content_type_whitelist must be a list of mime types")
+			content_type_whitelist = map(util.parse_mime_type, data["content_type_whitelist"])
+		if "content_type_blacklist" in data:
+			if not isinstance(data["content_type_whitelist"], (list, tuple)):
+				return make_response("content_type_blacklist must be a list of mime types")
+			content_type_blacklist = map(util.parse_mime_type, data["content_type_blacklist"])
+
+		response_result = None
+		outcome = True
+		status = 0
 		try:
-			response = requests.request(method=method, url=url, timeout=timeout)
-			status = response.status_code
+			with requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True) as response:
+				status = response.status_code
+				outcome = outcome and any(map(lambda x: status in x, check_status))
+				content_type = response.headers.get("content-type")
+
+				response_result = dict(headers=dict(response.headers),
+				                       content_type=content_type)
+
+				parsed_content_type = util.parse_mime_type(content_type)
+				in_whitelist = content_type_whitelist is None or any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
+				in_blacklist = content_type_blacklist is not None and any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_blacklist))
+
+				if not in_whitelist or in_blacklist:
+					# we don't support this content type
+					response.close()
+					outcome = False
+
+				elif "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
+					if data["response"] == "json":
+						content = response.json()
+
+					else:
+						import base64
+						content = base64.standard_b64encode(response.content)
+
+					response_result["content"] = content
 		except:
-			status = 0
+			logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
+			outcome = False
 
 		result = dict(
 			url=url,
 			status=status,
-			result=any(map(lambda x: status in x, check_status))
+			result=outcome
 		)
-
-		if "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
-
-			import base64
-			content = base64.standard_b64encode(response.content)
-
-			if data["response"] == "json":
-				try:
-					content = response.json()
-				except:
-					logging.getLogger(__name__).exception("Couldn't convert response to json")
-					result["result"] = False
-
-			result["response"] = dict(
-				headers=dict(response.headers),
-				content=content
-			)
+		if response_result:
+			result["response"] = response_result
 
 		return jsonify(**result)
+
+	elif command == "server":
+		host = data["host"]
+		try:
+			port = int(data["port"])
+		except:
+			return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
+
+		timeout = 3.05
+		if "timeout" in data:
+			try:
+				timeout = float(data["timeout"])
+			except:
+				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+
+		protocol = data.get("protocol", "tcp")
+		if protocol not in ("tcp", "udp"):
+			return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
+
+		from octoprint.util import server_reachable
+		reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
+
+		result = dict(host=host,
+		              port=port,
+		              protocol=protocol,
+		              result=reachable)
+
+		return jsonify(**result)
+

@@ -352,37 +352,56 @@ table {
     &.settings_users_name {
       text-overflow: ellipsis;
       text-align: left;
+      width: 100px;
     }
 
-    &.settings_users_active, &.settings_users_admin {
+    &.settings_users_active {
       text-align: center;
       width: 55px;
     }
 
-    &.settings_users_actions {
+    table.settings_users_details_table {
+      font-size: 0.8em;
+      margin-bottom: 0;
+
+      .settings_users_details_key {
+        width: 100px;
+      }
+
+      th, td {
+        border: 0;
+        padding: 0;
+      }
+    }
+
+    &.settings_groups_default {
+      text-align: center;
+      width: 20px;
+    }
+
+    &.settings_groups_name {
+      width: 180px;
+    }
+
+    &.settings_users_actions,
+    &.settings_groups_actions {
       width: 60px;
       .actioncol;
     }
 
-    // log files
-    &.settings_logs_name {
-      text-overflow: ellipsis;
-      text-align: left;
+    &.settings_accesscontrol_permissions_list_checkbox {
+      width: 20px;
     }
 
-    &.settings_logs_size {
-      text-align: right;
-      width: 70px;
+    &.settings_accesscontrol_groups_list_checkbox {
+      width: 20px;
     }
 
-    &.settings_logs_date {
-      text-align: left;
-      width: 130px;
-    }
-
-    &.settings_logs_action {
-      width: 70px;
-      .actioncol;
+    #settings-usersDialogAddUser, #settings-usersDialogEditUser {
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-top: 0 !important;
     }
 
     // Printer profiles
@@ -413,12 +432,55 @@ table {
   background: url("../img/graph-background.png") no-repeat center;
 }
 
-.tab-content, .tab-pane {
-  overflow: visible;
+#temperature-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 20px;
+
+  th, td {
+    &.temperature_tool,
+    &.temperature_actual,
+    &.temperature_target,
+    &.temperature_offset {
+      vertical-align: middle;
+      text-align: center;
+
+      form {
+        margin: 0;
+      }
+
+      .dropdown-menu {
+        text-align: left;
+      }
+    }
+
+    &.temperature_tool {
+      width: 16%;
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    &.temperature_actual {
+      width: 12%;
+    }
+
+    &.temperature_target {
+      width: 42%;
+      overflow: visible;
+    }
+
+    &.temperature_offset {
+      width: 30%;
+    }
+  }
 }
 
-.tempInput {
-  width: 50px;
+/** Various */
+
+.tab-content, .tab-pane {
+  overflow: visible;
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
@@ -624,10 +686,14 @@ ul.dropdown-menu li a {
 #files {
   .gcode_files {
     @padding: 5px;
-    @scrollBar: 5px;
     @line-height: 20px;
 
-    padding-right: @scrollBar + 2px;
+    .scroll-wrapper {
+      overflow-x: hidden;
+      overflow-y: scroll;
+      height: 306px;
+      padding-right: 2px;
+    }
 
     .entry {
       padding: @padding;
@@ -644,9 +710,13 @@ ul.dropdown-menu li a {
         word-break: break-all;
       }
 
-      .uploaded, .size, .additionalInfo {
+      .internal, .uploaded, .size, .additionalInfo {
         font-size: 85%;
         color: #999;
+      }
+
+      .internal {
+        word-break: break-all;
       }
 
       .action-buttons {
@@ -836,14 +906,6 @@ ul.dropdown-menu li a {
 
     margin-bottom: 30px;
   }
-
-  #terminal-sendpanel {
-    text-align: right;
-  }
-
-  #terminal-output span {
-    display: block;
-  }
 }
 
 #settings_dialog {
@@ -863,7 +925,21 @@ ul.dropdown-menu li a {
   }
 }
 
+#wizard_firstrun_start,
+#wizard_firstrun_end {
+  p {
+    margin-bottom: 1.5em;
+    line-height: 1.5;
+  }
+}
 
+#settings_appearance_managelanguagesdialog_list {
+    width: auto;
+    height: 300px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding-right: 2px;
+}
 
 #settings_appearance_managelanguagesdialog_emptylist {
   overflow: hidden;
@@ -897,6 +973,11 @@ ul.dropdown-menu li a {
     }
 
   }
+
+  #footer_version,
+  #footer_link {
+    max-width: 50%;
+  }
 }
 
 /** Notifications */
@@ -929,6 +1010,10 @@ ul.dropdown-menu li a {
 
 .text-center {
   text-align: center;
+}
+
+.text-block {
+  display: block;
 }
 
 .overflow_visible {
@@ -1094,10 +1179,6 @@ textarea.block {
   display: inline-block !important;
 }
 
-a.dropdown-sd {
-  padding-top: 4px !important;
-}
-
 .center {
   float: none;
   margin-left: auto;
@@ -1228,6 +1309,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   -webkit-overflow-scrolling: touch;
 }
 
+.pre-output {
+  span {
+    display: block; // so we don't need to add individual <br> tags to each line
+  }
+}
+
 .input-append, .input-prepend {
   .add-on {
     &.add-on-limited {
@@ -1236,6 +1323,57 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       width: inherit;
     }
   }
+
+  .btn-group:first-child {
+    .btn:first-child {
+      -webkit-border-radius: 4px 0 0 4px;
+      -moz-border-radius: 4px 0 0 4px;
+      border-radius: 4px 0 0 4px;
+    }
+  }
+
+  .btn-group {
+    .btn:first-child {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+// block level inputs with add-ons
+//
+// LESS based on CSS from https://stackoverflow.com/a/17466199/2028598
+//
+// Note: do not use <button> for attached buttons, use <a class="btn add-on">...</a>
+// instead
+
+.input-append,
+.input-prepend {
+  &.input-block-level {
+    display: table;
+
+    .add-on {
+      display: table-cell;
+      width: 1%; /* remove this if you want default bootstrap button width */
+    }
+
+    > input {
+      box-sizing: border-box; /* use bootstrap mixin or include vendor variants */
+      display: table; /* table-cell is not working well in Chrome for small widths */
+      min-height: inherit;
+      width: 100%;
+    }
+
+    :not(:last-child) {
+      border-right: 0;
+    }
+  }
+}
+
+.btn-input-dec,
+.btn-input-enc {
+  //font-size: 80%;
 }
 
 .control-group.error .input-prepend .fileinput-button,
@@ -1243,8 +1381,23 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   border-color: #b94a48;
 }
 
+.control-text {
+  // like control-label, but without cursor, float, width or text-align
+  padding-top: 5px;
+  cursor: default;
+}
+
 input[type=number] {
   text-align: right;
+}
+
+input[type="number"].input-nospin::-webkit-outer-spin-button,
+input[type="number"].input-nospin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].input-nospin {
+    -moz-appearance: textfield;
 }
 
 // Progress bars with text
@@ -1323,4 +1476,69 @@ input[type=number] {
   button {
     margin-top: 20px;
   }
+}
+
+// page wide login form
+#page-container-needlogin {
+  background-color: #ffffff;
+  z-index: 12300;
+  .form-signin {
+    max-width: 300px;
+    padding: 19px 29px 29px;
+    margin: 50px auto;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+
+    .form-signin-heading, .checkbox {
+      margin-bottom: 10px;
+    }
+
+    input[type="text"], input[type="password"] {
+      font-size: 16px;
+      height: auto;
+      margin-bottom: 15px;
+      padding: 7px 9px;
+    }
+  }
+}
+
+// loading overlay
+#page-container-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  z-index: 12301;
+
+  .wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    .outer {
+      display: table;
+      width: 100%;
+      height: 100%;
+
+      .inner {
+        display: table-cell;
+        vertical-align: middle;
+
+        .content {
+          text-align: center;
+        }
+      }
+    }
+  }
+
 }

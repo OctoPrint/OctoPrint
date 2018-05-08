@@ -3,7 +3,7 @@ import os
 import sys
 
 """
-This "python package" doesn't actually install. This is intenional. It is merely
+This "python package" doesn't actually install. This is intentional. It is merely
 used to figure out some information about the environment a specific pip call
 is running under (installation dir, whether it belongs to a virtual environment,
 whether the install location is writable by the current user), and for that it

@@ -21,45 +21,41 @@ or **[creating pull requests](#pull-requests)**.
 
 ## Issues, Tickets, however you may call them
 
-Please read the following short instructions fully and follow them. You can
+Please read the following instructions fully and follow them. You can
 help the project tremendously this way: not only do you help the maintainers
 to **address problems in a timely manner** but also keep it possible for them
 to **fix bugs, add new and improve on existing functionality** instead of doing
 nothing but ticket management.
 
-![Ticket flow chart](http://i.imgur.com/qYSZyuw.png)
+![Ticket flow chart](https://i.imgur.com/SmU7iCJ.png)
 
-- **[Read the FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)**
+- **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
   and *[use the provided template](#what-should-i-include-in-a-ticket)*.
   You do not need to do anything else with your ticket.
 - If you want to post a **feature request** or a **documentation request**, add `[Request]`
   to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
   something is **not** what qualifies as a request here, use the
-  [Mailinglist](https://groups.google.com/group/octoprint) or the
-  [Google+ Community](https://plus.google.com/communities/102771308349328485741) for
+  [community forum at discourse.octoprint.org](https://discourse.octoprint.org) for
   such support issues.
 - If you are a **developer** that wants to brainstorm a pull request or possible
   changes to the plugin system, add [Brainstorming] to your issue's title (e.g.
   `[Brainstorming] New plugin hook for doing some cool stuff`).
 - If you need **support**, have a **question** or some **other reason** that
   doesn't fit any of the above categories, the issue tracker is not the right place.
-  Consult the [Mailinglist](https://groups.google.com/group/octoprint) or the
-  [Google+ Community](https://plus.google.com/communities/102771308349328485741) instead.
+  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org) instead.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
 
-----
-
-**Note**: A bot is in place that monitors new tickets, automatically
-categorizes them and checks new bug reports for usage of the provided template.
-That bot will only bother you if you open a ticket that appears to be a bug (no
-`[Request]` or `[Brainstorming]` in the title) without the template, and it
-will do that only to ensure that all information needed to solve the issue is
-available for the maintainers to directly start tackling that problem.
-
-----
+> 👉 **Note**
+> 
+> A bot is in place that monitors new tickets, automatically
+> categorizes them and checks new bug reports for usage of the provided template.
+> That bot will only bother you if you open a ticket that appears to be a bug (no
+> `[Request]` or `[Brainstorming]` in the title) without the complete template, and it
+> will do that only to ensure that all information needed to solve the issue is
+> available for the maintainers to directly start tackling that problem.
 
 ## How to file a bug report
 
@@ -72,22 +68,25 @@ following section *completely* and also follow the instructions in the
 
 ### What should I do before submitting a bug report?
 
-1. **Make sure you are at the right location**. This is the Github repository
+1. **Make sure you are at the right location**. This is the bug tracker
    of the official version of OctoPrint, which is the 3D print server and
    corresponding web interface itself.
-
-   **This is not the Github respository of OctoPi**, which is the preconfigured
+   
+   **OctoPrint doesn't manage your network connection or your webcam nor
+   can it fix your printer not getting detected as a serial interface** - 
+   if you have any kinds of problems with that, get in touch on the 
+   [community forum](https://discourse.octoprint.org).
+   
+   **This is not the bug tracker of OctoPi**, which is the preconfigured
    Raspberry Pi image including OctoPrint among other things - that one can be found
-   [here](https://github.com/guysoft/OctoPi). Please note that while we do have
-   some entries regarding OctoPi in the FAQ, any bugs should be reported in the
-   [proper bug tracker](https://github.com/guysoft/OctoPi/issues) which - again -
-   is not here.
+   [here](https://github.com/guysoft/OctoPi). If you have any kind of specific
+   issue with how the OctoPi system is setup, go there please.
 
-   **This is also not the Github repository of any OctoPrint Plugins you
+   **This is also not the bug tracker of any OctoPrint Plugins you
    might have installed**. Report any issues with those in their corresponding
    bug tracker (probably linked to from the plugin's homepage).
 
-   Finally, **this is also not the right issue tracker if you are running a
+   Finally, **this is also not the right bug tracker if you are running a
    forked version of OctoPrint**. Seek help for such unofficial versions from
    the people maintaining them instead.
 
@@ -101,7 +100,7 @@ following section *completely* and also follow the instructions in the
    more about safe mode in the [docs](http://docs.octoprint.org/en/master/features/safemode.html).
 
    You might also want to try the current development version of OctoPrint
-   (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
+   (if you aren't already). Refer to the [FAQ](https://faq.octoprint.org)
    for information on how to do this.
 
 3. The problem still exists? Then please **look through the
@@ -111,8 +110,8 @@ following section *completely* and also follow the instructions in the
    Sorting through duplicates of the same issue sometimes causes more work than
    fixing it. Take the time to filter through possible duplicates and be really
    sure that your problem definitely is a new one. Try more than one search query
-   (e.g. do not only search for "webcam" if you happen to run into an issue
-   with your webcam, also search for "timelapse" etc). Do not only read the subject lines
+   (e.g. do not only search for "timelapse" if you happen to run into an issue
+   with your webcam, also search for "recording" etc). Do not only read the subject lines
    of tickets that look like they might be related, but also read the ticket itself!
 
    **Very important:** Please make absolutely sure that if you find a bug that looks like
@@ -126,84 +125,149 @@ following section *completely* and also follow the instructions in the
    makes it more difficult due to on top of having to figure out the original problem
    there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
    very diligent here!
-
+   
+If in doubt about any of the above - get in touch on the [community forum](https://discourse.octoprint.org)
+instead of opening a ticket here. If you are actually running into a bug, we'll figure it out together 
+there.
+   
 ### What should I include in a bug report?
 
 First of all make sure your use **a descriptive title**. "It doesn't work"
 and similar unspecific complaints are NOT descriptive titles.
 
-**Always use the following template** (please remove what's within `[...]`, that's
-only provided here as some additional information for you), **even if only adding a
-"me too" to an existing ticket**:
+**Always use the following template, even if only adding a "me too" to an 
+existing ticket**:
 
-    #### What were you doing?
+```
+<!--
+READ THE FOLLOWING FIRST:
 
-    [Please be as specific as possible here. The maintainers will need to
-    reproduce your issue in order to fix it and that is not possible if they
-    don't know what you did to get it to happen in the first place.
+If not already done, please read the the Contribution Guidelines that
+are linked to the right under "Helpful resources" > "Contributing".
 
-    Ideally provide exact steps to follow in order to reproduce your problem:
+Also read the FAQ: https://faq.octoprint.org
 
-    1. ...
-    2. ...
-    3. ...
+This is a bug and feature tracker, please only use it to report bugs
+or request features within OctoPrint (not OctoPi, not any OctoPrint
+plugins and not unofficial OctoPrint versions).
 
-    If you encountered a problem with specific files of any sorts, make sure
-    to also include a link to a file with which to reproduce the problem.]
+Do not seek support here ("I need help with ...", "I have a
+question ..."), that belongs on the community forum at 
+discourse.octoprint.org, NOT here.
 
-    #### What did you expect to happen?
+Mark requests with a "[Request]" prefix in the title please. For bug
+reports fully fill out the bug reporting template (if you don't know
+where to find some information - it's all described in the Contribution
+Guidelines linked up there in the big yellow box).
 
-    #### What happened instead?
+When reporting a bug do NOT delete ANY lines from the template.
 
-    #### Did the same happen when running OctoPrint in safe mode?
+Make sure any bug you want to report is still present with the CURRENT
+OctoPrint version and that it does not vanish when you start OctoPrint
+in safe mode - how to do that is also explained in the Contribution
+Guidelines linked up there in the big yellow box.
 
-    [Try to reproduce your problem in safe mode. You can find information
-    on how to enable safe mode in the Contribution Guidelines.]
+Thank you!
+-->
 
-    #### Branch & Commit or Version of OctoPrint
+#### What were you doing?
 
-    [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
+<!-- 
+Please be as specific as possible here. The maintainers will need to
+reproduce your issue in order to fix it and that is not possible if they
+don't know what you did to get it to happen in the first place.
 
-    #### Operating System running OctoPrint
+Ideally provide exact steps to follow in order to reproduce your problem:
+-->
 
-    [OctoPi, Linux, Windows, MacOS, something else? With version please,
-    OctoPi's version can be found in /etc/octopi_version]
+1. ...
+2. ...
+3. ...
 
-    #### Printer model & used firmware incl. version
+<!--
+If you encountered a problem with specific files of any sorts, make sure
+to also include a link to a file with which to reproduce the problem.
+-->
 
-    [If applicable, always include if unsure.]
+#### What did you expect to happen?
 
-    #### Browser and Version of Browser, Operating System running Browser
+#### What happened instead?
 
-    [If applicable, always include if unsure.]
+#### Did the same happen when running OctoPrint in safe mode?
 
-    #### Link to octoprint.log
+<!-- 
+Test if you can reproduce your problem in safe mode. You can find information
+on how to enable safe mode in the Contribution Guidelines.
 
-    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
-    The Contribution Guidelines tell you where to find that.]
+If you can't reproduce in safe mode, this is a bug with one of your
+installed third party plugins. Don't open a ticket here!
 
-    #### Link to contents of terminal tab or serial.log
+If you can't test this in safe mode, state why.
+-->
 
-    [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-    reporting communication issues. Never truncate.
+#### Version of OctoPrint
 
-    serial.log is usually not written due to performance reasons and must be
-    enabled explicitly. Provide at the very least the FULL contents of your
-    terminal tab at the time of the bug occurrence, even if you do not have
-    a serial.log.]
+<!--
+Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.
+-->
 
-    #### Link to contents of Javascript console in the browser
+#### Operating System running OctoPrint
 
-    [On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
-    always include if unsure or reporting UI issues.
+<!--
+OctoPi, Linux, Windows, MacOS, something else? With version please.
+OctoPi's version can be found in /etc/octopi_version or in the lower left
+corner of the web interface.
+-->
 
-    The Contribution Guidelines tell you where to find that.]
+#### Printer model & used firmware incl. version
 
-    #### Screenshot(s)/video(s) showing the problem:
+<!--
+If applicable, always include if unsure.
+-->
 
-    [If applicable. Always include if unsure or reporting UI issues.]
+#### Browser and version of browser, operating system running browser
 
-    I have read the FAQ.
+<!--
+If applicable, always include if unsure.
+-->
+
+#### Link to octoprint.log
+
+<!--
+On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
+
+The Contribution Guidelines tell you where to find that.
+-->
+
+#### Link to contents of terminal tab or serial.log
+
+<!--
+On gist.github.com or pastebin.com. If applicable, always include if unsure or
+reporting communication issues. Never truncate.
+
+serial.log is usually not written due to performance reasons and must be
+enabled explicitly. Provide at the very least the FULL contents of your
+terminal tab at the time of the bug occurrence, even if you do not have
+a serial.log (which the Contribution Guidelines tell you where to find).
+-->
+
+#### Link to contents of Javascript console in the browser
+
+<!--
+On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
+always include if unsure or reporting UI issues.
+
+The Contribution Guidelines tell you where to find that.
+-->
+
+#### Screenshot(s)/video(s) showing the problem:
+
+<!--
+If applicable. Always include if unsure or reporting UI issues.
+-->
+
+I have read the FAQ.
+```
 
 Copy-paste this template **completely** (or use the version that gets pre-filled
 into the "new issue" form). Do not skip any lines or the bot *will* complain! Provide
@@ -211,50 +275,11 @@ all requested information or your ticket will be closed.
 
 ### Where can I find which version and branch I'm on?
 
-You can find out all of them by taking a look into the lower left corner of the
-OctoPrint UI:
-
-![Current version and git branch info in OctoPrint's UI](http://i.imgur.com/HyHMlY2.png)
-
-If you don't have access to the UI you can find out that information via the
-command line as well. Either `octoprint --version` or `python setup.py version`
-in OctoPrint's folder will tell you the version of OctoPrint you are running
-(note: if it doesn't then you are running a version older than 1.1.0,
-*upgrade now*). A `git branch` in your OctoPrint installation folder will mark
-the branch you are on with a little *. `git rev-parse HEAD` will tell you the
-current commit.
+Please refer to [this FAQ entry](https://discourse.octoprint.org/t/how-can-i-find-out-the-version-of-octoprint-or-octopi-i-am-running/204/1).
 
 ### Where can I find those log files you keep talking about?
 
-OctoPrint by default provides two log outputs, a third one can be enabled if
-more information is needed.
-
-One is contained in the **"Terminal" tab** within OctoPrint's UI and is a log
-of the last 300 lines of communication with the printer. Please copy-paste
-this *completely* somewhere (disable auto scroll to make copying the contents easier) -
-e.g. http://pastebin.com or http://gist.github.com - and include a link in
-your bug report.
-
-There is also **OctoPrint's application log file** or in short `octoprint.log`,
-which is by default located at `~/.octoprint/logs/octoprint.log` on Linux,
-`%APPDATA%\OctoPrint\logs\octoprint.log` on Windows and
-`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. You can
-also access it directly through OctoPrint via Settings > Logs. Please
-copy-paste this *completely* to pastebin or gist as well and include a link in your bug
-report.
-
-It might happen that you are asked to provide a more **thorough log of the
-communication with the printer** if you haven't already done so, the `serial.log`.
-This is not written by default due to performance reasons, but you can enable
-it in the settings dialog. After enabling that log, please reproduce the problem
-again (connect to the printer, do whatever triggers it), then copy-paste
-`~/.octoprint/logs/serial.log` (Windows: `%APPDATA%\OctoPrint\logs\serial.log`,
-MacOS: `~/Library/Application Support/OctoPrint/logs/serial.log`) to pastebin
-or gist and include the link in the bug report.
-
-You might also be asked to provide a log with an increased log level. You can
-find information on how to do just that in the
-[docs](http://docs.octoprint.org/en/master/configuration/logging_yaml.html).
+Please refer to [this FAQ entry](https://discourse.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299/1).
 
 ### Where can I find my browser's error console?
 
@@ -263,6 +288,8 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 ## Setting up a development environment
 
 See [the corresponding chapter in the documentation](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment).
+This also includes information on how to run the test suite and how to build 
+the documentation.
 
 ## Pull requests
 
@@ -303,7 +330,17 @@ See [the corresponding chapter in the documentation](http://docs.octoprint.org/e
      * Make sure you do not add dead code (e.g. commented out left-overs
        from experiments).
 8. Ensure your changes **pass the existing unit tests**. PRs that break
-   those cannot be accepted.
+   those cannot be accepted. You can run the unit tests locally (after
+   [initial development environment setup with "develop" dependencies](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment)) 
+   by running
+   
+   ```
+   nosetests --with-doctest
+   ```
+   
+   in the OctoPrint checkout folder. A [travis build](https://travis-ci.org/foosel/OctoPrint) 
+   is also setup so that if the tests should fail, your PR will be marked 
+   accordingly.
 9. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
@@ -432,6 +469,10 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
     by OctoPrint itself and not a misbehaving plugin.
   * 2017-03-27: Added safe mode section to ticket template.
+  * 2017-11-22: Added note on how to run the unit tests
+  * 2018-03-15: Link to new community forum and some clarifications re bug
+    reporting
+  * 2018-03-29: "Where to find version numbers" is now located on the FAQ 
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

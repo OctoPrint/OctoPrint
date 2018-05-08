@@ -82,8 +82,37 @@ Retrieve all files
             "path": "folderA",
             "type": "folder",
             "typePath": ["folder"],
-            "children": [],
-            "size": 1334
+            "children": [
+              {
+                "name": "whistle_v2_copy.gcode",
+                "path": "whistle_v2_copy.gcode",
+                "type": "machinecode",
+                "typePath": ["machinecode", "gcode"],
+                "hash": "...",
+                "size": 1468987,
+                "date": 1378847754,
+                "origin": "local",
+                "refs": {
+                  "resource": "http://example.com/api/files/local/folderA/whistle_v2_copy.gcode",
+                  "download": "http://example.com/downloads/files/local/folderA/whistle_v2_copy.gcode"
+                },
+                "gcodeAnalysis": {
+                  "estimatedPrintTime": 1188,
+                  "filament": {
+                    "length": 810,
+                    "volume": 5.36
+                  }
+                },
+                "print": {
+                  "failure": 4,
+                  "success": 23,
+                  "last": {
+                    "date": 1387144346,
+                    "success": true
+                  }
+                }
+              }
+            ]
           }
         ],
         "free": "3.2GB"
@@ -192,6 +221,7 @@ Retrieve all files
                 "refs": {
                   "resource": "http://example.com/api/files/local/folderA/subfolder",
                 }
+              }
             ],
             "size": 1334,
             "refs": {
@@ -442,7 +472,7 @@ Upload file or create folder
    :form select:     Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
                      to ``false``. Ignored when creating a folder.
    :form print:      Whether to start printing the file directly after upload (``true``) or not (``false``). If set, ``select``
-                     is implicitely ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
+                     is implicitly ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
    :form userdata:   [Optional] An optional string that if specified will be interpreted as JSON and then saved along
                      with the file as metadata (metadata key ``userdata``). Ignored when creating a folder.
    :form foldername: The name of the folder to create. Ignored when uploading a file.
