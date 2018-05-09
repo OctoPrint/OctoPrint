@@ -261,7 +261,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def get_print_job(self, path):
+	def get_print_job(self, path, user=None):
 		"""
 		Retrieves the :class:`~octoprint.job.PrintJob` instance
 		to use for printing ``path``.
@@ -854,10 +854,13 @@ class LocalFileStorage(StorageInterface):
 		metadata = self.get_metadata(path)
 		return "analysis" in metadata
 
-	def get_print_job(self, path):
+	def get_print_job(self, path, user=None):
 		from octoprint.job import LocalGcodeFilePrintjob
 		return LocalGcodeFilePrintjob(self.path_on_disk(path),
+		                              "local",
+		                              self.path_in_storage(path),
 		                              name=path,
+		                              user=user,
 		                              event_data=dict(path=path,
 		                                              name=self.split_path(path)[1],
 		                                              origin="local"))

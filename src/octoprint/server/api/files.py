@@ -508,12 +508,13 @@ def gcodeFileCommand(filename, target):
 
 		print_after_loading = False
 		if "print" in data and data["print"] in valid_boolean_trues:
-			with Permissions.PRINT.require(403):if not printer.is_operational():
-				return make_response("Printer is not operational, cannot directly start printing", 409)
-			print_after_loading = True
+			with Permissions.PRINT.require(403):
+				if not printer.is_operational():
+					return make_response("Printer is not operational, cannot directly start printing", 409)
+				print_after_loading = True
 
-		job = fileManager.get_print_job(target, filename)
-		printer.select_job(job, start_printing=print_after_loading, user=user)
+		job = fileManager.create_print_job(target, filename, user=user)
+		printer.select_job(job, start_printing=print_after_loading)
 
 	elif command == "slice":
 		with Permissions.SLICE.require(403):

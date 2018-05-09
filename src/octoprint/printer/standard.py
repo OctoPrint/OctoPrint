@@ -161,7 +161,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if not isinstance(callback, PrinterCallback):
 			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
 		self._callbacks.append(callback)
-		self._sendInitialStateUpdate(callback)
 
 	def unregister_callback(self, callback, *args, **kwargs):
 		try:
@@ -350,8 +349,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		# TODO
 		#result = self._comm.sendGcodeScript(name,
-		                                    replacements=context,
-		                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
+		#                                    replacements=context,
+		#                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
 		#if not result:
 		#	if must_be_set:
 		#		raise UnknownScript(name)
@@ -469,7 +468,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._protocol.set_extrusion_multiplier(factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
-	def select_job(self, job, start_printing=False, user=None, pos=None, *args, **kwargs):
+	def select_job(self, job, start_printing=False, pos=None, *args, **kwargs):
 		self._update_job(job)
 		self._reset_progress_data()
 
@@ -516,8 +515,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._update_progress_data()
 		self._setCurrentZ(None)
 
-		self._protocol.process(self._job.job, position=pos,
-		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
+		self._protocol.process(self._job.job,
+		                       position=pos,
+		                       tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
 	def pause_print(self, *args, **kwargs):
 		"""
@@ -539,7 +539,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			return
 		self._protocol.resume_processing()
 
-	def cancel_print(self, error=False):
+	def cancel_print(self, error=False, tags=None, *args, **kwargs):
 		"""
 		 Cancel the current job.
 		"""
@@ -818,11 +818,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	def _update_progress_data(self):
 		if self._job is None or not self._job.job.active:
-			self._state_monitor.set_progress(dict(completion=None,
-			                                      filepos=None,
-			                                      printTime=None,
-			                                      printTimeLeft=None,
-			                                      printTimeLeftOrigin=None))
+			self._state_monitor.set_progress(self._dict(completion=None,
+			                                            filepos=None,
+			                                            printTime=None,
+			                                            printTimeLeft=None,
+			                                            printTimeLeftOrigin=None))
 			return
 
 		estimated_total_print_time = self._estimate_total_for_job()
@@ -870,14 +870,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._state_monitor.add_temperature(entry)
 
 	def _remove_job(self):
-		job_data = dict(file=dict(name=None,
-		                          origin=None,
-		                          size=None,
-		                          date=None),
-		                estimatedPrintTime=None,
-		                averagePrintTime=None,
-		                lastPrintTime=None,
-		                filament=None)
+		job_data = self._dict(file=self._dict(name=None,
+		                                      path=None,
+		                                      display=None,
+		                                      origin=None,
+		                                      size=None,
+		                                      date=None),
+		                      estimatedPrintTime=None,
+		                      averagePrintTime=None,
+		                      lastPrintTime=None,
+		                      filament=None,
+		                      user=None)
 		self._state_monitor.set_job_data(job_data)
 		self._job = None
 
@@ -898,6 +901,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		last_total = None
 		date = None
 
+		display_name = job.name
+
 		if isinstance(job, SDFilePrintjob):
 			# we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
 			# by that divided by the sd status polling interval
@@ -916,9 +921,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			except:
 				pass
 			else:
-				if "display" in fileData:
-						display_name = fileData["display"]
-					if "analysis" in file_data:
+				if "display" in file_data:
+					display_name = file_data["display"]
+
+				if "analysis" in file_data:
 					if "estimatedPrintTime" in file_data["analysis"]:
 						analysis_total = file_data["analysis"]["estimatedPrintTime"]
 					if "filament" in file_data["analysis"].keys():
@@ -932,14 +938,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 						last_total = file_data["statistics"]["lastPrintTime"][printer_profile]
 
 		# set the job data on the state monitor
-		job_data = dict(file=dict(name=job.name,
-		                          origin=self._get_origin_for_job(job),
-		                          size=job.size,
-		                          date=date),
-		                estimatedPrintTime=analysis_total,
-		                averagePrintTime=average_past_total,
-		                lastPrintTime=last_total,
-		                filament=filament)
+		job_data = self._dict(file=self._dict(name=job.name,
+		                                      path=job.path_in_storage,
+		                                      display=display_name,
+		                                      origin=self._get_origin_for_job(job),
+		                                      size=job.size,
+		                                      date=date),
+		                      estimatedPrintTime=analysis_total,
+		                      averagePrintTime=average_past_total,
+		                      lastPrintTime=last_total,
+		                      filament=filament,
+		                      user=job.user)
 		self._state_monitor.set_job_data(job_data)
 
 		# set our internal job data
@@ -1253,13 +1262,11 @@ class StateMonitor(object):
 				self._progress = self._get_current_progress()
 				self._progress_dirty = False
 
-		return {
-			"state": self._state,
-			"job": self._job_data,
-			"currentZ": self._current_z,
-			"progress": self._progress,
-			"offsets": self._offsets
-		}
+		return dict(state=self._state,
+		            job=self._job_data,
+		            currentZ=self._current_z,
+		            progress=self._progress,
+		            offsets=self._offsets)
 
 
 class TemperatureHistory(InvariantContainer):

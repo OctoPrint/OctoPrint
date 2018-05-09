@@ -15,13 +15,17 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 class Printjob(ProtocolListener, ListenerAware):
 	__metaclass__ = ABCMeta
 
-	def __init__(self, name=None, event_data=None):
+	def __init__(self, name=None, user=None, event_data=None):
+		if event_data is None:
+			event_data = dict()
+
 		super(Printjob, self).__init__()
 		self._logger = logging.getLogger(__name__)
 		self._start = None
 		self._protocol = None
 		self._printer_profile = None
 		self._name = name
+		self._user = user
 		self._event_data = event_data
 
 		self._lost_time = 0
@@ -29,6 +33,10 @@ class Printjob(ProtocolListener, ListenerAware):
 	@property
 	def name(self):
 		return self._name
+
+	@property
+	def user(self):
+		return self._user
 
 	@property
 	def size(self):
@@ -74,7 +82,7 @@ class Printjob(ProtocolListener, ListenerAware):
 	def can_process(self, protocol):
 		return False
 
-	def process(self, protocol, position=0):
+	def process(self, protocol, position=0, tags=None):
 		self._start = time.time()
 		self._protocol = protocol
 		self._protocol.register_listener(self)
@@ -97,7 +105,9 @@ class Printjob(ProtocolListener, ListenerAware):
 		return None
 
 	def event_payload(self):
-		return copy.deepcopy(self._event_data)
+		payload = copy.deepcopy(self._event_data)
+		payload["user"] = self._user
+		return payload
 
 	def process_job_started(self):
 		self.notify_listeners("on_job_started", self)
@@ -124,10 +134,38 @@ class Printjob(ProtocolListener, ListenerAware):
 		if new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR) and self.active:
 			self.cancel(error=True)
 
-class LocalFilePrintjob(Printjob):
 
-	def __init__(self, path, encoding="utf-8", name=None, event_data=None):
-		Printjob.__init__(self, name=name, event_data=event_data)
+class StoragePrintjob(Printjob):
+	def __init__(self, storage, path_in_storage, *args, **kwargs):
+		Printjob.__init__(self, *args, **kwargs)
+		self._storage = storage
+		self._path_in_storage = path_in_storage
+
+	@property
+	def storage(self):
+		return self._storage
+
+	@property
+	def path_in_storage(self):
+		return self._path_in_storage
+
+	def event_payload(self):
+		payload = Printjob.event_payload(self)
+		payload["name"] = self.name
+		payload["path"] = self.path_in_storage
+		payload["origin"] = self.storage
+		return payload
+
+
+class LocalFilePrintjob(StoragePrintjob):
+
+	def __init__(self, path, *args, **kwargs):
+		encoding = kwargs.pop("encoding", "utf-8")
+
+		StoragePrintjob.__init__(self, *args, **kwargs)
+
+		if path is None or not os.path.exists(path):
+			raise ValueError("path must be set to a local file path")
 
 		self._path = path
 		self._encoding = encoding
@@ -151,12 +189,7 @@ class LocalFilePrintjob(Printjob):
 	def path(self):
 		return self._path
 
-	def event_payload(self):
-		event_data = Printjob.event_payload(self)
-		event_data["size"] = self.size
-		return event_data
-
-	def process(self, protocol, position=0):
+	def process(self, protocol, position=0, tags=None):
 		Printjob.process(self, protocol, position=position)
 
 		from octoprint.util import bom_aware_open
@@ -248,18 +281,19 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob):
 		return line
 
 
-class SDFilePrintjob(Printjob, FileAwareProtocolListener):
+class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 
 	def __init__(self, path, status_interval=2.0):
 		name = path
 		if name.startswith("/"):
 			name = name[1:]
 
-		Printjob.__init__(self,
-		                  name=name,
-		                  event_data=dict(name=name,
-		                                  path=path,
-		                                  origin="sdcard"))
+		StoragePrintjob.__init__(self,
+		                         name,
+		                         name=name,
+		                         event_data=dict(name=name,
+		                                         path=path,
+		                                         origin="sdcard"))
 		self._filename = path
 		self._status_interval = status_interval
 
@@ -294,11 +328,11 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 		from octoprint.comm.protocol import FileAwareProtocolMixin
 		return SDFilePrintjob in protocol.supported_jobs and isinstance(protocol, FileAwareProtocolMixin)
 
-	def process(self, protocol, position=0):
+	def process(self, protocol, position=0, tags=None):
 		Printjob.process(self, protocol, position=position)
 
 		self._protocol.register_listener(self)
-		self._protocol.start_file_print(self._filename, position=position)
+		self._protocol.start_file_print(self._filename, position=position, tags=tags)
 		self._active = True
 		self._last_pos = position
 

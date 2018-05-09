@@ -83,12 +83,12 @@ class Protocol(ListenerAware, TransportListener):
 		else:
 			self.state = ProtocolState.DISCONNECTED
 
-	def process(self, job, position=0):
+	def process(self, job, position=0, tags=None):
 		if not job.can_process(self):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
 		self._job = job
 		self._job.register_listener(self)
-		self._job.process(self, position=position)
+		self._job.process(self, position=position, tags=tags)
 
 	def pause_processing(self):
 		if self._job is None or self.state != ProtocolState.PRINTING:
@@ -158,6 +158,8 @@ class ProtocolState(object):
 	DISCONNECTING = "disconnecting"
 	DISCONNECTED = "disconnected"
 	PRINTING = "printing"
+	CANCELLING = "cancelling"
+	PAUSING = "pausing"
 	PAUSED = "paused"
 	ERROR = "error"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
@@ -246,7 +248,7 @@ class FileAwareProtocolMixin(object):
 	def list_files(self):
 		pass
 
-	def start_file_print(self, name, position=0):
+	def start_file_print(self, name, position=0, tags=None):
 		pass
 
 	def pause_file_print(self):

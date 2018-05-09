@@ -157,7 +157,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		super(ReprapGcodeProtocol, self).disconnect()
 
-	def process(self, job, position=0):
+	def process(self, job, position=0, tags=None):
 		if isinstance(job, LocalGcodeStreamjob):
 			self._internal_state["only_from_job"] = True
 			self._internal_state["trigger_events"] = False
@@ -165,7 +165,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_state["only_from_job"] = False
 			self._internal_state["trigger_events"] = True
 
-		super(ReprapGcodeProtocol, self).process(job, position=position)
+		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
 		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
@@ -213,10 +213,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def list_files(self):
 		self._send_commands(self.flavor.command_sd_refresh())
 
-	def start_file_print(self, name, position=0):
+	def start_file_print(self, name, position=0, **kwargs):
+		tags = kwargs.get("tags", set()) | "trigger:protocol.start_file_print"
 		self._send_commands(self.flavor.command_sd_select_file(name),
 		                    self.flavor.command_sd_set_pos(position),
-		                    self.flavor.command_sd_start())
+		                    self.flavor.command_sd_start(),
+		                    tags=tags)
 
 	def pause_file_print(self):
 		self._send_commands(self.flavor.command_sd_pause())
@@ -398,7 +400,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# figure out which consecutive timeout maximum we have to use
 		if self._internal_state["long_running_command"]:
 			consecutive_max = 5 # TODO take from config
-		elif self.state in (ProtocolState.PRINTING,):
+		elif self.state in (ProtocolState.PRINTING, ProtocolState.PAUSING, ProtocolState.CANCELLING):
 			consecutive_max = 10 # TODO take from config
 		else:
 			consecutive_max = 15 # TODO take from config
@@ -612,9 +614,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self.notify_listeners("on_protocol_sd_status", self, current, total)
 
 	def _finish_heatup(self):
-		if self._internal_state["heating_start"]:
-			self._internal_state["heating_lost"] = self._internal_state["heating_lost"] + (time.time() - self._internal_state["heating_start"])
-			self._internal_state["heating_start"] = None
+		if self._internal_state["heating"]:
+			if self._internal_state["heating_start"]:
+				self._internal_state["heating_lost"] = self._internal_state["heating_lost"] + (time.time() - self._internal_state["heating_start"])
+				self._internal_state["heating_start"] = None
 			self._internal_state["heating"] = False
 
 	##~~ Sending
@@ -727,13 +730,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _send_commands(self, *commands, **kwargs):
 		# TODO return True or False depending on whether something/all? was sent
-		command_type = kwargs.get("command_type", None)
+		command_type = kwargs.get(b"command_type", None)
 		for command in commands:
 			if len(commands) > 1:
 				command_type = None
-			self._send_command(command, command_type=command_type)
+			self._send_command(command, command_type=command_type, tags=kwargs.get(b"tags", set()))
 
-	def _send_command(self, command, command_type=None, on_sent=None):
+	def _send_command(self, command, command_type=None, on_sent=None, tags=None):
 		if isinstance(command, GcodeCommand):
 			gcode = command
 			command = str(gcode)

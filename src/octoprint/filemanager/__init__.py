@@ -592,8 +592,8 @@ class FileManager(object):
 		                                              name=dst_name))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
-	def get_print_job(self, destination, path):
-		return self._storage(destination).get_print_job(path)
+	def create_print_job(self, destination, path, user=None):
+		return self._storage(destination).get_print_job(path, user=user)
 
 	def has_analysis(self, destination, path):
 		return self._storage(destination).has_analysis(path)
