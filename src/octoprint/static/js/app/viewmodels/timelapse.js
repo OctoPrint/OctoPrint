@@ -20,7 +20,25 @@ $(function() {
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
 
-        self.renderProgressText = ko.observable();
+        self.renderProgress = ko.observable();
+        self.renderTarget = ko.observable();
+        self.renderProgressString = ko.pureComputed(function() {
+            if (!self.renderProgress())
+                return 0;
+            return self.renderProgress();
+        });
+        self.renderProgressBarString = ko.pureComputed(function() {
+            if (!self.renderTarget()) {
+                return "";
+            }
+            var progress = self.renderProgress();
+            if (!progress) {
+                progress = 0;
+            }
+            return _.sprintf(gettext("Rendering %(target)s... (%(progress)d%%)"),
+                {target: self.renderTarget(), progress: progress});
+        });
+
         self.serverConfig = ko.observable();
 
         self.persist = ko.observable(false);
@@ -478,15 +496,12 @@ $(function() {
                 hide: false
             });
 
-            self.renderProgress
-                .addClass("progress-striped")
-                .addClass("active");
-            self.renderProgressBar.css("width", "0%");
-            self.renderProgressText(_.sprintf(gettext("Rendering %(movie_prefix)s..."), payload));
+            self.renderProgress(0);
+            self.renderTarget(payload.movie_prefix);
         };
 
         self.onRenderProgress = function(percentage) {
-            self.renderProgressBar.css("width", percentage + "%");
+            self.renderProgress(percentage);
         };
 
         self.onEventMovieFailed = function(payload) {
@@ -511,12 +526,8 @@ $(function() {
                 hide: false
             });
 
-            self.renderProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.renderProgressBar
-                .css("width", "0%");
-            self.renderProgressText("");
+            self.renderProgress(0);
+            self.renderTarget(undefined);
         };
 
         self.onEventMovieDone = function(payload) {
@@ -534,19 +545,14 @@ $(function() {
             });
             self.requestData();
 
-            self.renderProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.renderProgressBar
-                .css("width", "0%");
-            self.renderProgressText("");
+            self.renderProgress(0);
+            self.renderTarget(payload.undefined);
         };
 
         self.onStartup = function() {
             self.requestData();
 
-            self.renderProgress = $("#render_progress");
-            self.renderProgressBar = $(".bar", self.renderProgress);
+            self.renderProgressBar = $("#render_progress");
         };
     }
 
