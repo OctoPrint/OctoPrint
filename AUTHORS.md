@@ -91,6 +91,7 @@ date of first contribution):
   * [Daniele Forsi](https://github.com/dforsi)
   * [Ganey](https://github.com/ganey)
   * [Sven Lohrmann](https://github.com/malnvenshorn)
+  * [Zachary Nofzinger](https://github.com/ZachNo)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

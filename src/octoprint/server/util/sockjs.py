@@ -257,6 +257,11 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		                                           dest_path=dest_path,
 		                                           progress=progress))
 
+	def sendRenderProgress(self, progress):
+		self._emit("renderProgress",
+		           dict(progress=progress)
+		)
+
 	def on_plugin_message(self, plugin, data, permissions=None):
 		self._emit("plugin", payload=dict(plugin=plugin, data=data), permissions=permissions)
 

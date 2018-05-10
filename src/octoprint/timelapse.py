@@ -16,6 +16,7 @@ try:
 except ImportError:
 	import Queue as queue
 import requests
+import re
 
 import octoprint.plugin
 import octoprint.util as util
@@ -23,6 +24,7 @@ import octoprint.util as util
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.util import monotonic_time
+from octoprint.util.commandline import CommandlineCaller
 
 import sarge
 import collections
@@ -44,6 +46,10 @@ current_render_job = None
 # filename formats
 _capture_format = "{prefix}-%d.jpg"
 _output_format = "{prefix}.mpg"
+
+# ffmpeg progress regexes
+_ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
 
 # old capture format, needed to delete old left-overs from
 # versions <1.2.9
@@ -798,6 +804,8 @@ class TimelapseRenderJob(object):
 		self._thread = None
 		self._logger = logging.getLogger(__name__)
 
+		self._parsed_duration = 0
+
 	def process(self):
 		"""Processes the job."""
 
@@ -851,13 +859,18 @@ class TimelapseRenderJob(object):
 		with self.render_job_lock:
 			try:
 				self._notify_callback("start", output)
-				p = sarge.run(command_str, stdout=sarge.Capture(), stderr=sarge.Capture())
-				if p.returncode == 0:
+
+				self._logger.debug("Parsing ffmpeg output")
+
+				c = CommandlineCaller()
+				c.on_log_stderr = self._process_ffmpeg_output
+				returncode, stdout_text, stderr_text = c.call(command_str, universal_newlines=True)
+
+				self._logger.debug("Done with parsing")
+
+				if returncode == 0:
 					self._notify_callback("success", output)
 				else:
-					returncode = p.returncode
-					stdout_text = p.stdout.text
-					stderr_text = p.stderr.text
 					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
 					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
 			except:
@@ -865,6 +878,30 @@ class TimelapseRenderJob(object):
 				self._notify_callback("fail", output, reason="unknown")
 			finally:
 				self._notify_callback("always", output)
+
+	def _process_ffmpeg_output(self, *lines):
+		for line in lines:
+			# We should be getting the time more often, so try it first
+			current_time = _ffmpeg_current_regex.search(line)
+			if current_time is not None and self._parsed_duration is not 0:
+				current_s = self._convert_time(*current_time.groups())
+				progress = current_s / float(self._parsed_duration) * 100
+
+				# Update progress bar
+				for callback in _update_callbacks:
+					try:
+						callback.sendRenderProgress(progress)
+					except Exception as ex:
+						self._logger.exception("Exception while pushing render progress")
+
+			else:
+				duration = _ffmpeg_duration_regex.search(line)
+				if duration is not None:
+					self._parsed_duration = self._convert_time(*duration.groups())
+
+	@staticmethod
+	def _convert_time(hours, minutes, seconds):
+		return (int(hours) * 60 + int(minutes)) * 60 + int(seconds)
 
 	@classmethod
 	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, hflip=False, vflip=False,
@@ -894,7 +931,7 @@ class TimelapseRenderJob(object):
 		logger = logging.getLogger(__name__)
 
 		command = [
-			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
+			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
 			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
 			'-f', 'vob']
 
