@@ -851,7 +851,7 @@ class TimelapseRenderJob(object):
 
 				c = CommandlineCaller()
 				c.on_log_stderr = self._process_ffmpeg_output
-				returncode, stdout_text, stderr_text = c.call(command_str)
+				returncode, stdout_text, stderr_text = c.call(command_str, universal_newlines=True)
 
 				self._logger.debug("Done with parsing")
 
