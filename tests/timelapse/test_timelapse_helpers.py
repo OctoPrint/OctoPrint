@@ -192,9 +192,9 @@ class TimelapseTest(unittest.TestCase):
 		durationStr = "  Duration: 00:00:18.60, start: 0.000000, bitrate: " # 18s duration
 		noChange2Str = "0: Video: mpeg2video, yuv420p, 640x480, q=2-31, 10000 kb/s, 90k tbn, 25 tbc"
 		progress1Str = "frame=  134 fps=0.0 q=1.6 size=    1528kB time=00:00:05.28 bitrate=2370.7kbits/s dup=80 drop=0  " # 5s elapsed
-		expectedProgress1 = 5.0 / 18.0
+		expectedProgress1 = 5.0 / 18.0 * 100.0
 		progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 " # 10s elapsed
-		expectedProgress2 = 10.0 / 18.0
+		expectedProgress2 = 10.0 / 18.0 * 100.0
 
 		# Callback mock
 		callback = mock.MagicMock()
@@ -220,9 +220,9 @@ class TimelapseTest(unittest.TestCase):
 
 		r._process_ffmpeg_output(progress1Str)
 		self.assertEqual(r._parsed_duration, 18)
-		callback.sendRenderProgress.assert_called_with(expectedProgress1)
+		self.assertAlmostEqual(callback.sendRenderProgress.call_args_list[0][0][0], expectedProgress1)
 
 		r._process_ffmpeg_output(progress2Str)
 		self.assertEqual(r._parsed_duration, 18)
-		callback.sendRenderProgress.assert_called_with(expectedProgress2)
+		self.assertAlmostEqual(callback.sendRenderProgress.call_args_list[1][0][0], expectedProgress2)
 
