@@ -14,15 +14,19 @@ from octoprint.timelapse import TimelapseRenderJob
 class TimelapseRenderJobTest(unittest.TestCase):
 
 	@data(
-		(("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg"),
+		(("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg", "mpeg2video"),
 		 dict(),
 		 '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p [out]\' "/path/to/output.mpg"'),
 
-		(("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg"),
+		(("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mp4", "libx264"),
+		 dict(),
+		 '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec libx264 -threads 1 -r 25 -y -b 10000k -f mp4 -vf \'[in] format=yuv420p [out]\' "/path/to/output.mp4"'),
+
+		(("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg", "mpeg2video"),
 		 dict(hflip=True),
 		 '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p,hflip [out]\' "/path/to/output.mpg"'),
 
-		(("/path/to/ffmpeg", 25, "20000k", 4, "/path/to/input/files_%d.jpg", "/path/to/output.mpg"),
+		(("/path/to/ffmpeg", 25, "20000k", 4, "/path/to/input/files_%d.jpg", "/path/to/output.mpg", "mpeg2video"),
 		 dict(rotate=True, watermark="/path/to/watermark.png"),
 		 '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 4 -r 25 -y -b 20000k -f vob -vf \'[in] format=yuv420p,transpose=2 [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]\' "/path/to/output.mpg"')
 	)
