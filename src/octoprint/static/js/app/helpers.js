@@ -63,17 +63,25 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self.removeItem = function(matcher) {
-        var item = self.getItem(matcher, true);
-        if (item === undefined) {
-            return;
-        }
-
-        var index = self.allItems.indexOf(item);
+        var index = self.getIndex(matcher, true);
         if (index > -1) {
             self.allItems.splice(index, 1);
             self._updateItems();
         }
     };
+
+    self.updateItem = function(matcher, item) {
+        var index = self.allItems.findIndex(matcher);
+        if (index > -1) {
+            self.allItems[index] = item;
+            self._updateItems();
+        }
+    };
+
+    self.addItem = function(item) {
+        self.allItems.push(item);
+        self._updateItems();
+    }
 
     //~~ pagination
 
@@ -154,20 +162,29 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     };
 
-    self.getItem = function(matcher, all) {
+    self.getIndex = function(matcher, all) {
         var itemList;
         if (all !== undefined && all === true) {
             itemList = self.allItems;
         } else {
             itemList = self.items();
         }
+
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
-                return itemList[i];
+                return i;
             }
         }
+        return -1;
+    }
 
-        return undefined;
+    self.getItem = function(matcher, all) {
+        var index = self.getIndex(matcher, all);
+        if (all !== undefined && all === true) {
+            return index > -1 ? self.allItems[index] : undefined;
+        } else {
+            return index > -1 ? self.items()[index] : undefined;
+        }
     };
 
     self.resetPage = function() {
