@@ -535,7 +535,7 @@ $(function() {
         };
 
         self.update = function(force) {
-            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                 self._updateClicked = false;
                 return;
             }
