@@ -565,7 +565,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                 return;
             }
 
@@ -686,8 +686,6 @@ $(function() {
                     break;
                 }
                 case "updating": {
-                    console.log(JSON.stringify(messageData));
-
                     text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
@@ -705,8 +703,6 @@ $(function() {
                     break;
                 }
                 case "restarting": {
-                    console.log(JSON.stringify(messageData));
-
                     title = gettext("Update successful, restarting!");
                     text = gettext("The update finished successfully and the server will now be restarted.");
 
@@ -745,8 +741,6 @@ $(function() {
                     break;
                 }
                 case "restart_manually": {
-                    console.log(JSON.stringify(messageData));
-
                     restartType = messageData.restart_type;
                     text = gettext("The update finished successfully, please restart OctoPrint now.");
                     if (restartType === "environment") {
