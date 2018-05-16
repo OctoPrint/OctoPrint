@@ -1,0 +1,30 @@
+name: octoprint # check to see if it's available
+version: '1.3.8.1+git' # check versioning
+summary: OctoPrint provides a snappy web interface for controlling consumer 3D printers. # 79 char long summary
+description: |
+    OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software and released under the GNU Affero General Public License V3.
+grade: stable # must be 'stable' to release into candidate/stable channels
+confinement: strict # use 'strict' once you have the right plugs
+
+apps:
+  octoprint:
+    command: octoprint
+    environment: 
+      LC_ALL: C.UTF-8
+    plugs:
+      - home
+      - network
+      - network-bind
+     
+parts: 
+  my-part:
+    source: https://github.com/softlayer/OctoPrint
+    source-type: git
+    plugin: python
+    python-version: python3
+    
+    build-packages:
+      - python3
+      
+    stage-packages:
+      - python3
