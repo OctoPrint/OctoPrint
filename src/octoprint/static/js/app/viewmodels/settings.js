@@ -100,6 +100,7 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
+        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
 
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
@@ -129,6 +130,7 @@ $(function() {
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
+        self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);

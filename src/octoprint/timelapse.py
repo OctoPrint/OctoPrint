@@ -16,7 +16,6 @@ try:
 except ImportError:
 	import Queue as queue
 import requests
-import re
 
 import octoprint.plugin
 import octoprint.util as util
@@ -45,7 +44,8 @@ current_render_job = None
 
 # filename formats
 _capture_format = "{prefix}-%d.jpg"
-_output_format = "{prefix}.mpg"
+_capture_glob = "{prefix}-*.jpg"
+_output_format = "{prefix}{postfix}.{extension}"
 
 # ffmpeg progress regexes
 _ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
@@ -165,13 +165,13 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
 	capture_dir = settings().getBaseFolder("timelapse_tmp")
 	output_dir = settings().getBaseFolder("timelapse")
 	threads = settings().get(["webcam", "ffmpegThreads"])
+	videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
 
 	job = TimelapseRenderJob(capture_dir, output_dir, name,
 	                         postfix=postfix,
-	                         capture_format=_capture_format,
-	                         output_format=_output_format,
 	                         fps=fps,
 	                         threads=threads,
+	                         videocodec=videocodec,
 	                         on_start=_create_render_start_handler(name, gcode=gcode),
 	                         on_success=_create_render_success_handler(name, gcode=gcode),
 	                         on_fail=_create_render_fail_handler(name, gcode=gcode),
@@ -784,9 +784,9 @@ class TimelapseRenderJob(object):
 
 	render_job_lock = threading.RLock()
 
-	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob="{prefix}-*.jpg",
-	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}.mpg", fps=25, threads=1,
-	             on_start=None, on_success=None, on_fail=None, on_always=None):
+	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob=_capture_glob,
+	             capture_format=_capture_format, output_format=_output_format, fps=25, threads=1,
+	             videocodec="mpeg2video", on_start=None, on_success=None, on_fail=None, on_always=None):
 		self._capture_dir = capture_dir
 		self._output_dir = output_dir
 		self._prefix = prefix
@@ -796,6 +796,7 @@ class TimelapseRenderJob(object):
 		self._output_format = output_format
 		self._fps = fps
 		self._threads = threads
+		self._videocodec = videocodec
 		self._on_start = on_start
 		self._on_success = on_success
 		self._on_fail = on_fail
@@ -824,12 +825,18 @@ class TimelapseRenderJob(object):
 			self._logger.warn("Cannot create movie, path to ffmpeg or desired bitrate is unset")
 			return
 
+		if self._videocodec == 'mpeg2video':
+			extension = "mpg"
+		else:
+			extension = "mp4"
+
 		input = os.path.join(self._capture_dir,
 		                     self._capture_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
 		output = os.path.join(self._output_dir,
 		                      self._output_format.format(prefix=self._prefix,
-		                                                 postfix=self._postfix if self._postfix is not None else ""))
+		                                                 postfix=self._postfix if self._postfix is not None else "",
+		                                                 extension=extension))
 
 		for i in range(4):
 			if os.path.exists(input % i):
@@ -853,7 +860,8 @@ class TimelapseRenderJob(object):
 
 		# prepare ffmpeg command
 		command_str = self._create_ffmpeg_command_string(ffmpeg, self._fps, bitrate, self._threads, input, output,
-		                                                 hflip=hflip, vflip=vflip, rotate=rotate, watermark=watermark)
+		                                                 self._videocodec, hflip=hflip, vflip=vflip, rotate=rotate,
+		                                                 watermark=watermark)
 		self._logger.debug("Executing command: {}".format(command_str))
 
 		with self.render_job_lock:
@@ -904,7 +912,7 @@ class TimelapseRenderJob(object):
 		return (int(hours) * 60 + int(minutes)) * 60 + int(seconds)
 
 	@classmethod
-	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, hflip=False, vflip=False,
+	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, videocodec, hflip=False, vflip=False,
 	                                  rotate=False, watermark=None, pixfmt="yuv420p"):
 		"""
 		Create ffmpeg command string based on input parameters.
@@ -914,6 +922,7 @@ class TimelapseRenderJob(object):
 		    fps (int): Frames per second for output
 		    bitrate (str): Bitrate of output
 		    threads (int): Number of threads to use for rendering
+		    videocodec (str): Videocodec to be used for encoding
 		    input (str): Absolute path to input files including file mask
 		    output (str): Absolute path to output file
 		    hflip (bool): Perform horizontal flip on input material.
@@ -930,10 +939,16 @@ class TimelapseRenderJob(object):
 
 		logger = logging.getLogger(__name__)
 
+		### Not all players can handle non-mpeg2 in VOB format
+		if videocodec == "mpeg2video":
+			containerformat = "vob"
+		else:
+			containerformat = "mp4"
+
 		command = [
-			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
+			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', videocodec,
 			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
-			'-f', 'vob']
+			'-f', containerformat]
 
 		filter_string = cls._create_filter_string(hflip=hflip,
 		                                          vflip=vflip,
