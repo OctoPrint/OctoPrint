@@ -1103,7 +1103,7 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
         condition = function() { return true; };
     }
 
-    if (!viewModel.hasOwnProperty(method) || !_.isFunction(viewModel[method]) || !condition(viewModel, method)) return;
+    if (!_.isFunction(viewModel[method]) || !condition(viewModel, method)) return;
 
     var parameters = undefined;
     if (!_.isFunction(callback)) {
