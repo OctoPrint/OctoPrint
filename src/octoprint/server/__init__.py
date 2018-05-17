@@ -272,7 +272,17 @@ class Server(object):
 
 		printerProfileManager = PrinterProfileManager()
 		eventManager = self._event_manager
-		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
+
+		analysis_queue_factories = dict(gcode=octoprint.filemanager.analysis.GcodeAnalysisQueue)
+		analysis_queue_hooks = pluginManager.get_hooks("octoprint.filemanager.analysis.factory")
+		for name, hook in analysis_queue_hooks.items():
+			try:
+				additional_factories = hook()
+				analysis_queue_factories.update(**additional_factories)
+			except:
+				self._logger.exception("Error while processing analysis queues from {}".format(name))
+		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
+
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
 
 		storage_managers = dict()
@@ -303,17 +313,6 @@ class Server(object):
 				connectivityChecker.check_immediately()
 
 		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
-
-		# setup access control
-		userManagerName = self._settings.get(["accessControl", "userManager"])
-		try:
-			clazz = octoprint.util.get_class(userManagerName)
-			userManager = clazz()
-		except:
-			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
-			userManager = octoprint.users.FilebasedUserManager()
-		finally:
-			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 
 		components = dict(
 			plugin_manager=pluginManager,
