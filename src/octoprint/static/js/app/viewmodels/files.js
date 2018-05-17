@@ -99,13 +99,13 @@ $(function() {
                 "upload": function(a, b) {
                     // sorts descending
                     if (b["date"] === undefined || a["date"] > b["date"]) return -1;
-                    if (a["date"] < b["date"]) return 1;
+                    if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
                 "size": function(a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
-                    if (a["size"] < b["size"]) return 1;
+                    if (a["size"] === undefined || a["size"] < b["size"]) return 1;
                     return 0;
                 }
             },
