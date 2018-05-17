@@ -9,8 +9,8 @@ confinement: strict # use 'strict' once you have the right plugs
 apps:
   octoprint:
     command: octoprint
-    environment: 
-      LC_ALL: C.UTF-8
+    #environment: 
+      #LC_ALL: C.UTF-8
     plugs:
       - home
       - network
