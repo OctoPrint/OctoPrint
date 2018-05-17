@@ -209,7 +209,7 @@ default_settings = {
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
 		"ffmpegVideoCodec": "mpeg2video",
-		"bitrate": "5000k",
+		"bitrate": "10000k",
 		"watermark": True,
 		"flipH": False,
 		"flipV": False,
