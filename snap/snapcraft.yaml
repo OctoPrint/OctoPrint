@@ -21,10 +21,10 @@ parts:
     source: https://github.com/kz6fittycent/OctoPrint
     source-type: git
     plugin: python
-    python-version: python2
+    #python-version: python
     
     build-packages:
-      - python2
+      - python
       
     stage-packages:
-      - python2
+      - python
