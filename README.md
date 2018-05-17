@@ -60,6 +60,13 @@ you already have Python 2.7, pip and virtualenv set up on your system:
 3. Create a user-owned virtual environment therein: `virtualenv venv`
 4. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install .`
 
+### COMING SOON!!
+A snap for Octoprint is in the works!!
+
+You can test it (and please do!) by installing it via this command:
+
+`sudo snap install --edge octoprint`
+
 You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
 for details.
 
