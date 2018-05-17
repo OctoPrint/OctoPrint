@@ -18,7 +18,7 @@ apps:
      
 parts: 
   my-part:
-    source: https://github.com/softlayer/OctoPrint
+    source: https://github.com/kz6fittycent/OctoPrint
     source-type: git
     plugin: python
     python-version: python3
