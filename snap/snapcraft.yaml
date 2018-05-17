@@ -1,5 +1,5 @@
 name: octoprint # check to see if it's available
-version: '1.3.8.3+git' # check versioning
+version: '1.3.8.4+git' # check versioning
 summary: OctoPrint provides a snappy web interface for consumer 3D printers. # 79 char long summary
 description: |
     OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software and released under the GNU Affero General Public License V3.
@@ -15,6 +15,11 @@ apps:
       - home
       - network
       - network-bind
+      - hardware-observe
+      - hardware-random-control
+      - log-observe
+      - mount-observe
+      - cups-control
      
 parts: 
   my-part:
