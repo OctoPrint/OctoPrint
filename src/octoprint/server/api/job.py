@@ -74,6 +74,5 @@ def jobState():
 	return jsonify({
 		"job": currentData["job"],
 		"progress": currentData["progress"],
-		"state": currentData["state"]["text"],
-		"printingUser": currentData["printingUser"],
+		"state": currentData["state"]["text"]
 	})
