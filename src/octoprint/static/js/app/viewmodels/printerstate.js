@@ -324,7 +324,8 @@ $(function() {
                     proceed: gettext("Yes"),
                     onproceed: function() {
                         OctoPrint.job.cancel();
-                    }
+                    },
+                    nofade: true
                 });
             }
         };
