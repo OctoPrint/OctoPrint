@@ -411,6 +411,7 @@ class MachineCom(object):
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
+		self._block_M0_M1 = settings().getBoolean(["serial", "blockM0M1"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 
@@ -3164,7 +3165,12 @@ class MachineCom(object):
 
 	def _gcode_M0_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self.setPause(True)
-		return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+		if self._block_M0_M1:
+			if self.isPrinting():
+				self._log("Not sending {} to printer since it's known to block communication, only pausing".format(cmd))
+			else:
+				self._log("Not sending {} to printer since it's known to block communication".format(cmd))
+			return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 	_gcode_M1_queuing = _gcode_M0_queuing
 
 	def _gcode_M25_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):

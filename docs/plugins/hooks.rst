@@ -801,6 +801,44 @@ octoprint.comm.transport.serial.factory
    :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
 
+.. _sec-plugins-hook-filemanager-analysis-factory:
+
+octoprint.filemanager.analysis.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: analysis_queue_factory_hook(*args, **kwargs)
+
+   Return additional (or replacement) analysis queue factories used for analysing uploaded files.
+
+   Should return a dictionary to merge with the existing dictionary of factories, mapping from extension tree leaf
+   to analysis queue factory. Analysis queue factories are expected to be :class:`~octoprint.filemanager.analysis.AbstractAnalysisQueue`
+   subclasses or factory methods taking one argument (the finish callback to be used by the queue implementation
+   to signal that an analysis has been finished to the system). See the source of :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue`
+   for an example.
+
+   By default, only one analysis queue factory is registered in the system, for file type ``gcode``: :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue`.
+   This can be replaced by plugins using this hook, allowing other approaches to file analysis.
+
+   This is useful for plugins wishing to provide (alternative) methods of metadata analysis for printable files.
+
+   **Example:**
+
+   The following handler would replace the existing analysis queue for ``gcode`` files with a custom implementation:
+
+   .. code-block:: python
+      :linenos:
+
+      from octoprint.filemanager.analysis import AbstractAnalysisQueue
+
+      class MyCustomGcodeAnalysisQueue(AbstractAnalysisQueue):
+          # ... custom implementation here ...
+
+      def custom_gcode_analysis_queue(*args, **kwargs):
+          return dict(gcode=MyCustomGcodeAnalysisQueue)
+
+   :return: A dictionary of analysis queue factories, mapped by their targeted file type.
+   :rtype: dict
+
 .. _sec-plugins-hook-filemanager-extensiontree:
 
 octoprint.filemanager.extension_tree
@@ -902,6 +940,52 @@ octoprint.printer.factory
    :param dict components: System components to use for printer instance initialization
    :return: The ``printer`` instance to use globally.
    :rtype: PrinterInterface subclass or None
+
+.. _sec-plugins-hook-printer-estimation-factory:
+
+octoprint.printer.estimation.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: print_time_estimator_factory(*args, **kwargs)
+
+   Return a :class:`~octoprint.printer.estimation.PrintTimeEstimator` subclass (or factory) to use for print time
+   estimation. This will be called on each start of a print or streaming job with a single parameter ``job_type``
+   denoting the type of job that was just started: ``local`` meaning a print of a local file through the serial connection,
+   ``sdcard`` a print of a file stored on the printer's SD card, ``stream`` the streaming of a local file to the
+   printer's SD card.
+
+   This is useful for plugins wishing to provide alternative methods of live print time estimation.
+
+   If none of the registered factories return a ``PrintTimeEstimator`` subclass, the default :class:`~octoprint.printer.estimation.PrintTimeEstimator`
+   will be used.
+
+   **Example:**
+
+   The following example would replace the stock print time estimator with (a nonsensical) one that always estimates
+   two hours of print time left:
+
+   .. code-block:: python
+
+      from octoprint.printer.estimation import PrintTimeEstimator
+
+      class CustomPrintTimeEstimator(PrintTimeEstimator):
+          def __init__(self, job_type):
+              pass
+
+          def estimate(self, progress, printTime, cleanedPrintTime, statisticalTotalPrintTime, statisticalTotalPrintTimeType):
+              # always reports 2h as printTimeLeft
+              return 2 * 60 * 60, "estimate"
+
+      def create_estimator_factory(*args, **kwargs):
+          return CustomPrintTimeEstimator
+
+      __plugin_hooks__ = {
+      	"octoprint.printer.estimation.factory": create_estimator_factory
+      }
+
+
+   :return: The :class:`~octoprint.printer.estimation.PrintTimeEstimator` class to use, or a factory method
+   :rtype: class or function
 
 .. _sec-plugins-hook-server-http-bodysize:
 

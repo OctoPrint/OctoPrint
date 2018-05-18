@@ -9,6 +9,7 @@ $(function() {
         self.printerProfiles=parameters[4];
         self.access = parameters[5];
 
+        self.filesListVisible = ko.observable(true);
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
@@ -98,13 +99,13 @@ $(function() {
                 "upload": function(a, b) {
                     // sorts descending
                     if (b["date"] === undefined || a["date"] > b["date"]) return -1;
-                    if (a["date"] < b["date"]) return 1;
+                    if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
                 "size": function(a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
-                    if (a["size"] < b["size"]) return 1;
+                    if (a["size"] === undefined || a["size"] < b["size"]) return 1;
                     return 0;
                 }
             },
@@ -836,9 +837,11 @@ $(function() {
                 var files = $("#files");
                 if (files.hasClass("in")) {
                     files.removeClass("overflow_visible");
+                    self.filesListVisible(false);
                 } else {
                     setTimeout(function() {
                         files.addClass("overflow_visible");
+                        self.filesListVisible(true);
                     }, 100);
                 }
             });

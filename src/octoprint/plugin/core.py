@@ -750,20 +750,19 @@ class PluginManager(object):
 						continue
 
 					kwargs = dict(module_name=module_name, version=version)
-					package_name = None
+					package_name = entry_point.dist.project_name
 					try:
-						module_pkginfo = InstalledEntryPoint(entry_point)
+						entry_point_metadata = EntryPointMetadata(entry_point)
 					except:
-						self.logger.exception("Something went wrong while retrieving package info data for module %s" % module_name)
+						self.logger.exception("Something went wrong while retrieving metadata for module {}".format(module_name))
 					else:
 						kwargs.update(dict(
-							name=module_pkginfo.name,
-							summary=module_pkginfo.summary,
-							author=module_pkginfo.author,
-							url=module_pkginfo.home_page,
-							license=module_pkginfo.license
+							name=entry_point_metadata.name,
+							summary=entry_point_metadata.summary,
+							author=entry_point_metadata.author,
+							url=entry_point_metadata.home_page,
+							license=entry_point_metadata.license
 						))
-						package_name = module_pkginfo.name
 
 					plugin = self._import_plugin_from_module(key, **kwargs)
 					if plugin:
@@ -1597,56 +1596,25 @@ def is_editable_install(install_dir, package, module, location):
 	return False
 
 
-class InstalledEntryPoint(pkginfo.Installed):
-
-	def __init__(self, entry_point, metadata_version=None):
+class EntryPointMetadata(pkginfo.Distribution):
+	def __init__(self, entry_point):
 		self.entry_point = entry_point
-		package = entry_point.module_name
-		pkginfo.Installed.__init__(self, package, metadata_version=metadata_version)
+		self.extractMetadata()
 
 	def read(self):
-		import sys
-		import glob
 		import warnings
 
-		opj = os.path.join
-		if self.package is not None:
-			package = self.package.__package__
-			if package is None:
-				package = self.package.__name__
+		metadata_files = ("METADATA",  # wheel
+		                  "PKG-INFO")  # egg
 
-			project = pkg_resources.to_filename(pkg_resources.safe_name(self.entry_point.dist.project_name))
+		if self.entry_point and self.entry_point.dist:
+			for metadata_file in metadata_files:
+				try:
+					return self.entry_point.dist.get_metadata(metadata_file)
+				except:
+					pass
 
-			package_pattern = '%s*.egg-info' % package
-			project_pattern = '%s*.egg-info' % project
-
-			file = getattr(self.package, '__file__', None)
-			if file is not None:
-				candidates = []
-
-				def _add_candidate(where):
-					candidates.extend(glob.glob(where))
-
-				for entry in sys.path:
-					if file.startswith(entry):
-						_add_candidate(opj(entry, 'EGG-INFO')) # egg?
-						for pattern in (package_pattern, project_pattern): # dist-installed?
-							_add_candidate(opj(entry, pattern))
-
-				dir, name = os.path.split(self.package.__file__)
-				for pattern in (package_pattern, project_pattern):
-					_add_candidate(opj(dir, pattern))
-					_add_candidate(opj(dir, '..', pattern))
-
-				for candidate in candidates:
-					if os.path.isdir(candidate):
-						path = opj(candidate, 'PKG-INFO')
-					else:
-						path = candidate
-					if os.path.exists(path):
-						with open(path) as f:
-							return f.read()
-		warnings.warn('No PKG-INFO found for package: %s' % self.package_name)
+		warnings.warn('No package metadata found for package: {}'.format(self.entry_point.module_name))
 
 
 class Plugin(object):

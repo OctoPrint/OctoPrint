@@ -57,8 +57,6 @@ class TestSettings(unittest.TestCase):
 			expected_timelapse_tmp_folder = os.path.join(basedir, "timelapse", "tmp")
 
 			# test
-			self.assertFalse(os.path.isdir(expected_upload_folder))
-
 			upload_folder = settings.getBaseFolder("uploads")
 			timelapse_folder = settings.getBaseFolder("timelapse")
 			timelapse_tmp_folder = settings.getBaseFolder("timelapse_tmp")

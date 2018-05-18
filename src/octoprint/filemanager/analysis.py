@@ -50,8 +50,6 @@ class AnalysisQueue(object):
 	OctoPrint's :class:`AnalysisQueue` can manage various :class:`AbstractAnalysisQueue` implementations, mapped
 	by their machine code type.
 
-	At the moment, only the analysis of GCODE files for 3D printing is supported, through :class:`GcodeAnalysisQueue`.
-
 	By invoking :meth:`register_finish_callback` it is possible to register oneself as a callback to be invoked each
 	time the analysis of a queue entry finishes. The call parameters will be the finished queue entry as the first
 	and the analysis result as the second parameter. It is also possible to remove the registration again by invoking
@@ -62,12 +60,13 @@ class AnalysisQueue(object):
 	entry will be enqueued with the type specific analysis queue.
 	"""
 
-	def __init__(self):
+	def __init__(self, queue_factories):
 		self._logger = logging.getLogger(__name__)
 		self._callbacks = []
-		self._queues = dict(
-			gcode=GcodeAnalysisQueue(self._analysis_finished)
-		)
+
+		self._queues = dict()
+		for key, queue_factory in queue_factories.items():
+			self._queues[key] = queue_factory(self._analysis_finished)
 
 	def register_finish_callback(self, callback):
 		self._callbacks.append(callback)
@@ -307,6 +306,28 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	     * The extruded length in mm
 	   - * ``filament.toolX.volume``
 	     * The extruded volume in cm³
+	   - * ``printingArea``
+	     * Bounding box of the printed object in the print volume (minimum and maximum coordinates)
+	   - * ``printingArea.minX``
+	     * Minimum X coordinate of the printed object
+	   - * ``printingArea.maxX``
+	     * Maximum X coordinate of the printed object
+	   - * ``printingArea.minY``
+	     * Minimum Y coordinate of the printed object
+	   - * ``printingArea.maxY``
+	     * Maximum Y coordinate of the printed object
+	   - * ``printingArea.minZ``
+	     * Minimum Z coordinate of the printed object
+	   - * ``printingArea.maxZ``
+	     * Maximum Z coordinate of the printed object
+	   - * ``dimensions``
+	     * Dimensions of the printed object in X, Y, Z
+	   - * ``dimensions.width``
+	     * Width of the printed model along the X axis, in mm
+	   - * ``dimensions.depth``
+	     * Depth of the printed model along the Y axis, in mm
+	   - * ``dimensions.height``
+	     * Height of the printed model along the Z axis, in mm
 	"""
 
 	def __init__(self, finished_callback):

@@ -321,6 +321,12 @@
                             <span class="help-block">{{ _('Try checking this if you run into connection timeouts due to your printer taking too long to respond to OctoPrint\'s handshake attempts on connect.') }}</span>
                         </label>
                     </div>
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_blockM0M1" id="settings-serialBlockM0M1"> {{ _('Do not send <code>M0</code>/<code>M1</code> commands to the firmware, only pause') }}
+                            <span class="help-block">{{ _('Most firmware will block and wait for the user to press the button on the controller when an <code>M0</code> or <code>M1</code> is received. Due to that OctoPrint will normally not send those commands to the printer and only pause any ongoing prints. If you want OctoPrint to send those commands to your printer, uncheck this option.') }}</span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>

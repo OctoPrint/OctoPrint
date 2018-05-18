@@ -279,9 +279,23 @@ def utilTestPath():
 
 			check_access = [check for check in request_check_access if check in ("r", "w", "x")]
 
-		exists = os.path.exists(path)
+		allow_create_dir = data.get("allow_create_dir", False) and check_type == "dir"
+		check_writable_dir = data.get("check_writable_dir", False) and check_type == "dir"
+		if check_writable_dir and "w" not in check_access:
+			check_access.append("w")
 
 		# check if path exists
+		exists = os.path.exists(path)
+		if not exists and check_type == "dir" and allow_create_dir:
+			try:
+				os.makedirs(path)
+			except:
+				logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
+				return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+			else:
+				exists = True
+
+		# check path type
 		type_mapping = dict(file=os.path.isfile, dir=os.path.isdir)
 		if check_type:
 			typeok = type_mapping[check_type](path)
@@ -291,9 +305,22 @@ def utilTestPath():
 		# check if path allows requested access
 		access_mapping = dict(r=os.R_OK, w=os.W_OK, x=os.X_OK)
 		if check_access:
-			access = os.access(path, reduce(lambda x, y: x | y, map(lambda a: access_mapping[a], check_access)))
+			mode = 0
+			for a in map(lambda x: access_mapping[x], check_access):
+				mode |= a
+			access = os.access(path, mode)
 		else:
 			access = exists
+
+		if check_writable_dir and check_type == "dir":
+			try:
+				test_path = os.path.join(path, ".testballoon.txt")
+				with open(test_path, "wb") as f:
+					f.write("Test")
+				os.remove(test_path)
+			except:
+				logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
+				return jsonify(path=path, exists=exists, typeok=typeok, access=False, result=False)
 
 		return jsonify(path=path, exists=exists, typeok=typeok, access=access, result=exists and typeok and access)
 

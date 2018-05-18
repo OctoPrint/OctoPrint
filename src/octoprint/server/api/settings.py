@@ -153,6 +153,7 @@ def getSettings():
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
 			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"blockM0M1": s.getBoolean(["serial", "blockM0M1"]),
 			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
 			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
 			"supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
@@ -296,7 +297,9 @@ def setSettings():
 		return make_response("Malformed request, need settings dictionary, "
 		                     "got a {} instead: {!r}".format(type(data).__name__, data), 400)
 
-	_saveSettings(data)
+	response = _saveSettings(data)
+	if response:
+		return response
 	return getSettings()
 
 
@@ -323,6 +326,16 @@ def _saveSettings(data):
 
 	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
 	# is changed, added or removed here
+
+	if "folder" in data.keys():
+		try:
+			if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
+			if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
+			if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
+			if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
+			if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
+		except IOError:
+			return make_response("One of the configured folders is invalid", 400)
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
@@ -391,6 +404,7 @@ def _saveSettings(data):
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
+		if "blockM0M1" in data["serial"]: s.setBoolean(["serial", "blockM0M1"], data["serial"]["blockM0M1"])
 		if "supportResendsWithoutOk" in data["serial"]:
 			value = data["serial"]["supportResendsWithoutOk"]
 			if value in ("always", "detect", "never"):
@@ -425,13 +439,6 @@ def _saveSettings(data):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
-
-	if "folder" in data.keys():
-		if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
-		if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-		if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-		if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
-		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]:
