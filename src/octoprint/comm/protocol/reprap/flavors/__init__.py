@@ -12,7 +12,8 @@ import logging
 import time
 
 
-from octoprint.comm.protocol.gcode.util import GcodeCommand, regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
+from octoprint.comm.protocol.commands import GcodeCommand
+from octoprint.comm.protocol.gcode.util import regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
 
 # TODO needed? move?
 from octoprint.util import chunks

@@ -116,13 +116,22 @@ class Printjob(ProtocolListener, ListenerAware):
 		self.notify_listeners("on_job_done", self)
 		self.reset_job()
 
-	def process_job_cancelled(self):
-		self.notify_listeners("on_job_cancelled", self)
-		self.reset_job()
-
 	def process_job_failed(self):
 		self.notify_listeners("on_job_failed", self)
 		self.reset_job()
+
+	def process_job_cancelling(self, firmware_error=None):
+		self.notify_listeners("on_job_cancelling", self, firmware_error=firmware_error)
+
+	def process_job_cancelled(self, cancel_position=None):
+		self.notify_listeners("on_job_cancelled", self, cancel_position=cancel_position)
+		self.reset_job()
+
+	def process_job_paused(self, pause_position=None):
+		self.notify_listeners("on_job_paused", self, pause_position=pause_position)
+
+	def process_job_resumed(self):
+		self.notify_listeners("on_job_resumed", self)
 
 	def process_job_progress(self):
 		self.notify_listeners("on_job_progress", self)
@@ -179,6 +188,7 @@ class LocalFilePrintjob(StoragePrintjob):
 
 	@property
 	def pos(self):
+		# TODO manual pos tracking
 		return self._handle.tell() if self._handle is not None else 0
 
 	@property
@@ -246,6 +256,7 @@ class LocalFilePrintjob(StoragePrintjob):
 	def reset_job(self):
 		super(LocalFilePrintjob, self).reset_job()
 		self.close()
+		self._pos = self._read_lines = 0
 
 class LocalGcodeFilePrintjob(LocalFilePrintjob):
 
@@ -283,12 +294,13 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob):
 
 class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 
-	def __init__(self, path, status_interval=2.0):
+	def __init__(self, path, status_interval=2.0, *args, **kwargs):
 		name = path
 		if name.startswith("/"):
 			name = name[1:]
 
 		StoragePrintjob.__init__(self,
+		                         "sdcard",
 		                         name,
 		                         name=name,
 		                         event_data=dict(name=name,
@@ -373,10 +385,19 @@ class PrintjobListener(object):
 	def on_job_done(self, job):
 		pass
 
-	def on_job_cancelled(self, job):
+	def on_job_failed(self, job):
 		pass
 
-	def on_job_failed(self, job):
+	def on_job_cancelling(self, job, firmware_error=None):
+		pass
+
+	def on_job_cancelled(self, job, cancel_position=None):
+		pass
+
+	def on_job_paused(self, job, pause_position=None):
+		pass
+
+	def on_job_resumed(self, job):
 		pass
 
 	def on_job_progress(self, job):

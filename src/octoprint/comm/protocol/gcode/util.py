@@ -32,57 +32,71 @@ class GcodeCommand(object):
 	known_int_attributes = ("f", "t", "n")
 	known_attributes = known_float_attributes + known_int_attributes
 
-	command_regex = re.compile("^\s*((?P<GM>[GM](?P<number>\d+))|(?P<T>T(?P<tool>\d+))|(?P<F>F(?P<feedrate>\d+)))")
+	command_regex = re.compile("^\s*((?P<GM>[GM](?P<number>\d+))(\\.(?P<subcode>\d+))?|(?P<T>T(?P<tool>\d+))|(?P<F>F(?P<feedrate>\d+)))")
 
 	argument_pattern = "\s*([{float_args}]{float}|[{int_args}]{int})".format(float_args="".join(map(lambda x: x.upper(), known_float_attributes)),
 	                                                                         int_args="".join(map(lambda x: x.upper(), known_int_attributes)),
 	                                                                         float=regex_float_pattern,
 	                                                                         int=regex_int_pattern)
 	argument_regex = re.compile(argument_pattern)
-	param_regex = re.compile("^[GMT]\d+\s+(.*?)$")
+	param_regex = re.compile("^[GMTF]\d+(\\.\d+)?\s+(?P<param>.*?)$")
 
 	@staticmethod
-	def from_line(line):
+	def from_line(line, tags=None):
 		"""
 		>>> gcode = GcodeCommand.from_line("M30 some_file.gco")
-		>>> gcode.command
-		'M30'
+		>>> gcode.code
+		u'M30'
 		>>> gcode.param
-		'some_file.gco'
+		u'some_file.gco'
 		>>> gcode = GcodeCommand.from_line("G28 X0 Y0")
-		>>> gcode.command
-		'G28'
+		>>> gcode.code
+		u'G28'
 		>>> gcode.x
 		0.0
 		>>> gcode.y
 		0.0
 		>>> gcode = GcodeCommand.from_line("M104 S220.0 T1")
-		>>> gcode.command
-		'M104'
+		>>> gcode.code
+		u'M104'
 		>>> gcode.s
 		220.0
 		>>> gcode.t
 		1
+		>>> gcode = GcodeCommand.from_line("M123.456 my parameter is long")
+		>>> gcode.code
+		u'M123'
+		>>> gcode.subcode
+		456
+		>>> gcode.param
+		u'my parameter is long'
 		"""
 
 		if isinstance(line, GcodeCommand):
 			return line
 
+		if tags is None:
+			tags = set()
+
 		line = line.strip()
-		command = ""
-		args = {"original": line}
+		code = ""
+		subcode = None
+		args = {"original": line, "tags": tags}
 		match = GcodeCommand.command_regex.match(line)
 		if match is None:
 			args["unknown"] = True
 		else:
 			if match.group("GM"):
-				command = match.group("GM")
+				code = match.group("GM")
+
+				if match.group("subcode"):
+					subcode = int(match.group("subcode"))
 
 				matched_args = GcodeCommand.argument_regex.findall(line)
 				if not matched_args:
-					param_match = GcodeCommand.param_regex.match(line)
-					if param_match is not None:
-						args["param"] = param_match.group(1)
+					param = line[len(match.group(0)):].lstrip()
+					if param:
+						args["param"] = param
 				else:
 					for arg in matched_args:
 						key = arg[0].lower()
@@ -94,16 +108,18 @@ class GcodeCommand(object):
 							value = str(arg[1:])
 						args[key] = value
 			elif match.group("T"):
-				command = "T"
+				code = "T"
 				args["tool"] = match.group("tool")
 			elif match.group("F"):
-				command = "F"
+				code = "F"
 				args["f"] = match.group("feedrate")
 
-		return GcodeCommand(command, **args)
+		return GcodeCommand(code, subcode=subcode, **args)
 
-	def __init__(self, command, **kwargs):
-		self.command = command
+	def __init__(self, command, subcode=None, **kwargs):
+		self.code = command
+		self.subcode = subcode
+
 		self.x = None
 		self.y = None
 		self.z = None
@@ -121,11 +137,12 @@ class GcodeCommand(object):
 
 		self.progress = None
 		self.callback = None
+		self.tags = set()
 
 		self.unknown = False
 
-		for key, value in kwargs.iteritems():
-			if key in GcodeCommand.known_attributes + ("tool", "original", "param", "progress", "callback", "unknown"):
+		for key, value in kwargs.items():
+			if key in GcodeCommand.known_attributes + ("tool", "original", "param", "progress", "callback", "tags", "unknown"):
 				self.__setattr__(key, value)
 
 	def __repr__(self):
@@ -139,14 +156,9 @@ class GcodeCommand(object):
 			for key in GcodeCommand.known_attributes:
 				value = self.__getattribute__(key)
 				if value is not None:
-					if key in GcodeCommand.known_int_attributes:
-						attr.append("%s%d" % (key.upper(), value))
-					elif key in GcodeCommand.known_float_attributes:
-						attr.append("%s%f" % (key.upper(), value))
-					else:
-						attr.append("%s%r" % (key.upper(), value))
-			attributeStr = " ".join(attr)
-			return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
+					attr.append("{}{!r}".format(key.upper(), value))
+			attribute_str = " ".join(attr)
+			return "{}{}{}".format(self.code.upper(), " " + attribute_str if attribute_str else "", " " + self.param if self.param else "")
 
 
 class TypedQueue(queue.Queue):

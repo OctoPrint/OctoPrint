@@ -93,7 +93,6 @@ import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
-import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
@@ -296,10 +295,12 @@ class Server(object):
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
 
-		storage_managers = dict()
-		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
-		storage_managers[octoprint.filemanager.FileDestinations.SDCARD] = octoprint.filemanager.storage.PrinterSDStorage()
-		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
+		storage_managers = self._collect_initial_storage_managers()
+		fileManager = octoprint.filemanager.FileManager(analysisQueue,
+		                                                slicingManager,
+		                                                printerProfileManager,
+		                                                initial_storage_managers=storage_managers)
+
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
@@ -857,6 +858,15 @@ class Server(object):
 			return Locale.negotiate([default_language], LANGUAGES)
 
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
+
+	def _collect_initial_storage_managers(self):
+		from octoprint.filemanager.storage.local import LocalFileStorage
+		from octoprint.filemanager.storage.sdcard import PrinterSDStorage
+
+		storage_managers = dict()
+		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = LocalFileStorage(self._settings.getBaseFolder("uploads"))
+		storage_managers[octoprint.filemanager.FileDestinations.SDCARD] = PrinterSDStorage()
+		return storage_managers
 
 	def _setup_heartbeat_logging(self):
 		logger = logging.getLogger(__name__ + ".heartbeat")

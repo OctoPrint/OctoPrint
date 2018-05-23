@@ -15,11 +15,11 @@ from octoprint.events import eventManager, Events
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
-from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 from collections import namedtuple
 
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
@@ -593,7 +593,7 @@ class FileManager(object):
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def create_print_job(self, destination, path, user=None):
-		return self._storage(destination).get_print_job(path, user=user)
+		return self._storage(destination).create_print_job(path, user=user)
 
 	def has_analysis(self, destination, path):
 		return self._storage(destination).has_analysis(path)

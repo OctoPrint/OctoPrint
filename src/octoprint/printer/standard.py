@@ -461,12 +461,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	def feed_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=50, max=200)
 		self._protocol.set_feedrate_multiplier(factor,
-		              tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
+		                                       tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
 
 	def flow_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=75, max=125)
 		self._protocol.set_extrusion_multiplier(factor,
-		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
+		                                        tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
 	def select_job(self, job, start_printing=False, pos=None, *args, **kwargs):
 		self._update_job(job)
@@ -477,7 +477,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			eventManager().fire(Events.FILE_SELECTED, event_payload)
 
 		if start_printing and self.is_ready():
-			self.start_print(pos=pos)
+			self.start_print(pos=pos,
+			                 tags=kwargs.get("tags", set()))
 
 	def unselect_job(self):
 		self._remove_job()
@@ -485,23 +486,21 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		eventManager().fire(Events.FILE_DESELECTED)
 
-	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
-	@util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
-	def select_file(self, path, sd, printAfterSelect=False, pos=None):
+	@util.deprecated("select_file has been deprecated, use select_job instead",
+	                 includedoc="Replaced by :func:`select_job`",
+	                 since="1.4.0")
+	def select_file(self, path, sd, printAfterSelect=False, pos=None, user=None):
 		if sd:
-			job = SDFilePrintjob("/" + path)
+			storage = "sdcard"
 		else:
-			full_path = os.path.join(settings().getBaseFolder("uploads"), path)
-			job = LocalGcodeFilePrintjob(full_path,
-			                             name=path,
-			                             event_data=dict(name=os.path.basename(full_path),
-			                                             path=path,
-			                                             origin="local"))
+			storage = "local"
 
+		job = self._file_manager.create_print_job(storage, path, user=user)
 		self.select_job(job, start_printing=printAfterSelect, pos=pos)
 
-	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
-	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")(unselect_job)
+	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead",
+	                                includedoc="Replaced by :func:`unselect_job`",
+	                                since="1.4.0")(unselect_job)
 
 	def start_print(self, pos=None, user=None, *args, **kwargs):
 		"""
@@ -1106,40 +1105,73 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if job != self._job.job:
 			return
 
-		# TODO include position in payload if available
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
-	def on_comm_print_job_cancelling(self, firmware_error=None):
-		payload = self._payload_for_print_job_event()
+	def on_job_cancelling(self, job, firmware_error=None):
+		if job != self._job.job:
+			return
+
+		payload = job.event_payload()
 		if payload:
 			if firmware_error:
 				payload["firmwareError"] = firmware_error
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
-	def on_job_cancelled(self, job):
+	def on_job_cancelled(self, job, cancel_position=None):
 		if job != self._job.job:
 			return
 
 		self._update_progress_data()
 
-		# TODO include position in payload if available
 		payload = job.event_payload()
 		if payload:
 			payload["time"] = job.elapsed
+			if cancel_position:
+				payload["position"] = cancel_position
+
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self.script("afterPrintCancelled",
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-			def finalize():self._file_manager.log_print(self._get_origin_for_job(),
-			                            self._job.job.name,
-			                            time.time(),
-			                            payload["time"],
-			                            False,
-			                            self._printer_profile_manager.get_current_or_default()["id"])
-			eventManager().fire(Events.PRINT_FAILED, payload)
+			def finalize():
+				self._file_manager.log_print(job.storage,
+			                                 job.name,
+			                                 time.time(),
+			                                 payload["time"],
+			                                 False,
+			                                 self._printer_profile_manager.get_current_or_default()["id"])
+				eventManager().fire(Events.PRINT_FAILED, payload)
+
+			thread = threading.Thread(target=finalize)
+			thread.daemon = True
+			thread.start()
+
+	def on_job_paused(self, job, pause_position=None):
+		if job != self._job.job:
+			return
+
+		payload = job.event_payload()
+		if payload:
+			if pause_position:
+				payload["position"] = pause_position
+			eventManager().fire(Events.PRINT_PAUSED, payload)
+			self.script("afterPrintPaused",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
+	def on_job_resumed(self, job):
+		if job != self._job.job:
+			return
+
+		payload = job.event_payload()
+		if payload:
+			eventManager().fire(Events.PRINT_RESUMED, payload)
+			self.script("beforePrintResumed",
+			            context=dict(event=payload),
+			            must_be_set=False)
 
 	#~~ comm.MachineComPrintCallback implementation
 

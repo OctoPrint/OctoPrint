@@ -10,13 +10,19 @@ from octoprint.comm.protocol import Protocol, ThreeDPrinterProtocolMixin, FileSt
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, \
 	PushingTransportWrapper, PushingTransportWrapperListener
 
+from octoprint.comm.protocol.commands import Command, AtCommand, GcodeCommand
+
 from octoprint.comm.protocol.gcode.util import TypedQueue, TypeAlreadyInQueue, \
-	GcodeCommand, regexes_parameters
+	regexes_parameters
+
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result
 
 from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
 
-from octoprint.util import to_unicode, protectedkeydict, CountedEvent
+from octoprint.util import to_str, to_unicode, protectedkeydict, CountedEvent
+
+from octoprint.events import Events
 
 try:
 	import queue
@@ -24,8 +30,41 @@ except ImportError:
 	import Queue as queue
 
 import collections
+import logging
 import threading
 import time
+
+
+gcode_to_event = {
+	# pause for user input
+	"M226": Events.WAITING,
+	"M0": Events.WAITING,
+	"M1": Events.WAITING,
+	# dwell command
+	"G4": Events.DWELL,
+
+	# part cooler
+	"M245": Events.COOLING,
+
+	# part conveyor
+	"M240": Events.CONVEYOR,
+
+	# part ejector
+	"M40": Events.EJECT,
+
+	# user alert
+	"M300": Events.ALERT,
+
+	# home print head
+	"G28": Events.HOME,
+
+	# emergency stop
+	"M112": Events.E_STOP,
+
+	# motors on/off
+	"M80": Events.POWER_ON,
+	"M81": Events.POWER_OFF,
+}
 
 
 class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
@@ -43,6 +82,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def __init__(self, flavor, connection_timeout=30.0, communication_timeout=5.0,
 	             temperature_interval_idle=5.0, temperature_interval_printing=5.0):
 		super(ReprapGcodeProtocol, self).__init__()
+
+		self._phase_logger = logging.getLogger(__name__ + ".command_phases")
 
 		self.flavor = flavor
 		self.timeouts = dict(
@@ -100,7 +141,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		)
 		self._protected_state = protectedkeydict(self._internal_state)
 
-		self._command_queue = queue.Queue()
+		self._command_queue = TypedQueue()
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
 
@@ -112,6 +153,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                         queued=dict(),
 		                         sending=dict(),
 		                         sent=dict())
+
+		self._atcommand_hooks = dict(queuing=dict(),
+		                             sending=dict())
 
 		# temperature polling
 		self._temperature_poller = None
@@ -214,7 +258,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._send_commands(self.flavor.command_sd_refresh())
 
 	def start_file_print(self, name, position=0, **kwargs):
-		tags = kwargs.get("tags", set()) | "trigger:protocol.start_file_print"
+		tags = kwargs.get(b"tags", set()) | {"trigger:protocol.start_file_print"}
 		self._send_commands(self.flavor.command_sd_select_file(name),
 		                    self.flavor.command_sd_set_pos(position),
 		                    self.flavor.command_sd_start(),
@@ -242,14 +286,27 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		return not self._internal_state["long_running_command"] and not self._internal_state["heating"]
 
 	def send_commands(self, *commands, **kwargs):
-		command_type = kwargs.get("command_type")
-		if self.state == ProtocolState.PRINTING and not self._job.runs_parallel:
+		command_type = kwargs.get(b"command_type")
+		on_sent = kwargs.get(b"on_sent")
+		tags = kwargs.get(b"tags")
+		force = kwargs.get(b"force", False)
+
+		# TODO job on hold
+		if self.state == ProtocolState.PRINTING and not self._job.runs_parallel and not force:
 			if len(commands) > 1:
 				command_type = None
 			for command in commands:
-				self._command_queue.put((command, command_type))
-		elif self._is_operational():
-			self._send_commands(*commands, command_type=command_type)
+				if not isinstance(command, Command):
+					command = Command.from_line(command, type=command_type, tags=tags)
+
+				try:
+					self._command_queue.put((command, on_sent), item_type=command_type)
+					return True
+				except TypeAlreadyInQueue as e:
+					self._logger.debug("Type already in queue: " + e.type)
+					return False
+		elif self._is_operational() or force:
+			self._send_commands(*commands, command_type=command_type, tags=tags)
 
 	##~~ State handling
 
@@ -258,6 +315,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _is_busy(self):
 		return self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED)
+
+	def _is_streaming(self):
+		# TODO make more abstract?
+		return self._is_busy() and self._job and isinstance(self._job, LocalGcodeStreamjob)
 
 	def _on_state_connecting(self, old_state):
 		if old_state is not ProtocolState.DISCONNECTED:
@@ -624,10 +685,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _continue_sending(self):
 		while self._active:
-			if self.state in (ProtocolState.CONNECTED, ProtocolState.PAUSED):
-				return self._send_from_queue()
-
-			elif self.state in (ProtocolState.PRINTING,):
+			if self.state in (ProtocolState.PRINTING,) and not (self._job is None or not self._job.active or isinstance(self._job, SDFilePrintjob)):
 				# we are printing, we really want to send either something from the command
 				# queue or the next line from our file, so we only return here if we actually DO
 				# send something
@@ -635,11 +693,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					# we found something in the queue to send
 					return True
 
+				# TODO job on hold
+				#elif self.job_on_hold:
+				#	return False
+
 				elif self._send_next_from_job():
 					# we sent the next line from the file
 					return True
 
 				self._logger.debug("No command sent on ok while printing, doing another iteration")
+			else:
+				# just send stuff from the command queue and be done with it
+				return self._send_from_queue()
 
 	def _send_same_from_resend(self):
 		return self._send_next_from_resend(again=True)
@@ -665,7 +730,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			command = self._last_lines[-resend_delta]
 			linenumber = self._current_linenumber - resend_delta
 
-			result = self._enqueue_for_sending(command, linenumber=linenumber)
+			result = self._enqueue_for_sending(Command(command), linenumber=linenumber, processed=True)
 
 			self._internal_state["resend_delta"] -= 1
 			if self._internal_state["resend_delta"] <= 0:
@@ -684,12 +749,22 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					# we are no longer printing, return False
 					return False
 
+				# TODO job on hold
+				#elif self.job_on_hold:
+				#	# job is on hold, return false
+				#	return False
+
 				line = self._job.get_next()
+				# TODO implement QueueMarker
 				if line is None:
 					# end of job, return False
 					return False
 
-				if self._send_command(line):
+				command = Command.from_line(line, tags={"source:file",})
+				                                        # TODO filepos & fileline tags
+				                                        #"filepos:{}".format(pos),
+				                                        #"fileline:{}".format(lineno)})
+				if self._send_command(command):
 					return True
 
 				self._logger.debug("Command \"{}\" from job not enqueued, doing another iteration".format(line))
@@ -715,13 +790,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						# something with that entry is broken, ignore it and fetch
 						# the next one
 						continue
-					cmd, cmd_type, callback = entry
+					cmd, callback = entry
 				else:
 					cmd = entry
-					cmd_type = None
 					callback = None
 
-				if self._send_command(cmd, command_type=cmd_type, on_sent=callback):
+				if self._send_command(cmd, on_sent=callback):
 					# we actually did add this cmd to the send queue, so let's
 					# return, we are done here
 					return True
@@ -729,55 +803,87 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._command_queue.task_done()
 
 	def _send_commands(self, *commands, **kwargs):
-		# TODO return True or False depending on whether something/all? was sent
 		command_type = kwargs.get(b"command_type", None)
+		result = False
 		for command in commands:
 			if len(commands) > 1:
 				command_type = None
-			self._send_command(command, command_type=command_type, tags=kwargs.get(b"tags", set()))
+			result = self._send_command(command, command_type=command_type, tags=kwargs.get(b"tags", None)) or result
+		return result
 
-	def _send_command(self, command, command_type=None, on_sent=None, tags=None):
-		if isinstance(command, GcodeCommand):
-			gcode = command
-			command = str(gcode)
-		else:
-			gcode = None
+	def _send_command(self, command, command_type=None, tags=None, on_sent=None):
+		if not isinstance(command, Command):
+			command = Command.from_line(command, type=command_type, tags=tags)
 
 		with self._send_queue_mutex:
 			if self._internal_state["trigger_events"]:
-				command, command_type, gcode = self._process_command_phase("queuing", command, command_type, gcode=gcode)
+				results = self._process_command_phase("queuing", command)
 
-				if command is None:
+				if not results:
 					# command is no more, return
 					return False
-
-				# TODO gcode to event mapping
-				#if gcode and gcode.command in gcode_to_event:
-				#	# if this is a gcode bound to an event, trigger that now
-				#	self._eventbus.fire(gcode_to_event[gcode.command])
-
-			if self._enqueue_for_sending(command, command_type=command_type, on_sent=on_sent):
-				if self._internal_state["trigger_events"]:
-					self._process_command_phase("queued", command, command_type, gcode=gcode)
-				return True
 			else:
-				return False
+				results = [command]
 
-	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None):
+			# process helper
+			def process(command, on_sent=None):
+				if command is None:
+					# no command, next entry
+					return False
+
+				# process @ commands
+				if isinstance(command, AtCommand):
+					self._process_atcommand_phase("queuing", command)
+
+				# actually enqueue the command for sending
+				if self._enqueue_for_sending(command, on_sent=on_sent):
+					if not self._is_streaming():
+						# trigger the "queued" phase only if we are not streaming to sd right now
+						self._process_command_phase("queued", command)
+
+						if self._internal_state["trigger_events"] and isinstance(command, GcodeCommand) and command.code in gcode_to_event:
+							# TODO inject eventbus
+							#self._eventbus.fire(gcode_to_event[command.code])
+							pass
+					return True
+				else:
+					return False
+
+			# split off the final command, because that needs special treatment
+			if len(results) > 1:
+				last_command = results[-1]
+				results = results[:-1]
+			else:
+				last_command = results[0]
+				results = []
+
+			# track if we enqueued anything at all
+			enqueued_something = False
+
+			# process all but the last ...
+			for command in results:
+				enqueued_something = process(command) or enqueued_something
+
+			# ... and then process the last one with the on_sent callback attached
+			command = last_command
+			enqueued_something = process(command, on_sent=on_sent) or enqueued_something
+
+			return enqueued_something
+
+	def _enqueue_for_sending(self, command, linenumber=None, on_sent=None, processed=False):
 		"""
 		Enqueues a command and optional command_type and linenumber in the send queue.
 
 		Arguments:
-		    command (unicode): The command to send
+		    command (Command): The command to send
 		    linenumber (int): An optional line number to use for sending the
 		        command.
-		    command_type (unicode): An optional command type. There can only be
-		        one command of a specified command type in the queue at any
-		        given time.
+		    on_sent (callable or None): Callback to call when the command has been sent
+		    processed (bool): Whether this line has already been processed or not
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, command_type, on_sent), item_type=command_type)
+			self._send_queue.put((command, linenumber, on_sent, processed), item_type=command.type)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in queue: {}".format(e.type))
@@ -802,34 +908,38 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						break
 
 					# fetch command and optional linenumber from queue
-					command, linenumber, command_type, on_sent = entry
-
-					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
-					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
-					# at hand here and only clear our clear_to_send flag later if that's the case
-					gcode = GcodeCommand.from_line(command)
+					command, linenumber, on_sent, processed = entry
 
 					if linenumber is not None:
 						# line number predetermined - this only happens for resends, so we'll use the number and
 						# send directly without any processing (since that already took place on the first sending!)
-						self._do_send_with_checksum(command, linenumber)
+						self._do_send_with_checksum(to_str(command.line), linenumber)
 
 					else:
-						# trigger "sending" phase
-						command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
+						if not processed:
+							results = self._process_command_phase("sending", command)
 
-						if command is None:
-							# No, we are not going to send this, that was a last-minute bail.
-							# However, since we already are in the send queue, our _monitor
-							# loop won't be triggered with the reply from this unsent command
-							# now, so we try to tickle the processing of any active
-							# command queues manually
-							self._continue_sending()
+							if not results:
+								# No, we are not going to send this, that was a last-minute bail.
+								# However, since we already are in the send queue, our _monitor
+								# loop won't be triggered with the reply from this unsent command
+								# now, so we try to tickle the processing of any active
+								# command queues manually
+								self._continue_sending()
 
-							# and now let's fetch the next item from the queue
-							continue
+								# and now let's fetch the next item from the queue
+								continue
 
-						if command.strip() == "":
+							# we explicitly throw away plugin hook results that try
+							# to perform command expansion in the sending/sent phase,
+							# so "results" really should only have more than one entry
+							# at this point if our core code contains a bug
+							assert len(results) == 1
+
+							# we only use the first (and only!) entry here
+							command = results[0]
+
+						if command.line.strip() == "":
 							self._logger.info("Refusing to send an empty line to the printer")
 
 							# same here, tickle the queues manually
@@ -838,11 +948,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							# and fetch the next item
 							continue
 
+						# handle @ commands
+						if isinstance(command, AtCommand):
+							self._process_command_phase("sending", command)
+
+							# tickle...
+							self._continue_sending()
+
+							# ... and fetch the next item
+							continue
+
 						# now comes the part where we increase line numbers and send stuff - no turning back now
 						if not self._transport.message_integrity:
 							# transport does not have message integrity, let's see if we'll send a checksum
-							command_requiring_checksum = gcode is not None and gcode.command in self.flavor.checksum_requiring_commands
-							command_allowing_checksum = gcode is not None or self.flavor.unknown_with_checksum
+							command_requiring_checksum = isinstance(command, GcodeCommand) and command.code in self.flavor.checksum_requiring_commands
+							command_allowing_checksum = isinstance(command, GcodeCommand) or self.flavor.unknown_with_checksum
 							checksum_enabled = self.flavor.always_send_checksum or (self.state == ProtocolState.PRINTING and not self.flavor.never_send_checksum)
 
 							send_with_checksum = command_requiring_checksum or (command_allowing_checksum and checksum_enabled)
@@ -851,22 +971,22 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							# transport has message integrity, no checksum
 							send_with_checksum = False
 
-						command_to_send = command.encode("ascii", errors="replace")
+						command_to_send = command.line.encode("ascii", errors="replace")
 						if send_with_checksum:
-							self._do_increment_and_send_with_checksum(command_to_send)
+							self._do_increment_and_send_with_checksum(to_str(command_to_send))
 						else:
-							self._do_send_without_checksum(command_to_send)
+							self._do_send_without_checksum(to_str(command_to_send))
 
 					# trigger "sent" phase and use up one "ok"
 					if on_sent is not None and callable(on_sent):
 						# we have a sent callback for this specific command, let's execute it now
 						on_sent()
-					self._process_command_phase("sent", command, command_type, gcode=gcode)
+					self._process_command_phase("sent", command)
 
 					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
 					# require ack's for unknown commands
 					use_up_clear = self.flavor.unknown_requires_ack
-					if gcode is not None and not gcode.unknown:
+					if isinstance(command, GcodeCommand):
 						use_up_clear = True
 
 					if use_up_clear:
@@ -889,87 +1009,134 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._logger.exception("Caught an exception in the send loop")
 		self.notify_listeners("on_protocol_log", self, "Closing down send loop")
 
-	def _process_command_phase(self, phase, command, command_type=None, gcode=None):
-		if phase not in ("queuing", "queued", "sending", "sent"):
-			return command, command_type, gcode
+	def _log_command_phase(self, phase, command):
+		if self._phase_logger.isEnabledFor(logging.DEBUG):
+			self._phase_logger.debug("phase: {}, command: {!r}".format(phase, command))
 
-		if gcode is None:
-			gcode = GcodeCommand.from_line(command)
+	def _process_command_phase(self, phase, command, **kwargs):
+		command = Command.from_line(command, **kwargs)
+		results = [command]
+
+		self._log_command_phase(phase, command)
+
+		if phase not in ("queueing", "queued", "sending", "sent"):
+			return results
 
 		# send it through the phase specific handlers provided by plugins
 		for name, hook in self._gcode_hooks[phase].items():
-			try:
-				hook_result = hook(self, phase, command, command_type, gcode.command)
-			except:
-				self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
-			else:
-				command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode.command, hook_result)
-				if command is None:
-					# hook handler return None as command, so we'll stop here and return a full out None result
-					return None, None, None
+			new_results = []
+			for command in results:
+				try:
+					hook_results = hook(self,
+					                    phase,
+					                    str(command),
+					                    command.type,
+					                    command.code if isinstance(command, GcodeCommand) else None,
+					                    subcode=command.subcode if isinstance(command, GcodeCommand) else None,
+					                    tags=command.tags)
+				except:
+					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
+				else:
+					normalized = normalize_command_handler_result(command, hook_results,
+					                                              tags_to_add={"source:rewrite",
+					                                                           "phase:{}".format(phase),
+					                                                           "plugin:{}".format(name)})
+
+					# make sure we don't allow multi entry results in anything but the queuing phase
+					if not phase in ("queuing",) and len(normalized) > 1:
+						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
+						new_results.append(command)
+					else:
+						new_results += normalized
+			if not new_results:
+				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+				return []
+			results = new_results
 
 		# if it's a gcode command send it through the specific handler if it exists
-		if gcode is not None:
-			gcode_handler = "_gcode_" + gcode.command + "_" + phase
-			if hasattr(self, gcode_handler):
-				handler_result = getattr(self, gcode_handler)(command, cmd_type=command_type)
-				command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, handler_result)
+		new_results = []
+		modified = False
+		for command in results:
+			if isinstance(command, GcodeCommand) is not None:
+				gcode_handler = "_gcode_" + command.code + "_" + phase
+				if hasattr(self, gcode_handler):
+					handler_results = getattr(self, gcode_handler)(command)
+					new_results += normalize_command_handler_result(command, handler_results)
+					modified = True
+				else:
+					new_results.append(command)
+			else:
+				new_results.append(command)
+
+		if modified:
+			if not new_results:
+				# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+				return []
+			else:
+				results = new_results
 
 		# send it through the phase specific command handler if it exists
 		command_phase_handler = "_command_phase_" + phase
 		if hasattr(self, command_phase_handler):
-			handler_result = getattr(self, command_phase_handler)(command, cmd_type=command_type, gcode=gcode)
-			command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, handler_result)
+			new_results = []
+			for command in results:
+				handler_results = getattr(self, command_phase_handler)(command)
+				new_results += normalize_command_handler_result(command, handler_results)
+			results = new_results
 
 		# finally return whatever we resulted on
-		return command, command_type, gcode
+		return results
 
-	def _handle_command_handler_result(self, command, command_type, gcode, handler_result):
-		original_tuple = (command, command_type, gcode)
+	def _process_atcommand_phase(self, phase, command):
+		if (self._is_streaming()) or phase not in ("queuing", "sending"):
+			return
 
-		if handler_result is None:
-			# handler didn't return anything, we'll just continue
-			return original_tuple
+		# send it through the phase specific handlers provided by plugins
+		for name, hook in self._atcommand_hooks[phase].items():
+			try:
+				hook(self, phase, command.atcommand, command.parameters, tags=command.tags)
+			except:
+				self._logger.exception("Error while processing hook {} for phase {} and command {}:".format(name, phase, command.atcommand))
 
-		if isinstance(handler_result, basestring):
-			# handler did return just a string, we'll turn that into a 1-tuple now
-			handler_result = (handler_result,)
-		elif not isinstance(handler_result, (tuple, list)):
-			# handler didn't return an expected result format, we'll just ignore it and continue
-			return original_tuple
-
-		hook_result_length = len(handler_result)
-		if hook_result_length == 1:
-			# handler returned just the command
-			command, = handler_result
-		elif hook_result_length == 2:
-			# handler returned command and command_type
-			command, command_type = handler_result
-		else:
-			# handler returned a tuple of an unexpected length
-			return original_tuple
-
-		gcode = GcodeCommand.from_line(command)
-		return command, command_type, gcode
+		# trigger built-in handler if available
+		handler = getattr(self, "_atcommand_{}_{}".format(command.atcommand, phase), None)
+		if callable(handler):
+			try:
+				handler(command.atcommand, command.parameters, tags=command.tags)
+			except:
+				self._logger.exception("Error in handler for phase {} and command {}".format(phase, command.atcommand))
 
 	##~~ actual sending via serial
 
-	def _do_increment_and_send_with_checksum(self, cmd):
+	def _do_increment_and_send_with_checksum(self, line):
+		"""
+		Args:
+			line (str): the line to send
+		"""
 		with self._line_mutex:
 			linenumber = self._current_linenumber
-			self._add_to_last_lines(cmd)
+			self._add_to_last_lines(line)
 			self._current_linenumber += 1
-			self._do_send_with_checksum(cmd, linenumber)
+			self._do_send_with_checksum(line, linenumber)
 
-	def _do_send_with_checksum(self, cmd, lineNumber):
-		command_to_send = b"N%d %s" % (lineNumber, cmd)
+	def _do_send_with_checksum(self, line, line_number):
+		"""
+		Args:
+			line (str): the line to send
+			line_number (int): the line number to send
+		"""
+		command_to_send = b"N" + str(line_number) + b" " + line
 		checksum = 0
-		for c in command_to_send:
-			checksum ^= ord(c)
-		command_to_send = b"%s*%d" % (command_to_send, checksum)
+		for c in bytearray(command_to_send):
+			checksum ^= c
+		command_to_send = command_to_send + b"*" + str(checksum)
 		self._do_send_without_checksum(command_to_send)
 
 	def _do_send_without_checksum(self, data):
+		"""
+		Args:
+			data (str): the data to send
+		"""
 		self._transport.write(data + b"\n")
 
 	def _add_to_last_lines(self, command):
@@ -983,16 +1150,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_state["current_tool"] = int(tool_match.group("value"))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None):
-		if "Z" in cmd:
-			match = regexes_parameters["floatZ"].search(cmd)
-			if match:
-				try:
-					z = float(match.group("value"))
-					if self._internal_state["current_z"] != z:
-						self._internal_state["current_z"] = z
-						# TODO self._callback.on_comm_z_change(z)
-				except ValueError:
-					pass
+		if cmd.z is not None and self._internal_state["current_z"] != cmd.z:
+				self._internal_state["current_z"] = cmd.z
+				# TODO self._callback.on_comm_z_change(z)
 	_gcode_G1_sent = _gcode_G0_sent
 
 	def _gcode_M0_queuing(self, cmd, cmd_type=None):
@@ -1138,7 +1298,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	##~~ command phase handlers
 
 	def _command_phase_sending(self, cmd, cmd_type=None, gcode=None):
-		if gcode is not None and gcode.command in self.flavor.long_running_commands:
+		if gcode is not None and gcode.code in self.flavor.long_running_commands:
 			self._internal_state["long_running_command"] = True
 
 	##~~ helpers

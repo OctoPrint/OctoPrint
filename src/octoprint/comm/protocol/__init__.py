@@ -90,17 +90,17 @@ class Protocol(ListenerAware, TransportListener):
 		self._job.register_listener(self)
 		self._job.process(self, position=position, tags=tags)
 
-	def pause_processing(self):
+	def pause_processing(self, tags=None):
 		if self._job is None or self.state != ProtocolState.PRINTING:
 			return
 		self.state = ProtocolState.PAUSED
 
-	def resume_processing(self):
+	def resume_processing(self, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
 		self.state = ProtocolState.PRINTING
 
-	def cancel_processing(self, error=False):
+	def cancel_processing(self, error=False, tags=None):
 		if self._job is not None and self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
 			self._job.cancel(error=error)
 		self.state = ProtocolState.CONNECTED
