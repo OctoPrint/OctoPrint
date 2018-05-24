@@ -49,7 +49,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn aboutlink" data-bind="click: about.show"><i class="fa fa-info-circle"></i> {{ _('About OctoPrint') }}</button>
-        <button class="btn" data-bind="click: function() { cancelData() }" aria-hidden="true">{{ _('Cancel') }}</button>
+        <button class="btn" data-bind="click: function() { cancelData() }" aria-hidden="true">{{ _('Close') }}</button>
         <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}"><i class="fa fa-spinner fa-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
     </div>
 </div>

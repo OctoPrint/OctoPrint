@@ -4606,6 +4606,14 @@ msgstr ""
 msgid "FFMPEG threads"
 msgstr ""
 
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegVideoCodec.jinja2:1
+msgid "Videocodec uses for encoding"
+msgstr ""
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegVideoCodec.jinja2:2
+msgid "Videocodec"
+msgstr ""
+
 #: src/octoprint/templates/snippets/settings/webcam/watermark.jinja2:4
 msgid "Enable OctoPrint watermark in timelapse movies"
 msgstr ""

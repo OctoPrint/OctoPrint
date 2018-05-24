@@ -151,15 +151,15 @@
                 </div>
             </div>
             <fieldset data-bind="visible: api_enabled">
-                <legend>Apikey</legend>
+                <legend>API Key</legend>
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls">
                         <div class="input-append input-block-level ">
                             <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
-                            <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, enable: $root.access.users.editor.apikey"><i class="fa fa-copy"></i></a>
+                            <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-copy"></i></a>
                             <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="fa fa-refresh"></i></a>
-                            <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }"><i class="fa fa-trash-o"></i></a>
+                            <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-trash-o"></i></a>
                         </div>
 
                     </div>

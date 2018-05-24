@@ -1,4 +1,4 @@
-function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize) {
     var self = this;
 
     self.listType = listType;
@@ -7,6 +7,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.defaultSorting = defaultSorting;
     self.defaultFilters = defaultFilters;
     self.exclusiveFilters = exclusiveFilters;
+    self.defaultPageSize = defaultPageSize;
 
     self.searchFunction = undefined;
 
@@ -14,11 +15,17 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.allSize = ko.observable(0);
 
     self.items = ko.observableArray([]);
-    self.pageSize = ko.observable(filesPerPage);
+    self.pageSize = ko.observable(self.defaultPageSize);
     self.currentPage = ko.observable(0);
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
     self.selectedItem = ko.observable(undefined);
+
+    self.storageIds = {
+        "currentSorting": self.listType + "." + "currentSorting",
+        "currentFilters": self.listType + "." + "currentFilters",
+        "pageSize": self.listType + "." + "pageSize",
+    };
 
     //~~ item handling
 
@@ -56,17 +63,25 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self.removeItem = function(matcher) {
-        var item = self.getItem(matcher, true);
-        if (item === undefined) {
-            return;
-        }
-
-        var index = self.allItems.indexOf(item);
+        var index = self.getIndex(matcher, true);
         if (index > -1) {
             self.allItems.splice(index, 1);
             self._updateItems();
         }
     };
+
+    self.updateItem = function(matcher, item) {
+        var index = self.allItems.findIndex(matcher);
+        if (index > -1) {
+            self.allItems[index] = item;
+            self._updateItems();
+        }
+    };
+
+    self.addItem = function(item) {
+        self.allItems.push(item);
+        self._updateItems();
+    }
 
     //~~ pagination
 
@@ -147,20 +162,29 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     };
 
-    self.getItem = function(matcher, all) {
+    self.getIndex = function(matcher, all) {
         var itemList;
         if (all !== undefined && all === true) {
             itemList = self.allItems;
         } else {
             itemList = self.items();
         }
+
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
-                return itemList[i];
+                return i;
             }
         }
+        return -1;
+    }
 
-        return undefined;
+    self.getItem = function(matcher, all) {
+        var index = self.getIndex(matcher, all);
+        if (all !== undefined && all === true) {
+            return index > -1 ? self.allItems[index] : undefined;
+        } else {
+            return index > -1 ? self.items()[index] : undefined;
+        }
     };
 
     self.resetPage = function() {
@@ -282,16 +306,16 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         if ( self._initializeLocalStorage() ) {
             var currentSorting = self.currentSorting();
             if (currentSorting !== undefined)
-                localStorage[self.listType + "." + "currentSorting"] = currentSorting;
+                localStorage[self.storageIds.currentSorting] = currentSorting;
             else
-                localStorage[self.listType + "." + "currentSorting"] = undefined;
+                localStorage[self.storageIds.currentSorting] = undefined;
         }
     };
 
     self._loadCurrentSortingFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-            if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
-                self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
+            if (_.contains(_.keys(supportedSorting), localStorage[self.storageIds.currentSorting]))
+                self.currentSorting(localStorage[self.storageIds.currentSorting]);
             else
                 self.currentSorting(defaultSorting);
         }
@@ -300,31 +324,47 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self._saveCurrentFiltersToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
             var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-            localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+            localStorage[self.storageIds.currentFilters] = JSON.stringify(filters);
         }
     };
 
     self._loadCurrentFiltersFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.storageIds.currentFilters])));
         }
     };
+
+    self._savePageSizeToLocalStorage = function(pageSize) {
+        if (self._initializeLocalStorage()) {
+            localStorage[self.storageIds.pageSize] = pageSize;
+        }
+    }
+
+    self.pageSize.subscribe(self._savePageSizeToLocalStorage);
+
+    self._loadPageSizeFromLocalStorage = function() {
+        if (self._initializeLocalStorage) {
+            self.pageSize(parseInt(localStorage[self.storageIds.pageSize]));
+        }
+    }
 
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
             return false;
 
-        if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
+        if (localStorage[self.storageIds.currentSorting] !== undefined && localStorage[self.storageIds.currentFilters] !== undefined && JSON.parse(localStorage[self.storageIds.currentFilters]) instanceof Array && localStorage[self.storageIds.pageSize] !== undefined)
             return true;
 
-        localStorage[self.listType + "." + "currentSorting"] = self.defaultSorting;
-        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
+        localStorage[self.storageIds.currentSorting] = self.defaultSorting;
+        localStorage[self.storageIds.currentFilters] = JSON.stringify(self.defaultFilters);
+        localStorage[self.storageIds.pageSize] = self.defaultPageSize;
 
         return true;
     };
 
     self._loadCurrentFiltersFromLocalStorage();
     self._loadCurrentSortingFromLocalStorage();
+    self._loadPageSizeFromLocalStorage();
 }
 
 function formatSize(bytes) {
@@ -653,8 +693,12 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     }
 
     var title = options.title || gettext("Are you sure?");
+
     var message = options.message || "";
     var question = options.question || gettext("Are you sure you want to proceed?");
+
+    var html = options.html;
+
     var cancel = options.cancel || gettext("Cancel");
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
@@ -663,7 +707,12 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
-    var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
+    var modalBody;
+    if (html) {
+        modalBody = $(html);
+    } else {
+        modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
+    }
 
     var cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + '</a>')
         .attr("data-dismiss", "modal")
@@ -1054,7 +1103,7 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
         condition = function() { return true; };
     }
 
-    if (!viewModel.hasOwnProperty(method) || !_.isFunction(viewModel[method]) || !condition(viewModel, method)) return;
+    if (!_.isFunction(viewModel[method]) || !condition(viewModel, method)) return;
 
     var parameters = undefined;
     if (!_.isFunction(callback)) {

@@ -71,16 +71,28 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			self._logger.exception("There was an error while processing the file {} in the watched folder".format(path))
 
 	def on_created(self, event):
-		thread = threading.Thread(target=self._repeatedly_check, args=(event.src_path,))
+		path = event.src_path
+		if octoprint.util.is_hidden_path(path):
+			return
+
+		thread = threading.Thread(target=self._repeatedly_check, args=(path,))
 		thread.daemon = True
 		thread.start()
 
 	def _repeatedly_check(self, path, interval=1, stable=5):
-		last_size = os.stat(path).st_size
+		try:
+			last_size = os.stat(path).st_size
+		except:
+			return
+
 		countdown = stable
 
 		while True:
-			new_size = os.stat(path).st_size
+			try:
+				new_size = os.stat(path).st_size
+			except:
+				return
+
 			if new_size == last_size:
 				self._logger.debug("File at {} is no longer growing, counting down: {}".format(path, countdown))
 				countdown -= 1

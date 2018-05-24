@@ -31,18 +31,21 @@ GCODE.renderer = (function(){
         colorMove: "#00ff00",
         colorRetract: "#ff0000",
         colorRestart: "#0000ff",
+        colorHead: "#00ff00",
 
         showMoves: true,
         showRetracts: true,
         extrusionWidth: 1 * pixelRatio,
         // #000000", "#45c7ba",  "#a9533a", "#ff44cc", "#dd1177", "#eeee22", "#ffbb55", "#ff5511", "#777788"
         sizeRetractSpot: 2 * pixelRatio,
+        sizeHeadSpot: 2 * pixelRatio,
         modelCenter: {x: 0, y: 0},
         differentiateColors: true,
         showNextLayer: false,
         showPreviousLayer: false,
         showBoundingBox: false,
         showFullSize: false,
+        showHead: false,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -420,6 +423,47 @@ GCODE.renderer = (function(){
         ctx.setLineDash([1, 0]);
     };
 
+    var drawTriangle = function(centerX, centerY, length, up) {
+        /*
+         *             (cx,cy)
+         *                *             ^
+         *               / \            |
+         *              /   \           |
+         *             /     \          |
+         *            / (x,y) \         | h
+         *           /         \        |
+         *          /           \       |
+         *         /             \      |
+         *        *---------------*     v
+         *    (ax,ay)           (bx,by)
+         */
+
+        var ax, bx, cx, ay, by, cy;
+        var h = Math.sqrt(0.75 * length * length);
+
+        ax = centerX - length / 2;
+        bx = centerX + length / 2;
+        cx = centerX;
+
+        if (up) {
+            ay = centerY + h / 2;
+            by = centerY + h / 2;
+            cy = centerY - h / 2;
+        } else {
+            ay = centerY - h / 2;
+            by = centerY - h / 2;
+            cy = centerY + h / 2;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(ax, ay);
+        ctx.stroke();
+        ctx.fill();
+    };
+
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
         log.trace("Drawing layer " + layerNum + " from " + fromProgress + " to " + toProgress + " (current: " + !isNotCurrentLayer + ")");
 
@@ -505,15 +549,12 @@ GCODE.renderer = (function(){
 
             if (!cmds[i].extrude && !cmds[i].noMove) {
                 // neither extrusion nor move
-                if (cmds[i].retract == -1) {
+                if (cmds[i].retract === -1) {
                     // retract => draw dot if configured to do so
                     if (renderOptions["showRetracts"]) {
                         ctx.strokeStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
                         ctx.fillStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
-                        ctx.beginPath();
-                        ctx.arc(prevX, prevY, renderOptions["sizeRetractSpot"], 0, Math.PI*2, true);
-                        ctx.stroke();
-                        ctx.fill();
+                        drawTriangle(prevX, prevY, renderOptions["sizeRetractSpot"] * 2, true);
                     }
                 }
 
@@ -526,13 +567,13 @@ GCODE.renderer = (function(){
                     ctx.stroke();
                 }
             } else if(cmds[i].extrude) {
-                if (cmds[i].retract == 0) {
+                if (cmds[i].retract === 0) {
                     // no retraction => real extrusion move, use tool color to draw line
                     ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
-                    if (cmds[i].direction !== undefined && cmds[i].direction != 0){
+                    if (cmds[i].direction !== undefined && cmds[i].direction !== 0){
                         var cmd = cmds[i];
                         var di = cmd.i*zoomFactor;
                         var dj = -1*cmd.j*zoomFactor; // Y-coordinate is inverted
@@ -551,10 +592,7 @@ GCODE.renderer = (function(){
                     if (renderOptions["showRetracts"]) {
                         ctx.strokeStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
                         ctx.fillStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
-                        ctx.beginPath();
-                        ctx.arc(prevX, prevY, renderOptions["sizeRetractSpot"], 0, Math.PI*2, true);
-                        ctx.stroke();
-                        ctx.fill();
+                        drawTriangle(prevX, prevY, renderOptions["sizeRetractSpot"] * 2, false);
                     }
                 }
             }
@@ -563,7 +601,17 @@ GCODE.renderer = (function(){
             prevX = x * zoomFactor;
             prevY = y * zoomFactor;
         }
+
         ctx.stroke();
+
+        if (renderOptions["showHead"]) {
+            ctx.strokeStyle = pusher.color(renderOptions["colorHead"]).shade(shade).alpha(alpha).html();
+            ctx.fillStyle = pusher.color(renderOptions["colorHead"]).shade(shade).alpha(alpha).html();
+            ctx.beginPath();
+            ctx.arc(prevX, prevY, renderOptions["sizeHeadSpot"], 0, Math.PI*2, true);
+            ctx.stroke();
+            ctx.fill();
+        }
     };
 
     var applyOffsets = function() {

@@ -35,7 +35,7 @@ INSTALL_REQUIRES = [
 	"netifaces>=0.10,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.4,<3.5",
-	"pkginfo>=1.4.1,<1.5",
+	"pkginfo>=1.4.2,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.6.0,<2.7",
 	"psutil==5.4.3", # 5.4.4 introduced a breaking change concerning installing under non current

@@ -588,7 +588,7 @@ $(function() {
                 return;
             }
 
-            if (!self.enableManagement()) {
+            if (!self.enableUninstall(data)) {
                 return;
             }
 

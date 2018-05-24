@@ -90,6 +90,15 @@
     </form>
 </div>
 
+<h1 data-bind="visible: renderProgressBarString">{{ _('Timelapse Render Progress') }}</h1>
+
+<div id="render_progress" class="progress progress-text-centered" data-bind="visible: renderProgressBarString">
+    <span class="progress-text-back" data-bind="text: renderProgressBarString"></span>
+    <div class="bar" data-bind="style: {width: renderProgressString() + '%'}">
+        <span class="progress-text-front" data-bind="copyWidth: ':parent :parent', text: renderProgressBarString"></span>
+    </div>
+</div>
+
 <h1>{{ _('Finished Timelapses') }}</h1>
 
 <div class="pull-right">
@@ -145,7 +154,7 @@
 </div>
 
 
-<div data-bind="unrenderedListHelper.allSize">
+<div data-bind="visible: unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
         <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">

@@ -100,6 +100,7 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
+        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
 
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
@@ -129,6 +130,7 @@ $(function() {
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
+        self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
@@ -172,6 +174,7 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_blockM0M1 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
         self.serial_sdRelativePath =  ko.observable(undefined);
@@ -254,6 +257,23 @@ $(function() {
             self.server_onlineCheckText("");
             self.server_onlineCheckOk(false);
             self.server_onlineCheckBroken(false);
+        };
+
+        var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
+        self.testFolderConfigText = {};
+        self.testFolderConfigOk = {};
+        self.testFolderConfigBroken = {};
+        _.each(folderTypes, function(folderType) {
+            self.testFolderConfigText[folderType] = ko.observable("");
+            self.testFolderConfigOk[folderType] = ko.observable(false);
+            self.testFolderConfigBroken[folderType] = ko.observable(false);
+        });
+        self.testFolderConfigReset = function() {
+            _.each(folderTypes, function(folderType) {
+                self.testFolderConfigText[folderType]("");
+                self.testFolderConfigOk[folderType](false);
+                self.testFolderConfigBroken[folderType](false);
+            });
         };
 
         self.observableCopies = {
@@ -441,9 +461,46 @@ $(function() {
                 });
         };
 
+        self.testFolderConfigBusy = ko.observable(false);
+        self.testFolderConfig = function(folder) {
+            var observable = "folder_" + folder;
+            if (!self.hasOwnProperty(observable)) return;
+
+            if (self.testFolderConfigBusy()) return;
+            self.testFolderConfigBusy(true);
+
+            var opts = {
+                check_type: "dir",
+                check_access: "w",
+                allow_create_dir: true,
+                check_writable_dir: true
+            };
+            var path = self[observable]();
+            OctoPrint.util.testPath(path, opts)
+                .done(function(response) {
+                    if (!response.result) {
+                        if (!response.exists) {
+                            self.testFolderConfigText[folder](gettext("The path does not exist and cannot be created."));
+                        } else if (!response.typeok) {
+                            self.testFolderConfigText[folder](gettext("The path is not a folder."));
+                        } else if (!response.access) {
+                            self.testFolderConfigText[folder](gettext("The path is not writable."));
+                        }
+                    } else {
+                        self.testFolderConfigText[folder](gettext("The path is valid"));
+                    }
+                    self.testFolderConfigOk[folder](response.result);
+                    self.testFolderConfigBroken[folder](!response.result);
+                })
+                .always(function() {
+                    self.testFolderConfigBusy(false);
+                });
+        };
+
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
             self.server_onlineCheckReset();
+            self.testFolderConfigReset();
         };
 
         self.isDialogActive = function() {

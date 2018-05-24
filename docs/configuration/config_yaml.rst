@@ -560,6 +560,7 @@ Use the following settings to enable or disable OctoPrint features:
      # Defaults to only M117.
      autoUppercaseBlacklist:
      - M117
+     - M118
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -1193,6 +1194,9 @@ Use the following settings to configure webcam support:
      # Number of how many threads to instruct ffmpeg to use for encoding. Defaults to 1.
      # Should be left at 1 for RPi1.
      ffmpegThreads: 1
+
+     # Videocodec to be used for encoding. Defaults to mpeg2video.
+     ffmpegVideoCodec: mpeg2video
 
      # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
      bitrate: 5000k

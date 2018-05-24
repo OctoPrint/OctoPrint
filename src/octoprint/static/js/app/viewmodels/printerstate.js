@@ -185,6 +185,14 @@ $(function() {
 
         self.userString = ko.pureComputed(function() {
             var user = self.user();
+            if (!CONFIG_ACCESS_CONTROL || user === "_dummy") {
+                return "";
+            }
+
+            if (user === "_api") {
+                user = "API client";
+            }
+
             var file = self.filename();
             return (user ? user : (file ? "-" : ""));
         });

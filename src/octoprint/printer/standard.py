@@ -24,7 +24,7 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
 from octoprint.plugin import plugin_manager, ProgressPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation, InvalidFileType
-from octoprint.printer.estimation import TimeEstimationHelper
+from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
@@ -110,6 +110,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._sd_ready = False
 		self._sd_files = []
 
+		# job handling & estimation
+		self._estimator_factory = PrintTimeEstimator
+		analysis_queue_hooks = plugin_manager().get_hooks("octoprint.printer.estimation.factory")
+		for name, hook in analysis_queue_hooks.items():
+			try:
+				estimator = hook()
+				if estimator is not None:
+					self._logger.info("Using print time estimator provided by {}".format(name))
+					self._estimator_factory = estimator
+			except:
+				self._logger.exception("Error while processing analysis queues from {}".format(name))
 		# comm
 		self._comm = None
 
@@ -154,6 +165,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
 		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated)
+
+	def _create_estimator(self, job_type):
+		self._estimator = self._estimator_factory(job_type)
 
 	#~~ handling of PrinterCallbacks
 
@@ -510,6 +524,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if self._job is None or self._protocol is None or self._protocol.state not in (ProtocolState.CONNECTED,):
 			return
 
+		# TODO other way to determine job type
+		if isinstance(self._job.job, SDFilePrintjob):
+			job_type = "sdcard"
+		else:
+			job_type = "local"
+
+		self._create_estimator(job_type)
+		self._fileManager.delete_recovery_data()
+
 		self._last_progress_report = None
 		self._update_progress_data()
 		self._setCurrentZ(None)
@@ -716,7 +739,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		# else:
 		# 	# probably something else added through a plugin, use it's basename as-is
 		# 	remoteName = os.path.basename(filename)
-		# self._timeEstimationData = TimeEstimationHelper()
+		# self._create_estimator("stream")
 		# self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
 		#                              special=not valid_file_type(filename, "gcode"),
 		#                              tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
@@ -860,6 +883,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				self._report_print_progress_to_plugins(progress_int)
 
 	def _add_temperature_data(self, temperatures):
+		if temperatures is None:
+			temperatures = dict()
+
 		entry = dict(time=int(time.time()))
 		for tool in temperatures.keys():
 			entry[tool] = dict(actual=temperatures[tool][0],

@@ -5,6 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.access = parameters[1];
 
+        self.renderProgressBar = undefined;
         self.timelapsePopup = undefined;
 
         self.defaultFps = 25;
@@ -19,6 +20,25 @@ $(function() {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+
+        self.renderProgress = ko.observable();
+        self.renderTarget = ko.observable();
+        self.renderProgressString = ko.pureComputed(function() {
+            if (!self.renderProgress())
+                return 0;
+            return self.renderProgress();
+        });
+        self.renderProgressBarString = ko.pureComputed(function() {
+            if (!self.renderTarget()) {
+                return "";
+            }
+            var progress = self.renderProgress();
+            if (!progress) {
+                progress = 0;
+            }
+            return _.sprintf(gettext("Rendering %(target)s... (%(progress)d%%)"),
+                {target: self.renderTarget(), progress: progress});
+        });
 
         self.serverConfig = ko.observable();
 
@@ -497,6 +517,13 @@ $(function() {
                 text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
                 hide: false
             });
+
+            self.renderProgress(0);
+            self.renderTarget(payload.movie_prefix);
+        };
+
+        self.onRenderProgress = function(percentage) {
+            self.renderProgress(percentage);
         };
 
         self.onEventMovieFailed = function(payload) {
@@ -520,6 +547,9 @@ $(function() {
                 type: "error",
                 hide: false
             });
+
+            self.renderProgress(0);
+            self.renderTarget(undefined);
         };
 
         self.onEventMovieDone = function(payload) {
@@ -536,10 +566,15 @@ $(function() {
                 }
             });
             self.requestData();
+
+            self.renderProgress(0);
+            self.renderTarget(payload.undefined);
         };
 
         self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
+
+            self.renderProgressBar = $("#render_progress");
         }
     }
 

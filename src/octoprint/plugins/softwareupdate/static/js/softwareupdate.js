@@ -37,7 +37,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -46,28 +46,28 @@
         return this.checkEntries({entries: [], force: force, opts: opts});
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.update = function(entries, force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+    OctoPrintSoftwareUpdateClient.prototype.update = function(targets, force, opts) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
-            entries = params.entries;
+            targets = params.targets;
             force = params.force;
             opts = params.opts;
         }
 
-        entries = entries || [];
-        if (typeof entries == "string") {
-            entries = [entries];
+        targets = targets || [];
+        if (typeof targets === "string") {
+            targets = [targets];
         }
 
         var data = {
-            entries: entries,
+            targets: targets,
             force: !!force
         };
         return this.base.postJson(this.updateUrl, data, opts);
     };
 
     OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -92,8 +92,6 @@ $(function() {
         self.settings = parameters[2];
         self.access = parameters[3];
         self.popup = undefined;
-
-        self.forceUpdate = false;
 
         self.updateInProgress = false;
         self.waitingForRestart = false;
@@ -141,7 +139,6 @@ $(function() {
         });
 
         self.configurationDialog = undefined;
-        self.confirmationDialog = undefined;
         self._updateClicked = false;
 
         self.config_availableCheckTypes = ko.observableArray([]);
@@ -500,6 +497,7 @@ $(function() {
 
         self.performUpdate = function(force, items) {
             if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) return;
+            if (self.printerState.isPrinting()) return;
 
             self.updateInProgress = true;
 
@@ -515,7 +513,7 @@ $(function() {
             };
             self._showPopup(options);
 
-            OctoPrint.plugins.softwareupdate.updateAll(force, items)
+            OctoPrint.plugins.softwareupdate.update(items, force)
                 .done(function(data) {
                     self.currentlyBeingUpdated = data.checks;
                     self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
@@ -534,10 +532,14 @@ $(function() {
                 });
         };
 
-        self.update = function(force) {
-            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+        self.update = function(force, items) {
+            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                 self._updateClicked = false;
                 return;
+            }
+
+            if (items === undefined) {
+                items = self.availableAndPossible();
             }
 
             if (self.printerState.isPrinting()) {
@@ -548,24 +550,39 @@ $(function() {
                 });
                 self._updateClicked = false;
             } else {
-                self.forceUpdate = (force == true);
-                self.confirmationDialog.modal("show");
+                var html = "<p>" + gettext("This will update the following components and restart the server:") + "</p>";
+                html += "<ul>";
+                _.each(items, function(item) {
+                    html += "<li>"
+                        + "<span class=\"name\" title=\"" + item.fullNameRemote + "\">" + item.fullNameRemote + "</span>";
+                    if (item.releaseNotes) {
+                        html += "<br><a href=\"" + item.releaseNotes + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + gettext("Release Notes") + "</a>"
+                    }
+                    html += "</li>";
+                });
+                html += "</ul>";
+                html += "<p>" + gettext("Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.") + "</p>"
+                    + "<p><strong>" + gettext("This action may disrupt any ongoing print jobs.") + "</strong></p>"
+                    + "<p>" + gettext("Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset.") + "</p>"
+                    + "<p>" + gettext("Are you sure you want to proceed?") + "</p>";
+                showConfirmationDialog({
+                    title: gettext("Are you sure you want to update now?"),
+                    html: html,
+                    proceed: gettext("Proceed"),
+                    onproceed: function() {
+                        self.performUpdate((force === true),
+                                           _.map(items, function(info) { return info.key }));
+                    },
+                    onclose: function() {
+                        self._updateClicked = false;
+                    }
+                });
             }
 
         };
 
-        self.confirmUpdate = function() {
-            self.performUpdate(self.forceUpdate,
-                _.map(self.availableAndPossible(), function(info) { return info.key }));
-            self.confirmationDialog.modal("hide");
-        };
-
-        self.confirmationHidden = function() {
-            self._updateClicked = false;
-        };
-
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                 return;
             }
 
@@ -620,9 +637,6 @@ $(function() {
             self.workingDialog = $("#settings_plugin_softwareupdate_workingdialog");
             self.workingOutput = $("#settings_plugin_softwareupdate_workingdialog_output");
             self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
-            self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
-
-            self.confirmationDialog.on("hidden", self.confirmationHidden);
         };
 
         self.onServerDisconnect = function() {
@@ -686,8 +700,6 @@ $(function() {
                     break;
                 }
                 case "updating": {
-                    console.log(JSON.stringify(messageData));
-
                     text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
@@ -705,8 +717,6 @@ $(function() {
                     break;
                 }
                 case "restarting": {
-                    console.log(JSON.stringify(messageData));
-
                     title = gettext("Update successful, restarting!");
                     text = gettext("The update finished successfully and the server will now be restarted.");
 
@@ -745,8 +755,6 @@ $(function() {
                     break;
                 }
                 case "restart_manually": {
-                    console.log(JSON.stringify(messageData));
-
                     restartType = messageData.restart_type;
                     text = gettext("The update finished successfully, please restart OctoPrint now.");
                     if (restartType === "environment") {
