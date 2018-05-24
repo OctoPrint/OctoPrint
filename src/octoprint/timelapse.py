@@ -440,7 +440,7 @@ class Timelapse(object):
 		"""
 		Override this to perform additional actions upon start of a print job.
 		"""
-		self.start_timelapse(payload["file"])
+		self.start_timelapse(payload["name"])
 
 	def on_print_done(self, event, payload):
 		"""
@@ -484,7 +484,7 @@ class Timelapse(object):
 		self._capture_errors = 0
 		self._capture_success = 0
 		self._in_timelapse = True
-		self._gcode_file = os.path.basename(gcodeFile)
+		self._gcode_file = gcodeFile
 		self._file_prefix = "{}_{}".format(os.path.splitext(self._gcode_file)[0], time.strftime("%Y%m%d%H%M%S"))
 
 	def stop_timelapse(self, do_create_movie=True, success=True):

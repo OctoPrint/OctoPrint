@@ -30,13 +30,16 @@ from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 
-from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState
+from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, ProtocolState
 
-from octoprint.job import LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob, PrintjobListener
+from octoprint.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob, PrintjobListener
 
 from collections import namedtuple
 
-JobData = namedtuple("JobData", ("job", "average_past_total", "analysis_total", "estimator"))
+JobData = namedtuple("JobData", ("job",
+                                 "average_past_total",
+                                 "analysis_total",
+                                 "estimator"))
 
 def _serial_factory(port=None, baudrate=None):
 	import serial
@@ -64,7 +67,7 @@ def _serial_factory(port=None, baudrate=None):
 	return None
 
 
-class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, FileAwareProtocolListener, PrintjobListener):
+class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, PrintjobListener):
 	"""
 	Default implementation of the :class:`PrinterInterface`. Manages the communication layer object and registers
 	itself with it as a callback to react to changes on the communication layer.
@@ -95,10 +98,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._log_backlog = []
 
 		self._current_z = None
-
-		self._progress = None
-		self._print_time = None
-		self._print_time_left = None
 
 		# sd handling
 		self._sdPrinting = False
@@ -140,7 +139,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			on_update=self._send_current_data_callbacks,
 			on_add_temperature=self.send_add_temperature_callbacks,
 			on_add_log=self._send_add_log_callbacks,
-			on_add_message=self._send_add_message_callbacks
+			on_add_message=self._send_add_message_callbacks,
+			on_get_progress=self._update_progress_data_callback
 		)
 		self._state_monitor.reset(
 			state=self._dict(text=self.get_state_string(), flags=self._get_state_flags()),
@@ -167,7 +167,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated)
 
 	def _create_estimator(self, job_type):
-		self._estimator = self._estimator_factory(job_type)
+		return self._estimator_factory(job_type)
 
 	#~~ handling of PrinterCallbacks
 
@@ -524,18 +524,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if self._job is None or self._protocol is None or self._protocol.state not in (ProtocolState.CONNECTED,):
 			return
 
-		# TODO other way to determine job type
-		if isinstance(self._job.job, SDFilePrintjob):
-			job_type = "sdcard"
-		else:
-			job_type = "local"
-
-		self._create_estimator(job_type)
-		self._fileManager.delete_recovery_data()
+		self._file_manager.delete_recovery_data()
 
 		self._last_progress_report = None
 		self._update_progress_data()
-		self._setCurrentZ(None)
+		self._set_current_z(None)
 
 		self._protocol.process(self._job.job,
 		                       position=pos,
@@ -547,7 +540,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		"""
 		if self._protocol is None:
 			return
-		if self._protocol.state != ProtocolState.PRINTING:
+		if self._protocol.state != ProtocolState.PROCESSING:
 			return
 		self._protocol.pause_processing()
 
@@ -565,11 +558,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		"""
 		 Cancel the current job.
 		"""
-		if self._protocol is None or not self._protocol.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
+		if self._protocol is None or not self._protocol.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			return
 
 		# reset progress, height, print time
-		self._setCurrentZ(None)
+		self._set_current_z(None)
 		self._reset_progress_data()
 
 		# mark print as failure
@@ -608,7 +601,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				return "Connecting"
 			elif state == ProtocolState.CONNECTED:
 				return "Operational"
-			elif state == ProtocolState.PRINTING:
+			elif state == ProtocolState.PROCESSING:
 				if self._job is None:
 					return "Printing unknown job"
 				if isinstance(self._job.job, SDFilePrintjob):
@@ -637,7 +630,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				return "CONNECTING"
 			elif state == ProtocolState.CONNECTED:
 				return "OPERATIONAL"
-			elif state == ProtocolState.PRINTING:
+			elif state == ProtocolState.PROCESSING:
 				return "PRINTING"
 			elif state == ProtocolState.PAUSED:
 				return "PAUSED"
@@ -679,7 +672,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		return self.get_state_string(), port, baudrate, printer_profile
 
 	def is_connected(self):
-		return self._protocol is not None and self._protocol.state in (ProtocolState.CONNECTED, ProtocolState.PRINTING, ProtocolState.PAUSED)
+		return self._protocol is not None and self._protocol.state in (ProtocolState.CONNECTED, ProtocolState.PROCESSING, ProtocolState.PAUSED)
 
 	def is_closed_or_error(self, *args, **kwargs):
 		return self._protocol is None or self._protocol.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR)
@@ -688,7 +681,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		return not self.is_closed_or_error()
 
 	def is_printing(self, *args, **kwargs):
-		return self._protocol is not None and self._protocol.state == ProtocolState.PRINTING
+		return self._protocol is not None and self._protocol.state == ProtocolState.PROCESSING
 
 	def is_cancelling(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isCancelling()
@@ -703,7 +696,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		return self._protocol is not None and self._protocol.state == ProtocolState.DISCONNECTED_WITH_ERROR
 
 	def is_ready(self, *args, **kwargs):
-		return self.is_operational() and not self._protocol.state in (ProtocolState.PRINTING, ProtocolState.PAUSED)
+		return self.is_operational() and not self._protocol.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED)
 
 	def is_sd_ready(self, *args, **kwargs):
 		if not settings().getBoolean(["feature", "sdSupport"]) or self._protocol is None:
@@ -778,10 +771,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	#~~ state monitoring
 
-	def _setOffsets(self, offsets):
-		self._stateMonitor.set_temp_offsets(offsets)
+	def _set_offsets(self, offsets):
+		self._state_monitor.set_temp_offsets(offsets)
 
-	def _setCurrentZ(self, currentZ):
+	def _set_current_z(self, currentZ):
 		self._current_z = currentZ
 		self._state_monitor.set_current_z(self._current_z)
 
@@ -809,16 +802,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._state_monitor.add_message(message)
 
 	def _estimate_total_for_job(self):
-		if self._job is None or self._job.job is None or self._job.estimator is None or  self._job.job.estimate is None:
+		if self._job is None or self._job.job is None or self._job.estimator is None:
 			return None
 
-		self._job.estimator.update(self._job.job.estimate)
-
-		result = None
-		if self._job.estimator.is_stable():
-			result = self._job.estimator.average_total_rolling
-
-		return result
+		return self._job.estimator.estimate_total()
 
 	def _reset_progress_data(self):
 		self._state_monitor.set_progress(dict(completion=None,
@@ -827,60 +814,71 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		                                      printTimeLeft=None))
 
 	def _set_completion_progress_data(self):
-		self._progress = 1.0
-		self._print_time = self._job.job.elapsed if self._job is not None else None
-		self._print_time_left = 0
+		progress = 1.0
+		pos = self._job.job.size if self._job is not None else None
+		print_time = int(self._job.job.elapsed) if self._job is not None else None
+		print_time_left = 0
 
-		pos = self._job.job.pos if self._job is not None else None
+		self._update_progress_data(completion=progress,
+		                           filepos=pos,
+		                           print_time=print_time,
+		                           print_time_left=print_time_left)
 
-		self._state_monitor.set_progress(dict(completion=self._progress * 100 if self._progress is not None else None,
-		                                      filepos=pos,
-		                                      printTime=int(self._print_time) if self._print_time is not None else None,
-		                                      printTimeLeft=int(self._print_time_left) if self._print_time_left is not None else None))
+	def _update_progress_data(self, completion=None, filepos=None, print_time=None, print_time_left=None, print_time_left_origin=None):
+		self._state_monitor.set_progress(self._dict(completion=completion,
+		                                            filepos=filepos,
+		                                            printTime=print_time,
+		                                            printTimeLeft=print_time_left,
+		                                            printTimeLeftOrigin=print_time_left_origin))
 
-	def _update_progress_data(self):
-		if self._job is None or not self._job.job.active:
-			self._state_monitor.set_progress(self._dict(completion=None,
-			                                            filepos=None,
-			                                            printTime=None,
-			                                            printTimeLeft=None,
-			                                            printTimeLeftOrigin=None))
-			return
+	def _update_progress_data_callback(self):
+		if self._job is None or self._job.job is None:
+			progress = None
+			print_time = None
+			cleaned_print_time = None
+			pos = None
+		else:
+			progress = self._job.job.progress
+			print_time = self._job.job.elapsed
+			cleaned_print_time = self._job.job.clean_elapsed
+			pos = self._job.job.pos
 
-		estimated_total_print_time = self._estimate_total_for_job()
-		total_print_time = estimated_total_print_time
+		print_time_left = print_time_left_origin = None
 
-		original_estimate = None
-		if self._job.average_past_total:
-			original_estimate = self._job.average_past_total
-		elif self._job.analysis_total:
-			original_estimate = self._job.analysis_total
-
-		if original_estimate:
-			if self._job.job.progress and self._job.job.elapsed:
-				if estimated_total_print_time is None:
-					total_print_time = original_estimate
-				else:
-					if self._job.job.progress < 0.5:
-						sub_progress = self._job.job.progress * 2
-					else:
-						sub_progress = 1.0
-					total_print_time = (1 - sub_progress) * original_estimate + sub_progress * estimated_total_print_time
-
-		self._progress = self._job.job.progress
-		self._print_time = self._job.job.elapsed
-		self._print_time_left = total_print_time - self._job.job.elapsed if (total_print_time is not None and self._job.job.elapsed is not None) else None
-
-		self._state_monitor.set_progress(dict(completion=self._progress * 100 if self._progress is not None else None,
-		                                      filepos=self._job.job.pos,
-		                                      printTime=int(self._print_time) if self._print_time is not None else None,
-		                                      printTimeLeft=int(self._print_time_left) if self._print_time_left is not None else None))
-
-		if self._job.job.progress:
+		if progress is not None:
 			progress_int = int(self._job.job.progress * 100)
 			if self._last_progress_report != progress_int:
 				self._last_progress_report = progress_int
 				self._report_print_progress_to_plugins(progress_int)
+
+			if progress == 0:
+				print_time_left = None
+				print_time_left_origin = None
+			elif progress == 1.0:
+				print_time_left = 0
+				print_time_left_origin = None
+			else:
+				original_estimate = None
+				original_estimate_type = None
+
+				if self._job.average_past_total is not None:
+					original_estimate = self._job.average_past_total
+					original_estimate_type = "average"
+				elif self._job.analysis_total is not None:
+					original_estimate = self._job.analysis_total
+					original_estimate_type = "analysis"
+
+				print_time_left, print_time_left_origin = self._job.estimator.estimate(progress,
+				                                                                       print_time,
+				                                                                       cleaned_print_time,
+				                                                                       original_estimate,
+				                                                                       original_estimate_type)
+
+		return self._dict(completion=progress * 100 if progress is not None else None,
+		                  filepos=pos,
+		                  printTime=int(print_time) if print_time is not None else None,
+		                  printTimeLeft=int(print_time_left) if print_time_left is not None else None,
+		                  printTimeLeftOrigin=print_time_left_origin)
 
 	def _add_temperature_data(self, temperatures):
 		if temperatures is None:
@@ -914,12 +912,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			job = self._job.job
 
 		if job is None:
+			# TODO fix this, this won't work for deselecting jobs
 			self._remove_job()
 			return
 
-		rolling_window = None
-		threshold = None
-		countdown = None
 		average_past_total = None
 		analysis_total = None
 		filament = None
@@ -928,18 +924,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		display_name = job.name
 
-		if isinstance(job, SDFilePrintjob):
-			# we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
-			# by that divided by the sd status polling interval
-			rolling_window = 15 / job.status_interval
-
-			# we are happy if the average of the estimates stays within 60s of the prior one
-			threshold = 60
-
-			# we are happy when one rolling window has been stable
-			countdown = rolling_window
-
-		elif isinstance(job, LocalGcodeFilePrintjob):
+		if isinstance(job, LocalGcodeFilePrintjob):
 			# local file means we might have some information about the job stored in the file manager!
 			try:
 				file_data = self._file_manager.get_metadata(FileDestinations.LOCAL, job.path)
@@ -977,11 +962,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._state_monitor.set_job_data(job_data)
 
 		# set our internal job data
-		estimation_helper = TimeEstimationHelper(rolling_window=rolling_window, threshold=threshold, countdown=countdown)
+
+		# TODO other way to determine job type?
+		if isinstance(job, SDFilePrintjob):
+			job_type = "sdcard"
+		elif isinstance(job, LocalGcodeStreamjob):
+			job_type = "stream"
+		else:
+			job_type = "local"
+
 		self._job = JobData(job=job,
 		                    average_past_total=average_past_total,
 		                    analysis_total=analysis_total,
-		                    estimator=estimation_helper)
+		                    estimator=self._create_estimator(job_type))
 		job.register_listener(self)
 
 	def _send_initial_state_update(self, callback):
@@ -1011,7 +1004,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				return None
 			job = self._job.job
 
-		return FileDestinations.SDCARD if isinstance(job, SDFilePrintjob) else FileDestinations.LOCAL
+		if not isinstance(job, StoragePrintjob):
+			return None
+
+		return job.storage
 
 	#~~ octoprint.comm.protocol.ProtocolListener implementation
 
@@ -1028,7 +1024,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._logger.info("Protocol state changed from {} to {}".format(old_state, new_state))
 
 		# forward relevant state changes to file manager
-		if old_state == ProtocolState.PRINTING:
+		if old_state == ProtocolState.PROCESSING:
 			if self._job is not None:
 				if new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
 					self._file_manager.log_print(self._get_origin_for_job(self._job.job),
@@ -1039,14 +1035,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 					                             self._printer_profile_manager.get_current_or_default()["id"])
 			self._analysis_queue.resume() # printing done, put those cpu cycles to good use
 
-		elif new_state == ProtocolState.PRINTING:
+		elif new_state == ProtocolState.PROCESSING:
 			self._analysis_queue.pause() # do not analyse files while printing
 
 		elif new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR) and old_state != ProtocolState.DISCONNECTING:
 			self.disconnect()
-			self._setCurrentZ(None)
+			self._set_current_z(None)
 			self._update_progress_data()
-			self._setOffsets(None)
+			self._set_offsets(None)
 			self._addTemperatureData()
 			self._update_job()
 			self._printer_profile_manager.deselect()
@@ -1077,19 +1073,30 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sd_filelist_available.set()
 
+	#~~ octoprint.comm.protocol.PositionAwareProtocolListener implementation
+
+	def on_protocol_position_z_update(self, protocol, z):
+		if protocol != self._protocol:
+			return
+
+		old_z = self._current_z
+		if z != old_z:
+			eventManager().fire(Events.Z_CHANGE, dict(new=z, old=old_z))
+
+		self._set_current_z(z)
+
 	#~~ octoprint.job.PrintjobListener
 
 	def on_job_progress(self, job):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
-		self._update_progress_data()
+		self._state_monitor.trigger_progress_update()
 
 	def on_job_started(self, job):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
-		# TODO include position in payload if available
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
@@ -1098,37 +1105,54 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			            must_be_set=False)
 
 	def on_job_done(self, job):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		if isinstance(self._job.job, LocalGcodeStreamjob):
+			# streaming job
+
 			if self._streamingFinishedCallback is not None:
 				# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
 				# both parameters
 				self._streamingFinishedCallback(self._job.job.name, self._job.job.name, FileDestinations.SDCARD)
 
-			self._setCurrentZ(None)
+			self._set_current_z(None)
 			self._update_job()
 			self._update_progress_data()
-		else:
-			self._set_completion_progress_data()
 
-			# TODO include position in payload if available
+		else:
+			# all other job types
+
 			payload = job.event_payload()
 			if payload:
 				payload["time"] = job.elapsed
-				eventManager().fire(Events.PRINT_DONE, payload)
-				self._file_manager.log_print(payload["origin"],
-				                             payload["path"],
-				                             time.time(),
-				                             payload["time"],
-				                             True,
-				                             self._printer_profile_manager.get_current_or_default()["id"])
+				self._update_progress_data(completion=1.0,
+				                           filepos=payload["size"],
+				                           print_time=payload["time"],
+				                           print_time_left=0)
+				self._state_monitor.set_state(self._dict(text=self.get_state_string(),
+				                                         flags=self._get_state_flags()))
 
-		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
+				eventManager().fire(Events.PRINT_DONE, payload)
+				self.script("afterPrintDone",
+				            context=dict(event=payload),
+				            must_be_set=False)
+
+				def log_print():
+					self._file_manager.log_print(payload["origin"],
+					                             payload["path"],
+					                             time.time(),
+					                             payload["time"],
+					                             True,
+					                             self._printer_profile_manager.get_current_or_default()["id"])
+
+				thread = threading.Thread(target=log_print)
+				thread.daemon = True
+				thread.start()
+
 
 	def on_job_failed(self, job):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
@@ -1136,7 +1160,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_job_cancelling(self, job, firmware_error=None):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
@@ -1146,7 +1170,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
 	def on_job_cancelled(self, job, cancel_position=None):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		self._update_progress_data()
@@ -1176,7 +1200,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			thread.start()
 
 	def on_job_paused(self, job, pause_position=None):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
@@ -1189,7 +1213,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			            must_be_set=False)
 
 	def on_job_resumed(self, job):
-		if job != self._job.job:
+		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
@@ -1201,10 +1225,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	#~~ comm.MachineComPrintCallback implementation
 
-	def on_comm_z_change(self, newZ):
-		# TODO
-		pass
-
 	def on_comm_force_disconnect(self):
 		# TODO
 		self.disconnect()
@@ -1212,7 +1232,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	def on_comm_record_fileposition(self, origin, name, pos):
 		# TODO
 		try:
-			self._fileManager.save_recovery_data(origin, name, pos)
+			self._file_manager.save_recovery_data(origin, name, pos)
 		except NoSuchStorage:
 			pass
 		except:

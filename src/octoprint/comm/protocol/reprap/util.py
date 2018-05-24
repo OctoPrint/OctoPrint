@@ -7,11 +7,39 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from octoprint.comm.protocol.gcode.util import strip_comment, GcodeCommand
-from octoprint.comm.protocol.commands import Command
+from octoprint.comm.protocol.reprap.commands import Command
 
 # noinspection PyCompatibility
 from past.builtins import basestring
+
+import copy
+
+try:
+	# noinspection PyCompatibility
+	from queue import Queue
+except:
+	# noinspection PyCompatibility
+	from Queue import Queue
+
+
+regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
+regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
+regex_int_pattern = "\d+"
+
+
+def strip_comment(line):
+	if not ";" in line:
+		# shortcut
+		return line
+
+	escaped = False
+	result = []
+	for c in line:
+		if c == ";" and not escaped:
+			break
+		result += c
+		escaped = (c == "\\") and not escaped
+	return "".join(result).strip()
 
 
 def process_gcode_line(line, offsets=None, current_tool=None):
@@ -137,7 +165,7 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 
 		elif isinstance(handler_result, Command):
 			if handler_result != original:
-				command = handler_result.copy()
+				command = copy.copy(handler_result)
 				command.tags = expand_tags(original.tags, tags_to_add)
 			result.append(command)
 
@@ -145,7 +173,6 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 			# entry is a tuple, extract command and command_type
 			hook_result_length = len(handler_result)
 
-			command_line = original.line
 			command_type = original.type
 			command_tags = original.tags
 
@@ -177,3 +204,41 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 		command, command_type, gcode, subcode, tags = original
 
 	return result
+
+class TypedQueue(Queue):
+
+	def __init__(self, maxsize=0):
+		Queue.__init__(self, maxsize=maxsize)
+		self._lookup = set()
+
+	def put(self, item, item_type=None, *args, **kwargs):
+		Queue.put(self, (item, item_type), *args, **kwargs)
+
+	def get(self, *args, **kwargs):
+		item, _ = Queue.get(self, *args, **kwargs)
+		return item
+
+	def _put(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		Queue._put(self, item)
+
+	def _get(self):
+		item = Queue._get(self)
+		_, item_type = item
+
+		if item_type is not None:
+			self._lookup.discard(item_type)
+
+		return item
+
+
+class TypeAlreadyInQueue(Exception):
+	def __init__(self, t, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
+		self.type = t

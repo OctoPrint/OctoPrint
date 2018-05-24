@@ -12,6 +12,8 @@ from octoprint.util.listener import ListenerAware
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from monotonic import monotonic
+
 class Printjob(ProtocolListener, ListenerAware):
 	__metaclass__ = ABCMeta
 
@@ -48,7 +50,14 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	@property
 	def elapsed(self):
-		return time.time() - self._start if self._start is not None else None
+		return monotonic() - self._start if self._start is not None else None
+
+	@property
+	def clean_elapsed(self):
+		elapsed = self.elapsed
+		if elapsed is None:
+			return None
+		return elapsed - self._lost_time
 
 	@property
 	def progress(self):
@@ -58,19 +67,6 @@ class Printjob(ProtocolListener, ListenerAware):
 			return None
 
 		return float(pos) / float(size)
-
-	@property
-	def estimate(self):
-		elapsed = self.elapsed
-		if elapsed is None:
-			return
-
-		progress = self.progress
-		if progress is None:
-			return
-
-		spent_time = elapsed - self._lost_time
-		return spent_time / progress
 
 	@property
 	def active(self):
@@ -83,7 +79,7 @@ class Printjob(ProtocolListener, ListenerAware):
 		return False
 
 	def process(self, protocol, position=0, tags=None):
-		self._start = time.time()
+		self._start = monotonic()
 		self._protocol = protocol
 		self._protocol.register_listener(self)
 
@@ -180,6 +176,10 @@ class LocalFilePrintjob(StoragePrintjob):
 		self._encoding = encoding
 		self._size = os.stat(path).st_size
 
+		self._pos = 0
+		self._read_lines = 0
+		self._actual_lines = 0
+
 		self._handle = None
 
 	@property
@@ -188,8 +188,15 @@ class LocalFilePrintjob(StoragePrintjob):
 
 	@property
 	def pos(self):
-		# TODO manual pos tracking
-		return self._handle.tell() if self._handle is not None else 0
+		return self._pos
+
+	@property
+	def actual_lines(self):
+		return self._actual_lines
+
+	@property
+	def read_lines(self):
+		return self._read_lines
 
 	@property
 	def active(self):
@@ -199,6 +206,11 @@ class LocalFilePrintjob(StoragePrintjob):
 	def path(self):
 		return self._path
 
+	def event_payload(self):
+		event_data = StoragePrintjob.event_payload(self)
+		event_data["size"] = self.size
+		return event_data
+
 	def process(self, protocol, position=0, tags=None):
 		Printjob.process(self, protocol, position=position)
 
@@ -207,6 +219,7 @@ class LocalFilePrintjob(StoragePrintjob):
 
 		if position > 0:
 			self._handle.seek(position)
+			self._pos = position
 		self.process_job_started()
 
 	def get_next(self):
@@ -222,10 +235,19 @@ class LocalFilePrintjob(StoragePrintjob):
 					# file got closed just now
 					return None
 				line = to_unicode(self._handle.readline())
+
+				# we need to manually keep track of our pos here since
+				# codecs' readline will make our handle's tell not
+				# return the actual number of bytes read, but also the
+				# already buffered bytes (for detecting the newlines)
+				self._pos += len(line)
+				self._actual_lines += 1
+
 				if not line:
 					self.process_job_done()
 				processed = self.process_line(line)
 
+			self._read_lines += 1
 			self.process_job_progress()
 			return processed
 		except Exception as e:
@@ -265,7 +287,7 @@ class LocalGcodeFilePrintjob(LocalFilePrintjob):
 
 	def process_line(self, line):
 		# TODO no dependency on protocol module
-		from octoprint.comm.protocol.gcode.util import strip_comment
+		from octoprint.comm.protocol.reprap.util import strip_comment
 
 		# strip line
 		processed = line.strip()
@@ -330,11 +352,6 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 	@property
 	def status_interval(self):
 		return self._status_interval
-
-	def event_payload(self):
-		event_data = Printjob.event_payload(self)
-		event_data["size"] = self.size
-		return event_data
 
 	def can_process(self, protocol):
 		from octoprint.comm.protocol import FileAwareProtocolMixin

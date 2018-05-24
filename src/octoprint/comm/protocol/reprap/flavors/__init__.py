@@ -2,18 +2,16 @@
 from __future__ import absolute_import, unicode_literals, print_function, \
 	division
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 
 import re
 import logging
 import time
 
 
-from octoprint.comm.protocol.commands import GcodeCommand
-from octoprint.comm.protocol.gcode.util import regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
+from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
+from octoprint.comm.protocol.reprap.util import regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
 
 # TODO needed? move?
 from octoprint.util import chunks
@@ -198,7 +196,7 @@ class ReprapGcodeFlavor(object):
 		line_to_resend = None
 		match = cls.regex_resend_linenumber.search(line)
 		if match is not None:
-			line_to_resend = int(match.group("n"))
+			line_to_resend = int(match.group(b"n"))
 		return dict(linenumber=line_to_resend)
 
 	@classmethod
@@ -245,7 +243,7 @@ class ReprapGcodeFlavor(object):
 	def parse_message_position(cls, line, lower_line, state):
 		position = dict(x=None, y=None, z=None, e=None)
 		for match in re.finditer(cls.regex_position, line):
-			position[match.group("axis").lower()] = float(match.group("pos"))
+			position[match.group(b"axis").lower()] = float(match.group(b"pos"))
 		return position
 
 	@classmethod
@@ -275,7 +273,7 @@ class ReprapGcodeFlavor(object):
 		match = cls.regex_sd_file_opened.match(lower_line)
 		if not match:
 			return
-		return dict(name=match.group("name"), size=int(match.group("size")))
+		return dict(name=match.group(b"name"), size=int(match.group(b"size")))
 
 	@classmethod
 	def parse_message_sd_entry(cls, line, lower_line, state):
@@ -310,7 +308,7 @@ class ReprapGcodeFlavor(object):
 		match = cls.regex_sd_printing_byte.match(lower_line)
 		if not match:
 			return None
-		return dict(current=int(match.group("current")), total=int(match.group("total")))
+		return dict(current=int(match.group(b"current")), total=int(match.group(b"total")))
 
 	##~~ Commands
 

@@ -91,17 +91,17 @@ class Protocol(ListenerAware, TransportListener):
 		self._job.process(self, position=position, tags=tags)
 
 	def pause_processing(self, tags=None):
-		if self._job is None or self.state != ProtocolState.PRINTING:
+		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 		self.state = ProtocolState.PAUSED
 
 	def resume_processing(self, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
-		self.state = ProtocolState.PRINTING
+		self.state = ProtocolState.PROCESSING
 
 	def cancel_processing(self, error=False, tags=None):
-		if self._job is not None and self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
+		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			self._job.cancel(error=error)
 		self.state = ProtocolState.CONNECTED
 
@@ -115,7 +115,7 @@ class Protocol(ListenerAware, TransportListener):
 		pass
 
 	def on_job_started(self, job):
-		self.state = ProtocolState.PRINTING
+		self.state = ProtocolState.PROCESSING
 
 	def on_job_done(self, job):
 		self._job_processed(job)
@@ -157,7 +157,7 @@ class ProtocolState(object):
 	CONNECTED = "connected"
 	DISCONNECTING = "disconnecting"
 	DISCONNECTED = "disconnected"
-	PRINTING = "printing"
+	PROCESSING = "processing"
 	CANCELLING = "cancelling"
 	PAUSING = "pausing"
 	PAUSED = "paused"
@@ -177,11 +177,14 @@ class ThreeAxisProtocolMixin(object):
 	def home(self, x=False, y=False, z=False):
 		pass
 
+
+class MultiToolProtocolMixin(object):
+
 	def change_tool(self, tool):
 		pass
 
 
-class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin):
+class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin, MultiToolProtocolMixin):
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
 		pass
 
@@ -303,4 +306,13 @@ class FileAwareProtocolListener(object):
 		pass
 
 	def on_protocol_file_print_done(self, protocol):
+		pass
+
+
+class PositionAwareProtocolListener(object):
+
+	def on_protocol_position_all_update(self, protocol, position):
+		pass
+
+	def on_protocol_position_z_update(self, protocol, z):
 		pass
