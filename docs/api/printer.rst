@@ -229,7 +229,7 @@ Issue a print head command
    feedrate
      Changes the feedrate factor to apply to the movements of the axes.
 
-     * ``factor``: The new factor, percentage as integer or float (percentage divided by 100) between 50 and 200%.
+     * ``factor``: The new factor, percentage between 50 and 200% as integer (``50`` to ``200``) or float (``0.5`` to ``2.0``).
 
    All of these commands except ``feedrate`` may only be sent if the printer is currently operational and not printing.
    Otherwise a :http:statuscode:`409` is returned.
@@ -280,9 +280,9 @@ Issue a print head command
 
       HTTP/1.1 204 No Content
 
-   **Example feed rate request**
+   **Example feed rate request (1/2)**
 
-   Set the feed rate factor to 105%.
+   Set the feed rate factor to 105% using an integer argument.
 
    .. sourcecode:: http
 
@@ -294,6 +294,26 @@ Issue a print head command
       {
         "command": "feedrate",
         "factor": 105
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example feed rate request (2/2)**
+
+   Set the feed rate factor to 105% using a float argument.
+
+   .. sourcecode:: http
+
+      POST /api/printer/printhead HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "feedrate",
+        "factor": 1.05
       }
 
    .. sourcecode:: http
@@ -346,7 +366,7 @@ Issue a tool command
    flowrate
      Changes the flow rate factor to apply to extrusion of the tool.
 
-     * ``factor``: The new factor, percentage as integer or float (percentage divided by 100) between 75 and 125%.
+     * ``factor``: The new factor, percentage between 75 and 125% as integer (``75`` to ``125``) or float (``0.75`` to ``1.25``).
 
    All of these commands may only be sent if the printer is currently operational and -- in case of ``select`` and
    ``extrude`` -- not printing. Otherwise a :http:statuscode:`409` is returned.
@@ -461,9 +481,9 @@ Issue a tool command
 
       HTTP/1.1 204 No Content
 
-   **Example flow rate request**
+   **Example flow rate request (1/2)**
 
-   Set the flow rate factor to 95%.
+   Set the flow rate factor to 95% using an integer attribute.
 
    .. sourcecode:: http
 
@@ -475,6 +495,26 @@ Issue a tool command
       {
         "command": "flowrate",
         "factor": 95
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example flow rate request (2/2)**
+
+   Set the flow rate factor to 95% using a float attribute.
+
+   .. sourcecode:: http
+
+      POST /api/printer/tool HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "flowrate",
+        "factor": 0.95
       }
 
    .. sourcecode:: http
