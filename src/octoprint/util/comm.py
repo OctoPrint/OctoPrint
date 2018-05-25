@@ -516,6 +516,9 @@ class MachineCom(object):
 		self._record_pause_data = False
 		self._record_cancel_data = False
 
+		self._suppress_scripts = set()
+		self._suppress_scripts_mutex = threading.RLock()
+
 		self._pause_position_timer = None
 		self._pause_mutex = threading.RLock()
 		self._cancel_position_timer = None
@@ -1184,7 +1187,12 @@ class MachineCom(object):
 		self._log("Did not receive parseable position data from printer within {}s, continuing without it".format(timeout))
 		self._pause_preparation_done()
 
-	def _pause_preparation_done(self, check_timer=True):
+	def _pause_preparation_done(self, check_timer=True, suppress_script=None):
+		if suppress_script is None:
+			with self._suppress_scripts_mutex:
+				suppress_script = "pause" in self._suppress_scripts
+				self._suppress_scripts.remove("pause")
+
 		with self._pause_mutex:
 			if self._pause_position_timer is not None:
 				self._pause_position_timer.cancel()
@@ -1192,14 +1200,14 @@ class MachineCom(object):
 			elif check_timer:
 				return
 
-			self._callback.on_comm_print_job_paused()
+			self._callback.on_comm_print_job_paused(suppress_script=suppress_script)
 
 			def finalize():
 				self._changeState(self.STATE_PAUSED)
 			self.sendCommand(SendQueueMarker(finalize))
 			self._continue_sending()
 
-	def setPause(self, pause, tags=None):
+	def setPause(self, pause, local_handling=True, tags=None):
 		if self.isStreaming():
 			return
 
@@ -1216,10 +1224,11 @@ class MachineCom(object):
 					self._pauseWaitStartTime = None
 
 				self._changeState(self.STATE_PRINTING)
-				self._callback.on_comm_print_job_resumed()
+				self._callback.on_comm_print_job_resumed(suppress_script=not local_handling)
 
 				if self.isSdFileSelected():
-					self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
+					if local_handling:
+						self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
 					self.sendCommand("M27", tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 				else:
 					line, pos, lineno = self._getNext()
@@ -1241,8 +1250,12 @@ class MachineCom(object):
 					self._pauseWaitStartTime = time.time()
 
 				self._changeState(self.STATE_PAUSING)
-				if self.isSdFileSelected():
+				if self.isSdFileSelected() and local_handling:
 					self.sendCommand("M25", tags=tags | {"trigger:comm.set_pause", "trigger:pause"}) # pause print
+
+				if not local_handling:
+					with self._suppress_scripts_mutex:
+						self._suppress_scripts.add("pause")
 
 				def _on_M400_sent():
 					# we don't call on_print_job_paused on our callback here
@@ -1270,7 +1283,7 @@ class MachineCom(object):
 												  "trigger:record_position"})
 					self._continue_sending()
 				else:
-					self._pause_preparation_done(check_timer=False)
+					self._pause_preparation_done(check_timer=False, suppress_script=not local_handling)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1498,9 +1511,15 @@ class MachineCom(object):
 						elif action_command == "pause":
 							self._log("Pausing on request of the printer...")
 							self.setPause(True)
+						elif action_command == "paused":
+							self._log("Printer signalled that it paused, switching state...")
+							self.setPause(True, local_handling=False)
 						elif action_command == "resume":
 							self._log("Resuming on request of the printer...")
 							self.setPause(False)
+						elif action_command == "resumed":
+							self._log("Printer signalled that it resumed, switching state...")
+							self.setPause(False, local_handling=False)
 						elif action_command == "disconnect":
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
@@ -3390,25 +3409,25 @@ class MachineComPrintCallback(object):
 	def on_comm_progress(self):
 		pass
 
-	def on_comm_print_job_started(self):
+	def on_comm_print_job_started(self, suppress_script=False):
 		pass
 
 	def on_comm_print_job_failed(self):
 		pass
 
-	def on_comm_print_job_done(self):
+	def on_comm_print_job_done(self, suppress_script=False):
 		pass
 
 	def on_comm_print_job_cancelling(self, firmware_error=None):
 		pass
 
-	def on_comm_print_job_cancelled(self):
+	def on_comm_print_job_cancelled(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_paused(self):
+	def on_comm_print_job_paused(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_resumed(self):
+	def on_comm_print_job_resumed(self, suppress_script=False):
 		pass
 
 	def on_comm_z_change(self, newZ):
