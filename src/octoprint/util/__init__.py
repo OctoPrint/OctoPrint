@@ -1554,3 +1554,8 @@ class CaseInsensitiveSet(collections.Set):
 
 	def __len__(self):
 		return len(self.data)
+
+
+# originally from https://stackoverflow.com/a/5967539
+def natural_key(text):
+	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
