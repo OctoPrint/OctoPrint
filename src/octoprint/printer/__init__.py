@@ -24,7 +24,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import re
 
 from octoprint.settings import settings
-from octoprint.util import deprecated
+from octoprint.util import deprecated, natural_key
 from octoprint.filemanager import FileDestinations
 
 
@@ -68,8 +68,8 @@ class PrinterInterface(object):
 		"""
 		import octoprint.util.comm as comm
 		return {
-			"ports": comm.serialList(),
-			"baudrates": comm.baudrateList(),
+			"ports": sorted(comm.serialList(), key=natural_key),
+			"baudrates": sorted(comm.baudrateList(), reverse=True),
 			"portPreference": settings().get(["serial", "port"]),
 			"baudratePreference": settings().getInt(["serial", "baudrate"]),
 			"autoconnect": settings().getBoolean(["serial", "autoconnect"])
