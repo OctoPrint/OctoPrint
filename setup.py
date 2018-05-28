@@ -38,8 +38,7 @@ INSTALL_REQUIRES = [
 	"pkginfo>=1.4.2,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.4.2,<2.5",
-	"psutil==5.4.3", # 5.4.4 introduced a breaking change concerning installing under non current
-	                 # setuptools versions. Pinning to 5.4.3 for now to work around this.
+	"psutil>=5.4.5,<5.5",
 	"Click>=6.2,<6.3",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
