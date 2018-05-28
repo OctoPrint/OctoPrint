@@ -48,5 +48,8 @@ resumed
 disconnect
     When this command is received from the printer, OctoPrint will immediately disconnect from it.
 
+If the bundled :ref:`Action Command Prompt Support Plugin <sec-bundledplugins-action_command_prompt>` is enabled (which
+should be the case by default), OctoPrint will also interactive dialog creation through its :ref:`supported commands <sec-bundledplugins-action_command_prompt-action_commands>`.
+
 Support for additional commands may be added by plugins by implementing a handler for the
 :ref:`octoprint.comm.protocol.action <sec-plugins-hook-comm-protocol-action>` hook.

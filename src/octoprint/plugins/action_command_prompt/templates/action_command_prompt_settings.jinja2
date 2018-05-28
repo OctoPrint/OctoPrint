@@ -1,0 +1,11 @@
+<h3>{{ _('Action Command Prompt Settings') }}</h3>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label">{{ _('Selection Command') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.action_command_prompt.selection_command">
+            <div class="help-block">{{ _('Use this to define the command to tell the printer about the selection. OctoPrint will replace <code>{choice}</code> with the index of the selected choice. E.g. <code>M876 S{choice}</code> will become <code>M123 S1</code>') }}</div>
+        </div>
+    </div>
+</form>
