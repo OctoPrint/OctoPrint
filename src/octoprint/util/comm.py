@@ -1480,6 +1480,12 @@ class MachineCom(object):
 					if self._dwelling_until and now > self._dwelling_until:
 						self._dwelling_until = False
 
+				if self._resend_ok_timer and line and not line.startswith("ok"):
+					# we got anything but an ok after a resend request - this means the ok after the resend request
+					# was in fact missing and we now need to trigger the timer
+					self._resend_ok_timer.cancel()
+					self._resendSimulateOk()
+
 				##~~ busy protocol handling
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
@@ -2017,11 +2023,12 @@ class MachineCom(object):
 
 		# process queues ongoing resend requests and queues if we are operational
 
-		if self._resendDelta is not None:
-			self._resendNextCommand()
-		else:
-			self._resendActive = False
-			self._continue_sending()
+		with self._sendingLock: # prevent concurrency due to resend_ok_timers
+			if self._resendDelta is not None:
+				self._resendNextCommand()
+			else:
+				self._resendActive = False
+				self._continue_sending()
 
 		return
 
@@ -2659,12 +2666,14 @@ class MachineCom(object):
 			if self._trigger_ok_after_resend == "always":
 				self._handle_ok()
 			elif self._trigger_ok_after_resend == "detect":
-				def process():
-					self._resend_ok_timer = None
-					self._handle_ok()
-					self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug with some firmware variants out there. Simulating an ok to continue...")
-				self._resend_ok_timer = threading.Timer(self._timeout_intervals.get("resendOk", 1.0), process)
+				self._resend_ok_timer = threading.Timer(self._timeout_intervals.get("resendOk", 1.0), self._resendSimulateOk)
 				self._resend_ok_timer.start()
+
+	def _resendSimulateOk(self):
+		self._resend_ok_timer = None
+		self._handle_ok()
+		self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug "
+		                  "with some firmware variants out there. Simulating an ok to continue...")
 
 	def _resendSameCommand(self):
 		return self._resendNextCommand(again=True)
