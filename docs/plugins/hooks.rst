@@ -380,6 +380,52 @@ octoprint.cli.commands
             OctoPrint's CLI.
    :rtype: list
 
+.. _sec-plugins-hook-comm-firmware-info:
+
+octoprint.comm.firmware.info
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: firmware_info_hook(comm_instance, firmware_name, firmware_data, *args, **kwargs)
+
+   Be notified of firmware information received from the printer following an ``M115``.
+
+   Hook handlers may use this to react/adjust behaviour based on reported firmware data. OctoPrint parses the received
+   report line and provides the parsed ``firmware_name`` and additional ``firmware_data`` contained therein. A
+   response line ``FIRMWARE_NAME:Some Firmware Name FIRMWARE_VERSION:1.2.3 PROTOCOL_VERSION:1.0`` for example will
+   be turned into a ``dict`` looking like this:
+
+   .. code-block:: python
+
+      dict(FIRMWARE_NAME="Some Firmware Name",
+           FIRMWARE_VERSION="1.2.3",
+           PROTOCOL_VERSION="1.0")
+
+   ``firmware_name`` will be ``Some Firmware Name`` in this case.
+
+   :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str firmware_name: The name of the parsed capability
+   :param dict firmware_data: All data contained in the ``M115`` report
+
+.. _sec-plugins-hook-comm-firmware-capabilities:
+
+octoprint.comm.firmware.capabilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: firmware_capability_hook(comm_instance, capability, enabled, already_defined, *args, **kwargs)
+
+   Be notified of capability report entries received from the printer.
+
+   Hook handlers may use this to react to custom firmware capabilities. OctoPrint parses the received capability
+   line and provides the parsed ``capability`` and whether it's ``enabled`` to the handler. Additionally all already
+   parsed capabilities will also be provided.
+
+   Note that hook handlers will be called once per received capability line.
+
+   :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str capability: The name of the parsed capability
+   :param bool enabled: Whether the capability is reported as enabled or disabled
+   :param dict already_defined: Already defined capabilities (capability name mapped to enabled flag)
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action
@@ -389,7 +435,7 @@ octoprint.comm.protocol.action
 
    React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
-   Hook handlers may use this to react to react to custom firmware messages. OctoPrint parses the received action
+   Hook handlers may use this to react to custom firmware messages. OctoPrint parses the received action
    command ``line`` and provides the parsed ``action`` (so anything after ``// action:``) to the hook handler.
 
    No returned value is expected.

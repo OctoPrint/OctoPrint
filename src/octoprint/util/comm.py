@@ -11,6 +11,7 @@ import time
 import re
 import threading
 import contextlib
+import copy
 
 try:
 	import queue
@@ -487,6 +488,10 @@ class MachineCom(object):
 		self._atcommand_hooks = dict(
 			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
 			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")
+		)
+		self._firmware_info_hooks = dict(
+			info=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.info"),
+			capabilities=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.capabilities")
 		)
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
@@ -1758,6 +1763,13 @@ class MachineCom(object):
 						self._firmware_info = data
 						self._firmware_name = firmware_name
 
+						# notify plugins
+						for name, hook in self._firmware_info_hooks["info"].items():
+							try:
+								hook(self, firmware_name, copy.copy(data))
+							except:
+								self._logger.exception("Error processing firmware info hook {}:".format(name))
+
 				##~~ Firmware capability report triggered by M115
 				elif lower_line.startswith("cap:"):
 					parsed = parse_capability_line(lower_line)
@@ -1772,6 +1784,13 @@ class MachineCom(object):
 							elif capability == self.CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
 								self._logger.info("Firmware states that it supports sd status autoreporting")
 								self._set_autoreport_sdstatus_interval()
+
+						# notify plugins
+						for name, hook in self._firmware_info_hooks["capabilities"].items():
+							try:
+								hook(self, capability, enabled, copy.copy(self._firmware_capabilities))
+							except:
+								self._logger.exception("Error processing firmware capability hook {}:".format(name))
 
 				##~~ invalid extruder
 				elif 'invalid extruder' in lower_line:
