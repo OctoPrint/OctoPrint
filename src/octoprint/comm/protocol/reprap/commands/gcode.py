@@ -89,15 +89,15 @@ class GcodeCommand(Command):
 		self.param = kwargs.pop(b"param", None)
 		self.original = kwargs.pop(b"original", None)
 
-		if self.original is None:
-			line = self._to_line()
-		else:
-			line = self.original
-
 		type = kwargs.pop(b"type", None)
 		tags = kwargs.pop(b"tags", None)
 
 		self.args = kwargs
+
+		if self.original is None:
+			line = self._to_line()
+		else:
+			line = self.original
 
 		super(GcodeCommand, self).__init__(line, type=type, tags=tags)
 
@@ -114,7 +114,7 @@ class GcodeCommand(Command):
 	def _to_line(self):
 		attr = []
 		for key in string.ascii_lowercase:
-			value = getattr(self, key, None)
+			value = self.args.get(key, None)
 			if value is not None:
 				if value is True:
 					attr.append(key.upper())

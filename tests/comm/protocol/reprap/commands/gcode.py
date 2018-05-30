@@ -47,3 +47,11 @@ class GcodeCommandTest(unittest.TestCase):
 	def test_repr(self, line, expected):
 		gcode = GcodeCommand.from_line(line)
 		self.assertEqual(expected, repr(gcode))
+
+	@ddt.data(
+		("M104", dict(s=210.0), "M104 S210.0")
+	)
+	@ddt.unpack
+	def test_constructor(self, code, kwargs, expected):
+		gcode = GcodeCommand(code, **kwargs)
+		self.assertEqual(expected, str(gcode))
