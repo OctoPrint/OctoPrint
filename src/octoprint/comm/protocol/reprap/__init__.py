@@ -14,7 +14,9 @@ from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
-from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, TypedQueue, TypeAlreadyInQueue
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, LineHistory
+
+from octoprint.util import TypedQueue, TypeAlreadyInQueue
 
 from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
@@ -129,8 +131,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			sd_files_temp=None,
 
 			# resend status
-			resend_active=False,
-			resend_delta=None,
+			resend_requested=None,
 			resend_linenumber=None,
 			resend_count=None,
 
@@ -150,10 +151,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._command_queue = TypedQueue()
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
-		self._send_queue = TypedQueue()
+		self._send_queue = SendQueue()
 
 		self._current_linenumber = 1
-		self._last_lines = collections.deque(iterable=[], maxlen=50)
+		self._last_lines = LineHistory(maxlen = 50)
 		self._last_communication_error = None
 
 		self._gcode_hooks = dict(queuing=dict(),
@@ -506,7 +507,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# TODO implement
 			pass
 
-		elif self._internal_state["resend_active"]:
+		elif self._internal_state["resend_requested"] is not None:
 			message = "Communication timeout during an active resend, resending same line again to trigger response from printer."
 			self._logger.info(message)
 			self.notify_listeners("on_protocol_log", self, message + " " + general_message)
@@ -569,10 +570,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		# process ongoing resend requests and queues if we are operational
 
-		if self._internal_state["resend_delta"] is not None:
+		if self._internal_state["resend_requested"] is not None:
 			self._send_next_from_resend()
 		else:
-			self._internal_state["resend_active"] = False
 			self._continue_sending()
 
 	def _on_comm_ignore_ok(self):
@@ -587,7 +587,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if linenumber is None:
 			return False
 
-		if self._internal_state["resend_delta"] is None and linenumber == self._current_linenumber:
+		if self._internal_state["resend_requested"] is None and linenumber == self._current_linenumber:
 			# We don't expect to have an active resend request and the printer is requesting a resend of
 			# a line we haven't yet sent.
 			#
@@ -597,33 +597,30 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			#
 			# We will ignore this resend request and just continue normally.
 			self._logger.debug("Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(linenumber))
-			return False
+			return
 
 		last_communication_error = self._last_communication_error
 		self._last_communication_error = None
 
-		resend_delta = self._current_linenumber - linenumber
-
 		if last_communication_error is not None \
 				and last_communication_error == "linenumber" \
-				and linenumber == self._internal_state["resend_linenumber"] \
-				and self._internal_state["resend_delta"] is not None and self._internal_state["resend_count"] < self._internal_state["resend_delta"]:
+				and linenumber == self._internal_state["resend_requested"] \
+				and self._internal_state["resend_count"] < self._current_linenumber - linenumber - 1:
 			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
 			self._internal_state["resend_count"] += 1
-			return True
+			return
 
-		self._internal_state["resend_active"] = True
-		self._internal_state["resend_delta"] = resend_delta
-		self._internal_state["resend_linenumber"] = linenumber
-		self._internal_state["resend_count"] = 0
-
-		if resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or resend_delta < 0:
-			self._logger.error("Printer requested to resend a line further back than we have")
+		if not linenumber in self._last_lines:
+			self._logger.error("Printer requested to resend a line we don't have: {}".format(linenumber))
 			if self._is_busy():
 				# TODO set error state & log
 				self.cancel_processing(error=True)
 			else:
-				self._internal_state["resend_delta"] = None
+				return
+
+		self._internal_state["resend_requested"] = linenumber
+		self._internal_state["resend_linenumber"] = linenumber
+		self._internal_state["resend_count"] = 0
 
 		# if we log resends, make sure we don't log more resends than the set rate within a window
 		#
@@ -642,7 +639,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				                               u"current line = {}".format(linenumber, self._current_linenumber))
 				self._log_resends_rate_count += 1
 
-		return True
+		self._send_queue.resend_active = True
 
 	def _on_comm_start(self):
 		if self.state == ProtocolState.CONNECTING:
@@ -767,23 +764,27 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				# if that's the case we set it to 0. It will then be incremented,
 				# the last line will be sent again, and then the delta will be
 				# decremented and set to None again, completing the cycle.
-				if self._internal_state["resend_delta"] is None:
-					self._internal_state["resend_delta"] = 0
-				self._internal_state["resend_delta"] += 1
+				if self._internal_state["resend_linenumber"] is None:
+					self._internal_state["resend_linenumber"] = self._current_linenumber
+				self._internal_state["resend_linenumber"] -= 1
 
-			resend_delta = self._internal_state["resend_delta"]
+			linenumber = self._internal_state["resend_linenumber"]
 
-			command = self._last_lines[-resend_delta]
-			linenumber = self._current_linenumber - resend_delta
+			try:
+				command = self._last_lines[linenumber]
+			except KeyError:
+				# TODO what to do?
+				return False
 
-			result = self._enqueue_for_sending(Command(command), linenumber=linenumber, processed=True)
+			result = self._enqueue_for_sending(Command(command), linenumber=linenumber, processed=True, resend=True)
 
-			self._internal_state["resend_delta"] -= 1
-			if self._internal_state["resend_delta"] <= 0:
-				self._internal_state["resend_active"] = False
-				self._internal_state["resend_delta"] = None
+			self._internal_state["resend_linenumber"] += 1
+			if self._internal_state["resend_linenumber"] == self._current_linenumber:
+				self._internal_state["resend_requested"] = None
 				self._internal_state["resend_linenumber"] = None
 				self._internal_state["resend_count"] = 0
+
+				self._send_queue.resend_active = False
 
 			return result
 
@@ -919,7 +920,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			return enqueued_something
 
-	def _enqueue_for_sending(self, command, linenumber=None, on_sent=None, processed=False):
+	def _enqueue_for_sending(self, command, linenumber=None, on_sent=None, processed=False, resend=False):
 		"""
 		Enqueues a command and optional command_type and linenumber in the send queue.
 
@@ -932,7 +933,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, on_sent, processed), item_type=command.type)
+			target = "send"
+			if resend:
+				target = "resend"
+
+			self._send_queue.put((command, linenumber, on_sent, processed), item_type=command.type, target=target)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in queue: {}".format(e.type))
@@ -1164,10 +1169,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			line (str): the line to send
 		"""
 		with self._line_mutex:
-			linenumber = self._current_linenumber
-			self._add_to_last_lines(line)
+			line_number = self._current_linenumber
+			self._add_to_last_lines(line, line_number=line_number)
 			self._current_linenumber += 1
-			self._do_send_with_checksum(line, linenumber)
+			self._do_send_with_checksum(line, line_number)
 
 	def _do_send_with_checksum(self, line, line_number):
 		"""
@@ -1189,8 +1194,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		"""
 		self._transport.write(data + b"\n")
 
-	def _add_to_last_lines(self, command):
-		self._last_lines.append(command)
+	def _add_to_last_lines(self, command, line_number=None):
+		self._last_lines.append(command, line_number=line_number)
 
 	##~~ gcode command handlers
 
@@ -1289,7 +1294,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			# after a reset of the line number we have no way to determine what line exactly the printer now wants
 			self._last_lines.clear()
-		self._internal_state["resend_delta"] = None
+		self._internal_state["resend_linenumber"] = None
 
 	def _gcode_M112_queuing(self, command):
 		# emergency stop, jump the queue with the M112

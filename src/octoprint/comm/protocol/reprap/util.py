@@ -8,18 +8,21 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 from octoprint.comm.protocol.reprap.commands import Command
+from octoprint.util import PrependableQueue, TypeAlreadyInQueue
+
 
 # noinspection PyCompatibility
 from past.builtins import basestring
 
 import copy
+import threading
 
 try:
 	# noinspection PyCompatibility
-	from queue import Queue
+	import queue
 except:
 	# noinspection PyCompatibility
-	from Queue import Queue
+	import Queue as queue
 
 
 regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
@@ -205,40 +208,134 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 
 	return result
 
-class TypedQueue(Queue):
+
+class SendQueue(PrependableQueue):
 
 	def __init__(self, maxsize=0):
-		Queue.__init__(self, maxsize=maxsize)
+		PrependableQueue.__init__(self, maxsize=maxsize)
+
+		self._resend_queue = PrependableQueue()
+		self._send_queue = PrependableQueue()
 		self._lookup = set()
 
-	def put(self, item, item_type=None, *args, **kwargs):
-		Queue.put(self, (item, item_type), *args, **kwargs)
+		self._resend_active = False
 
-	def get(self, *args, **kwargs):
-		item, _ = Queue.get(self, *args, **kwargs)
+	@property
+	def resend_active(self):
+		return self._resend_active
+
+	@resend_active.setter
+	def resend_active(self, resend_active):
+		with self.mutex:
+			self._resend_active = resend_active
+
+	def prepend(self, item, item_type=None, target=None, block=True, timeout=None):
+		PrependableQueue.prepend(self, (item, item_type, target), block=block, timeout=timeout)
+
+	def put(self, item, item_type=None, target=None, block=True, timeout=None):
+		PrependableQueue.put(self, (item, item_type, target), block=block, timeout=timeout)
+
+	def get(self, block=True, timeout=None):
+		item, _, _ = PrependableQueue.get(self, block=block, timeout=timeout)
 		return item
 
 	def _put(self, item):
-		_, item_type = item
+		_, item_type, target = item
 		if item_type is not None:
 			if item_type in self._lookup:
 				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
 			else:
 				self._lookup.add(item_type)
 
-		Queue._put(self, item)
+		if target == "resend":
+			self._resend_queue.put(item)
+		else:
+			self._send_queue.put(item)
+
+	def _prepend(self, item):
+		_, item_type, target = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		if target == "resend":
+			self._resend_queue.prepend(item)
+		else:
+			self._send_queue.prepend(item)
 
 	def _get(self):
-		item = Queue._get(self)
-		_, item_type = item
+		if self.resend_active:
+			item = self._resend_queue.get(block=False)
+		else:
+			try:
+				item = self._resend_queue.get(block=False)
+			except queue.Empty:
+				item = self._send_queue.get(block=False)
 
+		_, item_type, _ = item
 		if item_type is not None:
-			self._lookup.discard(item_type)
+			if item_type in self._lookup:
+				self._lookup.remove(item_type)
 
 		return item
 
+	def _qsize(self, len=len):
+		if self.resend_active:
+			return self._resend_queue.qsize()
+		else:
+			return self._resend_queue.qsize() + self._send_queue.qsize()
 
-class TypeAlreadyInQueue(Exception):
-	def __init__(self, t, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-		self.type = t
+
+class LineHistory(object):
+	def __init__(self, maxlen=None):
+		self.maxlen = maxlen
+
+		self._lines = []
+		self._mutex = threading.RLock()
+		self._line_number_lookup = dict()
+
+	@property
+	def lines(self):
+		with self._mutex:
+			return [x[0] for x in self._lines]
+
+	def append(self, line, line_number=None):
+		with self._mutex:
+			self._lines.append((line, line_number))
+			if line_number is not None:
+				self._line_number_lookup[line_number] = line
+			self._cleanup()
+
+	def clear(self):
+		with self._mutex:
+			self._lines = []
+			self._line_number_lookup = dict()
+
+	def __len__(self):
+		with self._mutex:
+			return len(self._lines)
+
+	def __getitem__(self, line_number):
+		with self._mutex:
+			return self._line_number_lookup[line_number]
+
+	def __contains__(self, line_number):
+		with self._mutex:
+			return line_number in self._line_number_lookup
+
+	def __iter__(self):
+		return iter(self.lines)
+
+	def _cleanup(self):
+		if len(self._lines) <= self.maxlen:
+			return
+
+		while len(self._lines) > self.maxlen:
+			_, line_number = self._lines.pop(0)
+			if line_number is not None:
+				try:
+					del self._line_number_lookup[line_number]
+				except KeyError:
+					pass
