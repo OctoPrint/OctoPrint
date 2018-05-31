@@ -453,7 +453,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				continue
 
 			# match line against flavor specific matcher
-			matches = getattr(self.flavor, message)(line, lower_line, self._protected_flags)
+			matches = getattr(self.flavor, message)(line, lower_line, self._state, self._protected_flags)
 			continue_further = False
 			if isinstance(matches, tuple) and len(matches) == 2:
 				matches, continue_further = matches
@@ -468,7 +468,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
 				if parse_method:
 					# flavor specific parser? run it
-					parse_result = parse_method(line, lower_line, self._protected_flags)
+					parse_result = parse_method(line, lower_line, self._state, self._protected_flags)
 					if parse_result is None:
 						if continue_further:
 							continue
@@ -492,7 +492,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					after_handler(result, **message_args)
 
 				if not result:
-					# nothing returned? handled -> only continue further if instructed
+					# nothing or False returned? handled -> only continue further if instructed
 					if continue_further:
 						continue
 					else:
@@ -677,12 +677,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			if not handler_method:
 				continue
 
-			if getattr(self.flavor, message)(line, lower_line, self._protected_flags):
+			if getattr(self.flavor, message)(line, lower_line, self._state, self._protected_flags):
 				message_args = dict()
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
 				if parse_method:
-					parse_result = parse_method(line, lower_line, self._protected_flags)
+					parse_result = parse_method(line, lower_line, self._state, self._protected_flags)
 					if parse_result is None:
 						break
 

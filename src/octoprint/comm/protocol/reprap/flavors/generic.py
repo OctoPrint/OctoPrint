@@ -12,8 +12,7 @@ import time
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 from octoprint.comm.protocol.reprap.util import regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
 
-# TODO needed? move?
-from octoprint.util import chunks
+from octoprint.util import chunks, monotonic_time
 
 _flavor_registry = dict()
 
@@ -107,119 +106,123 @@ class GenericFlavor(object):
 	##~~ Message matchers
 
 	@classmethod
-	def comm_timeout(cls, line, lower_line, state):
-		return line == "" and time.time() > state["timeout"]
+	def comm_timeout(cls, line, lower_line, state, flags):
+		return line == "" and monotonic_time() > flags["timeout"]
 
 	@classmethod
-	def comm_ok(cls, line, lower_line, state):
-		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state) \
-		       or cls.message_position(line, lower_line, state) \
-		       or cls.message_firmware_info(line, lower_line, state)
+	def comm_ok(cls, line, lower_line, state, flags):
+		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state, flags) \
+		       or cls.message_position(line, lower_line, state, flags) \
+		       or cls.message_firmware_info(line, lower_line, state, flags)
 
 	@classmethod
-	def comm_start(cls, line, lower_line, state):
+	def comm_start(cls, line, lower_line, state, flags):
 		return lower_line.startswith("start")
 
 	@classmethod
-	def comm_wait(cls, line, lower_line, state):
+	def comm_wait(cls, line, lower_line, state, flags):
 		return lower_line.startswith("wait")
 
 	@classmethod
-	def comm_resend(cls, line, lower_line, state):
+	def comm_resend(cls, line, lower_line, state, flags):
 		return lower_line.startswith("resend") or lower_line.startswith("rs")
 
 	@classmethod
-	def comm_debug(cls, line, lower_line, state):
+	def comm_debug(cls, line, lower_line, state, flags):
 		return line.startswith("//")
 
 	@classmethod
-	def comm_error(cls, line, lower_line, state):
+	def comm_error(cls, line, lower_line, state, flags):
 		return line.startswith("Error:") or line.startswith("!!")
 
 	@classmethod
-	def comm_ignore_ok(cls, line, lower_line, state):
+	def comm_ignore_ok(cls, line, lower_line, state, flags):
 		return False
 
 	@classmethod
-	def error_multiline(cls, line, lower_line, state):
+	def comm_busy(cls, line, lower_line, state, flags):
+		return line.startswith("echo:busy:") or line.startswith("busy:")
+
+	@classmethod
+	def error_multiline(cls, line, lower_line, state, flags):
 		return False
 
 	@classmethod
-	def error_communication(cls, line, lower_line, state):
+	def error_communication(cls, line, lower_line, state, flags):
 		return "line number" in lower_line or "checksum" in lower_line or "format error" in lower_line or "expected line" in lower_line
 
 	@classmethod
-	def message_temperature(cls, line, lower_line, state):
+	def message_temperature(cls, line, lower_line, state, flags):
 		return "T:" in line or "T0:" in line or "B:" in line
 
 	@classmethod
-	def message_position(cls, line, lower_line, state):
+	def message_position(cls, line, lower_line, state, flags):
 		return "C:" in line or "X:" in line
 
 	@classmethod
-	def message_firmware_info(cls, line, lower_line, state):
+	def message_firmware_info(cls, line, lower_line, state, flags):
 		return "NAME:" in line
 
 	@classmethod
-	def message_firmware_capability(cls, line, lower_line, state):
+	def message_firmware_capability(cls, line, lower_line, state, flags):
 		return lower_line.startswith("cap:")
 
 	@classmethod
-	def message_sd_init_ok(cls, line, lower_line, state):
+	def message_sd_init_ok(cls, line, lower_line, state, flags):
 		return "sd card ok" in lower_line
 
 	@classmethod
-	def message_sd_init_fail(cls, line, lower_line, state):
+	def message_sd_init_fail(cls, line, lower_line, state, flags):
 		return "sd init fail" in lower_line or "volume.init failed" in lower_line or "openroot failed" in lower_line
 
 	@classmethod
-	def message_sd_file_opened(cls, line, lower_line, state):
+	def message_sd_file_opened(cls, line, lower_line, state, flags):
 		return lower_line.startswith("file opened")
 
 	@classmethod
-	def message_sd_file_selected(cls, line, lower_line, state):
+	def message_sd_file_selected(cls, line, lower_line, state, flags):
 		return lower_line.startswith("file selected")
 
 	@classmethod
-	def message_sd_begin_file_list(cls, line, lower_line, state):
+	def message_sd_begin_file_list(cls, line, lower_line, state, flags):
 		return lower_line.startswith("begin file list")
 
 	@classmethod
-	def message_sd_end_file_list(cls, line, lower_line, state):
+	def message_sd_end_file_list(cls, line, lower_line, state, flags):
 		return lower_line.startswith("end file list")
 
 	@classmethod
-	def message_sd_printing_byte(cls, line, lower_line, state):
+	def message_sd_printing_byte(cls, line, lower_line, state, flags):
 		return "sd printing byte" in lower_line
 
 	@classmethod
-	def message_sd_not_printing(cls, line, lower_line, state):
+	def message_sd_not_printing(cls, line, lower_line, state, flags):
 		return "not sd printing" in lower_line
 
 	@classmethod
-	def message_sd_done_printing(cls, line, lower_line, state):
+	def message_sd_done_printing(cls, line, lower_line, state, flags):
 		return "done printing file" in lower_line
 
 	@classmethod
-	def message_sd_begin_writing(cls, line, lower_line, state):
+	def message_sd_begin_writing(cls, line, lower_line, state, flags):
 		return "writing to file" in lower_line
 
 	@classmethod
-	def message_sd_end_writing(cls, line, lower_line, state):
+	def message_sd_end_writing(cls, line, lower_line, state, flags):
 		return "done saving file" in lower_line
 
 	@classmethod
-	def message_sd_entry(cls, line, lower_line, state):
-		return state["sd_files_temp"] is not None
+	def message_sd_entry(cls, line, lower_line, state, flags):
+		return flags["sd_files_temp"] is not None
 
 	##~~ Message parsers
 
 	@classmethod
-	def parse_comm_error(cls, line, lower_line, state):
+	def parse_comm_error(cls, line, lower_line, state, flags):
 		return dict(line=line, lower_line=lower_line)
 
 	@classmethod
-	def parse_error_communication(cls, line, lower_line, state):
+	def parse_error_communication(cls, line, lower_line, state, flags):
 		if "line number" in lower_line or "expected line" in lower_line:
 			error_type = "linenumber"
 		elif "checksum" in lower_line:
@@ -227,11 +230,11 @@ class GenericFlavor(object):
 		else:
 			error_type = "other"
 
-		state["last_communication_error"] = error_type
+		flags["last_communication_error"] = error_type
 		return dict(error_type=error_type)
 
 	@classmethod
-	def parse_comm_resend(cls, line, lower_line, state):
+	def parse_comm_resend(cls, line, lower_line, state, flags):
 		line_to_resend = None
 		match = cls.regex_resend_linenumber.search(line)
 		if match is not None:
@@ -239,7 +242,7 @@ class GenericFlavor(object):
 		return dict(linenumber=line_to_resend)
 
 	@classmethod
-	def parse_message_temperature(cls, line, lower_line, state):
+	def parse_message_temperature(cls, line, lower_line, state, flags):
 		"""
 		Parses the provided temperature line.
 
@@ -252,7 +255,7 @@ class GenericFlavor(object):
 		      key to (actual, target) tuples, with key either matching ``Tn`` for ``n >= 0`` or ``B``
 		"""
 
-		current_tool = state["current_tool"]
+		current_tool = flags["current_tool"]
 
 		result = {}
 		max_tool_num = 0
@@ -272,21 +275,21 @@ class GenericFlavor(object):
 				# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
 				pass
 
-		heatup_detected = not lower_line.startswith("ok") and not state["heating"]
+		heatup_detected = not lower_line.startswith("ok") and not flags["heating"]
 
 		return dict(max_tool_num=max(max_tool_num, current_tool),
 		            temperatures=cls._canonicalize_temperatures(result, current_tool),
 		            heatup_detected=heatup_detected)
 
 	@classmethod
-	def parse_message_position(cls, line, lower_line, state):
+	def parse_message_position(cls, line, lower_line, state, flags):
 		position = dict(x=None, y=None, z=None, e=None)
 		for match in re.finditer(cls.regex_position, line):
 			position[match.group(b"axis").lower()] = float(match.group(b"pos"))
 		return position
 
 	@classmethod
-	def parse_message_firmware_info(cls, line, lower_line, state):
+	def parse_message_firmware_info(cls, line, lower_line, state, flags):
 		data = cls._parse_firmware_line(line)
 		firmware_name = data.get("FIRMWARE_NAME")
 
@@ -311,7 +314,7 @@ class GenericFlavor(object):
 		            data=data)
 
 	@classmethod
-	def parse_message_firmware_capability(cls, line, lower_line, state):
+	def parse_message_firmware_capability(cls, line, lower_line, state, flags):
 		result = cls._parse_capability_line(line)
 		if not result:
 			return
@@ -319,14 +322,14 @@ class GenericFlavor(object):
 		return dict(cap=cap, enabled=enabled)
 
 	@classmethod
-	def parse_message_sd_file_opened(cls, line, lower_line, state):
+	def parse_message_sd_file_opened(cls, line, lower_line, state, flags):
 		match = cls.regex_sd_file_opened.match(lower_line)
 		if not match:
 			return
 		return dict(name=match.group(b"name"), size=int(match.group(b"size")))
 
 	@classmethod
-	def parse_message_sd_entry(cls, line, lower_line, state):
+	def parse_message_sd_entry(cls, line, lower_line, state, flags):
 		fileinfo = lower_line.rsplit(None, 1)
 		if len(fileinfo) > 1:
 			# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
@@ -354,7 +357,7 @@ class GenericFlavor(object):
 		return dict(name=filename, size=int(size) if size is not None else None)
 
 	@classmethod
-	def parse_message_sd_printing_byte(cls, line, lower_line, state):
+	def parse_message_sd_printing_byte(cls, line, lower_line, state, flags):
 		match = cls.regex_sd_printing_byte.match(lower_line)
 		if not match:
 			return None

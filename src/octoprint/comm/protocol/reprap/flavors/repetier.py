@@ -45,11 +45,11 @@ class RepetierFlavor(GenericFlavor):
 		return "repetier" in firmware_name.lower()
 
 	@classmethod
-	def message_temperature(cls, line, lower_line, state):
-		return GenericFlavor.message_temperature(line, lower_line, state) or "targetextr" in lower_line or "targetbed" in lower_line
+	def message_temperature(cls, line, lower_line, state, flags):
+		return GenericFlavor.message_temperature(line, lower_line, state, flags) or "targetextr" in lower_line or "targetbed" in lower_line
 
 	@classmethod
-	def parse_message_temperature(cls, line, lower_line, state):
+	def parse_message_temperature(cls, line, lower_line, state, flags):
 		if "targetextr" in lower_line:
 			match = cls.regex_tempextr.match(lower_line)
 			if match is not None:
@@ -58,7 +58,7 @@ class RepetierFlavor(GenericFlavor):
 				tool = "T{}".format(tool_num)
 				temperatures = dict()
 				temperatures[tool] = (None, target)
-				return dict(max_tool_num=max(tool_num, state.get("current_tool", 0)),
+				return dict(max_tool_num=max(tool_num, flags.get("current_tool", 0)),
 				            temperatures=temperatures,
 				            heatup_detected=False)
 		elif "targetbed" in lower_line:
@@ -66,13 +66,13 @@ class RepetierFlavor(GenericFlavor):
 			if match is not None:
 				target = float(match.group(b"target"))
 				temperatures = dict(bed=(None, target))
-				return dict(max_tool_num=state.get("current_tool", 0),
+				return dict(max_tool_num=flags.get("current_tool", 0),
 				            temperatures=temperatures,
 				            heatup_detected=False)
 		else:
 			# Repetier sends temperature output on it's own line, so we can't use the
 			# "no ok in temperature output" metric to detected external heatups
-			result = GenericFlavor.parse_message_temperature(line, lower_line, state)
+			result = GenericFlavor.parse_message_temperature(line, lower_line, state, flags)
 			result[b"heatup_detected"] = False
 			return result
 
@@ -80,17 +80,17 @@ class RepetierFlavor(GenericFlavor):
 	##~~ Preprocessors, returning True stops further processing by the protocol
 
 	@classmethod
-	def preprocess_comm_resend(cls, linenumber, state):
-		if state.get("resend_swallow_repetitions", False) \
-				and state.get("resend_swallow_repetitions_counter", 0) \
-				and linenumber == state["resend_last_linenumber"] \
-				and state["resend_swallow_repetitions_counter"] > 0:
+	def preprocess_comm_resend(cls, linenumber, state, flags):
+		if flags.get("resend_swallow_repetitions", False) \
+				and flags.get("resend_swallow_repetitions_counter", 0) \
+				and linenumber == flags["resend_requested"] \
+				and flags["resend_swallow_repetitions_counter"] > 0:
 			cls.logger.debug("Ignoring resend request for line {}, that is "
 			                 "probably a repetition sent by the firmware to "
 			                 "ensure it arrives, not a real request"
 			                 .format(linenumber))
-			state["resend_swallow_repetitions_counter"] -= 1
+			flags["resend_swallow_repetitions_counter"] -= 1
 			return True
 
-		state["resend_swallow_repetitions_counter"] = cls.identical_resends_countdown
+		flags["resend_swallow_repetitions_counter"] = cls.identical_resends_countdown
 
