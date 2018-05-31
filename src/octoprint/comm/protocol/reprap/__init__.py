@@ -23,7 +23,7 @@ from octoprint.util import TypedQueue, TypeAlreadyInQueue
 from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
 
-from octoprint.util import to_str, to_unicode, protectedkeydict, CountedEvent
+from octoprint.util import to_str, to_unicode, protectedkeydict, CountedEvent, monotonic_time
 
 from octoprint.events import Events
 
@@ -652,7 +652,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		#
 		# this it to prevent the log from getting flooded for extremely bad communication issues
 		if self._log_resends:
-			now = time.time()
+			now = monotonic_time()
 			new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
 			in_rate = self._log_resends_rate_count < self._log_resends_max
 
@@ -703,7 +703,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if heatup_detected:
 			self._logger.debug("Externally triggered heatup detected")
 			self._internal_state["heating"] = True
-			self._internal_state["heatup_start"] = time.time()
+			self._internal_state["heatup_start"] = monotonic_time()
 
 		potential_tools = dict(("T{}".format(x), "tool{}".format(x)) for x in range(max_tool_num + 1))
 		potential_tools.update(dict(B="bed"))
@@ -773,7 +773,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _finish_heatup(self):
 		if self._internal_state["heating"]:
 			if self._internal_state["heating_start"]:
-				self._internal_state["heating_lost"] = self._internal_state["heating_lost"] + (time.time() - self._internal_state["heating_start"])
+				self._internal_state["heating_lost"] = self._internal_state["heating_lost"] + (monotonic_time() - self._internal_state["heating_start"])
 				self._internal_state["heating_start"] = None
 			self._internal_state["heating"] = False
 
@@ -1331,19 +1331,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.notify_listeners("on_protocol_temperature", self, self._internal_state["temperatures"])
 
 	def _gcode_M109_sent(self, command):
-		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["heatup_start"] = monotonic_time()
 		self._internal_state["long_running_command"] = True
 		self._internal_state["heating"] = True
 		self._gcode_M104_sent(command, wait=True, support_r=True)
 
 	def _gcode_M190_sent(self, command):
-		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["heatup_start"] = monotonic_time()
 		self._internal_state["long_running_command"] = True
 		self._internal_state["heating"] = True
 		self._gcode_M140_sent(command, wait=True, support_r=True)
 
 	def _gcode_M116_sent(self, command):
-		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["heatup_start"] = monotonic_time()
 		self._internal_state["long_running_command"] = True
 		self._internal_state["heating"] = True
 
@@ -1471,9 +1471,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _get_timeout(self, timeout_type):
 		if timeout_type in self.timeouts:
-			return time.time() + self.timeouts[timeout_type]
+			return monotonic_time() + self.timeouts[timeout_type]
 		else:
-			return time.time()
+			return monotonic_time()
 
 	def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
 		log = u"Last lines in terminal:\n" + u"\n".join(map(lambda x: u"| {}".format(x), list(self._terminal_log)))
