@@ -14,6 +14,8 @@ from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
+from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
+
 from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, LineHistory
 
 from octoprint.util import TypedQueue, TypeAlreadyInQueue
@@ -36,7 +38,7 @@ import threading
 import time
 
 
-gcode_to_event = {
+GCODE_TO_EVENT = {
 	# pause for user input
 	"M226": Events.WAITING,
 	"M0": Events.WAITING,
@@ -67,6 +69,9 @@ gcode_to_event = {
 	"M81": Events.POWER_OFF,
 }
 
+CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
+CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 
 class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
@@ -84,20 +89,27 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def get_attributes_starting_with(cls, prefix):
 		return dict((x, getattr(cls, x)) for x in dir(cls) if x.startswith(prefix))
 
-	def __init__(self, flavor, connection_timeout=30.0, communication_timeout=5.0,
-	             temperature_interval_idle=5.0, temperature_interval_printing=5.0):
+	def __init__(self, flavor=None,
+	             connection_timeout=30.0,
+	             communication_timeout=10.0,
+	             temperature_interval_idle=5.0,
+	             temperature_interval_printing=5.0,
+	             temperature_interval_autoreport=2.0,
+	             sd_status_interval_autoreport=1.0):
 		super(ReprapGcodeProtocol, self).__init__()
 
 		self._phase_logger = logging.getLogger(__name__ + ".command_phases")
 
-		self.flavor = flavor
+		self.flavor = flavor if flavor is not None else GenericFlavor
 		self.timeouts = dict(
 			connection=connection_timeout,
 			communication=communication_timeout
 		)
 		self.interval = dict(
 			temperature_idle=temperature_interval_idle,
-			temperature_printing=temperature_interval_printing
+			temperature_printing=temperature_interval_printing,
+			temperature_autoreport=temperature_interval_autoreport,
+			sd_status_autoreport=sd_status_interval_autoreport
 		)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
@@ -111,6 +123,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._handlers_atcommand = self.get_attributes_starting_with("_atcommand_")
 		self._handlers_command_phase = self.get_attributes_starting_with("_command_phase_")
 
+		self._capability_support = dict()
+		self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = True
+
 		self._transport = None
 
 		self._internal_state = dict(
@@ -119,6 +134,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			heating_start=None,
 			heating_lost=0,
 			heating=False,
+			temperature_autoreporting=False,
 
 			# current stuff
 			current_tool=0,
@@ -129,6 +145,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			sd_available=False,
 			sd_files=[],
 			sd_files_temp=None,
+			sd_status_autoreporting=False,
 
 			# resend status
 			resend_requested=None,
@@ -146,6 +163,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# timeout
 			timeout = None,
 			timeout_consecutive=0,
+
+			# firmware info
+			firmware_identified=False,
+			firmware_name=None,
+			firmware_info=dict(),
+			firmware_capabilities=dict()
 		)
 		self._protected_state = protectedkeydict(self._internal_state)
 
@@ -358,7 +381,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				return self.interval["temperature_printing"] if self.state == ProtocolState.PROCESSING else self.interval["temperature_idle"]
 
 			def poll_temperature():
-				if self._is_operational() and not self._internal_state["only_from_job"] and self.can_send():
+				if self._is_operational() \
+						and not self._internal_state["temperature_autoreporting"] \
+						and not self._internal_state["only_from_job"] \
+						and self.can_send():
 					self._send_command(self.flavor.command_get_temp(), command_type="temperature_poll")
 
 			from octoprint.util import RepeatedTimer
@@ -690,6 +716,33 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self.notify_listeners("on_protocol_temperature", self, self._internal_state["temperatures"])
 
+	def _on_message_firmware_info(self, firmware_name, data):
+		# TODO
+		#self._event_bus.fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=copy.copy(data)))
+
+		if not self._internal_state["firmware_identified"] and firmware_name:
+			self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
+
+			for flavor in all_flavors():
+				if flavor.identifier and callable(flavor.identifier) and flavor.identifier(firmware_name, data):
+					self._logger.info("Detected firmware flavor \"{}\", switching...".format(flavor.key))
+					self._switch_flavor(flavor)
+
+			self._internal_state["firmware_identified"] = True
+			self._internal_state["firmware_name"] = firmware_name
+			self._internal_state["firmware_info"] = data
+
+	def _on_message_firmware_capability(self, cap, enabled):
+		self._internal_state["firmware_capabilities"][cap] = enabled
+
+		if self._capability_support.get(cap, False):
+			if cap == CAPABILITY_AUTOREPORT_TEMP and enabled:
+				self._logger.info("Firmware states that it supports temperature autoreporting")
+				self._set_autoreport_temperature_interval()
+			elif cap == CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
+				self._logger.info("Firmware states that it supports sd status autoreporting")
+				self._set_autoreport_sdstatus_interval()
+
 	def _on_message_sd_init_ok(self):
 		self._internal_state["sd_available"] = True
 		self.list_files()
@@ -891,7 +944,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						# trigger the "queued" phase only if we are not streaming to sd right now
 						self._process_command_phase("queued", command)
 
-						if self._internal_state["trigger_events"] and isinstance(command, GcodeCommand) and command.code in gcode_to_event:
+						if self._internal_state["trigger_events"] and isinstance(command, GcodeCommand) and command.code in GCODE_TO_EVENT:
 							# TODO inject eventbus
 							#self._eventbus.fire(gcode_to_event[command.code])
 							pass
@@ -1228,6 +1281,24 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		pass
 	_gcode_M190_queuing = _gcode_M140_queuing
 
+	def _gcode_M155_sending(self, command):
+		try:
+			interval = int(command.s)
+			self._internal_state["temperature_autoreporting"] = self._internal_state["firmware_capabilities"].get(CAPABILITY_AUTOREPORT_TEMP,
+			                                                                                                      False) \
+			                                                    and (interval > 0)
+		except:
+			pass
+
+	def _gcode_M27_sending(self, command):
+		try:
+			interval = int(command.s)
+			self._internal_state["sd_status_autoreporting"] = self._internal_state["firmware_capabilities"].get(CAPABILITY_AUTOREPORT_SD_STATUS,
+			                                                                                                    False) \
+			                                                  and (interval > 0)
+		except:
+			pass
+
 	def _gcode_M104_sent(self, command, wait=False, support_r=False):
 		tool_num = self._internal_state["current_tool"]
 		if command.t:
@@ -1370,6 +1441,24 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if gcode is not None and gcode.code in self.flavor.long_running_commands:
 			self._internal_state["long_running_command"] = True
 
+	##~~ autoreporting
+
+	def _set_autoreport_temperature_interval(self, interval=None):
+		if interval is None:
+			try:
+				interval = int(self.interval.get("temperature_autoreport", 2))
+			except:
+				interval = 2
+		self.send_commands(self.flavor.command_autoreport_temperature(interval=interval))
+
+	def _set_autoreport_sdstatus_interval(self, interval=None):
+		if interval is None:
+			try:
+				interval = int(self.interval.get("sd_status_autoreport", 1))
+			except:
+				interval = 1
+		self.send_commands(self.flavor.command_autoreport_sd_status(interval=interval))
+
 	##~~ helpers
 
 	def _set_temperature(self, tool, actual, target):
@@ -1392,11 +1481,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			log = message + u"\n| " + log
 		self._logger.log(level, log)
 
+	def _switch_flavor(self, new_flavor):
+		self.flavor = new_flavor
+
+		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
+		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
+		flavor_error_attrs = self.get_flavor_attributes_starting_with(self.flavor, "error_")
+
+		self._registered_messages = flavor_comm_attrs + flavor_message_attrs
+		self._error_messages = flavor_error_attrs
+
 
 if __name__ == "__main__":
 	from octoprint.comm.transport.serialtransport import VirtualSerialTransport
 	from octoprint.comm.protocol.reprap.virtual import VirtualPrinter
-	from octoprint.comm.protocol.reprap.flavors import ReprapGcodeFlavor
+	from octoprint.comm.protocol.reprap.flavors import GenericFlavor
 	from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener
 	from octoprint.job import PrintjobListener
 
@@ -1466,7 +1565,7 @@ if __name__ == "__main__":
 			self.start_next_job()
 
 	transport = VirtualSerialTransport(virtual_serial_factory=virtual_serial_factory)
-	protocol = ReprapGcodeProtocol(ReprapGcodeFlavor)
+	protocol = ReprapGcodeProtocol()
 
 	protocol_listener = CustomProtocolListener(protocol)
 	protocol_listener.add_job(LocalGcodeFilePrintjob(os.path.join(virtual_sd, filename)))

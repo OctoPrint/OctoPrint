@@ -293,8 +293,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		# TODO make this depend on the printer profile
 		from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
-		from octoprint.comm.protocol.reprap.flavors.marlin import BqMarlinFlavor
-		protocol = ReprapGcodeProtocol(BqMarlinFlavor)
+		protocol = ReprapGcodeProtocol()
 		protocol.register_listener(self)
 
 		self._transport = transport

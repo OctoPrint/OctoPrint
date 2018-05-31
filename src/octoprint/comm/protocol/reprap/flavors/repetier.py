@@ -7,19 +7,20 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from octoprint.comm.protocol.reprap.flavors import ReprapGcodeFlavor
+from octoprint.comm.protocol.reprap.flavors import GenericFlavor
 
-from octoprint.comm.protocol.gcode.util import regex_positive_float_pattern
+from octoprint.comm.protocol.reprap.util import regex_positive_float_pattern
 
 import re
 
-class RepetierFlavor(ReprapGcodeFlavor):
+class RepetierFlavor(GenericFlavor):
 
 	key = "repetier"
 
 	always_send_checksum = True
-
 	identical_resends_countdown = 5
+	block_while_dwelling = True
+	detect_external_heatups = False
 
 	regex_tempextr = re.compile("targetextr(?P<toolnum>\d+):(?P<target>%s)" % regex_positive_float_pattern)
 	"""Regex for matching target temp reporting from Repetier.
@@ -40,35 +41,39 @@ class RepetierFlavor(ReprapGcodeFlavor):
 	"""
 
 	@classmethod
+	def identifier(cls, firmware_name, firmware_info):
+		return "repetier" in firmware_name.lower()
+
+	@classmethod
 	def message_temperature(cls, line, lower_line, state):
-		return ReprapGcodeFlavor.message_temperature(line, lower_line, state) or "targetextr" in lower_line or "targetbed" in lower_line
+		return GenericFlavor.message_temperature(line, lower_line, state) or "targetextr" in lower_line or "targetbed" in lower_line
 
 	@classmethod
 	def parse_message_temperature(cls, line, lower_line, state):
 		if "targetextr" in lower_line:
 			match = cls.regex_tempextr.match(lower_line)
 			if match is not None:
-				tool_num = int(match.group("toolnum"))
-				target = float(match.group("target"))
+				tool_num = int(match.group(b"toolnum"))
+				target = float(match.group(b"target"))
 				tool = "T{}".format(tool_num)
 				temperatures = dict()
 				temperatures[tool] = (None, target)
 				return dict(max_tool_num=max(tool_num, state.get("current_tool", 0)),
 				            temperatures=temperatures,
-				            detected_heatup=False)
+				            heatup_detected=False)
 		elif "targetbed" in lower_line:
 			match = cls.regex_tempbed.match(lower_line)
 			if match is not None:
-				target = float(match.group("target"))
+				target = float(match.group(b"target"))
 				temperatures = dict(bed=(None, target))
 				return dict(max_tool_num=state.get("current_tool", 0),
 				            temperatures=temperatures,
-				            detected_heatup=False)
+				            heatup_detected=False)
 		else:
 			# Repetier sends temperature output on it's own line, so we can't use the
 			# "no ok in temperature output" metric to detected external heatups
-			result = ReprapGcodeFlavor.parse_message_temperature(line, lower_line, state)
-			result["heating"] = False
+			result = GenericFlavor.parse_message_temperature(line, lower_line, state)
+			result[b"heatup_detected"] = False
 			return result
 
 
@@ -88,5 +93,4 @@ class RepetierFlavor(ReprapGcodeFlavor):
 			return True
 
 		state["resend_swallow_repetitions_counter"] = cls.identical_resends_countdown
-
 

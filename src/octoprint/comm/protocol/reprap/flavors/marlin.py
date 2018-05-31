@@ -7,9 +7,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from octoprint.comm.protocol.reprap.flavors import ReprapGcodeFlavor
+from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
 
-class MarlinFlavor(ReprapGcodeFlavor):
+class MarlinFlavor(GenericFlavor):
 
 	key = "marlin"
 
