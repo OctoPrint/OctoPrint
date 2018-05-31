@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals, print_function, \
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
+import copy
 import re
 
 __registry = dict()
@@ -64,3 +64,16 @@ class Command(object):
 
 	def __hash__(self):
 		return hash(self.__key())
+
+	def with_type(self, type):
+		c = copy.deepcopy(self)
+		c.type = type
+		return c
+
+	def with_tags(self, tags):
+		if tags is None:
+			return self
+
+		c = copy.deepcopy(self)
+		c.tags |= tags
+		return c

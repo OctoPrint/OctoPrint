@@ -17,6 +17,8 @@ from monotonic import monotonic
 class Printjob(ProtocolListener, ListenerAware):
 	__metaclass__ = ABCMeta
 
+	parallel = False
+
 	def __init__(self, name=None, user=None, event_data=None):
 		if event_data is None:
 			event_data = dict()
@@ -315,6 +317,8 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob):
 
 
 class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
+
+	parallel = True
 
 	def __init__(self, path, status_interval=2.0, *args, **kwargs):
 		name = path

@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 from octoprint.comm.protocol.reprap.commands import Command
-from octoprint.util import PrependableQueue, TypeAlreadyInQueue
+from octoprint.util import PrependableQueue, TypeAlreadyInQueue, CountedEvent
 
 
 # noinspection PyCompatibility
@@ -286,6 +286,30 @@ class SendQueue(PrependableQueue):
 			return self._resend_queue.qsize()
 		else:
 			return self._resend_queue.qsize() + self._send_queue.qsize()
+
+
+class SendToken(CountedEvent):
+
+	def __init__(self, value=0, maximum=None, **kwargs):
+		super(SendToken, self).__init__(value=value, maximum=maximum, **kwargs)
+		self._ignored = 0
+
+	def set(self, ignore=False):
+		with self._mutex:
+			if ignore:
+				self._ignored += 1
+			self._internal_set(self._counter + 1)
+
+	def clear(self, completely=False):
+		with self._mutex:
+			if completely:
+				self._internal_set(0)
+				self._ignored = 0
+			else:
+				if self._ignored > 0:
+					self._ignored -= 1
+					self._internal_set(self._counter - 1)
+				self._internal_set(self._counter - 1)
 
 
 class LineHistory(object):

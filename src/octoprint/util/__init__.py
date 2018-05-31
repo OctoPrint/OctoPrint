@@ -1334,9 +1334,9 @@ class ResettableTimer(threading.Thread):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, maximum=None, **kwargs):
+	def __init__(self, value=0, max=None, **kwargs):
 		self._counter = 0
-		self._max = kwargs.get("max", maximum)
+		self._max = max
 		self._mutex = threading.RLock()
 		self._event = threading.Event()
 

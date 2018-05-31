@@ -16,7 +16,7 @@ from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
 
-from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, LineHistory
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory
 
 from octoprint.util import TypedQueue, TypeAlreadyInQueue
 
@@ -92,6 +92,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def __init__(self, flavor=None,
 	             connection_timeout=30.0,
 	             communication_timeout=10.0,
+	             communication_busy_timeout=2.0,
 	             temperature_interval_idle=5.0,
 	             temperature_interval_printing=5.0,
 	             temperature_interval_autoreport=2.0,
@@ -103,7 +104,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self.flavor = flavor if flavor is not None else GenericFlavor
 		self.timeouts = dict(
 			connection=connection_timeout,
-			communication=communication_timeout
+			communication=communication_timeout,
+			communication_busy=communication_busy_timeout
 		)
 		self.interval = dict(
 			temperature_idle=temperature_interval_idle,
@@ -125,6 +127,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._capability_support = dict()
 		self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = True
+		self._capability_support[CAPABILITY_BUSY_PROTOCOL] = True
 
 		self._transport = None
 
@@ -158,22 +161,30 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# misc
 			only_from_job=False,
 			trigger_events=True,
+			expect_continous_comms=False,
 			ignore_ok=0,
 
 			# timeout
 			timeout = None,
 			timeout_consecutive=0,
+			ok_timeout=None,
+
+			# dwelling
+			dwelling_until=None,
 
 			# firmware info
 			firmware_identified=False,
 			firmware_name=None,
 			firmware_info=dict(),
-			firmware_capabilities=dict()
+			firmware_capabilities=dict(),
+
+			# busy protocol
+			busy_detected=False
 		)
 		self._protected_flags = protectedkeydict(self._internal_flags)
 
 		self._command_queue = TypedQueue()
-		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
+		self._clear_to_send = CountedEvent(max=10, name="protocol.clear_to_send")
 		self._send_queue = SendQueue()
 
 		self._current_linenumber = 1
@@ -249,6 +260,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		else:
 			self._internal_flags["only_from_job"] = False
 			self._internal_flags["trigger_events"] = True
+		self._internal_flags["expect_continous_comms"] = not job.parallel
 
 		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
 
@@ -333,12 +345,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		force = kwargs.get(b"force", False)
 
 		# TODO job on hold
-		if self.state == ProtocolState.PROCESSING and not self._job.runs_parallel and not force:
+		if self.state == ProtocolState.PROCESSING and not self._job.parallel and not force:
 			if len(commands) > 1:
 				command_type = None
 			for command in commands:
 				if not isinstance(command, Command):
 					command = to_command(command, type=command_type, tags=tags)
+				else:
+					command = command.with_type(command_type).with_tags(tags)
 
 				try:
 					self._command_queue.put((command, on_sent), item_type=command_type)
@@ -358,7 +372,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		return self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED)
 
 	def _is_streaming(self):
-		# TODO make more abstract?
 		return self._is_busy() and self._job and isinstance(self._job, LocalGcodeStreamjob)
 
 	def _on_state_connecting(self, old_state):
@@ -367,14 +380,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		hello = self.flavor.command_hello()
 		if hello:
-			self._send_command(hello)
-			self._clear_to_send.set()
+			self._tickle(hello)
 
 	def _on_state_connected(self, old_state):
 		if old_state == ProtocolState.CONNECTING:
 			self._internal_flags["timeout"] = self._get_timeout("communication")
 
 			self._send_command(self.flavor.command_set_line(0))
+			self._send_command(self.flavor.command_get_firmware_info())
 			self._clear_to_send.set()
 
 			def poll_temperature_interval():
@@ -385,7 +398,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						and not self._internal_flags["temperature_autoreporting"] \
 						and not self._internal_flags["only_from_job"] \
 						and self.can_send():
-					self._send_command(self.flavor.command_get_temp(), command_type="temperature_poll")
+					self._send_command(self.flavor.command_get_temp(), command_type="temperature_poll", tags={"trigger:protocol.poll_temperature"})
 
 			from octoprint.util import RepeatedTimer
 			self._temperature_poller = RepeatedTimer(poll_temperature_interval,
@@ -403,6 +416,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self._temperature_poller is not None:
 			self._temperature_poller.cancel()
 			self._temperature_poller = None
+
+	##~~ Job handling
+
+	def _job_processed(self, job):
+		self._internal_flags["expect_continous_comms"] = False
+		self._internal_flags["only_from_job"] = False
+		self._internal_flags["trigger_events"] = True
+		super(ReprapGcodeProtocol, self)._job_processed(job)
 
 	##~~ Transport logging
 
@@ -505,15 +526,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self.state == ProtocolState.CONNECTING:
 			hello = self.flavor.command_hello()
 			if hello:
-				self._send_command(hello)
-				self._clear_to_send.set()
+				self._tickle(hello)
 
-	def _on_comm_timeout(self):
-		if self.state not in (ProtocolState.PROCESSING,
-		                      ProtocolState.PAUSED,
-		                      ProtocolState.CONNECTED):
-			return
-
+	def _on_comm_timeout(self, line, lower_line):
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
 
 		# figure out which consecutive timeout maximum we have to use
@@ -555,7 +570,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			message = "Communication timeout while printing, trying to trigger response from printer."
 			self._logger.info(message)
 			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
-			if self._send_command("M105", command_type="temperature"):
+			if self._send_command(GcodeCommand("M105", type="temperature")):
 				self._clear_to_send.set()
 
 		elif self._clear_to_send.blocked():
@@ -565,7 +580,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
 			self._clear_to_send.set()
 
-		return self.state != ProtocolState.PROCESSING
+		self._internal_flags["ok_timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication")
+
+		return self.state != ProtocolState.PROCESSING and line == ""
 
 	def _on_comm_ok(self):
 		if self._internal_flags["ignore_ok"] > 0:
@@ -579,6 +596,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.state = ProtocolState.CONNECTED
 			return
 
+		self._internal_flags["ok_timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication")
 		self._clear_to_send.set()
 
 		# reset long running commands, persisted current tools and heatup counters on ok
@@ -623,6 +641,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			#
 			# We will ignore this resend request and just continue normally.
 			self._logger.debug("Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(linenumber))
+			self.process_protocol_log("Ignoring resend request for line {}, we haven't sent that yet".format(linenumber))
 			return
 
 		last_communication_error = self._last_communication_error
@@ -633,6 +652,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				and linenumber == self._internal_flags["resend_requested"] \
 				and self._internal_flags["resend_count"] < self._current_linenumber - linenumber - 1:
 			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
+			self.process_protocol_log("Ignoring resend request for line {}, originates from lines sent earlier".format(linenumber))
 			self._internal_flags["resend_count"] += 1
 			return
 
@@ -698,6 +718,23 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._last_communication_error = error_type
 
 	# TODO multiline error handling
+
+	def _on_comm_busy(self):
+		self._internal_flags["ok_timeout"] = self._get_timeout("communcation_busy" if self._internal_flags["busy_detected"] else "communication")
+
+		if not self._internal_flags["busy_detected"] and self._capability_support.get(CAPABILITY_BUSY_PROTOCOL, False):
+			self.process_protocol_log("Printer seems to support the busy protocol, adjusting timeouts and setting busy "
+			                          "interval accordingly")
+			self._internal_flags["busy_detected"] = True
+
+			new_communication_timeout = self.timeouts.get("communication_busy", 2)
+			self._transport.timeout = new_communication_timeout
+			busy_interval = max(int(new_communication_timeout) - 1, 1)
+
+			self._logger.info("Printer seems to support the busy protocol, telling it to set the busy "
+			                  "interval to our \"communication_busy\" timeout - 1s = {}s".format(busy_interval))
+
+			self._set_busy_protocol_interval(interval=busy_interval)
 
 	def _on_message_temperature(self, max_tool_num, temperatures, heatup_detected):
 		if heatup_detected:
@@ -778,6 +815,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["heating"] = False
 
 	##~~ Sending
+
+	def _tickle(self, command):
+		if self._send_command(command):
+			if self._clear_to_send.blocked():
+				self._clear_to_send.set()
 
 	def _continue_sending(self):
 		while self._active:
@@ -917,6 +959,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _send_command(self, command, command_type=None, tags=None, on_sent=None):
 		if not isinstance(command, Command):
 			command = to_command(command, type=command_type, tags=tags)
+		elif command_type or tags:
+			command = command.with_type(command_type).with_tags(tags)
 
 		with self._send_queue_mutex:
 			if self._internal_flags["trigger_events"]:
@@ -1014,6 +1058,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					if not self._send_queue_active:
 						break
 
+					# sleep if we are dwelling
+					now = monotonic_time()
+					if self.flavor.block_while_dwelling and self._internal_flags["dwelling_until"] and now < self._internal_flags["dwelling_until"]:
+						time.sleep(self._internal_flags["dwelling_until"] - now)
+						self._internal_flags["dwelling_until"] = False
+
 					# fetch command and optional linenumber from queue
 					command, linenumber, on_sent, processed = entry
 
@@ -1070,7 +1120,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							# transport does not have message integrity, let's see if we'll send a checksum
 							command_requiring_checksum = isinstance(command, GcodeCommand) and command.code in self.flavor.checksum_requiring_commands
 							command_allowing_checksum = isinstance(command, GcodeCommand) or self.flavor.unknown_with_checksum
-							checksum_enabled = self.flavor.always_send_checksum or (self.state == ProtocolState.PROCESSING and not self.flavor.never_send_checksum)
+							checksum_enabled = not self.flavor.never_send_checksum and (self.state == ProtocolState.PROCESSING # TODO does job need checksum?
+							                                                            or self.flavor.always_send_checksum
+							                                                            or not self._internal_flags["firmware_identified"])
 
 							send_with_checksum = command_requiring_checksum or (command_allowing_checksum and checksum_enabled)
 
@@ -1402,14 +1454,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
 
-	def _gcode_G4_sent(self, cmd):
-		# we are intending to dwell for a period of time, increase the timeout to match
+	def _gcode_G4_sent(self, command):
 		timeout = 0
-		if cmd.p:
-			timeout = float(cmd.p) / 1000.0
-		elif cmd.s:
-			timeout = float(cmd.s)
-		self._internal_flags["timeout"] = self._get_timeout("communication") + timeout
+		if command.p is not None:
+			try:
+				timeout = float(command.p) / 1000.0
+			except ValueError:
+				pass
+		elif command.s is not None:
+			try:
+				timeout = float(command.s)
+			except ValueError:
+				pass
+
+		self._internal_flags["timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication") + timeout
+		self._internal_flags["dwelling_until"] = monotonic_time() + timeout
 
 	##~~ atcommand handlers
 
@@ -1449,7 +1508,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				interval = int(self.interval.get("temperature_autoreport", 2))
 			except:
 				interval = 2
-		self.send_commands(self.flavor.command_autoreport_temperature(interval=interval))
+		self.send_commands(self.flavor.command_autoreport_temperature(interval=interval),
+		                   tags={"trigger:set_autoreport_temperature_interval"})
 
 	def _set_autoreport_sdstatus_interval(self, interval=None):
 		if interval is None:
@@ -1457,7 +1517,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				interval = int(self.interval.get("sd_status_autoreport", 1))
 			except:
 				interval = 1
-		self.send_commands(self.flavor.command_autoreport_sd_status(interval=interval))
+		self.send_commands(self.flavor.command_autoreport_sd_status(interval=interval),
+		                   tags={"trigger:protocol.set_autoreport_sdstatus_interval"})
+
+	##~~ busy protocol
+
+	def _set_busy_protocol_interval(self, interval=None):
+		if interval is None:
+			try:
+				interval = max(int(self.timeouts.get("communication_busy", 3)) - 1, 1)
+			except:
+				interval = 2
+		self.send_commands(self.flavor.command_busy_protocol_interval(interval),
+		                   tags={"trigger:protocol.set_busy_protocol_interval"})
 
 	##~~ helpers
 
@@ -1502,7 +1574,7 @@ if __name__ == "__main__":
 	import os
 
 	virtual_sd = "C:/Users/gina/AppData/Roaming/OctoPrint/virtualSd"
-	filename = "50mm-t~5.gco"
+	filename = "20mm_c~1.gco"
 
 	def virtual_serial_factory():
 		return VirtualPrinter(virtual_sd=virtual_sd)
@@ -1554,12 +1626,11 @@ if __name__ == "__main__":
 				return
 			print(data)
 
-		def on_job_progress(self, job, progress, elapsed, estimated):
+		def on_job_progress(self, job):
 			if job != self._job:
 				return
-			print("Job progress: {}% (Time: {} min / {} min)".format(int(progress * 100) if progress is not None else "0",
-			                                                       "{}:{}".format(int(elapsed / 60), int(elapsed % 60)) if elapsed is not None else "?",
-			                                                       "{}:{}".format(int(estimated / 60), int(estimated % 60)) if estimated is not None else "?"))
+			print("Job progress: {}% (Time: {} min)".format(int(job.progress * 100) if job.progress is not None else "0",
+			                                                "{}:{}".format(int(job.elapsed / 60), int(job.elapsed % 60)) if job.elapsed is not None else "?"))
 
 		def on_job_done(self, job):
 			self.start_next_job()
@@ -1568,14 +1639,9 @@ if __name__ == "__main__":
 	protocol = ReprapGcodeProtocol()
 
 	protocol_listener = CustomProtocolListener(protocol)
-	protocol_listener.add_job(LocalGcodeFilePrintjob(os.path.join(virtual_sd, filename)))
+	protocol_listener.add_job(LocalGcodeFilePrintjob(os.path.join(virtual_sd, filename), "local", "foo.gcode"))
 	protocol_listener.add_job(SDFilePrintjob(filename))
 	protocol.register_listener(protocol_listener)
 
 	transport.connect()
 	protocol.connect(transport)
-"""
-
-if __name__ == "__main__":
-	gcode = GcodeCommand.from_line("M104 S220.4 T2")
-"""

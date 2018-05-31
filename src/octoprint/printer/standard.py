@@ -285,6 +285,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			transport_kwargs = kwargs.get("transport_kwargs", dict())
 			transport_connect_kwargs = kwargs.get("transport_connect_kwargs", dict())
 
+		from octoprint.logging.handlers import CommunicationLogHandler
+		CommunicationLogHandler.on_open_connection(u"TRANSPORT")
+		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
+
 		from octoprint.comm.transport import lookup_transport
 		transport_class = lookup_transport(selected_transport)
 		if not transport_class:

@@ -52,6 +52,7 @@ class GenericFlavor(object):
 	never_send_checksum = False
 
 	detect_external_heatups = True
+	block_while_dwelling = False
 
 	sd_relative_path = False
 
@@ -107,7 +108,13 @@ class GenericFlavor(object):
 
 	@classmethod
 	def comm_timeout(cls, line, lower_line, state, flags):
-		return line == "" and monotonic_time() > flags["timeout"]
+		now = monotonic_time()
+		return ((line == "" and now > flags["timeout"]) or (flags["expect_continous_comms"]
+		                                                    #and not flags["job_on_hold"] # TODO job on hold
+		                                                    and not flags["long_running_command"]
+		                                                    and not flags["heating"]
+		                                                    and now > flags["ok_timeout"])) and \
+		       (not cls.block_while_dwelling or not flags["dwelling_until"] or now > flags["dwelling_until"])
 
 	@classmethod
 	def comm_ok(cls, line, lower_line, state, flags):
@@ -219,6 +226,10 @@ class GenericFlavor(object):
 
 	@classmethod
 	def parse_comm_error(cls, line, lower_line, state, flags):
+		return dict(line=line, lower_line=lower_line)
+
+	@classmethod
+	def parse_comm_timeout(cls, line, lower_line, state, flags):
 		return dict(line=line, lower_line=lower_line)
 
 	@classmethod
@@ -368,6 +379,10 @@ class GenericFlavor(object):
 	@classmethod
 	def command_hello(cls):
 		return cls.command_set_line(0)
+
+	@classmethod
+	def command_get_firmware_info(cls):
+		return GcodeCommand("M115")
 
 	@classmethod
 	def command_get_temp(cls):

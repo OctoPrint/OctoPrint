@@ -194,6 +194,9 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				},
 				"serial": {
 					"format": "%(asctime)s - %(message)s"
+				},
+				"communication": {
+					"format": "%(asctime)s - %(name)s - %(message)s"
 				}
 			},
 			"handlers": {
@@ -211,35 +214,24 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"backupCount": 6,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "octoprint.log")
 				},
-				"serialFile": {
-					"class": "octoprint.logging.handlers.SerialLogHandler",
+				"protocolFile": {
+					"class": "octoprint.logging.handlers.CommunicationLogHandler",
 					"level": "DEBUG",
-					"formatter": "serial",
+					"formatter": "communication",
 					"backupCount": 3,
-					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log"),
+					"filename": os.path.join(settings.getBaseFolder("logs"), "protocol.log"),
 					"delay": True
 				},
-				"protocolFile": {
-					"class": "logging.handlers.RotatingFileHandler",
-					"level": "DEBUG",
-					"formatter": "simple",
-					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
-					"filename": os.path.join(settings.getBaseFolder("logs"), "protocol.log")
-				},
 				"transportFile": {
-					"class": "logging.handlers.RotatingFileHandler",
+					"class": "octoprint.logging.handlers.CommunicationLogHandler",
 					"level": "DEBUG",
-					"formatter": "simple",
-					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
-					"filename": os.path.join(settings.getBaseFolder("logs"), "transport.log")
+					"formatter": "communication",
+					"backupCount": 3,
+					"filename": os.path.join(settings.getBaseFolder("logs"), "transport.log"),
+					"delay": True
 				}
 			},
 			"loggers": {
-				"SERIAL": {
-					"level": "INFO",
-					"handlers": ["serialFile"],
-					"propagate": False
-				},
 				"PROTOCOL": {
 					"level": "DEBUG",
 					"handlers": ["protocolFile"],

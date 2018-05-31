@@ -56,22 +56,22 @@ class OctoPrintStreamHandler(AsyncLogHandlerMixin, logging.StreamHandler):
 	pass
 
 
-class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler):
+class CommunicationLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler):
 
-	do_rollover = False
+	do_rollover = dict()
 	suffix_template = "%Y-%m-%d_%H-%M-%S"
 	file_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
 
 	@classmethod
-	def on_open_connection(cls):
-		cls.do_rollover = True
+	def on_open_connection(cls, logger):
+		cls.do_rollover[logger] = True
 
 	def __init__(self, *args, **kwargs):
-		super(SerialLogHandler, self).__init__(*args, **kwargs)
+		super(CommunicationLogHandler, self).__init__(*args, **kwargs)
 		self.cleanupFiles()
 
 	def shouldRollover(self, record):
-		return type(self).do_rollover
+		return self.do_rollover.pop(record.name, False)
 
 	def getFilesToDelete(self):
 		"""
@@ -100,8 +100,6 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 				os.remove(path)
 
 	def doRollover(self):
-		self.__class__._do_rollover = False
-
 		if self.stream:
 			self.stream.close()
 			self.stream = None
@@ -117,6 +115,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 		self.cleanupFiles()
 		if not self.delay:
 			self.stream = self._open()
+
 
 class RecordingLogHandler(logging.Handler):
 	def __init__(self, target=None, *args, **kwargs):
