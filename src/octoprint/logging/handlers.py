@@ -71,7 +71,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 		self.cleanupFiles()
 
 	def shouldRollover(self, record):
-		return type(self).do_rollover
+		return self.do_rollover
 
 	def getFilesToDelete(self):
 		"""
@@ -100,7 +100,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 				os.remove(path)
 
 	def doRollover(self):
-		self.__class__._do_rollover = False
+		self.do_rollover = False
 
 		if self.stream:
 			self.stream.close()
