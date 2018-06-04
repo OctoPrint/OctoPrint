@@ -999,7 +999,10 @@ class MachineCom(object):
 
 						self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
 
-					self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
+					interval = self._timeout_intervals.get("sdStatus", 1.0)
+					if interval <= 0:
+						interval = 1.0
+					self._sd_status_timer = RepeatedTimer(interval, self._poll_sd_status, run_first=True)
 					self._sd_status_timer.start()
 				else:
 					if pos is not None and isinstance(pos, int) and pos > 0:
@@ -2275,19 +2278,25 @@ class MachineCom(object):
 		busy_default = 4.0
 		target_default = 2.0
 
+		def get(key, default):
+			interval = self._timeout_intervals.get(key, default)
+			if interval <= 0:
+				interval = 1.0
+			return interval
+
 		if self.isBusy():
-			return self._timeout_intervals.get("temperature", busy_default)
+			return get("temperature", busy_default)
 
 		tools = self.last_temperature.tools
 		for temp in [tools[k][1] for k in tools.keys()]:
 			if temp > self._temperatureTargetSetThreshold:
-				return self._timeout_intervals.get("temperatureTargetSet", target_default)
+				return get("temperatureTargetSet", target_default)
 
 		bed = self.last_temperature.bed
 		if bed and len(bed) > 0 and bed[1] > self._temperatureTargetSetThreshold:
-			return self._timeout_intervals.get("temperatureTargetSet", target_default)
+			return get("temperatureTargetSet", target_default)
 
-		return self._timeout_intervals.get("temperature", busy_default)
+		return get("temperature", busy_default)
 
 	def _sendFromQueue(self):
 		# We loop here to make sure that if we do NOT send the first command
