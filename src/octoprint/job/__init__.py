@@ -400,10 +400,10 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 
 class PrintjobListener(object):
 
-	def on_job_started(self, job):
+	def on_job_started(self, job, suppress_script=False):
 		pass
 
-	def on_job_done(self, job):
+	def on_job_done(self, job, suppress_script=False):
 		pass
 
 	def on_job_failed(self, job):
@@ -412,13 +412,13 @@ class PrintjobListener(object):
 	def on_job_cancelling(self, job, firmware_error=None):
 		pass
 
-	def on_job_cancelled(self, job, cancel_position=None):
+	def on_job_cancelled(self, job, cancel_position=None, suppress_script=False):
 		pass
 
-	def on_job_paused(self, job, pause_position=None):
+	def on_job_paused(self, job, pause_position=None, suppress_script=False):
 		pass
 
-	def on_job_resumed(self, job):
+	def on_job_resumed(self, job, suppress_script=False):
 		pass
 
 	def on_job_progress(self, job):

@@ -39,7 +39,10 @@ class PrintTimeEstimator(object):
 			if self._job_type == "sdcard":
 				# we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
 				# by that divided by the sd status polling interval
-				rolling_window = 15 / settings().get(["serial", "timeout", "sdStatus"])
+				interval = settings().getFloat(["serial", "timeout", "sdStatus"])
+				if interval <= 0:
+					interval = 1.0
+				rolling_window = 15 / interval
 
 				# we are happy when one rolling window has been stable
 				countdown = rolling_window

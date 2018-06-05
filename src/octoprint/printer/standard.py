@@ -695,6 +695,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	def is_paused(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.PAUSED
 
+	def is_resuming(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isResuming()
+
+	def is_finishing(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isFinishing()
+
 	def is_error(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.DISCONNECTED_WITH_ERROR
 
@@ -991,15 +997,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self._logger.exception("Error while trying to send initial state update")
 
 	def _get_state_flags(self):
-		return dict(operational=self.is_operational(),
-		            printing=self.is_printing(),
-		            cancelling=self.is_cancelling(),
-		            pausing=self.is_pausing(),
-		            closedOrError=self.is_closed_or_error(),
-		            error=self.is_error(),
-		            paused=self.is_paused(),
-		            ready=self.is_ready(),
-		            sdReady=self.is_sd_ready())
+		return self._dict(operational=self.is_operational(),
+		                  printing=self.is_printing(),
+		                  cancelling=self.is_cancelling(),
+		                  pausing=self.is_pausing(),
+		                  resuming=self.is_resuming(),
+		                  finishing=self.is_finishing(),
+		                  closedOrError=self.is_closed_or_error(),
+		                  error=self.is_error(),
+		                  paused=self.is_paused(),
+		                  ready=self.is_ready(),
+		                  sdReady=self.is_sd_ready())
 
 	def _get_origin_for_job(self, job=None):
 		if job is None:
@@ -1096,18 +1104,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._state_monitor.trigger_progress_update()
 
-	def on_job_started(self, job):
+	def on_job_started(self, job, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
-			self.script("beforePrintStarted",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("beforePrintStarted",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
-	def on_job_done(self, job):
+	def on_job_done(self, job, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1137,9 +1146,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				                                         flags=self._get_state_flags()))
 
 				eventManager().fire(Events.PRINT_DONE, payload)
-				self.script("afterPrintDone",
-				            context=dict(event=payload),
-				            must_be_set=False)
+				if not suppress_script:
+					self.script("afterPrintDone",
+					            context=dict(event=payload),
+					            must_be_set=False)
 
 				def log_print():
 					self._file_manager.log_print(payload["origin"],
@@ -1172,7 +1182,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				payload["firmwareError"] = firmware_error
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
-	def on_job_cancelled(self, job, cancel_position=None):
+	def on_job_cancelled(self, job, cancel_position=None, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1185,9 +1195,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				payload["position"] = cancel_position
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
-			self.script("afterPrintCancelled",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("afterPrintCancelled",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 			def finalize():
 				self._file_manager.log_print(job.storage,
@@ -1202,7 +1213,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			thread.daemon = True
 			thread.start()
 
-	def on_job_paused(self, job, pause_position=None):
+	def on_job_paused(self, job, pause_position=None, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1211,20 +1222,22 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			if pause_position:
 				payload["position"] = pause_position
 			eventManager().fire(Events.PRINT_PAUSED, payload)
-			self.script("afterPrintPaused",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("afterPrintPaused",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
-	def on_job_resumed(self, job):
+	def on_job_resumed(self, job, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
-			self.script("beforePrintResumed",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("beforePrintResumed",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 	#~~ comm.MachineComPrintCallback implementation
 
