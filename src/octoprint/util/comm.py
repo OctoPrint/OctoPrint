@@ -338,6 +338,15 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 	STATE_CANCELLING = 12
 	STATE_PAUSING = 13
+	STATE_RESUMING = 14
+	STATE_FINISHING = 15
+
+	# be sure to add anything here that signifies an operational state
+	OPERATIONAL_STATES = (STATE_PRINTING, STATE_OPERATIONAL, STATE_PAUSED, STATE_CANCELLING, STATE_PAUSING,
+	                      STATE_RESUMING, STATE_FINISHING, STATE_TRANSFERING_FILE)
+
+	# be sure to add anything here that signifies a printing state
+	PRINTING_STATES = (STATE_PRINTING, STATE_CANCELLING, STATE_PAUSING, STATE_RESUMING, STATE_FINISHING)
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 	CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
@@ -647,6 +656,10 @@ class MachineCom(object):
 			return "Pausing"
 		elif state == self.STATE_PAUSED:
 			return "Paused"
+		elif state == self.STATE_RESUMING:
+			return "Resuming"
+		elif state == self.STATE_FINISHING:
+			return "Finishing"
 		elif state == self.STATE_CLOSED:
 			return "Offline"
 		elif state == self.STATE_ERROR:
@@ -667,17 +680,22 @@ class MachineCom(object):
 		return self._state in (self.STATE_ERROR, self.STATE_CLOSED_WITH_ERROR)
 
 	def isOperational(self):
-		return self._state in (self.STATE_OPERATIONAL, self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING,
-		                       self.STATE_PAUSED, self.STATE_TRANSFERING_FILE)
+		return self._state in self.OPERATIONAL_STATES
 
 	def isPrinting(self):
-		return self._state in (self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING)
+		return self._state in self.PRINTING_STATES
 
 	def isCancelling(self):
 		return self._state == self.STATE_CANCELLING
 
 	def isPausing(self):
 		return self._state == self.STATE_PAUSING
+
+	def isResuming(self):
+		return self._state == self.STATE_RESUMING
+
+	def isFinishing(self):
+		return self._state == self.STATE_FINISHING
 
 	def isSdPrinting(self):
 		return self.isSdFileSelected() and self.isPrinting()
@@ -1199,7 +1217,10 @@ class MachineCom(object):
 		if suppress_script is None:
 			with self._suppress_scripts_mutex:
 				suppress_script = "pause" in self._suppress_scripts
-				self._suppress_scripts.remove("pause")
+				try:
+					self._suppress_scripts.remove("pause")
+				except KeyError:
+					pass
 
 		with self._pause_mutex:
 			if self._pause_position_timer is not None:
@@ -1231,8 +1252,9 @@ class MachineCom(object):
 					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
 
-				self._changeState(self.STATE_PRINTING)
+				self._changeState(self.STATE_RESUMING)
 				self._callback.on_comm_print_job_resumed(suppress_script=not local_handling)
+				self.sendCommand(SendQueueMarker(lambda: self._changeState(self.STATE_PRINTING)))
 
 				if self.isSdFileSelected():
 					if local_handling:
@@ -1908,13 +1930,18 @@ class MachineCom(object):
 					# printer is reporting file finished printing
 					self._currentFile.done = True
 					self._currentFile.pos = 0
-					self._callback.on_comm_print_job_done()
-					self._changeState(self.STATE_OPERATIONAL)
+
 					if self._sd_status_timer is not None:
 						try:
 							self._sd_status_timer.cancel()
 						except:
 							pass
+
+					self._changeState(self.STATE_FINISHING)
+					self._callback.on_comm_print_job_done()
+					def finalize():
+						self._changeState(self.STATE_OPERATIONAL)
+					self.sendCommand(SendQueueMarker(finalize))
 				elif 'Done saving file' in line:
 					if self._trigger_ok_for_m29:
 						# workaround for most versions of Marlin out in the wild
@@ -2021,7 +2048,7 @@ class MachineCom(object):
 
 		self._finish_heatup()
 
-		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED, self.STATE_CANCELLING, self.STATE_PAUSING):
+		if not self._state in self.OPERATIONAL_STATES:
 			return
 
 		# process queues ongoing resend requests and queues if we are operational
@@ -2553,6 +2580,7 @@ class MachineCom(object):
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
 			else:
+				self._changeState(self.STATE_FINISHING)
 				self._callback.on_comm_print_job_done()
 				def finalize():
 					self._changeState(self.STATE_OPERATIONAL)

@@ -615,6 +615,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def is_paused(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPaused()
 
+	def is_resuming(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isResuming()
+
+	def is_finishing(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isFinishing()
+
 	def is_error(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isError()
 
@@ -904,6 +910,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printing=self.is_printing(),
 		                  cancelling=self.is_cancelling(),
 		                  pausing=self.is_pausing(),
+		                  resuming=self.is_resuming(),
+		                  finishing=self.is_finishing(),
 		                  closedOrError=self.is_closed_or_error(),
 		                  error=self.is_error(),
 		                  paused=self.is_paused(),
@@ -936,28 +944,29 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is not None:
 			state_string = self._comm.getStateString()
 
-		# forward relevant state changes to gcode manager
-		if oldState == comm.MachineCom.STATE_PRINTING:
-			with self._selectedFileMutex:
-				if self._selectedFile is not None:
-					if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
-						payload = self._payload_for_print_job_event()
-						if payload:
-							payload["time"] = self._comm.getPrintTime()
+		if oldState in (comm.MachineCom.STATE_PRINTING,):
+			# if we were still printing and went into an error state, mark the print as failed
+			if state in (comm.MachineCom.STATE_CLOSED, comm.MachineCom.STATE_ERROR, comm.MachineCom.STATE_CLOSED_WITH_ERROR):
+				with self._selectedFileMutex:
+					if self._selectedFile is not None:
+							payload = self._payload_for_print_job_event()
+							if payload:
+								payload["time"] = self._comm.getPrintTime()
 
-							def finalize():
-								self._fileManager.log_print(payload["origin"],
-								                            payload["path"],
-								                            time.time(),
-								                            payload["time"],
-								                            False,
-								                            self._printerProfileManager.get_current_or_default()["id"])
-								eventManager().fire(Events.PRINT_FAILED, payload)
+								def finalize():
+									self._fileManager.log_print(payload["origin"],
+									                            payload["path"],
+									                            time.time(),
+									                            payload["time"],
+									                            False,
+									                            self._printerProfileManager.get_current_or_default()["id"])
+									eventManager().fire(Events.PRINT_FAILED, payload)
 
-							thread = threading.Thread(target=finalize)
-							thread.daemon = True
-							thread.start()
+								thread = threading.Thread(target=finalize)
+								thread.daemon = True
+								thread.start()
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+
 		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
 
