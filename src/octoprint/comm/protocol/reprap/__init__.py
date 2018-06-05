@@ -880,7 +880,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				# TODO what to do?
 				return False
 
-			result = self._enqueue_for_sending(Command(command), linenumber=linenumber, processed=True, resend=True)
+			result = self._enqueue_for_sending(to_command(command), linenumber=linenumber, processed=True, resend=True)
 
 			self._internal_flags["resend_linenumber"] += 1
 			if self._internal_flags["resend_linenumber"] == self._current_linenumber:
