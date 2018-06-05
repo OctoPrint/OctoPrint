@@ -135,8 +135,8 @@ class GenericFlavor(object):
 		return lower_line.startswith("resend") or lower_line.startswith("rs")
 
 	@classmethod
-	def comm_debug(cls, line, lower_line, state, flags):
-		return line.startswith("//")
+	def comm_action_command(cls, line, lower_line, state, flags):
+		return line.startswith("//") and line[2:].strip().startswith("action:")
 
 	@classmethod
 	def comm_error(cls, line, lower_line, state, flags):
@@ -231,6 +231,11 @@ class GenericFlavor(object):
 	@classmethod
 	def parse_comm_timeout(cls, line, lower_line, state, flags):
 		return dict(line=line, lower_line=lower_line)
+
+	@classmethod
+	def parse_comm_action_command(cls, line, lower_line, state, flags):
+		action = line[2:].strip()[len("action:"):].strip()
+		return dict(line=line, lower_line=lower_line, action=action)
 
 	@classmethod
 	def parse_error_communication(cls, line, lower_line, state, flags):

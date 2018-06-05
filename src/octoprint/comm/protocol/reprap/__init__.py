@@ -193,13 +193,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._last_lines = LineHistory(maxlen = 50)
 		self._last_communication_error = None
 
+		# TODO GCODE Hooks
 		self._gcode_hooks = dict(queuing=dict(),
 		                         queued=dict(),
 		                         sending=dict(),
 		                         sent=dict())
 
+		# TODO atcommand hooks
 		self._atcommand_hooks = dict(queuing=dict(),
 		                             sending=dict())
+
+		# TODO action hooks
+		self._action_hooks = dict()
 
 		# temperature polling
 		self._temperature_poller = None
@@ -742,6 +747,37 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			self._set_busy_protocol_interval(interval=busy_interval)
 
+	def _on_comm_action_command(self, line, lower_line, action):
+		if action == "cancel":
+			self.process_protocol_log("Cancelling on request of the printer...")
+			self.cancel_processing()
+		elif action == "pause":
+			self.process_protocol_log("Pausing on request of the printer...")
+			self.pause_processing()
+		elif action == "paused":
+			self.process_protocol_log("Printer signalled that it paused, switching state...")
+			# TODO disable local handling
+			self.pause_processing()
+		elif action == "resume":
+			self.process_protocol_log("Resuming on request of the printer...")
+			self.resume_processing()
+		elif action == "resumed":
+			self.process_protocol_log("Printer signalled that it resumed, switching state...")
+			# TODO disable local handling
+			self.resume_processing()
+		elif action == "disconnect":
+			self.process_protocol_log("Disconnecting on request of the printer...")
+			# TODO inform printer about forced disconnect
+			self.disconnect()
+		else:
+			for hook in self._action_hooks:
+				try:
+					self._action_hooks[hook](self, line, action)
+				except:
+					self._logger.exception("Error while calling hook {} with action command {}".format(self._action_hooks[hook],
+						                                                                               action))
+					continue
+
 	def _on_message_temperature(self, max_tool_num, temperatures, heatup_detected):
 		if heatup_detected:
 			self._logger.debug("Externally triggered heatup detected")
@@ -940,7 +976,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			try:
 				if isinstance(entry, tuple):
-					if not len(entry) == 3:
+					if not len(entry) == 2:
 						# something with that entry is broken, ignore it and fetch
 						# the next one
 						continue
