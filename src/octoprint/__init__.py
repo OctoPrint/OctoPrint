@@ -197,6 +197,9 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				},
 				"communication": {
 					"format": "%(asctime)s - %(name)s - %(message)s"
+				},
+				"commdebug": {
+					"format": "%(asctime)s - %(threadName)s - %(message)s"
 				}
 			},
 			"handlers": {
@@ -229,6 +232,14 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"backupCount": 3,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "transport.log"),
 					"delay": True
+				},
+				"commDebugFile": {
+					"class": "octoprint.logging.handlers.CommunicationLogHandler",
+					"level": "DEBUG",
+					"formatter": "commdebug",
+					"backupCount": 3,
+					"filename": os.path.join(settings.getBaseFolder("logs"), "commdebug.log"),
+					"delay": True
 				}
 			},
 			"loggers": {
@@ -240,6 +251,11 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				"TRANSPORT": {
 					"level": "DEBUG",
 					"handlers": ["transportFile"],
+					"propagate": False
+				},
+				"COMMDEBUG": {
+					"level": "DEBUG",
+					"handlers": ["commDebugFile"],
 					"propagate": False
 				},
 				"octoprint": {

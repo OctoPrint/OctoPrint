@@ -99,6 +99,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             sd_status_interval_autoreport=1.0):
 		super(ReprapGcodeProtocol, self).__init__()
 
+		self._logger = logging.getLogger(__name__)
+		self._commdebug_logger = logging.getLogger("COMMDEBUG")
 		self._phase_logger = logging.getLogger(__name__ + ".command_phases")
 
 		self.flavor = flavor if flavor is not None else GenericFlavor
@@ -553,6 +555,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._logger.info(message)
 			self.notify_listeners("on_protocol_log", self, message + " " + general_message)
 			if self._send_same_from_resend():
+				self._commdebug_logger.debug("on_comm_timeout => clear_to_send.set: timeout during active resend (counter: {})".format(self._clear_to_send.counter))
 				self._clear_to_send.set()
 
 		elif self._internal_flags["heating"]:
@@ -571,6 +574,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._logger.info(message)
 			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
 			if self._send_command(GcodeCommand("M105", type="temperature")):
+				self._commdebug_logger.debug("on_comm_timeout => clear_to_send.set: timeout while printing (counter: {})".format(self._clear_to_send.counter))
 				self._clear_to_send.set()
 
 		elif self._clear_to_send.blocked():
@@ -578,13 +582,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			message = "Communication timeout while idle, trying to trigger response from printer."
 			self._logger.info(message)
 			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
+			self._commdebug_logger.debug("on_comm_timeout => clear_to_send.set: timeout while idle (counter: {})".format(self._clear_to_send.counter))
 			self._clear_to_send.set()
 
 		self._internal_flags["ok_timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication")
 
 		return self.state != ProtocolState.PROCESSING and line == ""
 
-	def _on_comm_ok(self):
+	def _on_comm_ok(self, wait=False):
 		if self._internal_flags["ignore_ok"] > 0:
 			self._internal_flags["ignore_ok"] -= 1
 			if self._internal_flags["ignore_ok"] < 0:
@@ -597,6 +602,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			return
 
 		self._internal_flags["ok_timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication")
+		self._commdebug_logger.debug("on_comm_ok => clear_to_send.set: {} (counter: {})".format("wait" if wait else "ok", self._clear_to_send.counter))
 		self._clear_to_send.set()
 
 		# reset long running commands, persisted current tools and heatup counters on ok
@@ -625,7 +631,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _on_comm_wait(self):
 		if self.state == ProtocolState.PROCESSING:
-			self._on_comm_ok()
+			self._on_comm_ok(wait=True)
 
 	def _on_comm_resend(self, linenumber):
 		if linenumber is None:
@@ -819,9 +825,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _tickle(self, command):
 		if self._send_command(command):
 			if self._clear_to_send.blocked():
+				self._commdebug_logger.debug("tickle => clear_to_send.set (counter: {})".format(self._clear_to_send.counter))
 				self._clear_to_send.set()
 
 	def _continue_sending(self):
+		self._commdebug_logger.debug("continue_sending (counter: {}, line number: {})".format(self._clear_to_send.counter, self._current_linenumber))
 		while self._active:
 			if self.state in (ProtocolState.PROCESSING,) and not (self._job is None or not self._job.active or isinstance(self._job, SDFilePrintjob)):
 				# we are printing, we really want to send either something from the command
@@ -848,6 +856,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		return self._send_next_from_resend(again=True)
 
 	def _send_next_from_resend(self, again=False):
+		self._commdebug_logger.debug("send_next_from_resend (counter: {}, line number: {})".format(self._clear_to_send.counter, self._internal_flags.get("resend_linenumber")))
 		self._last_communication_error = None
 
 		# Make sure we are only handling one sending job at a time
@@ -1082,6 +1091,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 								# loop won't be triggered with the reply from this unsent command
 								# now, so we try to tickle the processing of any active
 								# command queues manually
+								self._commdebug_logger.debug("send_loop => no results")
 								self._continue_sending()
 
 								# and now let's fetch the next item from the queue
@@ -1100,6 +1110,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							self._logger.info("Refusing to send an empty line to the printer")
 
 							# same here, tickle the queues manually
+							self._commdebug_logger.debug("send_loop => empty line")
 							self._continue_sending()
 
 							# and fetch the next item
@@ -1110,6 +1121,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							self._process_command_phase("sending", command)
 
 							# tickle...
+							self._commdebug_logger.debug("send_loop => at command")
 							self._continue_sending()
 
 							# ... and fetch the next item
@@ -1147,14 +1159,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					use_up_clear = self.flavor.unknown_requires_ack
 					if isinstance(command, GcodeCommand):
 						use_up_clear = True
+					else:
+						self._commdebug_logger.debug("send_loop => command != instanceof GcodeCommand: {!r}".format(command))
 
 					if use_up_clear:
 						# if we need to use up a clear, do that now
+						self._commdebug_logger.debug("send_loop => clear_to_send.clear: line sent (counter: {}, line number: {})".format(self._clear_to_send.counter, self._current_linenumber))
 						self._clear_to_send.clear()
 					else:
 						# Otherwise we need to tickle the read queue - there might not be a reply
 						# to this command, so our _monitor loop will stay waiting until timeout. We
 						# definitely do not want that, so we tickle the queue manually here
+						self._commdebug_logger.debug("send_loop => use_up_clear == False")
 						self._continue_sending()
 
 				finally:

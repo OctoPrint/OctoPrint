@@ -288,6 +288,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		from octoprint.logging.handlers import CommunicationLogHandler
 		CommunicationLogHandler.on_open_connection(u"TRANSPORT")
 		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
+		CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
 
 		from octoprint.comm.transport import lookup_transport
 		transport_class = lookup_transport(selected_transport)
