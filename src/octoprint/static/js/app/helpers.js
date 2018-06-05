@@ -650,6 +650,7 @@ function showMessageDialog(msg, options) {
     var onclose = options.onclose || undefined;
     var onshow = options.onshow || undefined;
     var onshown = options.onshown || undefined;
+    var nofade = options.nofade || false;
 
     if (_.isString(message)) {
         message = $("<p>" + message + "</p>");
@@ -660,7 +661,11 @@ function showMessageDialog(msg, options) {
     var modalFooter = $('<a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">' + close + '</a>');
 
     var modal = $('<div></div>')
-        .addClass('modal hide fade')
+        .addClass("modal hide");
+    if (!nofade) {
+        modal.addClass("fade");
+    }
+    modal
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(modalFooter));
@@ -669,6 +674,7 @@ function showMessageDialog(msg, options) {
         if (onclose && _.isFunction(onclose)) {
             onclose();
         }
+        modal.remove();
     });
 
     if (onshow) {
@@ -705,6 +711,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var onproceed = options.onproceed || undefined;
     var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
+    var nofade = options.nofade || false;
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
     var modalBody;
@@ -721,8 +728,11 @@ function showConfirmationDialog(msg, onacknowledge, options) {
         .addClass("btn-" + proceedClass);
 
     var modal = $('<div></div>')
-        .addClass('modal hide fade')
-        .addClass(dialogClass)
+        .addClass('modal hide');
+    if (!nofade) {
+        modal.addClass('fade');
+    }
+    modal.addClass(dialogClass)
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
@@ -739,6 +749,108 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onproceed(e);
         }
         modal.modal("hide");
+        modal.remove();
+    });
+
+    return modal;
+}
+
+function showSelectionDialog(options) {
+    var title = options.title;
+    var message = options.message || undefined;
+    var selections = options.selections || [];
+
+    var maycancel = options.maycancel || false;
+    var cancel = options.cancel || undefined;
+    var onselect = options.onselect || undefined;
+    var onclose = options.onclose || undefined;
+    var dialogClass = options.dialogClass || "";
+    var nofade = options.nofade || false;
+
+    // header
+    var modalHeader;
+    if (maycancel) {
+        modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    } else {
+        modalHeader = $('<h3>' + title + '</h3>');
+    }
+
+    // body
+    var buttons = [];
+    var selectionBody = $("<div></div>");
+    var container;
+    var additionalClass;
+
+    if (selections.length === 1) {
+        container = selectionBody;
+        additionalClass = "btn-block";
+    } else if (selections.length === 2) {
+        container = $("<div class='row-fluid'></div>");
+        selectionBody.append(container);
+        additionalClass = "span6"
+    } else {
+        container = $("<div class='row-fluid'></div>");
+        selectionBody.append(container);
+        additionalClass = "span6 offset3";
+    }
+
+    _.each(selections, function(s, i) {
+        var button = $('<button class="btn" data-index="' + i + '">' + selections[i] + '</button>');
+        if (additionalClass) {
+            button.addClass(additionalClass);
+        }
+        container.append(button);
+        buttons.push(button);
+
+        if (selections.length > 2 && i < selections.length - 1) {
+            container = $("<div class='row-fluid'></div>");
+            selectionBody.append(container);
+        }
+    });
+
+    // divs
+    var headerDiv = $('<div></div>').addClass('modal-header').append(modalHeader);
+
+    var bodyDiv = $('<div></div>').addClass('modal-body');
+    if (message) {
+        bodyDiv.append($('<p>' + message + '</p>'));
+    }
+    bodyDiv.append(selectionBody);
+
+    // create modal and do final wiring up
+    var modal = $('<div></div>')
+        .addClass('modal hide');
+    if (!nofade) {
+        modal.addClass('fade');
+    }
+    if (!cancel) {
+        modal.data("backdrop", "static").data("keyboard", "false");
+    }
+
+    modal.addClass(dialogClass)
+        .append(headerDiv)
+        .append(bodyDiv);
+    modal.on('hidden', function(event) {
+        if (onclose && _.isFunction(onclose)) {
+            onclose(event);
+        }
+        modal.remove();
+    });
+    modal.modal("show");
+
+    _.each(buttons, function(button) {
+        button.click(function(e) {
+            e.preventDefault();
+            var index = button.data("index");
+            if (index < 0) {
+                return;
+            }
+
+            if (onselect && _.isFunction(onselect)) {
+                onselect(index, e);
+            }
+            modal.modal("hide");
+        })
     });
 
     return modal;

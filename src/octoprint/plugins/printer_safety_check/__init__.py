@@ -9,6 +9,7 @@ import octoprint.plugin
 from octoprint.events import Events
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.util.version import get_comparable_version
 
 import flask
 from flask_babel import gettext
@@ -39,12 +40,31 @@ CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
 # Malyan M200 aka Monoprice Select Mini
 MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
 
+# Any Repetier versions < 0.92
+REPETIER_BEFORE_092_M115_TEST = lambda name, data: name and name.lower().startswith("repetier") and extract_repetier_version(name) is not None and extract_repetier_version(name) < get_comparable_version("0.92")
+
+# THERMAL_PROTECTION capability reported as disabled
+THERMAL_PROTECTION_CAP_TEST = lambda cap, enabled: cap == "THERMAL_PROTECTION" and not enabled
+
 SAFETY_CHECKS = {
-	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST),
+	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST, REPETIER_BEFORE_092_M115_TEST),
 	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST),
+	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
 	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
 	                                u"thermal runaway protection). This is a fire risk.")
 }
+
+def extract_repetier_version(name):
+	"""
+	Extracts the Repetier version number from the firmware name.
+
+	Example: "Repetier_0.91" => 0.91
+	"""
+	version = None
+	if "_" in name:
+		_, version = name.split("_", 1)
+		version = get_comparable_version(version, base=True)
+	return version
 
 class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
                                octoprint.plugin.EventHandlerPlugin,
@@ -77,10 +97,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	##~~ EventHandlerPlugin API
 
 	def on_event(self, event, payload):
-		if event == Events.FIRMWARE_DATA:
-			self._run_checks("m115", payload.get("name"), payload.get("data"))
-			self._scan_received = False
-		elif event == Events.DISCONNECTED:
+		if event == Events.DISCONNECTED:
 			self._reset_warnings()
 
 	##~~ SimpleApiPlugin API
@@ -97,7 +114,18 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 			self._run_checks("received", line)
 		return line
 
-	# Additional permissions hook
+	##~~ Firmware info hook handler
+
+	def on_firmware_info_received(self, comm_instance, firmware_name, firmware_data):
+		self._run_checks("m115", firmware_name, firmware_data)
+		self._scan_received = False
+
+	##~~ Firmware capability hook handler
+
+	def on_firmware_cap_received(self, comm_instance, cap, enabled, all_caps):
+		self._run_checks("cap", cap, enabled)
+
+	##~~ Additional permissions hook handler
 
 	def get_additional_permissions(self):
 		return [
@@ -154,6 +182,8 @@ __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = PrinterSafetyCheckPlugin()
 __plugin_hooks__ = {
 	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
+	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
+	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
 

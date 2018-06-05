@@ -11,6 +11,7 @@ import time
 import re
 import threading
 import contextlib
+import copy
 
 try:
 	import queue
@@ -338,6 +339,15 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 	STATE_CANCELLING = 12
 	STATE_PAUSING = 13
+	STATE_RESUMING = 14
+	STATE_FINISHING = 15
+
+	# be sure to add anything here that signifies an operational state
+	OPERATIONAL_STATES = (STATE_PRINTING, STATE_OPERATIONAL, STATE_PAUSED, STATE_CANCELLING, STATE_PAUSING,
+	                      STATE_RESUMING, STATE_FINISHING, STATE_TRANSFERING_FILE)
+
+	# be sure to add anything here that signifies a printing state
+	PRINTING_STATES = (STATE_PRINTING, STATE_CANCELLING, STATE_PAUSING, STATE_RESUMING, STATE_FINISHING)
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 	CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
@@ -489,6 +499,10 @@ class MachineCom(object):
 			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
 			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")
 		)
+		self._firmware_info_hooks = dict(
+			info=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.info"),
+			capabilities=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.capabilities")
+		)
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -516,6 +530,9 @@ class MachineCom(object):
 
 		self._record_pause_data = False
 		self._record_cancel_data = False
+
+		self._suppress_scripts = set()
+		self._suppress_scripts_mutex = threading.RLock()
 
 		self._pause_position_timer = None
 		self._pause_mutex = threading.RLock()
@@ -640,6 +657,10 @@ class MachineCom(object):
 			return "Pausing"
 		elif state == self.STATE_PAUSED:
 			return "Paused"
+		elif state == self.STATE_RESUMING:
+			return "Resuming"
+		elif state == self.STATE_FINISHING:
+			return "Finishing"
 		elif state == self.STATE_CLOSED:
 			return "Offline"
 		elif state == self.STATE_ERROR:
@@ -660,17 +681,22 @@ class MachineCom(object):
 		return self._state in (self.STATE_ERROR, self.STATE_CLOSED_WITH_ERROR)
 
 	def isOperational(self):
-		return self._state in (self.STATE_OPERATIONAL, self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING,
-		                       self.STATE_PAUSED, self.STATE_TRANSFERING_FILE)
+		return self._state in self.OPERATIONAL_STATES
 
 	def isPrinting(self):
-		return self._state in (self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING)
+		return self._state in self.PRINTING_STATES
 
 	def isCancelling(self):
 		return self._state == self.STATE_CANCELLING
 
 	def isPausing(self):
 		return self._state == self.STATE_PAUSING
+
+	def isResuming(self):
+		return self._state == self.STATE_RESUMING
+
+	def isFinishing(self):
+		return self._state == self.STATE_FINISHING
 
 	def isSdPrinting(self):
 		return self.isSdFileSelected() and self.isPrinting()
@@ -992,7 +1018,10 @@ class MachineCom(object):
 
 						self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
 
-					self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
+					interval = self._timeout_intervals.get("sdStatus", 1.0)
+					if interval <= 0:
+						interval = 1.0
+					self._sd_status_timer = RepeatedTimer(interval, self._poll_sd_status, run_first=True)
 					self._sd_status_timer.start()
 				else:
 					if pos is not None and isinstance(pos, int) and pos > 0:
@@ -1185,7 +1214,15 @@ class MachineCom(object):
 		self._log("Did not receive parseable position data from printer within {}s, continuing without it".format(timeout))
 		self._pause_preparation_done()
 
-	def _pause_preparation_done(self, check_timer=True):
+	def _pause_preparation_done(self, check_timer=True, suppress_script=None):
+		if suppress_script is None:
+			with self._suppress_scripts_mutex:
+				suppress_script = "pause" in self._suppress_scripts
+				try:
+					self._suppress_scripts.remove("pause")
+				except KeyError:
+					pass
+
 		with self._pause_mutex:
 			if self._pause_position_timer is not None:
 				self._pause_position_timer.cancel()
@@ -1193,14 +1230,14 @@ class MachineCom(object):
 			elif check_timer:
 				return
 
-			self._callback.on_comm_print_job_paused()
+			self._callback.on_comm_print_job_paused(suppress_script=suppress_script)
 
 			def finalize():
 				self._changeState(self.STATE_PAUSED)
 			self.sendCommand(SendQueueMarker(finalize))
 			self._continue_sending()
 
-	def setPause(self, pause, tags=None):
+	def setPause(self, pause, local_handling=True, tags=None):
 		if self.isStreaming():
 			return
 
@@ -1216,11 +1253,13 @@ class MachineCom(object):
 					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
 
-				self._changeState(self.STATE_PRINTING)
-				self._callback.on_comm_print_job_resumed()
+				self._changeState(self.STATE_RESUMING)
+				self._callback.on_comm_print_job_resumed(suppress_script=not local_handling)
+				self.sendCommand(SendQueueMarker(lambda: self._changeState(self.STATE_PRINTING)))
 
 				if self.isSdFileSelected():
-					self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
+					if local_handling:
+						self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
 					self.sendCommand("M27", tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 				else:
 					line, pos, lineno = self._getNext()
@@ -1242,8 +1281,12 @@ class MachineCom(object):
 					self._pauseWaitStartTime = time.time()
 
 				self._changeState(self.STATE_PAUSING)
-				if self.isSdFileSelected():
+				if self.isSdFileSelected() and local_handling:
 					self.sendCommand("M25", tags=tags | {"trigger:comm.set_pause", "trigger:pause"}) # pause print
+
+				if not local_handling:
+					with self._suppress_scripts_mutex:
+						self._suppress_scripts.add("pause")
 
 				def _on_M400_sent():
 					# we don't call on_print_job_paused on our callback here
@@ -1271,7 +1314,7 @@ class MachineCom(object):
 												  "trigger:record_position"})
 					self._continue_sending()
 				else:
-					self._pause_preparation_done(check_timer=False)
+					self._pause_preparation_done(check_timer=False, suppress_script=not local_handling)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1463,6 +1506,12 @@ class MachineCom(object):
 					if self._dwelling_until and now > self._dwelling_until:
 						self._dwelling_until = False
 
+				if self._resend_ok_timer and line and not line.startswith("ok"):
+					# we got anything but an ok after a resend request - this means the ok after the resend request
+					# was in fact missing and we now need to trigger the timer
+					self._resend_ok_timer.cancel()
+					self._resendSimulateOk()
+
 				##~~ busy protocol handling
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
@@ -1499,9 +1548,15 @@ class MachineCom(object):
 						elif action_command == "pause":
 							self._log("Pausing on request of the printer...")
 							self.setPause(True)
+						elif action_command == "paused":
+							self._log("Printer signalled that it paused, switching state...")
+							self.setPause(True, local_handling=False)
 						elif action_command == "resume":
 							self._log("Resuming on request of the printer...")
 							self.setPause(False)
+						elif action_command == "resumed":
+							self._log("Printer signalled that it resumed, switching state...")
+							self.setPause(False, local_handling=False)
 						elif action_command == "disconnect":
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
@@ -1740,6 +1795,13 @@ class MachineCom(object):
 						self._firmware_info = data
 						self._firmware_name = firmware_name
 
+						# notify plugins
+						for name, hook in self._firmware_info_hooks["info"].items():
+							try:
+								hook(self, firmware_name, copy.copy(data))
+							except:
+								self._logger.exception("Error processing firmware info hook {}:".format(name))
+
 				##~~ Firmware capability report triggered by M115
 				elif lower_line.startswith("cap:"):
 					parsed = parse_capability_line(lower_line)
@@ -1754,6 +1816,13 @@ class MachineCom(object):
 							elif capability == self.CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
 								self._logger.info("Firmware states that it supports sd status autoreporting")
 								self._set_autoreport_sdstatus_interval()
+
+						# notify plugins
+						for name, hook in self._firmware_info_hooks["capabilities"].items():
+							try:
+								hook(self, capability, enabled, copy.copy(self._firmware_capabilities))
+							except:
+								self._logger.exception("Error processing firmware capability hook {}:".format(name))
 
 				##~~ invalid extruder
 				elif 'invalid extruder' in lower_line:
@@ -1862,13 +1931,18 @@ class MachineCom(object):
 					# printer is reporting file finished printing
 					self._currentFile.done = True
 					self._currentFile.pos = 0
-					self._callback.on_comm_print_job_done()
-					self._changeState(self.STATE_OPERATIONAL)
+
 					if self._sd_status_timer is not None:
 						try:
 							self._sd_status_timer.cancel()
 						except:
 							pass
+
+					self._changeState(self.STATE_FINISHING)
+					self._callback.on_comm_print_job_done()
+					def finalize():
+						self._changeState(self.STATE_OPERATIONAL)
+					self.sendCommand(SendQueueMarker(finalize))
 				elif 'Done saving file' in line:
 					if self._trigger_ok_for_m29:
 						# workaround for most versions of Marlin out in the wild
@@ -1975,16 +2049,17 @@ class MachineCom(object):
 
 		self._finish_heatup()
 
-		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED, self.STATE_CANCELLING, self.STATE_PAUSING):
+		if not self._state in self.OPERATIONAL_STATES:
 			return
 
 		# process queues ongoing resend requests and queues if we are operational
 
-		if self._resendDelta is not None:
-			self._resendNextCommand()
-		else:
-			self._resendActive = False
-			self._continue_sending()
+		with self._sendingLock: # prevent concurrency due to resend_ok_timers
+			if self._resendDelta is not None:
+				self._resendNextCommand()
+			else:
+				self._resendActive = False
+				self._continue_sending()
 
 		return
 
@@ -2231,19 +2306,25 @@ class MachineCom(object):
 		busy_default = 4.0
 		target_default = 2.0
 
+		def get(key, default):
+			interval = self._timeout_intervals.get(key, default)
+			if interval <= 0:
+				interval = 1.0
+			return interval
+
 		if self.isBusy():
-			return self._timeout_intervals.get("temperature", busy_default)
+			return get("temperature", busy_default)
 
 		tools = self.last_temperature.tools
 		for temp in [tools[k][1] for k in tools.keys()]:
 			if temp > self._temperatureTargetSetThreshold:
-				return self._timeout_intervals.get("temperatureTargetSet", target_default)
+				return get("temperatureTargetSet", target_default)
 
 		bed = self.last_temperature.bed
 		if bed and len(bed) > 0 and bed[1] > self._temperatureTargetSetThreshold:
-			return self._timeout_intervals.get("temperatureTargetSet", target_default)
+			return get("temperatureTargetSet", target_default)
 
-		return self._timeout_intervals.get("temperature", busy_default)
+		return get("temperature", busy_default)
 
 	def _sendFromQueue(self):
 		# We loop here to make sure that if we do NOT send the first command
@@ -2500,6 +2581,7 @@ class MachineCom(object):
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
 			else:
+				self._changeState(self.STATE_FINISHING)
 				self._callback.on_comm_print_job_done()
 				def finalize():
 					self._changeState(self.STATE_OPERATIONAL)
@@ -2622,12 +2704,14 @@ class MachineCom(object):
 			if self._trigger_ok_after_resend == "always":
 				self._handle_ok()
 			elif self._trigger_ok_after_resend == "detect":
-				def process():
-					self._resend_ok_timer = None
-					self._handle_ok()
-					self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug with some firmware variants out there. Simulating an ok to continue...")
-				self._resend_ok_timer = threading.Timer(self._timeout_intervals.get("resendOk", 1.0), process)
+				self._resend_ok_timer = threading.Timer(self._timeout_intervals.get("resendOk", 1.0), self._resendSimulateOk)
 				self._resend_ok_timer.start()
+
+	def _resendSimulateOk(self):
+		self._resend_ok_timer = None
+		self._handle_ok()
+		self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug "
+		                  "with some firmware variants out there. Simulating an ok to continue...")
 
 	def _resendSameCommand(self):
 		return self._resendNextCommand(again=True)
@@ -3391,25 +3475,25 @@ class MachineComPrintCallback(object):
 	def on_comm_progress(self):
 		pass
 
-	def on_comm_print_job_started(self):
+	def on_comm_print_job_started(self, suppress_script=False):
 		pass
 
 	def on_comm_print_job_failed(self):
 		pass
 
-	def on_comm_print_job_done(self):
+	def on_comm_print_job_done(self, suppress_script=False):
 		pass
 
 	def on_comm_print_job_cancelling(self, firmware_error=None):
 		pass
 
-	def on_comm_print_job_cancelled(self):
+	def on_comm_print_job_cancelled(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_paused(self):
+	def on_comm_print_job_paused(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_resumed(self):
+	def on_comm_print_job_resumed(self, suppress_script=False):
 		pass
 
 	def on_comm_z_change(self, newZ):

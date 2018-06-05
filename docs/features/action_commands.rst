@@ -29,12 +29,27 @@ pause
     When this command is received from the printer, OctoPrint will pause a current print job just like if the
     "Pause" button had been clicked.
 
+paused
+    When this command is received from the printer, OctoPrint will pause a current print job but *without* triggering
+    any GCODE scripts or sending SD print control commands to the printer. This might be interesting for firmware
+    that wants to signal to OctoPrint that a print should be paused but without any control interference from
+    OctoPrint, e.g. in case of a filament change fully managed by the firmware.
+
 resume
     When this command is received from the printer, OctoPrint will resume a current print job just like if
     the "Resume" button had been clicked.
 
+resumed
+    When this command is received from the printer, OctoPrint will resume a current print job but *without* triggering
+    any GCODE scripts or sending SD print control commands to the printer. This might be interesting for firmware
+    that wants to signal to OctoPrint that a print should be resumed but without any control interference from
+    OctoPrint, e.g. in case of a filament change fully managed by the firmware.
+
 disconnect
     When this command is received from the printer, OctoPrint will immediately disconnect from it.
+
+If the bundled :ref:`Action Command Prompt Support Plugin <sec-bundledplugins-action_command_prompt>` is enabled (which
+should be the case by default), OctoPrint will also interactive dialog creation through its :ref:`supported commands <sec-bundledplugins-action_command_prompt-action_commands>`.
 
 Support for additional commands may be added by plugins by implementing a handler for the
 :ref:`octoprint.comm.protocol.action <sec-plugins-hook-comm-protocol-action>` hook.

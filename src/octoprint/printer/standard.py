@@ -620,6 +620,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def is_paused(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPaused()
 
+	def is_resuming(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isResuming()
+
+	def is_finishing(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isFinishing()
+
 	def is_error(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isError()
 
@@ -909,6 +915,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printing=self.is_printing(),
 		                  cancelling=self.is_cancelling(),
 		                  pausing=self.is_pausing(),
+		                  resuming=self.is_resuming(),
+		                  finishing=self.is_finishing(),
 		                  closedOrError=self.is_closed_or_error(),
 		                  error=self.is_error(),
 		                  paused=self.is_paused(),
@@ -941,28 +949,29 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is not None:
 			state_string = self._comm.getStateString()
 
-		# forward relevant state changes to gcode manager
-		if oldState == comm.MachineCom.STATE_PRINTING:
-			with self._selectedFileMutex:
-				if self._selectedFile is not None:
-					if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
-						payload = self._payload_for_print_job_event()
-						if payload:
-							payload["time"] = self._comm.getPrintTime()
+		if oldState in (comm.MachineCom.STATE_PRINTING,):
+			# if we were still printing and went into an error state, mark the print as failed
+			if state in (comm.MachineCom.STATE_CLOSED, comm.MachineCom.STATE_ERROR, comm.MachineCom.STATE_CLOSED_WITH_ERROR):
+				with self._selectedFileMutex:
+					if self._selectedFile is not None:
+							payload = self._payload_for_print_job_event()
+							if payload:
+								payload["time"] = self._comm.getPrintTime()
 
-							def finalize():
-								self._fileManager.log_print(payload["origin"],
-								                            payload["path"],
-								                            time.time(),
-								                            payload["time"],
-								                            False,
-								                            self._printerProfileManager.get_current_or_default()["id"])
-								eventManager().fire(Events.PRINT_FAILED, payload)
+								def finalize():
+									self._fileManager.log_print(payload["origin"],
+									                            payload["path"],
+									                            time.time(),
+									                            payload["time"],
+									                            False,
+									                            self._printerProfileManager.get_current_or_default()["id"])
+									eventManager().fire(Events.PRINT_FAILED, payload)
 
-							thread = threading.Thread(target=finalize)
-							thread.daemon = True
-							thread.start()
+								thread = threading.Thread(target=finalize)
+								thread.daemon = True
+								thread.start()
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+
 		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
 
@@ -1029,15 +1038,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._printAfterSelect = False
 			self.start_print(pos=self._posAfterSelect, user=user)
 
-	def on_comm_print_job_started(self):
+	def on_comm_print_job_started(self, suppress_script=False):
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
-			self.script("beforePrintStarted",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("beforePrintStarted",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
-	def on_comm_print_job_done(self):
+	def on_comm_print_job_done(self, suppress_script=False):
 		self._fileManager.delete_recovery_data()
 
 		payload = self._payload_for_print_job_event()
@@ -1050,9 +1060,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 			eventManager().fire(Events.PRINT_DONE, payload)
-			self.script("afterPrintDone",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("afterPrintDone",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 			def log_print():
 				self._fileManager.log_print(payload["origin"],
@@ -1083,7 +1094,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				payload["firmwareError"] = firmware_error
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
-	def on_comm_print_job_cancelled(self):
+	def on_comm_print_job_cancelled(self, suppress_script=False):
 		self._setCurrentZ(None)
 		self._updateProgressData()
 
@@ -1092,9 +1103,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			payload["time"] = self._comm.getPrintTime()
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
-			self.script("afterPrintCancelled",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("afterPrintCancelled",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 			def finalize():
 				self._fileManager.log_print(payload["origin"],
@@ -1109,21 +1121,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			thread.daemon = True
 			thread.start()
 
-	def on_comm_print_job_paused(self):
+	def on_comm_print_job_paused(self, suppress_script=False):
 		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
-			self.script("afterPrintPaused",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("afterPrintPaused",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
-	def on_comm_print_job_resumed(self):
+	def on_comm_print_job_resumed(self, suppress_script=False):
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
-			self.script("beforePrintResumed",
-			            context=dict(event=payload),
-			            must_be_set=False)
+			if not suppress_script:
+				self.script("beforePrintResumed",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 	def on_comm_file_transfer_started(self, filename, filesize, user=None):
 		self._sdStreaming = True
