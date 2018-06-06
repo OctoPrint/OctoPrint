@@ -1139,7 +1139,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			payload = job.event_payload()
 			if payload:
 				payload["time"] = job.elapsed
-				self._update_progress_data(completion=1.0,
+				self._update_progress_data(completion=100,
 				                           filepos=payload["size"],
 				                           print_time=payload["time"],
 				                           print_time_left=0)
