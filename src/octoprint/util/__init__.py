@@ -1414,8 +1414,17 @@ class InvariantContainer(object):
 	def __len__(self):
 		return len(self._data)
 
+	def __getitem__(self, item):
+		with self._mutex:
+			return self._data[item]
+
+	def __setitem__(self, item, value):
+		with self._mutex:
+			self._data[item] = value
+			self._data = self._invariant(self._data)
+
 	def __iter__(self):
-		return self._data.__iter__()
+		return iter(self._data)
 
 
 class PrependableQueue(queue.Queue):

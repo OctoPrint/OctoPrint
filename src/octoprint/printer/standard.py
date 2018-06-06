@@ -649,7 +649,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		return util.thaw_frozendict(data["job"])
 
 	def get_current_temperatures(self, *args, **kwargs):
-		# TODO
+		# TODO temperature offsets
 		#if self._comm is not None:
 		#	offsets = self._comm.getOffsets()
 		#else:
@@ -657,9 +657,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		offsets = dict()
 
 		result = dict()
-		for key, value in self._latest_temperatures.items():
-			result[key] = dict(actual=value[0],
-			                   target=value[1],
+		if not len(self._temperature_history):
+			return result
+
+		latest_temperature = self._temperature_history[-1]
+		for key, value in latest_temperature.items():
+			if not key.startswith("tool") and not key == "bed":
+				continue
+
+			result[key] = dict(actual=value["actual"],
+			                   target=value["target"],
 			                   offset=offsets.get(key, 0))
 		return result
 
