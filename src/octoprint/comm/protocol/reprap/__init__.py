@@ -16,7 +16,7 @@ from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
 
-from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory, QueueMarker, SendQueueMarker, PositionRecord
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory, QueueMarker, SendQueueMarker, PositionRecord, TemperatureRecord
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
@@ -135,7 +135,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._internal_flags = dict(
 			# temperature and heating related
-			temperatures=dict(),
+			temperatures=TemperatureRecord(),
 			heating_start=None,
 			heating_lost=0,
 			heating=False,
@@ -192,6 +192,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._current_linenumber = 1
 		self._last_lines = LineHistory(maxlen = 50)
 		self._last_communication_error = None
+
+		# last known temperatures
+		self.pause_temperature = TemperatureRecord()
+		self.cancel_temperature = TemperatureRecord()
 
 		# last known positions
 		self.last_position = PositionRecord()
@@ -341,8 +345,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		# cancel the job
 		self.state = ProtocolState.CANCELLING
-		self.notify_listeners("on_protocol_job_cancelling", self, self._job)
 		self._job.cancel(error=error)
+		self.notify_listeners("on_protocol_job_cancelling", self, self._job)
 
 		if log_position:
 			self.send_commands(self.flavor.command_finish_moving(),
@@ -394,8 +398,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			tags = set()
 
 		self.state = ProtocolState.PAUSING
-		self.notify_listeners("on_protocol_job_pausing", self, self._job)
 		self._job.pause()
+		self.notify_listeners("on_protocol_job_pausing", self, self._job)
 
 		if suppress_scripts_and_commands:
 			with self._suppress_scripts_mutex:
@@ -536,6 +540,28 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		elif self._is_operational() or force:
 			self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
 
+	def send_script(self, script, context=None):
+		if context is None:
+			context = dict()
+
+		# TODO printer profile
+		context.update(dict(last_position=self.last_position))
+
+		if script.name == "afterPrintPaused" or script.name == "beforePrintResumed":
+			context.update(dict(pause_position=self.pause_position,
+			                    pause_temperature=self.pause_temperature.as_script_dict()))
+		elif script.name == "afterPrintCancelled":
+			context.update(dict(cancel_position=self.cancel_position,
+			                    cancel_temperature=self.cancel_temperature.as_script_dict()))
+
+		lines = script.render(context=context)
+		self.send_commands(tags={"trigger:protocol.send_script",
+		                         "source:script",
+		                         "script:{}".format(script.name)}, *lines)
+
+	def repair(self):
+		self._on_comm_ok()
+
 	##~~ State handling
 
 	def _is_operational(self):
@@ -564,7 +590,23 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._clear_to_send.set()
 
 			def poll_temperature_interval():
-				return self.interval["temperature_printing"] if self.state == ProtocolState.PROCESSING else self.interval["temperature_idle"]
+				printing_default = 4.0
+				target_default = 2.0
+				threshold = 25
+
+				if self.state in ProtocolState.PROCESSING_STATES:
+					return self.interval.get("temperature_printing", printing_default)
+
+				tools = self._internal_flags["temperatures"].tools
+				for temp in [tools[k][1] for k in tools]:
+					if temp > threshold:
+						return self.interval.get("temperature_target_set", target_default)
+
+				bed = self.last_temperatur.bed
+				if bed and len(bed) > 0 and bed[1] > threshold:
+					return self.interval.get("temperature_target_set", target_default)
+
+				return self.interval.get("temperature_idle")
 
 			def poll_temperature():
 				if self._is_operational() \
@@ -604,11 +646,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self.state = ProtocolState.FINISHING
 		self.notify_listeners("on_protocol_job_finishing", self, job)
+		self._job_processed(job)
 
 		def finalize():
 			self.state = ProtocolState.CONNECTED
 			self.notify_listeners("on_protocol_job_done", self, job)
 		self.send_commands(SendQueueMarker(finalize))
+		self._continue_sending()
 
 	def _job_processed(self, job):
 		self._internal_flags["expect_continous_comms"] = False
@@ -968,16 +1012,20 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["heating"] = True
 			self._internal_flags["heatup_start"] = monotonic_time()
 
-		potential_tools = dict(("T{}".format(x), "tool{}".format(x)) for x in range(max_tool_num + 1))
-		potential_tools.update(dict(B="bed"))
-
-		for tool_rep, tool in potential_tools.items():
-			if not tool_rep in temperatures:
+		for x in range(max_tool_num + 1):
+			tool = "T{}".format(x)
+			if not tool in temperatures:
+				# TODO shared nozzle
 				continue
-			actual, target = temperatures[tool_rep]
-			self._set_temperature(tool, actual, target)
+			else:
+				actual, target = temperatures[tool]
+			self._internal_flags["temperatures"].set_tool(x, actual=actual, target=target)
 
-		self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"])
+		if "B" in temperatures:
+			actual, target = temperatures["B"]
+			self._internal_flags["temperatures"].set_bed(actual=actual, target=target)
+
+		self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
 
 	def _on_message_position(self, position):
 		self.last_position.valid = True
@@ -1006,14 +1054,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			reason = "pause"
 			self._record_pause_data = False
 			self.pause_position.copy_from(self.last_position)
-			#self.pause_temperature.copy_from(self.last_temperature) # TODO pause temperature
+			self.pause_temperature.copy_from(self._internal_flags["temperatures"])
 			self._pause_preparation_done()
 
 		if self._record_cancel_data:
 			reason = "cancel"
 			self._record_cancel_data = False
 			self.cancel_position.copy_from(self.last_position)
-			#self.cancel_temperature.copy_from(self.last_temperature) # TODO cancel temperature
+			self.cancel_temperature.copy_from(self._internal_flags["temperatures"])
 			self._cancel_preparation_done()
 
 		self.notify_listeners("on_protocol_position_all_update", self, position, reason=reason)
@@ -1659,9 +1707,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			target = float(command.r)
 
 		if target:
-			tool = "tool{}".format(tool_num)
-			self._set_temperature(tool, None, target)
-			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"])
+			self._internal_flags["temperatures"].set_tool(tool_num, target=target)
+			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
 
 	def _gcode_M140_sent(self, command, wait=False, support_r=False):
 		target = None
@@ -1671,8 +1718,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			target = float(command.r)
 
 		if target:
-			self._set_temperature("bed", None, target)
-			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"])
+			self._internal_flags["temperatures"].set_bed(target=target)
+			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
 
 	def _gcode_M109_sent(self, command):
 		self._internal_flags["heatup_start"] = monotonic_time()
@@ -1824,14 +1871,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                   tags={"trigger:protocol.set_busy_protocol_interval"})
 
 	##~~ helpers
-
-	def _set_temperature(self, tool, actual, target):
-		temperatures = self._internal_flags["temperatures"]
-		if actual is None and tool in temperatures:
-			actual, _ = temperatures[tool]
-		if target is None and tool in temperatures:
-			_, target = temperatures[tool]
-		temperatures[tool] = (actual, target)
 
 	def _get_timeout(self, timeout_type):
 		if timeout_type in self.timeouts:

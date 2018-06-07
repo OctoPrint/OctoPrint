@@ -12,6 +12,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
+import string
 import threading
 import time
 
@@ -31,8 +32,8 @@ from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, ProtocolState
-
 from octoprint.comm.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob
+from octoprint.comm.protocol.reprap.scripts import GcodeScript
 
 from collections import namedtuple
 
@@ -368,14 +369,16 @@ class Printer(PrinterInterface,
 		if name is None or not name:
 			raise ValueError("name must be set")
 
-		# TODO
-		#result = self._comm.sendGcodeScript(name,
-		#                                    replacements=context,
-		#                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
-		#if not result:
-		#	if must_be_set:
-		#		raise UnknownScript(name)
-		#	return
+		if context is None:
+			context = dict()
+
+		def render(context):
+			lines = settings().loadScript("gcode", name, context=context)
+			if lines is None and must_be_set:
+				raise UnknownScript(name)
+			return lines
+		script = GcodeScript(name, render, context=context)
+		self._protocol.send_script(script)
 
 	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		if isinstance(axes, basestring):
@@ -388,12 +391,23 @@ class Printer(PrinterInterface,
 			if not isinstance(amount, (int, long, float)):
 				raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
-		printer_profile = self._printer_profile_manager.get_current_or_default()
-		movement_speed = printer_profile["axes"][axis]["speed"]
+			axes = dict()
+			axes[axis] = amount
 
-		kwargs = dict(feedrate=movement_speed,
-		              relative=True)
-		kwargs[axis] = amount
+		if not axes:
+			raise ValueError("At least one axis to jog must be provided")
+
+		for axis in axes:
+			if not axis in PrinterInterface.valid_axes:
+				raise ValueError("Invalid axis {}, valid axes are {}".format(axis, ", ".join(PrinterInterface.valid_axes)))
+
+		if speed is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+			speed = max(*map(lambda x: printer_profile["axes"][x]["speed"], axes))
+
+		kwargs = dict(feedrate=speed,
+		              relative=relative)
+		kwargs.update(axes)
 		self._protocol.move(**kwargs)
 
 	def home(self, axes, *args, **kwargs):
@@ -913,9 +927,9 @@ class Printer(PrinterInterface,
 			temperatures = dict()
 
 		entry = dict(time=int(time.time()))
-		for tool in temperatures.keys():
-			entry[tool] = dict(actual=temperatures[tool][0],
-			                   target=temperatures[tool][1])
+		for tool in temperatures:
+			entry[tool] = dict(actual=temperatures[tool]["actual"],
+			                   target=temperatures[tool]["target"])
 
 		self._temperature_history.append(entry)
 		self._state_monitor.add_temperature(entry)
@@ -1041,13 +1055,13 @@ class Printer(PrinterInterface,
 
 	#~~ octoprint.comm.protocol.ProtocolListener implementation
 
-	def on_protocol_log(self, protocol, message):
+	def on_protocol_log(self, protocol, message, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
 		self._add_log(message)
 
-	def on_protocol_state(self, protocol, old_state, new_state):
+	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1080,7 +1094,7 @@ class Printer(PrinterInterface,
 
 		self._set_state(new_state)
 
-	def on_protocol_temperature(self, protocol, temperatures):
+	def on_protocol_temperature(self, protocol, temperatures, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1088,14 +1102,14 @@ class Printer(PrinterInterface,
 
 	#~~ octoprint.comm.protocol.FileAwareProtocolListener implementation
 
-	def on_protocol_file_storage_available(self, protocol, available):
+	def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
 		self._sd_ready = available
 		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
 
-	def on_protocol_file_list(self, protocol, files):
+	def on_protocol_file_list(self, protocol, files, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1105,7 +1119,7 @@ class Printer(PrinterInterface,
 
 	#~~ octoprint.comm.protocol.PositionAwareProtocolListener implementation
 
-	def on_protocol_position_z_update(self, protocol, z):
+	def on_protocol_position_z_update(self, protocol, z, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1132,7 +1146,7 @@ class Printer(PrinterInterface,
 				            context=dict(event=payload),
 				            must_be_set=False)
 
-	def on_protocol_job_done(self, protocol, job, suppress_script=False):
+	def on_protocol_job_finishing(self, protocol, job, suppress_script=False, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1202,12 +1216,21 @@ class Printer(PrinterInterface,
 			return
 
 		firmware_error = kwargs.get("error", None)
+		cancel_position = kwargs.get("position", None)
+		suppress_scripts = kwargs.get("suppress_scripts", None)
 
 		payload = job.event_payload()
 		if payload:
 			if firmware_error:
 				payload["firmwareError"] = firmware_error
+			if cancel_position:
+				payload["position"] = cancel_position
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
+
+			if not suppress_scripts:
+				self.script("afterPrintCancelled",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
 	def on_protocol_job_cancelled(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1219,7 +1242,6 @@ class Printer(PrinterInterface,
 		self._update_progress_data()
 
 		cancel_position = kwargs.get("position", None)
-		suppress_scripts = kwargs.get("suppress_scripts", None)
 
 		payload = job.event_payload()
 		if payload:
@@ -1228,10 +1250,6 @@ class Printer(PrinterInterface,
 				payload["position"] = cancel_position
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
-			if not suppress_scripts:
-				self.script("afterPrintCancelled",
-				            context=dict(event=payload),
-				            must_be_set=False)
 
 			def finalize():
 				self._file_manager.log_print(job.storage,
@@ -1246,7 +1264,7 @@ class Printer(PrinterInterface,
 			thread.daemon = True
 			thread.start()
 
-	def on_protocol_job_paused(self, protocol, job, *args, **kwargs):
+	def on_protocol_job_pausing(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1260,13 +1278,28 @@ class Printer(PrinterInterface,
 		if payload:
 			if pause_position:
 				payload["position"] = pause_position
-			eventManager().fire(Events.PRINT_PAUSED, payload)
+			#eventManager().fire(Events.PRINT_PAUSED, payload)
 			if not suppress_scripts:
 				self.script("afterPrintPaused",
 				            context=dict(event=payload),
 				            must_be_set=False)
 
-	def on_protocol_job_resumed(self, protocol, job, *args, **kwargs):
+	def on_protocol_job_paused(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
+		if self._job is None or job != self._job.job:
+			return
+
+		pause_position = kwargs.get("position", None)
+
+		payload = job.event_payload()
+		if payload:
+			if pause_position:
+				payload["position"] = pause_position
+			eventManager().fire(Events.PRINT_PAUSED, payload)
+
+	def on_protocol_job_resuming(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1276,12 +1309,21 @@ class Printer(PrinterInterface,
 		suppress_scripts = kwargs.get("suppress_scripts", False)
 
 		payload = job.event_payload()
+		if payload and not suppress_scripts:
+			self.script("beforePrintResumed",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
+	def on_protocol_job_resumed(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
+		if self._job is None or job != self._job.job:
+			return
+
+		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
-			if not suppress_scripts:
-				self.script("beforePrintResumed",
-				            context=dict(event=payload),
-				            must_be_set=False)
 
 	# ~~ octoprint.comm.job.PrintjobListener implementation
 

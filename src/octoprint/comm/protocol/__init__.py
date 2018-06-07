@@ -114,6 +114,9 @@ class Protocol(ListenerAware, TransportListener):
 	def send_commands(self, command_type=None, *commands):
 		pass
 
+	def send_script(self, script, context=None):
+		pass
+
 	def repair(self):
 		pass
 
