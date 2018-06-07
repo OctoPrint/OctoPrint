@@ -16,14 +16,12 @@ from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
 
-from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory, QueueMarker, SendQueueMarker, PositionRecord
 
-from octoprint.util import TypedQueue, TypeAlreadyInQueue
-
-from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
+from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
 
-from octoprint.util import to_str, to_unicode, protectedkeydict, CountedEvent, monotonic_time
+from octoprint.util import TypedQueue, TypeAlreadyInQueue, ResettableTimer, to_str, to_unicode, protectedkeydict, CountedEvent, monotonic_time
 
 from octoprint.events import Events
 
@@ -102,6 +100,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._logger = logging.getLogger(__name__)
 		self._commdebug_logger = logging.getLogger("COMMDEBUG")
 		self._phase_logger = logging.getLogger(__name__ + ".command_phases")
+
+		self._terminal_log = collections.deque([], 20)
 
 		self.flavor = flavor if flavor is not None else GenericFlavor
 		self.timeouts = dict(
@@ -193,6 +193,16 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._last_lines = LineHistory(maxlen = 50)
 		self._last_communication_error = None
 
+		# last known positions
+		self.last_position = PositionRecord()
+		self.pause_position = PositionRecord()
+		self.cancel_position = PositionRecord()
+
+		# pause and cancel processing
+		self._record_pause_data = False
+		self._record_cancel_data = False
+
+		# hooks
 		# TODO GCODE Hooks
 		self._gcode_hooks = dict(queuing=dict(),
 		                         queued=dict(),
@@ -206,11 +216,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# TODO action hooks
 		self._action_hooks = dict()
 
-		# temperature polling
+		# polling
 		self._temperature_poller = None
+		self._sd_status_poller = None
 
-		# terminal logging
-		self._terminal_log = collections.deque([], 20)
+		# script processing
+		self._suppress_scripts = set()
 
 		# resend logging
 		self._log_resends = True
@@ -222,6 +233,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# mutexes
 		self._line_mutex = threading.RLock()
 		self._send_queue_mutex = threading.RLock()
+		self._cancel_mutex = threading.RLock()
+		self._suppress_scripts_mutex = threading.RLock()
+
+		# timers
+		self._pause_position_timer = None
+		self._cancel_position_timer = None
 
 		# sending thread
 		self._send_queue_active = False
@@ -270,6 +287,152 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._internal_flags["expect_continous_comms"] = not job.parallel
 
 		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
+
+	# cancel handling
+
+	def _cancel_preparation_failed(self):
+		self.process_protocol_log("Did not receive parseable position data from printer within {}s, "
+		                          "continuing without it".format(self.timeouts.get("position_log_wait", 10.0)))
+		self._cancel_preparation_done()
+
+	def _cancel_preparation_done(self, check_timer=True):
+		with self._cancel_mutex:
+			if self._cancel_position_timer is not None:
+				self._cancel_position_timer.cancel()
+				self._cancel_position_timer = None
+			elif check_timer:
+				return
+
+			# TODO: recovery data
+
+			def finalize():
+				self.state = ProtocolState.CONNECTED
+				self.notify_listeners("on_protocol_job_cancelled", self, self._job)
+
+			self.send_commands(SendQueueMarker(finalize))
+			self._continue_sending()
+
+	def cancel_processing(self, error=False, tags=None, log_position=True):
+		if self.state not in (ProtocolState.PROCESSING, ProtocolState.PAUSED, ProtocolState.PAUSING):
+			return
+
+		if self._job is None:
+			return
+
+		# TODO cancel file streaming
+
+		if tags is None:
+			tags = set()
+
+		def on_move_finish_requested():
+			self._record_cancel_data = True
+
+			with self._cancel_mutex:
+				if self._cancel_position_timer is not None:
+					self._cancel_position_timer.cancel()
+				self._cancel_position_timer = ResettableTimer(self.timeouts.get("position_log_wait", 10.0),
+				                                              self._cancel_preparation_failed)
+				self._cancel_position_timer.start()
+
+			self.send_commands(self.flavor.command_get_position(),
+			                   tags=tags | {"trigger:comm.cancel",
+			                                "trigger:record_position"})
+			self._continue_sending()
+
+		# cancel the job
+		self.state = ProtocolState.CANCELLING
+		self.notify_listeners("on_protocol_job_cancelling", self, self._job)
+		self._job.cancel(error=error)
+
+		if log_position:
+			self.send_commands(self.flavor.command_finish_moving(),
+			                   on_sent=on_move_finish_requested,
+			                   tags=tags | {"trigger:comm.cancel",
+			                                "trigger:record_position"})
+			self._continue_sending()
+		else:
+			self._cancel_preparation_done(check_timer=False)
+
+	# pause handling
+
+	def _pause_preparation_failed(self):
+		self.process_protocol_log("Did not receive parseable position data from printer within {}s, "
+		                          "continuing without it".format(self.timeouts.get("position_log_wait", 10.0)))
+		self._pause_preparation_done()
+
+	def _pause_preparation_done(self, check_timer=True, suppress_script=None):
+		# do we need to suppress the script?
+		if suppress_script is not None:
+			with self._suppress_scripts_mutex:
+				suppress_script = "pause" in self._suppress_scripts
+				try:
+					self._suppress_scripts.remove("pause")
+				except KeyError:
+					pass
+
+		# do we need to stop a timer?
+		with self._pause_mutex:
+			if self._pause_position_timer is not None:
+				self._pause_position_timer.cancel()
+				self._pause_position_timer = None
+			elif check_timer:
+				return
+
+		# wait for current commands to be sent, then switch to paused state
+		def finalize():
+			self.state = ProtocolState.PAUSED
+			self.notify_listeners("on_protocol_job_paused", self, self._job, suppress_script=suppress_script)
+
+		self.send_commands(SendQueueMarker(finalize))
+		self._continue_sending()
+
+	def pause_processing(self, tags=None, log_position=True, suppress_scripts_and_commands=False):
+		if self._job is None or self.state != ProtocolState.PROCESSING:
+			return
+
+		if tags is None:
+			tags = set()
+
+		self.state = ProtocolState.PAUSING
+		self.notify_listeners("on_protocol_job_pausing", self, self._job)
+		self._job.pause()
+
+		if suppress_scripts_and_commands:
+			with self._suppress_scripts_mutex:
+				self._suppress_scripts.add("pause")
+
+		def on_move_finish_requested():
+			self._record_pause_data = True
+
+			with self._pause_mutex:
+				if self._pause_position_timer is not None:
+					self._pause_position_timer.cancel()
+					self._pause_position_timer = None
+				self._pause_position_timer = ResettableTimer(self.timeouts.get("position_log_wait", 10.0),
+				                                             self._pause_preparation_failed)
+				self._pause_position_timer.start()
+
+			self.send_commands(self.flavor.command_get_position(),
+			                   tags=tags | {"trigger:comm.set_pause",
+			                                "trigger:pause",
+			                                "trigger:record_position"})
+			self._continue_sending()
+
+		if log_position:
+			self.send_commands(self.flavor.command_finish_moving(),
+			                   on_sent=on_move_finish_requested,
+			                   tags=tags | {"trigger:comm.set_pause",
+			                                "trigger:pause",
+			                                "trigger:record_position"})
+			self._continue_sending()
+		else:
+			self._pause_preparation_done(check_timer=False, suppress_script=suppress_scripts_and_commands)
+
+	def resume_processing(self, tags=None, only_adjust_state=False):
+		if only_adjust_state:
+			self.state = ProtocolState.PROCESSING
+		else:
+			super(ReprapGcodeProtocol, self).resume_processing(tags=tags)
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
 		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
@@ -351,24 +514,27 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		tags = kwargs.get(b"tags")
 		force = kwargs.get(b"force", False)
 
+		def sanitize_command(c, ct, t):
+			if isinstance(c, Command):
+				return c.with_type(ct).with_tags(t)
+			elif isinstance(c, QueueMarker):
+				return c
+			else:
+				return to_command(c, type=ct, tags=t)
+
 		# TODO job on hold
-		if self.state == ProtocolState.PROCESSING and not self._job.parallel and not force:
+		if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not force:
 			if len(commands) > 1:
 				command_type = None
 			for command in commands:
-				if not isinstance(command, Command):
-					command = to_command(command, type=command_type, tags=tags)
-				else:
-					command = command.with_type(command_type).with_tags(tags)
-
 				try:
-					self._command_queue.put((command, on_sent), item_type=command_type)
+					self._command_queue.put((sanitize_command(command, command_type, tags), on_sent), item_type=command_type)
 					return True
 				except TypeAlreadyInQueue as e:
 					self._logger.debug("Type already in queue: " + e.type)
 					return False
 		elif self._is_operational() or force:
-			self._send_commands(*commands, command_type=command_type, tags=tags)
+			self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
 
 	##~~ State handling
 
@@ -426,11 +592,20 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	##~~ Job handling
 
+	def on_job_cancelled(self, job):
+		pass
+
+	def on_job_paused(self, job, *args, **kwargs):
+		pass
+
+	def on_job_done(self, job):
+		pass
+
 	def _job_processed(self, job):
 		self._internal_flags["expect_continous_comms"] = False
 		self._internal_flags["only_from_job"] = False
 		self._internal_flags["trigger_events"] = True
-		super(ReprapGcodeProtocol, self)._job_processed(job)
+		self._job.unregister_listener(self)
 
 	##~~ Transport logging
 
@@ -795,6 +970,45 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"])
 
+	def _on_message_position(self, position):
+		self.last_position.valid = True
+		self.last_position.x = position.get("x")
+		self.last_position.y = position.get("y")
+		self.last_position.z = position.get("z")
+
+		# TODO determine e, f and t
+		"""
+		if "e" in position:
+			self.last_position.e = position.get("e")
+		else:
+			# multiple extruder coordinates provided, find current one
+			self.last_position.e = position.get("e{}".format(self._currentTool)) if not self.isSdFileSelected() else None
+
+		for key in [key for key in position if key.startswith("e") and len(key) > 1]:
+			setattr(self.last_position, key, position.get(key))
+
+		self.last_position.t = self._currentTool if not self.isSdFileSelected() else None
+		self.last_position.f = self._currentF if not self.isSdFileSelected() else None
+		"""
+
+		reason = None
+
+		if self._record_pause_data:
+			reason = "pause"
+			self._record_pause_data = False
+			self.pause_position.copy_from(self.last_position)
+			#self.pause_temperature.copy_from(self.last_temperature) # TODO pause temperature
+			self._pause_preparation_done()
+
+		if self._record_cancel_data:
+			reason = "cancel"
+			self._record_cancel_data = False
+			self.cancel_position.copy_from(self.last_position)
+			#self.cancel_temperature.copy_from(self.last_temperature) # TODO cancel temperature
+			self._cancel_preparation_done()
+
+		self.notify_listeners("on_protocol_position_all_update", self, position, reason=reason)
+
 	def _on_message_firmware_info(self, firmware_name, data):
 		# TODO
 		#self._event_bus.fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=copy.copy(data)))
@@ -942,8 +1156,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				#	return False
 
 				line = self._job.get_next()
-				# TODO implement QueueMarker
-				if line is None:
+				if isinstance(line, QueueMarker):
+					self._send_command(line)
+					# TODO on job progress
+
+					# end of file, return false so that the next round in continue_sending will process
+					# what we just enqueued (any scripts + marker)
+					return False
+
+				elif line is None:
 					# end of job, return False
 					return False
 
@@ -993,21 +1214,29 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._command_queue.task_done()
 
 	def _send_commands(self, *commands, **kwargs):
-		command_type = kwargs.get(b"command_type", None)
+		command_type = kwargs.pop(b"command_type", None)
 		result = False
 		for command in commands:
 			if len(commands) > 1:
 				command_type = None
-			result = self._send_command(command, command_type=command_type, tags=kwargs.get(b"tags", None)) or result
+			result = self._send_command(command, command_type=command_type, **kwargs) or result
 		return result
 
 	def _send_command(self, command, command_type=None, tags=None, on_sent=None):
-		if not isinstance(command, Command):
-			command = to_command(command, type=command_type, tags=tags)
-		elif command_type or tags:
-			command = command.with_type(command_type).with_tags(tags)
-
 		with self._send_queue_mutex:
+			if isinstance(command, QueueMarker):
+				if isinstance(command, SendQueueMarker):
+					self._enqueue_for_sending(command)
+					return True
+				else:
+					return False
+
+			elif isinstance(command, Command) and (command_type or tags):
+				command = command.with_type(command_type).with_tags(tags)
+
+			else:
+				command = to_command(command, type=command_type, tags=tags)
+
 			if self._internal_flags["trigger_events"]:
 				results = self._process_command_phase("queuing", command)
 
@@ -1067,7 +1296,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		Enqueues a command and optional command_type and linenumber in the send queue.
 
 		Arguments:
-		    command (Command): The command to send
+		    command (Command or SendQueueMarker): The command to send or the marker to enqueue
 		    linenumber (int): An optional line number to use for sending the
 		        command.
 		    on_sent (callable or None): Callback to call when the command has been sent
@@ -1079,7 +1308,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			if resend:
 				target = "resend"
 
-			self._send_queue.put((command, linenumber, on_sent, processed), item_type=command.type, target=target)
+			if isinstance(command, Command):
+				command_type = command.type
+			else:
+				command_type = None
+
+			self._send_queue.put((command, linenumber, on_sent, processed), item_type=command_type, target=target)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in queue: {}".format(e.type))
@@ -1111,6 +1345,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 					# fetch command and optional linenumber from queue
 					command, linenumber, on_sent, processed = entry
+
+					if isinstance(command, SendQueueMarker):
+						command.run()
+						self._continue_sending()
+						continue
 
 					if linenumber is not None:
 						# line number predetermined - this only happens for resends, so we'll use the number and
@@ -1621,7 +1860,7 @@ if __name__ == "__main__":
 	from octoprint.comm.protocol.reprap.virtual import VirtualPrinter
 	from octoprint.comm.protocol.reprap.flavors import GenericFlavor
 	from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener
-	from octoprint.job import PrintjobListener
+	from octoprint.comm.job import PrintjobListener
 
 	import os
 

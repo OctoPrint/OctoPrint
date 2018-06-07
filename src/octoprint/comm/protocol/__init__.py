@@ -93,17 +93,20 @@ class Protocol(ListenerAware, TransportListener):
 	def pause_processing(self, tags=None):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
-		self.state = ProtocolState.PAUSED
+		self.state = ProtocolState.PAUSING
+		self._job.pause()
 
 	def resume_processing(self, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
-		self.state = ProtocolState.PROCESSING
+		self.state = ProtocolState.RESUMING
+		self._job.resume()
 
 	def cancel_processing(self, error=False, tags=None):
 		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
+			self.state = ProtocolState.CANCELLING
+			self.notify_listeners("on_protocol_job_cancelling", self, self._job)
 			self._job.cancel(error=error)
-		self.state = ProtocolState.CONNECTED
 
 	def can_send(self):
 		return True
@@ -115,15 +118,27 @@ class Protocol(ListenerAware, TransportListener):
 		pass
 
 	def on_job_started(self, job):
+		self.notify_listeners("on_protocol_job_started", self, job)
+		self.state = ProtocolState.PROCESSING
+
+	def on_job_paused(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_paused", self, job)
+		self.state = ProtocolState.PAUSED
+
+	def on_job_resumed(self, job):
+		self.notify_listeners("on_protocol_job_resumed", self, job)
 		self.state = ProtocolState.PROCESSING
 
 	def on_job_done(self, job):
+		self.notify_listeners("on_protocol_job_done", self, job)
 		self._job_processed(job)
 
 	def on_job_cancelled(self, job):
+		self.notify_listeners("on_protocol_job_cancelled", self, job)
 		self._job_processed(job)
 
 	def on_job_failed(self, job):
+		self.notify_listeners("on_protocol_job_failed", self, job)
 		self._job_processed(job)
 
 	def _job_processed(self, job):
@@ -158,11 +173,16 @@ class ProtocolState(object):
 	DISCONNECTING = "disconnecting"
 	DISCONNECTED = "disconnected"
 	PROCESSING = "processing"
+	FINISHING = "finishing"
 	CANCELLING = "cancelling"
 	PAUSING = "pausing"
+	RESUMING = "resuming"
 	PAUSED = "paused"
 	ERROR = "error"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
+
+	PROCESSING_STATES = (PROCESSING, CANCELLING, PAUSING, RESUMING, FINISHING)
+	OPERATIONAL_STATES = (CONNECTED, PAUSED) + PROCESSING_STATES
 
 class ProtocolAlreadyConnectedError(Exception):
 	pass
@@ -281,38 +301,68 @@ class FileStreamingProtocolMixin(FileManagementProtocolMixin):
 
 class ProtocolListener(object):
 
-	def on_protocol_state(self, protocol, old_state, new_state):
+	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		pass
 
-	def on_protocol_temperature(self, protocol, temperatures):
+	def on_protocol_temperature(self, protocol, temperatures, *args, **kwargs):
 		pass
 
-	def on_protocol_log(self, protocol, message):
+	def on_protocol_log(self, protocol, message, *args, **kwargs):
+		pass
+
+	def on_protocol_job_started(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_pausing(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_paused(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_resuming(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_resumed(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_cancelling(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_cancelled(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_finishing(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_done(self, protocol, job, *args, **kwargs):
+		pass
+
+	def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
 		pass
 
 
 class FileAwareProtocolListener(object):
 
-	def on_protocol_file_storage_available(self, protocol, available):
+	def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
 		pass
 
-	def on_protocol_file_list(self, protocol, files):
+	def on_protocol_file_list(self, protocol, files, *args, **kwargs):
 		pass
 
-	def on_protocol_file_status(self, protocol, pos, total):
+	def on_protocol_file_status(self, protocol, pos, total, *args, **kwargs):
 		pass
 
-	def on_protocol_file_print_started(self, protocol, name, size):
+	def on_protocol_file_print_started(self, protocol, name, size, *args, **kwargs):
 		pass
 
-	def on_protocol_file_print_done(self, protocol):
+	def on_protocol_file_print_done(self, protocol, *args, **kwargs):
 		pass
 
 
 class PositionAwareProtocolListener(object):
 
-	def on_protocol_position_all_update(self, protocol, position):
+	def on_protocol_position_all_update(self, protocol, position, *args, **kwargs):
 		pass
 
-	def on_protocol_position_z_update(self, protocol, z):
+	def on_protocol_position_z_update(self, protocol, z, *args, **kwargs):
 		pass

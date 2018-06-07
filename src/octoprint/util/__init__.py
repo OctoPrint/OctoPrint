@@ -1282,7 +1282,7 @@ class ResettableTimer(threading.Thread):
 	    on_reset (callable): Callback to call when the timer is reset.
 	"""
 
-	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None, daemon=True):
 		threading.Thread.__init__(self)
 		self._event = threading.Event()
 		self._mutex = threading.Lock()
@@ -1299,6 +1299,8 @@ class ResettableTimer(threading.Thread):
 		self.kwargs = kwargs
 		self.on_cancelled = on_cancelled
 		self.on_reset = on_reset
+
+		self.daemon = daemon
 
 
 	def run(self):

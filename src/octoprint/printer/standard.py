@@ -15,6 +15,7 @@ import os
 import threading
 import time
 
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 from frozendict import frozendict
@@ -26,13 +27,12 @@ from octoprint.plugin import plugin_manager, ProgressPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation, InvalidFileType
 from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.settings import settings
-from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, ProtocolState
 
-from octoprint.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob, PrintjobListener
+from octoprint.comm.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob
 
 from collections import namedtuple
 
@@ -67,7 +67,10 @@ def _serial_factory(port=None, baudrate=None):
 	return None
 
 
-class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, PrintjobListener):
+class Printer(PrinterInterface,
+              ProtocolListener,
+              FileAwareProtocolListener,
+              PositionAwareProtocolListener):
 	"""
 	Default implementation of the :class:`PrinterInterface`. Manages the communication layer object and registers
 	itself with it as a callback to react to changes on the communication layer.
@@ -614,6 +617,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 					return "Sending file to SD"
 				else:
 					return "Printing"
+			elif state == ProtocolState.PAUSING:
+				return "Pausing"
+			elif state == ProtocolState.RESUMING:
+				return "Resuming"
+			elif state == ProtocolState.CANCELLING:
+				return "Cancelling"
+			elif state == ProtocolState.FINISHING:
+				return "Finishing"
 			elif state == ProtocolState.PAUSED:
 				return "Paused"
 			elif state == ProtocolState.DISCONNECTED_WITH_ERROR:
@@ -1104,15 +1115,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._set_current_z(z)
 
-	#~~ octoprint.job.PrintjobListener
+	#~~ octoprint.comm.protocol.JobAwareProtocolListener implementation
 
-	def on_job_progress(self, job):
-		if self._job is None or job != self._job.job:
+	def on_protocol_job_processing(self, protocol, job, suppress_script=False):
+		if protocol != self._protocol:
 			return
 
-		self._state_monitor.trigger_progress_update()
-
-	def on_job_started(self, job, suppress_script=False):
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1124,7 +1132,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				            context=dict(event=payload),
 				            must_be_set=False)
 
-	def on_job_done(self, job, suppress_script=False):
+	def on_protocol_job_done(self, protocol, job, suppress_script=False):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1172,7 +1183,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				thread.start()
 
 
-	def on_job_failed(self, job):
+	def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
 
@@ -1180,9 +1194,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
-	def on_job_cancelling(self, job, firmware_error=None):
+	def on_protocol_job_cancelling(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
+
+		firmware_error = kwargs.get("error", None)
 
 		payload = job.event_payload()
 		if payload:
@@ -1190,11 +1209,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				payload["firmwareError"] = firmware_error
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
-	def on_job_cancelled(self, job, cancel_position=None, suppress_script=False):
+	def on_protocol_job_cancelled(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
 
 		self._update_progress_data()
+
+		cancel_position = kwargs.get("position", None)
+		suppress_scripts = kwargs.get("suppress_scripts", None)
 
 		payload = job.event_payload()
 		if payload:
@@ -1203,7 +1228,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				payload["position"] = cancel_position
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
-			if not suppress_script:
+			if not suppress_scripts:
 				self.script("afterPrintCancelled",
 				            context=dict(event=payload),
 				            must_be_set=False)
@@ -1221,31 +1246,50 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			thread.daemon = True
 			thread.start()
 
-	def on_job_paused(self, job, pause_position=None, suppress_script=False):
+	def on_protocol_job_paused(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
+
+		pause_position = kwargs.get("position", None)
+		suppress_scripts = kwargs.get("suppress_scripts", None)
 
 		payload = job.event_payload()
 		if payload:
 			if pause_position:
 				payload["position"] = pause_position
 			eventManager().fire(Events.PRINT_PAUSED, payload)
-			if not suppress_script:
+			if not suppress_scripts:
 				self.script("afterPrintPaused",
 				            context=dict(event=payload),
 				            must_be_set=False)
 
-	def on_job_resumed(self, job, suppress_script=False):
+	def on_protocol_job_resumed(self, protocol, job, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
 		if self._job is None or job != self._job.job:
 			return
+
+		suppress_scripts = kwargs.get("suppress_scripts", False)
 
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
-			if not suppress_script:
+			if not suppress_scripts:
 				self.script("beforePrintResumed",
 				            context=dict(event=payload),
 				            must_be_set=False)
+
+	# ~~ octoprint.comm.job.PrintjobListener implementation
+
+	def on_job_progress(self, job):
+		if self._job is None or job != self._job.job:
+			return
+
+		self._state_monitor.trigger_progress_update()
 
 	#~~ comm.MachineComPrintCallback implementation
 

@@ -10,5 +10,5 @@ from . import Storage, StorageError
 
 class PrinterSDStorage(Storage):
 	def create_print_job(self, path, user=None):
-		from octoprint.job import SDFilePrintjob
+		from octoprint.comm.job import SDFilePrintjob
 		return SDFilePrintjob("/" + path, user=user)

@@ -85,6 +85,12 @@ class Printjob(ProtocolListener, ListenerAware):
 		self._protocol = protocol
 		self._protocol.register_listener(self)
 
+	def pause(self):
+		self.process_job_paused()
+
+	def resume(self):
+		self.process_job_resumed()
+
 	def cancel(self, error=False):
 		if error:
 			self.process_job_failed()
@@ -118,15 +124,12 @@ class Printjob(ProtocolListener, ListenerAware):
 		self.notify_listeners("on_job_failed", self)
 		self.reset_job()
 
-	def process_job_cancelling(self, firmware_error=None):
-		self.notify_listeners("on_job_cancelling", self, firmware_error=firmware_error)
-
-	def process_job_cancelled(self, cancel_position=None):
-		self.notify_listeners("on_job_cancelled", self, cancel_position=cancel_position)
+	def process_job_cancelled(self):
+		self.notify_listeners("on_job_cancelled", self)
 		self.reset_job()
 
-	def process_job_paused(self, pause_position=None):
-		self.notify_listeners("on_job_paused", self, pause_position=pause_position)
+	def process_job_paused(self):
+		self.notify_listeners("on_job_paused", self)
 
 	def process_job_resumed(self):
 		self.notify_listeners("on_job_resumed", self)
@@ -137,7 +140,7 @@ class Printjob(ProtocolListener, ListenerAware):
 	def reset_job(self):
 		self._start = None
 
-	def on_protocol_state(self, protocol, old_state, new_state):
+	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		if new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR) and self.active:
 			self.cancel(error=True)
 
@@ -182,6 +185,8 @@ class LocalFilePrintjob(StoragePrintjob):
 		self._read_lines = 0
 		self._actual_lines = 0
 
+		self._cancel_pos = None
+
 		self._handle = None
 
 	@property
@@ -199,6 +204,10 @@ class LocalFilePrintjob(StoragePrintjob):
 	@property
 	def read_lines(self):
 		return self._read_lines
+
+	@property
+	def cancel_pos(self):
+		return self._cancel_pos
 
 	@property
 	def active(self):
@@ -223,6 +232,10 @@ class LocalFilePrintjob(StoragePrintjob):
 			self._handle.seek(position)
 			self._pos = position
 		self.process_job_started()
+
+	def cancel(self, error=False):
+		self._cancel_pos = self.pos
+		super(LocalFilePrintjob, self).cancel(error=error)
 
 	def get_next(self):
 		from octoprint.util import to_unicode

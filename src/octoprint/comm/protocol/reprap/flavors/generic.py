@@ -164,7 +164,7 @@ class GenericFlavor(object):
 
 	@classmethod
 	def message_position(cls, line, lower_line, state, flags):
-		return "C:" in line or "X:" in line
+		return 'X:' in line and 'Y:' in line and 'Z:' in line
 
 	@classmethod
 	def message_firmware_info(cls, line, lower_line, state, flags):
@@ -302,7 +302,7 @@ class GenericFlavor(object):
 		position = dict(x=None, y=None, z=None, e=None)
 		for match in re.finditer(cls.regex_position, line):
 			position[match.group(b"axis").lower()] = float(match.group(b"pos"))
-		return position
+		return dict(position=position)
 
 	@classmethod
 	def parse_message_firmware_info(cls, line, lower_line, state, flags):
@@ -388,6 +388,14 @@ class GenericFlavor(object):
 	@classmethod
 	def command_get_firmware_info(cls):
 		return GcodeCommand("M115")
+
+	@classmethod
+	def command_finish_moving(cls):
+		return GcodeCommand("M400")
+
+	@classmethod
+	def command_get_position(cls):
+		return GcodeCommand("M114")
 
 	@classmethod
 	def command_get_temp(cls):
