@@ -599,7 +599,16 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		pass
 
 	def on_job_done(self, job):
-		pass
+		if job != self._job:
+			return
+
+		self.state = ProtocolState.FINISHING
+		self.notify_listeners("on_protocol_job_finishing", self, job)
+
+		def finalize():
+			self.state = ProtocolState.CONNECTED
+			self.notify_listeners("on_protocol_job_done", self, job)
+		self.send_commands(SendQueueMarker(finalize))
 
 	def _job_processed(self, job):
 		self._internal_flags["expect_continous_comms"] = False
@@ -1156,15 +1165,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				#	return False
 
 				line = self._job.get_next()
-				if isinstance(line, QueueMarker):
-					self._send_command(line)
-					# TODO on job progress
-
-					# end of file, return false so that the next round in continue_sending will process
-					# what we just enqueued (any scripts + marker)
-					return False
-
-				elif line is None:
+				if line is None:
 					# end of job, return False
 					return False
 

@@ -248,6 +248,7 @@ class LocalFilePrintjob(StoragePrintjob):
 			while processed is None:
 				if self._handle is None:
 					# file got closed just now
+					self.process_job_done()
 					return None
 				line = to_unicode(self._handle.readline())
 
