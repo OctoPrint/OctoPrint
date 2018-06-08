@@ -1177,7 +1177,7 @@ class MachineCom(object):
 				if self._cancel_position_timer is not None:
 					self._cancel_position_timer.cancel()
 				self._cancel_position_timer = ResettableTimer(self._timeout_intervals.get("positionLogWait", 10.0),
-				                                              self._cancel_preparation_done)
+				                                              self._cancel_preparation_failed)
 				self._cancel_position_timer.daemon = True
 				self._cancel_position_timer.start()
 			self.sendCommand("M114", tags=tags | {"trigger:comm.cancel",
