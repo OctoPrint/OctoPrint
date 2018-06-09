@@ -3781,11 +3781,13 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def _report_stats(self):
 		duration = time.time() - self._start_time
-		stats = dict(lines=self._read_lines,
-		             rate=float(self._read_lines) / duration,
-		             time_per_line=duration * 1000.0 / float(self._read_lines),
-		             duration=duration)
-		self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
+		read_lines = self._read_lines
+		if duration > 0 and read_lines > 0:
+			stats = dict(lines=read_lines,
+			             rate=float(read_lines) / duration,
+			             time_per_line=duration * 1000.0 / float(read_lines),
+			             duration=duration)
+			self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
 
 
 class SpecialStreamingGcodeFileInformation(StreamingGcodeFileInformation):
