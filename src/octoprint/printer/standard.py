@@ -285,7 +285,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		for command in commands:
 			self._comm.sendCommand(command, tags=kwargs.get("tags", set()) | {"trigger:printer.commands"})
 
-	def script(self, name, context=None, must_be_set=True, *args, **kwargs):
+	def script(self, name, context=None, must_be_set=True, part_of_job=False, *args, **kwargs):
 		if self._comm is None:
 			return
 
@@ -293,6 +293,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			raise ValueError("name must be set")
 
 		result = self._comm.sendGcodeScript(name,
+		                                    part_of_job=part_of_job,
 		                                    replacements=context,
 		                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
 		if not result and must_be_set:
@@ -1040,6 +1041,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not suppress_script:
 				self.script("beforePrintStarted",
 				            context=dict(event=payload),
+				            part_of_job=True,
 				            must_be_set=False)
 
 	def on_comm_print_job_done(self, suppress_script=False):
@@ -1058,6 +1060,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not suppress_script:
 				self.script("afterPrintDone",
 				            context=dict(event=payload),
+				            part_of_job=True,
 				            must_be_set=False)
 
 			def log_print():
@@ -1101,6 +1104,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not suppress_script:
 				self.script("afterPrintCancelled",
 				            context=dict(event=payload),
+				            part_of_job=True,
 				            must_be_set=False)
 
 			def finalize():
@@ -1123,6 +1127,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not suppress_script:
 				self.script("afterPrintPaused",
 				            context=dict(event=payload),
+				            part_of_job=True,
 				            must_be_set=False)
 
 	def on_comm_print_job_resumed(self, suppress_script=False):
@@ -1132,6 +1137,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not suppress_script:
 				self.script("beforePrintResumed",
 				            context=dict(event=payload),
+				            part_of_job=True,
 				            must_be_set=False)
 
 	def on_comm_file_transfer_started(self, filename, filesize, user=None):

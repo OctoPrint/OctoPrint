@@ -483,6 +483,8 @@ class MachineCom(object):
 		self._temperature_timer = None
 		self._sd_status_timer = None
 
+		self._script_queue = ScriptQueue()
+
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
 
@@ -968,13 +970,17 @@ class MachineCom(object):
 		                  scriptLines))
 
 
-	def sendGcodeScript(self, scriptName, replacements=None, tags=None):
+	def sendGcodeScript(self, scriptName, replacements=None, tags=None, part_of_job=False):
 		if tags is None:
 			tags = set()
 
 		scriptLines = self._getGcodeScript(scriptName, replacements=replacements)
+		tags_to_use = tags | {"trigger:comm.send_gcode_script", "source:script", "script:{}".format(scriptName)}
 		for line in scriptLines:
-			self.sendCommand(line, tags=tags | {"trigger:comm.send_gcode_script", "source:script", "script:{}".format(scriptName)})
+			if part_of_job:
+				self._script_queue.put((line, tags_to_use))
+			else:
+				self.sendCommand(line, tags=tags_to_use)
 		return "\n".join(scriptLines)
 
 	def startPrint(self, pos=None, tags=None, external_sd=False):
@@ -1026,7 +1032,7 @@ class MachineCom(object):
 					if pos is not None and isinstance(pos, int) and pos > 0:
 						self._currentFile.seek(pos)
 
-					line, pos, lineno = self._getNext()
+					line, pos, lineno = self._get_next_from_job()
 					if line is not None:
 						self.sendCommand(line, tags=tags | {"trigger:comm.start_print",
 						                                    "source:file",
@@ -1034,7 +1040,7 @@ class MachineCom(object):
 						                                    "fileline:{}".format(lineno)})
 
 				# now make sure we actually do something, up until now we only filled up the queue
-				self._sendFromQueue()
+				self._send_from_command_queue()
 		except:
 			self._logger.exception("Error while trying to start printing")
 			self._trigger_error(get_exception_string(), "start_print")
@@ -1261,7 +1267,7 @@ class MachineCom(object):
 						self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
 					self.sendCommand("M27", tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 				else:
-					line, pos, lineno = self._getNext()
+					line, pos, lineno = self._get_next_from_job()
 					if line is not None:
 						if not tags:
 							tags = set()
@@ -1273,7 +1279,7 @@ class MachineCom(object):
 						self.sendCommand(line, tags=tags_to_use)
 
 				# now make sure we actually do something, up until now we only filled up the queue
-				self._sendFromQueue()
+				self._send_from_command_queue()
 
 			elif pause and self.isPrinting():
 				if not self._pauseWaitStartTime:
@@ -2174,26 +2180,29 @@ class MachineCom(object):
 
 	def _continue_sending(self):
 		while self._active:
+			job_active = self._state == self.STATE_PRINTING and not (self._currentFile is None or self._currentFile.done or self.isSdPrinting())
 
-			if self._state == self.STATE_PRINTING and not (self._currentFile is None or self._currentFile.done or self.isSdPrinting()):
-				# we are printing, we really want to send either something from the command
-				# queue or the next line from our file, so we only return here if we actually DO
-				# send something
-				if self._sendFromQueue():
-					# we found something in the queue to send
-					return True
+			if self._send_from_command_queue():
+				# we found something in the command queue to send
+				return True
 
-				elif self.job_on_hold:
-					return False
+			elif self.job_on_hold:
+				# job is on hold, that means we must not send from either script queue or file
+				return False
 
-				elif self._sendNext():
-					# we sent the next line from the file
-					return True
+			elif self._send_from_script_queue():
+				# we found something in the script queue to send
+				return True
 
-				self._logger.debug("No command sent on ok while printing, doing another iteration")
-			else:
-				# just send stuff from the command queue and be done with it
-				return self._sendFromQueue()
+			elif job_active and self._send_from_job():
+				# we sent the next line from the file
+				return True
+
+			elif not job_active:
+				# nothing sent but also no job active, so we can just return false
+				return False
+
+			self._logger.debug("No command sent on ok while printing, doing another iteration")
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
@@ -2341,7 +2350,7 @@ class MachineCom(object):
 
 		return get("temperature", busy_default)
 
-	def _sendFromQueue(self):
+	def _send_from_command_queue(self):
 		# We loop here to make sure that if we do NOT send the first command
 		# from the queue, we'll send the second (if there is one). We do not
 		# want to get stuck here by throwing away commands.
@@ -2587,7 +2596,7 @@ class MachineCom(object):
 
 		return ret
 
-	def _getNext(self):
+	def _get_next_from_job(self):
 		if self._currentFile is None:
 			return None
 
@@ -2603,7 +2612,7 @@ class MachineCom(object):
 				return SendQueueMarker(finalize), None, None
 		return line, pos, lineno
 
-	def _sendNext(self):
+	def _send_from_job(self):
 		with self._jobLock:
 			while self._active:
 				# we loop until we've actually enqueued a line for sending
@@ -2615,7 +2624,7 @@ class MachineCom(object):
 					# job is on hold, return false
 					return False
 
-				line, pos, lineno = self._getNext()
+				line, pos, lineno = self._get_next_from_job()
 				if isinstance(line, QueueMarker):
 					self.sendCommand(line)
 					self._callback.on_comm_progress()
@@ -2631,10 +2640,22 @@ class MachineCom(object):
 				result = self._sendCommand(line, tags={"source:file", "filepos:{}".format(pos), "fileline:{}".format(lineno)})
 				self._callback.on_comm_progress()
 				if result:
-					# line sent, return true
+					# line from file sent, return true
 					return True
 
 				self._logger.debug("Command \"{}\" from file not enqueued, doing another iteration".format(line))
+
+	def _send_from_script_queue(self):
+		try:
+			line, tags = self._script_queue.get_nowait()
+			result = self._sendCommand(line, tags=tags)
+			if result:
+				# line from script sent, return true
+				return True
+		except queue.Empty:
+			pass
+
+		return False
 
 	def _handle_resend_request(self, line):
 		try:
@@ -3805,6 +3826,9 @@ class SpecialStreamingGcodeFileInformation(StreamingGcodeFileInformation):
 		if not len(line):
 			return None
 		return line
+
+class ScriptQueue(PrependableQueue):
+	pass
 
 class CommandQueue(TypedQueue):
 	def __init__(self, *args, **kwargs):
