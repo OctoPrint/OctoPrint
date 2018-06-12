@@ -1103,6 +1103,12 @@ class Printer(PrinterInterface,
 
 		self._add_temperature_data(temperatures)
 
+	def on_protocol_reset(self, protocol, idle, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
+		eventManager().fire(Events.PRINTER_RESET, payload=dict(idle=idle))
+
 	#~~ octoprint.comm.protocol.FileAwareProtocolListener implementation
 
 	def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):

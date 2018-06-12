@@ -2,18 +2,16 @@
 from __future__ import absolute_import, unicode_literals, print_function, \
 	division
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 
 from octoprint.comm.protocol.reprap.commands import Command
 from octoprint.util import PrependableQueue, TypeAlreadyInQueue, CountedEvent
 
-
 # noinspection PyCompatibility
 from past.builtins import basestring
 
+import contextlib
 import copy
 import logging
 import threading
@@ -24,7 +22,6 @@ try:
 except:
 	# noinspection PyCompatibility
 	import Queue as queue
-
 
 regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
 regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
@@ -51,10 +48,11 @@ def process_gcode_line(line, offsets=None, current_tool=None):
 	if not len(line):
 		return None
 
-	#if offsets is not None:
+	# if offsets is not None:
 	#	line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
 
 	return line
+
 
 def normalize_command_handler_result(command, handler_results, tags_to_add=None):
 	"""
@@ -139,7 +137,7 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 		return [original]
 
 	if not isinstance(handler_results, list):
-		handler_results = [handler_results,]
+		handler_results = [handler_results, ]
 
 	result = []
 	for handler_result in handler_results:
@@ -164,7 +162,8 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 			# entry is just a string, replace command with it
 			if handler_result != original.line:
 				# command changed, swap it
-				command = Command.from_line(handler_result, type=original.type, tags=expand_tags(original.tags, tags_to_add))
+				command = Command.from_line(handler_result, type=original.type,
+				                            tags=expand_tags(original.tags, tags_to_add))
 			result.append(command)
 
 		elif isinstance(handler_result, Command):
@@ -210,85 +209,6 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 	return result
 
 
-class SendQueue(PrependableQueue):
-
-	def __init__(self, maxsize=0):
-		PrependableQueue.__init__(self, maxsize=maxsize)
-
-		self._resend_queue = PrependableQueue()
-		self._send_queue = PrependableQueue()
-		self._lookup = set()
-
-		self._resend_active = False
-
-	@property
-	def resend_active(self):
-		return self._resend_active
-
-	@resend_active.setter
-	def resend_active(self, resend_active):
-		with self.mutex:
-			self._resend_active = resend_active
-
-	def prepend(self, item, item_type=None, target=None, block=True, timeout=None):
-		PrependableQueue.prepend(self, (item, item_type, target), block=block, timeout=timeout)
-
-	def put(self, item, item_type=None, target=None, block=True, timeout=None):
-		PrependableQueue.put(self, (item, item_type, target), block=block, timeout=timeout)
-
-	def get(self, block=True, timeout=None):
-		item, _, _ = PrependableQueue.get(self, block=block, timeout=timeout)
-		return item
-
-	def _put(self, item):
-		_, item_type, target = item
-		if item_type is not None:
-			if item_type in self._lookup:
-				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
-			else:
-				self._lookup.add(item_type)
-
-		if target == "resend":
-			self._resend_queue.put(item)
-		else:
-			self._send_queue.put(item)
-
-	def _prepend(self, item):
-		_, item_type, target = item
-		if item_type is not None:
-			if item_type in self._lookup:
-				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
-			else:
-				self._lookup.add(item_type)
-
-		if target == "resend":
-			self._resend_queue.prepend(item)
-		else:
-			self._send_queue.prepend(item)
-
-	def _get(self):
-		if self.resend_active:
-			item = self._resend_queue.get(block=False)
-		else:
-			try:
-				item = self._resend_queue.get(block=False)
-			except queue.Empty:
-				item = self._send_queue.get(block=False)
-
-		_, item_type, _ = item
-		if item_type is not None:
-			if item_type in self._lookup:
-				self._lookup.remove(item_type)
-
-		return item
-
-	def _qsize(self, len=len):
-		if self.resend_active:
-			return self._resend_queue.qsize()
-		else:
-			return self._resend_queue.qsize() + self._send_queue.qsize()
-
-
 class SendToken(CountedEvent):
 
 	def __init__(self, value=0, maximum=None, **kwargs):
@@ -314,8 +234,8 @@ class SendToken(CountedEvent):
 
 
 class LineHistory(object):
-	def __init__(self, maxlen=None):
-		self.maxlen = maxlen
+	def __init__(self, max=None):
+		self.max = max
 
 		self._lines = []
 		self._mutex = threading.RLock()
@@ -354,33 +274,16 @@ class LineHistory(object):
 		return iter(self.lines)
 
 	def _cleanup(self):
-		if len(self._lines) <= self.maxlen:
+		if len(self._lines) <= self.max:
 			return
 
-		while len(self._lines) > self.maxlen:
+		while len(self._lines) > self.max:
 			_, line_number = self._lines.pop(0)
 			if line_number is not None:
 				try:
 					del self._line_number_lookup[line_number]
 				except KeyError:
 					pass
-
-
-class QueueMarker(object):
-
-	def __init__(self, callback):
-		self.callback = callback
-
-	def run(self):
-		if callable(self.callback):
-			try:
-				self.callback()
-			except:
-				logging.getLogger(__name__).exception("Error while running callback of QueueMarker")
-
-
-class SendQueueMarker(QueueMarker):
-	pass
 
 
 class PositionRecord(object):
@@ -417,6 +320,7 @@ class PositionRecord(object):
 	def as_dict(self):
 		attrs = self._standard_attrs | set([key for key in dir(self) if self.valid_e(key)])
 		return dict((attr, getattr(self, attr)) for attr in attrs)
+
 
 class TemperatureRecord(object):
 	def __init__(self):

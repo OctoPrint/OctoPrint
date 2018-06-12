@@ -16,7 +16,8 @@ from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
 
-from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendQueue, SendToken, LineHistory, QueueMarker, SendQueueMarker, PositionRecord, TemperatureRecord
+from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendToken, LineHistory, PositionRecord, TemperatureRecord
+from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, CommandQueue, SendQueue, QueueMarker, SendQueueMarker
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob
@@ -190,12 +191,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		)
 		self._protected_flags = protectedkeydict(self._internal_flags)
 
-		self._command_queue = TypedQueue()
-		self._clear_to_send = CountedEvent(max=10, name="protocol.clear_to_send")
+		self._command_queue = CommandQueue()
 		self._send_queue = SendQueue()
+		self._clear_to_send = SendToken(max=10,
+		                                name="protocol.clear_to_send")
 
 		self._current_linenumber = 1
-		self._last_lines = LineHistory(maxlen = 50)
+		self._last_lines = LineHistory(max= 50)
 		self._last_communication_error = None
 
 		# last known temperatures
@@ -947,6 +949,28 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self.state == ProtocolState.CONNECTING:
 			self.state = ProtocolState.CONNECTED
 
+		elif self.state in ProtocolState.OPERATIONAL_STATES:
+			with self.job_put_on_hold():
+				idle = self._state == ProtocolState.CONNECTED
+				if idle:
+					message = "Printer sent 'start' while already connected. External reset? " \
+					          "Resetting state to be on the safe side."
+					self.process_protocol_log(message)
+					self._logger.warn(message)
+
+					self._on_external_reset()
+
+				else:
+					message = "Printer sent 'start' while processing a job. External reset? " \
+					          "Aborting job since printer lost state."
+					self.process_protocol_log(message)
+					self._logger.warn(message)
+
+					self._on_external_reset()
+					self.cancel_processing(log_position=False)
+
+			self.notify_listeners("on_protocol_reset", idle)
+
 	def _on_comm_error(self, line, lower_line):
 		for message in self._error_messages:
 			handler_method = getattr(self, "_on_{}".format(message), None)
@@ -1143,6 +1167,29 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._internal_flags["heating_lost"] = self._internal_flags["heating_lost"] + (monotonic_time() - self._internal_flags["heating_start"])
 				self._internal_flags["heating_start"] = None
 			self._internal_flags["heating"] = False
+
+	def _on_external_reset(self):
+		with self._send_queue.blocked():
+			self._clear_to_send.clear(completely=True)
+			with self._command_queue.blocked():
+				self._command_queue.clear()
+			self._send_queue.clear()
+
+			with self._line_mutex:
+				self._current_linenumber = 0
+				self._last_lines.clear()
+
+		self.flavor = GenericFlavor
+
+		self.send_commands(self.flavor.command_hello(),
+		                   self.flavor.command_set_line(0))
+
+		if self._internal_flags["temperature_autoreporting"]:
+			self._set_autoreport_temperature_interval()
+		if self._internal_flags["sd_status_autoreporting"]:
+			self._set_autoreport_sdstatus_interval()
+		if self._internal_flags["busy_detected"]:
+			self._set_busy_protocol_interval()
 
 	##~~ Sending
 

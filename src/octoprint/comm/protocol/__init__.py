@@ -358,6 +358,9 @@ class ProtocolListener(object):
 	def on_protocol_log(self, protocol, message, *args, **kwargs):
 		pass
 
+	def on_protocol_reset(self, protocol, idle, *args, **kwargs):
+		pass
+
 	def on_protocol_job_started(self, protocol, job, *args, **kwargs):
 		pass
 
