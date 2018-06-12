@@ -738,7 +738,7 @@ class Printer(PrinterInterface,
 		return self._protocol is not None and self._protocol.state == ProtocolState.DISCONNECTED_WITH_ERROR
 
 	def is_ready(self, *args, **kwargs):
-		return self.is_operational() and not self._protocol.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED)
+		return self.is_operational() and not self._protocol.state in ProtocolState.PROCESSING_STATES
 
 	def is_sd_ready(self, *args, **kwargs):
 		if not settings().getBoolean(["feature", "sdSupport"]) or self._protocol is None:
