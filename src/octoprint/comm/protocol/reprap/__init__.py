@@ -237,6 +237,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# mutexes
 		self._line_mutex = threading.RLock()
 		self._send_queue_mutex = threading.RLock()
+		self._pause_mutex = threading.RLock()
 		self._cancel_mutex = threading.RLock()
 		self._suppress_scripts_mutex = threading.RLock()
 
@@ -848,7 +849,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._finish_heatup()
 
-		if not self.state in (ProtocolState.PROCESSING, ProtocolState.CONNECTED, ProtocolState.PAUSED):
+		if not self.state in ProtocolState.OPERATIONAL_STATES:
 			return
 
 		# process ongoing resend requests and queues if we are operational
