@@ -291,7 +291,7 @@ class GenericFlavor(object):
 				# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
 				pass
 
-		heatup_detected = not lower_line.startswith("ok") and not flags["heating"]
+		heatup_detected = not lower_line.startswith("ok") and not flags["heating"] and not flags["temperature_autoreporting"]
 
 		return dict(max_tool_num=max(max_tool_num, current_tool),
 		            temperatures=cls._canonicalize_temperatures(result, current_tool),
