@@ -302,7 +302,7 @@ class Printer(PrinterInterface,
 
 		# TODO make this depend on the printer profile
 		from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
-		protocol = ReprapGcodeProtocol()
+		protocol = ReprapGcodeProtocol(plugin_manager=plugin_manager())
 		protocol.register_listener(self)
 
 		self._transport = transport
@@ -327,22 +327,20 @@ class Printer(PrinterInterface,
 		eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self, *args, **kwargs):
-
-		if self._comm is None:
+		if self._protocol is None:
 			return None
-
-		return self._comm.getTransport()
+		return self._protocol.transport
 	getTransport = util.deprecated("getTransport has been renamed to get_transport", since="1.2.0-dev-590", includedoc="Replaced by :func:`get_transport`")
 
 	def job_on_hold(self, blocking=True, *args, **kwargs):
-		if self._comm is None:
+		if self._protocol is None:
 			raise RuntimeError("No connection to the printer")
-		return self._comm.job_put_on_hold(blocking=blocking)
+		return self._protocol.job_put_on_hold(blocking=blocking)
 
 	def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
-		if self._comm is None:
+		if self._protocol is None:
 			raise RuntimeError("No connection to the printer")
-		return self._comm.set_job_on_hold(value, blocking=blocking)
+		return self._protocol.set_job_on_hold(value, blocking=blocking)
 
 	def fake_ack(self, *args, **kwargs):
 		if self._protocol is None:
@@ -360,7 +358,7 @@ class Printer(PrinterInterface,
 		if not isinstance(commands, (list, tuple)):
 			commands = [commands]
 
-		self._protocol.send_commands(*commands)
+		self._protocol.send_commands(*commands, **kwargs)
 
 	def script(self, name, context=None, must_be_set=True, *args, **kwargs):
 		if self._protocol is None:
@@ -1133,6 +1131,11 @@ class Printer(PrinterInterface,
 			eventManager().fire(Events.Z_CHANGE, dict(new=z, old=old_z))
 
 		self._set_current_z(z)
+
+	def on_protocol_position_all_update(self, protocol, position, *args, **kwargs):
+		payload = dict(reason=kwargs.get("reason", None))
+		payload.update(position)
+		eventManager().fire(Events.POSITION_UPDATE, payload)
 
 	#~~ octoprint.comm.protocol.JobAwareProtocolListener implementation
 

@@ -110,7 +110,7 @@ class GenericFlavor(object):
 	def comm_timeout(cls, line, lower_line, state, flags):
 		now = monotonic_time()
 		return ((line == "" and now > flags["timeout"]) or (flags["expect_continous_comms"]
-		                                                    #and not flags["job_on_hold"] # TODO job on hold
+		                                                    and not flags["job_on_hold"]
 		                                                    and not flags["long_running_command"]
 		                                                    and not flags["heating"]
 		                                                    and now > flags["ok_timeout"])) and \

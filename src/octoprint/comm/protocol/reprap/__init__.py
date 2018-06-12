@@ -87,15 +87,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def get_attributes_starting_with(cls, prefix):
 		return dict((x, getattr(cls, x)) for x in dir(cls) if x.startswith(prefix))
 
-	def __init__(self, flavor=None,
+	def __init__(self,
+	             flavor=None,
 	             connection_timeout=30.0,
 	             communication_timeout=10.0,
 	             communication_busy_timeout=2.0,
 	             temperature_interval_idle=5.0,
 	             temperature_interval_printing=5.0,
 	             temperature_interval_autoreport=2.0,
-	             sd_status_interval_autoreport=1.0):
+	             sd_status_interval_autoreport=1.0,
+	             plugin_manager=None):
 		super(ReprapGcodeProtocol, self).__init__()
+
+		self._plugin_manager = plugin_manager
 
 		self._logger = logging.getLogger(__name__)
 		self._commdebug_logger = logging.getLogger("COMMDEBUG")
@@ -165,6 +169,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			trigger_events=True,
 			expect_continous_comms=False,
 			ignore_ok=0,
+			job_on_hold=property(lambda: self.job_on_hold),
 
 			# timeout
 			timeout = None,
@@ -207,18 +212,27 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._record_cancel_data = False
 
 		# hooks
-		# TODO GCODE Hooks
-		self._gcode_hooks = dict(queuing=dict(),
-		                         queued=dict(),
-		                         sending=dict(),
-		                         sent=dict())
+		self._gcode_hooks = dict(queuing=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.queuing"),
+		                         queued=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.queued"),
+		                         sending=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.sending"),
+		                         sent=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.sent"),
+		                         receiving=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.receiving")) # TODO receiving hook
 
-		# TODO atcommand hooks
-		self._atcommand_hooks = dict(queuing=dict(),
-		                             sending=dict())
+		self._error_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.error") # TODO error hook
 
-		# TODO action hooks
-		self._action_hooks = dict()
+		self._atcommand_hooks = dict(queuing=self._plugin_manager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
+		                             sending=self._plugin_manager.get_hooks("octoprint.comm.protocol.atcommand.sending")),
+
+		self._action_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.action")
+
+		self._script_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.scripts") # TODO script hook
+
+		self._temperature_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.temperatures.received") # TODO temperature hook
+
+		self._firmware_info_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.info") # TODO firmware info hook
+
+		self._firmware_cap_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.capabilities") # TODO firmware cap hook
+
 
 		# polling
 		self._temperature_poller = None
@@ -527,8 +541,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			else:
 				return to_command(c, type=ct, tags=t)
 
-		# TODO job on hold
-		if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not force:
+		if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not self.job_on_hold and not force:
 			if len(commands) > 1:
 				command_type = None
 			for command in commands:
@@ -660,6 +673,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._internal_flags["only_from_job"] = False
 		self._internal_flags["trigger_events"] = True
 		self._job.unregister_listener(self)
+
+	def _job_on_hold_cleared(self):
+		self._continue_sending()
 
 	##~~ Transport logging
 
@@ -864,7 +880,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._logger.info("Ignoring next ok, counter is now at {}".format(self._internal_flags["ignore_ok"]))
 
 	def _on_comm_wait(self):
-		if self.state == ProtocolState.PROCESSING:
+		if self.state == ProtocolState.PROCESSING and not self.job_on_hold:
 			self._on_comm_ok(wait=True)
 
 	def _on_comm_resend(self, linenumber):
@@ -1147,9 +1163,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					# we found something in the queue to send
 					return True
 
-				# TODO job on hold
-				#elif self.job_on_hold:
-				#	return False
+				elif self.job_on_hold:
+					return False
 
 				elif self._send_next_from_job():
 					# we sent the next line from the file
@@ -1208,10 +1223,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					# we are no longer printing, return False
 					return False
 
-				# TODO job on hold
-				#elif self.job_on_hold:
-				#	# job is on hold, return false
-				#	return False
+				elif self.job_on_hold:
+					# job is on hold, return false
+					return False
 
 				line = self._job.get_next()
 				if line is None:
@@ -1519,7 +1533,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._log_command_phase(phase, command)
 
-		if phase not in ("queueing", "queued", "sending", "sent"):
+		if phase not in ("queuing", "queued", "sending", "sent"):
 			return results
 
 		# send it through the phase specific handlers provided by plugins

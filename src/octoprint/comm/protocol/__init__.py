@@ -8,8 +8,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 from octoprint.util.listener import ListenerAware
 from octoprint.comm.transport import TransportListener, TransportState
 
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode, CountedEvent
 
+import contextlib
 import logging
 
 class Protocol(ListenerAware, TransportListener):
@@ -25,6 +26,46 @@ class Protocol(ListenerAware, TransportListener):
 
 		self._job = None
 		self._transport = None
+
+		self._job_on_hold = CountedEvent()
+
+	@contextlib.contextmanager
+	def job_put_on_hold(self, blocking=True):
+		if not self._job_on_hold.acquire(blocking=blocking):
+			raise RuntimeError("Could not acquire job_on_hold lock")
+
+		self._job_on_hold.set()
+		try:
+			yield
+		finally:
+			self._job_on_hold.clear()
+			if self._job_on_hold.counter == 0:
+				self._job_on_hold_cleared()
+			self._job_on_hold.release()
+
+	@property
+	def job_on_hold(self):
+		return self._job_on_hold.counter > 0
+
+	def set_job_on_hold(self, value, blocking=True):
+		if not self._job_on_hold.acquire(blocking=blocking):
+			return False
+
+		try:
+			if value:
+				self._job_on_hold.set()
+			else:
+				self._job_on_hold.clear()
+				if self._job_on_hold.counter == 0:
+					self._job_on_hold_cleared()
+		finally:
+			self._job_on_hold.release()
+
+		return True
+
+	@property
+	def transport(self):
+		return self._transport
 
 	@property
 	def state(self):
@@ -166,6 +207,10 @@ class Protocol(ListenerAware, TransportListener):
 	def process_protocol_log(self, message):
 		self._protocol_logger.info(message)
 		self.notify_listeners("on_protocol_log", self, message)
+
+	def _job_on_hold_cleared(self):
+		pass
+
 
 	def __str__(self):
 		return self.__class__.__name__
@@ -368,4 +413,13 @@ class PositionAwareProtocolListener(object):
 		pass
 
 	def on_protocol_position_z_update(self, protocol, z, *args, **kwargs):
+		pass
+
+
+class FirmwareDataAwareProtocolListener(object):
+
+	def on_protocol_firmware_info(self, protocol, info, *args, **kwargs):
+		pass
+
+	def on_protocol_firmware_capability(self, protocol, capability, enabled, capabilities, *args, **kwargs):
 		pass
