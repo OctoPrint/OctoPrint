@@ -647,24 +647,29 @@ class Printer(PrinterInterface,
 		return "Unknown state ({})".format(self._protocol.state)
 
 	def get_state_id(self, state=None, *args, **kwargs):
-		if self._comm is None:
-			return "OFFLINE"
-		else:
-			if state is None:
-				state = self._protocol.state
-
-			if state == ProtocolState.DISCONNECTED:
+		if state is None:
+			if self._protocol is None:
 				return "OFFLINE"
-			elif state == ProtocolState.CONNECTING:
-				return "CONNECTING"
-			elif state == ProtocolState.CONNECTED:
-				return "OPERATIONAL"
-			elif state == ProtocolState.PROCESSING:
-				return "PRINTING"
-			elif state == ProtocolState.PAUSED:
-				return "PAUSED"
-			elif state == ProtocolState.DISCONNECTED_WITH_ERROR:
-				return "CLOSED_WITH_ERROR"
+			state = self._protocol.state
+
+		if state == ProtocolState.DISCONNECTED:
+			return "OFFLINE"
+		elif state == ProtocolState.CONNECTING:
+			return "CONNECTING"
+		elif state == ProtocolState.CONNECTED:
+			return "OPERATIONAL"
+		elif state == ProtocolState.PROCESSING:
+			return "PRINTING"
+		elif state == ProtocolState.PAUSING:
+			return "PAUSING"
+		elif state == ProtocolState.PAUSED:
+			return "PAUSED"
+		elif state == ProtocolState.RESUMING:
+			return "RESUMING"
+		elif state == ProtocolState.FINISHING:
+			return "FINISHING"
+		elif state == ProtocolState.DISCONNECTED_WITH_ERROR:
+			return "CLOSED_WITH_ERROR"
 
 	def get_current_data(self, *args, **kwargs):
 		return util.thaw_frozendict(self._state_monitor.get_current_data())
