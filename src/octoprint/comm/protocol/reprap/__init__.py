@@ -603,7 +603,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					if temp > threshold:
 						return self.interval.get("temperature_target_set", target_default)
 
-				bed = self.last_temperatur.bed
+				bed = self._internal_flags["temperatures"].bed
 				if bed and len(bed) > 0 and bed[1] > threshold:
 					return self.interval.get("temperature_target_set", target_default)
 
