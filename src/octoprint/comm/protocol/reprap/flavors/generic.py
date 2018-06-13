@@ -109,26 +109,29 @@ class GenericFlavor(object):
 	@classmethod
 	def comm_timeout(cls, line, lower_line, state, flags):
 		now = monotonic_time()
-		return ((line == "" and now > flags["timeout"]) or (flags["expect_continous_comms"]
-		                                                    and not flags["job_on_hold"]
-		                                                    and not flags["long_running_command"]
-		                                                    and not flags["heating"]
-		                                                    and now > flags["ok_timeout"])) and \
-		       (not cls.block_while_dwelling or not flags["dwelling_until"] or now > flags["dwelling_until"])
+		matches = ((line == "" and now > flags["timeout"]) or (flags["expect_continous_comms"]
+		                                                       and not flags["job_on_hold"]
+		                                                       and not flags["long_running_command"]
+		                                                       and not flags["heating"]
+		                                                       and now > flags["ok_timeout"])) and \
+		          (not cls.block_while_dwelling or not flags["dwelling_until"] or now > flags["dwelling_until"])
+		continue_further = line != ""
+		return matches, continue_further
 
 	@classmethod
 	def comm_ok(cls, line, lower_line, state, flags):
-		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state, flags) \
+		return lower_line.startswith("ok"), \
+		       cls.message_temperature(line, lower_line, state, flags) \
 		       or cls.message_position(line, lower_line, state, flags) \
 		       or cls.message_firmware_info(line, lower_line, state, flags)
 
 	@classmethod
 	def comm_start(cls, line, lower_line, state, flags):
-		return lower_line.startswith("start")
+		return lower_line == "start"
 
 	@classmethod
 	def comm_wait(cls, line, lower_line, state, flags):
-		return lower_line.startswith("wait")
+		return lower_line == "wait"
 
 	@classmethod
 	def comm_resend(cls, line, lower_line, state, flags):

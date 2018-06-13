@@ -10,6 +10,7 @@ from .parameters import get_param_dict
 import logging
 import time
 
+from octoprint.util import monotonic_time
 from octoprint.util.listener import ListenerAware
 from octoprint.plugin import plugin_manager
 
@@ -113,6 +114,10 @@ class Transport(ListenerAware):
 		self.do_write(data)
 		self.notify_listeners("on_transport_log_sent_data", self, data)
 
+	@property
+	def in_waiting(self):
+		return 0
+
 	def do_read(self, size=None, timeout=None):
 		return b""
 
@@ -172,45 +177,54 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
 	unforwarded_handlers = ["on_transport_log_received_data"]
 	"""We have read overwritten and hence send our own received_data notification."""
 
-	def __init__(self, transport, separator, internal_timeout=0.1):
+	def __init__(self, transport, terminator):
 		TransportWrapper.__init__(self, transport)
 
-		self.separator = separator
-		self.internal_timeout = internal_timeout
+		self.terminator = terminator
 
-		self._buffered = b""
+		self._buffered = bytearray()
 
 	def read(self, size=None, timeout=None):
+		start = monotonic_time()
+		termlen = len(self.terminator)
 		data = self._buffered
-		self._buffered = b""
 
-		rest = timeout
-		while self.separator not in data and (rest is None or rest > 0):
-			start = time.time()
-			read = self.transport.read(1, timeout=self.internal_timeout)
-			end = time.time()
+		while True:
+			# make sure we always read everything that is waiting
+			data += bytearray(self.transport.read(self.transport.in_waiting))
 
-			if rest is not None:
-				rest -= end - start if end > start else 0
-				if rest < 0:
-					rest = 0
+			# check for terminator, if it's there we have found our line
+			termpos = data.find(self.terminator)
+			if termpos >= 0:
+				# line: everything up to and incl. the terminator
+				line = data[:termpos + termlen]
 
-			if read is None:
+				# buffered: everything after the terminator
+				self._buffered = data[termpos + termlen:]
+
+				received = bytes(line)
+				self.notify_listeners("on_transport_log_received_data", self, received)
+				return received
+
+			# check if timeout expired
+			if timeout and monotonic_time() > start + timeout:
+				break
+
+			# if we arrive here we so far couldn't read a full line, wait for more data
+			c = self.transport.read(1)
+			if not c:
 				# EOF
 				break
-			data += read
 
-		if rest is not None and rest <= 0:
-			# couldn't read a full line within the timeout, returning empty line and
-			# buffering already read data
-			self._buffered = data
-			data = b""
+			# add to data and loop
+			data += c
 
-		self.notify_listeners("on_transport_log_received_data", self, data)
-		return data
+		self._buffered = data
+
+		raise TimeoutTransportException()
 
 	def __str__(self):
-		return "SeparatorAwareTransportWrapper({}, separator={})".format(self.transport, self.separator)
+		return "SeparatorAwareTransportWrapper({}, separator={})".format(self.transport, self.terminator)
 
 class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 
@@ -256,6 +270,8 @@ class PushingTransportWrapper(TransportWrapper):
 			try:
 				data = self.transport.read(timeout=self.timeout)
 				self.notify_listeners("on_transport_data_pushed", self, data)
+			except TimeoutTransportException as ex:
+				self.notify_listeners("on_transport_data_exception", self, ex)
 			except:
 				if self._receiver_active:
 					raise
@@ -285,3 +301,14 @@ class PushingTransportWrapperListener(object):
 	def on_transport_data_pushed(self, transport, data):
 		pass
 
+	def on_transport_data_exception(self, transport, exception):
+		pass
+
+class TransportException(Exception):
+	pass
+
+class TimeoutTransportException(TransportException):
+	pass
+
+class EofTransportException(TransportException):
+	pass

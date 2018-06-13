@@ -22,4 +22,8 @@ class Script(object):
 		render_context = dict(self.context)
 		render_context.update(context)
 
-		return self.renderer(render_context).split("\n")
+		content = self.renderer(render_context)
+		if content is None:
+			return None
+
+		return content.split("\n")

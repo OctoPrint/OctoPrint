@@ -18,7 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer
+from octoprint.util import RepeatedTimer, monotonic_time
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -52,7 +52,7 @@ class VirtualPrinter(object):
 		self._rx_buffer_size = settings().getInt(["devel", "virtualPrinter", "rxBuffer"])
 
 		self.incoming = CharCountingQueue(self._rx_buffer_size, name="RxBuffer")
-		self.outgoing = queue.Queue()
+		self.outgoing = Outgoing()
 		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
@@ -83,7 +83,7 @@ class VirtualPrinter(object):
 		self.targetTemp = [0.0] * self.temperatureCount
 		self.bedTemp = self._ambient_temperature
 		self.bedTargetTemp = 0.0
-		self.lastTempAt = time.time()
+		self.lastTempAt = monotonic_time()
 
 		self._relative = True
 		self._lastX = 0.0
@@ -169,7 +169,7 @@ class VirtualPrinter(object):
 
 	def _reset(self):
 		self._clearQueue(self.incoming)
-		self._clearQueue(self.outgoing)
+		self.outgoing = bytearray("")
 		self._clearQueue(self.buffered)
 
 		self._relative = True
@@ -262,7 +262,7 @@ class VirtualPrinter(object):
 			pass
 
 	def _processIncoming(self):
-		next_wait_timeout = time.time() + self._waitInterval
+		next_wait_timeout = monotonic_time() + self._waitInterval
 		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
@@ -275,9 +275,9 @@ class VirtualPrinter(object):
 				data = self.incoming.get(timeout=0.01)
 				self.incoming.task_done()
 			except queue.Empty:
-				if self._sendWait and time.time() > next_wait_timeout:
+				if self._sendWait and monotonic_time() > next_wait_timeout:
 					self._send("wait")
-					next_wait_timeout = time.time() + self._waitInterval
+					next_wait_timeout = monotonic_time() + self._waitInterval
 				continue
 
 			buf += data
@@ -287,7 +287,7 @@ class VirtualPrinter(object):
 			else:
 				continue
 
-			next_wait_timeout = time.time() + self._waitInterval
+			next_wait_timeout = monotonic_time() + self._waitInterval
 
 			if data is None:
 				continue
@@ -638,8 +638,8 @@ class VirtualPrinter(object):
 			_timeout = float(matchS.group(1))
 
 		if self._sendBusy and self._busyInterval > 0:
-			until = time.time() + _timeout
-			while time.time() < until:
+			until = monotonic_time() + _timeout
+			while monotonic_time() < until:
 				time.sleep(self._busyInterval)
 				self._send("busy:processing")
 		else:
@@ -1098,7 +1098,7 @@ class VirtualPrinter(object):
 		try:
 			handle = open(file, "w")
 		except:
-			self._output("error writing to file")
+			self._send("error writing to file")
 			if handle is not None:
 				try:
 					handle.close()
@@ -1118,7 +1118,7 @@ class VirtualPrinter(object):
 			self._writingToSdHandle = None
 		self._writingToSd = False
 		self._selectedSdFile = None
-		self._output("Done saving file")
+		self._send("Done saving file")
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
@@ -1162,12 +1162,12 @@ class VirtualPrinter(object):
 			self._selectedSdFilePos = 0
 			self._sdPrinting = False
 			self._sdPrinter = None
-			self._output("Done printing file")
+			self._send("Done printing file")
 
 	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
 		delay = 1
-		last_busy = time.time()
+		last_busy = monotonic_time()
 
 		self._heatingUp = True
 		try:
@@ -1183,10 +1183,10 @@ class VirtualPrinter(object):
 
 			while not self._killed and self._heatingUp and test():
 				self._simulateTemps(delta=delta)
-				self._output(output())
-				if self._sendBusy and time.time() - last_busy >= self._busyInterval:
-					self._output("echo:busy: processing")
-					last_busy = time.time()
+				self._send(output())
+				if self._sendBusy and monotonic_time() - last_busy >= self._busyInterval:
+					self._send("echo:busy: processing")
+					last_busy = monotonic_time()
 				time.sleep(delay)
 		except AttributeError:
 			if self.outgoing is not None:
@@ -1202,8 +1202,8 @@ class VirtualPrinter(object):
 			os.remove(f)
 
 	def _simulateTemps(self, delta=0.5):
-		timeDiff = self.lastTempAt - time.time()
-		self.lastTempAt = time.time()
+		timeDiff = self.lastTempAt - monotonic_time()
+		self.lastTempAt = monotonic_time()
 
 		def simulate(actual, target, ambient):
 			if target > 0 and abs(actual - target) > delta:
@@ -1245,13 +1245,6 @@ class VirtualPrinter(object):
 
 		self._logger.info("Closing down buffer loop")
 
-	def _output(self, line):
-		try:
-			self.outgoing.put(line)
-		except:
-			if self.outgoing is None:
-				pass
-
 	def write(self, data):
 		if self._debug_awol:
 			return len(data)
@@ -1277,9 +1270,7 @@ class VirtualPrinter(object):
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
 
-	def read(self, size=None):
-		from octoprint.util import to_str
-
+	def read(self, size=1):
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
@@ -1302,16 +1293,11 @@ class VirtualPrinter(object):
 			# use the full read timeout as timeout
 			timeout = self._read_timeout
 
-		try:
-			# fetch a line from the queue, wait no longer than timeout
-			line = self.outgoing.get(timeout=timeout)
-			self._seriallog.info(">>> {}".format(line.strip()))
-			return to_str(line) + b"\n"
-		except queue.Empty:
-			return ""
+		return self.outgoing.read(size=size, timeout=timeout)
 
-	def readline(self):
-		return self.read()
+	@property
+	def in_waiting(self):
+		return self.outgoing.in_waiting
 
 	def close(self):
 		self._killed = True
@@ -1332,8 +1318,16 @@ class VirtualPrinter(object):
 			self._send("wait")
 
 	def _send(self, line):
-		if self.outgoing is not None:
-			self.outgoing.put(line)
+		if not line.endswith("\n"):
+			line += "\n"
+
+		try:
+			self.outgoing.write(line)
+		except:
+			if self.outgoing is None:
+				pass
+			else:
+				raise
 
 	def _ok(self):
 		ok = self._okFormatString
@@ -1346,6 +1340,40 @@ class VirtualPrinter(object):
 
 	def _error(self, error, *args, **kwargs):
 		return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
+
+class Outgoing(object):
+	def __init__(self):
+		self._outgoing = bytearray()
+		self._mutex = threading.RLock()
+		self._event = threading.Event()
+
+	@property
+	def in_waiting(self):
+		with self._mutex:
+			return len(self._outgoing)
+
+	def read(self, size=1, timeout=0):
+		start = monotonic_time()
+
+		result = bytearray()
+		while len(result) < size:
+			if self.in_waiting >= size:
+				with self._mutex:
+					result.extend(self._outgoing[:size])
+					self._outgoing = self._outgoing[size:]
+					if not len(self._outgoing):
+						self._event.clear()
+				return bytes(result)
+			self._event.wait(start + timeout - monotonic_time())
+			if start + timeout < monotonic_time():
+				break
+
+		return bytes("")
+
+	def write(self, data):
+		with self._mutex:
+			self._outgoing.extend(data)
+			self._event.set()
 
 class CharCountingQueue(queue.Queue):
 
@@ -1376,9 +1404,9 @@ class CharCountingQueue(queue.Queue):
 			elif timeout < 0:
 				raise ValueError("'timeout' must be a positive number")
 			else:
-				endtime = time.time() + timeout
+				endtime = monotonic_time() + timeout
 				while not self._will_it_fit(item):
-					remaining = endtime - time.time()
+					remaining = endtime - monotonic_time()
 					if remaining <= 0.0:
 						raise queue.Full
 					self.not_full.wait(remaining)

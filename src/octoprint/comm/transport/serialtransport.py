@@ -26,10 +26,10 @@ class SerialTransport(Transport):
 	def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
 		patterns = SerialTransport.unix_port_patterns + additional_ports
 		baudrates = SerialTransport.suggested_baudrates + additional_baudrates
-		return type(cls.__name__ + "WithAdditionalPorts",
+		return type(cls.__name__ + b"WithAdditionalPorts",
 		            (cls,),
-		            {"unix_port_patterns": patterns,
-		             "suggested_baudrates": baudrates})
+		            {b"unix_port_patterns": patterns,
+		             b"suggested_baudrates": baudrates})
 
 	@classmethod
 	def get_connection_options(cls):
@@ -140,12 +140,16 @@ class SerialTransport(Transport):
 
 			if old_written == written:
 				passes += 1
-				if passes > self.__class__.max_write_passes:
+				if passes > self.max_write_passes:
 					message = "Could not write anything to the serial port in {} tries, something appears to be " \
-					          "wrong with the printer communication".format(self.__class__.max_write_passes)
+					          "wrong with the printer communication".format(self.max_write_passes)
 					self._logger.error(message)
 					self.disconnect(error=message)
 					break
+
+	@property
+	def in_waiting(self):
+		return getattr(self._serial, "in_waiting", 0)
 
 	def __str__(self):
 		return "SerialTransport"

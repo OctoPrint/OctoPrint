@@ -8,7 +8,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 from octoprint.comm.protocol import Protocol, ThreeDPrinterProtocolMixin, FileStreamingProtocolMixin, \
 	MotorControlProtocolMixin, FanControlProtocolMixin, ProtocolState
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, \
-	PushingTransportWrapper, PushingTransportWrapperListener, TransportListener
+	PushingTransportWrapper, PushingTransportWrapperListener, TransportListener, TimeoutTransportException, \
+	EofTransportException
 
 from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
@@ -700,6 +701,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			return
 		self._receive(data)
 
+	def on_transport_data_exception(self, transport, exception):
+		if transport != self._transport:
+			return
+
+		if isinstance(exception, TimeoutTransportException):
+			self._receive("")
+		elif isinstance(exception, EofTransportException):
+			self._receive(None)
+
 	def _receive(self, data):
 		if data is None:
 			# EOF
@@ -729,9 +739,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			# match line against flavor specific matcher
 			matches = getattr(self.flavor, message)(line, lower_line, self._state, self._protected_flags)
-			continue_further = False
 			if isinstance(matches, tuple) and len(matches) == 2:
 				matches, continue_further = matches
+			else:
+				continue_further = not matches
 
 			if matches:
 				if not any_processed:
@@ -772,11 +783,20 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						continue
 					else:
 						break
+
+			elif not continue_further:
+				break
+
 		else:
 			# unknown message
 			pass
 
 	def _on_comm_any(self):
+		offsets = [self.timeouts.get("communication_busy" if self._internal_flags["busy_detected"] else "communication", 0.0),]
+		if self._temperature_poller:
+			offsets.append(self._temperature_poller.interval())
+		self._internal_flags["timeout"] = self._get_max_timeout(*offsets)
+
 		if self.state == ProtocolState.CONNECTING:
 			hello = self.flavor.command_hello()
 			if hello:
@@ -1939,6 +1959,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			return monotonic_time() + self.timeouts[timeout_type]
 		else:
 			return monotonic_time()
+
+	def _get_max_timeout(self, *offsets):
+		if len(offsets) == 0:
+			offsets = (0.0,)
+		return monotonic_time() + max(offsets)
 
 	def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
 		log = u"Last lines in terminal:\n" + u"\n".join(map(lambda x: u"| {}".format(x), list(self._terminal_log)))
