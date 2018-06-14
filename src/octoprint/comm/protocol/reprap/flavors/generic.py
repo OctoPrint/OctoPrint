@@ -120,10 +120,12 @@ class GenericFlavor(object):
 
 	@classmethod
 	def comm_ok(cls, line, lower_line, state, flags):
-		return lower_line.startswith("ok"), \
-		       cls.message_temperature(line, lower_line, state, flags) \
-		       or cls.message_position(line, lower_line, state, flags) \
-		       or cls.message_firmware_info(line, lower_line, state, flags)
+		matches = lower_line.startswith("ok")
+		continue_further = not matches \
+		                   or cls.message_temperature(line, lower_line, state, flags) \
+		                   or cls.message_position(line, lower_line, state, flags) \
+		                   or cls.message_firmware_info(line, lower_line, state, flags)
+		return matches, continue_further
 
 	@classmethod
 	def comm_start(cls, line, lower_line, state, flags):
