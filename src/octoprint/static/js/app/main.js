@@ -49,7 +49,8 @@ $(function() {
 
                     mobile: false,
                     desktop: false
-                }
+                },
+                viewmodels: {}
             };
 
             var browserVisibilityCallbacks = [];
@@ -400,6 +401,7 @@ $(function() {
             pass++;
         }
         log.info("... dependency resolution done");
+        OctoPrint.coreui.viewmodels = viewModelMap;
 
         //~~ some additional hooks and initializations
 
