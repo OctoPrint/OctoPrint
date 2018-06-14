@@ -126,7 +126,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
 		flavor_error_attrs = self.get_flavor_attributes_starting_with(self.flavor, "error_")
 
+		self._comm_messages = flavor_comm_attrs
 		self._registered_messages = flavor_comm_attrs + flavor_message_attrs
+		self._current_registered_messages = self._registered_messages
 		self._error_messages = flavor_error_attrs
 
 		self._handlers_gcode = self.get_attributes_starting_with("_gcode_")
@@ -303,9 +305,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if isinstance(job, LocalGcodeStreamjob):
 			self._internal_flags["only_from_job"] = True
 			self._internal_flags["trigger_events"] = False
+			self._current_registered_messages = self._comm_messages
 		else:
 			self._internal_flags["only_from_job"] = False
 			self._internal_flags["trigger_events"] = True
+			self._current_registered_messages = self._registered_messages
 		self._internal_flags["expect_continous_comms"] = not job.parallel
 
 		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
@@ -734,7 +738,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		any_processed = False
 
-		for message in self._registered_messages: # flavor.comm_* + flavor.message_*
+		for message in self._current_registered_messages:
 			handler_method = getattr(self, "_on_{}".format(message), None)
 			if not handler_method:
 				# no handler, nothing to do
@@ -1983,7 +1987,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
 		flavor_error_attrs = self.get_flavor_attributes_starting_with(self.flavor, "error_")
 
+		self._comm_messages = flavor_comm_attrs
 		self._registered_messages = flavor_comm_attrs + flavor_message_attrs
+		self._current_registered_messages = self._registered_messages
 		self._error_messages = flavor_error_attrs
 
 
