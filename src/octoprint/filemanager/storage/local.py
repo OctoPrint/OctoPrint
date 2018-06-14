@@ -444,7 +444,7 @@ class LocalFileStorage(Storage):
 		return LocalGcodeFilePrintjob(self.path_on_disk(path),
 		                              "local",
 		                              self.path_in_storage(path),
-		                              name=path,
+		                              name=self.path_in_storage(path),
 		                              user=user,
 		                              event_data=dict(path=path,
 		                                              name=self.split_path(path)[1],

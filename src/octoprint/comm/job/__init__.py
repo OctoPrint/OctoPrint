@@ -6,7 +6,7 @@ import os
 import time
 import copy
 
-from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState
+from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState, FileManagementProtocolMixin
 
 from octoprint.util.listener import ListenerAware
 
@@ -118,14 +118,17 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	def process_job_done(self):
 		self.notify_listeners("on_job_done", self)
+		self.report_stats()
 		self.reset_job()
 
 	def process_job_failed(self):
 		self.notify_listeners("on_job_failed", self)
+		self.report_stats()
 		self.reset_job()
 
 	def process_job_cancelled(self):
 		self.notify_listeners("on_job_cancelled", self)
+		self.report_stats()
 		self.reset_job()
 
 	def process_job_paused(self):
@@ -136,6 +139,11 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	def process_job_progress(self):
 		self.notify_listeners("on_job_progress", self)
+
+	def report_stats(self):
+		elapsed = self.elapsed
+		if elapsed:
+			self._logger.info("Job processed in {}s".format(elapsed))
 
 	def reset_job(self):
 		self._start = None
@@ -296,6 +304,14 @@ class LocalFilePrintjob(StoragePrintjob):
 		self.close()
 		self._pos = self._read_lines = 0
 
+	def report_stats(self):
+		elapsed = self.elapsed
+		lines = self._read_lines
+
+		if elapsed and lines:
+			self._logger.info("Job processed in {:.3f}s ({} lines)".format(elapsed, lines))
+
+
 class LocalGcodeFilePrintjob(LocalFilePrintjob):
 
 	def can_process(self, protocol):
@@ -319,15 +335,66 @@ class LocalGcodeFilePrintjob(LocalFilePrintjob):
 		return processed
 
 
-class LocalGcodeStreamjob(LocalGcodeFilePrintjob):
+class CopyJobMixin(object):
+	pass
+
+
+class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
+
+	@classmethod
+	def from_job(cls, job, remote):
+		if not isinstance(job, LocalGcodeFilePrintjob):
+			raise ValueError("job must be a LocalGcodeFilePrintjob")
+
+		path = job._path
+		storage = job._storage
+		path_in_storage = job._path_in_storage
+		name = job._name
+		user = job._user
+		encoding = job._encoding
+		event_data = job._event_data
+
+		return cls(remote, path, storage, path_in_storage,
+		           name=name, user=user, encoding=encoding, event_data=event_data)
+
+	def __init__(self, remote, *args, **kwargs):
+		super(LocalGcodeStreamjob, self).__init__(*args, **kwargs)
+		self._remote = remote
+
+	@property
+	def remote(self):
+		return self._remote
+
+	def process(self, protocol, position=0, tags=None):
+		super(LocalGcodeStreamjob, self).process(protocol, position=position, tags=tags)
+		self._protocol.record_file(self._remote)
+
+	def process_job_done(self):
+		self._protocol.stop_recording_file()
+		super(LocalGcodeStreamjob, self).process_job_done()
+
+	def process_job_failed(self):
+		self._protocol.stop_recording_file()
+		super(LocalGcodeStreamjob, self).process_job_failed()
+
+	def process_job_cancelled(self):
+		self._protocol.stop_recording_file()
+		self._protocol.delete_file(self.remote)
+		super(LocalGcodeStreamjob, self).process_job_cancelled()
 
 	def can_process(self, protocol):
 		from octoprint.comm.protocol import FileStreamingProtocolMixin
-		return LocalGcodeStreamjob in protocol.supported_jobs and isinstance(protocol, FileStreamingProtocolMixin)
+		return LocalGcodeStreamjob in protocol.supported_jobs and isinstance(protocol, FileStreamingProtocolMixin) and isinstance(protocol, FileManagementProtocolMixin)
 
-	def process_line(self, line):
-		# we do not change anything for sd file streaming
-		return line
+	def report_stats(self):
+		elapsed = self.elapsed
+		lines = self._read_lines
+
+		if elapsed and lines:
+			self._logger.info("Job processed in {:.3f}s ({} lines). Approx. {:.3f} lines/s, {:.3f} ms/line".format(elapsed,
+			                                                                                                       lines,
+			                                                                                                       float(lines) / float(elapsed),
+			                                                                                                       float(elapsed) * 1000.0 / float(lines)))
 
 
 class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
@@ -387,16 +454,16 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._status_timer = RepeatedTimer(self._status_interval, self._query_status, condition=self._query_active)
 		self._status_timer.start()
 
-	def on_protocol_file_status(self, protocol, pos, total):
+	def on_protocol_file_status(self, protocol, pos, total, *args, **kwargs):
 		self._last_pos = pos
 		self._size = total
 		self.process_job_progress()
 
-	def on_protocol_file_print_started(self, protocol, name, size):
+	def on_protocol_file_print_started(self, protocol, name, size, *args, **kwargs):
 		self._size = size
 		self.process_job_started()
 
-	def on_protocol_file_print_done(self, protocol):
+	def on_protocol_file_print_done(self, protocol, *args, **kwargs):
 		self.process_job_done()
 
 	def reset_job(self):

@@ -347,7 +347,10 @@ class GenericFlavor(object):
 		match = cls.regex_sd_file_opened.match(lower_line)
 		if not match:
 			return
-		return dict(name=match.group(b"name"), size=int(match.group(b"size")))
+
+		name = match.group(b"name")
+		size = int(match.group(b"size"))
+		return dict(name=name, long_name=name, size=size)
 
 	@classmethod
 	def parse_message_sd_entry(cls, line, lower_line, state, flags):
@@ -375,7 +378,7 @@ class GenericFlavor(object):
 				# file from the root of the sd -- we'll prepend a /
 				filename = "/" + filename
 
-		return dict(name=filename, size=int(size) if size is not None else None)
+		return dict(name=filename, long_name=filename, size=int(size) if size is not None else None)
 
 	@classmethod
 	def parse_message_sd_printing_byte(cls, line, lower_line, state, flags):

@@ -21,7 +21,7 @@ from octoprint.comm.protocol.reprap.util import normalize_command_handler_result
 from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, CommandQueue, SendQueue, QueueMarker, SendQueueMarker
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
-	LocalGcodeStreamjob
+	LocalGcodeStreamjob, CopyJobMixin
 
 from octoprint.util import TypedQueue, TypeAlreadyInQueue, ResettableTimer, to_str, to_unicode, protectedkeydict, CountedEvent, monotonic_time
 
@@ -341,8 +341,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self._job is None:
 			return
 
-		# TODO cancel file streaming
-
 		if tags is None:
 			tags = set()
 
@@ -366,7 +364,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._job.cancel(error=error)
 		self.notify_listeners("on_protocol_job_cancelling", self, self._job)
 
-		if log_position:
+		if log_position and not isinstance(self._job, CopyJobMixin):
 			self.send_commands(self.flavor.command_finish_moving(),
 			                   on_sent=on_move_finish_requested,
 			                   tags=tags | {"trigger:comm.cancel",
@@ -410,6 +408,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def pause_processing(self, tags=None, log_position=True, suppress_scripts_and_commands=False):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
+			return
+
+		if isinstance(self._job, CopyJobMixin):
 			return
 
 		if tags is None:
@@ -456,7 +457,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		else:
 			super(ReprapGcodeProtocol, self).resume_processing(tags=tags)
 
-	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
+	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
 		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
 
 		if relative:
@@ -466,65 +467,65 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._send_commands(*commands)
 
-	def home(self, x=False, y=False, z=False):
+	def home(self, x=False, y=False, z=False, *args, **kwargs):
 		self._send_commands(self.flavor.command_home(x=x, y=y, z=z))
 
-	def change_tool(self, tool):
+	def change_tool(self, tool, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_tool(tool))
 
-	def set_feedrate_multiplier(self, multiplier):
+	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_feedrate_multiplier(multiplier))
 
-	def set_extrusion_multiplier(self, multiplier):
+	def set_extrusion_multiplier(self, multiplier, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_extrusion_multiplier(multiplier))
 
-	def set_extruder_temperature(self, temperature, tool=None, wait=False):
+	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool, wait=wait))
 
-	def set_bed_temperature(self, temperature, wait=False):
+	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait))
 
 	##~~ MotorControlProtocolMixin
 
-	def set_motor_state(self, enabled):
+	def set_motor_state(self, enabled, *args, **kwargs):
 		self._send_commands(self.flavor.command.set_motor_state(enabled))
 
 	##~~ FanControlProtocolMixin
 
-	def set_fan_speed(self, speed):
+	def set_fan_speed(self, speed, *args, **kwargs):
 		self._send_commands(self.flavor.command.command_set_fan_speed(speed))
 
 	##~~ FileStreamingProtocolMixin
 
-	def init_file_storage(self):
+	def init_file_storage(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_init())
 
-	def list_files(self):
+	def list_files(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_refresh())
 
-	def start_file_print(self, name, position=0, **kwargs):
+	def start_file_print(self, name, position=0, *args, **kwargs):
 		tags = kwargs.get(b"tags", set()) | {"trigger:protocol.start_file_print"}
 		self._send_commands(self.flavor.command_sd_select_file(name),
 		                    self.flavor.command_sd_set_pos(position),
 		                    self.flavor.command_sd_start(),
 		                    tags=tags)
 
-	def pause_file_print(self):
+	def pause_file_print(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_pause())
 
-	def resume_file_print(self):
+	def resume_file_print(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_resume())
 
-	def delete_file(self, name):
+	def delete_file(self, name, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_delete(name))
 
-	def record_file(self, name, job):
+	def record_file(self, name, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_begin_write(name))
 
-	def stop_recording_file(self):
+	def stop_recording_file(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_end_write())
 
-	def get_file_print_status(self):
+	def get_file_print_status(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_status())
 
 	def can_send(self):
@@ -557,7 +558,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		elif self._is_operational() or force:
 			self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
 
-	def send_script(self, script, context=None):
+	def send_script(self, script, context=None, *args, **kwargs):
 		if context is None:
 			context = dict()
 
@@ -576,7 +577,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                         "source:script",
 		                         "script:{}".format(script.name)}, *lines)
 
-	def repair(self):
+	def repair(self, *args, **kwargs):
 		self._on_comm_ok()
 
 	##~~ State handling
@@ -652,7 +653,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	##~~ Job handling
 
 	def on_job_cancelled(self, job):
-		pass
+		if job != self._job:
+			return
+		self._job_processed(job)
 
 	def on_job_paused(self, job, *args, **kwargs):
 		pass
@@ -662,8 +665,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			return
 
 		self.state = ProtocolState.FINISHING
-		self.notify_listeners("on_protocol_job_finishing", self, job)
 		self._job_processed(job)
+		self.notify_listeners("on_protocol_job_finishing", self, job)
 
 		def finalize():
 			self.state = ProtocolState.CONNECTED
@@ -1157,9 +1160,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _on_message_sd_init_ok(self):
 		self._internal_flags["sd_available"] = True
 		self.list_files()
+		self.notify_listeners("on_protocol_file_storage_available", self, self._internal_flags["sd_available"])
 
 	def _on_message_sd_init_fail(self):
 		self._internal_flags["sd_available"] = False
+		self.notify_listeners("on_protocol_file_storage_available", self, self._internal_flags["sd_available"])
 
 	def _on_message_sd_begin_file_list(self):
 		self._internal_flags["sd_files_temp"] = []
@@ -1167,13 +1172,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _on_message_sd_end_file_list(self):
 		self._internal_flags["sd_files"] = self._internal_flags["sd_files_temp"]
 		self._internal_flags["sd_files_temp"] = None
-		self.notify_listeners("on_protocol_sd_file_list", self, self._internal_flags["sd_files"])
+		self.notify_listeners("on_protocol_file_list", self, self._internal_flags["sd_files"])
 
-	def _on_message_sd_entry(self, name, size):
-		self._internal_flags["sd_files_temp"].append((name, size))
+	def _on_message_sd_entry(self, name, long_name, size):
+		self._internal_flags["sd_files_temp"].append((name, long_name, size))
 
-	def _on_message_sd_file_opened(self, name, size):
-		self.notify_listeners("on_protocol_file_print_started", self, name, size)
+	def _on_message_sd_file_opened(self, name, long_name, size):
+		self.notify_listeners("on_protocol_file_print_started", self, name, long_name, size)
 
 	def _on_message_sd_done_printing(self):
 		self.notify_listeners("on_protocol_file_print_done", self)
@@ -1600,7 +1605,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._log_command_phase(phase, command)
 
-		if phase not in ("queuing", "queued", "sending", "sent"):
+		if not self._internal_flags["trigger_events"] or phase not in ("queuing", "queued", "sending", "sent"):
 			return results
 
 		# send it through the phase specific handlers provided by plugins

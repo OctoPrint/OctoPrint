@@ -32,7 +32,7 @@ from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, ProtocolState
-from octoprint.comm.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob
+from octoprint.comm.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob, CopyJobMixin
 from octoprint.comm.protocol.reprap.scripts import GcodeScript
 
 from collections import namedtuple
@@ -104,11 +104,11 @@ class Printer(PrinterInterface,
 		self._current_z = None
 
 		# sd handling
-		self._sdPrinting = False
-		self._sdStreaming = False
+		self._sd_printing = False
+		self._sd_streaming = False
 		self._sd_filelist_available = threading.Event()
-		self._streamingFinishedCallback = None
-		self._streamingFailedCallback = None
+		self._on_streaming_done = None
+		self._on_streaming_failed = None
 
 		self._sd_ready = False
 		self._sd_files = []
@@ -124,9 +124,8 @@ class Printer(PrinterInterface,
 					self._estimator_factory = estimator
 			except:
 				self._logger.exception("Error while processing analysis queues from {}".format(name))
-		# comm
-		self._comm = None
 
+		# comm
 		self._protocol = None
 		self._transport = None
 		self._job = None
@@ -603,8 +602,8 @@ class Printer(PrinterInterface,
 
 	def log_lines(self, *lines):
 		serial_logger = logging.getLogger("SERIAL")
-		self.on_comm_log("\n".join(lines))
 		for line in lines:
+			self.on_protocol_log(self._protocol, line)
 			serial_logger.debug(line)
 
 	def get_state_string(self, state=None, *args, **kwargs):
@@ -723,19 +722,19 @@ class Printer(PrinterInterface,
 		return self._protocol is not None and self._protocol.state == ProtocolState.PROCESSING
 
 	def is_cancelling(self, *args, **kwargs):
-		return self._comm is not None and self._comm.isCancelling()
+		return self._protocol is not None and self._protocol.state == ProtocolState.CANCELLING
 
 	def is_pausing(self, *args, **kwargs):
-		return self._comm is not None and self._comm.isPausing()
+		return self._protocol is not None and self._protocol.state == ProtocolState.PAUSING
 
 	def is_paused(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.PAUSED
 
 	def is_resuming(self, *args, **kwargs):
-		return self._comm is not None and self._comm.isResuming()
+		return self._protocol is not None and self._protocol.state == ProtocolState.RESUMING
 
 	def is_finishing(self, *args, **kwargs):
-		return self._comm is not None and self._comm.isFinishing()
+		return self._protocol is not None and self._protocol.state == ProtocolState.FINISHING
 
 	def is_error(self, *args, **kwargs):
 		return self._protocol is not None and self._protocol.state == ProtocolState.DISCONNECTED_WITH_ERROR
@@ -754,37 +753,36 @@ class Printer(PrinterInterface,
 	def get_sd_files(self, *args, **kwargs):
 		if not self.is_connected() or not self.is_sd_ready():
 			return []
-		return map(lambda x: (x[0][1:], x[1]), self._sd_files)
+		return map(lambda x: (x[0][1:], x[2]), self._sd_files)
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
-		# TODO
+		if not self._protocol or self._protocol.state in ProtocolState.PROCESSING_STATES or not self.is_sd_ready():
+			self._logger.error("No connection to printer, printer busy or missing SD support")
+			return
 
-		# if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-		# 	self._logger.error("No connection to printer or printer is busy")
-		# 	return
+		self._on_streaming_done = on_success
+		self._on_streaming_failed = on_failure
 
-		# self._streamingFinishedCallback = on_success
-		# self._streamingFailedCallback = on_failure
+		files = self.refresh_sd_files(blocking=True)
+		existingSdFiles = map(lambda x: x[0], files)
 
-		# self.refresh_sd_files(blocking=True)
-		# existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
+		if valid_file_type(filename, "gcode"):
+			remoteName = util.get_dos_filename(filename,
+			                                   existing_filenames=existingSdFiles,
+			                                   extension="gco",
+			                                   whitelisted_extensions=["gco", "g"])
+		else:
+			# probably something else added through a plugin, use it's basename as-is
+			remoteName = os.path.basename(filename)
 
-		# if valid_file_type(filename, "gcode"):
-		# 	remoteName = util.get_dos_filename(filename,
-		# 	                                   existing_filenames=existingSdFiles,
-		# 	                                   extension="gco",
-		# 	                                   whitelisted_extensions=["gco", "g"])
-		# else:
-		# 	# probably something else added through a plugin, use it's basename as-is
-		# 	remoteName = os.path.basename(filename)
-		# self._create_estimator("stream")
-		# self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
-		#                              special=not valid_file_type(filename, "gcode"),
-		#                              tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
+		job = LocalGcodeStreamjob.from_job(self._file_manager.create_print_job("local", absolutePath, user=kwargs.get("user")),
+		                                   "/" + remoteName)
+		self._sd_streaming = True
+		self._update_job(job)
+		self._reset_progress_data()
+		self._protocol.process(job)
 
-		# return remoteName
-
-		return "foo"
+		return remoteName
 
 	def delete_sd_file(self, filename, *args, **kwargs):
 		if not self._protocol or not self.is_sd_ready():
@@ -807,12 +805,13 @@ class Printer(PrinterInterface,
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
 		received. Defaults to an asynchronous operation.
 		"""
-		if self.is_connected() or not self.is_sd_ready():
-			return
+		if not self.is_connected() or not self.is_sd_ready():
+			return []
 		self._sd_filelist_available.clear()
 		self._protocol.list_files(tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"})
 		if blocking:
 			self._sd_filelist_available.wait(kwargs.get("timeout", 10000))
+			return self._sd_files
 
 	#~~ state monitoring
 
@@ -969,7 +968,7 @@ class Printer(PrinterInterface,
 
 		display_name = job.name
 
-		if isinstance(job, LocalGcodeFilePrintjob):
+		if isinstance(job, LocalGcodeFilePrintjob) and not isinstance(job, CopyJobMixin):
 			# local file means we might have some information about the job stored in the file manager!
 			try:
 				file_data = self._file_manager.get_metadata(FileDestinations.LOCAL, job.path)
@@ -1152,6 +1151,9 @@ class Printer(PrinterInterface,
 		if self._job is None or job != self._job.job:
 			return
 
+		if self._job_event_handled(protocol, job, "processing"):
+			return
+
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
@@ -1167,55 +1169,59 @@ class Printer(PrinterInterface,
 		if self._job is None or job != self._job.job:
 			return
 
-		if isinstance(self._job.job, LocalGcodeStreamjob):
-			# streaming job
+		if self._job_event_handled(protocol, job, "finishing"):
+			return
 
-			if self._streamingFinishedCallback is not None:
-				# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
-				# both parameters
-				self._streamingFinishedCallback(self._job.job.name, self._job.job.name, FileDestinations.SDCARD)
+		payload = job.event_payload()
+		if payload:
+			payload["time"] = job.elapsed
+			self._update_progress_data(completion=100,
+			                           filepos=payload["size"],
+			                           print_time=payload["time"],
+			                           print_time_left=0)
+			self._state_monitor.set_state(self._dict(text=self.get_state_string(),
+			                                         flags=self._get_state_flags()))
 
-			self._set_current_z(None)
-			self._update_job()
-			self._update_progress_data()
+			eventManager().fire(Events.PRINT_DONE, payload)
+			if not suppress_script:
+				self.script("afterPrintDone",
+				            context=dict(event=payload),
+				            must_be_set=False)
 
-		else:
-			# all other job types
+	def on_protocol_job_done(self, protocol, job, suppress_scripts=False, *args, **kwargs):
+		if protocol != self._protocol:
+			return
 
-			payload = job.event_payload()
-			if payload:
-				payload["time"] = job.elapsed
-				self._update_progress_data(completion=100,
-				                           filepos=payload["size"],
-				                           print_time=payload["time"],
-				                           print_time_left=0)
-				self._state_monitor.set_state(self._dict(text=self.get_state_string(),
-				                                         flags=self._get_state_flags()))
+		if self._job is None or job != self._job.job:
+			return
 
-				eventManager().fire(Events.PRINT_DONE, payload)
-				if not suppress_script:
-					self.script("afterPrintDone",
-					            context=dict(event=payload),
-					            must_be_set=False)
+		if self._job_event_handled(protocol, job, "done"):
+			return
 
-				def log_print():
-					self._file_manager.log_print(payload["origin"],
-					                             payload["path"],
-					                             time.time(),
-					                             payload["time"],
-					                             True,
-					                             self._printer_profile_manager.get_current_or_default()["id"])
+		payload = job.event_payload()
+		if payload:
+			payload["time"] = job.elapsed
 
-				thread = threading.Thread(target=log_print)
-				thread.daemon = True
-				thread.start()
+			def log_print():
+				self._file_manager.log_print(payload["origin"],
+				                             payload["path"],
+				                             time.time(),
+				                             payload["time"],
+				                             True,
+				                             self._printer_profile_manager.get_current_or_default()["id"])
 
+			thread = threading.Thread(target=log_print)
+			thread.daemon = True
+			thread.start()
 
 	def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
 		if self._job is None or job != self._job.job:
+			return
+
+		if self._job_event_handled(protocol, job, "failed"):
 			return
 
 		payload = job.event_payload()
@@ -1227,6 +1233,9 @@ class Printer(PrinterInterface,
 			return
 
 		if self._job is None or job != self._job.job:
+			return
+
+		if self._job_event_handled(protocol, job, "cancelling"):
 			return
 
 		firmware_error = kwargs.get("error", None)
@@ -1251,6 +1260,9 @@ class Printer(PrinterInterface,
 			return
 
 		if self._job is None or job != self._job.job:
+			return
+
+		if self._job_event_handled(protocol, job, "cancelled"):
 			return
 
 		self._update_progress_data()
@@ -1285,6 +1297,9 @@ class Printer(PrinterInterface,
 		if self._job is None or job != self._job.job:
 			return
 
+		if self._job_event_handled(protocol, job, "pausing"):
+			return
+
 		pause_position = kwargs.get("position", None)
 		suppress_scripts = kwargs.get("suppress_scripts", None)
 
@@ -1305,6 +1320,9 @@ class Printer(PrinterInterface,
 		if self._job is None or job != self._job.job:
 			return
 
+		if self._job_event_handled(protocol, job, "paused"):
+			return
+
 		pause_position = kwargs.get("position", None)
 
 		payload = job.event_payload()
@@ -1318,6 +1336,9 @@ class Printer(PrinterInterface,
 			return
 
 		if self._job is None or job != self._job.job:
+			return
+
+		if self._job_event_handled(protocol, job, "resuming"):
 			return
 
 		suppress_scripts = kwargs.get("suppress_scripts", False)
@@ -1335,9 +1356,35 @@ class Printer(PrinterInterface,
 		if self._job is None or job != self._job.job:
 			return
 
+		if self._job_event_handled(protocol, job, "resumed"):
+			return
+
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
+
+	def _job_event_handled(self, protocol, job, event_type):
+		if not isinstance(job, LocalGcodeStreamjob):
+			return False
+
+		if event_type == "processing":
+			eventManager().fire(Events.TRANSFER_STARTED, {"local": job.name, "remote": job.remote})
+
+		elif event_type in ("done", "cancelled"):
+			self._sd_streaming = False
+			self._set_current_z(None)
+			self._remove_job()
+			self._reset_progress_data()
+			self._state_monitor.set_state(self._dict(text=self.get_state_string(), flags=self._get_state_flags()))
+
+			if event_type == "done" and self._on_streaming_done is not None:
+				self._on_streaming_done(job.name, job.name, FileDestinations.SDCARD)
+				eventManager().fire(Events.TRANSFER_DONE, {"local": job.name, "remote": job.remote})
+			elif event_type == "cancelled" and self._on_streaming_failed is not None:
+				self._on_streaming_failed(job.name, job.name, FileDestinations.SDCARD)
+				eventManager().fire(Events.TRANSFER_FAILED, {"local": job.name, "remote": job.remote})
+
+		return True
 
 	# ~~ octoprint.comm.job.PrintjobListener implementation
 

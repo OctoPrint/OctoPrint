@@ -340,7 +340,7 @@ class FileManagementProtocolMixin(FileAwareProtocolMixin):
 
 class FileStreamingProtocolMixin(FileManagementProtocolMixin):
 
-	def record_file(self, name, job):
+	def record_file(self, name):
 		pass
 
 	def stop_recording_file(self):
