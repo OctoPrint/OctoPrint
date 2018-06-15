@@ -399,8 +399,6 @@ $(function() {
         };
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
-            if (!self.loginState.isAdmin() && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
-
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
@@ -590,7 +588,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.isAdmin() && !self.loginState.isUser()) {
                 return;
             }
 
