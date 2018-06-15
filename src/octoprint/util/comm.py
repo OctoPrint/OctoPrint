@@ -445,8 +445,6 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
-		self._resendSwallowRepetitions = settings().getBoolean(["serial", "ignoreIdenticalResends"])
-		self._resendSwallowRepetitionsCounter = 0
 
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
 		self._firmware_info_received = not self._firmware_detection
@@ -1771,7 +1769,6 @@ class MachineCom(object):
 							self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
 
 							self._alwaysSendChecksum = True
-							self._resendSwallowRepetitions = True
 							self._blockWhileDwelling = True
 							supportRepetierTargetTemp = True
 							disable_external_heatup_detection = True
@@ -2696,20 +2693,10 @@ class MachineCom(object):
 				self._currentResendCount += 1
 				return True
 
-			# If we ignore resend repetitions (Repetier firmware...), check if we
-			# need to do this now. If the same line number has been requested we
-			# already saw and resent, we'll ignore it up to <counter> times.
-			if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
-				self._logger.info("Ignoring resend request for line %d, that is probably a repetition sent by the "
-				                   "firmware to ensure it arrives, not a real request" % lineToResend)
-				self._resendSwallowRepetitionsCounter -= 1
-				return True
-
 			self._resendActive = True
 			self._resendDelta = resendDelta
 			self._lastResendNumber = lineToResend
 			self._currentResendCount = 0
-			self._resendSwallowRepetitionsCounter = settings().getInt(["serial", "identicalResendsCountdown"])
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				error_text = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend

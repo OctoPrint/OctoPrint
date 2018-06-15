@@ -680,8 +680,6 @@ class VirtualPrinter(object):
 				if not self._brokenResend:
 					self._sendOk()
 
-			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
-				request_resend()
 			request_resend()
 
 	def _debugTrigger(self, data):

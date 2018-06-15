@@ -382,7 +382,6 @@ default_settings = {
 			"includeFilenameInOpened": True,
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
-			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"reprapfwM114": False,
