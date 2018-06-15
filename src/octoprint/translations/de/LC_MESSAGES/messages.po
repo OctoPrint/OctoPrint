@@ -512,7 +512,7 @@ msgstr "Konfiguriere ein Slicingprofil"
 msgid "You haven't imported a slicing profile to use for slicing with CuraEngine\n"
 "    yet. If you plan on slicing from within OctoPrint then you should do this now.\n"
 "    Otherwise just skip this step."
-msgstr "Du hast noch kein Slicingprofile zum Slicen mit CuraEngine importiert. Falls Du vor hast, ausOctoPrint heraus zu slicen, dann solltest Du das jetzt tun. Andernfalls überspringe diesenSchritt einfach."
+msgstr "Du hast noch kein Slicingprofile zum Slicen mit CuraEngine importiert. Falls Du vor hast, aus OctoPrint heraus zu slicen, dann solltest Du das jetzt tun. Andernfalls überspringe diesen Schritt einfach."
 
 #: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:28
 msgid "\n"
