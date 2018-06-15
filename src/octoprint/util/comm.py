@@ -1011,9 +1011,15 @@ class MachineCom(object):
 				self._callback.on_comm_print_job_started()
 
 				if self.isSdFileSelected():
+					interval = self._timeout_intervals.get("sdStatus", 1.0)
+					if interval <= 0:
+						interval = 1.0
+					self._sd_status_timer = RepeatedTimer(interval, self._poll_sd_status, run_first=True)
+
 					if not external_sd:
 						# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
 						self._ignore_select = True
+
 						self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()),
 						                 part_of_job=True,
 						                 tags=tags | {"trigger:comm.start_print",})
@@ -1025,15 +1031,15 @@ class MachineCom(object):
 						else:
 							self._currentFile.pos = 0
 
+						def start_polling():
+							self._sd_status_timer.start()
+
 						self.sendCommand("M24",
+						                 on_sent=start_polling,
 						                 part_of_job=True,
 						                 tags=tags | {"trigger:comm.start_print",})
-
-					interval = self._timeout_intervals.get("sdStatus", 1.0)
-					if interval <= 0:
-						interval = 1.0
-					self._sd_status_timer = RepeatedTimer(interval, self._poll_sd_status, run_first=True)
-					self._sd_status_timer.start()
+					else:
+						self._sd_status_timer.start()
 				else:
 					if pos is not None and isinstance(pos, int) and pos > 0:
 						self._currentFile.seek(pos)
@@ -1890,7 +1896,7 @@ class MachineCom(object):
 								self._currentFile.size = total
 							self._callback.on_comm_progress()
 
-				elif 'Not SD printing' in line and self.isSdFileSelected() and self.isPrinting():
+				elif 'Not SD printing' in line and self.isSdFileSelected() and self.isPrinting() and not self.isFinishing():
 					# something went wrong, printer is reporting that we actually are not printing right now...
 					self.cancelPrint(external_sd=True)
 				elif 'File opened' in line and not self._ignore_select:
@@ -1933,6 +1939,8 @@ class MachineCom(object):
 					self._changeState(self.STATE_PRINTING)
 				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
+					self._changeState(self.STATE_FINISHING)
+
 					self._currentFile.done = True
 					self._currentFile.pos = 0
 
@@ -1942,11 +1950,12 @@ class MachineCom(object):
 						except:
 							pass
 
-					self._changeState(self.STATE_FINISHING)
+					self.sendCommand("M400", part_of_job=True)
 					self._callback.on_comm_print_job_done()
 					def finalize():
 						self._changeState(self.STATE_OPERATIONAL)
-					self.sendCommand(SendQueueMarker(finalize))
+					self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
+					self._continue_sending()
 				elif 'Done saving file' in line:
 					if self._trigger_ok_for_m29:
 						# workaround for most versions of Marlin out in the wild

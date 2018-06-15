@@ -440,8 +440,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._validateJob(path, sd)
 
 		origin = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
-		path_on_disk = self._fileManager.path_on_disk(origin, path)
-		path_in_storage = self._fileManager.path_in_storage(origin, path_on_disk)
+		if sd:
+			path_on_disk = "/" + path
+			path_in_storage = path
+		else:
+			path_on_disk = self._fileManager.path_on_disk(origin, path)
+			path_in_storage = self._fileManager.path_in_storage(origin, path_on_disk)
 
 		recovery_data = self._fileManager.get_recovery_data()
 		if recovery_data:

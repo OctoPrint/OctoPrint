@@ -1158,10 +1158,10 @@ class VirtualPrinter(object):
 	def _finishSdPrint(self):
 		if not self._killed:
 			self._sdPrintingSemaphore.clear()
+			self._output("Done printing file")
 			self._selectedSdFilePos = 0
 			self._sdPrinting = False
 			self._sdPrinter = None
-			self._output("Done printing file")
 
 	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
