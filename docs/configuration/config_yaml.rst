@@ -209,7 +209,7 @@ appearance or to modify the order and presence of the various UI components:
             tab:
             - plugin_helloworld
 
-   OctoPrint will then turn this into the order ``plugin_helloworld``, ``temperature``, ``control``, ``gcodeviewer``,
+   OctoPrint will then display the sidebar in the order ``plugin_helloworld``, ``temperature``, ``control``, ``gcodeviewer``,
    ``terminal``, ``timelapse`` plus any other plugins.
 
 
