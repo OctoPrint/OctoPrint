@@ -616,16 +616,16 @@ Settings pertaining to the server side GCODE analysis implementation.
 
 .. code-block:: yaml
 
-gcodeAnalysis:
-   # Maximum number of extruders to support/to sanity check for
-   maxExtruders: 10
+   gcodeAnalysis:
+     # Maximum number of extruders to support/to sanity check for
+     maxExtruders: 10
 
-   # Pause between each processed GCODE line in normal priority mode, seconds
-   throttle_normalprio: 0.01
+     # Pause between each processed GCODE line in normal priority mode, seconds
+     throttle_normalprio: 0.01
 
-   # Pause between each processed GCODE line in high priority mode (e.g. on fresh
-   # uploads), seconds
-   throttle_highprio: 0.0
+     # Pause between each processed GCODE line in high priority mode (e.g. on fresh
+     # uploads), seconds
+     throttle_highprio: 0.0
 
 .. _sec-configuration-config_yaml-gcodeviewer:
 
@@ -636,17 +636,17 @@ Settings pertaining to the built in GCODE Viewer.
 
 .. code-block:: yaml
 
- gcodeViewer:
-   # Whether to enable the GCODE viewer in the UI
-   enabled: true
+   gcodeViewer:
+     # Whether to enable the GCODE viewer in the UI
+     enabled: true
 
-   # Maximum size a GCODE file may have on mobile devices to automatically be loaded
-   # into the viewer, defaults to 2MB
-   mobileSizeThreshold: 2097152
+     # Maximum size a GCODE file may have on mobile devices to automatically be loaded
+     # into the viewer, defaults to 2MB
+     mobileSizeThreshold: 2097152
 
-   # Maximum size a GCODE file may have to automatically be loaded into the viewer,
-   # defaults to 20MB
-   sizeThreshold: 20971520
+     # Maximum size a GCODE file may have to automatically be loaded into the viewer,
+     # defaults to 20MB
+     sizeThreshold: 20971520
 
 .. _sec-configuration-config_yaml-plugins:
 
