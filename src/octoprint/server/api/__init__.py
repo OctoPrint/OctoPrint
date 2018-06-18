@@ -268,9 +268,12 @@ def _test_path(data):
 	import os
 	from octoprint.util.paths import normalize
 
-	path = normalize(data["path"])
+	path = normalize(data["path"], real=False)
 	if not path:
-		return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+		return jsonify(path=path, exists=False, typeok=False, broken_symlink=False, access=False, result=False)
+
+	unreal_path = path
+	path = os.path.realpath(path)
 
 	check_type = None
 	check_access = []
@@ -293,17 +296,17 @@ def _test_path(data):
 	# check if path exists
 	exists = os.path.exists(path)
 	if not exists:
-		if os.path.islink(path):
+		if os.path.islink(unreal_path):
 			# broken symlink, see #2644
-			logging.getLogger(__name__).error("{} is a broken symlink")
-			return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+			logging.getLogger(__name__).error("{} is a broken symlink pointing at non existing {}".format(unreal_path, path))
+			return jsonify(path=unreal_path, exists=False, typeok=False, broken_symlink=True, access=False, result=False)
 
 		elif check_type == "dir" and allow_create_dir:
 			try:
 				os.makedirs(path)
 			except:
 				logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
-				return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+				return jsonify(path=path, exists=False, typeok=False, broken_symlink=False, access=False, result=False)
 			else:
 				exists = True
 
@@ -332,9 +335,9 @@ def _test_path(data):
 			os.remove(test_path)
 		except:
 			logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
-			return jsonify(path=path, exists=exists, typeok=typeok, access=False, result=False)
+			return jsonify(path=path, exists=exists, typeok=typeok, broken_symlink=False, access=False, result=False)
 
-	return jsonify(path=path, exists=exists, typeok=typeok, access=access, result=exists and typeok and access)
+	return jsonify(path=path, exists=exists, typeok=typeok, broken_symlink=False, access=access, result=exists and typeok and access)
 
 
 def _test_url(data):

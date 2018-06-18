@@ -473,7 +473,9 @@ $(function() {
             OctoPrint.util.testPath(path, opts)
                 .done(function(response) {
                     if (!response.result) {
-                        if (!response.exists) {
+                        if (response.broken_symlink) {
+                            self.testFolderConfigText[folder](gettext("The path is a broken symlink."));
+                        } else if (!response.exists) {
                             self.testFolderConfigText[folder](gettext("The path does not exist and cannot be created."));
                         } else if (!response.typeok) {
                             self.testFolderConfigText[folder](gettext("The path is not a folder."));
