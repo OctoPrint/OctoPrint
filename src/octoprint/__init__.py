@@ -67,7 +67,7 @@ class FatalStartupError(Exception):
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
                   uncaught_handler=None, safe_mode=False, ignore_blacklist=False, after_preinit_logging=None,
-                  after_settings=None, after_logging=None, after_safe_mode=None,
+                  after_settings_init=None, after_logging=None, after_safe_mode=None, after_settings_valid=None,
                   after_event_manager=None, after_connectivity_checker=None,
                   after_plugin_manager=None, after_environment_detector=None):
 	kwargs = dict()
@@ -84,8 +84,8 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	except Exception as ex:
 		raise FatalStartupError("Could not initialize settings manager", cause=ex)
 	kwargs["settings"] = settings
-	if callable(after_settings):
-		after_settings(**kwargs)
+	if callable(after_settings_init):
+		after_settings_init(**kwargs)
 
 	try:
 		logger = init_logging(settings,
@@ -108,6 +108,14 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):
 		after_safe_mode(**kwargs)
+
+	# now before we continue, let's make sure *all* our folders are sane
+	try:
+		settings.sanity_check_folders()
+	except Exception as ex:
+		raise FatalStartupError("Configured folders didn't pass sanity check", cause=ex)
+	if callable(after_settings_valid):
+		after_settings_valid(**kwargs)
 
 	try:
 		event_manager = init_event_manager(settings)

@@ -621,7 +621,7 @@ class Settings(object):
 
 		self._script_env = self._init_script_templating()
 
-		self._sanity_check_folders()
+		self.sanity_check_folders(folders=["logs", ])
 
 	def _init_basedir(self, basedir):
 		if basedir is not None:
@@ -637,8 +637,10 @@ class Settings(object):
 				                   "can't run without a writable base folder.".format(self._basedir), exc_info=1)
 				raise
 
-	def _sanity_check_folders(self):
-		for folder in default_settings["folder"].keys():
+	def sanity_check_folders(self, folders=None):
+		if folders is None:
+			folders = default_settings["folder"].keys()
+		for folder in folders:
 			self.getBaseFolder(folder, log_error=True)
 
 	def _get_default_folder(self, type):
