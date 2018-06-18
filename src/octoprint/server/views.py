@@ -173,8 +173,7 @@ def index():
 	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates.get(locale))
 
 	# if we need to refresh our template cache or it's not yet set, process it
-	if force_refresh or _templates.get(locale) is None or _plugin_names is None or _plugin_vars is None:
-		_templates[locale], _plugin_names, _plugin_vars = _process_templates()
+	fetch_template_data(refresh=force_refresh)
 
 	now = datetime.datetime.utcnow()
 
@@ -441,7 +440,14 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	return render_kwargs
 
 
-def _process_templates():
+def fetch_template_data(refresh=False):
+	global _templates, _plugin_names, _plugin_vars
+
+	locale = g.locale.language if g.locale else "en"
+
+	if not refresh and _templates.get(locale) is not None and _plugin_names is not None and _plugin_vars is not None:
+		return _templates[locale], _plugin_names, _plugin_vars
+
 	first_run = settings().getBoolean(["server", "firstRun"])
 
 	##~~ prepare templates
@@ -741,6 +747,10 @@ def _process_templates():
 			templates[t]["entries"].update(template_sorting[t]["custom_insert_entries"](sorted_missing))
 			templates[t]["order"] = template_sorting[t]["custom_insert_order"](templates[t]["order"], sorted_missing)
 
+	_templates[locale] = templates
+	_plugin_names = plugin_names
+	_plugin_vars = plugin_vars
+
 	return templates, plugin_names, plugin_vars
 
 
@@ -827,6 +837,8 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 	data["_key"] = "plugin_" + name
 	if "suffix" in data:
 		data["_key"] += data["suffix"]
+
+	data["_plugin"] = name
 
 	return data
 

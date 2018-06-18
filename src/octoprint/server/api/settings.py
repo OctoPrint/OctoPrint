@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings, valid_boolean_trues
 
-from octoprint.server import admin_permission, printer
+from octoprint.server import admin_permission, printer, pluginManager
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 
@@ -312,6 +312,38 @@ def deleteApiKey():
 	settings().deleteApiKey()
 	return NO_CONTENT
 
+@api.route("/settings/templates", methods=["GET"])
+@restricted_access
+@admin_permission.require(403)
+def fetchTemplateData():
+	from octoprint.server.views import fetch_template_data
+
+	refresh = request.values.get("refresh", "false") in valid_boolean_trues
+	templates, _, _ = fetch_template_data(refresh=refresh)
+
+	result = dict()
+	for tt in templates:
+		result[tt] = []
+		for key in templates[tt]["order"]:
+			entry = templates[tt]["entries"].get(key)
+			if not entry:
+				continue
+
+			if isinstance(entry, dict):
+				name = key
+			else:
+				name, entry = entry
+
+			data = dict(id=key, name=name)
+
+			if entry and "_plugin" in entry:
+				plugin = pluginManager.get_plugin_info(entry["_plugin"], require_enabled=False)
+				data["plugin_id"] = plugin.key
+				data["plugin_name"] = plugin.name
+
+			result[tt].append(data)
+
+	return jsonify(order=result)
 
 def _saveSettings(data):
 	logger = logging.getLogger(__name__)
