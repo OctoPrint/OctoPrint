@@ -292,14 +292,20 @@ def _test_path(data):
 
 	# check if path exists
 	exists = os.path.exists(path)
-	if not exists and check_type == "dir" and allow_create_dir:
-		try:
-			os.makedirs(path)
-		except:
-			logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
+	if not exists:
+		if os.path.islink(path):
+			# broken symlink, see #2644
+			logging.getLogger(__name__).error("{} is a broken symlink")
 			return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
-		else:
-			exists = True
+
+		elif check_type == "dir" and allow_create_dir:
+			try:
+				os.makedirs(path)
+			except:
+				logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
+				return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+			else:
+				exists = True
 
 	# check path type
 	type_mapping = dict(file=os.path.isfile, dir=os.path.isdir)
