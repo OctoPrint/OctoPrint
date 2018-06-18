@@ -1749,15 +1749,23 @@ def _validate_folder(folder, create=True, writable=True, log_error=False):
 	logger = logging.getLogger(__name__)
 
 	if not os.path.exists(folder):
-		if create:
+		if os.path.islink(folder):
+			# broken symlink, see #2644
+			raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+
+		elif create:
+			# non existing, but we are allowed to create it
 			try:
 				os.makedirs(folder)
 			except:
 				if log_error:
 					logger.exception("Could not create {}".format(folder))
 				raise IOError("Folder for type {} at {} does not exist and creation failed".format(type, folder))
+
 		else:
+			# not extisting, not allowed to create it
 			raise IOError("No such folder: {}".format(folder))
+
 	elif os.path.isfile(folder):
 		# hardening against misconfiguration, see #1953
 		raise IOError("Expected a folder at {} but found a file instead".format(folder))
