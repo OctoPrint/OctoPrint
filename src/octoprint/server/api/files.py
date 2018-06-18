@@ -149,8 +149,16 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 		files = []
 		if sdFileList is not None:
 			for sdFile, sdSize in sdFileList:
+				type_path = octoprint.filemanager.get_file_type(sdFile)
+				if not type_path:
+					# only supported extensions
+					continue
+				else:
+					file_type = type_path[0]
+
 				file = {
-					"type": "machinecode",
+					"type": file_type,
+					"typePath": type_path,
 					"name": sdFile,
 					"display": sdFile,
 					"path": sdFile,
