@@ -134,7 +134,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
 		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated)
 
-	def _create_estimator(self, job_type):
+	def _create_estimator(self, job_type=None):
+		if job_type is None:
+			with self._selectedFileMutex:
+				if self._selectedFile is None:
+					return
+
+				if self._selectedFile["sd"]:
+					job_type = "sdcard"
+				else:
+					job_type = "local"
+
 		self._estimator = self._estimator_factory(job_type)
 
 	#~~ handling of PrinterCallbacks
@@ -490,16 +500,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or not self._comm.isOperational() or self._comm.isPrinting():
 			return
 
-		with self._selectedFileMutex:
-			if self._selectedFile is None:
-				return
-
-			if self._selectedFile["sd"]:
-				job_type = "sdcard"
-			else:
-				job_type = "local"
-
-		self._create_estimator(job_type)
 		self._fileManager.delete_recovery_data()
 
 		self._lastProgressReport = None
@@ -749,7 +749,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			cleanedPrintTime = self._comm.getCleanedPrintTime()
 
 		printTimeLeft = printTimeLeftOrigin = None
-		if progress is not None:
+		if progress is not None and self._estimator is not None:
 			progress_int = int(progress * 100)
 			if self._lastProgressReport != progress_int:
 				self._lastProgressReport = progress_int
@@ -1034,11 +1034,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setJobData(full_path, size, sd, user=user)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
+		self._create_estimator()
+
 		if self._printAfterSelect:
 			self._printAfterSelect = False
 			self.start_print(pos=self._posAfterSelect, user=user)
 
 	def on_comm_print_job_started(self, suppress_script=False):
+		self._stateMonitor.trigger_progress_update()
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
