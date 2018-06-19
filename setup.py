@@ -19,7 +19,7 @@ INSTALL_REQUIRES = [
 	                      # guarantee backwards compatibility for plugins and such with that
 	                      # version, hence we need to pin to a lower version for now. See #1697
 	"werkzeug>=0.8.3,<0.9",
-	"tornado>=4.5.3,<5",
+	"tornado==4.5.3",
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
 	                               # vendored one
 	"PyYAML>=3.10,<3.11",
