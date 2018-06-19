@@ -30,6 +30,7 @@ class VirtualPrinter(object):
 	send_regex = re.compile("send (.*)")
 	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
 	start_sd_regex = re.compile("start_sd (.*)")
+	select_sd_regex = re.compile("select_sd (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -736,7 +737,10 @@ class VirtualPrinter(object):
 			# SD printing
 
 			start_sd <str:file>
-			| Start printing file <file> from SD
+			| Select and start printing file <file> from SD
+			select_sd <str:file>
+			| Select file <file> from SD, don't start printing it yet. Use
+			| start_sd to start the print
 			cancel_sd
 			| Cancels an ongoing SD print
 
@@ -793,6 +797,7 @@ class VirtualPrinter(object):
 				send_match = VirtualPrinter.send_regex.match(data)
 				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
 				start_sd_match = VirtualPrinter.start_sd_regex.match(data)
+				select_sd_match = VirtualPrinter.select_sd_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -822,8 +827,10 @@ class VirtualPrinter(object):
 					self._ambient_temperature = float(set_ambient_match.group(1))
 					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
 				elif start_sd_match is not None:
-					self._selectSdFile(start_sd_match.group(1))
+					self._selectSdFile(start_sd_match.group(1), check_already_open=True)
 					self._startSdPrint()
+				elif select_sd_match is not None:
+					self._selectSdFile(select_sd_match.group(1))
 			except:
 				pass
 
@@ -843,10 +850,14 @@ class VirtualPrinter(object):
 			self._send(item)
 		self._send("End file list")
 
-	def _selectSdFile(self, filename):
+	def _selectSdFile(self, filename, check_already_open=False):
 		if filename.startswith("/"):
 			filename = filename[1:]
+
 		file = os.path.join(self._virtualSd, filename.lower())
+		if self._selectedSdFile == file and check_already_open:
+			return
+
 		if not os.path.exists(file) or not os.path.isfile(file):
 			self._send("open failed, File: %s." % filename)
 		else:

@@ -57,60 +57,71 @@ You can simulate certain conditions and communications through the terminal tab 
 
 All commands start with ``!!DEBUG:`` and are followed by the command you want to execute. For instance, sending
 ``!!DEBUG:action_disconnect`` will disconnect the printer. Sending ``!!DEBUG`` without command will show a help
-message with all the available commands.
+message with all the available commands:
 
-Action Triggers
-...............
+.. code-block:: none
 
-``action_pause``
-Sends a "// action:pause" action trigger to the host.
+   OctoPrint Virtual Printer debug commands
 
-``action_resume``
-Sends a "// action:resume" action trigger to the host.
+   help
+   ?
+   | This help.
 
-``action_disconnect``
-Sends a "// action:disconnect" action trigger to the host.
+   # Action Triggers
 
-``action_custom <action>[ <parameters>]``
-Sends a custom "// action:<action> <parameters>" action trigger to the host.
+   action_pause
+   | Sends a "// action:pause" action trigger to the host.
+   action_resume
+   | Sends a "// action:resume" action trigger to the host.
+   action_disconnect
+   | Sends a "// action:disconnect" action trigger to the
+   | host.
+   action_custom <action>[ <parameters>]
+   | Sends a custom "// action:<action> <parameters>"
+   | action trigger to the host.
 
-Communication Errors
-....................
+   # Communication Errors
 
-``dont_answer``
-Will not acknowledge the next command.
+   dont_answer
+   | Will not acknowledge the next command.
+   go_awol
+   | Will completely stop replying
+   trigger_resend_lineno
+   | Triggers a resend error with a line number mismatch
+   trigger_resend_checksum
+   | Triggers a resend error with a checksum mismatch
+   trigger_missing_checksum
+   | Triggers a resend error with a missing checksum
+   trigger_missing_lineno
+   | Triggers a "no line number with checksum" error w/o resend request
+   drop_connection
+   | Drops the serial connection
+   prepare_ok <broken ok>
+   | Will cause <broken ok> to be enqueued for use,
+   | will be used instead of actual "ok"
 
-``go_awol``
-Will completely stop replying.
+   # Reply Timing / Sleeping
 
-``trigger_resend_lineno``
-Triggers a resend error with a line number mismatch
+   sleep <int:seconds>
+   | Sleep <seconds> s
+   sleep_after <str:command> <int:seconds>
+   | Sleeps <seconds> s after each execution of <command>
+   sleep_after_next <str:command> <int:seconds>
+   | Sleeps <seconds> s after execution of next <command>
 
-``trigger_resend_checksum``
-Triggers a resend error with a checksum mismatch
+   # SD printing
 
-``drop_connection``
-Drops the serial connection
+   start_sd <str:file>
+   | Select and start printing file <file> from SD
+   select_sd <str:file>
+   | Select file <file> from SD, don't start printing it yet. Use
+   | start_sd to start the print
+   cancel_sd
+   | Cancels an ongoing SD print
 
-``prepare_ok <broken ok>``
-Will cause <broken ok> to be enqueued for use, will be used instead of actual "ok"
+   # Misc
 
-Reply Timing / Sleeping
-.......................
-``sleep <int:seconds>``
-Sleep <seconds> s
-
-``sleep_after <str:command> <int:seconds>``
-Sleeps <seconds> s after each execution of <command>
-
-``sleep_after_next <str:command> <int:seconds>``
-Sleeps <seconds> s after execution of next <command>
-
-Misc
-....
-
-``help``
-Show the available commands.
-
-``send <str:message>``
-Sends back <message>
+   send <str:message>
+   | Sends back <message>
+   reset
+   | Simulates a reset. Internal state will be lost.
