@@ -8,6 +8,7 @@ import octoprint.plugin
 
 from octoprint.server import user_permission
 from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 
 import flask
 from flask_babel import gettext
@@ -79,7 +80,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_api_command(self, command, data):
 		if command == "select":
-			if not user_permission.can():
+			if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
 				return flask.abort(403, "Insufficient permissions")
 
 			if self._prompt is None:
@@ -92,7 +93,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			self._answer_prompt(choice)
 
 	def on_api_get(self, request):
-		if not user_permission.can():
+		if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
 			return flask.abort(403, "Insufficient permissions")
 		if self._prompt is None:
 			return flask.jsonify()

@@ -320,7 +320,7 @@ def deleteApiKey():
 
 @api.route("/settings/templates", methods=["GET"])
 @require_firstrun
-@admin_permission.require(403)
+@Permissions.SETTINGS.require(403)
 def fetchTemplateData():
 	from octoprint.server.views import fetch_template_data
 
