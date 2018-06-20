@@ -247,7 +247,7 @@ def _logout(user):
 @api.route("/util/test", methods=["POST"])
 @require_firstrun
 @Permissions.ADMIN.require(403)
-def utilTestPath():
+def utilTest():
 	valid_commands = dict(
 		path=["path"],
 		url=["url"],
@@ -259,221 +259,242 @@ def utilTestPath():
 		return response
 
 	if command == "path":
-		import os
-		from octoprint.util.paths import normalize
+		return _test_path(data)
+	elif command == "url":
+		return _test_url(data)
+	elif command == "server":
+		return _test_server(data)
 
-		path = normalize(data["path"])
-		if not path:
-			return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+def _test_path(data):
+	import os
+	from octoprint.util.paths import normalize
 
-		check_type = None
-		check_access = []
+	path = normalize(data["path"], real=False)
+	if not path:
+		return jsonify(path=path, exists=False, typeok=False, broken_symlink=False, access=False, result=False)
 
-		if "check_type" in data and data["check_type"] in ("file", "dir"):
-			check_type = data["check_type"]
+	unreal_path = path
+	path = os.path.realpath(path)
 
-		if "check_access" in data:
-			request_check_access = data["check_access"]
-			if not isinstance(request_check_access, list):
-				request_check_access = list(request_check_access)
+	check_type = None
+	check_access = []
 
-			check_access = [check for check in request_check_access if check in ("r", "w", "x")]
+	if "check_type" in data and data["check_type"] in ("file", "dir"):
+		check_type = data["check_type"]
 
-		allow_create_dir = data.get("allow_create_dir", False) and check_type == "dir"
-		check_writable_dir = data.get("check_writable_dir", False) and check_type == "dir"
-		if check_writable_dir and "w" not in check_access:
-			check_access.append("w")
+	if "check_access" in data:
+		request_check_access = data["check_access"]
+		if not isinstance(request_check_access, list):
+			request_check_access = list(request_check_access)
 
-		# check if path exists
-		exists = os.path.exists(path)
-		if not exists and check_type == "dir" and allow_create_dir:
+		check_access = [check for check in request_check_access if check in ("r", "w", "x")]
+
+	allow_create_dir = data.get("allow_create_dir", False) and check_type == "dir"
+	check_writable_dir = data.get("check_writable_dir", False) and check_type == "dir"
+	if check_writable_dir and "w" not in check_access:
+		check_access.append("w")
+
+	# check if path exists
+	exists = os.path.exists(path)
+	if not exists:
+		if os.path.islink(unreal_path):
+			# broken symlink, see #2644
+			logging.getLogger(__name__).error("{} is a broken symlink pointing at non existing {}".format(unreal_path, path))
+			return jsonify(path=unreal_path, exists=False, typeok=False, broken_symlink=True, access=False, result=False)
+
+		elif check_type == "dir" and allow_create_dir:
 			try:
 				os.makedirs(path)
 			except:
 				logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
-				return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+				return jsonify(path=path, exists=False, typeok=False, broken_symlink=False, access=False, result=False)
 			else:
 				exists = True
 
-		# check path type
-		type_mapping = dict(file=os.path.isfile, dir=os.path.isdir)
-		if check_type:
-			typeok = type_mapping[check_type](path)
-		else:
-			typeok = exists
+	# check path type
+	type_mapping = dict(file=os.path.isfile, dir=os.path.isdir)
+	if check_type:
+		typeok = type_mapping[check_type](path)
+	else:
+		typeok = exists
 
-		# check if path allows requested access
-		access_mapping = dict(r=os.R_OK, w=os.W_OK, x=os.X_OK)
-		if check_access:
-			mode = 0
-			for a in map(lambda x: access_mapping[x], check_access):
-				mode |= a
-			access = os.access(path, mode)
-		else:
-			access = exists
+	# check if path allows requested access
+	access_mapping = dict(r=os.R_OK, w=os.W_OK, x=os.X_OK)
+	if check_access:
+		mode = 0
+		for a in map(lambda x: access_mapping[x], check_access):
+			mode |= a
+		access = os.access(path, mode)
+	else:
+		access = exists
 
-		if check_writable_dir and check_type == "dir":
-			try:
-				test_path = os.path.join(path, ".testballoon.txt")
-				with open(test_path, "wb") as f:
-					f.write("Test")
-				os.remove(test_path)
-			except:
-				logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
-				return jsonify(path=path, exists=exists, typeok=typeok, access=False, result=False)
-
-		return jsonify(path=path, exists=exists, typeok=typeok, access=access, result=exists and typeok and access)
-
-	elif command == "url":
-		import requests
-
-		class StatusCodeRange(object):
-			def __init__(self, start=None, end=None):
-				self.start = start
-				self.end = end
-
-			def __contains__(self, item):
-				if not isinstance(item, int):
-					return False
-				if self.start and self.end:
-					return self.start <= item < self.end
-				elif self.start:
-					return self.start <= item
-				elif self.end:
-					return item < self.end
-				else:
-					return False
-
-			def as_dict(self):
-				return dict(
-					start=self.start,
-					end=self.end
-				)
-
-		status_ranges = dict(
-			informational=StatusCodeRange(start=100,end=200),
-			success=StatusCodeRange(start=200,end=300),
-			redirection=StatusCodeRange(start=300,end=400),
-			client_error=StatusCodeRange(start=400,end=500),
-			server_error=StatusCodeRange(start=500,end=600),
-			normal=StatusCodeRange(end=400),
-			error=StatusCodeRange(start=400,end=600),
-			any=StatusCodeRange(start=100),
-			timeout=StatusCodeRange(start=0, end=1)
-		)
-
-		url = data["url"]
-		method = data.get("method", "HEAD")
-		timeout = 3.0
-		valid_ssl = True
-		check_status = [status_ranges["normal"]]
-		content_type_whitelist = None
-		content_type_blacklist = None
-
-		if "timeout" in data:
-			try:
-				timeout = float(data["timeout"])
-			except:
-				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
-
-		if "validSsl" in data:
-			valid_ssl = data["validSsl"] in valid_boolean_trues
-
-		if "status" in data:
-			request_status = data["status"]
-			if not isinstance(request_status, list):
-				request_status = [request_status]
-
-			check_status = []
-			for rs in request_status:
-				if isinstance(rs, int):
-					check_status.append([rs])
-				else:
-					if rs in status_ranges:
-						check_status.append(status_ranges[rs])
-					else:
-						code = requests.codes[rs]
-						if code is not None:
-							check_status.append([code])
-
-		if "content_type_whitelist" in data:
-			if not isinstance(data["content_type_whitelist"], (list, tuple)):
-				return make_response("content_type_whitelist must be a list of mime types")
-			content_type_whitelist = map(util.parse_mime_type, data["content_type_whitelist"])
-		if "content_type_blacklist" in data:
-			if not isinstance(data["content_type_whitelist"], (list, tuple)):
-				return make_response("content_type_blacklist must be a list of mime types")
-			content_type_blacklist = map(util.parse_mime_type, data["content_type_blacklist"])
-
-		response_result = None
-		outcome = True
-		status = 0
+	if check_writable_dir and check_type == "dir":
 		try:
-			with requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True) as response:
-				status = response.status_code
-				outcome = outcome and any(map(lambda x: status in x, check_status))
-				content_type = response.headers.get("content-type")
-
-				response_result = dict(headers=dict(response.headers),
-				                       content_type=content_type)
-
-				parsed_content_type = util.parse_mime_type(content_type)
-				in_whitelist = content_type_whitelist is None or any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
-				in_blacklist = content_type_blacklist is not None and any(map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_blacklist))
-
-				if not in_whitelist or in_blacklist:
-					# we don't support this content type
-					response.close()
-					outcome = False
-
-				elif "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
-					if data["response"] == "json":
-						content = response.json()
-
-					else:
-						import base64
-						content = base64.standard_b64encode(response.content)
-
-					response_result["content"] = content
+			test_path = os.path.join(path, ".testballoon.txt")
+			with open(test_path, "wb") as f:
+				f.write("Test")
+			os.remove(test_path)
 		except:
-			logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
-			outcome = False
+			logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
+			return jsonify(path=path, exists=exists, typeok=typeok, broken_symlink=False, access=False, result=False)
 
-		result = dict(
-			url=url,
-			status=status,
-			result=outcome
-		)
-		if response_result:
-			result["response"] = response_result
+	return jsonify(path=path, exists=exists, typeok=typeok, broken_symlink=False, access=access, result=exists and typeok and access)
 
-		return jsonify(**result)
 
-	elif command == "server":
-		host = data["host"]
+def _test_url(data):
+	import requests
+
+	class StatusCodeRange(object):
+		def __init__(self, start=None, end=None):
+			self.start = start
+			self.end = end
+
+		def __contains__(self, item):
+			if not isinstance(item, int):
+				return False
+			if self.start and self.end:
+				return self.start <= item < self.end
+			elif self.start:
+				return self.start <= item
+			elif self.end:
+				return item < self.end
+			else:
+				return False
+
+		def as_dict(self):
+			return dict(
+				start=self.start,
+				end=self.end
+			)
+
+	status_ranges = dict(
+		informational=StatusCodeRange(start=100, end=200),
+		success=StatusCodeRange(start=200, end=300),
+		redirection=StatusCodeRange(start=300, end=400),
+		client_error=StatusCodeRange(start=400, end=500),
+		server_error=StatusCodeRange(start=500, end=600),
+		normal=StatusCodeRange(end=400),
+		error=StatusCodeRange(start=400, end=600),
+		any=StatusCodeRange(start=100),
+		timeout=StatusCodeRange(start=0, end=1)
+	)
+
+	url = data["url"]
+	method = data.get("method", "HEAD")
+	timeout = 3.0
+	valid_ssl = True
+	check_status = [status_ranges["normal"]]
+	content_type_whitelist = None
+	content_type_blacklist = None
+
+	if "timeout" in data:
 		try:
-			port = int(data["port"])
+			timeout = float(data["timeout"])
 		except:
-			return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
+			return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]),
+			                     400)
 
-		timeout = 3.05
-		if "timeout" in data:
-			try:
-				timeout = float(data["timeout"])
-			except:
-				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+	if "validSsl" in data:
+		valid_ssl = data["validSsl"] in valid_boolean_trues
 
-		protocol = data.get("protocol", "tcp")
-		if protocol not in ("tcp", "udp"):
-			return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
+	if "status" in data:
+		request_status = data["status"]
+		if not isinstance(request_status, list):
+			request_status = [request_status]
 
-		from octoprint.util import server_reachable
-		reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
+		check_status = []
+		for rs in request_status:
+			if isinstance(rs, int):
+				check_status.append([rs])
+			else:
+				if rs in status_ranges:
+					check_status.append(status_ranges[rs])
+				else:
+					code = requests.codes[rs]
+					if code is not None:
+						check_status.append([code])
 
-		result = dict(host=host,
-		              port=port,
-		              protocol=protocol,
-		              result=reachable)
+	if "content_type_whitelist" in data:
+		if not isinstance(data["content_type_whitelist"], (list, tuple)):
+			return make_response("content_type_whitelist must be a list of mime types")
+		content_type_whitelist = map(util.parse_mime_type, data["content_type_whitelist"])
+	if "content_type_blacklist" in data:
+		if not isinstance(data["content_type_whitelist"], (list, tuple)):
+			return make_response("content_type_blacklist must be a list of mime types")
+		content_type_blacklist = map(util.parse_mime_type, data["content_type_blacklist"])
 
-		return jsonify(**result)
+	response_result = None
+	outcome = True
+	status = 0
+	try:
+		with requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True) as response:
+			status = response.status_code
+			outcome = outcome and any(map(lambda x: status in x, check_status))
+			content_type = response.headers.get("content-type")
 
+			response_result = dict(headers=dict(response.headers),
+			                       content_type=content_type)
+
+			parsed_content_type = util.parse_mime_type(content_type)
+			in_whitelist = content_type_whitelist is None or any(
+				map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
+			in_blacklist = content_type_blacklist is not None and any(
+				map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_blacklist))
+
+			if not in_whitelist or in_blacklist:
+				# we don't support this content type
+				response.close()
+				outcome = False
+
+			elif "response" in data and (
+					data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
+				if data["response"] == "json":
+					content = response.json()
+
+				else:
+					import base64
+					content = base64.standard_b64encode(response.content)
+
+				response_result["content"] = content
+	except:
+		logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
+		outcome = False
+
+	result = dict(
+		url=url,
+		status=status,
+		result=outcome
+	)
+	if response_result:
+		result["response"] = response_result
+
+	return jsonify(**result)
+
+def _test_server(data):
+	host = data["host"]
+	try:
+		port = int(data["port"])
+	except:
+		return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
+
+	timeout = 3.05
+	if "timeout" in data:
+		try:
+			timeout = float(data["timeout"])
+		except:
+			return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]),
+			                     400)
+
+	protocol = data.get("protocol", "tcp")
+	if protocol not in ("tcp", "udp"):
+		return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
+
+	from octoprint.util import server_reachable
+	reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
+
+	result = dict(host=host,
+	              port=port,
+	              protocol=protocol,
+	              result=reachable)
+
+	return jsonify(**result)

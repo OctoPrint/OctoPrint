@@ -86,8 +86,13 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		settings, _, safe_mode, event_manager, connectivity_checker, plugin_manager, environment_detector = components
 
 	except FatalStartupError as e:
-		click.echo(e.message, err=True)
-		click.echo("There was a fatal error starting up OctoPrint.", err=True)
+		logger = logging.getLogger("octoprint.startup").fatal
+		echo = lambda x: click.echo(x, err=True)
+
+		for method in logger, echo:
+			method(str(e))
+			method("There was a fatal error starting up OctoPrint.")
+
 	else:
 		from octoprint.server import Server
 		octoprint_server = Server(settings=settings,

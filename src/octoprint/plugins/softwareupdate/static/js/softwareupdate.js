@@ -400,8 +400,6 @@ $(function() {
         };
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
-
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
@@ -582,7 +580,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK)) {
                 return;
             }
 

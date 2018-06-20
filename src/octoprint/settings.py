@@ -387,7 +387,6 @@ default_settings = {
 			"includeFilenameInOpened": True,
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
-			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"reprapfwM114": False,
@@ -627,7 +626,7 @@ class Settings(object):
 
 		self._script_env = self._init_script_templating()
 
-		self._sanity_check_folders()
+		self.sanity_check_folders(folders=["logs", ])
 
 	def _init_basedir(self, basedir):
 		if basedir is not None:
@@ -643,8 +642,10 @@ class Settings(object):
 				                   "can't run without a writable base folder.".format(self._basedir), exc_info=1)
 				raise
 
-	def _sanity_check_folders(self):
-		for folder in default_settings["folder"].keys():
+	def sanity_check_folders(self, folders=None):
+		if folders is None:
+			folders = default_settings["folder"].keys()
+		for folder in folders:
 			self.getBaseFolder(folder, log_error=True)
 
 	def _get_default_folder(self, type):
@@ -1755,15 +1756,23 @@ def _validate_folder(folder, create=True, writable=True, log_error=False):
 	logger = logging.getLogger(__name__)
 
 	if not os.path.exists(folder):
-		if create:
+		if os.path.islink(folder):
+			# broken symlink, see #2644
+			raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+
+		elif create:
+			# non existing, but we are allowed to create it
 			try:
 				os.makedirs(folder)
 			except:
 				if log_error:
 					logger.exception("Could not create {}".format(folder))
 				raise IOError("Folder for type {} at {} does not exist and creation failed".format(type, folder))
+
 		else:
+			# not extisting, not allowed to create it
 			raise IOError("No such folder: {}".format(folder))
+
 	elif os.path.isfile(folder):
 		# hardening against misconfiguration, see #1953
 		raise IOError("Expected a folder at {} but found a file instead".format(folder))

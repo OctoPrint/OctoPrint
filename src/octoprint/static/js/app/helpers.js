@@ -674,7 +674,6 @@ function showMessageDialog(msg, options) {
         if (onclose && _.isFunction(onclose)) {
             onclose();
         }
-        modal.remove();
     });
 
     if (onshow) {
@@ -749,7 +748,6 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onproceed(e);
         }
         modal.modal("hide");
-        modal.remove();
     });
 
     return modal;
@@ -834,7 +832,6 @@ function showSelectionDialog(options) {
         if (onclose && _.isFunction(onclose)) {
             onclose(event);
         }
-        modal.remove();
     });
     modal.modal("show");
 

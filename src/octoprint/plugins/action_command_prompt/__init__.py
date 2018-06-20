@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.server import user_permission
+from octoprint.access import USER_GROUP
 
 import flask
 from flask_babel import gettext
@@ -45,6 +46,17 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def initialize(self):
 		self._selection_command = self._settings.get([b"selection_command"])
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="INTERACT",
+			     name="Interact with printer prompts",
+			     description=gettext("Allows to see and interact with printer prompts"),
+			     default_groups=[USER_GROUP],
+			     roles=["interact"])
+		]
 
 	#~ AssetPlugin
 
@@ -162,5 +174,6 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin your printer wil
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
-	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler
+	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
+	b"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }

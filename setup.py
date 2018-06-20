@@ -16,8 +16,8 @@ import octoprint_setuptools
 INSTALL_REQUIRES = [
 	"flask>=0.12,<0.13",
 	"werkzeug>=0.11.1,<0.12",
-	"tornado>=4.5.3,<5",
-	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
+	"tornado==4.5.3",
+	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
@@ -29,25 +29,26 @@ INSTALL_REQUIRES = [
 	"Flask-Assets>=0.12,<0.13",
 	"markdown>=2.6.4,<2.7",
 	"pyserial>=3.4,<3.5",
-	"netaddr>=0.7.17,<0.8",
+	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.8.3,<0.9",
-	"sarge>=0.1.4,<0.2",
-	"netifaces>=0.10,<0.11",
+	"sarge==0.1.4",  # 0.1.5 introduced a breaking change with regards to the async keyword. Pinning
+	                 # to 0.1.4 for now to work around this.
+	"netifaces>=0.10.6,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.4,<3.5",
 	"pkginfo>=1.4.2,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.6.0,<2.7",
-	"psutil>=5.4.5,<5.5",
+	"psutil>=5.4.6,<5.5",
 	"Click>=6.7,<6.8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
 	"chainmap>=1.0.2,<1.1",
-	"future>=0.15,<0.16",
+	"future>=0.15.2,<0.16",
 	"scandir>=1.3,<1.4",
-	"websocket-client>=0.40,<0.41",
-	"python-dateutil>=2.6,<2.7",
-	"wrapt>=1.10.10,<1.11",
+	"websocket-client>=0.40.0,<0.41",
+	"python-dateutil>=2.6.1,<2.7",
+	"wrapt>=1.10.11,<1.11",
 	"futures>=3.1.1,<3.2",
 	"emoji>=0.4.5,<0.5",
 	"monotonic>=1.3,<1.4",
