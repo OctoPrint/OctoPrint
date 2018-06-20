@@ -31,7 +31,8 @@ INSTALL_REQUIRES = [
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.8.3,<0.9",
-	"sarge>=0.1.4,<0.2",
+	"sarge==0.1.4",  # 0.1.5 introduced a breaking change with regards to the async keyword. Pinning
+	                 # to 0.1.4 for now to work around this.
 	"netifaces>=0.10.6,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.2.3,<3.3",
