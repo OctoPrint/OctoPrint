@@ -1,6 +1,8 @@
 #  OctoPrint
 
 [![GitHub version](https://badge.fury.io/gh/foosel%2FOctoPrint.svg)](https://badge.fury.io/gh/foosel%2FOctoPrint)
+[![Travis build status](https://img.shields.io/travis/foosel/OctoPrint.svg)](https://travis-ci.org/foosel/OctoPrint)
+[![IRC](https://img.shields.io/badge/freenode-%23octoprint-blue.svg)](https://chat.octoprint.org)
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
@@ -8,6 +10,8 @@ and released under the [GNU Affero General Public License V3](http://www.gnu.org
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
 The community forum is available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
+
+The official IRC channel is [#octoprint on freenode](https://chat.octoprint.org). Its logs can be found [here](https://freenode.logbot.info/octoprint).
 
 The FAQ can be accessed by following [faq.octoprint.org](https://faq.octoprint.org/?utm_source=github&utm_medium=readme).
 
