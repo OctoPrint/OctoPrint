@@ -18,7 +18,6 @@ As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/20
 
 ### Improvements
 
-  * [#485](https://github.com/foosel/OctoPrint/issues/485) - Added a progress bar for timelapse rendering (see also [#2586](https://github.com/foosel/OctoPrint/pull/2586)).
   * [#652](https://github.com/foosel/OctoPrint/issues/652) & [#1545](https://github.com/foosel/OctoPrint/issues/1545) - Added name of user who started a job to job info (see also [#2576](https://github.com/foosel/OctoPrint/pull/2576)).
   * [#1203](https://github.com/foosel/OctoPrint/issues/1203) & [#1905](https://github.com/foosel/OctoPrint/issues/1905) & [#1797](https://github.com/foosel/OctoPrint/issues/1797) & [#2514](https://github.com/foosel/OctoPrint/issues/2514) - Added support for plugins to override GCODE analysis provider and live print time estimation with their own implementations through two new hooks [`octoprint.filemanager.analysis.factory`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-filemanager-analysis-factory) and [`octoprint.printer.estimation.factory`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-printer-estimation-factory). 
   * [#1217](https://github.com/foosel/OctoPrint/issues/1217) - Software Update Plugin: Block the UI in general when an update is in progress (even in browser windows that didn't start it and logged in as user) so that no prints can be accidentally started during that.
