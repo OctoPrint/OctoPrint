@@ -23,7 +23,7 @@ apps:
      
 parts: 
   my-part:
-    source: https://github.com/kz6fittycent/OctoPrint
+    source: https://github.com/foosel/OctoPrint
     source-type: git
     plugin: python2
     #python-version: python
