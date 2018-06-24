@@ -299,7 +299,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	   - * **Key**
 	     * **Description**
 	   - * ``estimatedPrintTime``
-	     * Estimated time the file take to print, in minutes
+	     * Estimated time the file take to print, in seconds
 	   - * ``filament``
 	     * Substructure describing estimated filament usage. Keys are ``tool0`` for the first extruder, ``tool1`` for
 	       the second and so on. For each tool extruded length and volume (based on diameter) are provided.
