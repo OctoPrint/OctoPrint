@@ -9,6 +9,7 @@ import octoprint.plugin
 import sys
 import inspect
 from flask_babel import gettext
+from octoprint.access import ADMIN_GROUP, USER_GROUP
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -84,7 +85,8 @@ class AclSubwizard(object):
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
+
+			self._user_manager.add_user(data["user"], data["pass1"], True, [], [USER_GROUP, ADMIN_GROUP], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
