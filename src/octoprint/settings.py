@@ -278,6 +278,7 @@ default_settings = {
 		"name": "",
 		"color": "default",
 		"colorTransparent": False,
+		"colorIcon": True,
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
 		"components": {
