@@ -1424,17 +1424,22 @@ class Settings(object):
 	#~~ getter
 
 	def get(self, path, **kwargs):
-		error_on_path = kwargs.get("error_on_path", False)
-		new_kwargs = dict(kwargs)
-		if "error_on_path" in new_kwargs:
-			del new_kwargs["error_on_path"]
+		error_on_path = kwargs.pop("error_on_path", False)
+		validator = kwargs.pop("validator", None)
+		fallback = kwargs.pop("fallback", None)
 
-		try:
-			return self._get_value(path, **new_kwargs)
-		except NoSuchSettingsPath:
-			if error_on_path:
-				raise
-			return None
+		def process():
+			try:
+				return self._get_value(path, **kwargs)
+			except NoSuchSettingsPath:
+				if error_on_path:
+					raise
+				return None
+
+		result = process()
+		if callable(validator) and not validator(result):
+			result = fallback
+		return result
 
 	def getInt(self, path, **kwargs):
 		minimum = kwargs.pop("min", None)
