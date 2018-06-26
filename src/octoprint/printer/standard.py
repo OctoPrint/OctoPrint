@@ -1379,7 +1379,7 @@ class Printer(PrinterInterface,
 
 			if event_type == "done" and self._on_streaming_done is not None:
 				self._on_streaming_done(job.name, job.name, FileDestinations.SDCARD)
-				eventManager().fire(Events.TRANSFER_DONE, {"local": job.name, "remote": job.remote})
+				eventManager().fire(Events.TRANSFER_DONE, {"local": job.name, "remote": job.remote, "time": job.last_elapsed})
 			elif event_type == "cancelled" and self._on_streaming_failed is not None:
 				self._on_streaming_failed(job.name, job.name, FileDestinations.SDCARD)
 				eventManager().fire(Events.TRANSFER_FAILED, {"local": job.name, "remote": job.remote})

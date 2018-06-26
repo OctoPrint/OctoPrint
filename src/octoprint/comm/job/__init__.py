@@ -33,6 +33,7 @@ class Printjob(ProtocolListener, ListenerAware):
 		self._event_data = event_data
 
 		self._lost_time = 0
+		self._last_elapsed = None
 
 	@property
 	def name(self):
@@ -53,6 +54,13 @@ class Printjob(ProtocolListener, ListenerAware):
 	@property
 	def elapsed(self):
 		return monotonic() - self._start if self._start is not None else None
+
+	@property
+	def last_elapsed(self):
+		elapsed = self.elapsed
+		if elapsed is None:
+			elapsed = self._last_elapsed
+		return elapsed
 
 	@property
 	def clean_elapsed(self):
@@ -146,6 +154,8 @@ class Printjob(ProtocolListener, ListenerAware):
 			self._logger.info("Job processed in {}s".format(elapsed))
 
 	def reset_job(self):
+		if self._start is not None:
+			self._last_elapsed = self.elapsed
 		self._start = None
 
 	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
