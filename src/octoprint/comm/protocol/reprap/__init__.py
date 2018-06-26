@@ -305,11 +305,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if isinstance(job, LocalGcodeStreamjob):
 			self._internal_flags["only_from_job"] = True
 			self._internal_flags["trigger_events"] = False
-			self._current_registered_messages = self._comm_messages
 		else:
 			self._internal_flags["only_from_job"] = False
 			self._internal_flags["trigger_events"] = True
-			self._current_registered_messages = self._registered_messages
 		self._internal_flags["expect_continous_comms"] = not job.parallel
 
 		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
