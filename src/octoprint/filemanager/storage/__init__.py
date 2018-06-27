@@ -296,6 +296,33 @@ class Storage(object):
 		"""
 		raise NotImplementedError()
 
+	def add_history(self, path, data):
+		"""
+		Adds a history entry for the given ``path``.
+
+		:param path: path of the file for which to add the history entry
+		:param data: history entry
+		"""
+		raise NotImplementedError()
+
+	def update_history(self, path, index, data):
+		"""
+		Updates the history entry for ``path`` at ``index``.
+
+		:param path: path of the file for which to update the history entry
+		:param index: index
+		:param data: history entry
+		"""
+		raise NotImplementedError()
+
+	def remove_history(self, path, index):
+		"""
+		Removes the history entry for ``path`` at ``index``.
+		:param path: path of the file for which to remove the history entry
+		:param index: index
+		"""
+		raise NotImplementedError()
+
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
 		"""
 		Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.

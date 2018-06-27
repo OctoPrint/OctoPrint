@@ -97,6 +97,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             temperature_interval_idle=5.0,
 	             temperature_interval_printing=5.0,
 	             temperature_interval_autoreport=2.0,
+	             sd_status_interval=2.0,
 	             sd_status_interval_autoreport=1.0,
 	             plugin_manager=None):
 		super(ReprapGcodeProtocol, self).__init__()
@@ -119,6 +120,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			temperature_idle=temperature_interval_idle,
 			temperature_printing=temperature_interval_printing,
 			temperature_autoreport=temperature_interval_autoreport,
+			sd_status=sd_status_interval,
 			sd_status_autoreport=sd_status_interval_autoreport
 		)
 
@@ -507,6 +509,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def start_file_print(self, name, position=0, *args, **kwargs):
 		tags = kwargs.get(b"tags", set()) | {"trigger:protocol.start_file_print"}
+
 		self._send_commands(self.flavor.command_sd_select_file(name),
 		                    self.flavor.command_sd_set_pos(position),
 		                    self.flavor.command_sd_start(),
@@ -530,8 +533,28 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def get_file_print_status(self, *args, **kwargs):
 		self._send_commands(self.flavor.command_sd_status())
 
+	def start_file_print_status_monitor(self):
+		if self._internal_flags["sd_status_autoreporting"]:
+			return
+
+		from octoprint.util import RepeatedTimer
+
+		def poll_status():
+			if self.can_send() and not self._internal_flags["sd_status_autoreporting"]:
+				self.get_file_print_status()
+		self._sd_status_poller = RepeatedTimer(self.interval["sd_status"],
+		                                       poll_status)
+		self._sd_status_poller.start()
+
+	def stop_file_print_status_monitor(self):
+		if self._sd_status_poller is not None:
+			self._sd_status_poller.cancel()
+			self._sd_status_poller = None
+
+	##~~
+
 	def can_send(self):
-		return not self._internal_flags["long_running_command"] and not self._internal_flags["heating"]
+		return self._is_operational() and not self._internal_flags["long_running_command"] and not self._internal_flags["heating"] and not self._internal_flags["dwelling_until"]
 
 	def send_commands(self, *commands, **kwargs):
 		command_type = kwargs.get(b"command_type")

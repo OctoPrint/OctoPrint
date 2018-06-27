@@ -609,10 +609,13 @@ class FileManager(object):
 
 	def log_print(self, destination, path, timestamp, print_time, success, printer_profile):
 		try:
-			if success:
-				self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success, printerProfile=printer_profile))
-			else:
-				self._storage(destination).add_history(path, dict(timestamp=timestamp, success=success, printerProfile=printer_profile))
+			try:
+				if success:
+					self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success, printerProfile=printer_profile))
+				else:
+					self._storage(destination).add_history(path, dict(timestamp=timestamp, success=success, printerProfile=printer_profile))
+			except NotImplementedError:
+				pass
 			eventManager().fire(Events.METADATA_STATISTICS_UPDATED, dict(storage=destination, path=path))
 		except NoSuchStorage:
 			# if there's no storage configured where to log the print, we'll just not log it

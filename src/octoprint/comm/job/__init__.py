@@ -279,6 +279,7 @@ class LocalFilePrintjob(StoragePrintjob):
 
 				if not line:
 					self.process_job_done()
+					return None
 				processed = self.process_line(line)
 
 			self._read_lines += 1
@@ -460,11 +461,9 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._active = True
 		self._last_pos = position
 
-		from octoprint.util import RepeatedTimer
-		self._status_timer = RepeatedTimer(self._status_interval, self._query_status, condition=self._query_active)
-		self._status_timer.start()
+		self._protocol.start_file_print_status_monitor()
 
-	def on_protocol_file_status(self, protocol, pos, total, *args, **kwargs):
+	def on_protocol_sd_status(self, protocol, pos, total, *args, **kwargs):
 		self._last_pos = pos
 		self._size = total
 		self.process_job_progress()
@@ -474,6 +473,7 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self.process_job_started()
 
 	def on_protocol_file_print_done(self, protocol, *args, **kwargs):
+		self._protocol.stop_file_print_status_monitor()
 		self.process_job_done()
 
 	def reset_job(self):
@@ -481,12 +481,10 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._last_pos = None
 		self._size = None
 
-	def _query_status(self):
-		if self._protocol.can_send():
-			self._protocol.get_file_print_status()
-
-	def _query_active(self):
-		return self._active
+	def event_payload(self):
+		payload = Printjob.event_payload(self)
+		payload["size"] = self.size
+		return payload
 
 
 class PrintjobListener(object):

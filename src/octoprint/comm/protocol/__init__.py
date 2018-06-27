@@ -331,6 +331,12 @@ class FileAwareProtocolMixin(object):
 	def get_file_print_status(self):
 		pass
 
+	def start_file_print_status_monitor(self):
+		pass
+
+	def stop_file_print_status_monitor(self):
+		pass
+
 
 class FileManagementProtocolMixin(FileAwareProtocolMixin):
 

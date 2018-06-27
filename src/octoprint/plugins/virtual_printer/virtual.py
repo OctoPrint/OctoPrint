@@ -487,7 +487,10 @@ class VirtualPrinter(object):
 
 	def _gcode_M26(self, data):
 		if self._sdCardReady:
-			pos = int(re.search("S([0-9]+)", data).group(1))
+			match = re.search("S([0-9]+)", data)
+			if not match:
+				return
+			pos = int(match.group(1))
 			self._setSdPos(pos)
 
 	def _gcode_M27(self, data):

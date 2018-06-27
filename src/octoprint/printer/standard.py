@@ -521,14 +521,14 @@ class Printer(PrinterInterface,
 	@util.deprecated("select_file has been deprecated, use select_job instead",
 	                 includedoc="Replaced by :func:`select_job`",
 	                 since="1.4.0")
-	def select_file(self, path, sd, printAfterSelect=False, pos=None, user=None):
+	def select_file(self, path, sd, printAfterSelect=False, pos=None, user=None, **kwargs):
 		if sd:
 			storage = "sdcard"
 		else:
 			storage = "local"
 
 		job = self._file_manager.create_print_job(storage, path, user=user)
-		self.select_job(job, start_printing=printAfterSelect, pos=pos)
+		self.select_job(job, start_printing=printAfterSelect, pos=pos, **kwargs)
 
 	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead",
 	                                includedoc="Replaced by :func:`unselect_job`",
@@ -549,7 +549,7 @@ class Printer(PrinterInterface,
 		self._set_current_z(None)
 
 		self._protocol.process(self._job.job,
-		                       position=pos,
+		                       position=0 if pos is None else pos,
 		                       tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
 	def pause_print(self, *args, **kwargs):
