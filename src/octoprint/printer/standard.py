@@ -881,6 +881,11 @@ class Printer(PrinterInterface,
 			print_time = None
 			cleaned_print_time = None
 			pos = None
+		elif self._job.job.last_result.success:
+			progress = self._job.job.last_result.progress
+			print_time = self._job.job.last_result.elapsed
+			cleaned_print_time = self._job.job.last_result.clean_elapsed
+			pos = self._job.job.last_result.pos
 		else:
 			progress = self._job.job.progress
 			print_time = self._job.job.elapsed
@@ -890,7 +895,7 @@ class Printer(PrinterInterface,
 		print_time_left = print_time_left_origin = None
 
 		if progress is not None:
-			progress_int = int(self._job.job.progress * 100)
+			progress_int = int(progress * 100)
 			if self._last_progress_report != progress_int:
 				self._last_progress_report = progress_int
 				self._report_print_progress_to_plugins(progress_int)
@@ -924,7 +929,7 @@ class Printer(PrinterInterface,
 		                  printTimeLeft=int(print_time_left) if print_time_left is not None else None,
 		                  printTimeLeftOrigin=print_time_left_origin)
 
-	def _add_temperature_data(self, temperatures):
+	def _add_temperature_data(self, temperatures=None):
 		if temperatures is None:
 			temperatures = dict()
 
@@ -1089,7 +1094,7 @@ class Printer(PrinterInterface,
 			self._set_current_z(None)
 			self._update_progress_data()
 			self._set_offsets(None)
-			self._addTemperatureData()
+			self._add_temperature_data()
 			self._update_job()
 			self._printer_profile_manager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
@@ -1144,7 +1149,7 @@ class Printer(PrinterInterface,
 
 	#~~ octoprint.comm.protocol.JobAwareProtocolListener implementation
 
-	def on_protocol_job_processing(self, protocol, job, suppress_script=False):
+	def on_protocol_job_started(self, protocol, job, suppress_script=False, *args, **kwargs):
 		if protocol != self._protocol:
 			return
 
@@ -1474,12 +1479,10 @@ class StateMonitor(object):
 
 	def trigger_progress_update(self):
 		with self._progress_lock:
-			self._progress_dirty = True
 			self._change_event.set()
 
 	def set_progress(self, progress):
 		with self._progress_lock:
-			self._progress_dirty = False
 			self._progress = progress
 			self._change_event.set()
 
@@ -1507,9 +1510,7 @@ class StateMonitor(object):
 
 	def get_current_data(self):
 		with self._progress_lock:
-			if self._progress_dirty:
-				self._progress = self._get_current_progress()
-				self._progress_dirty = False
+			self._progress = self._get_current_progress()
 
 		return dict(state=self._state,
 		            job=self._job_data,

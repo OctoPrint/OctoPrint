@@ -14,6 +14,18 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from monotonic import monotonic
 
+
+class LastResult(object):
+	def __init__(self):
+		self.elapsed = None
+		self.clean_elapsed = None
+		self.progress = None
+		self.pos = None
+		self.success = None
+
+		self.available = False
+
+
 class Printjob(ProtocolListener, ListenerAware):
 	__metaclass__ = ABCMeta
 
@@ -33,7 +45,7 @@ class Printjob(ProtocolListener, ListenerAware):
 		self._event_data = event_data
 
 		self._lost_time = 0
-		self._last_elapsed = None
+		self._last_result = LastResult()
 
 	@property
 	def name(self):
@@ -56,18 +68,15 @@ class Printjob(ProtocolListener, ListenerAware):
 		return monotonic() - self._start if self._start is not None else None
 
 	@property
-	def last_elapsed(self):
-		elapsed = self.elapsed
-		if elapsed is None:
-			elapsed = self._last_elapsed
-		return elapsed
-
-	@property
 	def clean_elapsed(self):
 		elapsed = self.elapsed
 		if elapsed is None:
 			return None
 		return elapsed - self._lost_time
+
+	@property
+	def last_result(self):
+		return self._last_result
 
 	@property
 	def progress(self):
@@ -89,6 +98,7 @@ class Printjob(ProtocolListener, ListenerAware):
 		return False
 
 	def process(self, protocol, position=0, tags=None):
+		self._last_result = LastResult()
 		self._start = monotonic()
 		self._protocol = protocol
 		self._protocol.register_listener(self)
@@ -132,12 +142,12 @@ class Printjob(ProtocolListener, ListenerAware):
 	def process_job_failed(self):
 		self.notify_listeners("on_job_failed", self)
 		self.report_stats()
-		self.reset_job()
+		self.reset_job(success=False)
 
 	def process_job_cancelled(self):
 		self.notify_listeners("on_job_cancelled", self)
 		self.report_stats()
-		self.reset_job()
+		self.reset_job(success=False)
 
 	def process_job_paused(self):
 		self.notify_listeners("on_job_paused", self)
@@ -153,10 +163,16 @@ class Printjob(ProtocolListener, ListenerAware):
 		if elapsed:
 			self._logger.info("Job processed in {}s".format(elapsed))
 
-	def reset_job(self):
-		if self._start is not None:
-			self._last_elapsed = self.elapsed
+	def reset_job(self, success=True):
+		self._last_result.progress = 1.0 if success else self.progress
+		self._last_result.pos = self.size if success else self.pos
+		self._last_result.elapsed = self.elapsed
+		self._last_result.clean_elapsed = self.clean_elapsed
+		self._last_result.success = success
+		self._last_result.available = True
+
 		self._start = None
+		self._lost_time = 0
 
 	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		if new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR) and self.active:
@@ -310,8 +326,8 @@ class LocalFilePrintjob(StoragePrintjob):
 			for line in f.readline():
 				yield line
 
-	def reset_job(self):
-		super(LocalFilePrintjob, self).reset_job()
+	def reset_job(self, success=True):
+		super(LocalFilePrintjob, self).reset_job(success=success)
 		self.close()
 		self._pos = self._read_lines = 0
 
@@ -457,10 +473,10 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		Printjob.process(self, protocol, position=position)
 
 		self._protocol.register_listener(self)
-		self._protocol.start_file_print(self._filename, position=position, tags=tags)
 		self._active = True
 		self._last_pos = position
 
+		self._protocol.start_file_print(self._filename, position=position, tags=tags)
 		self._protocol.start_file_print_status_monitor()
 
 	def on_protocol_sd_status(self, protocol, pos, total, *args, **kwargs):
@@ -468,7 +484,7 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._size = total
 		self.process_job_progress()
 
-	def on_protocol_file_print_started(self, protocol, name, size, *args, **kwargs):
+	def on_protocol_file_print_started(self, protocol, name, long_name, size, *args, **kwargs):
 		self._size = size
 		self.process_job_started()
 
@@ -476,7 +492,8 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._protocol.stop_file_print_status_monitor()
 		self.process_job_done()
 
-	def reset_job(self):
+	def reset_job(self, success=True):
+		super(SDFilePrintjob, self).reset_job(success=success)
 		self._active = False
 		self._last_pos = None
 		self._size = None

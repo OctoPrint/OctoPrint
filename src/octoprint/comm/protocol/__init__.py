@@ -409,7 +409,7 @@ class FileAwareProtocolListener(object):
 	def on_protocol_file_status(self, protocol, pos, total, *args, **kwargs):
 		pass
 
-	def on_protocol_file_print_started(self, protocol, name, size, *args, **kwargs):
+	def on_protocol_file_print_started(self, protocol, name, long_name, size, *args, **kwargs):
 		pass
 
 	def on_protocol_file_print_done(self, protocol, *args, **kwargs):
