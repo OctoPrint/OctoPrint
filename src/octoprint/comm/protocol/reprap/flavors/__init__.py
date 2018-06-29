@@ -8,6 +8,7 @@ from .generic import *
 from .marlin import *
 from .repetier import *
 from .reprapfirmware import *
+from .smoothieware import *
 
 from .anet import *
 from .malyan import *

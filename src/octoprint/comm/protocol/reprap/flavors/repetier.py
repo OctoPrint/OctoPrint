@@ -16,6 +16,7 @@ import re
 class RepetierFlavor(GenericFlavor):
 
 	key = "repetier"
+	name = "Repetier"
 
 	always_send_checksum = True
 	identical_resends_countdown = 5

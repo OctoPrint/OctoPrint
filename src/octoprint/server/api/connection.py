@@ -13,16 +13,32 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
 from octoprint.access.permissions import Permissions
 
+from octoprint.comm.transport import all_transports
+from octoprint.comm.protocol import all_protocols
+
+def _convert_transport_options(options):
+	return [option.as_dict() for option in options]
+
+def _convert_protocol_options(options):
+	return [option.as_dict() for option in options]
+
 @api.route("/connection", methods=["GET"])
 @Permissions.STATUS.require(403)
 def connectionState():
-	state, port, baudrate, printer_profile = printer.get_current_connection()
-	current = {
-		"state": state,
-		"port": port,
-		"baudrate": baudrate,
-		"printerProfile": printer_profile["id"] if printer_profile is not None and "id" in printer_profile else "_default"
-	}
+	state, protocol, protocol_options, transport, transport_options, printer_profile = printer.get_current_connection_parameters()
+
+	current = dict(state=state,
+	               profile=printer_profile["id"] if printer_profile is not None and "id" in printer_profile else "_default",
+	               protocol=protocol,
+	               protocolOptions=protocol_options,
+	               transport=transport,
+	               transportOptions=transport_options)
+
+	##~~ legacy
+
+	# TODO remove in 1.5.0
+	_, port, baudrate, _ = printer.get_current_connection()
+	current.update(dict(port=port, baudrate=baudrate))
 
 	return jsonify({"current": current, "options": _get_options()})
 
@@ -42,39 +58,70 @@ def connectionCommand():
 		return response
 
 	if command == "connect":
-		connection_options = printer.__class__.get_connection_options()
+		kwargs = dict()
 
-		port = None
-		baudrate = None
-		printerProfile = None
-		if "port" in data.keys():
-			port = data["port"]
-			if port not in connection_options["ports"] and port != "AUTO":
-				return make_response("Invalid port: %s" % port, 400)
-		if "baudrate" in data.keys():
-			baudrate = data["baudrate"]
-			if baudrate not in connection_options["baudrates"] and baudrate != 0:
-				return make_response("Invalid baudrate: %d" % baudrate, 400)
+		if "protocol" in data:
+			kwargs["protocol"] = data["protocol"]
+
+		if "protocolOptions" in data:
+			kwargs["protocol_options"] = data["protocolOptions"]
+
+		if "transport" in data:
+			kwargs["transport"] = data["transport"]
+
+		if "transportOptions" in data:
+			kwargs["transport_options"] = data["transportOptions"]
+
 		if "printerProfile" in data.keys():
 			printerProfile = data["printerProfile"]
 			if not printerProfileManager.exists(printerProfile):
 				return make_response("Invalid printer profile: %s" % printerProfile, 400)
+			kwargs["profile"] = printerProfile
+
 		if "save" in data.keys() and data["save"]:
+			"""
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
-			printerProfileManager.set_default(printerProfile)
+			printerProfileManager.set_default(kwargs.get("profile"))
+			"""
+
 		if "autoconnect" in data.keys():
 			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
+
+		##~~ legacy
+
+		# TODO remove in 1.5.0
+
+		if "port" in data.keys():
+			kwargs["port"] = data["port"]
+
+		if "baudrate" in data.keys():
+			kwargs["baudrate"] = data["baudrate"]
+
 		settings().save()
-		printer.connect(port=port, baudrate=baudrate, profile=printerProfile)
+		printer.connect(**kwargs)
+
 	elif command == "disconnect":
 		printer.disconnect()
+
 	elif command == "fake_ack":
 		printer.fake_ack()
 
 	return NO_CONTENT
 
 def _get_options():
+	transports = []
+	for transport in all_transports():
+		transports.append(dict(name=transport.name,
+		                       key=transport.key,
+		                       options=_convert_transport_options(transport.get_connection_options())))
+
+	protocols = []
+	for protocol in all_protocols():
+		protocols.append(dict(name=protocol.name,
+		                      key=protocol.key,
+		                      options=_convert_protocol_options(protocol.get_connection_options())))
+
 	connection_options = printer.__class__.get_connection_options()
 	profile_options = printerProfileManager.get_all()
 	default_profile = printerProfileManager.get_default()
@@ -85,7 +132,9 @@ def _get_options():
 		printerProfiles=[dict(id=printer_profile["id"], name=printer_profile["name"] if "name" in printer_profile else printer_profile["id"]) for printer_profile in profile_options.values() if "id" in printer_profile],
 		portPreference=connection_options["portPreference"],
 		baudratePreference=connection_options["baudratePreference"],
-		printerProfilePreference=default_profile["id"] if "id" in default_profile else None
+		printerProfilePreference=default_profile["id"] if "id" in default_profile else None,
+		protocols=protocols,
+		transports=transports
 	)
 
 	return options

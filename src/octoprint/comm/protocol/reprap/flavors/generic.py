@@ -27,7 +27,7 @@ def all_flavors():
 	return _flavor_registry.values()
 
 
-def flavor(key):
+def lookup_flavor(key):
 	return _flavor_registry.get(key)
 
 
@@ -42,6 +42,7 @@ class GenericFlavor(object):
 	__metaclass__ = FlavorMeta
 
 	key = "generic"
+	name = "Generic Flavor"
 
 	logger = logging.getLogger(__name__)
 

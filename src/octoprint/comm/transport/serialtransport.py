@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
-from octoprint.comm.transport.parameters import TextType, IntegerType, SuggestionType, ConstantNameType
+from octoprint.comm.util.parameters import TextType, IntegerType, SuggestionType, Value
 
 import serial
 import logging
@@ -34,8 +34,8 @@ class SerialTransport(Transport):
 	@classmethod
 	def get_connection_options(cls):
 		return [
-			SuggestionType("port", "Port", TextType, cls.get_available_serial_ports(), default="AUTO"),
-			SuggestionType("baudrate", "Baudrate", IntegerType, cls.suggested_baudrates, default=0)
+			SuggestionType("port", "Port", cls.get_available_serial_ports(), lambda value: Value(value)),
+			SuggestionType("baudrate", "Baudrate", cls.get_available_baudrates(), lambda value: Value(value), default=0)
 		]
 
 	@classmethod
@@ -68,12 +68,15 @@ class SerialTransport(Transport):
 				from serial.tools import list_ports_common
 				ports = [list_ports_common.ListPortInfo(d) for d in devices]
 
-		return [ConstantNameType(port.device, port.description) for port in ports]
+		port_values = sorted([Value(port.device, title=port.description) for port in ports], key=lambda x: x.title)
+		if len(port_values) > 1:
+			port_values = [Value(None, title="Auto detect")] + port_values
+		return port_values
 
 	@classmethod
 	def get_available_baudrates(cls):
-		return [ConstantNameType(0, "Auto detect")] + \
-		       [ConstantNameType(baudrate, baudrate) for baudrate in cls.suggested_baudrates]
+		return [Value(0, title="Auto detect")] + \
+		       sorted([Value(baudrate) for baudrate in cls.suggested_baudrates], key=lambda x: x.title, reverse=True)
 
 	def __init__(self, *args, **kwargs):
 		super(SerialTransport, self).__init__()
@@ -92,6 +95,7 @@ class SerialTransport(Transport):
 
 		self._closing = False
 		self._serial = factory(port=port, baudrate=baudrate)
+		self.set_current_args(port=port, baudrate=baudrate)
 
 	def drop_connection(self):
 		if self._serial is not None:
@@ -153,30 +157,6 @@ class SerialTransport(Transport):
 
 	def __str__(self):
 		return "SerialTransport"
-
-class VirtualSerialTransport(SerialTransport):
-	name = "Virtual Serial Connection"
-	key = "virtual"
-
-	@classmethod
-	def get_connection_options(cls):
-		return []
-
-	def __init__(self, *args, **kwargs):
-		super(VirtualSerialTransport, self).__init__()
-		self.virtual_serial_factory = kwargs.get("virtual_serial_factory", None)
-
-	def create_connection(self, *args, **kwargs):
-		if self.virtual_serial_factory is None:
-			raise ValueError("virtual_serial_factory is unset")
-
-		if not callable(self.virtual_serial_factory):
-			raise ValueError("virtual_serial_factory is not callable")
-
-		self._serial = self.virtual_serial_factory()
-
-	def __str__(self):
-		return "VirtualSerialTransport({})".format(self.virtual_serial_factory)
 
 if __name__ == "__main__":
 	# list ports

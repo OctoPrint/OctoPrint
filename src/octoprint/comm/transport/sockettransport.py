@@ -6,13 +6,13 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper
-from octoprint.comm.transport.parameters import TextType, IntegerType
+from octoprint.comm.util.parameters import TextType, IntegerType
 
 import socket
 
 class TcpTransport(Transport):
 
-	name = "TCP Transport"
+	name = "TCP Connection"
 	key = "tcpsocket"
 	message_integrity = True
 
@@ -20,7 +20,7 @@ class TcpTransport(Transport):
 	def get_connection_options(cls):
 		return [
 			TextType("host", "Host"),
-			IntegerType("port", "Port", min=1)
+			IntegerType("port", "Port", min=1, max=65535)
 		]
 
 	def __init__(self):
@@ -36,6 +36,7 @@ class TcpTransport(Transport):
 
 		self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 		self._socket.connect((host, port))
+		self.set_current_args(host=host, port=port)
 
 	def drop_connection(self):
 		self._socket.close()
@@ -53,13 +54,6 @@ class TcpTransport(Transport):
 
 class SerialOverTcpTransport(TcpTransport):
 
-	name = "Serial over TCP Transport"
+	name = "Serial Connection over TCP"
 	key = "serialovertcpsocket"
 	message_integrity = False
-
-if __name__ == "__main__":
-	transport = LineAwareTransportWrapper(TcpTransport())
-	transport.connect(host="google.de", port=80)
-	transport.write(b"GET / HTTP/1.1\r\n\r\n")
-	while(True):
-		print("<<< {!r}".format(transport.read()))

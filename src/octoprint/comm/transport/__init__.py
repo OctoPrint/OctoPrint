@@ -5,8 +5,9 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from .parameters import get_param_dict
+from octoprint.comm.util.parameters import get_param_dict
 
+import copy
 import logging
 import time
 
@@ -17,15 +18,15 @@ from octoprint.plugin import plugin_manager
 _registry = dict()
 
 def register_transports():
-	from .serialtransport import SerialTransport, VirtualSerialTransport
-	from .sockettransport import TcpTransport
+	from .serialtransport import SerialTransport
+	from .sockettransport import TcpTransport, SerialOverTcpTransport
 
 	logger = logging.getLogger(__name__)
 
 	# stock transports
 	register_transport(SerialTransport)
-	register_transport(VirtualSerialTransport)
 	register_transport(TcpTransport)
+	register_transport(SerialOverTcpTransport)
 
 	# more transports provided by plugins
 	hooks = plugin_manager().get_hooks(b"octoprint.comm.transport.register")
@@ -51,10 +52,15 @@ def lookup_transport(key):
 	return _registry.get(key)
 
 
+def all_transports():
+	return _registry.values()
+
+
 class Transport(ListenerAware):
 
 	name = None
 	key = None
+
 	message_integrity = False
 
 	@classmethod
@@ -66,6 +72,13 @@ class Transport(ListenerAware):
 
 		self._logger = logging.getLogger(__name__)
 		self._state = TransportState.DISCONNECTED
+		self._args = dict()
+
+	def args(self):
+		return copy.deepcopy(self._args)
+
+	def set_current_args(self, **value):
+		self._args = copy.deepcopy(value)
 
 	@property
 	def state(self):

@@ -5,19 +5,65 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.util.listener import ListenerAware
 from octoprint.comm.transport import TransportListener, TransportState
-
+from octoprint.plugin import plugin_manager
 from octoprint.util import to_unicode, CountedEvent
+from octoprint.util.listener import ListenerAware
 
 import contextlib
+import copy
 import logging
+
+_registry = dict()
+
+def register_protocols():
+	from .reprap import ReprapGcodeProtocol
+
+	logger = logging.getLogger(__name__)
+
+	# stock protocols
+	register_protocol(ReprapGcodeProtocol)
+
+	# more protocols provided by plugins
+	hooks = plugin_manager().get_hooks(b"octoprint.comm.protocol.register")
+	for name, hook in hooks.items():
+		try:
+			protocols = hook()
+			for protocol in protocols:
+				try:
+					register_protocol(protocol)
+				except:
+					logger.exception("Error while registering protocol class {} for plugin {}".format(protocol, name))
+		except:
+			logger.exception("Error executing octoprint.comm.protocol.register hook for plugin {}".format(name))
+
+
+def register_protocol(protocol_class):
+	if not hasattr(protocol_class, "key"):
+		raise ValueError("Protocol class {} is missing key".format(protocol_class))
+	_registry[protocol_class.key] = protocol_class
+
+
+def lookup_protocol(key):
+	return _registry.get(key)
+
+
+def all_protocols():
+	return _registry.values()
+
 
 class Protocol(ListenerAware, TransportListener):
 
+	name = None
+	key = None
+
 	supported_jobs = []
 
-	def __init__(self):
+	@classmethod
+	def get_connection_options(cls):
+		return []
+
+	def __init__(self, *args, **kwargs):
 		super(Protocol, self).__init__()
 
 		self._logger = logging.getLogger(__name__)
@@ -28,6 +74,14 @@ class Protocol(ListenerAware, TransportListener):
 		self._transport = None
 
 		self._job_on_hold = CountedEvent()
+
+		self._args = dict()
+
+	def args(self):
+		return copy.deepcopy(self._args)
+
+	def set_current_args(self, **value):
+		self._args = copy.deepcopy(value)
 
 	@contextlib.contextmanager
 	def job_put_on_hold(self, blocking=True):

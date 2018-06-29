@@ -1,9 +1,11 @@
+from __future__ import absolute_import, unicode_literals
 
 from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
 
 class MalyanFlavor(GenericFlavor):
 
 	key = "malyan"
+	name = "Malyan"
 
 	always_send_checksum = False
 	block_while_dwelling = True

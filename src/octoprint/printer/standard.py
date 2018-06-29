@@ -263,13 +263,25 @@ class Printer(PrinterInterface,
 
 		eventManager().fire(Events.CONNECTING)
 
+		##~~ Logging
+
+		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
+			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
+
+		from octoprint.logging.handlers import CommunicationLogHandler
+		CommunicationLogHandler.on_open_connection(u"TRANSPORT")
+		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
+		CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
+
+		##~~ Printer profile
+
 		profile = kwargs.get("profile")
 		if not profile:
 			profile = self._printer_profile_manager.get_default()["id"]
 		self._printer_profile_manager.select(profile)
-		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
-			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
-			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
+
+		##~~ Transport
 
 		selected_transport = kwargs.get("transport")
 		if not selected_transport:
@@ -286,27 +298,40 @@ class Printer(PrinterInterface,
 			transport_connect_kwargs = dict(port=port, baudrate=baudrate)
 		else:
 			transport_kwargs = kwargs.get("transport_kwargs", dict())
-			transport_connect_kwargs = kwargs.get("transport_connect_kwargs", dict())
-
-		from octoprint.logging.handlers import CommunicationLogHandler
-		CommunicationLogHandler.on_open_connection(u"TRANSPORT")
-		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
-		CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
+			transport_connect_kwargs = kwargs.get("transport_options", dict())
 
 		from octoprint.comm.transport import lookup_transport
 		transport_class = lookup_transport(selected_transport)
 		if not transport_class:
 			raise ValueError("Invalid transport: {}".format(selected_transport))
+
 		transport = transport_class(**transport_kwargs)
+		self._transport = transport
+
+		##~~ Protocol
 
 		# TODO make this depend on the printer profile
-		from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
-		protocol = ReprapGcodeProtocol(plugin_manager=plugin_manager())
-		protocol.register_listener(self)
+		selected_protocol = kwargs.get("protocol")
+		if not selected_protocol:
+			selected_protocol = "reprap"
+			protocol_kwargs = dict()
+		else:
+			protocol_kwargs = kwargs.get("protocol_options", dict())
 
-		self._transport = transport
+		protocol_kwargs.update(dict(plugin_manager=plugin_manager(),
+		                            event_bus=eventManager()))
+
+		from octoprint.comm.protocol import lookup_protocol
+		protocol_class = lookup_protocol(selected_protocol)
+		if not protocol_class:
+			raise ValueError("Invalid protocol: {}".format(selected_protocol))
+
+		protocol = protocol_class(**protocol_kwargs)
 		self._protocol = protocol
 
+		##~~ Register everything and connect
+
+		self._protocol.register_listener(self)
 		self._protocol.connect(self._transport, transport_kwargs=transport_connect_kwargs)
 
 	def disconnect(self, *args, **kwargs):
@@ -708,6 +733,16 @@ class Printer(PrinterInterface,
 		baudrate = None # TODO self._transport._serial.baudrate
 		printer_profile = self._printer_profile_manager.get_current_or_default()
 		return self.get_state_string(), port, baudrate, printer_profile
+
+	def get_current_connection_parameters(self, *args, **kwargs):
+		if self._transport is None or self._protocol is None:
+			return "Closed", None, None, None, None, None
+		return self.get_state_string(), \
+		       self._transport.key, \
+		       self._transport.args(), \
+		       self._protocol.key, \
+		       self._protocol.args(), \
+		       self._printer_profile_manager.get_current_or_default()
 
 	def is_connected(self):
 		return self._protocol is not None and self._protocol.state in (ProtocolState.CONNECTED, ProtocolState.PROCESSING, ProtocolState.PAUSED)

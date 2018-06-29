@@ -21,12 +21,39 @@ $(function() {
             self.selectedPrinter(self.printerProfiles.currentProfile());
         });
 
-        self.portOptions = ko.observableArray(undefined);
-        self.baudrateOptions = ko.observableArray(undefined);
         self.printerOptions = ko.observableArray(undefined);
-        self.selectedPort = ko.observable(undefined);
-        self.selectedBaudrate = ko.observable(undefined);
         self.selectedPrinter = ko.observable(undefined);
+
+        // Protocol
+        self.availableProtocols = ko.observableArray();
+        self.selectedProtocol = ko.observable(undefined);
+        self.protocolParameters = ko.observable();
+
+        self.selectedProtocol.subscribe(function() {
+            var protocol = self.selectedProtocol();
+            if (protocol) {
+                self.protocolParameters(protocol.options);
+            } else {
+                self.protocolParameters([]);
+            }
+        });
+
+        // Transport
+        self.availableTransports = ko.observableArray();
+        self.selectedTransport = ko.observable(undefined);
+        self.transportParameters = ko.observableArray();
+
+        self.selectedTransport.subscribe(function() {
+            var transport = self.selectedTransport();
+            if (transport) {
+                self.transportParameters(transport.options);
+            } else {
+                self.transportParameters([]);
+            }
+        });
+
+        self.adjustConnectionParameters = ko.observable(undefined);
+        self.updateProfile = ko.observable(undefined);
         self.saveSettings = ko.observable(undefined);
         self.autoconnect = ko.observable(undefined);
 
@@ -59,22 +86,52 @@ $(function() {
         };
 
         self.fromResponse = function(response) {
-            var ports = response.options.ports;
-            var baudrates = response.options.baudrates;
-            var portPreference = response.options.portPreference;
-            var baudratePreference = response.options.baudratePreference;
-            var printerPreference = response.options.printerProfilePreference;
-            var printerProfiles = response.options.printerProfiles;
+            var profile = response.current.profile;
+            var profiles = response.options.printerProfiles;
 
-            self.portOptions(ports);
-            self.baudrateOptions(baudrates);
+            var protocol = response.current.protocol;
+            var protocolOptions = response.current.protocolOptions;
+            if (!protocolOptions) {
+                protocolOptions = {};
+            }
+            var protocols = response.options.protocols;
 
-            if (!self.selectedPort() && ports && ports.indexOf(portPreference) >= 0)
-                self.selectedPort(portPreference);
-            if (!self.selectedBaudrate() && baudrates && baudrates.indexOf(baudratePreference) >= 0)
-                self.selectedBaudrate(baudratePreference);
-            if (!self.selectedPrinter() && printerProfiles && printerProfiles.indexOf(printerPreference) >= 0)
-                self.selectedPrinter(printerPreference);
+            var transport = response.current.transport;
+            var transportOptions = response.current.transportOptions;
+            if (!transportOptions) {
+                transportOptions = {};
+            }
+            var transports = response.options.transports;
+
+            if (!self.selectedPrinter() && profiles && profiles.indexOf(profile) >= 0)
+                self.selectedPrinter(profile);
+
+            var extendOption = function(option, value) {
+                if (value === undefined && option.default !== undefined) {
+                    value = option.default;
+                }
+                option.value = ko.observable(value);
+            };
+
+            // protocol
+            _.each(protocols, function(protocol) {
+                _.each(protocol.options, function(option) {
+                    extendOption(option, protocolOptions[option.name]);
+                });
+            });
+
+            self.availableProtocols(protocols);
+            self.selectedProtocol(protocol);
+
+            // transport
+            _.each(transports, function(transport) {
+                _.each(transport.options, function(option) {
+                    extendOption(option, transportOptions[option.name]);
+                });
+            });
+
+            self.availableTransports(transports);
+            self.selectedTransport(transport);
 
             self.saveSettings(false);
         };
@@ -120,9 +177,19 @@ $(function() {
 
         self.connect = function() {
             if (self.isErrorOrClosed()) {
+                var toOptions = function(parameters) {
+                    var result = {};
+                    _.each(parameters, function(parameter) {
+                        result[parameter.name] = parameter.value();
+                    });
+                    return result;
+                };
+
                 var data = {
-                    "port": self.selectedPort() || "AUTO",
-                    "baudrate": self.selectedBaudrate() || 0,
+                    "protocol": self.selectedProtocol().key,
+                    "protocolOptions": toOptions(self.protocolParameters()),
+                    "transport": self.selectedTransport().key,
+                    "transportOptions": toOptions(self.transportParameters()),
                     "printerProfile": self.selectedPrinter(),
                     "autoconnect": self.settings.serial_autoconnect()
                 };

@@ -1,13 +1,52 @@
-<label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Serial Port') }}</label>
-<select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
-<label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Baudrate') }}</label>
-<select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
-<label for="connection_printers" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Printer Profile') }}</label>
-<select id="connection_printers" data-bind="options: printerOptions, optionsText: 'name', optionsValue: 'id', value: selectedPrinter, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
-<label class="checkbox">
-    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Save connection settings') }}
-</label>
-<label class="checkbox">
-    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Auto-connect on server startup') }}
-</label>
+<form>
+    <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Printer Profile') }}</label>
+    <select class="input-block-level" data-bind="options: printerOptions, optionsText: 'name', optionsValue: 'id', value: selectedPrinter, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+    <label class="checkbox">
+        <input type="checkbox" data-bind="checked: adjustConnectionParameters, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Adjust connection parameters') }}
+    </label>
+    <div style="display: none" data-bind="visible: adjustConnectionParameters">
+        <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Protocol') }}</label>
+        <select class="input-block-level" data-bind="options: availableProtocols, optionsText: 'name', value: selectedProtocol, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+        <!-- ko foreach: protocolParameters -->
+        <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        <hr style="margin: 0">
+        <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Transport') }}</label>
+        <select class="input-block-level" data-bind="options: availableTransports, optionsText: 'name', value: selectedTransport, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+        <!-- ko foreach: transportParameters -->
+        <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        <label class="checkbox">
+            <input type="checkbox" id="connection_update_profile" data-bind="checked: updateProfile, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Update printer profile on connect') }}
+        </label>
+    </div>
+    <label class="checkbox">
+        <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Save connection settings') }}
+    </label>
+    <label class="checkbox">
+        <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Auto-connect on server startup') }}
+    </label>
+</form>
+
 <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText">{{ _('Connect') }}</button>
+
+<script type="text/html" id="connection_template_text">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+</script>
+<script type="text/html" id="connection_template_integer">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+</script>
+<script type="text/html" id="connection_template_choice">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+</script>
+<script type="text/html" id="connection_template_suggestion">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+</script>
+<script type="text/html" id="connection_template_list">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
+</script>

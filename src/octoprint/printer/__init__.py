@@ -75,7 +75,7 @@ class PrinterInterface(object):
 			"autoconnect": settings().getBoolean(["serial", "autoconnect"])
 		}
 
-	def connect(self, port=None, baudrate=None, profile=None, *args, **kwargs):
+	def connect(self, protocol=None, protocol_options=None, transport=None, transport_options=None, profile=None, *args, **kwargs):
 		"""
 		Connects to the printer, using the specified serial ``port``, ``baudrate`` and printer ``profile``. If a
 		connection is already established, that connection will be closed prior to connecting anew with the provided

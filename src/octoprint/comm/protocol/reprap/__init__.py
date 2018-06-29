@@ -15,10 +15,12 @@ from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
-from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors
+from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors, lookup_flavor
 
 from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendToken, LineHistory, PositionRecord, TemperatureRecord
 from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, CommandQueue, SendQueue, QueueMarker, SendQueueMarker
+
+from octoprint.comm.util.parameters import ChoiceType, Value
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob, CopyJobMixin
@@ -33,6 +35,7 @@ except ImportError:
 	import Queue as queue
 
 import collections
+import copy
 import logging
 import threading
 import time
@@ -76,10 +79,18 @@ CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
                           PushingTransportWrapperListener, TransportListener):
+	name = "Reprap GCODE Protocol"
+	key = "reprap"
 
 	supported_jobs = [LocalGcodeFilePrintjob,
 	                  LocalGcodeStreamjob,
 	                  SDFilePrintjob]
+
+	@classmethod
+	def get_connection_options(cls):
+		return [ChoiceType("flavor", "Firmware Flavor",
+		                   sorted([Value(f.key, title=f.name) for f in all_flavors()], key=lambda x: x.title),
+		                   default="generic")]
 
 	@staticmethod
 	def get_flavor_attributes_starting_with(flavor, prefix):
@@ -99,10 +110,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             temperature_interval_autoreport=2.0,
 	             sd_status_interval=2.0,
 	             sd_status_interval_autoreport=1.0,
-	             plugin_manager=None):
-		super(ReprapGcodeProtocol, self).__init__()
+	             plugin_manager=None,
+	             event_bus=None,
+	             *args,
+	             **kwargs):
+		super(ReprapGcodeProtocol, self).__init__(*args, **kwargs)
+
+		self.flavor = lookup_flavor(flavor)
+		if self.flavor is None:
+			self.flavor = GenericFlavor
+		self.set_current_args(flavor=self.flavor.key)
 
 		self._plugin_manager = plugin_manager
+		self._event_bus = event_bus
 
 		self._logger = logging.getLogger(__name__)
 		self._commdebug_logger = logging.getLogger("COMMDEBUG")
@@ -110,7 +130,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._terminal_log = collections.deque([], 20)
 
-		self.flavor = flavor if flavor is not None else GenericFlavor
 		self.timeouts = dict(
 			connection=connection_timeout,
 			communication=communication_timeout,
@@ -1156,8 +1175,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self.notify_listeners("on_protocol_position_all_update", self, position, reason=reason)
 
 	def _on_message_firmware_info(self, firmware_name, data):
-		# TODO
-		#self._event_bus.fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=copy.copy(data)))
+		self._event_bus.fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=copy.copy(data)))
 
 		if not self._internal_flags["firmware_identified"] and firmware_name:
 			self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
@@ -1424,8 +1442,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 						self._process_command_phase("queued", command)
 
 						if self._internal_flags["trigger_events"] and isinstance(command, GcodeCommand) and command.code in GCODE_TO_EVENT:
-							# TODO inject eventbus
-							#self._eventbus.fire(gcode_to_event[command.code])
+							self._event_bus.fire(GCODE_TO_EVENT[command.code])
 							pass
 					return True
 				else:

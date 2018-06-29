@@ -419,6 +419,10 @@ class Server(object):
 		from octoprint.comm.transport import register_transports
 		register_transports()
 
+		# register available protocols
+		from octoprint.comm.protocol import register_protocols
+		register_protocols()
+
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
 		for name, factory in printer_factories.items():
