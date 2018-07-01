@@ -343,6 +343,7 @@ def _test_path(data):
 
 def _test_url(data):
 	import requests
+	from octoprint import util as util
 
 	class StatusCodeRange(object):
 		def __init__(self, start=None, end=None):
