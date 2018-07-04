@@ -76,6 +76,23 @@ CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 
+
+class FallbackValue(object):
+	def __init__(self, value, fallback=None, test=None):
+		self.value = value
+		self.fallback = fallback
+
+		self.test = test
+		if self.test is None:
+			self.test = lambda x: x is not None
+
+	@property
+	def effective(self):
+		if self.test(self.value):
+			return self.value
+		return self.fallback
+
+
 class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
                           PushingTransportWrapperListener, TransportListener):
@@ -110,6 +127,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             temperature_interval_autoreport=2.0,
 	             sd_status_interval=2.0,
 	             sd_status_interval_autoreport=1.0,
+	             trigger_ok_after_resend=None,
 	             plugin_manager=None,
 	             event_bus=None,
 	             *args,
@@ -142,6 +160,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			sd_status=sd_status_interval,
 			sd_status_autoreport=sd_status_interval_autoreport
 		)
+		self._trigger_ok_after_resend = FallbackValue(trigger_ok_after_resend, fallback=self.flavor.trigger_ok_after_resend)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
@@ -284,6 +303,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# timers
 		self._pause_position_timer = None
 		self._cancel_position_timer = None
+		self._resend_ok_timer = None
 
 		# sending thread
 		self._send_queue_active = False
@@ -776,7 +796,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# TODO handle dwelling
 			pass
 
-		any_processed = False
+		self._on_comm_any(line, lower_line)
 
 		for message in self._current_registered_messages:
 			handler_method = getattr(self, "_on_{}".format(message), None)
@@ -792,10 +812,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				continue_further = not matches
 
 			if matches:
-				if not any_processed:
-					self._on_comm_any()
-					any_processed = True
-
 				message_args = dict()
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
@@ -838,7 +854,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# unknown message
 			pass
 
-	def _on_comm_any(self):
+	def _on_comm_any(self, line, lower_line):
 		offsets = [self.timeouts.get("communication_busy" if self._internal_flags["busy_detected"] else "communication", 0.0),]
 		if self._temperature_poller:
 			offsets.append(self._temperature_poller.interval())
@@ -848,6 +864,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			hello = self.flavor.command_hello()
 			if hello:
 				self._tickle(hello)
+
+		if self._resend_ok_timer and line and not getattr(self.flavor, "comm_ok", lambda *a, **kwa: True)(line, lower_line, self._state, self._protected_flags):
+			# we got anything but an ok after a resend request - this means the ok after the resend request
+			# was in fact missing and we now need to trigger the timer
+			self._resend_ok_timer.cancel()
+			self._resend_simulate_ok()
 
 	def _on_comm_timeout(self, line, lower_line):
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
@@ -920,6 +942,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.state = ProtocolState.CONNECTED
 			return
 
+		if self._resend_ok_timer:
+			self._resend_ok_timer.cancel()
+			self._resend_ok_timer = None
+
 		self._internal_flags["ok_timeout"] = self._get_timeout("communication_busy" if self._internal_flags["busy_detected"] else "communication")
 		self._commdebug_logger.debug("on_comm_ok => clear_to_send.set: {} (counter: {})".format("wait" if wait else "ok", self._clear_to_send.counter))
 		self._clear_to_send.set()
@@ -953,64 +979,78 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._on_comm_ok(wait=True)
 
 	def _on_comm_resend(self, linenumber):
-		if linenumber is None:
-			return False
+		try:
+			if linenumber is None:
+				return False
 
-		if self._internal_flags["resend_requested"] is None and linenumber == self._current_linenumber:
-			# We don't expect to have an active resend request and the printer is requesting a resend of
-			# a line we haven't yet sent.
-			#
-			# This means the printer got a line from us with N = self._current_linenumber - 1 but had already
-			# acknowledged that. This can happen if the last line was resent due to a timeout during an active
-			# (prior) resend request.
-			#
-			# We will ignore this resend request and just continue normally.
-			self._logger.debug("Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(linenumber))
-			self.process_protocol_log("Ignoring resend request for line {}, we haven't sent that yet".format(linenumber))
-			return
-
-		last_communication_error = self._last_communication_error
-		self._last_communication_error = None
-
-		if last_communication_error is not None \
-				and last_communication_error == "linenumber" \
-				and linenumber == self._internal_flags["resend_requested"] \
-				and self._internal_flags["resend_count"] < self._current_linenumber - linenumber - 1:
-			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
-			self.process_protocol_log("Ignoring resend request for line {}, originates from lines sent earlier".format(linenumber))
-			self._internal_flags["resend_count"] += 1
-			return
-
-		if not linenumber in self._last_lines:
-			self._logger.error("Printer requested to resend a line we don't have: {}".format(linenumber))
-			if self._is_busy():
-				# TODO set error state & log
-				self.cancel_processing(error=True)
-			else:
+			if self._internal_flags["resend_requested"] is None and linenumber == self._current_linenumber:
+				# We don't expect to have an active resend request and the printer is requesting a resend of
+				# a line we haven't yet sent.
+				#
+				# This means the printer got a line from us with N = self._current_linenumber - 1 but had already
+				# acknowledged that. This can happen if the last line was resent due to a timeout during an active
+				# (prior) resend request.
+				#
+				# We will ignore this resend request and just continue normally.
+				self._logger.debug("Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(linenumber))
+				self.process_protocol_log("Ignoring resend request for line {}, we haven't sent that yet".format(linenumber))
 				return
 
-		self._internal_flags["resend_requested"] = linenumber
-		self._internal_flags["resend_linenumber"] = linenumber
-		self._internal_flags["resend_count"] = 0
+			last_communication_error = self._last_communication_error
+			self._last_communication_error = None
 
-		# if we log resends, make sure we don't log more resends than the set rate within a window
-		#
-		# this it to prevent the log from getting flooded for extremely bad communication issues
-		if self._log_resends:
-			now = monotonic_time()
-			new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
-			in_rate = self._log_resends_rate_count < self._log_resends_max
+			if last_communication_error is not None \
+					and last_communication_error == "linenumber" \
+					and linenumber == self._internal_flags["resend_requested"] \
+					and self._internal_flags["resend_count"] < self._current_linenumber - linenumber - 1:
+				self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
+				self.process_protocol_log("Ignoring resend request for line {}, originates from lines sent earlier".format(linenumber))
+				self._internal_flags["resend_count"] += 1
+				return
 
-			if new_rate_window or in_rate:
-				if new_rate_window:
-					self._log_resends_rate_start = now
-					self._log_resends_rate_count = 0
+			if not linenumber in self._last_lines:
+				self._logger.error("Printer requested to resend a line we don't have: {}".format(linenumber))
+				if self._is_busy():
+					# TODO set error state & log
+					self.cancel_processing(error=True)
+				else:
+					return
 
-				self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
-				                               u"current line = {}".format(linenumber, self._current_linenumber))
-				self._log_resends_rate_count += 1
+			self._internal_flags["resend_requested"] = linenumber
+			self._internal_flags["resend_linenumber"] = linenumber
+			self._internal_flags["resend_count"] = 0
 
-		self._send_queue.resend_active = True
+			# if we log resends, make sure we don't log more resends than the set rate within a window
+			#
+			# this it to prevent the log from getting flooded for extremely bad communication issues
+			if self._log_resends:
+				now = monotonic_time()
+				new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
+				in_rate = self._log_resends_rate_count < self._log_resends_max
+
+				if new_rate_window or in_rate:
+					if new_rate_window:
+						self._log_resends_rate_start = now
+						self._log_resends_rate_count = 0
+
+					self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
+					                               u"current line = {}".format(linenumber, self._current_linenumber))
+					self._log_resends_rate_count += 1
+
+			self._send_queue.resend_active = True
+
+		finally:
+			if self._trigger_ok_after_resend.effective == "always":
+				self._on_comm_ok()
+			elif self._trigger_ok_after_resend.effective == "detect":
+				self._resend_ok_timer = threading.Timer(self.timeouts.get("resendOk", 1.0), self._resend_simulate_ok)
+				self._resend_ok_timer.start()
+
+	def _resend_simulate_ok(self):
+		self._resend_ok_timer = None
+		self._on_comm_ok()
+		self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug "
+		                  "with some firmware variants out there. Simulating an ok to continue...")
 
 	def _on_comm_start(self):
 		if self.state == ProtocolState.CONNECTING:
@@ -2020,6 +2060,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _switch_flavor(self, new_flavor):
 		self.flavor = new_flavor
+
+		self._trigger_ok_after_resend = FallbackValue(self._trigger_ok_after_resend.value, fallback=self.flavor.trigger_ok_after_resend)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")

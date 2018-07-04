@@ -55,6 +55,8 @@ class GenericFlavor(object):
 	detect_external_heatups = True
 	block_while_dwelling = False
 
+	trigger_ok_after_resend = "detect"
+
 	sd_relative_path = False
 
 	checksum_requiring_commands = ["M110"]
