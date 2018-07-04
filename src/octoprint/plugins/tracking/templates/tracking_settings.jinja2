@@ -1,7 +1,15 @@
-<div class="control-group">
-    <div class="controls">
-        <label class="checkbox">
-            <input type="checkbox" data-bind="checked: settings.plugins.tracking.enabled"> {{ _('Enable anonymous usage tracking') }}
-        </label>
+<h3>{{ _('Anonymous Usage Tracking') }}</h3>
+
+{% include "snippets/plugins/tracking/trackingDescription.jinja2" %}
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.enabled"> {{ _('Enable anonymous usage tracking') }}
+            </label>
+        </div>
     </div>
-</div>
+</form>
+
+{% include "snippets/plugins/tracking/trackingDetails.jinja2" %}
