@@ -10,6 +10,12 @@
             </label>
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label" title="{{ _('Random unique instance ID') }}">{{ _('Instance ID') }}</label>
+        <div class="controls">
+            <span style="padding-top: 5px; margin-bottom: 5px; display: inline-block" data-bind="text: settings.plugins.tracking.unique_id() || 'N/A'"></span>
+        </div>
+    </div>
 </form>
 
 {% include "snippets/plugins/tracking/trackingDetails.jinja2" %}
