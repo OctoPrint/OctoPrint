@@ -792,10 +792,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		orig_line = to_unicode(data, encoding="ascii", errors="replace").strip()
 		line, lower_line = convert_line(orig_line)
 
-		if len(line):
-			# TODO handle dwelling
-			pass
-
 		self._on_comm_any(line, lower_line)
 
 		for message in self._current_registered_messages:
@@ -855,10 +851,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			pass
 
 	def _on_comm_any(self, line, lower_line):
+
 		offsets = [self.timeouts.get("communication_busy" if self._internal_flags["busy_detected"] else "communication", 0.0),]
 		if self._temperature_poller:
 			offsets.append(self._temperature_poller.interval())
 		self._internal_flags["timeout"] = self._get_max_timeout(*offsets)
+
+		if len(line):
+			if self._internal_flags["dwelling_until"] and monotonic_time() > self._internal_flags["dwelling_until"]:
+				self._internal_flags["dwelling_until"] = False
 
 		if self.state == ProtocolState.CONNECTING:
 			hello = self.flavor.command_hello()
