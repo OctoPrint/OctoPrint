@@ -628,9 +628,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if context is None:
 			context = dict()
 
-		# TODO last temperature
 		context.update(dict(printer_profile=self._printer_profile,
-		                    last_position=self.last_position))
+		                    last_position=self.last_position,
+		                    last_temperature=self._internal_flags["temperatures"].as_script_dict()))
 
 		if script.name == "afterPrintPaused" or script.name == "beforePrintResumed":
 			context.update(dict(pause_position=self.pause_position,
@@ -1958,17 +1958,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._do_increment_and_send_with_checksum(str(self.flavor.command_set_bed_temp(0)))
 
 		# close to reset host state
-		# TODO needs error and event handling
+		# TODO needs error handling
 		"""
 		self._errorValue = "Closing serial port due to emergency stop M112."
 		self._log(self._errorValue)
 		self.close(is_error=True)
+		"""
 
 		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
 		gcode = "M112"
-		if gcode in gcodeToEvent:
-			eventManager().fire(gcodeToEvent[gcode])
-		"""
+		if gcode in GCODE_TO_EVENT:
+			self._event_bus.fire(GCODE_TO_EVENT[gcode])
 
 		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
 		# I hope it got it the first time because as far as I can tell, there is no way to know
