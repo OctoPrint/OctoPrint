@@ -14,6 +14,7 @@ import time
 from octoprint.util import monotonic_time
 from octoprint.util.listener import ListenerAware
 from octoprint.plugin import plugin_manager
+from octoprint.settings import SubSettings
 
 _registry = dict()
 
@@ -67,12 +68,23 @@ class Transport(ListenerAware):
 	def get_connection_options(cls):
 		return []
 
+	@classmethod
+	def get_settings_defaults(cls):
+		return dict()
+
 	def __init__(self, *args, **kwargs):
 		super(Transport, self).__init__()
 
 		self._logger = logging.getLogger(__name__)
 		self._state = TransportState.DISCONNECTED
 		self._args = dict()
+
+		self._printer_profile = kwargs.get("printer_profile")
+		self._plugin_manager = kwargs.get("plugin_manager")
+		self._event_bus = kwargs.get("event_bus")
+		self._settings = kwargs.get("settings")
+		if not isinstance(self._settings, TransportSettings):
+			self._settings = TransportSettings(self._settings, self)
 
 	def args(self):
 		return copy.deepcopy(self._args)
@@ -95,14 +107,19 @@ class Transport(ListenerAware):
 			raise TransportAlreadyConnectedError("Already connected, disconnect first")
 		options = self.get_connection_options()
 		param_dict = get_param_dict(params, options)
+
 		self.create_connection(**param_dict)
+
 		self.state = TransportState.CONNECTED
 		self.notify_listeners("on_transport_connected", self)
 
 	def disconnect(self, error=None):
 		if self.state == TransportState.DISCONNECTED:
 			raise TransportNotConnectedError("Already disconnected")
-		self.drop_connection()
+
+		success = self.drop_connection()
+		if not success and not error:
+			error = "Error disconnecting transport"
 
 		if error:
 			self.state = TransportState.DISCONNECTED_WITH_ERROR
@@ -113,10 +130,10 @@ class Transport(ListenerAware):
 		self.notify_listeners("on_transport_disconnected", self, error=error)
 
 	def create_connection(self, *args, **kwargs):
-		pass
+		return True
 
 	def drop_connection(self):
-		pass
+		return True
 
 	def read(self, size=None, timeout=None):
 		data = self.do_read(size=size, timeout=timeout)
@@ -145,6 +162,13 @@ class TransportState(object):
 	CONNECTED = "connected"
 	DISCONNECTED = "disconnected"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
+
+
+class TransportSettings(SubSettings):
+	def __init__(self, settings, transport):
+		self.transport = transport.key
+		SubSettings.__init__(self, settings, ["comm", "transport", transport.key],
+		                     defaults=transport.get_settings_defaults())
 
 
 class TransportNotConnectedError(Exception):

@@ -497,6 +497,10 @@ class GenericFlavor(object):
 		return GcodeCommand("M25")
 
 	@classmethod
+	def command_sd_resume(cls):
+		return GcodeCommand("M24")
+
+	@classmethod
 	def command_sd_set_pos(cls, pos):
 		return GcodeCommand("M26", s=pos)
 

@@ -301,6 +301,11 @@ class Printer(PrinterInterface,
 			transport_kwargs = kwargs.get("transport_kwargs", dict())
 			transport_connect_kwargs = kwargs.get("transport_options", dict())
 
+		transport_kwargs.update(dict(settings=settings(),
+		                             plugin_manager=plugin_manager(),
+		                             event_bus=eventManager(),
+		                             printer_profile=profile))
+
 		from octoprint.comm.transport import lookup_transport
 		transport_class = lookup_transport(selected_transport)
 		if not transport_class:
@@ -319,7 +324,8 @@ class Printer(PrinterInterface,
 		else:
 			protocol_kwargs = kwargs.get("protocol_options", dict())
 
-		protocol_kwargs.update(dict(plugin_manager=plugin_manager(),
+		protocol_kwargs.update(dict(settings=settings(),
+		                            plugin_manager=plugin_manager(),
 		                            event_bus=eventManager(),
 		                            printer_profile=profile))
 
@@ -396,13 +402,11 @@ class Printer(PrinterInterface,
 		if context is None:
 			context = dict()
 
-		def render(context):
-			lines = settings().loadScript("gcode", name, context=context)
-			if lines is None and must_be_set:
-				raise UnknownScript(name)
-			return lines
-		script = GcodeScript(name, render, context=context)
-		self._protocol.send_script(script)
+		try:
+			self._protocol.send_script(name, context=context)
+		except UnknownScript:
+			if must_be_set:
+				raise
 
 	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		if isinstance(axes, basestring):
@@ -644,6 +648,8 @@ class Printer(PrinterInterface,
 				return "Offline"
 			elif state == ProtocolState.CONNECTING:
 				return "Connecting"
+			elif state in (ProtocolState.DISCONNECTING, ProtocolState.DISCONNECTING_WITH_ERROR):
+				return "Disconnecting"
 			elif state == ProtocolState.CONNECTED:
 				return "Operational"
 			elif state == ProtocolState.PROCESSING:

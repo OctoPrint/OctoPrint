@@ -43,7 +43,7 @@ try:
 except ImportError:
 	from chainmap import ChainMap
 
-from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet
+from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet, deprecated
 
 _APPNAME = "OctoPrint"
 
@@ -1738,6 +1738,137 @@ class Settings(object):
 	def deleteApiKey(self):
 		self.set(["api", "key"], None)
 		self.save(force=True)
+
+
+class SubSettings(object):
+
+	def __init__(self, settings, path, defaults=None, get_preprocessors=None, set_preprocessors=None):
+		self.settings = settings
+		self.path = path
+
+		if defaults is not None:
+			self.defaults = self._path_structure(path, defaults)
+		else:
+			self.defaults = None
+
+		if get_preprocessors is None:
+			get_preprocessors = dict()
+		self.get_preprocessors = self._path_structure(path, get_preprocessors)
+
+		if set_preprocessors is None:
+			set_preprocessors = dict()
+		self.set_preprocessors = self._path_structure(path, set_preprocessors)
+
+		def prefix_path_in_args(args, index=0):
+			result = []
+			if index == 0:
+				result.append(self._prefix_path(args[0]))
+				result.extend(args[1:])
+			else:
+				args_before = args[:index - 1]
+				args_after = args[index + 1:]
+				result.extend(args_before)
+				result.append(self._prefix_path(args[index]))
+				result.extend(args_after)
+			return result
+
+		def add_getter_kwargs(kwargs):
+			if not "defaults" in kwargs and self.defaults is not None:
+				kwargs.update(defaults=self.defaults)
+			if not "preprocessors" in kwargs:
+				kwargs.update(preprocessors=self.get_preprocessors)
+			return kwargs
+
+		def add_setter_kwargs(kwargs):
+			if not "defaults" in kwargs and self.defaults is not None:
+				kwargs.update(defaults=self.defaults)
+			if not "preprocessors" in kwargs:
+				kwargs.update(preprocessors=self.set_preprocessors)
+			return kwargs
+
+		self.access_methods = dict(
+			has        =("has",        prefix_path_in_args, add_getter_kwargs),
+			get        =("get",        prefix_path_in_args, add_getter_kwargs),
+			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
+			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
+			get_boolean=("getBoolean", prefix_path_in_args, add_getter_kwargs),
+			set        =("set",        prefix_path_in_args, add_setter_kwargs),
+			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
+			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
+			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
+			remove     =("remove",     prefix_path_in_args, lambda x: x)
+		)
+		self.deprecated_access_methods = dict(
+			getInt    ="get_int",
+			getFloat  ="get_float",
+			getBoolean="get_boolean",
+			setInt    ="set_int",
+			setFloat  ="set_float",
+			setBoolean="set_boolean"
+		)
+
+	def _prefix_path(self, path=None):
+		if path is None:
+			path = list()
+		return self.path + path
+
+	def get_all_data(self, **kwargs):
+		merged = kwargs.get("merged", True)
+		asdict = kwargs.get("asdict", True)
+		defaults = kwargs.get("defaults", self.defaults)
+		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
+
+		kwargs.update(dict(
+			merged=merged,
+			asdict=asdict,
+			defaults=defaults,
+			preprocessors=preprocessors
+		))
+
+		return self.settings.get(self._prefix_path(), **kwargs)
+
+	def clean_all_data(self):
+		self.settings.remove(self._prefix_path())
+
+	def __getattr__(self, item):
+		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
+		if item in all_access_methods:
+			decorator = None
+			if item in self.deprecated_access_methods:
+				new = self.deprecated_access_methods[item]
+				decorator = deprecated("{old} has been renamed to {new}".format(old=item, new=new), stacklevel=2)
+				item = new
+
+			settings_name, args_mapper, kwargs_mapper = self.access_methods[item]
+			if hasattr(self.settings, settings_name) and callable(getattr(self.settings, settings_name)):
+				orig_func = getattr(self.settings, settings_name)
+				if decorator is not None:
+					orig_func = decorator(orig_func)
+
+				def _func(*args, **kwargs):
+					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
+				_func.__name__ = item
+				_func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
+
+				return _func
+
+		return getattr(self.settings, item)
+
+	@staticmethod
+	def _path_structure(path, data):
+		root = dict()
+
+		if len(path) >= 1:
+			node = root
+			for entry in path[:-1]:
+				node[entry] = dict()
+				node = node[entry]
+
+			node[path[-1]] = data
+		else:
+			root = data
+
+		return root
 
 
 def _default_basedir(applicationName):

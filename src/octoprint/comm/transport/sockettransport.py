@@ -38,8 +38,15 @@ class TcpTransport(Transport):
 		self._socket.connect((host, port))
 		self.set_current_args(host=host, port=port)
 
+		return True
+
 	def drop_connection(self):
-		self._socket.close()
+		try:
+			self._socket.close()
+			return True
+		except:
+			self._logger.exception("Error closing socket")
+			return False
 
 	def do_read(self, size=None, timeout=None):
 		if size is None:

@@ -22,7 +22,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import os
 import logging
 
-from octoprint.settings import settings as s
+from octoprint.settings import settings as s, SubSettings
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import *
 
@@ -232,7 +232,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 					error_callback(plugin._identifier, plugin, exc)
 
 
-class PluginSettings(object):
+class PluginSettings(SubSettings):
 	"""
 	The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
 
@@ -306,78 +306,15 @@ class PluginSettings(object):
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
-		self.settings = settings
 		self.plugin_key = plugin_key
 
-		if defaults is not None:
-			self.defaults = dict(plugins=dict())
-			self.defaults["plugins"][plugin_key] = defaults
+		SubSettings.__init__(self, settings, ["plugins", plugin_key],
+		                     defaults=defaults,
+		                     get_preprocessors=get_preprocessors,
+		                     set_preprocessors=set_preprocessors)
+
+		if self.defaults is not None:
 			self.defaults["plugins"][plugin_key]["_config_version"] = None
-		else:
-			self.defaults = None
-
-		if get_preprocessors is None:
-			get_preprocessors = dict()
-		self.get_preprocessors = dict(plugins=dict())
-		self.get_preprocessors["plugins"][plugin_key] = get_preprocessors
-
-		if set_preprocessors is None:
-			set_preprocessors = dict()
-		self.set_preprocessors = dict(plugins=dict())
-		self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
-
-		def prefix_path_in_args(args, index=0):
-			result = []
-			if index == 0:
-				result.append(self._prefix_path(args[0]))
-				result.extend(args[1:])
-			else:
-				args_before = args[:index - 1]
-				args_after = args[index + 1:]
-				result.extend(args_before)
-				result.append(self._prefix_path(args[index]))
-				result.extend(args_after)
-			return result
-
-		def add_getter_kwargs(kwargs):
-			if not "defaults" in kwargs and self.defaults is not None:
-				kwargs.update(defaults=self.defaults)
-			if not "preprocessors" in kwargs:
-				kwargs.update(preprocessors=self.get_preprocessors)
-			return kwargs
-
-		def add_setter_kwargs(kwargs):
-			if not "defaults" in kwargs and self.defaults is not None:
-				kwargs.update(defaults=self.defaults)
-			if not "preprocessors" in kwargs:
-				kwargs.update(preprocessors=self.set_preprocessors)
-			return kwargs
-
-		self.access_methods = dict(
-			has        =("has",        prefix_path_in_args, add_getter_kwargs),
-			get        =("get",        prefix_path_in_args, add_getter_kwargs),
-			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
-			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
-			get_boolean=("getBoolean", prefix_path_in_args, add_getter_kwargs),
-			set        =("set",        prefix_path_in_args, add_setter_kwargs),
-			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
-			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
-			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
-			remove     =("remove",     prefix_path_in_args, lambda x: x)
-		)
-		self.deprecated_access_methods = dict(
-			getInt    ="get_int",
-			getFloat  ="get_float",
-			getBoolean="get_boolean",
-			setInt    ="set_int",
-			setFloat  ="set_float",
-			setBoolean="set_boolean"
-		)
-
-	def _prefix_path(self, path=None):
-		if path is None:
-			path = list()
-		return ['plugins', self.plugin_key] + path
 
 	def global_has(self, path, **kwargs):
 		return self.settings.has(path, **kwargs)
@@ -469,88 +406,3 @@ class PluginSettings(object):
 		filename += ".log"
 		return os.path.join(self.settings.getBaseFolder("logs"), filename)
 
-	@deprecated("PluginSettings.get_plugin_data_folder has been replaced by OctoPrintPlugin.get_plugin_data_folder",
-	            includedoc="Replaced by :func:`~octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`",
-	            since="1.2.0")
-	def get_plugin_data_folder(self):
-		path = os.path.join(self.settings.getBaseFolder("data"), self.plugin_key)
-		if not os.path.isdir(path):
-			os.makedirs(path)
-		return path
-
-	def get_all_data(self, **kwargs):
-		merged = kwargs.get("merged", True)
-		asdict = kwargs.get("asdict", True)
-		defaults = kwargs.get("defaults", self.defaults)
-		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
-
-		kwargs.update(dict(
-			merged=merged,
-			asdict=asdict,
-			defaults=defaults,
-			preprocessors=preprocessors
-		))
-
-		return self.settings.get(self._prefix_path(), **kwargs)
-
-	def clean_all_data(self):
-		self.settings.remove(self._prefix_path())
-
-	def __getattr__(self, item):
-		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
-		if item in all_access_methods:
-			decorator = None
-			if item in self.deprecated_access_methods:
-				new = self.deprecated_access_methods[item]
-				decorator = deprecated("{old} has been renamed to {new}".format(old=item, new=new), stacklevel=2)
-				item = new
-
-			settings_name, args_mapper, kwargs_mapper = self.access_methods[item]
-			if hasattr(self.settings, settings_name) and callable(getattr(self.settings, settings_name)):
-				orig_func = getattr(self.settings, settings_name)
-				if decorator is not None:
-					orig_func = decorator(orig_func)
-
-				def _func(*args, **kwargs):
-					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
-				_func.__name__ = item
-				_func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
-
-				return _func
-
-		return getattr(self.settings, item)
-
-	##~~ deprecated methods follow
-
-	# TODO: Remove with release of 1.3.0
-
-	globalGet            = deprecated("globalGet has been renamed to global_get",
-	                                  includedoc="Replaced by :func:`global_get`",
-	                                  since="1.2.0-dev-546")(global_get)
-	globalGetInt         = deprecated("globalGetInt has been renamed to global_get_int",
-	                                  includedoc="Replaced by :func:`global_get_int`",
-	                                  since="1.2.0-dev-546")(global_get_int)
-	globalGetFloat       = deprecated("globalGetFloat has been renamed to global_get_float",
-	                                  includedoc="Replaced by :func:`global_get_float`",
-	                                  since="1.2.0-dev-546")(global_get_float)
-	globalGetBoolean     = deprecated("globalGetBoolean has been renamed to global_get_boolean",
-	                                  includedoc="Replaced by :func:`global_get_boolean`",
-	                                  since="1.2.0-dev-546")(global_get_boolean)
-	globalSet            = deprecated("globalSet has been renamed to global_set",
-	                                  includedoc="Replaced by :func:`global_set`",
-	                                  since="1.2.0-dev-546")(global_set)
-	globalSetInt         = deprecated("globalSetInt has been renamed to global_set_int",
-	                                  includedoc="Replaced by :func:`global_set_int`",
-	                                  since="1.2.0-dev-546")(global_set_int)
-	globalSetFloat       = deprecated("globalSetFloat has been renamed to global_set_float",
-	                                  includedoc="Replaced by :func:`global_set_float`",
-	                                  since="1.2.0-dev-546")(global_set_float)
-	globalSetBoolean     = deprecated("globalSetBoolean has been renamed to global_set_boolean",
-	                                  includedoc="Replaced by :func:`global_set_boolean`",
-	                                  since="1.2.0-dev-546")(global_set_boolean)
-	globalGetBaseFolder  = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder",
-	                                  includedoc="Replaced by :func:`global_get_basefolder`",
-	                                  since="1.2.0-dev-546")(global_get_basefolder)
-	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path",
-	                                  includedoc="Replaced by :func:`get_plugin_logfile_path`",
-	                                  since="1.2.0-dev-546")(get_plugin_logfile_path)

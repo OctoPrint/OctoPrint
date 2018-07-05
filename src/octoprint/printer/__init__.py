@@ -27,6 +27,9 @@ from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key
 from octoprint.filemanager import FileDestinations
 
+# noinspection PyUnresolvedReferences
+from octoprint.comm.scripts import UnknownScript # for backwards compatibility
+
 
 @deprecated(message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
             includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
@@ -751,10 +754,6 @@ class PrinterCallback(object):
 		    data (dict): The current data in the format as specified above.
 		"""
 		pass
-
-class UnknownScript(Exception):
-	def __init__(self, name, *args, **kwargs):
-		self.name = name
 
 class InvalidFileLocation(Exception):
 	pass

@@ -97,11 +97,35 @@ class SerialTransport(Transport):
 		self._serial = factory(port=port, baudrate=baudrate)
 		self.set_current_args(port=port, baudrate=baudrate)
 
+		return True
+
 	def drop_connection(self):
+		error = False
+
 		if self._serial is not None:
 			self._closing = True
-			self._serial.close()
+
+			try:
+				if callable(getattr(self._serial, "cancel_read", None)):
+					self._serial.cancel_read()
+			except:
+				self._logger.exception("Error while cancelling pending reads from the serial port")
+
+			try:
+				if callable(getattr(self._serial, "cancel_write", None)):
+					self._serial.cancel_write()
+			except:
+				self._logger.exception("Error while cancelling pending writes to the serial port")
+
+			try:
+				self._serial.close()
+			except:
+				self._logger.exception("Error while closing the serial port")
+				error = True
+
 			self._serial = None
+
+		return not error
 
 	def do_read(self, size=None, timeout=None):
 		return self._serial.read(size=size)

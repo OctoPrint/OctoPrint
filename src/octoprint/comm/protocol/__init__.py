@@ -9,6 +9,7 @@ from octoprint.comm.transport import TransportListener, TransportState
 from octoprint.plugin import plugin_manager
 from octoprint.util import to_unicode, CountedEvent
 from octoprint.util.listener import ListenerAware
+from octoprint.settings import SubSettings
 
 import contextlib
 import copy
@@ -63,12 +64,23 @@ class Protocol(ListenerAware, TransportListener):
 	def get_connection_options(cls):
 		return []
 
+	@classmethod
+	def get_settings_defaults(cls):
+		return dict()
+
 	def __init__(self, *args, **kwargs):
 		super(Protocol, self).__init__()
 
 		self._logger = logging.getLogger(__name__)
 		self._protocol_logger = logging.getLogger("PROTOCOL")
 		self._state = ProtocolState.DISCONNECTED
+
+		self._printer_profile = kwargs.get("printer_profile")
+		self._plugin_manager = kwargs.get("plugin_manager")
+		self._event_bus = kwargs.get("event_bus")
+		self._settings = kwargs.get("settings")
+		if not isinstance(self._settings, ProtocolSettings):
+			self._settings = ProtocolSettings(self._settings, self)
 
 		self._job = None
 		self._transport = None
@@ -133,13 +145,18 @@ class Protocol(ListenerAware, TransportListener):
 
 		self._state = new_state
 
-		name = "_on_state_{}".format(new_state)
+		name = "_on_switching_state_{}".format(new_state)
 		method = getattr(self, name, None)
 		if method is not None:
 			method(old_state)
 
 		self.process_protocol_log("--- Protocol state changed from '{}' to '{}'".format(old_state, new_state))
 		self.notify_listeners("on_protocol_state", self, old_state, new_state)
+
+		name = "_on_switched_state_{}".format(new_state)
+		method = getattr(self, name, None)
+		if method is not None:
+			method(old_state)
 
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
 		if self.state not in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
@@ -161,17 +178,24 @@ class Protocol(ListenerAware, TransportListener):
 		self.state = ProtocolState.CONNECTING
 
 	def disconnect(self, error=False):
-		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR, ProtocolState.DISCONNECTING):
+		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR, ProtocolState.DISCONNECTING, ProtocolState.DISCONNECTING_WITH_ERROR):
 			raise ProtocolNotConnectedError("Already disconnecting or disconnected")
 
-		self.state = ProtocolState.DISCONNECTING
+		if error:
+			self.state = ProtocolState.DISCONNECTING_WITH_ERROR
+		else:
+			self.state = ProtocolState.DISCONNECTING
 
 		self.process_protocol_log("--- Protocol {} disconnecting from transport {}...".format(self,
 		                                                                                      self._transport))
 
 		self._transport.unregister_listener(self)
 		if self._transport.state == TransportState.CONNECTED:
-			self._transport.disconnect()
+			try:
+				self._transport.disconnect()
+			except:
+				self._logger.exception("Error while disconnecting from transport {}".format(self._transport))
+				error = True
 
 		if error:
 			self.state = ProtocolState.DISCONNECTED_WITH_ERROR
@@ -210,6 +234,13 @@ class Protocol(ListenerAware, TransportListener):
 		pass
 
 	def send_script(self, script, context=None):
+		"""
+		Sends the specified script/the GCODE script with the specified name.
+
+		Args:
+			script (GcodeScript or unicode): Script or name of the script to send
+			context (dict): Additional render context
+		"""
 		pass
 
 	def repair(self):
@@ -281,10 +312,16 @@ class ProtocolState(object):
 	RESUMING = "resuming"
 	PAUSED = "paused"
 	ERROR = "error"
+	DISCONNECTING_WITH_ERROR = "disconnecting_with_error"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
 
 	PROCESSING_STATES = (PROCESSING, CANCELLING, PAUSING, RESUMING, FINISHING)
 	OPERATIONAL_STATES = (CONNECTED, PAUSED) + PROCESSING_STATES
+
+class ProtocolSettings(SubSettings):
+	def __init__(self, settings, protocol):
+		SubSettings.__init__(self, settings, ["comm", "protocol", protocol.key],
+		                     defaults=protocol.get_settings_defaults())
 
 class ProtocolAlreadyConnectedError(Exception):
 	pass

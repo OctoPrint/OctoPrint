@@ -17,8 +17,12 @@ from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors, lookup_flavor
 
+from octoprint.comm.protocol.reprap.scripts import GcodeScript
+
 from octoprint.comm.protocol.reprap.util import normalize_command_handler_result, SendToken, LineHistory, PositionRecord, TemperatureRecord
 from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, CommandQueue, SendQueue, QueueMarker, SendQueueMarker
+
+from octoprint.comm.scripts import InvalidScript, UnknownScript
 
 from octoprint.comm.util.parameters import ChoiceType, Value
 
@@ -33,6 +37,9 @@ try:
 	import queue
 except ImportError:
 	import Queue as queue
+
+# noinspection PyCompatibility
+from past.builtins import basestring
 
 import collections
 import copy
@@ -128,9 +135,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             sd_status_interval=2.0,
 	             sd_status_interval_autoreport=1.0,
 	             trigger_ok_after_resend=None,
-	             printer_profile=None,
-	             plugin_manager=None,
-	             event_bus=None,
 	             *args,
 	             **kwargs):
 		super(ReprapGcodeProtocol, self).__init__(*args, **kwargs)
@@ -139,10 +143,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self.flavor is None:
 			self.flavor = GenericFlavor
 		self.set_current_args(flavor=self.flavor.key)
-
-		self._printer_profile = printer_profile
-		self._plugin_manager = plugin_manager
-		self._event_bus = event_bus
 
 		self._logger = logging.getLogger(__name__)
 		self._commdebug_logger = logging.getLogger("COMMDEBUG")
@@ -332,17 +332,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                                         transport_args=transport_args,
 		                                         transport_kwargs=transport_kwargs)
 
-
-	def disconnect(self, error=False):
-		# TODO either clear send queue, or wait until everything has been sent...
-		self._send_queue_active = False
-		self._sending_thread = None
-
-		if self._temperature_poller:
-			self._temperature_poller.cancel()
-			self._temperature_poller = None
-
-		super(ReprapGcodeProtocol, self).disconnect()
 
 	def process(self, job, position=0, tags=None):
 		if isinstance(job, LocalGcodeStreamjob):
@@ -628,6 +617,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if context is None:
 			context = dict()
 
+		# noinspection PyCompatibility
+		if isinstance(script, basestring):
+			script = GcodeScript(self._settings, script, context=context)
+
+		if not isinstance(script, GcodeScript):
+			raise InvalidScript("Can't process this script")
+
 		context.update(dict(printer_profile=self._printer_profile,
 		                    last_position=self.last_position,
 		                    last_temperature=self._internal_flags["temperatures"].as_script_dict()))
@@ -658,7 +654,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def _is_streaming(self):
 		return self._is_busy() and self._job and isinstance(self._job, LocalGcodeStreamjob)
 
-	def _on_state_connecting(self, old_state):
+	def _on_switching_state_connecting(self, old_state):
 		if old_state is not ProtocolState.DISCONNECTED:
 			return
 
@@ -666,7 +662,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if hello:
 			self._tickle(hello)
 
-	def _on_state_connected(self, old_state):
+	def _on_switching_state_connected(self, old_state):
 		if old_state == ProtocolState.CONNECTING:
 			self._internal_flags["timeout"] = self._get_timeout("communication")
 
@@ -706,16 +702,33 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                         run_first=True)
 			self._temperature_poller.start()
 
-	def _on_state_disconnected(self, old_state):
-		self._handle_disconnected(old_state, False)
+	def _on_switched_state_disconnecting(self, old_state):
+		self._handle_disconnecting(old_state, False)
 
-	def _on_state_disconnected_with_error(self, old_state):
-		self._handle_disconnected(old_state, True)
+	def _on_switched_state_disconnecting_with_error(self, old_state):
+		self._handle_disconnecting(old_state, True)
 
-	def _handle_disconnected(self, old_state, error):
+	def _handle_disconnecting(self, old_state, error):
 		if self._temperature_poller is not None:
 			self._temperature_poller.cancel()
 			self._temperature_poller = None
+
+		if self._sd_status_poller is not None:
+			self._sd_status_poller.cancel()
+			self._sd_status_poller = None
+
+		if not error:
+			try:
+				self.send_script("beforePrinterDisconnected")
+				stop = monotonic_time() + 10.0 # TODO make somehow configurable
+				while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and monotonic_time() < stop:
+					time.sleep(.1)
+			except UnknownScript:
+				pass
+			except:
+				self._logger.exception("Error while trying to send beforePrinterDisconnected script")
+
+		self._send_queue_active = False
 
 	##~~ Job handling
 
@@ -892,8 +905,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		if 0 < consecutive_max < self._internal_flags["timeout_consecutive"]:
 			# too many consecutive timeouts, we give up
-			# TODO implement
-			pass
+			message = "No response from printer after {} consecutive communication timeouts. " \
+			          "Have to consider it dead.".format(consecutive_max + 1)
+			self._logger.info(message)
+			self.process_protocol_log(message)
+
+			# TODO error handling
+
+			self.disconnect(error=True)
 
 		elif self._internal_flags["resend_requested"] is not None:
 			message = "Communication timeout during an active resend, resending same line again to trigger response from printer."

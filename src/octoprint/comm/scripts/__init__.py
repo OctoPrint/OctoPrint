@@ -27,3 +27,12 @@ class Script(object):
 			return None
 
 		return content.split("\n")
+
+
+class UnknownScript(Exception):
+	def __init__(self, name, *args, **kwargs):
+		self.name = name
+
+
+class InvalidScript(Exception):
+	pass
