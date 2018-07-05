@@ -421,12 +421,16 @@ class GenericFlavor(object):
 		return GcodeCommand("M112")
 
 	@classmethod
-	def command_set_extruder_temp(cls, s, t, wait):
-		return GcodeCommand("M109" if wait else "M104", s=s, t=t)
+	def command_set_extruder_temp(cls, temperature, tool=None, wait=False):
+		command = "M109" if wait else "M104"
+		args = dict(s=temperature)
+		if tool is not None:
+			args["t"] = tool
+		return GcodeCommand(command, **args)
 
 	@classmethod
-	def command_set_bed_temp(cls, s, wait):
-		return GcodeCommand("M190" if wait else "M140", s=s)
+	def command_set_bed_temp(cls, temperature, wait=False):
+		return GcodeCommand("M190" if wait else "M140", s=temperature)
 
 	@classmethod
 	def command_set_relative_positioning(cls):

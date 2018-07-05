@@ -276,10 +276,11 @@ class Printer(PrinterInterface,
 
 		##~~ Printer profile
 
-		profile = kwargs.get("profile")
-		if not profile:
-			profile = self._printer_profile_manager.get_default()["id"]
-		self._printer_profile_manager.select(profile)
+		profile_id = kwargs.get("profile")
+		if not profile_id:
+			profile_id = self._printer_profile_manager.get_default()["id"]
+		self._printer_profile_manager.select(profile_id)
+		profile = self._printer_profile_manager.get_current_or_default()
 
 		##~~ Transport
 
@@ -319,7 +320,8 @@ class Printer(PrinterInterface,
 			protocol_kwargs = kwargs.get("protocol_options", dict())
 
 		protocol_kwargs.update(dict(plugin_manager=plugin_manager(),
-		                            event_bus=eventManager()))
+		                            event_bus=eventManager(),
+		                            printer_profile=profile))
 
 		from octoprint.comm.protocol import lookup_protocol
 		protocol_class = lookup_protocol(selected_protocol)

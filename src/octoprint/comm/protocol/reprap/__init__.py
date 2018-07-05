@@ -128,6 +128,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	             sd_status_interval=2.0,
 	             sd_status_interval_autoreport=1.0,
 	             trigger_ok_after_resend=None,
+	             printer_profile=None,
 	             plugin_manager=None,
 	             event_bus=None,
 	             *args,
@@ -139,6 +140,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.flavor = GenericFlavor
 		self.set_current_args(flavor=self.flavor.key)
 
+		self._printer_profile = printer_profile
 		self._plugin_manager = plugin_manager
 		self._event_bus = event_bus
 
@@ -523,7 +525,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._send_commands(self.flavor.command_set_extrusion_multiplier(multiplier))
 
 	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool, wait=wait))
+		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool=tool, wait=wait))
 
 	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
 		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait))
@@ -531,12 +533,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	##~~ MotorControlProtocolMixin
 
 	def set_motor_state(self, enabled, *args, **kwargs):
-		self._send_commands(self.flavor.command.set_motor_state(enabled))
+		self._send_commands(self.flavor.command_set_motors(enabled))
 
 	##~~ FanControlProtocolMixin
 
 	def set_fan_speed(self, speed, *args, **kwargs):
-		self._send_commands(self.flavor.command.command_set_fan_speed(speed))
+		self._send_commands(self.flavor.command_set_fan_speed(speed))
 
 	##~~ FileStreamingProtocolMixin
 
@@ -626,8 +628,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if context is None:
 			context = dict()
 
-		# TODO printer profile
-		context.update(dict(last_position=self.last_position))
+		# TODO last temperature
+		context.update(dict(printer_profile=self._printer_profile,
+		                    last_position=self.last_position))
 
 		if script.name == "afterPrintPaused" or script.name == "beforePrintResumed":
 			context.update(dict(pause_position=self.pause_position,
@@ -1161,14 +1164,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["heating"] = True
 			self._internal_flags["heatup_start"] = monotonic_time()
 
-		for x in range(max_tool_num + 1):
-			tool = "T{}".format(x)
-			if not tool in temperatures:
-				# TODO shared nozzle
-				continue
-			else:
-				actual, target = temperatures[tool]
-			self._internal_flags["temperatures"].set_tool(x, actual=actual, target=target)
+		shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
+		current_tool_key = "T{}".format(self._internal_flags["current_tool"])
+
+		if current_tool_key in temperatures:
+			for x in range(max_tool_num + 1):
+				tool = "T{}".format(x)
+				if not tool in temperatures:
+					if shared_nozzle:
+						# replicate the current temperature across all tools (see #2077)
+						actual, target = temperatures[current_tool_key]
+					else:
+						continue
+				else:
+					actual, target = temperatures[tool]
+				self._internal_flags["temperatures"].set_tool(x, actual=actual, target=target)
 
 		if "B" in temperatures:
 			actual, target = temperatures["B"]
@@ -1836,11 +1846,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.pause_file_print()
 
 	def _gcode_M140_queuing(self, command):
-		# TODO heated bed handling needs heated bed flag from printer profile
-		#if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
-		#	self._log("Warn: Not sending \"{}\", printer profile has no heated bed".format(cmd))
-		#	return None, # Don't send bed commands if we don't have a heated bed
-		pass
+		if not self._printer_profile["heatedBed"]:
+			self.process_protocol_log("Warn: Not sending \"{}\", printer profile has no heated bed".format(command))
+			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
 	def _gcode_M155_sending(self, command):
@@ -1930,7 +1938,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _gcode_M112_queuing(self, command):
 		# emergency stop, jump the queue with the M112
-		self._do_send_with_checksum(str(self.flavor.command_emergency_stop()))
+		self._do_send_without_checksum(str(self.flavor.command_emergency_stop()))
 		self._do_increment_and_send_with_checksum(str(self.flavor.command_emergency_stop()))
 
 		# No idea if the printer is still listening or if M112 won. Just in case
@@ -1938,13 +1946,16 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# safe than sorry. We do this ignoring the queue since at this point it
 		# is irrelevant whether the printer has sent enough ack's or not, we
 		# are going to shutdown the connection in a second anyhow.
-		# TODO needs printer profile
-		"""
-		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
-			self._do_increment_and_send_with_checksum(self.flavor.set_extruder_temp(s=0, t=tool))
-		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
-			self._do_increment_and_send_with_checksum(str(self.flavor.set_bed_temp(s=0)))
-		"""
+		extruder_count = self._printer_profile["extruder"]["count"]
+		shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
+		if extruder_count > 1 and not shared_nozzle:
+			for tool in range(extruder_count):
+				self._do_increment_and_send_with_checksum(self.flavor.command_set_extruder_temp(0, tool=tool))
+		else:
+			self._do_increment_and_send_with_checksum(self.flavor.command_set_extruder_temp(0))
+
+		if self._printer_profile["heatedBed"]:
+			self._do_increment_and_send_with_checksum(str(self.flavor.command_set_bed_temp(0)))
 
 		# close to reset host state
 		# TODO needs error and event handling
