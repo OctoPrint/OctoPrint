@@ -83,6 +83,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	def on_event(self, event, payload):
 		if event.startswith("plugin_pluginmanager_"):
 			self._track_plugin_event(event, payload)
+		if event.startswith("plugin_softwareupdate_"):
+			self._track_update_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
 
@@ -148,6 +150,12 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("enable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 		elif event.endswith("_disableplugin"):
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
+
+	def _track_update_event(self, event, payload):
+		if event.endswith("_update_succeeded"):
+			self._track("update_successful", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
+		elif event.endswith("_update_failed"):
+			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 
 	def _track_printjob_event(self, event, payload):
 		sha = hashlib.sha1()
