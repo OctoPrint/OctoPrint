@@ -1037,10 +1037,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			eventManager().fire(Events.FILE_DESELECTED)
 
-		self._create_estimator()
-
 		self._setJobData(full_path, size, sd, user=user)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
+
+		self._create_estimator()
 
 		if self._printAfterSelect:
 			self._printAfterSelect = False
