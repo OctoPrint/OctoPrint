@@ -92,6 +92,7 @@ def getSettings():
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
+			"colorIcon": s.getBoolean(["appearance", "colorIcon"]),
 			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
 			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"])
 		},
@@ -378,6 +379,7 @@ def _saveSettings(data):
 		if "name" in data["appearance"]: s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"]: s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"]: s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
+		if "colorIcon" in data["appearance"]: s.setBoolean(["appearance", "colorIcon"], data["appearance"]["colorIcon"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 

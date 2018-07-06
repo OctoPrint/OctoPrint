@@ -82,6 +82,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._selectedFile = None
 
 		self._estimator_factory = PrintTimeEstimator
+		self._estimator = None
 		analysis_queue_hooks = plugin_manager().get_hooks("octoprint.printer.estimation.factory")
 		for name, hook in analysis_queue_hooks.items():
 			try:
@@ -134,7 +135,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
 		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated)
 
-	def _create_estimator(self, job_type):
+	def _create_estimator(self, job_type=None):
+		if job_type is None:
+			with self._selectedFileMutex:
+				if self._selectedFile is None:
+					return
+
+				if self._selectedFile["sd"]:
+					job_type = "sdcard"
+				else:
+					job_type = "local"
+
 		self._estimator = self._estimator_factory(job_type)
 
 	#~~ handling of PrinterCallbacks
@@ -499,12 +510,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if self._selectedFile is None:
 				return
 
-			if self._selectedFile["sd"]:
-				job_type = "sdcard"
-			else:
-				job_type = "local"
-
-		self._create_estimator(job_type)
 		self._fileManager.delete_recovery_data()
 
 		self._lastProgressReport = None
@@ -754,6 +759,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			cleanedPrintTime = self._comm.getCleanedPrintTime()
 
 		printTimeLeft = printTimeLeftOrigin = None
+		estimator = self._estimator
 		if progress is not None:
 			progress_int = int(progress * 100)
 			if self._lastProgressReport != progress_int:
@@ -766,7 +772,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			elif progress == 1.0:
 				printTimeLeft = 0
 				printTimeLeftOrigin = None
-			else:
+			elif estimator is not None:
 				statisticalTotalPrintTime = None
 				statisticalTotalPrintTimeType = None
 				with self._selectedFileMutex:
@@ -775,11 +781,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 						statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
 						statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
 
-				printTimeLeft, printTimeLeftOrigin = self._estimator.estimate(progress,
-				                                                              printTime,
-				                                                              cleanedPrintTime,
-				                                                              statisticalTotalPrintTime,
-				                                                              statisticalTotalPrintTimeType)
+				printTimeLeft, printTimeLeftOrigin = estimator.estimate(progress,
+				                                                        printTime,
+				                                                        cleanedPrintTime,
+				                                                        statisticalTotalPrintTime,
+				                                                        statisticalTotalPrintTimeType)
 
 		return self._dict(completion=progress * 100 if progress is not None else None,
 		                  filepos=filepos,
@@ -1036,14 +1042,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			eventManager().fire(Events.FILE_DESELECTED)
 
+		self._create_estimator()
+
 		self._setJobData(full_path, size, sd, user=user)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
+
+		self._create_estimator()
 
 		if self._printAfterSelect:
 			self._printAfterSelect = False
 			self.start_print(pos=self._posAfterSelect, user=user)
 
 	def on_comm_print_job_started(self, suppress_script=False):
+		self._stateMonitor.trigger_progress_update()
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
@@ -1310,20 +1321,23 @@ class StateMonitor(object):
 		self._change_event.set()
 
 	def _work(self):
-		while True:
-			self._change_event.wait()
+		try:
+			while True:
+				self._change_event.wait()
 
-			now = time.time()
-			delta = now - self._last_update
-			additional_wait_time = self._interval - delta
-			if additional_wait_time > 0:
-				time.sleep(additional_wait_time)
+				now = time.time()
+				delta = now - self._last_update
+				additional_wait_time = self._interval - delta
+				if additional_wait_time > 0:
+					time.sleep(additional_wait_time)
 
-			with self._state_lock:
-				data = self.get_current_data()
-				self._update_callback(data)
-				self._last_update = time.time()
-				self._change_event.clear()
+				with self._state_lock:
+					data = self.get_current_data()
+					self._update_callback(data)
+					self._last_update = time.time()
+					self._change_event.clear()
+		except:
+			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. Please report this on the OctoPrint issue tracker (make sure to include logs!)")
 
 	def get_current_data(self):
 		with self._progress_lock:

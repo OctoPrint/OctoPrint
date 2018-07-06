@@ -82,7 +82,6 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
                                    ignore_blacklist=ignore_blacklist,
 		                           after_safe_mode=log_startup,
 		                           after_environment_detector=log_register_rollover)
-
 		settings, _, safe_mode, event_manager, connectivity_checker, plugin_manager, environment_detector = components
 
 	except FatalStartupError as e:
