@@ -19,7 +19,7 @@ from octoprint.util import RepeatedTimer
 from octoprint.util.version import get_octoprint_version_string
 from octoprint.events import Events
 
-TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/?{args}"
+TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
 
 # noinspection PyMissingConstructor
 class TrackingPlugin(octoprint.plugin.SettingsPlugin,
@@ -162,13 +162,12 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def _do_track(self, event, **kwargs):
 		server = self._settings.get([b"server"])
-		url = server.format(id=self._settings.get([b"unique_id"]),
-		                    event=event,
-		                    args="&".join(map(lambda x: "{}={}".format(x[0], x[1]), kwargs.items())))
+		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
 
 		headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
 		try:
 			requests.get(url,
+			             params=kwargs,
 			             timeout=3.1,
 			             headers=headers)
 			self._logger.debug("Sent tracking event to {}".format(url))
