@@ -25,6 +25,7 @@ TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
 class TrackingPlugin(octoprint.plugin.SettingsPlugin,
                      octoprint.plugin.EnvironmentDetectionPlugin,
                      octoprint.plugin.StartupPlugin,
+                     octoprint.plugin.ShutdownPlugin,
                      octoprint.plugin.TemplatePlugin,
                      octoprint.plugin.AssetPlugin,
                      octoprint.plugin.WizardPlugin,
@@ -72,6 +73,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._ping_worker = RepeatedTimer(ping, self._track_ping)
 			self._ping_worker.start()
 
+	##~~ ShutdownPlugin
+
+	def on_shutdown(self):
+		self._track_shutdown()
+
 	##~~ EventHandlerPlugin
 
 	def on_event(self, event, payload):
@@ -113,9 +119,22 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._settings.save()
 
 	def _track_startup(self):
-		self._track("startup",
-		            version=get_octoprint_version_string(),
-		            os=self._environment[b"os"][b"id"])
+		payload = dict(version=get_octoprint_version_string(),
+		               os=self._environment[b"os"][b"id"],
+		               python=self._environment[b"python"][b"version"],
+		               pip=self._environment[b"python"][b"pip"],
+		               cores=self._environment[b"hardware"][b"cores"],
+		               freq=self._environment[b"hardware"][b"freq"],
+		               ram=self._environment[b"hardware"][b"ram"])
+
+		if b"plugins" in self._environment and b"octopi_support" in self._environment[b"plugins"]:
+			payload[b"octopi_version"] = self._environment[b"plugins"][b"octopi_support"][b"version"]
+			payload[b"pi_model"] = self._environment[b"plugins"][b"octopi_support"][b"model"]
+
+		self._track("startup", **payload)
+
+	def _track_shutdown(self):
+		self._track("shutdown")
 
 	def _track_ping(self):
 		self._track("ping")
