@@ -19,12 +19,13 @@ from octoprint.util import RepeatedTimer
 from octoprint.util.version import get_octoprint_version_string
 from octoprint.events import Events
 
-TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/?{args}"
+TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
 
 # noinspection PyMissingConstructor
 class TrackingPlugin(octoprint.plugin.SettingsPlugin,
                      octoprint.plugin.EnvironmentDetectionPlugin,
                      octoprint.plugin.StartupPlugin,
+                     octoprint.plugin.ShutdownPlugin,
                      octoprint.plugin.TemplatePlugin,
                      octoprint.plugin.AssetPlugin,
                      octoprint.plugin.WizardPlugin,
@@ -72,11 +73,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._ping_worker = RepeatedTimer(ping, self._track_ping)
 			self._ping_worker.start()
 
+	##~~ ShutdownPlugin
+
+	def on_shutdown(self):
+		self._track_shutdown()
+
 	##~~ EventHandlerPlugin
 
 	def on_event(self, event, payload):
 		if event.startswith("plugin_pluginmanager_"):
 			self._track_plugin_event(event, payload)
+		if event.startswith("plugin_softwareupdate_"):
+			self._track_update_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
 
@@ -113,9 +121,22 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._settings.save()
 
 	def _track_startup(self):
-		self._track("startup",
-		            version=get_octoprint_version_string(),
-		            os=self._environment[b"os"][b"id"])
+		payload = dict(version=get_octoprint_version_string(),
+		               os=self._environment[b"os"][b"id"],
+		               python=self._environment[b"python"][b"version"],
+		               pip=self._environment[b"python"][b"pip"],
+		               cores=self._environment[b"hardware"][b"cores"],
+		               freq=self._environment[b"hardware"][b"freq"],
+		               ram=self._environment[b"hardware"][b"ram"])
+
+		if b"plugins" in self._environment and b"octopi_support" in self._environment[b"plugins"]:
+			payload[b"octopi_version"] = self._environment[b"plugins"][b"octopi_support"][b"version"]
+			payload[b"pi_model"] = self._environment[b"plugins"][b"octopi_support"][b"model"]
+
+		self._track("startup", **payload)
+
+	def _track_shutdown(self):
+		self._track("shutdown")
 
 	def _track_ping(self):
 		self._track("ping")
@@ -130,29 +151,35 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		elif event.endswith("_disableplugin"):
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 
+	def _track_update_event(self, event, payload):
+		if event.endswith("_update_succeeded"):
+			self._track("update_successful", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
+		elif event.endswith("_update_failed"):
+			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
+
 	def _track_printjob_event(self, event, payload):
 		sha = hashlib.sha1()
 		sha.update(payload.get("name"))
 
-		event = None
+		track_event = None
 		args = dict(origin=payload.get(b"origin"), file=sha.hexdigest())
 
 		if event == Events.PRINT_STARTED:
-			event = "print_started"
+			track_event = "print_started"
 		elif event == Events.PRINT_DONE:
 			try:
 				elapsed = int(payload.get(b"time"))
 			except ValueError:
 				elapsed = "unknown"
 			args[b"elapsed"] = elapsed
-			event = "print_done"
+			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
-			event = "print_failed"
+			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
-			event = "print_cancelled"
+			track_event = "print_cancelled"
 
-		if event is not None:
-			self._track(event, **args)
+		if track_event is not None:
+			self._track(track_event, **args)
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
@@ -162,13 +189,12 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def _do_track(self, event, **kwargs):
 		server = self._settings.get([b"server"])
-		url = server.format(id=self._settings.get([b"unique_id"]),
-		                    event=event,
-		                    args="&".join(map(lambda x: "{}={}".format(x[0], x[1]), kwargs.items())))
+		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
 
 		headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
 		try:
 			requests.get(url,
+			             params=kwargs,
 			             timeout=3.1,
 			             headers=headers)
 			self._logger.debug("Sent tracking event to {}".format(url))
