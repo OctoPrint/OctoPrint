@@ -1,7 +1,7 @@
 # Supporters 
 
 Development of this version of OctoPrint wouldn't have been possible without
-[financial support by the community](http://octoprint.org/support-octoprint/) -
+[the financial support by the community](https://octoprint.org/support-octoprint/) -
 thanks to everyone who contributed!
 
 ## Patreon Patrons
