@@ -1,5 +1,20 @@
 # OctoPrint Changelog
 
+## 1.3.9rc2 (2018-07-06)
+
+### Improvements
+
+  * Add sanity check for disabled plugin list (see also [#2687 (comment)](https://github.com/foosel/OctoPrint/issues/2687#issuecomment-399797596)).
+  * Improve logging of exceptions triggered inside the state update worker (see also [#2715](https://github.com/foosel/OctoPrint/issues/2715)).
+
+### Bug fixes
+
+  * [#2715](https://github.com/foosel/OctoPrint/issues/2715) (regression) - Fix broken estimator initialization on SD print start and resulting crash of the state update worker.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc1...1.3.9rc2)
+
 ## 1.3.9rc1 (2018-06-20)
 
 ### Note for upgraders running NGINX as reverse proxy: Be sure to configure HTTP protocol version 1.1
