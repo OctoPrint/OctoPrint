@@ -30,10 +30,12 @@ thanks to everyone who contributed!
   * Jeremiah Avery
   * Josh Daniels
   * Joshua Wills
+  * Justin Kaufman
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
   * Kodama Inc. 
+  * Lewis Newby
   * LulzBot®
   * Makespace Madrid
   * Mark Walker
@@ -51,11 +53,10 @@ thanks to everyone who contributed!
   * Samer Najia
   * Simon Hallam
   * Stefan Krister
-  * Stephane Schittly
   * Sven Mueller
   * Symbiotic Devices
   * Thomas Hatley
   * Timothy D Hoogland
   * Trent Shumay
 
-and 1334 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1332 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
