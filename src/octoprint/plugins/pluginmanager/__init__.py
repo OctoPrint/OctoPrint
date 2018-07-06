@@ -681,7 +681,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
 
 	def _mark_plugin_enabled(self, plugin, needs_restart=False):
-		disabled_list = list(self._settings.global_get(["plugins", "_disabled"]))
+		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
+		                                               validator=lambda x: isinstance(x, list),
+		                                               fallback=[]))
 		if plugin.key in disabled_list:
 			disabled_list.remove(plugin.key)
 			self._settings.global_set(["plugins", "_disabled"], disabled_list)
@@ -699,7 +701,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                                               version=plugin.version))
 
 	def _mark_plugin_disabled(self, plugin, needs_restart=False):
-		disabled_list = list(self._settings.global_get(["plugins", "_disabled"]))
+		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
+		                                               validator=lambda x: isinstance(x, list),
+		                                               fallback=[]))
 		if not plugin.key in disabled_list:
 			disabled_list.append(plugin.key)
 			self._settings.global_set(["plugins", "_disabled"], disabled_list)
