@@ -134,25 +134,25 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		sha = hashlib.sha1()
 		sha.update(payload.get("name"))
 
-		event = None
+		track_event = None
 		args = dict(origin=payload.get(b"origin"), file=sha.hexdigest())
 
 		if event == Events.PRINT_STARTED:
-			event = "print_started"
+			track_event = "print_started"
 		elif event == Events.PRINT_DONE:
 			try:
 				elapsed = int(payload.get(b"time"))
 			except ValueError:
 				elapsed = "unknown"
 			args[b"elapsed"] = elapsed
-			event = "print_done"
+			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
-			event = "print_failed"
+			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
-			event = "print_cancelled"
+			track_event = "print_cancelled"
 
-		if event is not None:
-			self._track(event, **args)
+		if track_event is not None:
+			self._track(track_event, **args)
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
