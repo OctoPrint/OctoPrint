@@ -780,6 +780,9 @@ class MachineCom(object):
 		return self._job_on_hold.counter > 0
 
 	def set_job_on_hold(self, value, blocking=True):
+		trigger = False
+
+		# don't run any locking code beyond this...
 		if not self._job_on_hold.acquire(blocking=blocking):
 			return False
 
@@ -789,9 +792,13 @@ class MachineCom(object):
 			else:
 				self._job_on_hold.clear()
 				if self._job_on_hold.counter == 0:
-					self._continue_sending()
+					trigger = True
 		finally:
 			self._job_on_hold.release()
+
+		# locking code is now safe to run again
+		if trigger:
+			self._continue_sending()
 
 		return True
 
