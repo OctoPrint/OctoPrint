@@ -498,7 +498,6 @@ def getCodeInt(line, code):
 
 
 def getCodeFloat(line, code):
-	import math
 	n = line.find(code) + 1
 	if n < 1:
 		return None
@@ -511,4 +510,3 @@ def getCodeFloat(line, code):
 		return val if not (math.isnan(val) or math.isinf(val)) else None
 	except:
 		return None
-
