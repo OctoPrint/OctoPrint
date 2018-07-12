@@ -2090,9 +2090,7 @@ class MachineCom(object):
 		return
 
 	def _handle_timeout(self):
-		if self._state not in (self.STATE_PRINTING,
-		                       self.STATE_PAUSED,
-		                       self.STATE_OPERATIONAL):
+		if self._state not in self.OPERATIONAL_STATES:
 			return
 
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
@@ -2100,7 +2098,7 @@ class MachineCom(object):
 		# figure out which consecutive timeout maximum we have to use
 		if self._long_running_command:
 			consecutive_max = self._consecutive_timeout_maximums.get("long", 0)
-		elif self._state in (self.STATE_PRINTING,):
+		elif self._state in self.PRINTING_STATES:
 			consecutive_max = self._consecutive_timeout_maximums.get("printing", 0)
 		else:
 			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
@@ -2136,7 +2134,7 @@ class MachineCom(object):
 			# long running command active, ignore timeout
 			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
-		elif self._state in (self.STATE_PRINTING, self.STATE_PAUSED):
+		elif self._state in self.PRINTING_STATES + (self.STATE_PAUSED,):
 			# printing, try to tickle the printer
 			message = "Communication timeout while printing, trying to trigger response from printer."
 			self._logger.info(message)
