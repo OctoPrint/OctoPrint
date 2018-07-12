@@ -1633,7 +1633,7 @@ class MachineCom(object):
 				handled = False
 
 				# process oks
-				if line.startswith("ok") or (self.isPrinting() and not self.job_on_hold and supportWait and line == "wait"):
+				if line.startswith("ok") or (self.isPrinting() and supportWait and line == "wait"):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
@@ -1647,11 +1647,11 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting()
-				                                               and not self.isSdPrinting()
-				                                               and not self.job_on_hold
-				                                               and not self._long_running_command
-				                                               and not self._heating and now > self._ok_timeout)) \
+				elif ((line == "" and now >= self._timeout) or (self.isPrinting()
+				                                                and not self.isSdPrinting()
+				                                                and (not self.job_on_hold or self._resendActive)
+				                                                and not self._long_running_command
+				                                                and not self._heating and now >= self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
