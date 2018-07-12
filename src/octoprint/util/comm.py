@@ -2078,16 +2078,13 @@ class MachineCom(object):
 		if not self._state in self.OPERATIONAL_STATES:
 			return
 
-		# process queues ongoing resend requests and queues if we are operational
+		if self._resendDelta is not None and self._resendNextCommand():
+			# we processed a resend request and are done here
+			return
 
-		with self._sendingLock: # prevent concurrency due to resend_ok_timers
-			if self._resendDelta is not None:
-				self._resendNextCommand()
-			else:
-				self._resendActive = False
-				self._continue_sending()
-
-		return
+		# continue with our queues and the job
+		self._resendActive = False
+		self._continue_sending()
 
 	def _handle_timeout(self):
 		if self._state not in self.OPERATIONAL_STATES:
@@ -2780,6 +2777,11 @@ class MachineCom(object):
 					self._resendDelta = 0
 				self._resendDelta += 1
 
+			elif self._resendDelta is None:
+				# we might enter this twice in quick succession if we get triggered by the
+				# resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
+				return False
+
 			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
@@ -2787,6 +2789,8 @@ class MachineCom(object):
 
 			self._resendDelta -= 1
 			if self._resendDelta <= 0:
+				# reset everything BUT the resendActive flag - that will have to stay active until we receive
+				# our next ok!
 				self._resendDelta = None
 				self._lastResendNumber = None
 				self._currentResendCount = 0
