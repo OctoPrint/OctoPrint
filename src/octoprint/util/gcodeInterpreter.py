@@ -152,12 +152,12 @@ class MinMax3D(object):
 		self.max = Vector3D(None, None, None)
 
 	def record(self, coordinate):
-		for c in "xyz":
-			current_min = getattr(self.min, c)
-			current_max = getattr(self.max, c)
-			value = getattr(coordinate, c)
-			setattr(self.min, c, value if current_min is None or value < current_min else current_min)
-			setattr(self.max, c, value if current_max is None or value > current_max else current_max)
+		self.min.x = coordinate.x if not self.min.x else min(self.min.x, coordinate.x)
+		self.min.y = coordinate.y if not self.min.y else min(self.min.y, coordinate.y)
+		self.min.z = coordinate.z if not self.min.z else min(self.min.z, coordinate.z)
+		self.max.x = coordinate.x if not self.max.x else max(self.max.x, coordinate.x)
+		self.max.y = coordinate.y if not self.max.y else max(self.max.y, coordinate.y)
+		self.max.z = coordinate.z if not self.max.z else max(self.max.z, coordinate.z)
 
 	@property
 	def size(self):
