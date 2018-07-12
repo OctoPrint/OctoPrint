@@ -1512,11 +1512,13 @@ class MachineCom(object):
 			self.sayHello()
 
 		while self._monitoring_active:
-			now = time.time()
 			try:
 				line = self._readline()
 				if line is None:
 					break
+
+				now = time.time()
+
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
 					self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
