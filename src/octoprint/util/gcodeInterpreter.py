@@ -165,7 +165,7 @@ class MinMax3D(object):
 		for c in "xyz":
 			min = getattr(self.min, c)
 			max = getattr(self.max, c)
-			value = abs(max - min) if not math.isinf(min) and not math.isinf(max) else 0.0
+			value = abs(max - min) if max >= min else 0.0
 			setattr(result, c, value)
 		return result
 
