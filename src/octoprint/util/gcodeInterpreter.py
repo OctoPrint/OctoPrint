@@ -148,16 +148,16 @@ class MinMax3D(object):
 	"""
 
 	def __init__(self):
-		self.min = Vector3D(float("inf"), float("inf"), float("inf"))
-		self.max = Vector3D(-float("inf"), -float("inf"), -float("inf"))
+		self.min = Vector3D(None, None, None)
+		self.max = Vector3D(None, None, None)
 
 	def record(self, coordinate):
-		self.min.x = min(self.min.x, coordinate.x)
-		self.min.y = min(self.min.y, coordinate.y)
-		self.min.z = min(self.min.z, coordinate.z)
-		self.max.x = max(self.max.x, coordinate.x)
-		self.max.y = max(self.max.y, coordinate.y)
-		self.max.z = max(self.max.z, coordinate.z)
+		self.min.x = coordinate.x if not self.min.x else min(self.min.x, coordinate.x)
+		self.min.y = coordinate.y if not self.min.y else min(self.min.y, coordinate.y)
+		self.min.z = coordinate.z if not self.min.z else min(self.min.z, coordinate.z)
+		self.max.x = coordinate.x if not self.max.x else max(self.max.x, coordinate.x)
+		self.max.y = coordinate.y if not self.max.y else max(self.max.y, coordinate.y)
+		self.max.z = coordinate.z if not self.max.z else max(self.max.z, coordinate.z)
 
 	@property
 	def size(self):
@@ -165,7 +165,7 @@ class MinMax3D(object):
 		for c in "xyz":
 			min = getattr(self.min, c)
 			max = getattr(self.max, c)
-			value = abs(max - min) if max >= min else 0.0
+			value = abs(max - min) if min is not None and max is not None else 0.0
 			setattr(result, c, value)
 		return result
 
