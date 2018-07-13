@@ -1134,6 +1134,32 @@ octoprint.server.http.routes
    :return: a list of 3-tuples with additional routes as defined above
    :rtype: list
 
+.. _sec-plugins-hook-timelapse-extensions:
+
+octoprint.timelapse.extensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: timelapse_extension_hook(*args, **kwargs)
+
+   Allows extending the set of supported file extensions for timelapse files. Handlers must return a list of
+   additional file extensions.
+
+   **Example**
+
+   Allow the management of timelapse GIFs with extension ``gif``.
+
+   .. code-block:: python
+
+      def get_timelapse_extensions(*args, **kwargs):
+          return ["gif"]
+
+      __plugin_hooks__ = {
+          "octoprint.timelapse.extensions": get_timelapse_extensions
+      }
+
+   :return: a list of additional file extensions
+   :rtype: list
+
 .. _sec-plugins-hook-ui-web-templatetypes:
 
 octoprint.ui.web.templatetypes

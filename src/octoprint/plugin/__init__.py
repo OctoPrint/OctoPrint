@@ -94,7 +94,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_en
 
 			if plugin_restart_needing_hooks is None:
 				plugin_restart_needing_hooks = ["octoprint.server.http.*",
-				                                "octoprint.printer.factory"]
+				                                "octoprint.printer.factory",
+				                                "octoprint.timelapse.extensions"]
 
 			if plugin_obsolete_hooks is None:
 				plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
