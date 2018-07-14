@@ -601,8 +601,14 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		                alive message
 		"""
 
-		from BaseHTTPServer import BaseHTTPRequestHandler
-		from StringIO import StringIO
+		try:
+			# noinspection PyCompatibility
+			from http.server import BaseHTTPRequestHandler
+			from io import StringIO
+		except ImportError:
+			# noinspection PyCompatibility
+			from BaseHTTPServer import BaseHTTPRequestHandler
+			from StringIO import StringIO
 		import socket
 
 		socket.setdefaulttimeout(timeout)

@@ -481,8 +481,12 @@ def _strip_tags(text):
 	>>> _strip_tags(u"&#62; &#x3E; Foo")
 	u'&#62; &#x3E; Foo'
 	"""
-
-	from HTMLParser import HTMLParser
+	try:
+		# noinspection PyCompatibility
+		from html.parser import HTMLParser
+	except ImportError:
+		# noinspection PyCompatibility
+		from HTMLParser import HTMLParser
 
 	class TagStripper(HTMLParser):
 
