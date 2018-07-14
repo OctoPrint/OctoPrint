@@ -145,7 +145,7 @@ class EnvironmentDetector(object):
 
 		dumped_environment = yaml.safe_dump(environment,
 		                                    default_flow_style=False,
-		                                    indent="    ",
+		                                    indent=4,
 		                                    allow_unicode=True).strip()
 		environment_lines = "\n".join(map(lambda l: "|  {}".format(l), dumped_environment.split("\n")))
 		return u"Detected environment is Python {} under {} ({}). Details:\n{}".format(environment["python"]["version"],

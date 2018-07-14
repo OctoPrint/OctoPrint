@@ -70,4 +70,4 @@ def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle
 
 	click.echo("DONE:{}s".format(time.time() - start_time))
 	click.echo("RESULTS:")
-	click.echo(yaml.safe_dump(interpreter.get_result(), default_flow_style=False, indent="    ", allow_unicode=True))
+	click.echo(yaml.safe_dump(interpreter.get_result(), default_flow_style=False, indent=4, allow_unicode=True))

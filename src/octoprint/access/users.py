@@ -499,7 +499,7 @@ class FilebasedUserManager(UserManager):
 			}
 
 		with atomic_write(self._userfile, "wb", permissions=0o600, max_permissions=0o666) as f:
-			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
+			yaml.safe_dump(data, f, default_flow_style=False, indent=4, allow_unicode=True)
 			self._dirty = False
 		self._load()
 

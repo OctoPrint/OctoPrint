@@ -189,7 +189,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 		# save
 		with octoprint.util.atomic_write(self._get_logging_file(), "wb", max_permissions=0o666) as f:
-			yaml.safe_dump(config, f, default_flow_style=False, indent="  ", allow_unicode=True)
+			yaml.safe_dump(config, f, default_flow_style=False, indent=2, allow_unicode=True)
 
 		# set runtime logging levels now
 		for logger, level in new_levels.items():

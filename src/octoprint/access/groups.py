@@ -243,7 +243,7 @@ class FilebasedGroupManager(GroupManager):
 
 		with atomic_write(self._groupfile, "wb", permissions=0o600, max_permissions=0o666) as f:
 			import yaml
-			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
+			yaml.safe_dump(data, f, default_flow_style=False, indent=4, allow_unicode=True)
 			self._dirty = False
 		self._load()
 
@@ -501,6 +501,3 @@ class Group(object):
 
 	def __eq__(self, other):
 		return isinstance(other, Group) and other.key == self.key
-
-
-

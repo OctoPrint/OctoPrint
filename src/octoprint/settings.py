@@ -1320,7 +1320,7 @@ class Settings(object):
 		from octoprint.util import atomic_write
 		try:
 			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
-				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
 		except:
 			self._logger.exception("Error while saving config.yaml!")
