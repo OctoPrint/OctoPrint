@@ -384,7 +384,7 @@ class Group(object):
 			key=self.key,
 			name=self.get_name(),
 			description=self._description,
-			permissions=map(lambda p: p.key, self._permissions),
+			permissions=list(map(lambda p: p.key, self._permissions)),
 			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
 			default=self._default,
 			removable=self._removable,

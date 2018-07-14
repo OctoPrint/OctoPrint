@@ -263,7 +263,7 @@ class ReverseProxiedEnvironment(object):
 		if not isinstance(values, (list, tuple)):
 			values = [values]
 		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
-		return map(to_wsgi_format, values)
+		return list(map(to_wsgi_format, values))
 
 	@staticmethod
 	def valid_ip(address):

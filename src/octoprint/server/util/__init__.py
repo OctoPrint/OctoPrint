@@ -263,8 +263,8 @@ def get_plugin_hash():
 	from octoprint.plugin import plugin_manager
 
 	plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
-	template_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin))
-	asset_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin))
+	template_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin)))
+	asset_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)))
 	ui_plugins = sorted(set(template_plugins + asset_plugins))
 
 	import hashlib

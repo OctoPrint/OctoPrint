@@ -79,7 +79,7 @@ def _filter_out_latest(releases,
 		else:
 			filter_function = lambda rel: not rel["draft"]
 
-	releases = filter(filter_function, releases)
+	releases = list(filter(filter_function, releases))
 	if not releases:
 		return nothing
 
@@ -115,8 +115,8 @@ def _get_latest_release(user, repo, compare_type,
 
 	# sanitize
 	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at", "target_commitish"}
-	releases = filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
-	                  releases)
+	releases = list(filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
+	                  	   releases))
 
 	comparable_factory = _get_comparable_factory(compare_type,
 	                                             force_base=force_base)

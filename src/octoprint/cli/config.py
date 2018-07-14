@@ -17,7 +17,7 @@ import pprint
 
 def _to_settings_path(path):
 	if not isinstance(path, (list, tuple)):
-		path = filter(lambda x: x, map(lambda x: x.strip(), path.split(".")))
+		path = list(filter(lambda x: x, map(lambda x: x.strip(), path.split("."))))
 	return path
 
 def _set_helper(settings, path, value, data_type=None):

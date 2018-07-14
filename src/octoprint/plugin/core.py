@@ -519,8 +519,8 @@ class PluginInfo(object):
 			                     root.body)
 
 			def extract_target_ids(node):
-				return map(lambda x: x.id,
-				           filter(lambda x: isinstance(x, ast.Name), node.targets))
+				return list(map(lambda x: x.id,
+				                filter(lambda x: isinstance(x, ast.Name), node.targets)))
 
 			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
 			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
@@ -628,7 +628,7 @@ class PluginManager(object):
 
 	@property
 	def plugin_hooks(self):
-		return {key: map(lambda v: (v[1], v[2]), value) for key, value in self._plugin_hooks.items()}
+		return {key: list(map(lambda v: (v[1], v[2]), value)) for key, value in self._plugin_hooks.items()}
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True, incl_all_found=False):
 		added, found = self._find_plugins(existing=existing, ignore_uninstalled=ignore_uninstalled)
@@ -1501,7 +1501,7 @@ class PluginManager(object):
 
 		assert callable(f)
 		implementations = self.get_implementations(*types, sorting_context=kwargs.get("sorting_context", None))
-		return filter(f, implementations)
+		return list(filter(f, implementations))
 
 	def get_helpers(self, name, *helpers):
 		"""

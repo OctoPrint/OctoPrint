@@ -173,8 +173,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				config_checks = self._settings.get(["checks"])
 				plugin_and_not_enabled = lambda k: k in check_providers and \
 				                                   not check_providers[k] in self._plugin_manager.enabled_plugins
-				obsolete_plugin_checks = filter(plugin_and_not_enabled,
-				                                config_checks.keys())
+				obsolete_plugin_checks = list(filter(plugin_and_not_enabled,
+				                                	 config_checks.keys()))
 				for key in obsolete_plugin_checks:
 					self._logger.debug("Check for key {} was provided by plugin {} that's no longer available, ignoring it".format(key, check_providers[key]))
 					del self._configured_checks[key]

@@ -621,7 +621,7 @@ class MachineCom(object):
 		if state is None:
 			state = self._state
 
-		possible_states = filter(lambda x: x.startswith("STATE_"), self.__class__.__dict__.keys())
+		possible_states = list(filter(lambda x: x.startswith("STATE_"), self.__class__.__dict__.keys()))
 		for possible_state in possible_states:
 			if getattr(self, possible_state) == state:
 				return possible_state[len("STATE_"):]
@@ -970,9 +970,9 @@ class MachineCom(object):
 
 		scriptLines = scriptLinesPrefix + scriptLines + scriptLinesSuffix
 
-		return filter(lambda x: x is not None and x.strip() != "",
-		              map(lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
-		                  scriptLines))
+		return list(filter(lambda x: x is not None and x.strip() != "",
+		              	   map(lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
+		                  	   scriptLines)))
 
 
 	def sendGcodeScript(self, scriptName, replacements=None, tags=None, part_of_job=False):
@@ -4121,7 +4121,7 @@ def canonicalize_temperatures(parsed, current):
 	    dict: the canonicalized version of ``parsed``
 	"""
 
-	reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
+	reported_extruders = list(filter(lambda x: x.startswith("T"), parsed.keys()))
 	if not "T" in reported_extruders:
 		# Our reported_extruders are either empty or consist purely
 		# of Tn keys, no need for any action

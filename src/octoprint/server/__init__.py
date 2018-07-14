@@ -1068,7 +1068,7 @@ class Server(object):
 			return all([f(entry) for f in filters])
 
 		# filter out all old and non-http entries
-		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(filter_entries, entries))
+		cache_data = preemptive_cache.clean_all_data(lambda root, entries: list(filter(filter_entries, entries)))
 		if not cache_data:
 			return
 
@@ -1613,7 +1613,7 @@ class Server(object):
 
 			return path, data, content_type
 
-		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
+		rules = list(map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules)))
 
 		class HTTPServerV6(HTTPServer):
 			address_family = socket.AF_INET6

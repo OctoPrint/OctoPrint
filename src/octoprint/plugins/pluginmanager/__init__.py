@@ -171,7 +171,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		plugins = sorted(self._get_plugins(), key=lambda x: x["name"].lower())
 		return dict(
 			all=plugins,
-			thirdparty=filter(lambda p: not p["bundled"], plugins),
+			thirdparty=list(filter(lambda p: not p["bundled"], plugins)),
 			archive_extensions=self.__class__.ARCHIVE_EXTENSIONS
 		)
 
@@ -197,7 +197,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
-		exts = filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS)
+		exts = list(filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS))
 		if not len(exts):
 			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
 
@@ -399,8 +399,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					                     .format(source), 500)
 
 		try:
-			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
-			                     stdout)[-1]
+			result_line = list(filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
+			                     stdout))[-1]
 		except IndexError:
 			self._logger.error("Installing the plugin from {} failed, could not parse output from pip. "
 			                   "See plugin_pluginmanager_console.log for generated output".format(source))
@@ -443,7 +443,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		installed = map(lambda x: x.strip(), result_line[len(success_string):].split(" "))
+		installed = list(map(lambda x: x.strip(), result_line[len(success_string):].split(" ")))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 
 		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
@@ -691,7 +691,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:
-			lines = map(lambda x: x.strip(), lines)
+			lines = list(map(lambda x: x.strip(), lines))
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines",
 		                                                                loglines=[dict(line=line, stream=stream) for line in lines]))
@@ -821,7 +821,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			return result
 
-		self._repository_plugins = map(map_repository_entry, repo_data)
+		self._repository_plugins = list(map(map_repository_entry, repo_data))
 		return True
 
 	def _fetch_notices_from_disk(self):
@@ -988,10 +988,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
-		return filter(lambda x: x is not None,
-		              map(map_notification,
-		                  filter(filter_relevant,
-		                         plugin_notifications)))
+		return list(filter(lambda x: x is not None,
+		              	   map(map_notification,
+		                  	   filter(filter_relevant,
+		                         	  plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
 		return dict(key=key,

@@ -133,7 +133,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		return files
 
 	def _get_available_loggers(self):
-		return filter(lambda x: self._is_managed_logger(x), self._logger.manager.loggerDict.keys())
+		return list(filter(lambda x: self._is_managed_logger(x), self._logger.manager.loggerDict.keys()))
 
 	def _get_logging_file(self):
 		# TODO this might not be the logging config we are actually using here (command line parameter...)
