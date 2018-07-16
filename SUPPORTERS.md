@@ -28,6 +28,7 @@ thanks to everyone who contributed!
   * Jeff Renfer
   * Jefferson Hunt
   * Jeremiah Avery
+  * Joseph Payne
   * Josh Daniels
   * Joshua Wills
   * Justin Kaufman
@@ -59,4 +60,4 @@ thanks to everyone who contributed!
   * Timothy D Hoogland
   * Trent Shumay
 
-and 1332 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1333 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

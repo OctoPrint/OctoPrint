@@ -780,6 +780,9 @@ class MachineCom(object):
 		return self._job_on_hold.counter > 0
 
 	def set_job_on_hold(self, value, blocking=True):
+		trigger = False
+
+		# don't run any locking code beyond this...
 		if not self._job_on_hold.acquire(blocking=blocking):
 			return False
 
@@ -789,9 +792,13 @@ class MachineCom(object):
 			else:
 				self._job_on_hold.clear()
 				if self._job_on_hold.counter == 0:
-					self._continue_sending()
+					trigger = True
 		finally:
 			self._job_on_hold.release()
+
+		# locking code is now safe to run again
+		if trigger:
+			self._continue_sending()
 
 		return True
 
@@ -1490,11 +1497,13 @@ class MachineCom(object):
 			self.sayHello()
 
 		while self._monitoring_active:
-			now = time.time()
 			try:
 				line = self._readline()
 				if line is None:
 					break
+
+				now = time.time()
+
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
 					self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
@@ -1609,7 +1618,7 @@ class MachineCom(object):
 				handled = False
 
 				# process oks
-				if line.startswith("ok") or (self.isPrinting() and not self.job_on_hold and supportWait and line == "wait"):
+				if line.startswith("ok") or (self.isPrinting() and supportWait and line == "wait"):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
@@ -1623,11 +1632,11 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting()
-				                                               and not self.isSdPrinting()
-				                                               and not self.job_on_hold
-				                                               and not self._long_running_command
-				                                               and not self._heating and now > self._ok_timeout)) \
+				elif ((line == "" and now >= self._timeout) or (self.isPrinting()
+				                                                and not self.isSdPrinting()
+				                                                and (not self.job_on_hold or self._resendActive)
+				                                                and not self._long_running_command
+				                                                and not self._heating and now >= self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
@@ -2042,21 +2051,16 @@ class MachineCom(object):
 		if not self._state in self.OPERATIONAL_STATES:
 			return
 
-		# process queues ongoing resend requests and queues if we are operational
+		if self._resendDelta is not None and self._resendNextCommand():
+			# we processed a resend request and are done here
+			return
 
-		with self._sendingLock: # prevent concurrency due to resend_ok_timers
-			if self._resendDelta is not None:
-				self._resendNextCommand()
-			else:
-				self._resendActive = False
-				self._continue_sending()
-
-		return
+		# continue with our queues and the job
+		self._resendActive = False
+		self._continue_sending()
 
 	def _handle_timeout(self):
-		if self._state not in (self.STATE_PRINTING,
-		                       self.STATE_PAUSED,
-		                       self.STATE_OPERATIONAL):
+		if self._state not in self.OPERATIONAL_STATES:
 			return
 
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
@@ -2064,7 +2068,7 @@ class MachineCom(object):
 		# figure out which consecutive timeout maximum we have to use
 		if self._long_running_command:
 			consecutive_max = self._consecutive_timeout_maximums.get("long", 0)
-		elif self._state in (self.STATE_PRINTING,):
+		elif self._state in self.PRINTING_STATES:
 			consecutive_max = self._consecutive_timeout_maximums.get("printing", 0)
 		else:
 			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
@@ -2100,7 +2104,7 @@ class MachineCom(object):
 			# long running command active, ignore timeout
 			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
-		elif self._state in (self.STATE_PRINTING, self.STATE_PAUSED):
+		elif self._state in self.PRINTING_STATES + (self.STATE_PAUSED,):
 			# printing, try to tickle the printer
 			message = "Communication timeout while printing, trying to trigger response from printer."
 			self._logger.info(message)
@@ -2755,6 +2759,11 @@ class MachineCom(object):
 					self._resendDelta = 0
 				self._resendDelta += 1
 
+			elif self._resendDelta is None:
+				# we might enter this twice in quick succession if we get triggered by the
+				# resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
+				return False
+
 			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
@@ -2762,6 +2771,8 @@ class MachineCom(object):
 
 			self._resendDelta -= 1
 			if self._resendDelta <= 0:
+				# reset everything BUT the resendActive flag - that will have to stay active until we receive
+				# our next ok!
 				self._resendDelta = None
 				self._lastResendNumber = None
 				self._currentResendCount = 0
