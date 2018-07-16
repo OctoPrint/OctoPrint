@@ -24,10 +24,10 @@ maintenance 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
 fix/.* 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
 improve/.* 1.3.9 da2c9632ea54fd1b3c8ae34f8f26bab29dbaf3c6 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.3.9rc2
+# staging/maintenance is currently the branch for preparation of 1.3.9rc4
 # so is regressionfix/...
-staging/maintenance 1.3.9rc3 fd94fc94a09dd91deeb2f59a6b3b00b37eb1f145 pep440-dev
-regressionfix/.* 1.3.9rc3 fd94fc94a09dd91deeb2f59a6b3b00b37eb1f145 pep440-dev
+staging/maintenance 1.3.9rc4 2806676707020b270097876d6189d3c484dd47b8 pep440-dev
+regressionfix/.* 1.3.9rc4 2806676707020b270097876d6189d3c484dd47b8 pep440-dev
 
 # every other branch is a development branch and thus gets resolved to 1.4.0-dev for now
 .* 1.4.0 7f5d03d0549bcbd26f40e7e4a3297ea5204fb1cc pep440-dev
