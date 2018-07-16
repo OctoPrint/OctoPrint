@@ -78,7 +78,7 @@ class CommandlineCaller(object):
 		self._logger.debug(u"Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
 
-		kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
 		p = sarge.run(command, **kwargs)
 		while len(p.commands) == 0:

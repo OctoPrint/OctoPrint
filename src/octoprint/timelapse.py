@@ -22,6 +22,7 @@ import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+from octoprint.plugin import plugin_manager
 from octoprint.util import monotonic_time
 from octoprint.util.commandline import CommandlineCaller
 
@@ -67,6 +68,30 @@ _cleanup_lock = threading.RLock()
 # lock for timelapse job
 _job_lock = threading.RLock()
 
+# cached valid timelapse extensions
+_extensions = None
+
+def valid_timelapse(path):
+	global _extensions
+
+	if _extensions is None:
+		# create list of extensions
+		extensions = ["mpg", "mpeg", "mp4", "m4v", "mkv"]
+
+		hooks = plugin_manager().get_hooks("octoprint.timelapse.extensions")
+		for name, hook in hooks.items():
+			try:
+				result = hook()
+				if result is None or not isinstance(result, list):
+					continue
+				extensions += result
+			except:
+				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
+
+		_extensions = list(set(extensions))
+
+	return util.is_allowed_file(path, _extensions)
+
 
 def _extract_prefix(filename):
 	"""
@@ -93,7 +118,7 @@ def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
 	for entry in scandir(basedir):
-		if not fnmatch.fnmatch(entry.name, "*.m*"):
+		if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
 			continue
 		files.append({
 			"name": entry.name,

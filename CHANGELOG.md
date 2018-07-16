@@ -1,11 +1,27 @@
 # OctoPrint Changelog
 
+## 1.3.9rc3 (2018-07-16)
+
+### Improvements
+
+  * Fix resend and timeout handling during an active `job_on_hold`.
+
+### Bug fixes
+
+  * [#2677](https://github.com/foosel/OctoPrint/issues/2677) (regression) - Fix a deadlock when `job_on_hold` is utilized (causing issues at least with Octolapse)
+  * [#2719](https://github.com/foosel/OctoPrint/issues/2719) (regression) - Fix live print time estimation
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc2...1.3.9rc3)
+
 ## 1.3.9rc2 (2018-07-06)
 
 ### Improvements
 
   * Add sanity check for disabled plugin list (see also [#2687 (comment)](https://github.com/foosel/OctoPrint/issues/2687#issuecomment-399797596)).
   * Improve logging of exceptions triggered inside the state update worker (see also [#2715](https://github.com/foosel/OctoPrint/issues/2715)).
+  * Workaround for a potential `pip` issue when updating components through the Software Update plugin.
 
 ### Bug fixes
 

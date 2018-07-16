@@ -127,7 +127,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.propagate = False
 
 		# decouple repository fetching from server startup
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SettingsPlugin
 
@@ -224,7 +224,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		from octoprint.events import Events
 		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
 			return
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SimpleApiPlugin
 
@@ -738,12 +738,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._event_bus.fire("plugin_pluginmanager_disableplugin", dict(id=plugin.key,
 		                                                                version=plugin.version))
 
-	def _fetch_all_data(self, async=False):
+	def _fetch_all_data(self, do_async=False):
 		def run():
 			self._repository_available = self._fetch_repository_from_disk()
 			self._notices_available = self._fetch_notices_from_disk()
 
-		if async:
+		if do_async:
 			thread = threading.Thread(target=run)
 			thread.daemon = True
 			thread.start()

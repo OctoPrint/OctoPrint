@@ -5,6 +5,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import unittest
+import ddt
 
 try:
 	import unittest.mock as mock
@@ -18,9 +19,11 @@ from collections import namedtuple, OrderedDict
 _stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
 _entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
 
+import octoprint.plugin
 import octoprint.settings
 import octoprint.timelapse
 
+@ddt.ddt
 class TimelapseTest(unittest.TestCase):
 
 	def setUp(self):
@@ -31,10 +34,35 @@ class TimelapseTest(unittest.TestCase):
 		self.settings = mock.create_autospec(octoprint.settings.Settings)
 		self.settings_getter.return_value = self.settings
 
+		self.plugin_manager_patcher = mock.patch("octoprint.timelapse.plugin_manager")
+		self.plugin_manager_getter = self.plugin_manager_patcher.start()
+
+		self.plugin_manager = mock.create_autospec(octoprint.plugin.PluginManager)
+		self.plugin_manager_getter.return_value = self.plugin_manager
+
+		def extension_factory(*args, **kwargs):
+			return ["gif"]
+		hooks = dict(test=extension_factory)
+		self.plugin_manager.get_hooks.return_value = hooks
+
 		self.now = time.time()
 
 	def cleanUp(self):
 		self.settings_patcher.stop()
+		self.plugin_manager_patcher.stop()
+
+	@ddt.data(
+		("test.mpg", True),
+		("test.dat", False),
+		("test.gif", True)
+	)
+	@ddt.unpack
+	def test_valid_timelapse(self, input, expected):
+		## test
+		actual = octoprint.timelapse.valid_timelapse(input)
+
+		## verify
+		self.assertEqual(expected, actual)
 
 	@mock.patch("os.remove")
 	@mock.patch("octoprint.timelapse.scandir")

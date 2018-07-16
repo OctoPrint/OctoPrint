@@ -364,7 +364,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
 
 			self._aborted = False
-			p = sarge.run(command, async=True, stdout=sarge.Capture())
+			p = sarge.run(command, async_=True, stdout=sarge.Capture())
 
 			while len(p.commands) == 0:
 				# somewhat ugly... we can't use wait_events because
