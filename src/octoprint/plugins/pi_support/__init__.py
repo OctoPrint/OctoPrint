@@ -107,7 +107,7 @@ def get_proc_dt_model():
 
 	if _proc_dt_model is None:
 		with open(_PROC_DT_MODEL_PATH, "r") as f:
-			_proc_dt_model = f.readline().strip()
+			_proc_dt_model = f.readline().strip(" \t\r\n\0")
 
 	return _proc_dt_model
 
@@ -118,7 +118,8 @@ def get_vcgencmd_throttled_state():
 	if not "throttled=0x" in output:
 		raise ValueError("cannot parse vcgencmd get_throttled output: {}".format(output))
 
-	value = int(output[len("throttled="):], 0)
+	value = output[len("throttled="):].strip(" \t\r\n\0")
+	value = int(value, 0)
 	return ThrottleState.from_value(value)
 
 
@@ -132,7 +133,7 @@ def get_octopi_version():
 
 	if _octopi_version is None:
 		with open(_OCTOPI_VERSION_PATH, "r") as f:
-			_octopi_version = f.readline().strip()
+			_octopi_version = f.readline().strip(" \t\r\n\0")
 
 	return _octopi_version
 
