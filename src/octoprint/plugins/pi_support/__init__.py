@@ -211,6 +211,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 			return 300
 
 	def _check_throttled_state(self):
+		self._logger.debug("Retrieving throttle state via {}".format(_VCGENCMD))
 		try:
 			state = get_vcgencmd_throttled_state()
 		except:
