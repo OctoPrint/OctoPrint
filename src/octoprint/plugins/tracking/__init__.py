@@ -12,6 +12,12 @@ import requests
 import hashlib
 import logging
 
+try:
+	# noinspection PyCompatibility
+	from urllib.parse import urlencode
+except ImportError:
+	from urllib import urlencode
+
 # noinspection PyCompatibility
 import concurrent.futures
 
@@ -194,8 +200,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
 		try:
+			params = urlencode(kwargs, doseq=True).replace("+", "%20")
 			requests.get(url,
-			             params=kwargs,
+			             params=params,
 			             timeout=3.1,
 			             headers=headers)
 			self._logger.debug("Sent tracking event to {}".format(url))
