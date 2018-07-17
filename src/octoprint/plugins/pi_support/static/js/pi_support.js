@@ -77,7 +77,7 @@ $(function() {
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin !== "pi_support") return;
             if (!data.hasOwnProperty("state") || !data.hasOwnProperty("type")) return;
-            if (data.type !== "state") return;
+            if (data.type !== "throttle_state") return;
 
             self.fromThrottleState(data.state);
         }
