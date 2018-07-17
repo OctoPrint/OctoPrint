@@ -293,7 +293,7 @@ default_settings = {
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
-				"about": ["about", "plugin_octopi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
+				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
