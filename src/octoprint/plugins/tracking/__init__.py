@@ -131,7 +131,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		if b"plugins" in self._environment and b"pi_support" in self._environment[b"plugins"]:
 			payload[b"pi_model"] = self._environment[b"plugins"][b"pi_support"][b"model"]
-			if b"octopi_version" in self._environment[b"plugin"][b"pi_support"]:
+			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"octopi_support"][b"octopi_version"]
 
 		self._track("startup", **payload)
