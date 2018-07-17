@@ -162,13 +162,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ SimpleApiPlugin
 
 	def on_api_get(self, request):
-		try:
-			state = get_vcgencmd_throttled_state()
-		except:
-			self._logger.exception("Got an error while trying to fetch the current throttle state via {}".format(_VCGENCMD))
-			state = ThrottleState()
-
-		result = dict(throttle_state=state.as_dict())
+		result = dict(throttle_state=self._throttle_state.as_dict())
 		result.update(self.get_additional_environment())
 		return flask.jsonify(**result)
 
@@ -195,10 +189,10 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 	#~~ StartupPlugin
 
-	def on_after_startup(self):
+	def on_startup(self, *args, **kwargs):
+		self._check_throttled_state()
 		self._throttle_check = RepeatedTimer(self._check_throttled_state_interval,
-		                                     self._check_throttled_state,
-		                                     run_first=True)
+		                                     self._check_throttled_state)
 		self._throttle_check.start()
 
 	#~~ Helpers
@@ -233,8 +227,8 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 				message += "\n!!! FREQUENCY CAPPING DUE TO OVERHEATING REPORTED !!! Improve cooling on the Pi's CPU and GPU."
 			self._logger.warn(message)
 
-			self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
-			                                                                state=self._throttle_state.as_dict()))
+		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
+		                                                                state=self._throttle_state.as_dict()))
 
 
 __plugin_name__ = "Pi Support Plugin"
