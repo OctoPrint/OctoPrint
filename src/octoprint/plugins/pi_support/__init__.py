@@ -19,9 +19,9 @@ _OCTOPI_VERSION_PATH = "/etc/octopi_version"
 _VCGENCMD = "/usr/bin/vcgencmd"
 
 ### uncomment for local debugging
-_PROC_DT_MODEL_PATH = "fake_model.txt"
-_OCTOPI_VERSION_PATH = "fake_octopi.txt"
-_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
+#_PROC_DT_MODEL_PATH = "fake_model.txt"
+#_OCTOPI_VERSION_PATH = "fake_octopi.txt"
+#_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
 
 # see https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=147781&start=50#p972790
 _FLAG_UNDERVOLTAGE = 1 << 0
@@ -127,8 +127,8 @@ def get_proc_dt_model():
 
 
 def get_vcgencmd_throttled_state():
-	#output = sarge.get_stdout([_VCGENCMD, "get_throttled"])
-	output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
+	output = sarge.get_stdout([_VCGENCMD, "get_throttled"])
+	#output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
 	if not "throttled=0x" in output:
 		raise ValueError("cannot parse vcgencmd get_throttled output: {}".format(output))
 
