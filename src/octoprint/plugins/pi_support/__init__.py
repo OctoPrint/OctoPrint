@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import flask
 import os
 import sarge
-import itertools
 
 from flask_babel import gettext
 from octoprint.util import RepeatedTimer
@@ -19,6 +18,7 @@ _OCTOPI_VERSION_PATH = "/etc/octopi_version"
 _VCGENCMD = "/usr/bin/vcgencmd"
 
 ### uncomment for local debugging
+#import itertools
 #_PROC_DT_MODEL_PATH = "fake_model.txt"
 #_OCTOPI_VERSION_PATH = "fake_octopi.txt"
 #_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
