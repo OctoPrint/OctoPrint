@@ -246,12 +246,11 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
 __plugin_license__ = "AGPLv3"
 
 def __plugin_check__():
-	from octoprint.util.platform import get_os
-	if get_os() != "linux" or not os.path.exists(_PROC_DT_MODEL_PATH):
-		return False
-
-	proc_dt_model = get_proc_dt_model()
-	if proc_dt_model is None:
+	try:
+		proc_dt_model = get_proc_dt_model()
+		if proc_dt_model is None:
+			return False
+	except:
 		return False
 
 	return "raspberry pi" in proc_dt_model.lower()
