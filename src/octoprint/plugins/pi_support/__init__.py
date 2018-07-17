@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import flask
 import os
 import sarge
+import itertools
 
 from flask_babel import gettext
 from octoprint.util import RepeatedTimer
@@ -18,8 +19,9 @@ _OCTOPI_VERSION_PATH = "/etc/octopi_version"
 _VCGENCMD = "/usr/bin/vcgencmd"
 
 ### uncomment for local debugging
-#_PROC_DT_MODEL_PATH = "fake_model.txt"
-#_OCTOPI_VERSION_PATH = "fake_octopi.txt"
+_PROC_DT_MODEL_PATH = "fake_model.txt"
+_OCTOPI_VERSION_PATH = "fake_octopi.txt"
+_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
 
 # see https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=147781&start=50#p972790
 _FLAG_UNDERVOLTAGE = 1 << 0
@@ -58,6 +60,10 @@ class ThrottleState(object):
 				setattr(self, local_key, value)
 
 	@property
+	def undervoltage(self):
+		return self.current_undervoltage or self.past_undervoltage
+
+	@property
 	def current_undervoltage(self):
 		return self._undervoltage
 
@@ -66,12 +72,20 @@ class ThrottleState(object):
 		return self._past_undervoltage
 
 	@property
+	def overheat(self):
+		return self.current_overheat or self.past_overheat
+
+	@property
 	def current_overheat(self):
 		return self._freq_capped
 
 	@property
 	def past_overheat(self):
 		return self._past_freq_capped
+
+	@property
+	def issue(self):
+		return self.current_issue or self.past_issue
 
 	@property
 	def current_issue(self):
@@ -113,8 +127,8 @@ def get_proc_dt_model():
 
 
 def get_vcgencmd_throttled_state():
-	output = sarge.get_stdout([_VCGENCMD, "get_throttled"])
-	#output = "throttled=0x70005" # for local debugging
+	#output = sarge.get_stdout([_VCGENCMD, "get_throttled"])
+	output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
 	if not "throttled=0x" in output:
 		raise ValueError("cannot parse vcgencmd get_throttled output: {}".format(output))
 
@@ -142,12 +156,15 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
                       octoprint.plugin.SimpleApiPlugin,
                       octoprint.plugin.AssetPlugin,
                       octoprint.plugin.TemplatePlugin,
-                      octoprint.plugin.StartupPlugin):
+                      octoprint.plugin.StartupPlugin,
+                      octoprint.plugin.SettingsPlugin):
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._throttle_state = ThrottleState()
 		self._throttle_check = None
+		self._throttle_undervoltage = False
+		self._throttle_overheat = False
 
 	#~~ EnvironmentDetectionPlugin
 
@@ -177,7 +194,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ TemplatePlugin
 
 	def get_template_configs(self):
-		configs = []
+		configs = [dict(type="settings", name=gettext("Pi Support"), template="pi_support_settings.jinja2", custom_bindings=False)]
 
 		if is_octopi():
 			configs.append(dict(type="about", name="About OctoPi", template="pi_support_about_octopi.jinja2"))
@@ -190,15 +207,21 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ StartupPlugin
 
 	def on_startup(self, *args, **kwargs):
-		self._check_throttled_state()
-		self._throttle_check = RepeatedTimer(self._check_throttled_state_interval,
-		                                     self._check_throttled_state)
-		self._throttle_check.start()
+		if self._settings.get_boolean(["vcgencmd_throttle_check_enabled"]):
+			self._check_throttled_state()
+			self._throttle_check = RepeatedTimer(self._check_throttled_state_interval,
+			                                     self._check_throttled_state)
+			self._throttle_check.start()
+
+	#~~ SettingsPlugin
+
+	def get_settings_defaults(self):
+		return dict(vcgencmd_throttle_check_enabled=True)
 
 	#~~ Helpers
 
 	def _check_throttled_state_interval(self):
-		if self._throttle_state.current_undervoltage or self._throttle_state.current_overheat:
+		if self._throttle_state.current_issue:
 			# check state every 30s if something's currently amiss
 			return 30
 		else:
@@ -219,12 +242,21 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 		self._throttle_state = state
 
-		if state.current_issue or state.past_issue:
-			message = "This Raspberry Pi is reporting problems that might lead to bad performance or errors caused by overheating or insufficient power."
-			if self._throttle_state.current_undervoltage or self._throttle_state.past_undervoltage:
-				message += "\n!!! UNDERVOLTAGE REPORTED !!! Make sure that the power supply and power cable are capable of supplying enough voltage and current to your Pi."
-			if self._throttle_state.current_overheat or self._throttle_state.past_overheat:
-				message += "\n!!! FREQUENCY CAPPING DUE TO OVERHEATING REPORTED !!! Improve cooling on the Pi's CPU and GPU."
+		if (not self._throttle_undervoltage and self._throttle_state.undervoltage) \
+				or (not self._throttle_overheat and self._throttle_state.overheat):
+			message = "This Raspberry Pi is reporting problems that might lead to bad performance or errors caused " \
+			          "by overheating or insufficient power."
+
+			if self._throttle_state.undervoltage:
+				self._throttle_undervoltage = True
+				message += "\n!!! UNDERVOLTAGE REPORTED !!! Make sure that the power supply and power cable are " \
+				           "capable of supplying enough voltage and current to your Pi."
+
+			if self._throttle_state.overheat:
+				self._throttle_overheat = True
+				message += "\n!!! FREQUENCY CAPPING DUE TO OVERHEATING REPORTED !!! Improve cooling on the Pi's " \
+				           "CPU and GPU."
+
 			self._logger.warn(message)
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",

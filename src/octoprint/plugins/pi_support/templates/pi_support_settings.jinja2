@@ -1,0 +1,12 @@
+<h3>{{ _('Pi Support') }}</h3>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.pi_support.vcgencmd_throttle_check_enabled"> {{ _('Enable under voltage and overheat detection via <code>vcgencmd get_throttled</code>') }}
+            </label>
+            <span class="help-block">{{ _('This will regularly check the output of <code>vcgencmd get_throttled</code> for indications by the Pi that something is amiss either with power regulation or CPU/GPU temperature. If you change this, you\'ll need to restart OctoPrint for the change to take effect.') }}</span>
+        </div>
+    </div>
+</form>
