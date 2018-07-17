@@ -62,8 +62,8 @@ $(function() {
 
         self.issuePopoverContent = function() {
             return "<p><strong><i class=\"fa fa-bolt\"></i><i class=\"fa fa-exclamation\"></i></strong></strong> - " + gettext("Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi.") + "</p>"
-                + "<p><strong><i class=\"fa fa-thermometer-full\"></i><i class=\"fa fa-exclamation\"></i></strong> - " + gettext("Frequency capping due to overheat. Improve cooling of the CPU and GPU.") + "</p>"
-                + "<p>" + gettext("A blinking icon indicates an accute issue!") + "</p>"
+                + "<p><strong><i class=\"fa fa-thermometer-full\"></i><i class=\"fa fa-exclamation\"></i></strong> - " + gettext("Frequency capping due to overheating. Improve cooling of the CPU and GPU.") + "</p>"
+                + "<p>" + gettext("A blinking icon indicates an acute issue!") + "</p>"
         };
 
         self.onStartup = function() {
