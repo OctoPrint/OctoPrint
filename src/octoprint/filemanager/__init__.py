@@ -256,7 +256,7 @@ class FileManager(object):
 			file_name = storage_manager.split_path(path)
 
 			# we'll use the default printer profile for the backlog since we don't know better
-			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
+			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default(), None)
 			if self._analysis_queue.enqueue(queue_entry, high_priority=high_priority):
 				counter += 1
 
@@ -476,12 +476,9 @@ class FileManager(object):
 
 		path_in_storage = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite, display=display)
 
-		if analysis is None:
-			queue_entry = self._analysis_queue_entry(destination, path_in_storage, printer_profile=printer_profile)
-			if queue_entry:
-				self._analysis_queue.enqueue(queue_entry, high_priority=True)
-		else:
-			self._add_analysis_result(destination, path, analysis)
+		queue_entry = self._analysis_queue_entry(destination, path_in_storage, printer_profile=printer_profile, analysis=analysis)
+		if queue_entry:
+			self._analysis_queue.enqueue(queue_entry, high_priority=True)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
 		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
@@ -700,7 +697,7 @@ class FileManager(object):
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)
 
-	def _analysis_queue_entry(self, destination, path, printer_profile=None):
+	def _analysis_queue_entry(self, destination, path, printer_profile=None, analysis=None):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -709,6 +706,6 @@ class FileManager(object):
 		file_type = get_file_type(absolute_path)
 
 		if file_type:
-			return QueueEntry(file_name, path, file_type[-1], destination, absolute_path, printer_profile)
+			return QueueEntry(file_name, path, file_type[-1], destination, absolute_path, printer_profile, analysis)
 		else:
 			return None

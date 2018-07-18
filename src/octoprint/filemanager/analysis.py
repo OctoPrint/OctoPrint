@@ -20,7 +20,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 
 
-class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
+class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile, analysis")):
 	"""
 	A :class:`QueueEntry` for processing through the :class:`AnalysisQueue`. Wraps the entry's properties necessary
 	for processing.
@@ -33,6 +33,7 @@ class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, locatio
 	    location (str): Location the file is located on.
 	    absolute_path (str): Absolute path on disk through which to access the file.
 	    printer_profile (PrinterProfile): :class:`PrinterProfile` which to use for analysis.
+	    analysis (dict): :class:`GcodeAnalysisQueue` results from prior analysis, or ``None`` if there is none.
 	"""
 
 	def __str__(self):
@@ -341,6 +342,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 		import sys
 		import yaml
 
+		if self._current.analysis:
+			return self._current.analysis
 		try:
 			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority \
 				else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
