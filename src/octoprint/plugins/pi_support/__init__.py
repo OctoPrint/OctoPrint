@@ -15,13 +15,17 @@ import octoprint.plugin
 
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
-_VCGENCMD = "/usr/bin/vcgencmd"
+_VCGENCMD_THROTTLE = "/usr/bin/vcgencmd get_throttled"
 
 ### uncomment for local debugging
+#import sys
+#base = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "tests", "plugins", "pi_support", "fakes"))
+#_PROC_DT_MODEL_PATH = os.path.join(base, "fake_model.txt")
+#_OCTOPI_VERSION_PATH = os.path.join(base, "fake_octopi.txt")
+#_VCGENCMD_THROTTLE = "{} {}".format(sys.executable, os.path.join(base, "fake_vcgencmd.py"))
 #import itertools
-#_PROC_DT_MODEL_PATH = "fake_model.txt"
-#_OCTOPI_VERSION_PATH = "fake_octopi.txt"
 #_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
+
 
 # see https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=147781&start=50#p972790
 _FLAG_UNDERVOLTAGE = 1 << 0
@@ -126,11 +130,11 @@ def get_proc_dt_model():
 	return _proc_dt_model
 
 
-def get_vcgencmd_throttled_state():
-	output = sarge.get_stdout([_VCGENCMD, "get_throttled"])
+def get_vcgencmd_throttled_state(command):
+	output = sarge.get_stdout(command)
 	#output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
 	if not "throttled=0x" in output:
-		raise ValueError("cannot parse vcgencmd get_throttled output: {}".format(output))
+		raise ValueError("cannot parse \"{}\" output: {}".format(command, output))
 
 	value = output[len("throttled="):].strip(" \t\r\n\0")
 	value = int(value, 0)
@@ -165,6 +169,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		self._throttle_check = None
 		self._throttle_undervoltage = False
 		self._throttle_overheat = False
+		self._throttle_functional = True
 
 	#~~ EnvironmentDetectionPlugin
 
@@ -210,13 +215,18 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		if self._settings.get_boolean(["vcgencmd_throttle_check_enabled"]):
 			self._check_throttled_state()
 			self._throttle_check = RepeatedTimer(self._check_throttled_state_interval,
-			                                     self._check_throttled_state)
+			                                     self._check_throttled_state,
+			                                     condition=self._check_throttled_state_condition)
 			self._throttle_check.start()
 
 	#~~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(vcgencmd_throttle_check_enabled=True)
+		return dict(vcgencmd_throttle_check_enabled=True,
+		            vcgencmd_throttle_check_command=_VCGENCMD_THROTTLE)
+
+	def get_settings_restricted_paths(self):
+		return dict(admin=[["vcgencmd_throttle_check_enabled"], ["vcgencmd_throttle_check_command"]])
 
 	#~~ Helpers
 
@@ -228,12 +238,18 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 			# check state every 5min if nothing's currently amiss
 			return 300
 
+	def _check_throttled_state_condition(self):
+		return self._throttle_functional
+
 	def _check_throttled_state(self):
-		self._logger.debug("Retrieving throttle state via {}".format(_VCGENCMD))
+		command = self._settings.get(["vcgencmd_throttle_check_command"])
+
+		self._logger.debug("Retrieving throttle state via \"{}\"".format(command))
 		try:
-			state = get_vcgencmd_throttled_state()
+			state = get_vcgencmd_throttled_state(command)
 		except:
-			self._logger.exception("Got an error while trying to fetch the current throttle state via {}".format(_VCGENCMD))
+			self._logger.exception("Got an error while trying to fetch the current throttle state via \"{}\"".format(command))
+			self._throttle_functional = False
 			return
 
 		if self._throttle_state == state:
