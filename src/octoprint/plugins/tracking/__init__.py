@@ -54,7 +54,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		return dict(enabled=None,
 		            unique_id=None,
 		            server=TRACKING_URL,
-		            ping=15*60)
+		            ping=15*60,
+		            events=dict(startup=True,
+		                        printjob=True,
+		                        plugin=True,
+		                        update=True,
+		                        connection=True))
+
+	def get_settings_restricted_paths(self):
+		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
+		            never=[["server"], ["ping"]])
 
 	def on_settings_save(self, data):
 		enabled = self._settings.get([b"enabled"])
@@ -133,7 +142,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._settings.set([b"unique_id"], str(uuid.uuid4()))
 			self._settings.save()
 
+	def _track_ping(self):
+		self._track("ping")
+
 	def _track_startup(self):
+		if not self._settings.get_boolean(["events", "startup"]):
+			return
+
 		payload = dict(version=get_octoprint_version_string(),
 		               os=self._environment[b"os"][b"id"],
 		               python=self._environment[b"python"][b"version"],
@@ -150,12 +165,15 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("startup", **payload)
 
 	def _track_shutdown(self):
+		if not self._settings.get_boolean(["events", "startup"]):
+			return
+
 		self._track("shutdown")
 
-	def _track_ping(self):
-		self._track("ping")
-
 	def _track_plugin_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "plugin"]):
+			return
+
 		if event.endswith("_installplugin"):
 			self._track("install_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 		elif event.endswith("_uninstallplugin"):
@@ -166,12 +184,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 
 	def _track_update_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "update"]):
+			return
+
 		if event.endswith("_update_succeeded"):
 			self._track("update_successful", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 		elif event.endswith("_update_failed"):
 			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 
 	def _track_printjob_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "printjob"]):
+			return
+
 		sha = hashlib.sha1()
 		sha.update(payload.get("name"))
 
@@ -196,6 +220,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track(track_event, **args)
 
 	def _track_connection_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "connection"]):
+			return
+
 		args = dict(firmware_name=payload["name"])
 		self._track("connection", **args)
 
