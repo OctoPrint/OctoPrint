@@ -43,6 +43,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._ping_worker = None
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
+		self._record_next_firmware_info = False
+
 	def initialize(self):
 		self._init_tracking()
 
@@ -93,6 +95,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track_update_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
+		elif event in (Events.CONNECTING,):
+			self._record_next_firmware_info = True
+		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
+			self._record_next_firmware_info = False
+			self._track_connection_event(event, payload)
 
 	##~~ TemplatePlugin
 
@@ -187,6 +194,10 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		if track_event is not None:
 			self._track(track_event, **args)
+
+	def _track_connection_event(self, event, payload):
+		args = dict(firmware_name=payload["name"])
+		self._track("connection", **args)
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
