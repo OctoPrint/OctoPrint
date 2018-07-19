@@ -233,6 +233,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._executor.submit(self._do_track, event, **kwargs)
 
 	def _do_track(self, event, **kwargs):
+		if not self._connectivity_checker.online:
+			return
+
 		server = self._settings.get([b"server"])
 		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
 
