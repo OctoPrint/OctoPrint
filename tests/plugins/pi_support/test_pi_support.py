@@ -7,6 +7,8 @@ OCTOPI_VERSION = "0.14.0"
 
 DT_MODEL = "Raspberry Pi Model F Rev 1.1"
 
+VCGENCMD = "/usr/bin/vcgencmd get_throttled"
+
 class PiSupportTestCase(unittest.TestCase):
 
 	def test_get_octopi_version(self):
@@ -34,9 +36,9 @@ class PiSupportTestCase(unittest.TestCase):
 
 		with mock.patch("sarge.get_stdout", mock.MagicMock()) as m:
 			m.return_value = "throttled=0x70005"
-			state = get_vcgencmd_throttled_state()
+			state = get_vcgencmd_throttled_state(VCGENCMD)
 
-		m.assert_called_once_with(["/usr/bin/vcgencmd", "get_throttled"])
+		m.assert_called_once_with(VCGENCMD)
 		self.assertTrue(state.current_undervoltage)
 		self.assertFalse(state.current_overheat)
 		self.assertTrue(state.current_issue)
@@ -51,7 +53,7 @@ class PiSupportTestCase(unittest.TestCase):
 			m.return_value = "invalid"
 
 			try:
-				get_vcgencmd_throttled_state()
+				get_vcgencmd_throttled_state(VCGENCMD)
 			except ValueError:
 				# expected
 				pass
@@ -65,7 +67,7 @@ class PiSupportTestCase(unittest.TestCase):
 			m.return_value = "throttled=0xinvalid"
 
 			try:
-				get_vcgencmd_throttled_state()
+				get_vcgencmd_throttled_state(VCGENCMD)
 			except ValueError:
 				# expected
 				pass
