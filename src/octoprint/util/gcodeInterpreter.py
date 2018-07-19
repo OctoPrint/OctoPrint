@@ -43,15 +43,9 @@ class Vector3D(object):
 	True
 	"""
 
-	def __init__(self, *args, **kwargs):
-		self.x = kwargs.get("x", 0.0)
-		self.y = kwargs.get("y", 0.0)
-		self.z = kwargs.get("z", 0.0)
-
+	def __init__(self, *args):
 		if len(args) == 3:
-			self.x = args[0]
-			self.y = args[1]
-			self.z = args[2]
+			(self.x, self.y, self.z) = args
 
 		elif len(args) == 1:
 			# copy constructor
@@ -504,9 +498,7 @@ def getCodeFloat(line, code):
 	m = line.find(' ', n)
 	try:
 		if m < 0:
-			val = float(line[n:])
-		else:
-			val = float(line[n:m])
-		return val if not (math.isnan(val) or math.isinf(val)) else None
+			return float(line[n:])
+		return float(line[n:m])
 	except:
 		return None
