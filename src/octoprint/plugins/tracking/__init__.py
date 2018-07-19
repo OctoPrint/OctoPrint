@@ -39,6 +39,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def __init__(self):
 		self._environment = None
+		self._printer_connection_parameters = None
 		self._url = None
 		self._ping_worker = None
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -59,7 +60,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		                        printjob=True,
 		                        plugin=True,
 		                        update=True,
-		                        connection=True))
+		                        printer=True))
 
 	def get_settings_restricted_paths(self):
 		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
@@ -104,11 +105,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track_update_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
-		elif event in (Events.CONNECTING,):
+		elif event in (Events.CONNECTED,):
+			self._printer_connection_parameters = dict(port=payload["port"],
+			                                           baudrate=payload["baudrate"])
 			self._record_next_firmware_info = True
 		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
 			self._record_next_firmware_info = False
-			self._track_connection_event(event, payload)
+			self._track_printer_event(event, payload)
 
 	##~~ TemplatePlugin
 
@@ -219,12 +222,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if track_event is not None:
 			self._track(track_event, **args)
 
-	def _track_connection_event(self, event, payload):
-		if not self._settings.get_boolean(["events", "connection"]):
+	def _track_printer_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "printer"]):
 			return
 
-		args = dict(firmware_name=payload["name"])
-		self._track("connection", **args)
+		if event in (Events.FIRMWARE_DATA,):
+			args = dict(firmware_name=payload["name"])
+			if self._printer_connection_parameters:
+				args["printer_port"] = self._printer_connection_parameters["port"]
+				args["printer_baudrate"] = self._printer_connection_parameters["baudrate"]
+			self._track("printer_connected", **args)
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
