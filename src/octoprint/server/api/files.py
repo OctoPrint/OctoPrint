@@ -102,7 +102,7 @@ def readGcodeFiles():
 	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive, allow_from_cache=not force)
 	files.extend(_getFileList(FileDestinations.SDCARD))
 
-	usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
+	usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
 	return jsonify(files=files, free=usage.free, total=usage.total)
 
 
@@ -125,7 +125,7 @@ def readGcodeFilesForOrigin(origin):
 	files = _getFileList(origin, filter=filter, recursive=recursive, allow_from_cache=not force)
 
 	if origin == FileDestinations.LOCAL:
-		usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
+		usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
 		return jsonify(files=files, free=usage.free, total=usage.total)
 	else:
 		return jsonify(files=files)

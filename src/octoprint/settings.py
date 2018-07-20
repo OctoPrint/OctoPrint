@@ -642,7 +642,7 @@ class Settings(object):
 		if folders is None:
 			folders = default_settings["folder"].keys()
 		for folder in folders:
-			self.getBaseFolder(folder, log_error=True)
+			self.getBaseFolder(folder, check_writable=True, deep_check_writable=True, log_error=True)
 
 	def _get_default_folder(self, type):
 		folder = default_settings["folder"][type]
@@ -1496,7 +1496,7 @@ class Settings(object):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 
-	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False):
+	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False, check_writable=True, deep_check_writable=False):
 		if type not in default_settings["folder"].keys() + ["base"]:
 			return None
 
@@ -1509,7 +1509,7 @@ class Settings(object):
 			folder = default_folder
 
 		try:
-			_validate_folder(folder, create=create, writable=True, log_error=log_error)
+			_validate_folder(folder, create=create, check_writable=check_writable, deep_check_writable=deep_check_writable, log_error=log_error)
 		except:
 			if folder != default_folder and allow_fallback:
 				if log_error:
@@ -1517,7 +1517,7 @@ class Settings(object):
 					                   "fall back on default folder at {}".format(type,
 					                                                              folder,
 					                                                              default_folder))
-				_validate_folder(default_folder, create=create, writable=True, log_error=log_error)
+				_validate_folder(default_folder, create=create, check_writable=check_writable, deep_check_writable=deep_check_writable, log_error=log_error)
 				folder = default_folder
 
 				try:
@@ -1710,7 +1710,7 @@ class Settings(object):
 			self._dirty_time = time.time()
 		elif (path != currentPath and path != defaultPath) or force:
 			if validate:
-				_validate_folder(path)
+				_validate_folder(path, check_writable=True, deep_check_writable=True)
 
 			if not "folder" in self._config.keys():
 				self._config["folder"] = {}
@@ -1753,7 +1753,7 @@ def _default_basedir(applicationName):
 		return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))
 
 
-def _validate_folder(folder, create=True, writable=True, log_error=False):
+def _validate_folder(folder, create=True, check_writable=True, deep_check_writable=False, log_error=False):
 	logger = logging.getLogger(__name__)
 
 	if not os.path.exists(folder):
@@ -1778,12 +1778,13 @@ def _validate_folder(folder, create=True, writable=True, log_error=False):
 		# hardening against misconfiguration, see #1953
 		raise IOError("Expected a folder at {} but found a file instead".format(folder))
 
-	elif writable:
+	elif check_writable:
 		# make sure we can also write into the folder
 		error = "Folder at {} doesn't appear to be writable, please fix its permissions".format(folder)
 		if not os.access(folder, os.W_OK):
 			raise IOError(error)
-		else:
+
+		elif deep_check_writable:
 			# try to write a file to the folder - on network shares that might be the only reliable way
 			# to determine whether things are *actually* writable
 			testfile = os.path.join(folder, ".testballoon.txt")
