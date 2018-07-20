@@ -960,7 +960,7 @@ def _get_all_translationfiles(locale, domain):
 
 	po_files = []
 
-	user_base_path = os.path.join(settings().getBaseFolder("translations"))
+	user_base_path = os.path.join(settings().getBaseFolder("translations", check_writable=False))
 	user_plugin_path = os.path.join(user_base_path, "_plugins")
 
 	# plugin translations

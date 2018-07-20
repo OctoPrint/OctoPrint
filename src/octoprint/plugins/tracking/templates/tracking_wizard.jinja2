@@ -4,9 +4,13 @@
 
 {% include "snippets/plugins/tracking/trackingDetails.jinja2" %}
 
+<p>
+    {{ _('<strong>Note:</strong> You can always change your decision and also access more granular controls via Settings > Anonymous Usage Tracking.') }}
+</p>
+
 <div class="row-fluid">
-    <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){disableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Anonymous Usage Tracking') }}</a>
-    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable Anonymous Usage Tracking') }}</a>
+    <a href="javascript:void(0)" class="btn span6" data-bind="click: function() { if(!setup()){disableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Anonymous Usage Tracking') }}</a>
+    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable Anonymous Usage Tracking') }}</a>
 </div>
 
 <div class="tracking_decision" style="display: none" data-bind="visible: setup()">

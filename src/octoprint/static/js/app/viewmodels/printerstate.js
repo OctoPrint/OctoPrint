@@ -25,7 +25,7 @@ $(function() {
                 !self.isCancelling() &&
                 !self.isPausing() &&
                 self.loginState.hasPermission(self.access.permissions.PRINT) &&
-                self.filename() !== undefined;
+                self.filename();
         });
         self.enablePause = ko.pureComputed(function() {
             return self.isOperational() &&

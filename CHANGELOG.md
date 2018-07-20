@@ -1,5 +1,17 @@
 # OctoPrint Changelog
 
+## 1.3.9rc4 (2018-07-20)
+
+### Bug fixes
+
+  * [#2737](https://github.com/foosel/OctoPrint/issues/2737) (regression) - Fix print button being enabled even though no file is selected.
+  * [#2738](https://github.com/foosel/OctoPrint/issues/2738) (regression) - Limit the use of the `--no-cache-dir` argument added to `pip` calls to such versions of `pip` that already support it (anything newer than 1.5.6).
+  * Only perform write tests on directories where necessary. Especially avoid them on page rendition to prevent misconfigured folders from triggering an HTTP 500. (regression) 
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc3...1.3.9rc4)
+
 ## 1.3.9rc3 (2018-07-16)
 
 ### Improvements

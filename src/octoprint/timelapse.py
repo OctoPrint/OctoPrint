@@ -107,16 +107,16 @@ def _extract_prefix(filename):
 
 
 def last_modified_finished():
-	return os.stat(settings().getBaseFolder("timelapse")).st_mtime
+	return os.stat(settings().getBaseFolder("timelapse", check_writable=False)).st_mtime
 
 
 def last_modified_unrendered():
-	return os.stat(settings().getBaseFolder("timelapse_tmp")).st_mtime
+	return os.stat(settings().getBaseFolder("timelapse_tmp", check_writable=False)).st_mtime
 
 
 def get_finished_timelapses():
 	files = []
-	basedir = settings().getBaseFolder("timelapse")
+	basedir = settings().getBaseFolder("timelapse", check_writable=False)
 	for entry in scandir(basedir):
 		if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
 			continue
@@ -135,7 +135,7 @@ def get_unrendered_timelapses():
 
 	delete_old_unrendered_timelapses()
 
-	basedir = settings().getBaseFolder("timelapse_tmp")
+	basedir = settings().getBaseFolder("timelapse_tmp", check_writable=False)
 	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
 
 	for entry in scandir(basedir):

@@ -32,7 +32,7 @@ from flask_babel import Locale
 @require_firstrun
 @Permissions.SETTINGS.require(403)
 def getInstalledLanguagePacks():
-	translation_folder = settings().getBaseFolder("translations")
+	translation_folder = settings().getBaseFolder("translations", check_writable=False)
 	if not os.path.exists(translation_folder):
 		return jsonify(language_packs=dict(_core=[]))
 
