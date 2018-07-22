@@ -57,14 +57,6 @@ path to that in the plugin settings.
 Compiling for Raspbian
 ++++++++++++++++++++++
 
-.. note::
-
-   A binary of CuraEngine 15.04.06 precompiled on Raspbian Jessie Lite 2016-03-18 is available
-   `here <http://bit.ly/octopi_cura_engine_150406>`__. Don't forget to make it
-   executable after copying it to your preferred destination on your Pi
-   (suggestion: ``/usr/local/bin``) with ``chmod +x cura_engine``. Use at your
-   own risk.
-
 Raspbian Jessie
 ~~~~~~~~~~~~~~~
 
