@@ -1,63 +1,28 @@
 # OctoPrint Changelog
 
-## 1.3.9rc4 (2018-07-20)
+## 1.3.9 (2018-07-25)
 
-### Bug fixes
+### Still running OctoPrint 1.3.6? Heads-up!
 
-  * [#2737](https://github.com/foosel/OctoPrint/issues/2737) (regression) - Fix print button being enabled even though no file is selected.
-  * [#2738](https://github.com/foosel/OctoPrint/issues/2738) (regression) - Limit the use of the `--no-cache-dir` argument added to `pip` calls to such versions of `pip` that already support it (anything newer than 1.5.6).
-  * Only perform write tests on directories where necessary. Especially avoid them on page rendition to prevent misconfigured folders from triggering an HTTP 500. (regression) 
+OctoPrint 1.3.9 includes a couple of dependency updates whose update during switch to 1.3.9 are known to trigger an "update failed" message within OctoPrint's update dialog: 
 
-### More information
+![](https://i.imgur.com/BbEZTlc.png)
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc3...1.3.9rc4)
+The update did in fact succeed and the issue lies with a change in the underlying update mechanism concerning the dependencies. This problem has been fixed in 1.3.7/1.3.8 and versions prior to 1.3.6 aren't yet affected, so there you won't ever see this message there. If you are still running 1.3.6 though and updating from it, **simply run the update a second time through Settings > Software Update > Check for updates and clicking "Update now" in the reshown update notification**.
 
-## 1.3.9rc3 (2018-07-16)
+### Running NGINX as reverse proxy? Be sure to configure HTTP protocol version 1.1
 
-### Improvements
-
-  * Fix resend and timeout handling during an active `job_on_hold`.
-
-### Bug fixes
-
-  * [#2677](https://github.com/foosel/OctoPrint/issues/2677) (regression) - Fix a deadlock when `job_on_hold` is utilized (causing issues at least with Octolapse)
-  * [#2719](https://github.com/foosel/OctoPrint/issues/2719) (regression) - Fix live print time estimation
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc2...1.3.9rc3)
-
-## 1.3.9rc2 (2018-07-06)
-
-### Improvements
-
-  * Add sanity check for disabled plugin list (see also [#2687 (comment)](https://github.com/foosel/OctoPrint/issues/2687#issuecomment-399797596)).
-  * Improve logging of exceptions triggered inside the state update worker (see also [#2715](https://github.com/foosel/OctoPrint/issues/2715)).
-  * Workaround for a potential `pip` issue when updating components through the Software Update plugin.
-
-### Bug fixes
-
-  * [#2715](https://github.com/foosel/OctoPrint/issues/2715) (regression) - Fix broken estimator initialization on SD print start and resulting crash of the state update worker.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9rc1...1.3.9rc2)
-
-## 1.3.9rc1 (2018-06-20)
-
-### Note for upgraders running NGINX as reverse proxy: Be sure to configure HTTP protocol version 1.1
-
-OctoPrint 1.3.8 updates the internal webserver Tornado from 4.0.2 to 4.5.3. Among many many fixes and improvements this also includes a change (actually a fix) in the websocket implementation that requires you to tell your NGINX to use HTTP 1.1 instead of the default 1.0 to talk to OctoPrint. You can do this by simply adding 
+OctoPrint 1.3.9 updates the internal webserver Tornado from 4.0.2 to 4.5.3. Among many many fixes and improvements this also includes a change (actually a fix) in the websocket implementation that requires you to tell your NGINX to use HTTP 1.1 instead of the default 1.0 to talk to OctoPrint. You can do this by simply adding 
 
 ```
 proxy_http_version 1.1;
 ```
 
-to the `location` config. The [configuration examples](https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples) have been adjusted accordingly. See also [#2526](https://github.com/foosel/OctoPrint/issues/2526).
+to the `location` config. The [configuration examples](https://discourse.octoprint.org/t/reverse-proxy-configuration-examples/1107) have been adjusted accordingly. See also [#2526](https://github.com/foosel/OctoPrint/issues/2526).
 
-### Note for plugin authors
+### Heads-up for plugin authors
 
-As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/2017/12/12/new-release-1.3.6/), the legacy plugin bundling flag has now been removed again. [Make sure to check your plugins](https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/) if you haven't done that so far!
+As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/2017/12/12/new-release-1.3.6/), the legacy plugin bundling flag has now been removed again. [Make sure to check and if necessary fix your plugins](https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/) if you haven't done that so far!
 
 ### Improvements
 
@@ -111,6 +76,10 @@ As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/20
   * Added two new hooks for firmware information, [`octoprint.comm.firmware.info`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-comm-firmware-info) and [`octoprint.comm.firmware.capabilities`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-comm-firmware-capabilities).
   * Added view model list to `OctoPrint.coreui` UI module.
   * Improved logging of `FatalStartupError`s.
+  * Add sanity check for disabled plugin list (see also [#2687 (comment)](https://github.com/foosel/OctoPrint/issues/2687#issuecomment-399797596)).
+  * Improve logging of exceptions triggered inside the state update worker (see also [#2715](https://github.com/foosel/OctoPrint/issues/2715)).
+  * Workaround for a potential `pip` issue when updating components through the Software Update plugin.
+  * Fix resend and timeout handling during an active `job_on_hold`.
   * Updated some dependencies:
     * Tornado to 4.5. Version 5 sadly has issues with web socket handling when access behind `haproxy`. So far no solution has been found, so we stay at 4.5 for now.
     * jQuery to 3.3.1
@@ -155,13 +124,19 @@ As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/20
   * [#2625](https://github.com/foosel/OctoPrint/issues/2625) - Fixed incompatibility of OctoPrint's plugin subsystem with Python wheels, which are the default mode of installing plugins from pip version 10.0.0 onward.
   * [#2632](https://github.com/foosel/OctoPrint/issues/2632) - Fixed race condition in resend handling on missing `ok`s.
   * [#2675](https://github.com/foosel/OctoPrint/issues/2675) - Fixed a possible division by zero on SD upload.
+  * [#2677](https://github.com/foosel/OctoPrint/issues/2677) (regression) - Fix a deadlock when `job_on_hold` is utilized (causing issues at least with Octolapse)
   * [#2683](https://github.com/foosel/OctoPrint/pull/2683) - Fixed two missing spaces in the german translation.
+  * [#2715](https://github.com/foosel/OctoPrint/issues/2715) (regression) - Fix broken estimator initialization on SD print start and resulting crash of the state update worker.
+  * [#2719](https://github.com/foosel/OctoPrint/issues/2719) (regression) - Fix live print time estimation
+  * [#2737](https://github.com/foosel/OctoPrint/issues/2737) (regression) - Fix print button being enabled even though no file is selected.
+  * [#2738](https://github.com/foosel/OctoPrint/issues/2738) (regression) - Limit the use of the `--no-cache-dir` argument added to `pip` calls to such versions of `pip` that already support it (anything newer than 1.5.6).
   * Properly handle absolute paths for recovery data comparison.
   * Fixed snapshot test button not resetting on error.
   * Fixed decoupling of metadata logs in the file manager.
   * Fixed "remember me" and IPv4/IPv6 sessions. This might also solve [#1881](https://github.com/foosel/OctoPrint/issues/1881).
   * Removed Repetier resend repetition detection and handling code. It was buggy and introducing issues.
   * Fixed script order: `beforePrint*` should always precede any commands from the print job.
+  * Only perform write tests on directories where necessary. Especially avoid them on page rendition to prevent misconfigured folders from triggering an HTTP 500. (regression) 
 
 ### Special thanks to all the contributors!
 
@@ -170,6 +145,13 @@ Special thanks to everyone who contributed to this release candidate, especially
 ### More information
 
   * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.8...1.3.9rc1)
+  * Release Candidates:
+    * [1.3.9rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc1)
+    * [1.3.9rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc2)
+    * [1.3.9rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc3)
+    * [1.3.9rc4](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc4)
+    * A big **Thank you!** to everyone who reported back on these release candidates this time:
+      [arhi](https://github.com/arhi), [b-morgan](https://github.com/b-morgan), [brandstaetter](https://github.com/brandstaetter), [buchnoun](https://github.com/buchnoun), [CapnBry](https://github.com/CapnBry), [chatrat12](https://github.com/chatrat12), [ChrisHeerschap](https://github.com/ChrisHeerschap), [christianlupus](https://github.com/christianlupus), [chrisWhyTea](https://github.com/chrisWhyTea), [Crowlord](https://github.com/Crowlord), [ctgreybeard](https://github.com/ctgreybeard), [Cyberwizzard](https://github.com/Cyberwizzard), [DrJuJu](https://github.com/DrJuJu), [ejjenkins](https://github.com/ejjenkins), [fieldOfView](https://github.com/fieldOfView), [FormerLurker](https://github.com/FormerLurker), [four-of-four](https://github.com/four-of-four), [Galfinite](https://github.com/Galfinite), [gege2b](https://github.com/gege2b), [HFMan](https://github.com/HFMan), [jjlink](https://github.com/jjlink), [jneilliii](https://github.com/jneilliii), [JohnOCFII](https://github.com/JohnOCFII), [jwg3](https://github.com/jwg3), [kazibole](https://github.com/kazibole), [larp-welt](https://github.com/larp-welt), [McFly99](https://github.com/McFly99), [mod38](https://github.com/mod38), [ntoff](https://github.com/ntoff), [OutsourcedGuru](https://github.com/OutsourcedGuru), [paukstelis](https://github.com/paukstelis), [pingywon](https://github.com/pingywon), [pscrespo](https://github.com/pscrespo), [Rapsey](https://github.com/Rapsey), [tech-rat](https://github.com/tech-rat), [tedder](https://github.com/tedder), [thess](https://github.com/thess), [Thisismydigitalself](https://github.com/Thisismydigitalself), [tibmeister](https://github.com/tibmeister)
 
 ## 1.3.8 (2018-04-13)
 
