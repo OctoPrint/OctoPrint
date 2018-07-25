@@ -10,7 +10,7 @@ OctoPrint 1.3.9 includes a couple of dependency updates whose update during swit
 
 The update did in fact succeed and the issue lies with a change in the underlying update mechanism concerning the dependencies. This problem has been fixed in 1.3.7/1.3.8 and versions prior to 1.3.6 aren't yet affected, so there you won't ever see this message there. If you are still running 1.3.6 though and updating from it, **simply run the update a second time through Settings > Software Update > Check for updates and clicking "Update now" in the reshown update notification**.
 
-### Running NGINX as reverse proxy? Be sure to configure HTTP protocol version 1.1
+### Running NGINX as reverse proxy? Be sure to configure HTTP protocol version 1.1!
 
 OctoPrint 1.3.9 updates the internal webserver Tornado from 4.0.2 to 4.5.3. Among many many fixes and improvements this also includes a change (actually a fix) in the websocket implementation that requires you to tell your NGINX to use HTTP 1.1 instead of the default 1.0 to talk to OctoPrint. You can do this by simply adding 
 
@@ -20,7 +20,11 @@ proxy_http_version 1.1;
 
 to the `location` config. The [configuration examples](https://discourse.octoprint.org/t/reverse-proxy-configuration-examples/1107) have been adjusted accordingly. See also [#2526](https://github.com/foosel/OctoPrint/issues/2526).
 
-### Heads-up for plugin authors
+### Disabled IPv6 and now there are issues with the server after the update? Bind to IPv4 addresses only!
+
+Starting with this release OctoPrint natively supports IPv6 and will attempt to bind to such addresses if it detects support in the underlying OS. If for whatever reason your OS doesn't support IPv6 even though Python's `socket` says otherwise, you can tell OctoPrint to bind to an IPv4 address only either via the `--host` command line parameter or `server.host` in `config.yaml`. Use `127.0.0.1` for localhost only, `0.0.0.0` for all IPv4 addresses or whatever specific IPv4 address you want to bind to.
+
+### Plugin author and still dependent on the legacy plugin bundling flag? Fix your plugin!
 
 As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/2017/12/12/new-release-1.3.6/), the legacy plugin bundling flag has now been removed again. [Make sure to check and if necessary fix your plugins](https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/) if you haven't done that so far!
 
@@ -140,11 +144,11 @@ As [announced with the release of OctoPrint 1.3.6](https://octoprint.org/blog/20
 
 ### Special thanks to all the contributors!
 
-Special thanks to everyone who contributed to this release candidate, especially [@benlye](https://github.com/benlye), [@dadosch](https://github.com/dadosch), [@dforsi](https://github.com/dforsi), [@ganey](https://github.com/ganey),[@malnvenshorn](https://github.com/malnvenshorn), [@ntoff](https://github.com/ntoff), [@tedder](https://github.com/tedder) and [@vitormhenrique](https://github.com/vitormhenrique) for their PRs.
+Special thanks to everyone who contributed to this release, especially [@benlye](https://github.com/benlye), [@dadosch](https://github.com/dadosch), [@dforsi](https://github.com/dforsi), [@ganey](https://github.com/ganey),[@malnvenshorn](https://github.com/malnvenshorn), [@ntoff](https://github.com/ntoff), [@tedder](https://github.com/tedder) and [@vitormhenrique](https://github.com/vitormhenrique) for their PRs.
 
 ### More information
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.8...1.3.9rc1)
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.8...1.3.9)
   * Release Candidates:
     * [1.3.9rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc1)
     * [1.3.9rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.9rc2)
