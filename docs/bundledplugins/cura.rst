@@ -57,18 +57,10 @@ path to that in the plugin settings.
 Compiling for Raspbian
 ++++++++++++++++++++++
 
-.. note::
+Raspbian Jessie and later
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   A binary of CuraEngine 15.04.06 precompiled on Raspbian Jessie Lite 2016-03-18 is available
-   `here <http://bit.ly/octopi_cura_engine_150406>`__. Don't forget to make it
-   executable after copying it to your preferred destination on your Pi
-   (suggestion: ``/usr/local/bin``) with ``chmod +x cura_engine``. Use at your
-   own risk.
-
-Raspbian Jessie
-~~~~~~~~~~~~~~~
-
-Building on Raspbian Jessie is as easy as::
+Building on Raspbian Jessie and later is as easy as::
 
     sudo apt-get -y install gcc-4.7 g++-4.7
     git clone -b legacy https://github.com/Ultimaker/CuraEngine.git
