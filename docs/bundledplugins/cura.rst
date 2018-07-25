@@ -57,10 +57,10 @@ path to that in the plugin settings.
 Compiling for Raspbian
 ++++++++++++++++++++++
 
-Raspbian Jessie
-~~~~~~~~~~~~~~~
+Raspbian Jessie and later
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Building on Raspbian Jessie is as easy as::
+Building on Raspbian Jessie and later is as easy as::
 
     sudo apt-get -y install gcc-4.7 g++-4.7
     git clone -b legacy https://github.com/Ultimaker/CuraEngine.git

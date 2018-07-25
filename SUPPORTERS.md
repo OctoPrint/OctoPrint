@@ -60,4 +60,4 @@ thanks to everyone who contributed!
   * Timothy D Hoogland
   * Trent Shumay
 
-and 1337 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1351 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
