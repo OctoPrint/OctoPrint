@@ -82,9 +82,6 @@ EXTRA_REQUIRES = dict(
 	]
 )
 
-# Additional requirements for setup
-SETUP_REQUIRES = []
-
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
@@ -161,7 +158,6 @@ def params():
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
-	setup_requires = SETUP_REQUIRES
 
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",
