@@ -12,6 +12,9 @@ import octoprint_setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+# Supported python versions
+PYTHON_REQUIRES = ">=2.7.3,<3" # TODO change to >=2.7.9,<3 in 1.3.11
+
 # Requirements for our application
 INSTALL_REQUIRES = [
 	"flask>=0.10.1,<0.11",
@@ -154,6 +157,7 @@ def params():
 	long_description = read_file_contents(os.path.join(here, "README.md"))
 	long_description_content_type = "text/markdown"
 
+	python_requires = PYTHON_REQUIRES
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
