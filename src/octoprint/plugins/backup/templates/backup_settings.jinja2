@@ -1,0 +1,36 @@
+<h3>{{ _('Backup & Restore') }}</h3>
+
+<form class="form-horizontal">
+    <ul class="nav nav-pills">
+        <li class="active"><a href="#settings_plugin_backup_backup" data-toggle="tab">{{ _('Backup') }}</a></li>
+        <li><a href="#settings_plugin_backup_restore" data-toggle="tab">{{ _('Restore') }}</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div id="settings_plugin_backup_backup" class="tab-pane active">
+            <table class="table table-condensed table-hover">
+                <thead>
+                <tr>
+                    <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
+                    <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
+                    <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
+                    <th class="settings_plugin_backup_actions">{{ _('Action') }}</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: backups.paginatedItems">
+                <tr>
+                    <td class="settings_plugin_backup_name" data-bind="text: name"></td>
+                    <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
+                    <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
+                    <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeBackup($data.name); } else { return; } }, css: {disabled: !$root.loginState.isAdmin()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
+                </tr>
+                </tbody>
+            </table>
+
+            <button class="btn btn-primary" data-bind="click: createBackup">{{ _('Create backup now') }}</button>
+        </div>
+
+        <div id="settings_plugin_backup_restore" class="tab-pane">
+        </div>
+    </div>
+</form>
