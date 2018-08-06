@@ -11,6 +11,7 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
+from octoprint.util.version import get_octoprint_version_string
 
 try:
 	from os import scandir
@@ -202,18 +203,18 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					zip.write(source, arcname=target)
 
 			# backup current config file
-			add_to_zip(configfile, "config.yaml", ignored=[own_folder,])
+			add_to_zip(configfile, "basedir/config.yaml", ignored=[own_folder,])
 
 			# backup configured folder paths
 			for folder in default_settings["folder"].keys():
 				if folder in exclude:
 					continue
 				add_to_zip(self._settings.global_get_basefolder(folder),
-				           folder.replace("_", "/"),
+				           "basedir/" + folder.replace("_", "/"),
 				           ignored=[own_folder,])
 
 			# backup anything else that might be lying around in our basedir
-			add_to_zip(basedir, "", ignored=defaults + [own_folder, ])
+			add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ])
 
 			# add list of installed plugins
 			plugins = []
@@ -229,6 +230,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if len(plugins):
 				zip.writestr("plugin_list.json", json.dumps(plugins))
+
+			# add metadata
+			metadata = dict(version=get_octoprint_version_string())
+			zip.writestr("metadata.json", json.dumps(metadata))
 
 		shutil.move(temporary_path, final_path)
 		self._logger.info("... done creating backup zip.")
