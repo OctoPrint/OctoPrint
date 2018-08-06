@@ -1,5 +1,3 @@
-<h3>{{ _('Backup & Restore') }}</h3>
-
 <form class="form-horizontal">
     <ul class="nav nav-pills">
         <li class="active"><a href="#settings_plugin_backup_backup" data-toggle="tab">{{ _('Backup') }}</a></li>
@@ -8,9 +6,48 @@
 
     <div class="tab-content">
         <div id="settings_plugin_backup_backup" class="tab-pane active">
-            <table class="table table-condensed table-hover">
+            <h4>{{ _('Create backup') }}</h4>
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <button class="btn btn-primary" data-bind="enable: !backupInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+                </div>
+            </div>
+
+            <h4>{{ _('Existing backups') }}</h4>
+
+            <div class="pull-left">
+                <div class="btn-group">
+                    <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _('Clear selection') }}</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">{{ _('Delete selected') }}</button>
+            </div>
+            <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
                 <thead>
                 <tr>
+                    <th class="timelapse_unrendered_checkbox"></th>
                     <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
                     <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
                     <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
@@ -19,6 +56,7 @@
                 </thead>
                 <tbody data-bind="foreach: backups.paginatedItems">
                 <tr>
+                    <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
                     <td class="settings_plugin_backup_name" data-bind="text: name"></td>
                     <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
                     <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
@@ -26,8 +64,17 @@
                 </tr>
                 </tbody>
             </table>
-
-            <button class="btn btn-primary" data-bind="click: createBackup">{{ _('Create backup now') }}</button>
+            <div class="pagination pagination-mini pagination-centered">
+                <ul>
+                    <li data-bind="css: {disabled: backups.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a></li>
+                </ul>
+                <ul data-bind="foreach: backups.pages">
+                    <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a></li>
+                </ul>
+                <ul>
+                    <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
+                </ul>
+            </div>
         </div>
 
         <div id="settings_plugin_backup_restore" class="tab-pane">

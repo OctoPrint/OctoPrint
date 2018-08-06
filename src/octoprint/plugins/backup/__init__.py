@@ -8,7 +8,7 @@ import octoprint.plugin
 
 from octoprint.settings import default_settings
 from octoprint.plugin.core import FolderOrigin
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
 
@@ -35,12 +35,6 @@ import json
 """
 TODO:
 
-* Backup:
-  * UI to select things to backup (timelapse? uploads?) and start the backup
-  * perform backup
-    x sanity check of available space (must be at least what the selected parts currently consume unzipped)
-    x zip stuff to disk, incl. plugin list as json
-    * trigger download in browser
 * Restore:
   * UI to upload a backup zip
   * tornado endpoint to stream the upload
@@ -70,12 +64,15 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/backup.js"])
+		return dict(js=["js/backup.js"],
+		            css=["css/backup.css"],
+		            less=["less/backup.less"])
 
 	##~~ BlueprintPlugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/backup", methods=["GET"])
 	@admin_permission.require(403)
+	@restricted_access
 	def get_backups(self):
 		# TODO add caching
 		backups = []
@@ -85,36 +82,68 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			backups.append(dict(name=entry.name,
 			                    date=entry.stat().st_mtime,
 			                    size=entry.stat().st_size,
-			                    url=flask.url_for("index") + "downloads/backup/" + entry.name))
-		return flask.jsonify(backups=backups)
+			                    url=flask.url_for("index") + "plugin/backup/download/" + entry.name))
+		return flask.jsonify(backups=backups,
+		                     in_progress=len(self._in_progress) > 0)
 
 	@octoprint.plugin.BlueprintPlugin.route("/backup", methods=["POST"])
 	@admin_permission.require(403)
+	@restricted_access
 	def create_backup(self):
 		backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
 
+		data = flask.request.json
+		exclude = data.get("exclude", [])
+
 		thread = threading.Thread(target=self._create_backup,
 		                          args=(backup_file,),
-		                          kwargs=dict(exclude=["timelapse",
-		                                               "timelapse_tmp",
-		                                               "uploads"]))
+		                          kwargs=dict(exclude=exclude))
 		thread.daemon = True
 		thread.start()
 
 		response = flask.jsonify(started=True)
-		response.headers["Location"] = flask.url_for("index") + "downloads/backup/" + backup_file
+		response.headers["Location"] = flask.url_for("index") + "plugin/backup/download/" + backup_file
 		response.status_code = 201
 		return response
 
-	@octoprint.plugin.BlueprintPlugin.route("/backup/<backup>", methods=["DELETE"])
+	@octoprint.plugin.BlueprintPlugin.route("/backup/<filename>", methods=["DELETE"])
 	@admin_permission.require(403)
-	def delete_backup(self, backup):
-		pass
+	@restricted_access
+	def delete_backup(self, filename):
+		backup_folder = self.get_plugin_data_folder()
+		full_path = os.path.realpath(os.path.join(backup_folder, filename))
+		if full_path.startswith(backup_folder) \
+			and os.path.exists(full_path) \
+			and not is_hidden_path(full_path):
+			try:
+				os.remove(full_path)
+			except:
+				self._logger.exception("Could not delete {}".format(filename))
+				raise
+		return NO_CONTENT
 
 	@octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
 	@admin_permission.require(403)
+	@restricted_access
 	def perform_restore(self):
 		pass
+
+	##~~ tornado hook
+
+	def route_hook(self, *args, **kwargs):
+		from octoprint.server.util.tornado import LargeResponseHandler, path_validation_factory
+		from octoprint.util import is_hidden_path
+		from octoprint.server import app
+		from octoprint.server.util.tornado import access_validation_factory
+		from octoprint.server.util.flask import admin_validator
+
+		return [
+			(r"/download/(.*)", LargeResponseHandler, dict(path=self.get_plugin_data_folder(),
+			                                               as_attachment=True,
+			                                               path_validation=path_validation_factory(lambda path: not is_hidden_path(path),
+			                                                                                       status_code=404),
+			                                               access_validation=access_validation_factory(app, admin_validator)))
+		]
 
 	##~~ helpers
 
@@ -155,7 +184,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			self._in_progress.append(name)
 			self._send_client_message("backup_started", payload=dict(name=name))
 
-		self._logger.info("Creating backup zip at {}...".format(temporary_path))
+		self._logger.info("Creating backup zip at {} (excluded: {})...".format(temporary_path,
+		                                                                       ",".join(exclude) if len(exclude) else "-"))
 
 		with zipfile.ZipFile(temporary_path, "w", compression) as zip:
 			def add_to_zip(source, target, ignored=None):
@@ -228,3 +258,6 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin you will no long
                                            "& restore your OctoPrint settings and data.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = BackupPlugin()
+__plugin_hooks__ = {
+	"octoprint.server.http.routes": __plugin_implementation__.route_hook
+}

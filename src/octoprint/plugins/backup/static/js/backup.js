@@ -22,14 +22,18 @@
         return this.get(false, opts);
     };
 
-    OctoPrintBackupClient.prototype.createBackup = function(excludes, opts) {
-        excludes = excludes || [];
+    OctoPrintBackupClient.prototype.createBackup = function(exclude, opts) {
+        exclude = exclude || [];
 
         var data = {
-            excludes: excludes
+            exclude: exclude
         };
 
         return this.base.postJson(this.url + "backup", data, opts);
+    };
+
+    OctoPrintBackupClient.prototype.deleteBackup = function(backup, opts) {
+        return this.base.delete(this.url + "backup/" + backup, opts);
     };
 
     OctoPrintClient.registerPluginComponent("backup", OctoPrintBackupClient);
@@ -58,8 +62,11 @@ $(function() {
             "date",
             [],
             [],
-            0
+            10
         );
+        self.markedForBackupDeletion = ko.observableArray([]);
+        self.excludeFromBackup = ko.observableArray([]);
+        self.backupInProgress = ko.observable(false);
 
         self.requestData = function() {
             OctoPrint.plugins.backup.get()
@@ -71,7 +78,42 @@ $(function() {
         };
 
         self.createBackup = function() {
-            OctoPrint.plugins.backup.createBackup();
+            var excluded = self.excludeFromBackup();
+            OctoPrint.plugins.backup.createBackup(excluded)
+                .done(function() {
+                    self.excludeFromBackup([]);
+                })
+        };
+
+        self.removeBackup = function(backup) {
+            OctoPrint.plugins.backup.deleteBackup(backup)
+                .done(function() {
+                    self.requestData();
+                })
+        };
+
+        self.markFilesOnPage = function() {
+            self.markedForBackupDeletion(_.uniq(self.markedForBackupDeletion().concat(_.map(self.backups.paginatedItems(), "name"))));
+        };
+
+        self.markAllFiles = function() {
+            self.markedForBackupDeletion(_.map(self.backups.allItems, "name"));
+        };
+
+        self.clearMarkedFiles = function() {
+            self.markedForBackupDeletion.removeAll();
+        };
+
+        self.removeMarkedFiles = function() {
+            var perform = function() {
+                self._bulkRemove(self.markedForBackupDeletion())
+                    .done(function() {
+                        self.markedForBackupDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete %(count)d backups."), {count: self.markedForBackupDeletion().length}),
+                                   perform);
         };
 
         self.onSettingsShown = function() {
@@ -83,8 +125,54 @@ $(function() {
 
             if (data.type === "backup_done") {
                 self.requestData();
+                self.backupInProgress(false);
+            } else if (data.type === "backup_started") {
+                self.backupInProgress(true);
             }
-        }
+        };
+
+        self._bulkRemove = function(files) {
+            var title, message, handler;
+
+            title = gettext("Deleting backups");
+            message = _.sprintf(gettext("Deleting %(count)d backups..."), {count: files.length});
+            handler = function(filename) {
+                return OctoPrint.plugins.backup.deleteBackup(filename)
+                    .done(function() {
+                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                    })
+                    .fail(function(jqXHR) {
+                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                        deferred.notify(short, long, false);
+                    });
+            };
+
+            var deferred = $.Deferred();
+
+            var promise = deferred.promise();
+
+            var options = {
+                title: title,
+                message: message,
+                max: files.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var requests = [];
+            _.each(files, function(filename) {
+                var request = handler(filename);
+                requests.push(request)
+            });
+            $.when.apply($, _.map(requests, wrapPromiseWithAlways))
+                .done(function() {
+                    deferred.resolve();
+                    self.requestData();
+                });
+
+            return promise;
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
