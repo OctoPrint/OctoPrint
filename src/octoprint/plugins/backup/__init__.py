@@ -11,7 +11,7 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
-from octoprint.util.version import get_octoprint_version_string
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version
 
 try:
 	from os import scandir
@@ -28,6 +28,7 @@ from flask_babel import gettext
 import flask
 import os
 import shutil
+import tempfile
 import threading
 import time
 import zipfile
@@ -127,7 +128,38 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def perform_restore(self):
-		pass
+		input_name = "file"
+		input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
+		input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
+
+		if input_upload_path in flask.request.values and input_upload_name in flask.request.values:
+			# file to restore was uploaded
+			upload_path = flask.request.values[input_upload_path]
+			upload_name = flask.request.values[input_upload_name]
+
+			archive = tempfile.NamedTemporaryFile(delete=False, suffix="{ext}".format(**locals()))
+			archive.close()
+			shutil.copy(upload_path, archive.name)
+			path = archive.name
+
+		elif flask.request.json and "path" in flask.request.json:
+			# existing backup is supposed to be restored
+			backup_folder = self.get_plugin_data_folder()
+			path = os.path.realpath(os.path.join(backup_folder, flask.request.json["path"]))
+			if not path.startswith(backup_folder) \
+				or not os.path.exists(path) \
+				or is_hidden_path(path):
+				return flask.abort(404)
+
+		else:
+			return flask.make_response("Invalid request, neither a file nor a path of a file to restore provided", 400)
+
+		thread = threading.Thread(target=self._restore_backup,
+		                          args=(path,))
+		thread.daemon = True
+		thread.start()
+
+		return flask.jsonify(started=True)
 
 	##~~ tornado hook
 
@@ -202,6 +234,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				elif os.path.isfile(source):
 					zip.write(source, arcname=target)
 
+			# add metadata
+			metadata = dict(version=get_octoprint_version_string(),
+			                excludes=exclude)
+			zip.writestr("metadata.json", json.dumps(metadata))
+
 			# backup current config file
 			add_to_zip(configfile, "basedir/config.yaml", ignored=[own_folder,])
 
@@ -231,10 +268,6 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if len(plugins):
 				zip.writestr("plugin_list.json", json.dumps(plugins))
 
-			# add metadata
-			metadata = dict(version=get_octoprint_version_string())
-			zip.writestr("metadata.json", json.dumps(metadata))
-
 		shutil.move(temporary_path, final_path)
 		self._logger.info("... done creating backup zip.")
 
@@ -243,7 +276,53 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			self._send_client_message("backup_done", payload=dict(name=name))
 
 	def _restore_backup(self, path):
-		pass
+		with zipfile.ZipFile(path, "r") as zip:
+			# read metadata
+			try:
+				metadata_zipinfo = zip.getinfo("metadata.json")
+			except KeyError:
+				self._logger.error("Not an OctoPrint backup, lacks metadata.json")
+				return False
+
+			metadata_bytes = zip.read(metadata_zipinfo)
+			metadata = json.loads(metadata_bytes)
+
+			backup_version = get_comparable_version(metadata["version"])
+			if backup_version > get_octoprint_version():
+				self._logger.error("Backup is from a newer version of OctoPrint and cannot be applied")
+				return False
+
+			# unzip to temporary folder
+			temp = tempfile.mkdtemp()
+			try:
+				self._logger.info("Unpacking backup to {}...".format(temp))
+				abstemp = os.path.abspath(temp)
+				for member in zip.infolist():
+					abspath = os.path.abspath(os.path.join(temp, member.filename))
+					if abspath.startswith(abstemp):
+						zip.extract(member, temp)
+
+				# sanity check
+				configfile = os.path.join(temp, "basedir", "config.yaml")
+				if not os.path.exists(configfile):
+					self._logger.error("Backup lacks config.yaml")
+					return False
+
+				import yaml
+				import codecs
+
+				with codecs.open(configfile) as f:
+					configdata = yaml.safe_load(f)
+
+				if configdata.get("accessControl", dict()).get("enabled", True):
+					userfile = os.path.join(temp, "basedir", "users.yaml")
+					if not os.path.exists(userfile):
+						self._logger.error("Backup lacks users.yaml")
+						return False
+
+				self._logger.info("Unpacked")
+			finally:
+				shutil.rmtree(temp)
 
 	def _send_client_message(self, message, payload=None):
 		if payload is None:

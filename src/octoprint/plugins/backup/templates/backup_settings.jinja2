@@ -30,54 +30,61 @@
                 </div>
             </div>
 
-            <h4>{{ _('Existing backups') }}</h4>
-
-            <div class="pull-left">
-                <div class="btn-group">
-                    <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
-                    <ul class="dropdown-menu">
-                        <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
-                        <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
-                        <li class="divider"></li>
-                        <li><a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _('Clear selection') }}</a></li>
-                    </ul>
-                </div>
-                <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">{{ _('Delete selected') }}</button>
-            </div>
-            <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
-                <thead>
-                <tr>
-                    <th class="timelapse_unrendered_checkbox"></th>
-                    <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
-                    <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
-                    <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
-                    <th class="settings_plugin_backup_actions">{{ _('Action') }}</th>
-                </tr>
-                </thead>
-                <tbody data-bind="foreach: backups.paginatedItems">
-                <tr>
-                    <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
-                    <td class="settings_plugin_backup_name" data-bind="text: name"></td>
-                    <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
-                    <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
-                    <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeBackup($data.name); } else { return; } }, css: {disabled: !$root.loginState.isAdmin()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
-                </tr>
-                </tbody>
-            </table>
-            <div class="pagination pagination-mini pagination-centered">
-                <ul>
-                    <li data-bind="css: {disabled: backups.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a></li>
-                </ul>
-                <ul data-bind="foreach: backups.pages">
-                    <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a></li>
-                </ul>
-                <ul>
-                    <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
-                </ul>
-            </div>
         </div>
 
         <div id="settings_plugin_backup_restore" class="tab-pane">
+            <h4>{{ _('Restore backup') }}</h4>
+
+            <div class="control.group"></div>
         </div>
     </div>
+
+    <hr>
+
+    <h4>{{ _('Existing backups') }}</h4>
+
+    <div class="pull-left">
+        <div class="btn-group">
+            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
+                <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
+                <li class="divider"></li>
+                <li><a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _('Clear selection') }}</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">{{ _('Delete selected') }}</button>
+    </div>
+    <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
+        <thead>
+        <tr>
+            <th class="timelapse_unrendered_checkbox"></th>
+            <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
+            <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
+            <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
+            <th class="settings_plugin_backup_actions">{{ _('Action') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: backups.paginatedItems">
+        <tr>
+            <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
+            <td class="settings_plugin_backup_name" data-bind="text: name"></td>
+            <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
+            <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeBackup($data.name); } else { return; } }, css: {disabled: !$root.loginState.isAdmin()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" data-bind="click: function() { $parent.restoreBackup($data.name) }"><i class="fa fa-share-alt"></i></a></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-mini pagination-centered">
+        <ul>
+            <li data-bind="css: {disabled: backups.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a></li>
+        </ul>
+        <ul data-bind="foreach: backups.pages">
+            <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a></li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
+        </ul>
+    </div>
+
 </form>

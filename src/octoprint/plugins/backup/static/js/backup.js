@@ -36,6 +36,14 @@
         return this.base.delete(this.url + "backup/" + backup, opts);
     };
 
+    OctoPrintBackupClient.prototype.restoreBackup = function(backup, opts) {
+        var data = {
+            path: backup
+        };
+
+        return this.base.postJson(this.url + "restore", data, opts);
+    };
+
     OctoPrintClient.registerPluginComponent("backup", OctoPrintBackupClient);
     return OctoPrintBackupClient;
 });
@@ -89,6 +97,13 @@ $(function() {
             OctoPrint.plugins.backup.deleteBackup(backup)
                 .done(function() {
                     self.requestData();
+                })
+        };
+
+        self.restoreBackup = function(backup) {
+            OctoPrint.plugins.backup.restoreBackup(backup)
+                .done(function() {
+                    // do something
                 })
         };
 
