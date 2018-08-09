@@ -11,7 +11,9 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
+from octoprint.util.pip import LocalPipCaller
+from octoprint.util.platform import is_os_compatible
 
 try:
 	from os import scandir
@@ -26,7 +28,10 @@ except ImportError:
 from flask_babel import gettext
 
 import flask
+import logging
 import os
+import requests
+import sarge
 import shutil
 import tempfile
 import threading
@@ -55,6 +60,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
                    octoprint.plugin.BlueprintPlugin):
+
+	_pip_caller = None
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
@@ -97,9 +104,31 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data = flask.request.json
 		exclude = data.get("exclude", [])
 
+		def on_backup_start(name, temporary_path, exclude):
+			self._logger.info("Creating backup zip at {} (excluded: {})...".format(temporary_path,
+			                                                                       ",".join(exclude) if len(exclude) else "-"))
+
+			with self._in_progress_lock:
+				self._in_progress.append(name)
+				self._send_client_message("backup_started", payload=dict(name=name))
+
+		def on_backup_done(name, final_path, exclude):
+			with self._in_progress_lock:
+				self._in_progress.remove(name)
+				self._send_client_message("backup_done", payload=dict(name=name))
+
+			self._logger.info("... done creating backup zip.")
+
+
 		thread = threading.Thread(target=self._create_backup,
 		                          args=(backup_file,),
-		                          kwargs=dict(exclude=exclude))
+		                          kwargs=dict(exclude=exclude,
+		                                      settings=self._settings,
+		                                      plugin_manager=self._plugin_manager,
+		                                      datafolder=self.get_plugin_data_folder(),
+		                                      on_backup_start=on_backup_start,
+		                                      on_backup_done=on_backup_done,
+		                                      logger=self._logger))
 		thread.daemon = True
 		thread.start()
 
@@ -130,17 +159,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	def perform_restore(self):
 		input_name = "file"
 		input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
-		input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
 
-		if input_upload_path in flask.request.values and input_upload_name in flask.request.values:
+		if input_upload_path in flask.request.values:
 			# file to restore was uploaded
-			upload_path = flask.request.values[input_upload_path]
-			upload_name = flask.request.values[input_upload_name]
-
-			archive = tempfile.NamedTemporaryFile(delete=False, suffix="{ext}".format(**locals()))
-			archive.close()
-			shutil.copy(upload_path, archive.name)
-			path = archive.name
+			path = flask.request.values[input_upload_path]
 
 		elif flask.request.json and "path" in flask.request.json:
 			# existing backup is supposed to be restored
@@ -154,8 +176,24 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			return flask.make_response("Invalid request, neither a file nor a path of a file to restore provided", 400)
 
+		def on_install_plugins(plugins):
+			for plugin in plugins:
+				self.__class__._install_plugin(plugin)
+
+		def on_report_unknown_plugins(plugins):
+			self._send_client_message("unknown_plugins", payload=dict(plugins=plugins))
+
+		archive = tempfile.NamedTemporaryFile(delete=False)
+		archive.close()
+		shutil.copy(path, archive.name)
+		path = archive.name
+
 		thread = threading.Thread(target=self._restore_backup,
-		                          args=(path,))
+		                          args=(path,),
+		                          kwargs=dict(settings=self._settings,
+		                                      on_install_plugins=on_install_plugins,
+		                                      on_report_unknown_plugins=on_report_unknown_plugins,
+		                                      logger=self._logger))
 		thread.daemon = True
 		thread.start()
 
@@ -178,47 +216,140 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                                               access_validation=access_validation_factory(app, admin_validator)))
 		]
 
+	##~~ CLI hook
+
+	def cli_commands_hook(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+		import click
+
+		@click.command("backup")
+		@click.option("--exclude", multiple=True)
+		def backup_command(exclude):
+			backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
+			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
+
+			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+			if not os.path.isdir(datafolder):
+				os.makedirs(datafolder)
+
+			self._create_backup(backup_file,
+			                    exclude=exclude,
+			                    settings=settings,
+			                    plugin_manager=cli_group.plugin_manager,
+			                    datafolder=datafolder)
+			click.echo("Created {}".format(backup_file))
+
+		@click.command("restore")
+		@click.argument("path")
+		def restore_command(path):
+			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
+
+			if not os.path.isabs(path):
+				datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+				if not os.path.isdir(datafolder):
+					os.makedirs(datafolder)
+				path = os.path.join(datafolder, path)
+
+			# TODO fetch from repository
+			plugin_repo = dict()
+
+			archive = tempfile.NamedTemporaryFile(delete=False)
+			archive.close()
+			shutil.copy(path, archive.name)
+			path = archive.name
+
+			if self._restore_backup(path,
+			                        settings=settings,
+			                        plugin_repo=plugin_repo):
+				click.echo("Restored from {}".format(path))
+			else:
+				click.echo("Restoring from {} failed".format(path), err=True)
+
+		return [backup_command, restore_command]
+
 	##~~ helpers
 
-	def _get_disk_size(self, path):
+	@classmethod
+	def _get_disk_size(cls, path):
 		total = 0
 		for entry in scandir(path):
 			if entry.is_dir():
-				total += self._get_disk_size(entry.path)
+				total += cls._get_disk_size(entry.path)
 			elif entry.is_file():
 				total += entry.stat().st_size
 		return total
 
-	def _free_space(self, path, size):
+	@classmethod
+	def _free_space(cls, path, size):
 		from psutil import disk_usage
 		return disk_usage(path).free > size
 
-	def _create_backup(self, name, exclude=None):
+	@classmethod
+	def _get_plugin_repository_data(cls, url, logger=None):
+		if logger is None:
+			logger = logging.getLogger(__name__)
+
+		try:
+			r = requests.get(url, timeout=30)
+			r.raise_for_status()
+		except Exception:
+			logger.exception("Error while fetching the plugin repository data from {}".format(url))
+			return dict()
+
+		from octoprint.plugins.pluginmanager import map_repository_entry
+		return dict((plugin["id"], plugin) for plugin in map(map_repository_entry, r.json()))
+
+	@classmethod
+	def _install_plugin(cls, plugin, force_user=False):
+		# prepare pip caller
+		def log_call(*lines):
+			pass
+
+		def log_stdout(*lines):
+			pass
+
+		def log_stderr(*lines):
+			pass
+
+		if cls._pip_caller is None:
+			cls._pip_caller = LocalPipCaller(force_user=force_user)
+
+		cls._pip_caller.on_log_call = log_call
+		cls._pip_caller.on_log_stdout = log_stdout
+		cls._pip_caller.on_log_stderr = log_stderr
+
+		# install plugin
+
+
+	@classmethod
+	def _create_backup(cls, name,
+	                   exclude=None,
+	                   settings=None,
+	                   plugin_manager=None,
+	                   datafolder=None,
+	                   on_backup_start=None,
+	                   on_backup_done=None,
+	                   logger=None):
 		if exclude is None:
 			exclude = []
 
-		configfile = self._settings._configfile
-		basedir = self._settings._basedir
+		configfile = settings._configfile
+		basedir = settings._basedir
 
-		temporary_path = os.path.join(self.get_plugin_data_folder(), ".{}".format(name))
-		final_path = os.path.join(self.get_plugin_data_folder(), name)
+		temporary_path = os.path.join(datafolder, ".{}".format(name))
+		final_path = os.path.join(datafolder, name)
 
-		size = self._get_disk_size(basedir)
-		if not self._free_space(os.path.dirname(temporary_path), size):
+		size = cls._get_disk_size(basedir)
+		if not cls._free_space(os.path.dirname(temporary_path), size):
 			raise InsufficientSpace()
 
-		own_folder = self.get_plugin_data_folder()
+		own_folder = datafolder
 		defaults = [os.path.join(basedir, "config.yaml"),] + \
 		           [os.path.join(basedir, folder) for folder in default_settings["folder"].keys()]
 
 		compression = zipfile.ZIP_DEFLATED if zlib else zipfile.ZIP_STORED
 
-		with self._in_progress_lock:
-			self._in_progress.append(name)
-			self._send_client_message("backup_started", payload=dict(name=name))
-
-		self._logger.info("Creating backup zip at {} (excluded: {})...".format(temporary_path,
-		                                                                       ",".join(exclude) if len(exclude) else "-"))
+		if callable(on_backup_start):
+			on_backup_start(name, temporary_path, exclude)
 
 		with zipfile.ZipFile(temporary_path, "w", compression) as zip:
 			def add_to_zip(source, target, ignored=None):
@@ -246,7 +377,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			for folder in default_settings["folder"].keys():
 				if folder in exclude:
 					continue
-				add_to_zip(self._settings.global_get_basefolder(folder),
+				add_to_zip(settings.global_get_basefolder(folder),
 				           "basedir/" + folder.replace("_", "/"),
 				           ignored=[own_folder,])
 
@@ -255,8 +386,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			# add list of installed plugins
 			plugins = []
-			plugin_folder = self._settings.global_get_basefolder("plugins")
-			for key, plugin in self._plugin_manager.plugins.items():
+			plugin_folder = settings.global_get_basefolder("plugins")
+			for key, plugin in plugin_manager.plugins.items():
 				if plugin.bundled or (isinstance(plugin.origin, FolderOrigin) and plugin.origin.folder == plugin_folder):
 					# ignore anything bundled or from the plugins folder we already include in the backup
 					continue
@@ -269,19 +400,34 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				zip.writestr("plugin_list.json", json.dumps(plugins))
 
 		shutil.move(temporary_path, final_path)
-		self._logger.info("... done creating backup zip.")
 
-		with self._in_progress_lock:
-			self._in_progress.remove(name)
-			self._send_client_message("backup_done", payload=dict(name=name))
+		if callable(on_backup_done):
+			on_backup_done(name, final_path, exclude)
 
-	def _restore_backup(self, path):
+	@classmethod
+	def _restore_backup(cls, path,
+	                    settings=None,
+	                    on_install_plugins=None,
+	                    on_report_unknown_plugins=None,
+	                    logger=None):
+		if logger is None:
+			logger = logging.getLogger(__name__)
+
+		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
+
+		basedir = settings._basedir
+
+		plugin_repo = dict()
+		repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
+		if repo_url:
+			plugin_repo = cls._get_plugin_repository_data(repo_url)
+
 		with zipfile.ZipFile(path, "r") as zip:
 			# read metadata
 			try:
 				metadata_zipinfo = zip.getinfo("metadata.json")
 			except KeyError:
-				self._logger.error("Not an OctoPrint backup, lacks metadata.json")
+				logger.error("Not an OctoPrint backup, lacks metadata.json")
 				return False
 
 			metadata_bytes = zip.read(metadata_zipinfo)
@@ -289,13 +435,13 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			backup_version = get_comparable_version(metadata["version"])
 			if backup_version > get_octoprint_version():
-				self._logger.error("Backup is from a newer version of OctoPrint and cannot be applied")
+				logger.error("Backup is from a newer version of OctoPrint and cannot be applied")
 				return False
 
 			# unzip to temporary folder
 			temp = tempfile.mkdtemp()
 			try:
-				self._logger.info("Unpacking backup to {}...".format(temp))
+				logger.info("Unpacking backup to {}...".format(temp))
 				abstemp = os.path.abspath(temp)
 				for member in zip.infolist():
 					abspath = os.path.abspath(os.path.join(temp, member.filename))
@@ -305,7 +451,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				# sanity check
 				configfile = os.path.join(temp, "basedir", "config.yaml")
 				if not os.path.exists(configfile):
-					self._logger.error("Backup lacks config.yaml")
+					logger.error("Backup lacks config.yaml")
 					return False
 
 				import yaml
@@ -317,12 +463,74 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				if configdata.get("accessControl", dict()).get("enabled", True):
 					userfile = os.path.join(temp, "basedir", "users.yaml")
 					if not os.path.exists(userfile):
-						self._logger.error("Backup lacks users.yaml")
+						logger.error("Backup lacks users.yaml")
 						return False
 
-				self._logger.info("Unpacked")
+				logger.info("Unpacked")
+
+				# install available plugins
+				with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
+					plugins = json.load(f)
+
+				if plugins and plugin_repo:
+					installable = []
+					not_installable = []
+
+					for plugin in plugins:
+						if plugin["key"] in plugin_repo:
+							installable.append(plugin_repo[plugin["key"]])
+						else:
+							not_installable.append(plugin)
+
+					logger.info("Installable plugins: {}. Not installable: {}".format(", ".join(map(lambda x: x["id"], installable)),
+					                                                                  ", ".join(map(lambda x: x["key"], not_installable))))
+
+					if callable(on_install_plugins):
+						on_install_plugins(installable)
+
+					if callable(on_report_unknown_plugins):
+						on_report_unknown_plugins(not_installable)
+
+				# move config data
+				basedir_backup = basedir + ".bck"
+				basedir_extracted = os.path.join(temp, "basedir")
+
+				logger.info("Renaming {} to {}...".format(basedir, basedir_backup))
+				shutil.move(basedir, basedir_backup)
+
+				try:
+					logger.info("Moving {} to {}...".format(basedir_extracted, basedir))
+					shutil.move(basedir_extracted, basedir)
+				except:
+					logger.exception("Error while restoring config data")
+					logger.info("Rolling back old config data")
+					shutil.move(basedir_backup, basedir)
+					return False
+
+				#shutil.rmtree(basedir_backup)
+
 			finally:
+				logger.info("Removing temporary unpacked folder")
 				shutil.rmtree(temp)
+
+		# remove zip
+		logger.info("Removing temporary zip")
+		os.remove(path)
+
+		# restart server
+		if restart_command:
+			import sarge
+
+			logger.info("Restarting...")
+			try:
+				sarge.run(restart_command, async_=True)
+			except:
+				logger.exception("Error while restarting via command {}".format(restart_command))
+				logger.error("Please restart OctoPrint manually")
+				return False
+
+		return True
+
 
 	def _send_client_message(self, message, payload=None):
 		if payload is None:
@@ -343,5 +551,6 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin you will no long
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = BackupPlugin()
 __plugin_hooks__ = {
-	"octoprint.server.http.routes": __plugin_implementation__.route_hook
+	"octoprint.server.http.routes": __plugin_implementation__.route_hook,
+	"octoprint.cli.commands": __plugin_implementation__.cli_commands_hook
 }
