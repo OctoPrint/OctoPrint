@@ -44,6 +44,13 @@
         return this.base.postJson(this.url + "restore", data, opts);
     };
 
+    OctoPrintBackupClient.prototype.restoreBackupFromUpload = function (file, data) {
+        data = data || {};
+
+        var filename = data.filename || undefined;
+        return this.base.upload(this.url + "restore", file, filename, data);
+    };
+
     OctoPrintClient.registerPluginComponent("backup", OctoPrintBackupClient);
     return OctoPrintBackupClient;
 });
@@ -72,9 +79,35 @@ $(function() {
             [],
             10
         );
+
         self.markedForBackupDeletion = ko.observableArray([]);
+
         self.excludeFromBackup = ko.observableArray([]);
         self.backupInProgress = ko.observable(false);
+
+        self.backupUploadButton = $("#settings-backup-upload");
+        self.backupUploadData = undefined;
+        self.backupUploadButton.fileupload({
+            dataType: "json",
+            maxNumberOfFiles: 1,
+            autoUpload: false,
+            headers: OctoPrint.getRequestHeaders(),
+            add: function(e, data) {
+                if (data.files.length == 0) {
+                    // no files? ignore
+                    return false;
+                }
+
+                self.backupUploadName(data.files[0].name);
+                self.backupUploadData = data;
+            },
+            done: function(e, data) {
+                self.backupUploadName(undefined);
+                self.backupUploadData = undefined;
+            }
+        });
+        self.backupUploadName = ko.observable();
+        self.restoreInProgress = ko.observable(false);
 
         self.requestData = function() {
             OctoPrint.plugins.backup.get()
@@ -105,6 +138,11 @@ $(function() {
                 .done(function() {
                     // do something
                 })
+        };
+
+        self.performRestoreFromUpload = function() {
+            if (self.backupUploadData === undefined) return;
+            self.backupUploadData.submit();
         };
 
         self.markFilesOnPage = function() {

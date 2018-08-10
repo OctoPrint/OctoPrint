@@ -26,7 +26,7 @@
 
             <div class="control-group">
                 <div class="controls">
-                    <button class="btn btn-primary" data-bind="enable: !backupInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+                    <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
                 </div>
             </div>
 
@@ -35,7 +35,24 @@
         <div id="settings_plugin_backup_restore" class="tab-pane">
             <h4>{{ _('Restore backup') }}</h4>
 
-            <div class="control.group"></div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Backup file') }}</label>
+                <div class="controls">
+                    <div class="input-prepend">
+                        <span class="btn fileinput-button">
+                            <span>{{ _('Browse...') }}</span>
+                            <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
+                        </span>
+                        <span class="add-on" data-bind="text: backupUploadName"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
+                </div>
+            </div>
         </div>
     </div>
 

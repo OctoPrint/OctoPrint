@@ -211,7 +211,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      plugin_manager=self._plugin_manager,
 		                                      on_install_plugins=on_install_plugins,
 		                                      on_report_unknown_plugins=on_report_unknown_plugins,
-		                                      logger=self._logger))
+		                                      on_log_progress=on_log_progress,
+		                                      on_log_error=on_log_error))
 		thread.daemon = True
 		thread.start()
 
@@ -233,6 +234,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                                                                                       status_code=404),
 			                                               access_validation=access_validation_factory(app, admin_validator)))
 		]
+
+	def bodysize_hook(self, current_max_body_sizes, *args, **kwargs):
+		# max upload size of 1GB for the restore endpoint
+		return [("POST", r"/restore", 1024 * 1024 * 1024)]
 
 	##~~ CLI hook
 
@@ -490,7 +495,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if len(plugins):
 				zip.writestr("plugin_list.json", json.dumps(plugins))
 
-		shutil.move(temporary_path, final_path)
+		os.rename(temporary_path, final_path)
 
 		if callable(on_backup_done):
 			on_backup_done(name, final_path, exclude)
@@ -601,17 +606,17 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 				if callable(on_log_progress):
 					on_log_progress("Renaming {} to {}...".format(basedir, basedir_backup))
-				shutil.move(basedir, basedir_backup)
+				os.rename(basedir, basedir_backup)
 
 				try:
 					if callable(on_log_progress):
 						on_log_progress("Moving {} to {}...".format(basedir_extracted, basedir))
-					shutil.move(basedir_extracted, basedir)
+					os.rename(basedir_extracted, basedir)
 				except:
 					if callable(on_log_error):
 						on_log_error("Error while restoring config data", exc_info=sys.exc_info())
 						on_log_error("Rolling back old config data")
-					shutil.move(basedir_backup, basedir)
+					os.rename(basedir_backup, basedir)
 					return False
 
 				#shutil.rmtree(basedir_backup)
@@ -663,5 +668,6 @@ __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = BackupPlugin()
 __plugin_hooks__ = {
 	"octoprint.server.http.routes": __plugin_implementation__.route_hook,
+	"octoprint.server.http.bodysize": __plugin_implementation__.bodysize_hook,
 	"octoprint.cli.commands": __plugin_implementation__.cli_commands_hook
 }
