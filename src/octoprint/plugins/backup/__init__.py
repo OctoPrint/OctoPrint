@@ -184,27 +184,50 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			force_user = self._settings.global_get_boolean(["plugins", "pluginmanager", "pip_force_user"])
 			pip_args = self._settings.global_get(["plugins", "pluginmanager", "pip_args"])
 
+			def on_log(line):
+				self._logger.info(line)
+				self._send_client_message("logline", dict(line=line, type="stdout"))
+
 			for plugin in plugins:
 				self._logger.info("Installing plugin {}".format(plugin["id"]))
+				self._send_client_message("installing_plugin", dict(plugin=plugin["id"]))
 				self.__class__._install_plugin(plugin,
 				                               force_user=force_user,
 				                               pip_args=pip_args,
-				                               logger=self._logger.info)
+				                               on_log=on_log)
 
 		def on_report_unknown_plugins(plugins):
 			self._send_client_message("unknown_plugins", payload=dict(plugins=plugins))
 
 		def on_log_progress(line):
 			self._logger.info(line)
+			self._send_client_message("logline", payload=dict(line=line, stream="stdout"))
 
 		def on_log_error(line, exc_info=None):
 			self._logger.error(line, exc_info=exc_info)
+			self._send_client_message("logline", payload=dict(line=line, stream="stderr"))
+
+			if exc_info is not None:
+				exc_type, exc_value, exc_tb = exc_info
+				output = traceback.format_exception(exc_type, exc_value, exc_tb)
+				for line in output:
+					self._send_client_message("logline", payload=dict(line=line.rstrip(), stream="stderr"))
+
+		def on_restore_start(path):
+			self._send_client_message("restore_started")
+
+		def on_restore_done(path):
+			self._send_client_message("restore_done")
+
+		def on_restore_failed(path):
+			self._send_client_message("restore_failed")
 
 		archive = tempfile.NamedTemporaryFile(delete=False)
 		archive.close()
 		shutil.copy(path, archive.name)
 		path = archive.name
 
+		# noinspection PyTypeChecker
 		thread = threading.Thread(target=self._restore_backup,
 		                          args=(path,),
 		                          kwargs=dict(settings=self._settings,
@@ -212,7 +235,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      on_install_plugins=on_install_plugins,
 		                                      on_report_unknown_plugins=on_report_unknown_plugins,
 		                                      on_log_progress=on_log_progress,
-		                                      on_log_error=on_log_error))
+		                                      on_log_error=on_log_error,
+		                                      on_restore_start=on_restore_start,
+		                                      on_restore_done=on_restore_done,
+		                                      on_restore_failed=on_restore_failed))
 		thread.daemon = True
 		thread.start()
 
@@ -304,7 +330,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					self.__class__._install_plugin(plugin,
 					                               force_user=force_user,
 					                               pip_args=pip_args,
-					                               logger=log)
+					                               on_log=log)
 
 			def on_report_unknown_plugins(plugins):
 				if not plugins:
@@ -375,17 +401,17 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		return dict((plugin["id"], plugin) for plugin in map(map_repository_entry, r.json()))
 
 	@classmethod
-	def _install_plugin(cls, plugin, force_user=False, pip_args=None, logger=None):
+	def _install_plugin(cls, plugin, force_user=False, pip_args=None, on_log=None):
 		if pip_args is None:
 			pip_args = []
 
-		if logger is None:
-			logger = logging.getLogger(__name__).info
+		if on_log is None:
+			on_log = logging.getLogger(__name__).info
 
 		# prepare pip caller
 		def log(prefix, *lines):
 			for line in lines:
-				logger(u"{} {}".format(prefix, line.rstrip()))
+				on_log(u"{} {}".format(prefix, line.rstrip()))
 
 		def log_call(*lines):
 			log(u">", *lines)
@@ -508,7 +534,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                    on_report_unknown_plugins=None,
 	                    on_invalid_backup=None,
 	                    on_log_progress=None,
-	                    on_log_error=None):
+	                    on_log_error=None,
+	                    on_restore_start=None,
+	                    on_restore_done=None,
+	                    on_restore_failed=None):
 		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
 
 		basedir = settings._basedir
@@ -518,118 +547,133 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		if repo_url:
 			plugin_repo = cls._get_plugin_repository_data(repo_url)
 
-		with zipfile.ZipFile(path, "r") as zip:
-			# read metadata
-			try:
-				metadata_zipinfo = zip.getinfo("metadata.json")
-			except KeyError:
-				if callable(on_invalid_backup):
-					on_invalid_backup("Not an OctoPrint backup, lacks metadata.json")
-				return False
+		if callable(on_restore_start):
+			on_restore_start(path)
 
-			metadata_bytes = zip.read(metadata_zipinfo)
-			metadata = json.loads(metadata_bytes)
+		try:
 
-			backup_version = get_comparable_version(metadata["version"])
-			if backup_version > get_octoprint_version():
-				if callable(on_invalid_backup):
-					on_invalid_backup("Backup is from a newer version of OctoPrint and cannot be applied")
-				return False
-
-			# unzip to temporary folder
-			temp = tempfile.mkdtemp()
-			try:
-				if callable(on_log_progress):
-					on_log_progress("Unpacking backup to {}...".format(temp))
-				abstemp = os.path.abspath(temp)
-				for member in zip.infolist():
-					abspath = os.path.abspath(os.path.join(temp, member.filename))
-					if abspath.startswith(abstemp):
-						zip.extract(member, temp)
-
-				# sanity check
-				configfile = os.path.join(temp, "basedir", "config.yaml")
-				if not os.path.exists(configfile):
+			with zipfile.ZipFile(path, "r") as zip:
+				# read metadata
+				try:
+					metadata_zipinfo = zip.getinfo("metadata.json")
+				except KeyError:
 					if callable(on_invalid_backup):
-						on_invalid_backup("Backup lacks config.yaml")
+						on_invalid_backup("Not an OctoPrint backup, lacks metadata.json")
 					return False
 
-				import yaml
-				import codecs
+				metadata_bytes = zip.read(metadata_zipinfo)
+				metadata = json.loads(metadata_bytes)
 
-				with codecs.open(configfile) as f:
-					configdata = yaml.safe_load(f)
+				backup_version = get_comparable_version(metadata["version"])
+				if backup_version > get_octoprint_version():
+					if callable(on_invalid_backup):
+						on_invalid_backup("Backup is from a newer version of OctoPrint and cannot be applied")
+					return False
 
-				if configdata.get("accessControl", dict()).get("enabled", True):
-					userfile = os.path.join(temp, "basedir", "users.yaml")
-					if not os.path.exists(userfile):
-						if callable(on_invalid_backup):
-							on_invalid_backup("Backup lacks users.yaml")
-						return False
-
-				if callable(on_log_progress):
-					on_log_progress("Unpacked")
-
-				# install available plugins
-				with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
-					plugins = json.load(f)
-
-				if plugins and plugin_repo:
-					installable = []
-					not_installable = []
-
-					for plugin in plugins:
-						if plugin["key"] in plugin_manager.plugins:
-							# already installed
-							continue
-
-						if plugin["key"] in plugin_repo:
-							# not installed, can be installed from repository url
-							installable.append(plugin_repo[plugin["key"]])
-						else:
-							# not installed, not installable
-							not_installable.append(plugin)
-
-					if callable(on_log_progress):
-						on_log_progress("Installable plugins: {}. Not installable: {}".format(", ".join(map(lambda x: x["id"], installable)),
-						                                                                      ", ".join(map(lambda x: x["key"], not_installable))))
-
-					if callable(on_install_plugins):
-						on_install_plugins(installable)
-
-					if callable(on_report_unknown_plugins):
-						on_report_unknown_plugins(not_installable)
-
-				# move config data
-				basedir_backup = basedir + ".bck"
-				basedir_extracted = os.path.join(temp, "basedir")
-
-				if callable(on_log_progress):
-					on_log_progress("Renaming {} to {}...".format(basedir, basedir_backup))
-				os.rename(basedir, basedir_backup)
-
+				# unzip to temporary folder
+				temp = tempfile.mkdtemp()
 				try:
 					if callable(on_log_progress):
-						on_log_progress("Moving {} to {}...".format(basedir_extracted, basedir))
-					os.rename(basedir_extracted, basedir)
-				except:
-					if callable(on_log_error):
-						on_log_error("Error while restoring config data", exc_info=sys.exc_info())
-						on_log_error("Rolling back old config data")
-					os.rename(basedir_backup, basedir)
-					return False
+						on_log_progress("Unpacking backup to {}...".format(temp))
+					abstemp = os.path.abspath(temp)
+					for member in zip.infolist():
+						abspath = os.path.abspath(os.path.join(temp, member.filename))
+						if abspath.startswith(abstemp):
+							zip.extract(member, temp)
 
-				#shutil.rmtree(basedir_backup)
+					# sanity check
+					configfile = os.path.join(temp, "basedir", "config.yaml")
+					if not os.path.exists(configfile):
+						if callable(on_invalid_backup):
+							on_invalid_backup("Backup lacks config.yaml")
+						return False
 
-			finally:
-				if callable(on_log_progress):
-					on_log_progress("Removing temporary unpacked folder")
-				shutil.rmtree(temp)
+					import yaml
+					import codecs
 
-		# remove zip
-		if callable(on_log_progress):
-			on_log_progress("Removing temporary zip")
-		os.remove(path)
+					with codecs.open(configfile) as f:
+						configdata = yaml.safe_load(f)
+
+					if configdata.get("accessControl", dict()).get("enabled", True):
+						userfile = os.path.join(temp, "basedir", "users.yaml")
+						if not os.path.exists(userfile):
+							if callable(on_invalid_backup):
+								on_invalid_backup("Backup lacks users.yaml")
+							return False
+
+					if callable(on_log_progress):
+						on_log_progress("Unpacked")
+
+					# install available plugins
+					with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
+						plugins = json.load(f)
+
+					if plugins and plugin_repo:
+						installable = []
+						not_installable = []
+
+						for plugin in plugins:
+							if plugin["key"] in plugin_manager.plugins:
+								# already installed
+								continue
+
+							if plugin["key"] in plugin_repo:
+								# not installed, can be installed from repository url
+								installable.append(plugin_repo[plugin["key"]])
+							else:
+								# not installed, not installable
+								not_installable.append(plugin)
+
+						if callable(on_log_progress):
+							on_log_progress("Installable plugins: {}. Not installable: {}".format(", ".join(map(lambda x: x["id"], installable)),
+							                                                                      ", ".join(map(lambda x: x["key"], not_installable))))
+
+						if callable(on_install_plugins):
+							on_install_plugins(installable)
+
+						if callable(on_report_unknown_plugins):
+							on_report_unknown_plugins(not_installable)
+
+					# move config data
+					basedir_backup = basedir + ".bck"
+					basedir_extracted = os.path.join(temp, "basedir")
+
+					if callable(on_log_progress):
+						on_log_progress("Renaming {} to {}...".format(basedir, basedir_backup))
+					os.rename(basedir, basedir_backup)
+
+					try:
+						if callable(on_log_progress):
+							on_log_progress("Moving {} to {}...".format(basedir_extracted, basedir))
+						os.rename(basedir_extracted, basedir)
+					except:
+						if callable(on_log_error):
+							on_log_error("Error while restoring config data", exc_info=sys.exc_info())
+							on_log_error("Rolling back old config data")
+
+						os.rename(basedir_backup, basedir)
+
+						if callable(on_restore_failed):
+							on_restore_failed(path)
+						return False
+
+				finally:
+					if callable(on_log_progress):
+						on_log_progress("Removing temporary unpacked folder")
+					shutil.rmtree(temp)
+
+		except:
+			if callable(on_log_error):
+				on_log_error("Error while running restore", exc_info=sys.exc_info())
+			if callable(on_restore_failed):
+				on_restore_failed(path)
+			return False
+
+		finally:
+			# remove zip
+			if callable(on_log_progress):
+				on_log_progress("Removing temporary zip")
+			os.remove(path)
 
 		# restart server
 		if restart_command:
@@ -641,9 +685,13 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				sarge.run(restart_command, async_=True)
 			except:
 				if callable(on_log_error):
-					on_log_error("Error while restarting via command {}".format(restart_command), exc_info=sys.exc_info())
+					on_log_error("Error while restarting via command {}".format(restart_command),
+					             exc_info=sys.exc_info())
 					on_log_error("Please restart OctoPrint manually")
 				return False
+
+		if callable(on_restore_done):
+			on_restore_done(path)
 
 		return True
 

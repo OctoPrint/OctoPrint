@@ -93,7 +93,7 @@ $(function() {
             autoUpload: false,
             headers: OctoPrint.getRequestHeaders(),
             add: function(e, data) {
-                if (data.files.length == 0) {
+                if (data.files.length === 0) {
                     // no files? ignore
                     return false;
                 }
@@ -108,6 +108,11 @@ $(function() {
         });
         self.backupUploadName = ko.observable();
         self.restoreInProgress = ko.observable(false);
+        self.restoreTitle = ko.observable();
+        self.restoreDialog = undefined;
+        self.restoreOutput = undefined;
+
+        self.loglines = ko.observableArray([]);
 
         self.requestData = function() {
             OctoPrint.plugins.backup.get()
@@ -169,6 +174,11 @@ $(function() {
                                    perform);
         };
 
+        self.onStartup = function() {
+            self.restoreDialog = $("#settings_plugin_backup_restoredialog");
+            self.restoreOutput = $("#settings_plugin_backup_restoredialog_output");
+        };
+
         self.onSettingsShown = function() {
             self.requestData();
         };
@@ -181,7 +191,48 @@ $(function() {
                 self.backupInProgress(false);
             } else if (data.type === "backup_started") {
                 self.backupInProgress(true);
+            } else if (data.type === "restore_started") {
+                self.restoreInProgress(true);
+                self.loglines.removeAll();
+                self.loglines.push({line: gettext("Restoring from backup..."), stream: "message"});
+                self.loglines.push({line: " ", stream: "message"});
+                self.restoreDialog.modal({keyboard: false, backdrop: "static", show: true});
+            } else if (data.type === "restore_failed") {
+                self.loglines.push({line: " ", stream: "message"});
+                self.loglines.push({line: gettext("Restore failed! Check the above output and octoprint.log for reasons as to why."), stream: "error"});
+                self.restoreInProgress(false);
+            } else if (data.type === "restore_done") {
+                self.loglines.push({line: " ", stream: "message"});
+                self.loglines.push({line: gettext("Restore successful! The server will now be restarted!"), stream: "message"});
+                self.restoreInProgress(false);
+            } else if (data.type === "install_plugin") {
+                self.loglines.push({line: " ", stream: "message"});
+                self.loglines.push({line: _.sprintf(gettext("Installing plugin \"%(plugin)s}\"..."), {plugin: data.plugin.name}), stream: "message"});
+            } else if (data.type === "unknown_plugins") {
+                if (data.plugins.length > 0) {
+                    self.loglines.push({line: " ", stream: "message"});
+                    self.loglines.push({line: _.sprintf(gettext("There are %(count)d plugins you'll need to install manually since they aren't registered on the repository:"), {count: data.plugins.length}), stream: "message"});
+                    _.each(data.plugins, function(plugin) {
+                        self.loglines.push({line: plugin.name + ": <a href=\"" + plugin.url + "\" target=\"_blank\">" + plugin.url + "</a>", stream: "message"});
+                    });
+                    self.loglines.push({line: " ", stream: "message"});
+                }
+            } else if (data.type === "logline") {
+                self.loglines.push(self._preprocessLine({line: data.line, stream: data.stream}));
+                self._scrollRestoreOutputToEnd();
             }
+        };
+
+        self._scrollRestoreOutputToEnd = function() {
+            self.restoreOutput.scrollTop(self.restoreOutput[0].scrollHeight - self.restoreOutput.height());
+        };
+
+        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._preprocessLine = function(line) {
+            if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
+                line.stream = "stdout";
+            }
+            return line;
         };
 
         self._bulkRemove = function(files) {
