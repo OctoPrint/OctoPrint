@@ -131,13 +131,12 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      plugin_manager=self._plugin_manager,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_backup_start=on_backup_start,
-		                                      on_backup_done=on_backup_done,
-		                                      logger=self._logger))
+		                                      on_backup_done=on_backup_done))
 		thread.daemon = True
 		thread.start()
 
-		response = flask.jsonify(started=True)
-		response.headers["Location"] = flask.url_for("index") + "plugin/backup/download/" + backup_file
+		response = flask.jsonify(started=True,
+		                         name=backup_file)
 		response.status_code = 201
 		return response
 
