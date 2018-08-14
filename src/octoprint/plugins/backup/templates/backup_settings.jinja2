@@ -1,64 +1,10 @@
-<form class="form-horizontal">
-    <ul class="nav nav-pills">
-        <li class="active"><a href="#settings_plugin_backup_backup" data-toggle="tab">{{ _('Backup') }}</a></li>
-        <li><a href="#settings_plugin_backup_restore" data-toggle="tab">{{ _('Restore') }}</a></li>
-    </ul>
+<h3>{{ _('Existing backups') }}</h3>
 
-    <div class="tab-content">
-        <div id="settings_plugin_backup_backup" class="tab-pane active">
-            <h4>{{ _('Create backup') }}</h4>
-
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
-                    </label>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
-                    </label>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="controls">
-                    <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
-                </div>
-            </div>
-
-        </div>
-
-        <div id="settings_plugin_backup_restore" class="tab-pane">
-            <h4>{{ _('Restore backup') }}</h4>
-
-            <div class="control-group">
-                <label class="control-label">{{ _('Backup file') }}</label>
-                <div class="controls">
-                    <div class="input-prepend">
-                        <span class="btn fileinput-button">
-                            <span>{{ _('Browse...') }}</span>
-                            <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
-                        </span>
-                        <span class="add-on" data-bind="text: backupUploadName"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="controls">
-                    <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <hr>
-
-    <h4>{{ _('Existing backups') }}</h4>
+<div data-bind="visible: backups.allSize() <= 0">
+    <p>{{ _('There are no backups. Maybe create one below?') }}</p>
+</div>
+<div data-bind="visible: backups.allSize() > 0">
+    <p>{{ _('These are the backups of your settings and files that already exist on this OctoPrint instance. You may delete, download or restore them.') }}</p>
 
     <div class="pull-left">
         <div class="btn-group">
@@ -88,7 +34,7 @@
             <td class="settings_plugin_backup_name" data-bind="text: name"></td>
             <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
-            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeBackup($data.name); } else { return; } }, css: {disabled: !$root.loginState.isAdmin()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" data-bind="click: function() { $parent.restoreBackup($data.name) }"><i class="fa fa-share-alt"></i></a></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download') }}" class="fa fa-download" data-bind="attr: {href: url}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore') }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></td>
         </tr>
         </tbody>
     </table>
@@ -103,7 +49,59 @@
             <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
         </ul>
     </div>
+</div>
 
+<h3>{{ _('Create backup') }}</h3>
+
+<p>{{ _('Create a new backup of the current state.') }}</p>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
+            </label>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
+            </label>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+        </div>
+    </div>
+</form>
+
+<h3>{{ _('Restore from uploaded backup') }}</h3>
+
+<p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label">{{ _('Backup file') }}</label>
+        <div class="controls">
+            <div class="input-prepend">
+                <span class="btn fileinput-button">
+                    <span>{{ _('Browse...') }}</span>
+                    <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
+                </span>
+                <span class="add-on" data-bind="text: backupUploadName"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
+        </div>
+    </div>
 </form>
 
 <div id="settings_plugin_backup_restoredialog" class="modal hide fade">

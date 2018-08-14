@@ -132,22 +132,32 @@ $(function() {
         };
 
         self.removeBackup = function(backup) {
-            OctoPrint.plugins.backup.deleteBackup(backup)
-                .done(function() {
-                    self.requestData();
-                })
+            var perform = function() {
+                OctoPrint.plugins.backup.deleteBackup(backup)
+                    .done(function() {
+                        self.requestData();
+                    });
+            };
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete backup file \"%(name)s\"."), {name: backup}),
+                perform);
         };
 
         self.restoreBackup = function(backup) {
-            OctoPrint.plugins.backup.restoreBackup(backup)
-                .done(function() {
-                    // do something
-                })
+            var perform = function() {
+                OctoPrint.plugins.backup.restoreBackup(backup);
+            };
+            showConfirmationDialog(_.sprintf(gettext("You are about to restore the backup file \"%(name)s\". This cannot be undone."), {name: backup}),
+                perform);
         };
 
         self.performRestoreFromUpload = function() {
             if (self.backupUploadData === undefined) return;
-            self.backupUploadData.submit();
+
+            var perform = function() {
+                self.backupUploadData.submit();
+            };
+            showConfirmationDialog(_.sprintf(gettext("You are about to upload and restore the backup file \"%(name)s\". This cannot be undone."), {name: self.backupUploadName()}),
+                perform);
         };
 
         self.markFilesOnPage = function() {
