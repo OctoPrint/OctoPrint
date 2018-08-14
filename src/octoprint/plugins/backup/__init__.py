@@ -63,7 +63,8 @@ TODO:
 class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
-                   octoprint.plugin.BlueprintPlugin):
+                   octoprint.plugin.BlueprintPlugin,
+                   octoprint.plugin.StartupPlugin):
 
 	_pip_caller = None
 
@@ -72,7 +73,21 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		self._in_progress = []
 		self._in_progress_lock = threading.RLock()
 
-	##~~ TemplatePlugin
+	##~~ StarupPlugin
+
+	def on_after_startup(self):
+		basedir = self._settings._basedir
+		basedir_backup = basedir + ".bck"
+
+		if os.path.exists(basedir_backup):
+			def remove_bck():
+				self._logger.info("Found config folder backup from prior restore, deleting it...")
+				shutil.rmtree(basedir_backup)
+				self._logger.info("... deleted.")
+
+			thread = threading.Thread(target=remove_bck)
+			thread.daemon = True
+			thread.start()
 
 	##~~ AssetPlugin
 
