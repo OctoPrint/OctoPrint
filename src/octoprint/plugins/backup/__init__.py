@@ -347,12 +347,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 				if exc_info is not None:
 					exc_type, exc_value, exc_tb = exc_info
-					s = StringIO()
-					try:
-						traceback.print_exception(exc_type, exc_value, exc_tb, None, s)
-						click.echo(s.getvalue())
-					finally:
-						s.close()
+					output = traceback.format_exception(exc_type, exc_value, exc_tb)
+					for line in output:
+						click.echo(line.rstrip(), err=True)
 
 			if self._restore_backup(path,
 			                        settings=settings,
