@@ -59,18 +59,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StarupPlugin
 
 	def on_after_startup(self):
-		basedir = self._settings._basedir
-		basedir_backup = basedir + ".bck"
-
-		if os.path.exists(basedir_backup):
-			def remove_bck():
-				self._logger.info("Found config folder backup from prior restore, deleting it...")
-				shutil.rmtree(basedir_backup)
-				self._logger.info("... deleted.")
-
-			thread = threading.Thread(target=remove_bck)
-			thread.daemon = True
-			thread.start()
+		self._clean_dir_backup(self._settings.basedir,
+		                       on_log_progress=self._logger.info)
 
 	##~~ AssetPlugin
 
@@ -371,6 +361,23 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ helpers
 
 	@classmethod
+	def _clean_dir_backup(cls, basedir,
+	                      on_log_progress=None):
+		basedir_backup = basedir + ".bck"
+
+		if os.path.exists(basedir_backup):
+			def remove_bck():
+				if callable(on_log_progress):
+					on_log_progress("Found config folder backup from prior restore, deleting it...")
+				shutil.rmtree(basedir_backup)
+				if callable(on_log_progress):
+					on_log_progress("... deleted.")
+
+			thread = threading.Thread(target=remove_bck)
+			thread.daemon = True
+			thread.start()
+
+	@classmethod
 	def _get_disk_size(cls, path):
 		total = 0
 		for entry in scandir(path):
@@ -542,6 +549,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
 
 		basedir = settings._basedir
+		cls._clean_dir_backup(basedir,
+		                       on_log_progress=on_log_progress)
 
 		plugin_repo = dict()
 		repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
@@ -666,9 +675,12 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						if callable(on_log_progress):
 							on_log_progress("Writing info file about not installable plugins")
 
+						if not os.path.isdir(datafolder):
+							os.makedirs(datafolder)
+
 						not_installable_plugins_path = os.path.join(datafolder, "not_installable_plugins.json")
 						try:
-							with codecs.open(not_installable_plugins_path, mode="wb") as f:
+							with codecs.open(not_installable_plugins_path, mode="w", encoding="utf-8") as f:
 								json.dump(not_installable, f)
 						except:
 							if callable(on_log_error):
