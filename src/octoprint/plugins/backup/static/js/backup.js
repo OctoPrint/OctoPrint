@@ -111,6 +111,7 @@ $(function() {
         self.restoreTitle = ko.observable();
         self.restoreDialog = undefined;
         self.restoreOutput = undefined;
+        self.unknownPlugins = ko.observableArray([]);
 
         self.loglines = ko.observableArray([]);
 
@@ -223,9 +224,10 @@ $(function() {
                     self.loglines.push({line: " ", stream: "message"});
                     self.loglines.push({line: _.sprintf(gettext("There are %(count)d plugins you'll need to install manually since they aren't registered on the repository:"), {count: data.plugins.length}), stream: "message"});
                     _.each(data.plugins, function(plugin) {
-                        self.loglines.push({line: plugin.name + ": <a href=\"" + plugin.url + "\" target=\"_blank\">" + plugin.url + "</a>", stream: "message"});
+                        self.loglines.push({line: plugin.name + ": " + plugin.url, stream: "message"});
                     });
                     self.loglines.push({line: " ", stream: "message"});
+                    self.unknownPlugins(data.plugins);
                 }
             } else if (data.type === "logline") {
                 self.loglines.push(self._preprocessLine({line: data.line, stream: data.stream}));

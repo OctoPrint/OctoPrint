@@ -43,23 +43,6 @@ import json
 import sys
 import traceback
 
-"""
-TODO:
-
-* Restore:
-  * UI to upload a backup zip
-  * tornado endpoint to stream the upload
-  * apply upload
-    * unzip
-    * sanity check (config.yaml, users.yaml if acl is on)
-    * read plugin list from json, extract list of plugins installable from repo vs. those that need to be installed manually
-    * rename existing
-    * move over new
-    * delete old
-    * in case of any error roll back to old and abort
-* offer command line interface as well
-"""
-
 class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
@@ -246,6 +229,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                          args=(path,),
 		                          kwargs=dict(settings=self._settings,
 		                                      plugin_manager=self._plugin_manager,
+		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_install_plugins=on_install_plugins,
 		                                      on_report_unknown_plugins=on_report_unknown_plugins,
 		                                      on_log_progress=on_log_progress,
@@ -306,6 +290,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		def restore_command(path):
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 			plugin_manager = cli_group.plugin_manager
+
+			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+			if not os.path.isdir(datafolder):
+				os.makedirs(datafolder)
 
 			# register plugin manager plugin setting overlays
 			plugin_info = plugin_manager.get_plugin_info("pluginmanager")
@@ -369,6 +357,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if self._restore_backup(path,
 			                        settings=settings,
 			                        plugin_manager=plugin_manager,
+			                        datafolder=datafolder,
 			                        on_install_plugins=on_install_plugins,
 			                        on_report_unknown_plugins=on_report_unknown_plugins,
 			                        on_log_progress=on_log_progress,
@@ -404,7 +393,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
-		except Exception:
+		except:
 			logger.exception("Error while fetching the plugin repository data from {}".format(url))
 			return dict()
 
@@ -541,6 +530,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	def _restore_backup(cls, path,
 	                    settings=None,
 	                    plugin_manager=None,
+	                    datafolder=None,
 	                    on_install_plugins=None,
 	                    on_report_unknown_plugins=None,
 	                    on_invalid_backup=None,
@@ -619,21 +609,25 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
 						plugins = json.load(f)
 
-					if plugins and plugin_repo:
-						installable = []
-						not_installable = []
+					installable = []
+					not_installable = []
+					if plugins:
+						if plugin_repo:
+							for plugin in plugins:
+								if plugin["key"] in plugin_manager.plugins:
+									# already installed
+									continue
 
-						for plugin in plugins:
-							if plugin["key"] in plugin_manager.plugins:
-								# already installed
-								continue
+								if plugin["key"] in plugin_repo:
+									# not installed, can be installed from repository url
+									installable.append(plugin_repo[plugin["key"]])
+								else:
+									# not installed, not installable
+									not_installable.append(plugin)
 
-							if plugin["key"] in plugin_repo:
-								# not installed, can be installed from repository url
-								installable.append(plugin_repo[plugin["key"]])
-							else:
-								# not installed, not installable
-								not_installable.append(plugin)
+						else:
+							# no repo, all plugins are not installable
+							not_installable = plugins
 
 						if callable(on_log_progress):
 							on_log_progress("Installable plugins: {}. Not installable: {}".format(", ".join(map(lambda x: x["id"], installable)),
@@ -667,6 +661,19 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						if callable(on_restore_failed):
 							on_restore_failed(path)
 						return False
+
+					if not_installable:
+						if callable(on_log_progress):
+							on_log_progress("Writing info file about not installable plugins")
+
+						not_installable_plugins_path = os.path.join(datafolder, "not_installable_plugins.json")
+						try:
+							with codecs.open(not_installable_plugins_path, mode="wb") as f:
+								json.dump(not_installable, f)
+						except:
+							if callable(on_log_error):
+								on_log_error("Could not persist list of not installable plugins to {}".format(not_installable_plugins_path),
+								             exc_info = sys.exc_info())
 
 				finally:
 					if callable(on_log_progress):
