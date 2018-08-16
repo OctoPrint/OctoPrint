@@ -11,7 +11,7 @@
     };
 
     OctoPrintBackupClient.prototype.get = function(refresh, opts) {
-        return this.base.get(this.url + "backup", opts);
+        return this.base.get(this.url, opts);
     };
 
     OctoPrintBackupClient.prototype.getWithRefresh = function(opts) {
@@ -49,6 +49,10 @@
 
         var filename = data.filename || undefined;
         return this.base.upload(this.url + "restore", file, filename, data);
+    };
+
+    OctoPrintBackupClient.prototype.deleteUnknownPlugins = function (opts) {
+        return this.base.delete(this.url + "unknown_plugins", opts);
     };
 
     OctoPrintClient.registerPluginComponent("backup", OctoPrintBackupClient);
@@ -122,6 +126,7 @@ $(function() {
 
         self.fromResponse = function(response) {
             self.backups.updateItems(response.backups);
+            self.unknownPlugins(response.unknown_plugins);
         };
 
         self.createBackup = function() {
@@ -158,6 +163,17 @@ $(function() {
                 self.backupUploadData.submit();
             };
             showConfirmationDialog(_.sprintf(gettext("You are about to upload and restore the backup file \"%(name)s\". This cannot be undone."), {name: self.backupUploadName()}),
+                perform);
+        };
+
+        self.deleteUnknownPluginRecord = function() {
+            var perform = function() {
+                OctoPrint.plugins.backup.deleteUnknownPlugins()
+                    .done(function() {
+                        self.requestData();
+                    });
+            };
+            showConfirmationDialog(gettext("You are about to delete the record of plugins unknown during the last restore."),
                 perform);
         };
 

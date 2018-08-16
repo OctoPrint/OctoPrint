@@ -1,3 +1,15 @@
+<div class="alert" data-bind="visible: unknownPlugins().length > 0">
+    {% trans %}
+    Some plugins during the last restore could not be identified and hence not automatically installed.
+    Please install them manually, they are listed below including their stated homepages:
+    {% endtrans %}
+    <ul data-bind="foreach: unknownPlugins">
+        <li><span data-bind="text: name"></span>: <a data-bind="text: url, attr: {href: url}" target="_blank" rel="noreferrer noopener"></a></li>
+    </ul>
+    <small><a href="javascript:void(0)" data-bind="click: deleteUnknownPluginRecord">{{ _('Delete record of unknown plugins') }}</a></small>
+</div>
+
+
 <h3>{{ _('Existing backups') }}</h3>
 
 <div data-bind="visible: backups.allSize() <= 0">
