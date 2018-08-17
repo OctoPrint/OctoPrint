@@ -45,11 +45,6 @@ import traceback
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
-"""
-TODO:
-  * caching for GET endpoints on API
-"""
-
 
 class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -83,7 +78,6 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def get_state(self):
-		# TODO add caching
 		backups = self._get_backups()
 		unknown_plugins = self._get_unknown_plugins()
 		return flask.jsonify(backups=backups,
@@ -113,7 +107,6 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def get_backups(self):
-		# TODO add caching
 		backups = self._get_backups()
 		return flask.jsonify(backups=backups)
 

@@ -14,14 +14,6 @@
         return this.base.get(this.url, opts);
     };
 
-    OctoPrintBackupClient.prototype.getWithRefresh = function(opts) {
-        return this.get(true, opts);
-    };
-
-    OctoPrintBackupClient.prototype.getWithoutRefresh = function(opts) {
-        return this.get(false, opts);
-    };
-
     OctoPrintBackupClient.prototype.createBackup = function(exclude, opts) {
         exclude = exclude || [];
 
