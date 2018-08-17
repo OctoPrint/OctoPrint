@@ -875,30 +875,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._notices = notices
 		return True
 
-	@staticmethod
-	def _is_os_compatible(current_os, compatibility_entries):
-		"""
-		Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
-		"""
-		if len(compatibility_entries) == 0:
-			# shortcut - no compatibility info means we are compatible
-			return True
-
-		negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
-		positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
-
-		negative_match = False
-		if negative_entries:
-			# check if we are blacklisted
-			negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
-
-		positive_match = True
-		if positive_entries:
-			# check if we are whitelisted
-			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
-
-		return positive_match and not negative_match
-
 	@property
 	def _reconnect_hooks(self):
 		reconnect_hooks = self.__class__.RECONNECT_HOOKS
