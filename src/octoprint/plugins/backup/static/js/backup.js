@@ -234,7 +234,16 @@ $(function() {
                 self.restoreInProgress(false);
             } else if (data.type === "install_plugin") {
                 self.loglines.push({line: " ", stream: "message"});
-                self.loglines.push({line: _.sprintf(gettext("Installing plugin \"%(plugin)s}\"..."), {plugin: data.plugin.name}), stream: "message"});
+                self.loglines.push({
+                    line: _.sprintf(gettext("Installing plugin \"%(plugin)s}\"..."), {plugin: data.plugin.name}),
+                    stream: "message"
+                });
+            } else if (data.type === "plugin_incompatible") {
+                self.loglines.push({line: " ", stream: "message"});
+                self.loglines.push({
+                    line: _.sprintf(gettext("Cannot install plugin \"%(plugin)s\" due to it being incompatible to this OctoPrint version and/or underlying operating system"), {plugin: data.plugin.key}),
+                    stream: "stderr"
+                });
             } else if (data.type === "unknown_plugins") {
                 if (data.plugins.length > 0) {
                     self.loglines.push({line: " ", stream: "message"});

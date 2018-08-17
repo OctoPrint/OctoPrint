@@ -11,9 +11,8 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version
 from octoprint.util.pip import LocalPipCaller
-from octoprint.util.platform import is_os_compatible
 
 try:
 	from os import scandir
@@ -48,7 +47,6 @@ UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
 """
 TODO:
-  * check for plugin compatibility (OS, OctoPrint version) on install during restore
   * caching for GET endpoints on API
 """
 
@@ -208,6 +206,24 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				self._send_client_message("logline", dict(line=line, type="stdout"))
 
 			for plugin in plugins:
+				octoprint_compatible = plugin["compatibility"]["octoprint"]
+				os_compatible = plugin["compatibility"]["os"]
+				compatible = octoprint_compatible and os_compatible
+				if not compatible:
+					if not octoprint_compatible and not os_compatible:
+						self._logger.warn(u"Cannot install plugin {}, it is incompatible to this version "
+						                  u"of OctoPrint and the underlying operating system".format(plugin["id"]))
+					elif not octoprint_compatible:
+						self._logger.warn(u"Cannot install plugin {}, it is incompatible to this version "
+						                  u"of OctoPrint".format(plugin["id"]))
+					elif not os_compatible:
+						self._logger.warn(u"Cannot install plugin {}, it is incompatible to the underlying "
+						                  u"operating system".format(plugin["id"]))
+					self._send_client_message("plugin_incompatible", dict(plugin=plugin["id"],
+					                                                      octoprint_compatible=octoprint_compatible,
+					                                                      os_compatible=os_compatible))
+					continue
+
 				self._logger.info(u"Installing plugin {}".format(plugin["id"]))
 				self._send_client_message("installing_plugin", dict(plugin=plugin["id"]))
 				self.__class__._install_plugin(plugin,
@@ -350,6 +366,21 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					click.echo(u"\t{}".format(line))
 
 				for plugin in plugins:
+					octoprint_compatible = plugin["compatibility"]["octoprint"]
+					os_compatible = plugin["compatibility"]["os"]
+					compatible = octoprint_compatible and os_compatible
+					if not compatible:
+						if not octoprint_compatible and not os_compatible:
+							click.echo(u"Cannot install plugin {}, it is incompatible to this version of "
+							           u"OctoPrint and the underlying operating system".format(plugin["id"]))
+						elif not octoprint_compatible:
+							click.echo(u"Cannot install plugin {}, it is incompatible to this version of "
+							           u"OctoPrint".format(plugin["id"]))
+						elif not os_compatible:
+							click.echo(u"Cannot install plugin {}, it is incompatible to the underlying "
+							           u"operating system".format(plugin["id"]))
+						continue
+
 					click.echo(u"Installing plugin {}".format(plugin["id"]))
 					self.__class__._install_plugin(plugin,
 					                               force_user=force_user,
