@@ -1583,7 +1583,7 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False, *args, **kwargs):
 		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
