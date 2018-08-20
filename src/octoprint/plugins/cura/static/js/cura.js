@@ -181,6 +181,15 @@ $(function() {
                 self.uploadDialog.modal("hide");
                 self.requestData();
                 self.slicingViewModel.requestData();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                self.uploadBusy(false);
+                new PNotify({
+                    title: gettext("Profile import failed"),
+                    text: gettext("Could not import the provided profile, it might be invalid. Check <code>octoprint.log</code> for details"),
+                    type: "error",
+                    hide: false
+                });
             }
         });
 
