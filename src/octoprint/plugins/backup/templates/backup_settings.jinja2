@@ -33,7 +33,7 @@
     <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
         <thead>
         <tr>
-            <th class="timelapse_unrendered_checkbox"></th>
+            <th class="settings_plugin_backup_checkbox"></th>
             <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
             <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
             <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
@@ -42,7 +42,7 @@
         </thead>
         <tbody data-bind="foreach: backups.paginatedItems">
         <tr>
-            <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
+            <td class="settings_plugin_backup_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
             <td class="settings_plugin_backup_name" data-bind="text: name"></td>
             <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
