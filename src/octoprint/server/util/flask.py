@@ -1133,11 +1133,7 @@ def restricted_access(func):
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
-		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
-			return flask.make_response("OctoPrint isn't setup yet", 403)
-
-		return flask_login.login_required(func)(*args, **kwargs)
+		return flask_login.login_required(no_firstrun_access(func))(*args, **kwargs)
 
 	return decorated_view
 
@@ -1155,6 +1151,24 @@ def firstrun_only_access(func):
 			return func(*args, **kwargs)
 		else:
 			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
+
+	return decorated_view
+
+
+def no_firstrun_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup as been done for
+	OctoPrint's Access Control. Otherwise it
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		# if OctoPrint hasn't been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and \
+			(octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+			return flask.make_response("OctoPrint isn't setup yet", 403)
+		return func(*args, **kwargs)
 
 	return decorated_view
 
