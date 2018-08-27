@@ -414,6 +414,10 @@ $(function() {
             self.updateOutput();
         };
 
+        self.onBrowserTabVisibilityChange = function(status) {
+            self.updateOutput();
+        };
+
     }
 
     OCTOPRINT_VIEWMODELS.push({
