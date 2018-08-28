@@ -1,34 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintAppAuthClient = function(base) {
-        this.base = base;
-    };
-
-    OctoPrintAppAuthClient.prototype.getKeys = function(opts) {
-        return this.base.simpleApiGet("appauth", opts);
-    };
-
-    OctoPrintAppAuthClient.prototype.generateKey = function(app, opts) {
-        return this.base.simpleApiCommand("appauth", "generate", {"app": app}, opts);
-    };
-
-    OctoPrintAppAuthClient.prototype.revokeKey = function(key, opts) {
-        return this.base.simpleApiCommand("appauth", "revoke", {"key": key}, opts);
-    };
-
-    OctoPrintAppAuthClient.prototype.decide = function(token, decision, opts) {
-        return this.base.postJson(this.base.getBlueprintUrl("appauth") + "decision/" + token, {decision: !!decision}, opts);
-    };
-
-    OctoPrintClient.registerPluginComponent("appauth", OctoPrintAppAuthClient);
-    return OctoPrintAppAuthClient;
-});
-
 $(function() {
     function AppAuthViewModel(parameters) {
         var self = this;
@@ -90,23 +59,27 @@ $(function() {
         };
 
         self.promptForAccess = function(app, token) {
-            var message = gettext("\"%(app)s\" has requested access to control OctoPrint through the API. Do you want to allow access to this application with your user account?");
+            var message = gettext("\"<strong>%(app)s</strong>\" has requested access to control OctoPrint through the API.");
             message = _.sprintf(message, {app: app});
-
+            message = "<p>" + message + "</p><p>" + gettext("Do you want to allow access to this application with your user account?") + "</p>";
             return new PNotify({
                 title: gettext("Access Request"),
                 text: message,
+                hide: false,
+                icon: "fa fa-key",
                 confirm: {
                     confirm: true,
                     buttons: [{
                         text: gettext("Allow"),
                         click: function(notice) {
                             self.allowApp(token);
+                            notice.remove();
                         }
                     }, {
                         text: gettext("Deny"),
                         click: function(notice) {
                             self.denyApp(token);
+                            notice.remove();
                         }
                     }]
                 },
@@ -141,7 +114,7 @@ $(function() {
                     return;
                 }
 
-                if (self.pending[token] === undefined) {
+                if (self.pending[token] !== undefined) {
                     return;
                 }
 
