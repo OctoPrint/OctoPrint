@@ -31,15 +31,14 @@ class PendingDecision(object):
 
 
 class ReadyDecision(object):
-	def __init__(self, app_id, app_token, user_id, api_key):
+	def __init__(self, app_id, app_token, user_id):
 		self.app_id = app_id
 		self.app_token = app_token
 		self.user_id = user_id
-		self.api_key = api_key
 
 	@classmethod
-	def for_pending(cls, pending, api_key):
-		return cls(pending.app_id, pending.app_token, pending.user_id, api_key)
+	def for_pending(cls, pending, user_id):
+		return cls(pending.app_id, pending.app_token, user_id)
 
 
 class ActiveKey(object):
@@ -70,7 +69,8 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 	##-- AssetPlugin hooks
 
 	def get_assets(self):
-		return dict(js=["js/appauth.js"])
+		return dict(js=["js/appauth.js"],
+		            clientjs=["clientjs/appauth.js"])
 
 	##~~ BlueprintPlugin mixin
 
@@ -101,10 +101,12 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 	@no_firstrun_access
 	def handle_decision_poll(self, app_token):
 		if self._is_pending(app_token):
-			return flask.make_response("Awaiting decision", 202)
+			response = flask.jsonify(message="Awaiting decision")
+			response.status_code = 202
+			return response
 
 		result = self._get_decision(app_token)
-		if result is not None:
+		if result:
 			return flask.jsonify(api_key=result)
 
 		return flask.abort(404)
@@ -159,11 +161,7 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 			if not app_name:
 				return flask.abort(400)
 
-			api_key = self._generate_key()
-			try:
-				self._add_api_key(user_id, app_name.trim(), api_key)
-			except AppAlreadyExists:
-				return flask.abort(409)
+			self._add_api_key(user_id, app_name.trim())
 
 		return NO_CONTENT
 
@@ -210,7 +208,7 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 
 		if decision:
 			with self._ready_lock:
-				self._ready_decisions.append(ReadyDecision.for_pending(pending, self._generate_key()))
+				self._ready_decisions.append(ReadyDecision.for_pending(pending, user_id))
 
 		with self._pending_lock:
 			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
@@ -226,20 +224,23 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 			else:
 				return False # not found
 
-		self._add_api_key(decision.user_id, decision.app_id, decision.api_key)
+		api_key = self._add_api_key(decision.user_id, decision.app_id)
 
 		with self._ready_lock:
 			self._ready_decisions = filter(lambda x: x.app_token != app_token, self._ready_decisions)
 
-		return decision.api_key
+		return api_key
 
-	def _add_api_key(self, user_id, app_name, api_key):
+	def _add_api_key(self, user_id, app_name):
 		with self._keys_lock:
 			# TODO: persist to disk
 			for key in self._keys[user_id]:
 				if key.app_id.lower() == app_name.lower():
-					raise AppAlreadyExists("app {} does already exist".format(app_name))
-			self._keys[user_id].append(ActiveKey(app_name, api_key))
+					return key.api_key
+
+			key = ActiveKey(app_name, self._generate_key())
+			self._keys[user_id].append(key)
+			return key.api_key
 
 	def _delete_api_key(self, user_id, api_key):
 		with self._keys_lock:
