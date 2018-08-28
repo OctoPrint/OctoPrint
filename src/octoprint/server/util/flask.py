@@ -1335,6 +1335,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
+		clientjs=[],
 		css=[],
 		less=[]
 	)
@@ -1376,6 +1377,26 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			'gcodeviewer/js/renderer.js'
 		]
 
+	assets["clientjs"] = [
+		"js/app/client/base.js",
+		"js/app/client/socket.js",
+		"js/app/client/browser.js",
+		"js/app/client/connection.js",
+		"js/app/client/control.js",
+		"js/app/client/files.js",
+		"js/app/client/job.js",
+		"js/app/client/languages.js",
+		"js/app/client/printer.js",
+		"js/app/client/printerprofiles.js",
+		"js/app/client/settings.js",
+		"js/app/client/slicing.js",
+		"js/app/client/system.js",
+		"js/app/client/timelapse.js",
+		"js/app/client/users.js",
+		"js/app/client/util.js",
+		"js/app/client/wizard.js"
+	]
+
 	if preferred_stylesheet == "less":
 		assets["less"].append('less/octoprint.less')
 	elif preferred_stylesheet == "css":
@@ -1390,9 +1411,11 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 	supported_stylesheets = ("css", "less")
 	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
+	                           clientjs=DefaultOrderedDict(list),
 	                           css=DefaultOrderedDict(list),
 	                           less=DefaultOrderedDict(list)),
 	              external=dict(js=DefaultOrderedDict(list),
+	                            clientjs=DefaultOrderedDict(list),
 	                            css=DefaultOrderedDict(list),
 	                            less=DefaultOrderedDict(list)))
 
@@ -1421,6 +1444,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				if not asset_exists("js", asset):
 					continue
 				assets[asset_key]["js"][name].append('plugin/{name}/{asset}'.format(**locals()))
+
+		if "clientjs" in all_assets:
+			for asset in all_assets["clientjs"]:
+				if not asset_exists("clientjs", asset):
+					continue
+				assets[asset_key]["clientjs"][name].append("plugin/{name}/{asset}".format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:

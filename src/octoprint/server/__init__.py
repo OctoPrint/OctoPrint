@@ -1288,25 +1288,6 @@ class Server(object):
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.js"
 		]
-		js_client = [
-			"js/app/client/base.js",
-			"js/app/client/socket.js",
-			"js/app/client/browser.js",
-			"js/app/client/connection.js",
-			"js/app/client/control.js",
-			"js/app/client/files.js",
-			"js/app/client/job.js",
-			"js/app/client/languages.js",
-			"js/app/client/printer.js",
-			"js/app/client/printerprofiles.js",
-			"js/app/client/settings.js",
-			"js/app/client/slicing.js",
-			"js/app/client/system.js",
-			"js/app/client/timelapse.js",
-			"js/app/client/users.js",
-			"js/app/client/util.js",
-			"js/app/client/wizard.js"
-		]
 
 		css_libs = [
 			"css/bootstrap.min.css",
@@ -1359,13 +1340,15 @@ class Server(object):
 		js_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["js"],
 		                                    filters="js_delimiter_bundler")
 
+		clientjs_core = dynamic_core_assets["clientjs"] + \
+			all_assets_for_plugins(dynamic_plugin_assets["bundled"]["clientjs"])
+		clientjs_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["clientjs"],
+		                                          filters="js_delimiter_bundler")
+
 		js_libs_bundle = Bundle(*js_libs,
 		                        output="webassets/packed_libs.js",
 		                        filters=",".join(js_filters))
 
-		js_client_bundle = Bundle(*js_client,
-		                          output="webassets/packed_client.js",
-		                          filters=",".join(js_filters))
 		js_core_bundle = Bundle(*js_core,
 		                        output="webassets/packed_core.js",
 		                        filters=",".join(js_filters))
@@ -1380,6 +1363,21 @@ class Server(object):
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle,
 		                       output="webassets/packed_app.js",
 		                       filters=",".join(js_filters))
+
+		js_client_core_bundle = Bundle(*clientjs_core,
+		                               output="webassets/packed_client_core.js",
+		                               filters=",".join(js_filters))
+
+		if len(clientjs_plugins) == 0:
+			js_client_plugins_bundle = Bundle(*[])
+		else:
+			js_client_plugins_bundle = Bundle(*clientjs_plugins.values(),
+			                                  output="webassets/packed_client_plugins.js",
+			                                  filters=",".join(js_plugin_filters))
+
+		js_client_bundle = Bundle(js_client_core_bundle, js_client_plugins_bundle,
+		                          output="webassets/packed_client.js",
+		                          filters=",".join(js_filters))
 
 		# -- CSS -------------------------------------------------------------------------------------------------------
 
@@ -1440,6 +1438,11 @@ class Server(object):
 		# -- asset registration ----------------------------------------------------------------------------------------
 
 		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_client_core", js_client_core_bundle)
+		for plugin, bundle in clientjs_plugins.items():
+			# register our collected clientjs plugin bundles so that they are bound to the environment
+			assets.register("js_client_plugin_{}".format(plugin), bundle)
+		assets.register("js_client_plugins", js_client_plugins_bundle)
 		assets.register("js_client", js_client_bundle)
 		assets.register("js_core", js_core_bundle)
 		for plugin, bundle in js_plugins.items():
