@@ -560,6 +560,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return dict(
 			css=["css/softwareupdate.css"],
 			js=["js/softwareupdate.js"],
+			clientjs=["clientjs/softwareupdate.js"],
 			less=["less/softwareupdate.less"]
 		)
 

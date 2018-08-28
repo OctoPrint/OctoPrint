@@ -193,6 +193,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	def get_assets(self):
 		return dict(
 			js=["js/pi_support.js"],
+			clientjs=["clientjs/pi_support.js"],
 			css=["css/pi_support.css"]
 		)
 

@@ -69,6 +69,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(js=["js/backup.js"],
+		            clientjs=["clientjs/backup.js"],
 		            css=["css/backup.css"],
 		            less=["less/backup.less"])
 

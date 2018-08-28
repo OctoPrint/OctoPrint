@@ -195,6 +195,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_assets(self):
 		return dict(js=["js/logging.js"],
+		            clientjs=["clientjs/logging.js"],
 		            less=["less/logging.less"],
 		            css=["css/logging.css"])
 

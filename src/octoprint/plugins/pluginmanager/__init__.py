@@ -168,6 +168,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def get_assets(self):
 		return dict(
 			js=["js/pluginmanager.js"],
+			clientjs=["clientjs/pluginmanager.js"],
 			css=["css/pluginmanager.css"],
 			less=["less/pluginmanager.less"]
 		)
