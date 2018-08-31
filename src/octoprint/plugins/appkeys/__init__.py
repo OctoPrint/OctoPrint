@@ -6,6 +6,7 @@ import threading
 import os
 from binascii import hexlify
 from collections import defaultdict
+from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
@@ -51,7 +52,7 @@ class ActiveKey(object):
 		            api_key=self.api_key)
 
 
-class AppAuthPlugin(octoprint.plugin.AssetPlugin,
+class AppKeysPlugin(octoprint.plugin.AssetPlugin,
                     octoprint.plugin.BlueprintPlugin,
                     octoprint.plugin.SimpleApiPlugin,
                     octoprint.plugin.TemplatePlugin):
@@ -66,11 +67,18 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 		self._keys = defaultdict(list)
 		self._keys_lock = threading.RLock()
 
-	##-- AssetPlugin hooks
+	##~~ TemplatePlugin
+
+	def get_template_configs(self):
+		return [dict(type="usersettings", name=gettext("Application Keys"), custom_bindings=False)]
+
+	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/appauth.js"],
-		            clientjs=["clientjs/appauth.js"])
+		return dict(js=["js/appkeys.js"],
+		            clientjs=["clientjs/appkeys.js"],
+		            less=["less/appkeys.less"],
+		            css=["css/appkeys.css"])
 
 	##~~ BlueprintPlugin mixin
 
@@ -161,7 +169,7 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 			if not app_name:
 				return flask.abort(400)
 
-			self._add_api_key(user_id, app_name.trim())
+			self._add_api_key(user_id, app_name.strip())
 
 		return NO_CONTENT
 
@@ -261,10 +269,10 @@ class AppAuthPlugin(octoprint.plugin.AssetPlugin,
 	def _generate_key(self):
 		return hexlify(os.urandom(16))
 
-__plugin_name__ = "AppAuth Plugin"
+__plugin_name__ = "Application Keys Plugin"
 __plugin_description__ = "TODO"
 __plugin_author__ = "Gina Häußge, Aldo Hoeben"
-__plugin_implementation__ = AppAuthPlugin()
+__plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
 	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key
 }
