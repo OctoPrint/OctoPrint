@@ -1,10 +1,10 @@
 $(function() {
-    function AppAuthViewModel(parameters) {
+    function AppKeysViewModel(parameters) {
         var self = this;
         self.loginState = parameters[0];
 
         self.keys = new ItemListHelper(
-            "plugin.appauth.keys",
+            "plugin.appkeys.keys",
             {
                 "app": function (a, b) {
                     // sorts descending
@@ -26,7 +26,7 @@ $(function() {
         self.editorApp = ko.observable();
 
         self.requestData = function() {
-            OctoPrint.plugins.appauth.getKeys()
+            OctoPrint.plugins.appkeys.getKeys()
                 .done(self.fromResponse);
         };
 
@@ -39,22 +39,22 @@ $(function() {
         };
 
         self.generateKey = function() {
-            return OctoPrint.plugins.appauth.generateKey(self.editorApp())
+            return OctoPrint.plugins.appkeys.generateKey(self.editorApp())
                 .done(self.requestData);
         };
 
         self.revokeKey = function(key) {
-            return OctoPrint.plugins.appauth.revokeKey(key)
+            return OctoPrint.plugins.appkeys.revokeKey(key)
                 .done(self.requestData);
         };
 
         self.allowApp = function(token) {
-            return OctoPrint.plugins.appauth.decide(token, true)
+            return OctoPrint.plugins.appkeys.decide(token, true)
                 .done(self.requestData);
         };
 
         self.denyApp = function(token) {
-            return OctoPrint.plugins.appauth.decide(token, false)
+            return OctoPrint.plugins.appkeys.decide(token, false)
                 .done(self.requestData);
         };
 
@@ -99,7 +99,7 @@ $(function() {
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (plugin !== "appauth") {
+            if (plugin !== "appkeys") {
                 return;
             }
 
@@ -135,8 +135,8 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push([
-        AppAuthViewModel,
+        AppKeysViewModel,
         ["loginStateViewModel"],
-        ["#usersettings_plugin_appauth"]
+        ["#usersettings_plugin_appkeys"]
     ]);
 });
