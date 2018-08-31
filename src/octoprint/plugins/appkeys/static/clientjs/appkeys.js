@@ -13,6 +13,10 @@
         return this.base.simpleApiGet("appkeys", opts);
     };
 
+    OctoPrintAppKeysClient.prototype.getAllKeys = function(opts) {
+        return this.base.get(OctoPrintClient.prototype.getSimpleApiUrl("appkeys") + "?all=true", opts);
+    };
+
     OctoPrintAppKeysClient.prototype.generateKey = function(app, opts) {
         return this.base.simpleApiCommand("appkeys", "generate", {"app": app}, opts);
     };

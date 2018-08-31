@@ -11,7 +11,18 @@ from flask_babel import gettext
 import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
-from octoprint.server import NO_CONTENT, current_user, user_permission
+from octoprint.server import NO_CONTENT, current_user, admin_permission
+
+
+"""
+TODO:
+  * add key persistence
+  * add central management settings panel for *all* user's keys
+    * bulk delete: delete all, all on page, all by user?
+  * write documentation
+    * API docs
+    * JS client docs
+"""
 
 
 class AppAlreadyExists(Exception):
@@ -43,13 +54,15 @@ class ReadyDecision(object):
 
 
 class ActiveKey(object):
-	def __init__(self, app_id, api_key):
+	def __init__(self, app_id, api_key, user_id):
 		self.app_id = app_id
 		self.api_key = api_key
+		self.user_id = user_id
 
 	def external(self):
 		return dict(app_id=self.app_id,
-		            api_key=self.api_key)
+		            api_key=self.api_key,
+		            user_id=self.user_id)
 
 
 class AppKeysPlugin(octoprint.plugin.AssetPlugin,
@@ -148,7 +161,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		if not user_id:
 			return flask.abort(403)
 
-		return flask.jsonify(keys=map(lambda x: x.external(), self._api_keys_for_user(user_id)),
+		if request.values.get("all") in valid_boolean_trues and admin_permission.can():
+			keys = self._all_api_keys()
+		else:
+			keys = self._api_keys_for_user(user_id)
+
+		return flask.jsonify(keys=map(lambda x: x.external(), keys),
 		                     pending=dict((x.user_token, x.external()) for x in self._get_pending(user_id)))
 
 	def on_api_command(self, command, data):
@@ -246,7 +264,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				if key.app_id.lower() == app_name.lower():
 					return key.api_key
 
-			key = ActiveKey(app_name, self._generate_key())
+			key = ActiveKey(app_name, self._generate_key(), user_id)
 			self._keys[user_id].append(key)
 			return key.api_key
 
@@ -265,6 +283,13 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _api_keys_for_user(self, user_id):
 		with self._keys_lock:
 			return self._keys.get(user_id, [])
+
+	def _all_api_keys(self):
+		with self._keys_lock:
+			result = []
+			for user_id, keys in self._keys.items():
+				result += keys
+		return result
 
 	def _generate_key(self):
 		return hexlify(os.urandom(16))
