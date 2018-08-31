@@ -70,7 +70,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="usersettings", name=gettext("Application Keys"), custom_bindings=False)]
+		return [dict(type="usersettings", name=gettext("Application Keys"))]
 
 	##~~ AssetPlugin
 
