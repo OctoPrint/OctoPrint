@@ -15,7 +15,7 @@ from octoprint.server.util.flask import restricted_access, with_revalidation_che
 from octoprint.server import admin_permission
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
-from octoprint.util.platform import get_os
+from octoprint.util.platform import get_os, is_os_compatible
 
 from flask import jsonify, make_response
 from flask_babel import gettext
@@ -32,6 +32,35 @@ import time
 import threading
 
 _DATA_FORMAT_VERSION = "v2"
+
+
+def map_repository_entry(entry):
+	result = copy.deepcopy(entry)
+
+	if not "follow_dependency_links" in result:
+		result["follow_dependency_links"] = False
+
+	result["is_compatible"] = dict(
+		octoprint=True,
+		os=True
+	)
+
+	if "compatibility" in entry:
+		if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(
+			entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
+			result["is_compatible"]["octoprint"] = is_octoprint_compatible(*entry["compatibility"]["octoprint"])
+
+		if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(
+			entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
+			result["is_compatible"]["os"] = is_os_compatible(entry["compatibility"]["os"])
+
+	return result
+
+
+already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
+success_string = "Successfully installed"
+failure_string = "Could not install"
+
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -111,7 +140,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.propagate = False
 
 		# decouple repository fetching from server startup
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SettingsPlugin
 
@@ -208,7 +237,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		from octoprint.events import Events
 		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
 			return
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SimpleApiPlugin
 
@@ -340,10 +369,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		all_plugins_before = self._plugin_manager.find_plugins(existing=dict())
 
-		already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
-		success_string = "Successfully installed"
-		failure_string = "Could not install"
-
 		try:
 			returncode, stdout, stderr = self._call_pip(pip_args)
 
@@ -459,6 +484,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._plugin_manager.log_all_plugins()
 
 		self._logger.info("The plugin was installed successfully: {}, version {}".format(new_plugin.name, new_plugin.version))
+		self._event_bus.fire("plugin_pluginmanager_installplugin", dict(id=new_plugin.key,
+		                                                                version=new_plugin.version,
+		                                                                source=source,
+		                                                                source_type=source_type))
+
 		result = dict(result=True,
 		              source=source,
 		              source_type=source_type,
@@ -548,6 +578,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return jsonify(result)
 
 		self._plugin_manager.reload_plugins()
+
+		self._event_bus.fire("plugin_pluginmanager_uninstallplugin", dict(id=plugin.key,
+		                                                                           version=plugin.version))
 
 		result = dict(result=True,
 		              needs_restart=needs_restart,
@@ -667,7 +700,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if strip:
 			lines = map(lambda x: x.strip(), lines)
 
-		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines", loglines=[dict(line=line, stream=stream) for line in lines]))
+		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines",
+		                                                                loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
 			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
 
@@ -688,6 +722,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif not plugin.enabled and plugin.key not in self._pending_enable:
 				self._pending_enable.add(plugin.key)
 
+		self._event_bus.fire("plugin_pluginmanager_enableplugin", dict(id=plugin.key,
+		                                                               version=plugin.version))
+
 	def _mark_plugin_disabled(self, plugin, needs_restart=False):
 		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
 		                                               validator=lambda x: isinstance(x, list),
@@ -705,12 +742,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif (plugin.enabled or plugin.forced_disabled or getattr(plugin, "safe_mode_victim", False)) and plugin.key not in self._pending_disable:
 				self._pending_disable.add(plugin.key)
 
-	def _fetch_all_data(self, async=False):
+		self._event_bus.fire("plugin_pluginmanager_disableplugin", dict(id=plugin.key,
+		                                                                version=plugin.version))
+
+	def _fetch_all_data(self, do_async=False):
 		def run():
 			self._repository_available = self._fetch_repository_from_disk()
 			self._notices_available = self._fetch_notices_from_disk()
 
-		if async:
+		if do_async:
 			thread = threading.Thread(target=run)
 			thread.daemon = True
 			thread.start()
@@ -763,30 +803,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			repo_data = self._fetch_repository_from_url()
 			if repo_data is None:
 				return False
-
-		current_os = get_os()
-		octoprint_version = get_octoprint_version(base=True)
-
-		def map_repository_entry(entry):
-			result = copy.deepcopy(entry)
-
-			if not "follow_dependency_links" in result:
-				result["follow_dependency_links"] = False
-
-			result["is_compatible"] = dict(
-				octoprint=True,
-				os=True
-			)
-
-			if "compatibility" in entry:
-				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
-					result["is_compatible"]["octoprint"] = is_octoprint_compatible(*entry["compatibility"]["octoprint"],
-					                                                               octoprint_version=octoprint_version)
-
-				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
-					result["is_compatible"]["os"] = self._is_os_compatible(current_os, entry["compatibility"]["os"])
-
-			return result
 
 		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
@@ -858,30 +874,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._notices = notices
 		return True
-
-	@staticmethod
-	def _is_os_compatible(current_os, compatibility_entries):
-		"""
-		Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
-		"""
-		if len(compatibility_entries) == 0:
-			# shortcut - no compatibility info means we are compatible
-			return True
-
-		negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
-		positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
-
-		negative_match = False
-		if negative_entries:
-			# check if we are blacklisted
-			negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
-
-		positive_match = True
-		if positive_entries:
-			# check if we are whitelisted
-			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
-
-		return positive_match and not negative_match
 
 	@property
 	def _reconnect_hooks(self):

@@ -6,6 +6,7 @@ $(function() {
         self.settings = parameters[1];
 
         self.tabActive = false;
+        self.previousScroll = undefined;
 
         self.log = ko.observableArray([]);
         self.log.extend({ throttle: 500 });
@@ -278,14 +279,19 @@ $(function() {
         };
 
         self.terminalScrollEvent = _.throttle(function () {
-            if (self.autoscrollEnabled()) {
-                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+            var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+            var pos = container.scrollTop();
+            var scrollingUp = self.previousScroll !== undefined && pos < self.previousScroll;
+
+            if (self.autoscrollEnabled() && scrollingUp) {
                 var maxScroll = container[0].scrollHeight - container[0].offsetHeight;
 
-                if (container.scrollTop() <= maxScroll ) {
+                if (pos <= maxScroll ) {
                     self.autoscrollEnabled(false);
                 }
             }
+
+            self.previousScroll = pos;
         }, 250);
 
         self.gotoTerminalCommand = function() {
@@ -411,6 +417,10 @@ $(function() {
 
         self.onAfterTabChange = function(current, previous) {
             self.tabActive = current == "#term";
+            self.updateOutput();
+        };
+
+        self.onBrowserTabVisibilityChange = function(status) {
             self.updateOutput();
         };
 

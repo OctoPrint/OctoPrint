@@ -23,7 +23,7 @@ The API key must be supplied in the custom HTTP header ``X-Api-Key``, e.g.
    Host: example.com
    X-Api-Key: abcdef...
 
-If it is missing or included but invalid, OctoPrint will directly return a response with status :http:statuscode:`401`.
+If it is missing or included but invalid, OctoPrint will directly return a response with status :http:statuscode:`403`.
 
 For testing purposes it is also possible to supply the API key via a query parameter ``apikey``, e.g.
 

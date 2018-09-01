@@ -127,15 +127,17 @@ def downloadTimelapse(filename):
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4", "m4v", "mkv"]):
-		timelapse_folder = settings().getBaseFolder("timelapse")
-		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
-		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
-			try:
-				os.remove(full_path)
-			except Exception as ex:
-				logging.getLogger(__file__).exception("Error deleting timelapse file {}".format(full_path))
-				return make_response("Unexpected error: {}".format(ex), 500)
+	timelapse_folder = settings().getBaseFolder("timelapse")
+	full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
+	if octoprint.timelapse.valid_timelapse(full_path) \
+			and full_path.startswith(timelapse_folder) \
+			and os.path.exists(full_path) \
+			and not util.is_hidden_path(full_path):
+		try:
+			os.remove(full_path)
+		except Exception as ex:
+			logging.getLogger(__file__).exception("Error deleting timelapse file {}".format(full_path))
+			return make_response("Unexpected error: {}".format(ex), 500)
 
 	return getTimelapseData()
 

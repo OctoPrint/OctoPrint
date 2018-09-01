@@ -473,6 +473,7 @@ class Server(object):
 		self._setup_assets()
 
 		# configure timelapse
+		octoprint.timelapse.valid_timelapse("test")
 		octoprint.timelapse.configure_timelapse()
 
 		# setup command triggers
@@ -512,11 +513,13 @@ class Server(object):
 
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
 
-		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))
-		user_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))
+		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, util.flask.admin_validator))
+		user_validator = dict(access_validation=util.tornado.access_validation_factory(app, util.flask.user_validator))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
 		                                                                                      status_code=404))
+		timelapse_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
+		                                                                                status_code=404))
 
 		def joined_dict(*dicts):
 			if not len(dicts):
@@ -532,9 +535,9 @@ class Server(object):
 		server_routes = self._router.urls + [
 			# various downloads
 			# .mpg and .mp4 timelapses:
-			(r"/downloads/timelapse/([^/]*\.m(.*))", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
-			                                                                                      download_handler_kwargs,
-			                                                                                      no_hidden_files_validator)),
+			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			                                                                              download_handler_kwargs,
+			                                                                              timelapse_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
 			                                                                                     as_attachment=True,
 			                                                                                     name_generator=download_name_generator),

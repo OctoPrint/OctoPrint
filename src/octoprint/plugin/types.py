@@ -1984,7 +1984,7 @@ class SlicerPlugin(OctoPrintPlugin):
 		For jobs that finished successfully, ``result`` should be a :class:`dict` containing additional information
 		about the slicing job under the following keys:
 
-		_analysis
+		analysis
 		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
 		    data structure described for the analysis queue of the matching machine code format, e.g.
 		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.

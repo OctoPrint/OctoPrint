@@ -111,6 +111,7 @@ $(function() {
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
+        self.appearance_colorIcon = ko.observable();
         self.appearance_defaultLanguage = ko.observable();
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
 
@@ -298,7 +299,7 @@ $(function() {
         };
 
         self.addTerminalFilter = function() {
-            self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"})
+            self.terminalFilters.push({name: "New", regex: "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)"})
         };
 
         self.removeTerminalFilter = function(filter) {

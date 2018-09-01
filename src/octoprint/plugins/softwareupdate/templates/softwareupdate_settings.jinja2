@@ -29,7 +29,7 @@
             <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
         </td>
         <td class="settings_plugin_softwareupdate_column_information">
-            <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: updateAvailable" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+            <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
             <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
             <small class="muted">
                 <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
