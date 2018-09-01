@@ -299,7 +299,7 @@ $(function() {
         };
 
         self.addTerminalFilter = function() {
-            self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"})
+            self.terminalFilters.push({name: "New", regex: "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)"})
         };
 
         self.removeTerminalFilter = function(filter) {
