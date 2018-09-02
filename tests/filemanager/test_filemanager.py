@@ -352,29 +352,26 @@ class FileManagerTest(unittest.TestCase):
 
 		self.file_manager.delete_recovery_data()
 
-	@mock.patch("os.path.isfile")
-	@mock.patch("yaml.safe_load")
-	def test_get_recovery_data(self, mock_yaml_safe_load, mock_isfile):
-		import os
-		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+	@mock.patch("os.path.isfile", return_value=True)
+	def test_get_recovery_data(self, mock_isfile):
+	  import os
+	  import yaml
+	  recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
-		mock_isfile.return_value = True
+	  data = dict(path="some_path.gco",
+	              origin="local",
+	              pos=1234,
+	              date=123456789)
+	  text_data = yaml.dump(data)
 
-		data = dict(path="some_path.gco",
-		            origin="local",
-		            pos=1234,
-		            date=123456789)
-		mock_yaml_safe_load.return_value = data
+	  with mock.patch("__builtin__.open", mock.mock_open(read_data=text_data)) as m:
+	    # moved safe_load to here so we could mock up the return value properly
+	    with mock.patch("yaml.safe_load", return_value=data) as n:
+	      result = self.file_manager.get_recovery_data()
 
-		with mock.patch("__builtin__.open", mock.mock_open(read_data=data), create=True) as m:
-			result = self.file_manager.get_recovery_data()
-
-			self.assertDictEqual(data, result)
-
-			m.assert_called_with(recovery_file)
-
-			mock_handle = m()
-			mock_yaml_safe_load.assert_called_with(mock_handle)
+	      self.assertDictEqual(data, result)
+	      n.assert_called_with(m())
+	      mock_isfile.assert_called_with(recovery_file)
 
 	@mock.patch("os.path.isfile")
 	def test_get_recovery_data_no_file(self, mock_isfile):
