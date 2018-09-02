@@ -487,11 +487,11 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 
 	def test_header_config_ok(self):
 		result = ReverseProxiedEnvironment.to_header_candidates(["prefix-header1", "prefix-header2"])
-		self.assertEqual(result, ["HTTP_PREFIX_HEADER1", "HTTP_PREFIX_HEADER2"])
+		self.assertSetEqual(set(result), set(["HTTP_PREFIX_HEADER1", "HTTP_PREFIX_HEADER2"]))
 
 	def test_header_config_string(self):
 		result = ReverseProxiedEnvironment.to_header_candidates("prefix-header")
-		self.assertEqual(result, ["HTTP_PREFIX_HEADER"])
+		self.assertSetEqual(set(result), set(["HTTP_PREFIX_HEADER"]))
 
 	def test_header_config_none(self):
 		result = ReverseProxiedEnvironment.to_header_candidates(None)
