@@ -21,3 +21,32 @@ else:
 	else:
 		# Whatever we are running on here, it we don't want to use V6 on here due to lack of dual stack support
 		HAS_V6 = False
+
+def is_lan_address(address):
+	import netaddr
+	import netifaces
+
+	ip = netaddr.IPAddress(address)
+	if ip.is_private():
+		return True
+
+	subnets = netaddr.IPSet()
+	for interface in netifaces.interfaces():
+		addrs = netifaces.ifaddresses(interface)
+		for v4 in addrs.get(socket.AF_INET, ()):
+			try:
+				subnets.add(netaddr.IPNetwork(v4["addr"], v4["netmask"]))
+			except:
+				pass
+
+		if HAS_V6:
+			for v6 in addrs.get(socket.AF_INET6, ()):
+				try:
+					subnets.add(netaddr.IPNetwork(v6["addr"], v6["addr"]))
+				except:
+					pass
+
+	if ip in subnets:
+		return True
+
+	return False

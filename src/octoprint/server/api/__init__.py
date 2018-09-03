@@ -13,13 +13,14 @@ from flask_login import login_user, logout_user, current_user
 from flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
+import octoprint.util.net as util_net
 import octoprint.users
 import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login, get_remote_address
 
 
 #~~ init api blueprint, including sub modules
@@ -213,7 +214,11 @@ def login():
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-				return jsonify(user.asDict())
+
+				response = user.asDict()
+				response["_is_external_client"] = not util_net.is_lan_address(get_remote_address(request))
+				return jsonify(response)
+
 		return make_response(("User unknown or password incorrect", 401, []))
 
 	elif "passive" in data:
