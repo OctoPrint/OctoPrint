@@ -4,6 +4,9 @@ from __future__ import absolute_import
 import flask
 import threading
 import os
+import yaml
+import codecs
+import time
 from binascii import hexlify
 from collections import defaultdict
 from flask_babel import gettext
@@ -12,6 +15,7 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
+from octoprint.util import atomic_write
 
 
 """
@@ -64,6 +68,14 @@ class ActiveKey(object):
 		            api_key=self.api_key,
 		            user_id=self.user_id)
 
+	def internal(self):
+		return dict(app_id=self.app_id,
+		            api_key=self.api_key)
+
+	@classmethod
+	def for_internal(cls, internal, user_id):
+		return cls(internal["app_id"], internal["api_key"], user_id)
+
 
 class AppKeysPlugin(octoprint.plugin.AssetPlugin,
                     octoprint.plugin.BlueprintPlugin,
@@ -79,6 +91,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 		self._keys = defaultdict(list)
 		self._keys_lock = threading.RLock()
+
+		self._key_path = None
+
+	def initialize(self):
+		self._key_path = os.path.join(self.get_plugin_data_folder(), "keys.yaml")
+		self._load_keys()
 
 	##~~ TemplatePlugin
 
@@ -259,19 +277,19 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	def _add_api_key(self, user_id, app_name):
 		with self._keys_lock:
-			# TODO: persist to disk
 			for key in self._keys[user_id]:
 				if key.app_id.lower() == app_name.lower():
 					return key.api_key
 
 			key = ActiveKey(app_name, self._generate_key(), user_id)
 			self._keys[user_id].append(key)
+			self._save_keys()
 			return key.api_key
 
 	def _delete_api_key(self, user_id, api_key):
 		with self._keys_lock:
-			# TODO: persist to disk
 			self._keys[user_id] = filter(lambda x: x.api_key != api_key, self._keys[user_id])
+			self._save_keys()
 
 	def _user_for_api_key(self, api_key):
 		with self._keys_lock:
@@ -293,6 +311,38 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	def _generate_key(self):
 		return hexlify(os.urandom(16))
+
+	def _load_keys(self):
+		with self._keys_lock:
+			if not os.path.exists(self._key_path):
+				return
+
+			try:
+				with codecs.open(self._key_path, "rb", encoding="utf-8", errors="strict") as f:
+					persisted = yaml.safe_load(f)
+			except:
+				self._logger.exception("Could not load application keys from {}".format(self._key_path))
+				return
+
+			if not isinstance(persisted, dict):
+				return
+
+			keys = dict()
+			for user_id, persisted_keys in persisted.items():
+				keys[user_id] = [ActiveKey.for_internal(x, user_id) for x in persisted_keys]
+			self._keys = keys
+
+	def _save_keys(self):
+		with self._keys_lock:
+			to_persist = dict()
+			for user_id, keys in self._keys.items():
+				to_persist[user_id] = [x.internal() for x in keys]
+
+			try:
+				with atomic_write(self._key_path) as f:
+					yaml.safe_dump(to_persist, f)
+			except:
+				self._logger.exception("Could not write application keys to {}".format(self._key_path))
 
 __plugin_name__ = "Application Keys Plugin"
 __plugin_description__ = "TODO"
