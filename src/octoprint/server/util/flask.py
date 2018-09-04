@@ -516,6 +516,8 @@ def passive_login():
 		user = flask_login.current_user
 
 	remoteAddr = get_remote_address(flask.request)
+	ipCheckEnabled = settings().getBoolean(["server", "ipCheck", "enabled"])
+	ipCheckTrusted = settings().get(["server", "ipCheck", "trustedSubnets"])
 
 	if user is not None and not user.is_anonymous() and user.is_active():
 		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
@@ -525,7 +527,8 @@ def passive_login():
 		flask.g.user = user
 
 		response = user.asDict()
-		response["_is_external_client"] = not is_lan_address(remoteAddr)
+		response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
+		                                                                        additional_private=ipCheckTrusted)
 		return flask.jsonify(response)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
@@ -549,7 +552,8 @@ def passive_login():
 					                                      identity=flask_principal.Identity(user.get_id()))
 
 					response = user.asDict()
-					response["_is_external_client"] = not is_lan_address(remoteAddr)
+					response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
+					                                                                        additional_private=ipCheckTrusted)
 					return flask.jsonify(response)
 		except:
 			logger = logging.getLogger(__name__)

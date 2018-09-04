@@ -198,6 +198,10 @@ default_settings = {
 		"preemptiveCache": {
 			"exceptions": [],
 			"until": 7
+		},
+		"ipCheck": {
+			"enabled": True,
+			"trustedSubnets": []
 		}
 	},
 	"webcam": {

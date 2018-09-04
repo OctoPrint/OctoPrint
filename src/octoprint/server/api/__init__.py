@@ -216,7 +216,9 @@ def login():
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 
 				response = user.asDict()
-				response["_is_external_client"] = not util_net.is_lan_address(get_remote_address(request))
+				response["_is_external_client"] = s().getBoolean(["server", "ipCheck", "enabled"]) \
+				                                  and not util_net.is_lan_address(get_remote_address(request),
+				                                                                  additional_private=s().get(["server", "ipCheck", "trustedSubnets"]))
 				return jsonify(response)
 
 		return make_response(("User unknown or password incorrect", 401, []))
