@@ -1,13 +1,21 @@
 <h3>{{ _('Access Control') }}</h3>
 
-{% trans %}<p>
+{% trans safe_remote_url='https://octoprint.org/blog/2018/09/03/safe-remote-access/' %}<p>
     <strong>Please read the following, it is very important for your printer's health!</strong>
 </p>
 <p>
     OctoPrint by default ships with Access Control enabled, meaning you won't be able to do anything with the
     printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with
-    malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network
+    malicious intent - to gain access to your printer</strong> via an untrustworthy network
     and using it in such a way that it is damaged or worse (i.e. causes a fire).
+</p>
+<p>
+    If you plan on accessing OctoPrint remotely over the internet, <strong>you should not only rely on the built-in
+    Access Control mechanisms</strong> however -
+    <a href="{{ safe_remote_url }}" target="_blank" rel="noopener noreferrer">take additional precautions</a>.
+    Your OctoPrint enabled printer is a critical home appliance you really should not give anyone who happens to be
+    connected to the internet access to - even read-only! <strong>An instance available publicly on the internet
+    will be found, and people will try to break it open.</strong>
 </p>
 <p>
     It looks like you haven't configured access control yet. Please <strong>set up a username and password</strong> for the
@@ -36,12 +44,12 @@
     </div>
 </form>
 {% trans %}<p>
-    <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't
+    <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy local network and you don't
     need Access Control for other reasons, you may alternatively disable Access Control. You should only
     do this if you are absolutely certain that only people you know and trust will be able to connect to it.
 </p>
 <p>
-    <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>
+    <strong>Do NOT underestimate the risk of access from the internet to your printer and OctoPrint instance!</strong>
 </p>{% endtrans %}
 
 <div class="row-fluid">
