@@ -6,6 +6,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import socket
 import sys
+import netaddr
+import netifaces
 
 HAS_V6 = socket.has_ipv6
 
@@ -23,9 +25,6 @@ else:
 		HAS_V6 = False
 
 def is_lan_address(address, additional_private=None):
-	import netaddr
-	import netifaces
-
 	ip = netaddr.IPAddress(address)
 	if ip.is_private() or ip.is_loopback():
 		return True
@@ -40,20 +39,24 @@ def is_lan_address(address, additional_private=None):
 		except:
 			pass
 
+	def to_ipnetwork(address):
+		try:
+			prefix = address["netmask"]
+			if "/" in prefix:
+				# v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
+				_, prefix = prefix.split("/")
+			return netaddr.IPNetwork("{}/{}".format(address["addr"], prefix))
+		except:
+			pass
+
 	for interface in netifaces.interfaces():
 		addrs = netifaces.ifaddresses(interface)
 		for v4 in addrs.get(socket.AF_INET, ()):
-			try:
-				subnets.add(netaddr.IPNetwork(v4["addr"], v4["netmask"]))
-			except:
-				pass
+			subnets.add(to_ipnetwork(v4))
 
 		if HAS_V6:
 			for v6 in addrs.get(socket.AF_INET6, ()):
-				try:
-					subnets.add(netaddr.IPNetwork(v6["addr"], v6["netmask"]))
-				except:
-					pass
+				subnets.add(to_ipnetwork(v6))
 
 	if ip in subnets:
 		return True
