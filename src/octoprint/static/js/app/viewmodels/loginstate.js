@@ -188,7 +188,7 @@ $(function() {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
                 })
-                .error(function(error) {
+                .fail(function(error) {
                     if (error && error.status === 401) {
                          self.fromResponse(false);
                     }
