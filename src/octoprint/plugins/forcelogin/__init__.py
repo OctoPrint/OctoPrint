@@ -1,0 +1,84 @@
+# coding=utf-8
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
+
+import octoprint.plugin
+
+import flask
+import flask_login
+from flask_babel import gettext
+
+class ForceLoginPlugin(octoprint.plugin.UiPlugin,
+                       octoprint.plugin.TemplatePlugin,
+                       octoprint.plugin.AssetPlugin):
+
+	def get_assets(self):
+		return dict(
+			js=["js/viewmodel.js"]
+		)
+
+	def will_handle_ui(self, request):
+		from octoprint.server.util.flask import passive_login
+
+		result = passive_login()
+		if hasattr(result, "status_code") and result.status_code == 200:
+			# passive login successful, no need to handle that
+			return False
+		else:
+			return True
+
+	def on_ui_render(self, now, request, render_kwargs):
+		from flask import render_template, make_response
+		return make_response(render_template("forcelogin_index.jinja2", **render_kwargs))
+
+	def get_ui_custom_tracked_files(self):
+		from os.path import join as opj
+
+		paths = [opj("static", "css", "forcelogin.css"),
+		         opj("static", "js", "main.js"),
+		         opj("static", "js", "viewmodel.js"),
+		         opj("static", "less", "forcelogin.less"),
+		         opj("templates", "parts", "forcelogin_css.jinja2"),
+		         opj("templates", "parts", "forcelogin_javascripts.jinja2"),
+		         opj("templates", "forcelogin_index.jinja2")]
+
+		return [opj(self._basefolder, path) for path in paths]
+
+	def get_ui_preemptive_caching_enabled(self):
+		return False
+
+	def get_before_request_handlers(self):
+		def check_login_required():
+			if flask.request.endpoint in ("api.login", "api.getSettings"):
+				return
+
+			user = flask_login.current_user
+			if user is None or user.is_anonymous() or not user.is_active():
+				return flask.make_response("Forbidden", 403)
+
+		return [check_login_required]
+
+	def access_validator(self, request):
+		import tornado.web
+		from octoprint.server.util.flask import get_flask_user_from_request
+
+		user = get_flask_user_from_request(request)
+		if user is None or not user.is_authenticated():
+			raise tornado.web.HTTPError(403)
+
+
+__plugin_name__ = "Force Login"
+__plugin_author__ = "Gina Häußge"
+__plugin_description__ = "Forces users to login, disables read-only mode."
+__plugin_disabling_discouraged__ = gettext("Without this plugin anonymous users will have read-only access to your "
+                                           "OctoPrint instance. Only disable this if you are comfortable with this, your "
+                                           "OctoPrint instance is not publicly reachable on the internet and you fully "
+                                           "trust everyone who has access to your local network!")
+
+__plugin_implementation__ = ForceLoginPlugin()
+__plugin_hooks__ = {
+	"octoprint.server.api.before_request": __plugin_implementation__.get_before_request_handlers,
+	"octoprint.server.http.access_validator": __plugin_implementation__.access_validator
+}

@@ -1,0 +1,15 @@
+<!-- le javascript -->
+
+<script>
+    var BASE_URL = "{{ url_for('index') }}";
+</script>
+<script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+<script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
+<script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
+<script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
+
+{% assets "js_client" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+
+<script src="{{ url_for("plugin.forcelogin.static", filename="js/main.js") }}"></script>
