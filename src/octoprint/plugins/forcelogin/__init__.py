@@ -20,6 +20,10 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 		)
 
 	def will_handle_ui(self, request):
+		if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
+			# ACL hasn't been configured yet, make an exception
+			return False
+
 		from octoprint.server.util.flask import passive_login
 
 		result = passive_login()
@@ -51,6 +55,10 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 
 	def get_before_request_handlers(self):
 		def check_login_required():
+			if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
+				# ACL hasn't been configured yet, make an exception
+				return
+
 			if flask.request.endpoint in ("api.login", "api.getSettings"):
 				return
 
@@ -61,6 +69,10 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 		return [check_login_required]
 
 	def access_validator(self, request):
+		if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
+			# ACL hasn't been configured yet, make an exception
+			return
+
 		import tornado.web
 		from octoprint.server.util.flask import get_flask_user_from_request
 
