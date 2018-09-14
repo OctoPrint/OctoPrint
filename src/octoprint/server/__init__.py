@@ -513,8 +513,19 @@ class Server(object):
 
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
 
-		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, util.flask.admin_validator))
-		user_validator = dict(access_validation=util.tornado.access_validation_factory(app, util.flask.user_validator))
+		access_validators_from_plugins = []
+		for plugin, hook in pluginManager.get_hooks("octoprint.server.http.access_validator").items():
+			try:
+				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
+			except:
+				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin))
+
+		admin_validators = [util.tornado.access_validation_factory(app, util.flask.admin_validator),] + access_validators_from_plugins
+		user_validators = [util.tornado.access_validation_factory(app, util.flask.user_validator),] + access_validators_from_plugins
+
+		admin_validator = dict(access_validation=util.tornado.validation_chain(*admin_validators))
+		user_validator = dict(access_validation=util.tornado.validation_chain(*user_validators))
+		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
 		                                                                                      status_code=404))
@@ -537,13 +548,15 @@ class Server(object):
 			# .mpg and .mp4 timelapses:
 			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
 			                                                                              download_handler_kwargs,
-			                                                                              timelapse_validator)),
+			                                                                              timelapse_validator,
+			                                                                              access_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
 			                                                                                     as_attachment=True,
 			                                                                                     name_generator=download_name_generator),
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
-			                                                                                additional_mime_types)),
+			                                                                                additional_mime_types,
+			                                                                                access_validator)),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
 			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
 			                                                                            download_handler_kwargs,
@@ -1079,16 +1092,25 @@ class Server(object):
 	def _setup_blueprints(self):
 		from octoprint.server.api import api
 		from octoprint.server.apps import apps, clear_registered_app
-		import octoprint.server.views
 
-		app.register_blueprint(api, url_prefix="/api")
-		app.register_blueprint(apps, url_prefix="/apps")
+		import octoprint.server.views # do not remove or the index view won't be found
+
+		blueprints = OrderedDict()
+		blueprints["/api"] = api
+		blueprints["/apps"] = apps
 
 		# also register any blueprints defined in BlueprintPlugins
-		self._register_blueprint_plugins()
+		blueprints.update(self._prepare_blueprint_plugins())
 
 		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-		self._register_asset_plugins()
+		blueprints.update(self._prepare_asset_plugins())
+
+		# make sure all before/after_request hook results are attached as well
+		self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+
+		# register everything with the system
+		for url_prefix, blueprint in blueprints.items():
+			app.register_blueprint(blueprint, url_prefix=url_prefix)
 
 		global pluginLifecycleManager
 		def clear_apps(name, plugin):
@@ -1096,27 +1118,37 @@ class Server(object):
 		pluginLifecycleManager.add_callback("enabled", clear_apps)
 		pluginLifecycleManager.add_callback("disabled", clear_apps)
 
-	def _register_blueprint_plugins(self):
+	def _prepare_blueprint_plugins(self):
+		blueprints = OrderedDict()
+
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
 		for plugin in blueprint_plugins:
 			try:
-				self._register_blueprint_plugin(plugin)
+				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+				blueprints[prefix] = blueprint
 			except:
 				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
-	def _register_asset_plugins(self):
+		return blueprints
+
+	def _prepare_asset_plugins(self):
+		blueprints = OrderedDict()
+
 		asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 		for plugin in asset_plugins:
 			if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
 				continue
 			try:
-				self._register_asset_plugin(plugin)
+				blueprint, prefix = self._prepare_asset_plugin(plugin)
+				blueprints[prefix] = blueprint
 			except:
 				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
-	def _register_blueprint_plugin(self, plugin):
+		return blueprints
+
+	def _prepare_blueprint_plugin(self, plugin):
 		name = plugin._identifier
 		blueprint = plugin.get_blueprint()
 		if blueprint is None:
@@ -1138,7 +1170,9 @@ class Server(object):
 		if self._logger:
 			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
 
-	def _register_asset_plugin(self, plugin):
+		return blueprint, url_prefix
+
+	def _prepare_asset_plugin(self, plugin):
 		name = plugin._identifier
 
 		url_prefix = "/plugin/{name}".format(name=name)
@@ -1147,6 +1181,32 @@ class Server(object):
 
 		if self._logger:
 			self._logger.debug("Registered assets of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+		return blueprint, url_prefix
+
+	def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
+		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
+		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
+
+		for plugin, hook in before_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook()
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.before_request(h)
+				except:
+					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin))
+
+		for plugin, hook in after_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook()
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.after_request(h)
+				except:
+					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin))
 
 	def _setup_assets(self):
 		global app

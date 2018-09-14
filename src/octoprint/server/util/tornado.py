@@ -1168,3 +1168,9 @@ def path_validation_factory(path_filter, status_code=404):
 		if not path_filter(path):
 			raise tornado.web.HTTPError(status_code)
 	return f
+
+def validation_chain(*validators):
+	def f(request):
+		for validator in validators:
+			validator(request)
+	return f

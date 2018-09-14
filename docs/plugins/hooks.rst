@@ -1089,6 +1089,54 @@ octoprint.printer.estimation.factory
    :return: The :class:`~octoprint.printer.estimation.PrintTimeEstimator` class to use, or a factory method
    :rtype: class or function
 
+.. _sec-plugins-hook-server-http-after_request:
+
+octoprint.server.api.after_request
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: after_request_handlers_hook(*args, **kwargs)
+
+   Allows adding additional after-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
+
+   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
+   usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
+.. _sec-plugins-hook-server-http-before_request:
+
+octoprint.server.api.before_request
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: after_request_handlers_hook(*args, **kwargs)
+
+   Allows adding additional before-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
+
+   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
+   usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
+.. _sec-plugins-hook-server-http-access_validator:
+
+octoprint.server.http.access_validator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: access_validator_hook(request, *args, **kwargs)
+
+   Allows adding additional access validators to the default tornado routers.
+
+   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further. See the bundled
+   "Force Login" plugin for a usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
 .. _sec-plugins-hook-server-http-bodysize:
 
 octoprint.server.http.bodysize
