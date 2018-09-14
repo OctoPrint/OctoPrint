@@ -1069,7 +1069,7 @@ def admin_validator(request):
 	:param request: The Flask request object
 	"""
 
-	user = _get_flask_user_from_request(request)
+	user = get_flask_user_from_request(request)
 	if user is None or not user.is_authenticated() or not user.is_admin():
 		raise tornado.web.HTTPError(403)
 
@@ -1084,12 +1084,12 @@ def user_validator(request):
 	:param request: The Flask request object
 	"""
 
-	user = _get_flask_user_from_request(request)
+	user = get_flask_user_from_request(request)
 	if user is None or not user.is_authenticated():
 		raise tornado.web.HTTPError(403)
 
 
-def _get_flask_user_from_request(request):
+def get_flask_user_from_request(request):
 	"""
 	Retrieves the current flask user from the request context. Uses API key if available, otherwise the current
 	user session if available.
