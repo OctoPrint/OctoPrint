@@ -301,7 +301,7 @@ class FileManagerTest(unittest.TestCase):
 		                pos=pos,
 		                date=now)
 
-		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent="  ", allow_unicode=True)
+		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent=2, allow_unicode=True)
 
 	@mock.patch("octoprint.util.atomic_write", create=True)
 	@mock.patch("yaml.safe_dump", create=True)
