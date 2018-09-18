@@ -701,7 +701,7 @@ class Settings(object):
 				templates = []
 				for key in scripts:
 					if isinstance(scripts[key], dict):
-						templates += map(lambda x: key + "/" + x, self._get_templates(scripts[key]))
+						templates += list(map(lambda x: key + "/" + x, self._get_templates(scripts[key])))
 					elif isinstance(scripts[key], basestring):
 						templates.append(key)
 				return templates
@@ -797,11 +797,11 @@ class Settings(object):
 
 			elif "children" in result:
 				# if it has children we need to process them recursively
-				result["children"] = map(process_control, [child for child in result["children"] if child is not None])
+				result["children"] = list(map(process_control, [child for child in result["children"] if child is not None]))
 
 			return result
 
-		return map(process_control, controls)
+		return list(map(process_control, controls))
 
 	@property
 	def effective(self):
@@ -1540,7 +1540,7 @@ class Settings(object):
 		return folder
 
 	def listScripts(self, script_type):
-		return map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type)))
+		return list(map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type))))
 
 	def loadScript(self, script_type, name, context=None, source=False):
 		if context is None:

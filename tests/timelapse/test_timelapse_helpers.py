@@ -87,7 +87,7 @@ class TimelapseTest(unittest.TestCase):
 		## verify
 		expected_deletions = map(lambda x: os.path.join(mocked_path, x), ["b-0.jpg",
 		                                                                  "b-1.jpg"])
-		expected_deletion_calls = map(mock.call, expected_deletions)
+		expected_deletion_calls = list(map(mock.call, expected_deletions))
 		self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)
 
 	@mock.patch("time.time")
@@ -127,7 +127,7 @@ class TimelapseTest(unittest.TestCase):
 		                                                                  "old-0.jpg",
 		                                                                  "old-1.jpg",
 		                                                                  "old-2.jpg"])
-		expected_deletion_calls = map(mock.call, expected_deletions)
+		expected_deletion_calls = list(map(mock.call, expected_deletions))
 		self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)
 
 	@mock.patch("octoprint.timelapse.scandir")
@@ -253,4 +253,3 @@ class TimelapseTest(unittest.TestCase):
 		r._process_ffmpeg_output(progress2Str)
 		self.assertEqual(r._parsed_duration, 18)
 		self.assertAlmostEqual(callback.sendRenderProgress.call_args_list[1][0][0], expectedProgress2)
-

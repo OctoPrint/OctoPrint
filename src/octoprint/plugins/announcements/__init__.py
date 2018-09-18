@@ -170,7 +170,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			for key, data in channel_configs.items():
 				read_until = channel_configs[key].get("read_until", None)
 				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-				unread = len(filter(lambda e: not e["read"], entries))
+				unread = len(list(filter(lambda e: not e["read"], entries)))
 
 				if read_until is None and entries:
 					last = entries[0]["published"]
@@ -481,8 +481,12 @@ def _strip_tags(text):
 	>>> _strip_tags(u"&#62; &#x3E; Foo")
 	u'&#62; &#x3E; Foo'
 	"""
-
-	from HTMLParser import HTMLParser
+	try:
+		# noinspection PyCompatibility
+		from html.parser import HTMLParser
+	except ImportError:
+		# noinspection PyCompatibility
+		from HTMLParser import HTMLParser
 
 	class TagStripper(HTMLParser):
 

@@ -102,7 +102,7 @@ class OctoPrintPermission(Permission):
 		return '{}({!r}, {!r}, {})'.format(self.__class__.__name__,
 		                                   self.get_name(),
 		                                   self.get_description(),
-		                                   ', '.join(map(repr, self.needs)))
+		                                   ', '.join(list(map(repr, self.needs))))
 
 	def __hash__(self):
 		return self.get_name().__hash__()

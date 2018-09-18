@@ -511,7 +511,7 @@ class FilebasedUserManager(UserManager):
 			return [self._group_manager.user_group]
 
 	def _refresh_groups(self, user):
-		user._groups = self._to_groups(*map(lambda g: g.key, user.groups))
+		user._groups = self._to_groups(*list(map(lambda g: g.key, user.groups)))
 
 	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
@@ -894,8 +894,8 @@ class User(UserMixin):
 		return {
 			"name": self._username,
 			"active": bool(self.is_active),
-			"permissions": map(lambda p: p.key, self._permissions),
-			"groups": map(lambda g: g.key, self._groups),
+			"permissions": list(map(lambda p: p.key, self._permissions)),
+			"groups": list(map(lambda g: g.key, self._groups)),
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
 			"apikey": self._apikey,
 			"settings": self._settings,

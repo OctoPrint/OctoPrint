@@ -29,7 +29,7 @@ def get_permissions():
 @require_firstrun
 @Permissions.SETTINGS.require(403)
 def get_groups():
-	return jsonify(groups=map(lambda g: g.as_dict(), groupManager.groups))
+	return jsonify(groups=list(map(lambda g: g.as_dict(), groupManager.groups)))
 
 
 @api.route("/access/groups", methods=["POST"])
@@ -129,7 +129,7 @@ def get_users():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify(users=map(lambda u: u.as_dict(), userManager.get_all_users()))
+	return jsonify(users=list(map(lambda u: u.as_dict(), userManager.get_all_users())))
 
 
 @api.route("/access/users", methods=["POST"])

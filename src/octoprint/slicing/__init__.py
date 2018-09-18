@@ -165,7 +165,7 @@ class SlicingManager(object):
 		Returns:
 		    (list of str) Identifiers of all available configured slicers.
 		"""
-		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
+		return list(map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values())))
 
 	@property
 	def default_slicer(self):
@@ -667,5 +667,3 @@ class SlicingManager(object):
 				pass
 
 		return self.get_slicer(slicer).get_slicer_default_profile()
-
-

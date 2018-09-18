@@ -34,7 +34,7 @@ def get_latest(target, check, online=True):
 	# 1.1.0 is the current version, 1.1.1 is the remote version. If only one line is output, it's taken to be the
 	# display name of the new version
 
-	stdout_lines = filter(lambda x: len(x.strip()), stdout.splitlines())
+	stdout_lines = list(filter(lambda x: len(x.strip()), stdout.splitlines()))
 	local_name = stdout_lines[-2] if len(stdout_lines) >= 2 else "unknown"
 	remote_name = stdout_lines[-1] if len(stdout_lines) >= 1 else "unknown"
 	is_current = returncode != 0

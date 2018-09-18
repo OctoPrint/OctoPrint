@@ -32,7 +32,7 @@ def printerState():
 	if "exclude" in request.values:
 		excludeStr = request.values["exclude"]
 		if len(excludeStr.strip()) > 0:
-			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+			excludes = list(filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(","))))
 
 	result = {}
 
@@ -424,7 +424,7 @@ def _get_temperature_data(preprocessor):
 		limit = min(limit, len(history))
 
 		tempData.update({
-			"history": map(lambda x: preprocessor(x), history[-limit:])
+			"history": list(map(lambda x: preprocessor(x), history[-limit:]))
 		})
 
 	return preprocessor(tempData)

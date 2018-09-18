@@ -422,7 +422,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	first_run = settings().getBoolean(["server", "firstRun"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 	permissions = [permission.as_dict() for permission in Permissions.all()]
-	extensions = map(lambda ext: ".{}".format(ext), get_all_extensions())
+	extensions = list(map(lambda ext: ".{}".format(ext), get_all_extensions()))
 
 	#~~ prepare full set of template vars for rendering
 
@@ -852,8 +852,8 @@ def _filter_templates(templates, template_filter):
 		for template_key, template_entry in template_collection["entries"].items():
 			if template_filter(template_type, template_key):
 				filtered_entries[template_key] = template_entry
-		filtered_templates[template_type] = dict(order=filter(lambda x: x in filtered_entries,
-		                                                      template_collection["order"]),
+		filtered_templates[template_type] = dict(order=list(filter(lambda x: x in filtered_entries,
+		                                                      	   template_collection["order"])),
 		                                         entries=filtered_entries)
 	return filtered_templates
 
@@ -914,7 +914,7 @@ def _compute_date_for_i18n(locale, domain):
 
 def _compute_date(files):
 	from datetime import datetime
-	timestamps = map(lambda path: os.stat(path).st_mtime, files) + [0] if files else []
+	timestamps = list(map(lambda path: os.stat(path).st_mtime, files)) + [0] if files else []
 	max_timestamp = max(*timestamps) if timestamps else None
 	if max_timestamp:
 		# we set the micros to 0 since microseconds are not speced for HTTP

@@ -125,8 +125,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._groupManager.register_listener(self)
 
 		plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
-		template_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin))
-		asset_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.AssetPlugin))
+		template_plugins = list(map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)))
+		asset_plugins = list(map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.AssetPlugin)))
 		ui_plugins = sorted(set(template_plugins + asset_plugins))
 
 		import hashlib
@@ -374,4 +374,3 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
 			else:
 				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
-
