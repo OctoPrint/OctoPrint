@@ -226,7 +226,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache["__version"] = octoprint_version
 
 		with atomic_write(self._version_cache_path, max_permissions=0o666) as file_obj:
-			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
+			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent=2, allow_unicode=True)
 
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = time.time()
@@ -1198,5 +1198,3 @@ def __plugin_load__():
 		"octoprint.cli.commands": cli.commands,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}
-
-

@@ -207,7 +207,7 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 	if as_json:
 		output = json.dumps(value)
 	elif as_yaml:
-		output = yaml.safe_dump(value, default_flow_style=False, indent="    ", allow_unicode=True)
+		output = yaml.safe_dump(value, default_flow_style=False, indent=4, allow_unicode=True)
 	elif as_raw:
 		output = value
 	else:
@@ -232,7 +232,7 @@ def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
 		if as_json:
 				output = json.dumps(value)
 		elif as_yaml:
-				output = yaml.safe_dump(value, default_flow_style=False, indent="	", allow_unicode=True)
+				output = yaml.safe_dump(value, default_flow_style=False, indent=4, allow_unicode=True)
 		elif as_raw:
 				output = value
 		else:
