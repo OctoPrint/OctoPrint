@@ -124,7 +124,8 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		if targets:
 			data["check"] = targets
 
-		client = create_client(apikey=apikey,
+		client = create_client(settings=cli_group.settings,
+		                       apikey=apikey,
 		                       host=host,
 		                       port=port,
 		                       httpuser=httpuser,
@@ -191,9 +192,9 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 				flags["seen_close"] = True
 				click.echo("Disconnected from server...")
 
-		socket = client.connect_socket(on_message=on_message,
-		                               on_open=on_open,
-		                               on_close=on_close)
+		socket = client.create_socket(on_message=on_message,
+		                              on_open=on_open,
+		                              on_close=on_close)
 
 		r = client.post_json("plugin/softwareupdate/update", data=data)
 		try:
