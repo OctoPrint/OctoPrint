@@ -11,6 +11,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import os
 import traceback
+import past.builtins
 import sys
 import re
 import tempfile
@@ -1641,10 +1642,10 @@ class CaseInsensitiveSet(collections.Set):
 	"""
 
 	def __init__(self, *args):
-		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+		self.data = set([x.lower() if isinstance(x, past.builtins.basestring) else x for x in args])
 
 	def __contains__(self, item):
-		if isinstance(item, (str, unicode)):
+		if isinstance(item, past.builtins.basestring):
 			return item.lower() in self.data
 		else:
 			return item in self.data

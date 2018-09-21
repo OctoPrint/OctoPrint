@@ -9,11 +9,16 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import io
 import unittest
 import mock
+import six
 
 import octoprint.filemanager
 import octoprint.filemanager.util
 
 import octoprint.settings
+
+# we can't seem to get this from six.moves, so we have to work around it to ensure py2/py3 compatability
+BUILTINS = "builtins"
+if six.PY2: BUILTINS = "__builtin__"
 
 class FilemanagerMethodTest(unittest.TestCase):
 
@@ -53,18 +58,18 @@ class FilemanagerMethodTest(unittest.TestCase):
 		self.assertTrue("machinecode" in full)
 		self.assertTrue("gcode" in full["machinecode"])
 		self.assertTrue(isinstance(full["machinecode"]["gcode"], octoprint.filemanager.ContentTypeMapping))
-		self.assertItemsEqual(["gcode", "gco", "g"], full["machinecode"]["gcode"].extensions)
+		self.assertSetEqual(set(["gcode", "gco", "g"]), set(full["machinecode"]["gcode"].extensions))
 		self.assertTrue("foo" in full["machinecode"])
 		self.assertTrue(isinstance(full["machinecode"]["foo"], list))
-		self.assertItemsEqual(["f", "foo"], full["machinecode"]["foo"])
+		self.assertSetEqual(set(["f", "foo"]), set(full["machinecode"]["foo"]))
 
 		self.assertTrue("model" in full)
 		self.assertTrue("stl" in full["model"])
 		self.assertTrue(isinstance(full["model"]["stl"], octoprint.filemanager.ContentTypeMapping))
-		self.assertItemsEqual(["stl"], full["model"]["stl"].extensions)
+		self.assertSetEqual(set(["stl"]), set(full["model"]["stl"].extensions))
 		self.assertTrue("amf" in full["model"])
 		self.assertTrue(isinstance(full["model"]["amf"], list))
-		self.assertItemsEqual(["amf"], full["model"]["amf"])
+		self.assertSetEqual(set(["amf"]), set(full["model"]["amf"]))
 
 	def test_get_mimetype(self):
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.stl"), "application/sla")
@@ -235,22 +240,18 @@ class FileManagerTest(unittest.TestCase):
 	def test_add_folder_not_ignoring_existing(self):
 		self.local_storage.add_folder.side_effect = RuntimeError("already there")
 
-		try:
+		with self.assertRaises(RuntimeError, msg="already there"):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", ignore_existing=False)
 			self.fail("Expected an exception to occur!")
-		except RuntimeError as e:
-			self.assertEqual("already there", e.message)
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=False, display=None)
 
 	def test_add_folder_display(self):
 		self.local_storage.add_folder.side_effect = RuntimeError("already there")
 
-		try:
+		with self.assertRaises(RuntimeError, msg="already there"):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder",
 			                             display=u"täst_folder")
 			self.fail("Expected an exception to occur!")
-		except RuntimeError as e:
-			self.assertEqual("already there", e.message)
 		self.local_storage.add_folder.assert_called_once_with("test_folder",
 		                                                      ignore_existing=True,
 		                                                      display=u"täst_folder")
@@ -287,41 +288,37 @@ class FileManagerTest(unittest.TestCase):
 		pos = 1234
 		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
-		mock_atomic_write.return_value = mock.MagicMock(spec=file)
 		mock_atomic_write_handle = mock_atomic_write.return_value.__enter__.return_value
 		mock_time.return_value = now
 		self.local_storage.path_in_storage.return_value = path
 
-		self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(), create=True) as m:
+			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666)
 
 		expected = dict(origin=octoprint.filemanager.FileDestinations.LOCAL,
 		                path=path,
 		                pos=pos,
 		                date=now)
 
-
-		mock_atomic_write.assert_called_with(recovery_file)
-		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent="  ", allow_unicode=True)
+		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent=2, allow_unicode=True)
 
 	@mock.patch("octoprint.util.atomic_write", create=True)
 	@mock.patch("yaml.safe_dump", create=True)
 	@mock.patch("time.time")
-	def test_save_recovery_data(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
+	def test_save_recovery_data_with_error(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
 		import os
 
-		now = 123456789
 		path = "some_file.gco"
 		pos = 1234
 		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
-		mock_atomic_write.return_value = mock.MagicMock(spec=file)
-		mock_atomic_write_handle = mock_atomic_write.return_value.__enter__.return_value
-		mock_time.return_value = now
 		self.local_storage.path_in_storage.return_value = path
 
 		mock_yaml_safe_dump.side_effect = RuntimeError
 
-		self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(), create=True) as m:
+		  self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 
 	@mock.patch("os.path.isfile")
 	@mock.patch("os.remove")
@@ -352,29 +349,26 @@ class FileManagerTest(unittest.TestCase):
 
 		self.file_manager.delete_recovery_data()
 
-	@mock.patch("os.path.isfile")
-	@mock.patch("yaml.safe_load")
-	def test_get_recovery_data(self, mock_yaml_safe_load, mock_isfile):
+	@mock.patch("os.path.isfile", return_value=True)
+	def test_get_recovery_data(self, mock_isfile):
 		import os
+		import yaml
 		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
-
-		mock_isfile.return_value = True
 
 		data = dict(path="some_path.gco",
 		            origin="local",
 		            pos=1234,
 		            date=123456789)
-		mock_yaml_safe_load.return_value = data
+		text_data = yaml.dump(data)
 
-		with mock.patch("__builtin__.open", mock.mock_open(read_data=data), create=True) as m:
-			result = self.file_manager.get_recovery_data()
+		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(read_data=text_data)) as m:
+			# moved safe_load to here so we could mock up the return value properly
+			with mock.patch("yaml.safe_load", return_value=data) as n:
+				result = self.file_manager.get_recovery_data()
 
-			self.assertDictEqual(data, result)
-
-			m.assert_called_with(recovery_file)
-
-			mock_handle = m()
-			mock_yaml_safe_load.assert_called_with(mock_handle)
+				self.assertDictEqual(data, result)
+				n.assert_called_with(m())
+				mock_isfile.assert_called_with(recovery_file)
 
 	@mock.patch("os.path.isfile")
 	def test_get_recovery_data_no_file(self, mock_isfile):
