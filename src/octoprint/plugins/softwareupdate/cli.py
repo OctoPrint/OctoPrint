@@ -150,7 +150,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 			plugin_message_data = plugin_message["data"]
 
 			if plugin_message_type == "updating":
-				click.echo("Updating {} to {}...".format(plugin_message_data["name"], plugin_message_data["target"]))
+				click.echo("Updating {} to {}...".format(plugin_message_data.get("name", "unknown"), plugin_message_data.get("version", "n/a")))
 
 			elif plugin_message_type == "update_failed":
 				click.echo("\t... failed :(")
