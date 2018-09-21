@@ -647,6 +647,19 @@ class VirtualPrinter(object):
 		else:
 			time.sleep(_timeout)
 
+	def _gcode_G33(self, data):
+		self._send("G33 Auto Calibrate")
+		self._send("Will take ~60s")
+		timeout = 60
+
+		if self._sendBusy and self._busyInterval > 0:
+			until = time.time() + timeout
+			while time.time() < until:
+				time.sleep(self._busyInterval)
+				self._send("busy:processing")
+		else:
+			time.sleep(timeout)
+
 	##~~ further helpers
 
 	def _calculate_checksum(self, line):
