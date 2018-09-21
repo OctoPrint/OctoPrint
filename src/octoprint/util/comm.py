@@ -454,6 +454,7 @@ class MachineCom(object):
 		self._temperature_autoreporting = False
 		self._sdstatus_autoreporting = False
 		self._busy_protocol_detected = False
+		self._busy_protocol_support = False
 
 		self._trigger_ok_after_resend = settings().get(["serial", "supportResendsWithoutOk"])
 		self._resend_ok_timer = None
@@ -1485,8 +1486,8 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
-		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
+		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
@@ -1506,7 +1507,7 @@ class MachineCom(object):
 
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
-					self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+					self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
 
 					if self._dwelling_until and now > self._dwelling_until:
 						self._dwelling_until = False
@@ -1520,23 +1521,27 @@ class MachineCom(object):
 				##~~ busy protocol handling
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
-					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
 
 					# make sure the printer sends busy in a small enough interval to match our timeout
 					if not self._busy_protocol_detected and self._capability_support.get(self.CAPABILITY_BUSY_PROTOCOL,
 					                                                                     False):
-						self._log("Printer seems to support the busy protocol, adjusting timeouts and setting busy "
-						          "interval accordingly")
-						self._busy_protocol_detected = True
+						to_log = "Printer seems to support the busy protocol, will adjust timeouts and set busy " \
+						         "interval accordingly"
+						self._log(to_log)
+						self._logger.info(to_log)
 
+						self._busy_protocol_detected = True
 						new_communication_timeout = self._timeout_intervals.get("communicationBusy", 2)
-						self._serial.timeout = new_communication_timeout
 						busy_interval = max(int(new_communication_timeout) - 1, 1)
 
-						self._logger.info("Printer seems to support the busy protocol, telling it to set the busy "
-						                  "interval to our \"communicationBusy\" timeout - 1s = {}s".format(busy_interval))
+						def busyIntervalSet():
+							self._logger.info("Telling the printer to set the busy interval to our "
+							                  "\"communicationBusy\" timeout - 1s = {}s".format(busy_interval))
+							self._busy_protocol_support = True
+							self._serial.timeout = new_communication_timeout
 
-						self._set_busy_protocol_interval(interval=busy_interval)
+						self._set_busy_protocol_interval(interval=busy_interval, callback=busyIntervalSet)
 
 					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
 						continue
@@ -1650,7 +1655,7 @@ class MachineCom(object):
 					# Both variants can only happen if we are not currently blocked by a dwelling command
 
 					self._handle_timeout()
-					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
 
 					# timeout only considered handled if the printer is printing and it was a comm timeout, not an ok
 					# timeout
@@ -2035,7 +2040,7 @@ class MachineCom(object):
 			self._resend_ok_timer.cancel()
 			self._resend_ok_timer = None
 
-		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals)
 		self._clear_to_send.set()
 
 		# reset long running commands, persisted current tools and heatup counters on ok
@@ -2262,13 +2267,15 @@ class MachineCom(object):
 				interval = 1
 		self.sendCommand("M27 S{}".format(interval), tags={"trigger:comm.set_autoreport_sdstatus_interval"})
 
-	def _set_busy_protocol_interval(self, interval=None):
+	def _set_busy_protocol_interval(self, interval=None, callback=None):
 		if interval is None:
 			try:
 				interval = max(int(self._timeout_intervals.get("communicationBusy", 3)) - 1, 1)
 			except:
 				interval = 2
-		self.sendCommand("M113 S{}".format(interval), tags={"trigger:comm.set_busy_protocol_interval"})
+		self.sendCommand("M113 S{}".format(interval),
+		                 tags={"trigger:comm.set_busy_protocol_interval"},
+		                 on_sent=callback)
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
@@ -2311,7 +2318,7 @@ class MachineCom(object):
 			self._set_autoreport_temperature_interval()
 		if self._sdstatus_autoreporting:
 			self._set_autoreport_sdstatus_interval()
-		if self._busy_protocol_detected:
+		if self._busy_protocol_support:
 			self._set_busy_protocol_interval()
 
 	def _get_temperature_timer_interval(self):
@@ -3449,7 +3456,7 @@ class MachineCom(object):
 		elif s_match:
 			_timeout = float(s_match.group("value"))
 
-		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals) + _timeout
+		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_support else "communication", self._timeout_intervals) + _timeout
 		self._dwelling_until = time.time() + _timeout
 
 	def _validate_tool(self, tool):
