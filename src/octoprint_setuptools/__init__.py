@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import os
 import shutil
 import glob
+from past.builtins import basestring
 
 from setuptools import Command
 from distutils.command.clean import clean as _clean
