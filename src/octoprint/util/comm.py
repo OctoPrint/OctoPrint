@@ -4219,7 +4219,7 @@ def parse_temperature_line(line, current):
 		tool = values["tool"]
 		toolnum = values.get("toolnum", None)
 		toolNumber = int(toolnum) if toolnum is not None and len(toolnum) else None
-		if toolNumber > maxToolNum:
+		if toolNumber and toolNumber > maxToolNum:
 			maxToolNum = toolNumber
 
 		try:
