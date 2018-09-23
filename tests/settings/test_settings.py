@@ -13,6 +13,7 @@ import unittest
 import shutil
 import contextlib
 import os
+import sys
 import tempfile
 import yaml
 import hashlib
@@ -24,15 +25,28 @@ import octoprint.settings
 @ddt.ddt
 class TestSettings(unittest.TestCase):
 
+	def _load_yaml(self, fname):
+		if sys.version_info[0] >= 3:
+			with open(fname, "w+", encoding='utf-8') as f:
+				return yaml.safe_load(f)
+		else:
+			with open(fname, "wb+") as f:
+				return yaml.safe_load(f)
+	def _dump_yaml(self, fname, config):
+		if sys.version_info[0] >= 3:
+			with open(fname, "w+", encoding='utf-8') as f:
+				yaml.safe_dump(config, f)
+		else:
+			with open(fname, "wb+") as f:
+				yaml.safe_dump(config, f)
+
 	def setUp(self):
 		self.base_path = os.path.join(os.path.dirname(__file__), "_files")
 		self.config_path = os.path.realpath(os.path.join(self.base_path, "config.yaml"))
 		self.defaults_path = os.path.realpath(os.path.join(self.base_path, "defaults.yaml"))
 
-		with open(self.config_path, "r+b") as f:
-			self.config = yaml.safe_load(f)
-		with open(self.defaults_path, "r+b") as f:
-			self.defaults = yaml.safe_load(f)
+		self.config = self._load_yaml(self.config_path)
+		self.defaults = self._load_yaml(self.defaults_path)
 
 		from octoprint.util import dict_merge
 		self.expected_effective = dict_merge(self.defaults, self.config)
@@ -503,11 +517,9 @@ class TestSettings(unittest.TestCase):
 			self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
 			# modify yaml file externally
-			with open(configfile, "r+b") as f:
-				config = yaml.safe_load(f)
+			config = self._load_yaml(configfile)
 			config["server"]["host"] = "127.0.0.1"
-			with open(configfile, "w+b") as f:
-				yaml.safe_dump(config, f)
+			self._dump_yaml(configfile, config)
 
 			# set some value, should also reload file before setting new api key
 			settings.set(["api", "key"], "key")
