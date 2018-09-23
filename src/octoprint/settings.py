@@ -1502,7 +1502,7 @@ class Settings(object):
 		return value is not None
 
 	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False, check_writable=True, deep_check_writable=False):
-		if type not in default_settings["folder"].keys() + ["base"]:
+		if type not in list(default_settings["folder"].keys()) + ["base"]:
 			return None
 
 		if type == "base":
