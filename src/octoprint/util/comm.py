@@ -2601,7 +2601,14 @@ class MachineCom(object):
 		if self._currentFile is None:
 			return None, None, None
 
-		line, pos, lineno = self._currentFile.getNext()
+		try:
+			line, pos, lineno = self._currentFile.getNext()
+		except EnvironmentError:
+			self._log("There was an error reading from the file that's being printed, cancelling the print. Please "
+			          "consult octoprint.log for details on the error.")
+			self.cancelPrint()
+			return None, None, None
+
 		if line is None:
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
