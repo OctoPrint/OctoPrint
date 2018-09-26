@@ -351,6 +351,7 @@ class MachineCom(object):
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 	CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
+	CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
 
 	CAPABILITY_SUPPORT_ENABLED = "enabled"
 	CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -438,7 +439,8 @@ class MachineCom(object):
 		self._capability_support = {
 			self.CAPABILITY_AUTOREPORT_TEMP: settings().getBoolean(["serial", "capabilities", "autoreport_temp"]),
 			self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
-			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"])
+			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"]),
+			self.CAPABILITY_EMERGENCY_PARSER: settings().getBoolean(["serial", "capabilities", "emergency_parser"])
 		}
 
 		self._lastLines = deque([], 50)
@@ -477,7 +479,7 @@ class MachineCom(object):
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
 
-		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
+		self._clear_to_send = CountedEvent(name="comm.clear_to_send")
 		self._send_queue = SendQueue()
 		self._temperature_timer = None
 		self._sd_status_timer = None
@@ -541,6 +543,7 @@ class MachineCom(object):
 
 		self._log_position_on_pause = settings().getBoolean(["serial", "logPositionOnPause"])
 		self._log_position_on_cancel = settings().getBoolean(["serial", "logPositionOnCancel"])
+		self._abort_heatup_on_cancel = settings().getBoolean(["serial", "abortHeatupOnCancel"])
 
 		# print job
 		self._currentFile = None
@@ -1197,6 +1200,13 @@ class MachineCom(object):
 		with self._jobLock:
 			self._changeState(self.STATE_CANCELLING)
 
+			if self._abort_heatup_on_cancel:
+				# abort any ongoing heatups immediately to get back control over the printer
+				self.sendCommand("M108",
+				                 part_of_job=False,
+				                 tags=tags | {"trigger:comm.cancel", "trigger:abort_heatup"},
+				                 force=True)
+
 			if self.isSdFileSelected():
 				if not external_sd:
 					self.sendCommand("M25", part_of_job=True, tags=tags | {"trigger:comm.cancel",})    # pause print
@@ -1825,6 +1835,8 @@ class MachineCom(object):
 							elif capability == self.CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
 								self._logger.info("Firmware states that it supports sd status autoreporting")
 								self._set_autoreport_sdstatus_interval()
+							elif capability == self.CAPABILITY_EMERGENCY_PARSER and enabled:
+								self._logger.info("Firmware states that it supports emergency GCODEs M108 and M410 to be sent without waiting for an acknowledgement first")
 
 						# notify plugins
 						for name, hook in self._firmware_info_hooks["capabilities"].items():
@@ -2982,17 +2994,7 @@ class MachineCom(object):
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
-						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
-						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
-						checksum_enabled = not self._neverSendChecksum and ((self.isPrinting() and self._currentFile and self._currentFile.checksum) or
-						                                                    self._alwaysSendChecksum or
-						                                                    not self._firmware_info_received)
-
-						command_to_send = command.encode("ascii", errors="replace")
-						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-							self._do_increment_and_send_with_checksum(command_to_send)
-						else:
-							self._do_send_without_checksum(command_to_send)
+						self._do_send(command, gcode=gcode)
 
 					# trigger "sent" phase and use up one "ok"
 					if on_sent is not None and callable(on_sent):
@@ -3151,6 +3153,24 @@ class MachineCom(object):
 				self._logger.exception("Error in handler for phase {} and command {}".format(phase, atcommand))
 
 	##~~ actual sending via serial
+
+	def _needs_checksum(self, gcode=None):
+		command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
+		command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
+		return command_requiring_checksum or (command_allowing_checksum and self._checksum_enabled)
+
+	@property
+	def _checksum_enabled(self):
+		return not self._neverSendChecksum and ((self.isPrinting() and self._currentFile and self._currentFile.checksum) or
+		                                        self._alwaysSendChecksum or
+		                                        not self._firmware_info_received)
+
+	def _do_send(self, command, gcode=None):
+		command_to_send = command.encode("ascii", errors="replace")
+		if self._needs_checksum(gcode):
+			self._do_increment_and_send_with_checksum(command_to_send)
+		else:
+			self._do_send_without_checksum(command_to_send)
 
 	def _do_increment_and_send_with_checksum(self, cmd):
 		with self._line_mutex:
@@ -3420,7 +3440,12 @@ class MachineCom(object):
 		self._resendDelta = None
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		# emergency stop, jump the queue with the M112
+		self._logger.info("Force-sending M112 to the printer")
+
+		# emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
+		# available or not
+		#
+		# send the M112 once without and with checksum
 		self._do_send_without_checksum("M112")
 		self._do_increment_and_send_with_checksum("M112")
 
@@ -3446,6 +3471,32 @@ class MachineCom(object):
 
 		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
 		# I hope it got it the first time because as far as I can tell, there is no way to know
+		return None,
+
+	def _gcode_M108_queuing(self, cmd, gcode=None, *args, **kwargs):
+		# only jump the queue with M108 if the EMERGENCY_PARSER capability is available
+		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
+			return
+
+		self._logger.info("Force-sending M108 to the printer")
+		self._do_send(cmd, gcode=gcode)
+
+		# use up an ok since we will get one back for this command and don't want to get out of sync
+		self._clear_to_send.clear()
+
+		return None,
+
+	def _gcode_M410_queuing(self, cmd, gcode=None, *args, **kwargs):
+		# only jump the queue with M410 if the EMERGENCY_PARSER capability is available
+		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
+			return
+
+		self._logger.info("Force-sending M410 to the printer")
+		self._do_send(cmd, gcode=gcode)
+
+		# use up an ok since we will get one back for this command and don't want to get out of sync
+		self._clear_to_send.clear()
+
 		return None,
 
 	def _gcode_M114_queued(self, *args, **kwargs):

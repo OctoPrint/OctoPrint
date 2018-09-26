@@ -1302,7 +1302,7 @@ class CountedEvent(object):
 		self._event.wait(timeout)
 
 	def blocked(self):
-		return self.counter == 0
+		return self.counter <= 0
 
 	def acquire(self, blocking=1):
 		return self._mutex.acquire(blocking=blocking)
@@ -1313,7 +1313,6 @@ class CountedEvent(object):
 	def _internal_set(self, value):
 		self._counter = value
 		if self._counter <= 0:
-			self._counter = 0
 			self._event.clear()
 		else:
 			if self._max is not None and self._counter > self._max:

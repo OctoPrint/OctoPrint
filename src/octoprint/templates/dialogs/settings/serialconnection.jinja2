@@ -283,6 +283,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capEmergencyParser" id="settings-serialCapEmergencyParser"> {{ _('Send emergency GCODES <code>M108</code> and <code>M410</code> without waiting for acknowledgement, if detected as supported by the firmware') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capBusyProtocol" id="settings-serialCapBusyProtocol"> {{ _('Support <code>busy</code> protocol, if detected') }}
                                 </label>
                             </div>
@@ -377,17 +384,26 @@
                 </div>
             </fieldset>
             <fieldset>
-                <legend>{{ _('Event based position logging') }}</legend>
+                <legend>{{ _('Pausing') }}</legend>
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox" data-bind="checked: serial_logPositionOnPause" id="settings-serialLogPositionOnPause"> {{ _('Log position on pause') }} <span class="label label-important">{{ _('Warning') }}</span>
                         <span class="help-block">{{ _('If you disable this, the <code>pause_position</code> placeholders in your pause/resume GCODE scripts will stay unpopulated! However, pausing speed might improve slightly.') }}</span>
                     </label>
                 </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Cancelling') }}</legend>
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox" data-bind="checked: serial_logPositionOnCancel" id="settings-serialLogPositionOnCancel"> {{ _('Log position on cancel') }} <span class="label label-important">{{ _('Warning') }}</span>
                         <span class="help-block">{{ _('If you disable this, the <code>cancel_position</code> placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly.') }}</span>
+                    </label>
+                </div>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_abortHeatupOnCancel" id="settings-serialAbortHeatupOnCancel"> {{ _('Attempt to abort any blocking heatups on cancel via <code>M108</code>.') }}
+                        <span class="help-block">{{ _('Uncheck this if your firmware doesn\'t support <code>M108</code> for aborting blocking heatups!') }}</span>
                     </label>
                 </div>
             </fieldset>

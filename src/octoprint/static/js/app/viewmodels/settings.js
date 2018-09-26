@@ -183,12 +183,14 @@ $(function() {
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
+        self.serial_abortHeatupOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
         self.serial_capAutoreportTemp = ko.observable(undefined);
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
+        self.serial_capEmergencyParser = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

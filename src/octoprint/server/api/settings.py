@@ -154,6 +154,7 @@ def getSettings():
 			"blockM0M1": s.getBoolean(["serial", "blockM0M1"]),
 			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
 			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
+			"abortHeatupOnCancel": s.getBoolean(["serial", "abortHeatupOnCancel"]),
 			"supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
 			"waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
@@ -171,7 +172,8 @@ def getSettings():
 			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
 			"capAutoreportTemp": s.getBoolean(["serial", "capabilities", "autoreport_temp"]),
 			"capAutoreportSdStatus": s.getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
-			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"])
+			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
+			"capEmergencyParser": s.getBoolean(["serial", "capabilities", "emergency_parser"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -448,12 +450,14 @@ def _saveSettings(data):
 		if "blockWhileDwelling" in data["serial"]: s.setBoolean(["serial", "blockWhileDwelling"], data["serial"]["blockWhileDwelling"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
+		if "abortHeatupOnCancel" in data["serial"]: s.setBoolean(["serial", "abortHeatupOnCancel"], data["serial"]["abortHeatupOnCancel"])
 		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
 		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
 		if "capAutoreportTemp" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_temp"], data["serial"]["capAutoreportTemp"])
 		if "capAutoreportSdStatus" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_sdstatus"], data["serial"]["capAutoreportSdStatus"])
 		if "capBusyProtocol" in data["serial"]: s.setBoolean(["serial", "capabilities", "busy_protocol"], data["serial"]["capBusyProtocol"])
+		if "capEmergencyParser" in data["serial"]: s.setBoolean(["serial", "capabilities", "emergency_parser"], data["serial"]["capEmergencyParser"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"]: s.setBoolean(["serial", "log"], data["serial"]["log"])
