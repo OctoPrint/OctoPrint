@@ -479,7 +479,7 @@ class MachineCom(object):
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
 
-		self._clear_to_send = CountedEvent(name="comm.clear_to_send")
+		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None)
 		self._send_queue = SendQueue()
 		self._temperature_timer = None
 		self._sd_status_timer = None
