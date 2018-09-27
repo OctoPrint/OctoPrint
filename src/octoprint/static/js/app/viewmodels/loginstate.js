@@ -61,6 +61,10 @@ $(function() {
                         log.info("User " + response.name + " logged in")
                     }
 
+                    if (response.session) {
+                        OctoPrint.socket.sendAuth(response.name, response.session);
+                    }
+
                     // Show warning if connecting from what seems to be an external IP address, unless ignored
                     var ignorePublicAddressWarning = localStorage["loginState.ignorePublicAddressWarning"];
                     if (ignorePublicAddressWarning === undefined) {
@@ -200,6 +204,14 @@ $(function() {
                 event.preventDefault();
             }
             self.login();
+        };
+
+        self.onDataUpdaterReauthRequired = function(reason) {
+            if (reason === "logout" || reason === "removed") {
+                self.logout();
+            } else {
+                self.requestData();
+            }
         };
 
         self.onAllBound = function(allViewModels) {

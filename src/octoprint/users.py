@@ -518,6 +518,11 @@ class SessionUser(wrapt.ObjectProxy):
 		self._self_session = "".join(random.choice(chars) for _ in range(10))
 		self._self_created = time.time()
 
+	def asDict(self):
+		result = self.__wrapped__.asDict()
+		result.update(dict(session=self.session))
+		return result
+
 	@property
 	def session(self):
 		return self._self_session

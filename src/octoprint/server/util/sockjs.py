@@ -88,10 +88,16 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._pluginManager = pluginManager
 
 		self._remoteAddress = None
+		self._user = None
 
 		self._throttleFactor = 1
 		self._lastCurrent = 0
 		self._baseRateLimit = 0.5
+
+		self._register_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.register")
+		self._emit_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.emit")
+
+		self._registered = False
 
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
@@ -132,39 +138,14 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			safe_mode=octoprint.server.safe_mode
 		))
 
-		self._printer.register_callback(self)
-		self._fileManager.register_slicingprogress_callback(self)
-		octoprint.timelapse.register_callback(self)
-		self._pluginManager.register_message_receiver(self.on_plugin_message)
-
-		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
-		for event in octoprint.events.all_events():
-			self._eventManager.subscribe(event, self._onEvent)
-
-		octoprint.timelapse.notify_callbacks(octoprint.timelapse.current)
-
-		# This is a horrible hack for now to allow displaying a notification that a render job is still
-		# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
-		# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
-		# start and so on.
-		#
-		# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
-		#
-		# TODO remove when central job management becomes available and takes care of this for us
-		if octoprint.timelapse.current_render_job is not None:
-			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
+		self._register()
 
 	def on_close(self):
-		self._printer.unregister_callback(self)
-		self._fileManager.unregister_slicingprogress_callback(self)
-		octoprint.timelapse.unregister_callback(self)
-		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
-
-		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
-		for event in octoprint.events.all_events():
-			self._eventManager.unsubscribe(event, self._onEvent)
+		self._unregister()
 
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
+
+		self._user = None
 		self._remoteAddress = None
 
 	def on_message(self, message):
@@ -175,7 +156,29 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			self._logger.warn("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
 			return
 
-		if "throttle" in message:
+		if "auth" in message:
+			try:
+				parts = message["auth"].split(":")
+				if not len(parts) == 2:
+					raise ValueError()
+			except ValueError:
+				self._logger.warn("Got invalid auth message from client {}, ignoring: {!r]".format(self._remoteAddress,
+				                                                                                   message["auth"]))
+			else:
+				user_id, user_session = parts
+				user = self._userManager.findUser(userid=user_id, session=user_session)
+
+				if user is not None:
+					self._user = user
+					self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(),
+					                                                                          self._remoteAddress))
+				else:
+					self._user = None
+					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
+
+			self._register()
+
+		elif "throttle" in message:
 			try:
 				throttle = int(message["throttle"])
 				if throttle < 1:
@@ -257,6 +260,16 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
+		proceed = True
+		for name, hook in self._emit_hooks.items():
+			try:
+				proceed = proceed and hook(self, self._user, type, payload)
+			except:
+				self._logger.exception("Error processing emit hook handler from plugin {}".format(name))
+
+		if not proceed:
+			return
+
 		try:
 			self.send({type: payload})
 		except Exception as e:
@@ -264,3 +277,54 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
 			else:
 				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
+
+	def _register(self):
+		proceed = True
+		for name, hook in self._register_hooks.items():
+			try:
+				proceed = proceed and hook(self, self._user)
+			except:
+				self._logger.exception("Error processing register hook handler for plugin {}".format(name))
+
+		if not proceed:
+			return
+
+		if self._registered:
+			return
+
+		self._printer.register_callback(self)
+		self._fileManager.register_slicingprogress_callback(self)
+		octoprint.timelapse.register_callback(self)
+		self._pluginManager.register_message_receiver(self.on_plugin_message)
+
+		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
+		for event in octoprint.events.all_events():
+			self._eventManager.subscribe(event, self._onEvent)
+
+		octoprint.timelapse.notify_callbacks(octoprint.timelapse.current)
+
+		# This is a horrible hack for now to allow displaying a notification that a render job is still
+		# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
+		# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
+		# start and so on.
+		#
+		# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
+		#
+		# TODO remove when central job management becomes available and takes care of this for us
+		if octoprint.timelapse.current_render_job is not None:
+			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
+
+		self._registered = True
+
+	def _unregister(self):
+		self._printer.unregister_callback(self)
+		self._fileManager.unregister_slicingprogress_callback(self)
+		octoprint.timelapse.unregister_callback(self)
+		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
+
+		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
+		for event in octoprint.events.all_events():
+			self._eventManager.unsubscribe(event, self._onEvent)
+
+		self._registered = False
+

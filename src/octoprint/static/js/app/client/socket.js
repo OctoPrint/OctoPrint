@@ -85,6 +85,10 @@
         this.sendMessage("throttle", this.rateThrottleFactor);
     };
 
+    OctoPrintSocketClient.prototype.sendAuth = function(userId, session) {
+        this.sendMessage("auth", userId + ":" + session);
+    };
+
     OctoPrintSocketClient.prototype.sendMessage = function(type, payload) {
         var data = {};
         data[type] = payload;
