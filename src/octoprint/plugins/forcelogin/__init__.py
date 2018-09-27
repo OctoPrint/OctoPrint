@@ -81,9 +81,17 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 			raise tornado.web.HTTPError(403)
 
 	def socket_register_validator(self, socket, user):
+		if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
+			# ACL hasn't been configured yet, make an exception
+			return True
+
 		return user is not None and not user.is_anonymous() and user.is_active()
 
 	def socket_emit_validator(self, socket, user, message, payload):
+		if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
+			# ACL hasn't been configured yet, make an exception
+			return True
+
 		if message in ("connected", "reauthRequired"):
 			return True
 
