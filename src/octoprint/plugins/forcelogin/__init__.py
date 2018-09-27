@@ -80,6 +80,15 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 		if user is None or not user.is_authenticated():
 			raise tornado.web.HTTPError(403)
 
+	def socket_register_validator(self, socket, user):
+		return user is not None and not user.is_anonymous() and user.is_active()
+
+	def socket_emit_validator(self, socket, user, message, payload):
+		if message in ("connected", "reauthRequired"):
+			return True
+
+		return user is not None and not user.is_anonymous() and user.is_active()
+
 
 __plugin_name__ = "Force Login"
 __plugin_author__ = "Gina Häußge"
@@ -92,5 +101,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin anonymous users 
 __plugin_implementation__ = ForceLoginPlugin()
 __plugin_hooks__ = {
 	"octoprint.server.api.before_request": __plugin_implementation__.get_before_request_handlers,
-	"octoprint.server.http.access_validator": __plugin_implementation__.access_validator
+	"octoprint.server.http.access_validator": __plugin_implementation__.access_validator,
+	"octoprint.server.sockjs.register": __plugin_implementation__.socket_register_validator,
+	"octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_validator
 }
