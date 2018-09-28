@@ -35,6 +35,33 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 
 	def on_ui_render(self, now, request, render_kwargs):
 		from flask import render_template, make_response
+
+		"""
+		Support theming of the login dialog, just in case the core UI is themed as well.
+
+		Example usage by a plugin:
+
+		  def forcelogin_theming():
+		      from flask import url_for
+		      return [url_for("plugin.myplugin.static", filename="css/forcelogin_theme.css")]
+
+		  __plugin_hooks__ = {
+		      "octoprint.plugin.forcelogin.theming": forcelogin_theming
+		  }
+
+		Only a list of ready-made URLs to CSS files is supported, neither LESS nor JS. Best use
+		url_for like in the example above to be prepared for any configured prefix URLs.
+		"""
+		additional_assets = []
+		for name, hook in self._plugin_manager.get_hooks("octoprint.plugin.forcelogin.theming").items():
+			try:
+				assets = hook()
+				if isinstance(assets, (tuple, list)):
+					additional_assets += assets
+			except:
+				self._logger.exception("Error fetching theming CSS to include from plugin {}".format(name))
+
+		render_kwargs.update(dict(forcelogin_theming=additional_assets))
 		return make_response(render_template("forcelogin_index.jinja2", **render_kwargs))
 
 	def get_ui_custom_tracked_files(self):
