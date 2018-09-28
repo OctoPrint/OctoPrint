@@ -59,7 +59,7 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 				# ACL hasn't been configured yet, make an exception
 				return
 
-			if flask.request.endpoint in ("api.login", "api.getSettings"):
+			if flask.request.endpoint in ("api.login",):
 				return
 
 			user = flask_login.current_user
