@@ -732,6 +732,10 @@ class VirtualPrinter(object):
 			| Triggers a resend error with a missing checksum
 			trigger_missing_lineno
 			| Triggers a "no line number with checksum" error w/o resend request
+			trigger_fatal_error_marlin
+			| Triggers a fatal error/simulated heater fail, Marlin style
+			trigger_fatal_error_repetier
+			| Triggers a fatal error/simulated heater fail, Repetier style
 			drop_connection
 			| Drops the serial connection
 			prepare_ok <broken ok>
@@ -782,6 +786,11 @@ class VirtualPrinter(object):
 			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=False))
 		elif data == "trigger_missing_lineno":
 			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
+		elif data == "trigger_fatal_error_marlin":
+			self._send("Error:Thermal Runaway, system stopped! Heater_ID: bed")
+			self._send("Error:Printer halted. kill() called!")
+		elif data == "trigger_fatal_error_repetier":
+			self._send("fatal: Heater/sensor error - Printer stopped and heaters disabled due to this error. Fix error and restart with M999.")
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
 		elif data == "reset":
