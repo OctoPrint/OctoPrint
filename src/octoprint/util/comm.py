@@ -2518,6 +2518,11 @@ class MachineCom(object):
 
 		lower_line = line.lower()
 
+		if lower_line.startswith("fatal:"):
+			# hello Repetier firmware -_-
+			line = "Error:" + line
+			lower_line = line.lower()
+
 		if lower_line.startswith('error:') or line.startswith('!!'):
 			if regex_minMaxError.match(line):
 				# special delivery for firmware that goes "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
