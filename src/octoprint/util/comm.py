@@ -2507,6 +2507,9 @@ class MachineCom(object):
 	                                        "cannot open",
 	                                        "open failed",
 	                                        "cannot enter")
+	_fatal_errors                        = ("system stopped",
+	                                        "kill() called",
+	                                        "fatal:")
 	def _handle_errors(self, line):
 		if line is None:
 			return
@@ -2554,11 +2557,12 @@ class MachineCom(object):
 				                               level=logging.WARN)
 
 				if not self._ignore_errors:
-					if self._disconnect_on_errors:
+					if self._disconnect_on_errors or any(map(lambda x: x in lower_line, self._fatal_errors)):
 						self._trigger_error(stripped_error, "firmware")
 					elif self.isPrinting():
 						self.cancelPrint(firmware_error=stripped_error)
 						self._clear_to_send.set()
+
 				else:
 					self._log("WARNING! Received an error from the printer's firmware, ignoring that as configured "
 					          "but you might want to investigate what happened here! Error: {}".format(stripped_error))
