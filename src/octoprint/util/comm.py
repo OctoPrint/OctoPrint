@@ -76,6 +76,9 @@ regexes_parameters = dict(
 regex_minMaxError = re.compile("Error:[0-9]\n")
 """Regex matching first line of min/max errors from the firmware."""
 
+regex_marlinKillError = re.compile("Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused")
+"""Regex matching first line of kill causing errors from Marlin."""
+
 regex_sdPrintingByte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
 """Regex matching SD printing status reports.
 
@@ -2507,8 +2510,7 @@ class MachineCom(object):
 	                                        "cannot open",
 	                                        "open failed",
 	                                        "cannot enter")
-	_fatal_errors                        = ("system stopped",
-	                                        "kill() called",
+	_fatal_errors                        = ("kill() called",
 	                                        "fatal:")
 	def _handle_errors(self, line):
 		if line is None:
@@ -2520,6 +2522,13 @@ class MachineCom(object):
 			if regex_minMaxError.match(line):
 				# special delivery for firmware that goes "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 				line = line.rstrip() + self._readline()
+				lower_line = line.lower()
+			elif regex_marlinKillError.search(line):
+				# special delivery for marlin kill errors that are split across multiple error lines
+				next_line = self._readline().strip()
+				if next_line.lower().startswith("error:"):
+					next_line = next_line[6:].strip()
+				line = line.rstrip() + " - " + next_line
 				lower_line = line.lower()
 
 			stripped_error = (line[6:] if lower_line.startswith("error:") else line[2:]).strip()
