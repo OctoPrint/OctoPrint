@@ -1497,7 +1497,7 @@ class Settings(object):
 			return value
 		if isinstance(value, (int, float)):
 			return value != 0
-		if isinstance(value, (str, unicode)):
+		if isinstance(value, basestring):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 

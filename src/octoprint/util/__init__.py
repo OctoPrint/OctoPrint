@@ -25,6 +25,8 @@ import collections
 import frozendict
 import copy
 
+PY3 = sys.version_info[0] == 3
+
 try:
 	import queue
 except ImportError:
@@ -111,7 +113,7 @@ variable_deprecated = warning_factory(DeprecationWarning)
 """
 A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
 supplied ``message``. The call stack level used (for adding the source location of the offending call to the
-warning) can be overridden using the optional ``stacklevel`` parameter. 
+warning) can be overridden using the optional ``stacklevel`` parameter.
 
 Arguments:
     message (string): The message to include in the deprecation warning.
@@ -502,6 +504,10 @@ def filter_non_ascii(line):
 
 def to_str(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
+	if PY3:
+		if isinstance(s_or_u, bytes):
+			return s_or_u.decode(encoding)
+		return s_or_u
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
@@ -510,6 +516,8 @@ def to_str(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
+	if PY3:
+		return s_or_u
 	if isinstance(s_or_u, str):
 		return s_or_u.decode(encoding, errors=errors)
 	else:

@@ -9,6 +9,7 @@ import logging
 import os
 import mimetypes
 import re
+from past.builtins import basestring
 
 import tornado
 import tornado.web
@@ -23,8 +24,6 @@ import tornado.tcpserver
 import tornado.util
 
 import octoprint.util
-
-
 
 def fix_json_encode():
 	"""
@@ -621,7 +620,7 @@ class WsgiInputContainer(object):
 
 		# determine the request_body to supply as wsgi.input
 		if body is not None:
-			if isinstance(body, (bytes, str, unicode)):
+			if isinstance(body, (bytes, basestring)):
 				request_body = io.BytesIO(tornado.escape.utf8(body))
 			else:
 				request_body = body
