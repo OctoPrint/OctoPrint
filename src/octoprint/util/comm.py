@@ -12,6 +12,9 @@ import re
 import threading
 import contextlib
 import copy
+import sys
+
+PY3 = sys.version_info[0] == 3
 
 try:
 	import queue
@@ -949,10 +952,14 @@ class MachineCom(object):
 					continue
 
 				def to_list(data):
-					if isinstance(data, str):
-						data = map(str.strip, data.split("\n"))
-					elif isinstance(data, unicode):
-						data = map(unicode.strip, data.split("\n"))
+					if PY3:
+						if isinstance(data, str):
+							data = map(str.strip, data.split("\n"))
+					else:
+						if isinstance(data, str):
+							data = map(str.strip, data.split("\n"))
+						elif isinstance(data, unicode):
+							data = map(unicode.strip, data.split("\n"))
 
 					if isinstance(data, (list, tuple)):
 						return list(data)
