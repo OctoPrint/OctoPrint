@@ -298,7 +298,7 @@ class PipCaller(CommandlineCaller):
 			if not output.startswith("pip"):
 				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
 
-			split_output = map(lambda x: x.strip(), output.split())
+			split_output = list(map(lambda x: x.strip(), output.split()))
 			if len(split_output) < 2:
 				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
 
@@ -404,7 +404,7 @@ class PipCaller(CommandlineCaller):
 				return False, False, False, None
 
 	def _preprocess_lines(self, *lines):
-		return map(self._preprocess, lines)
+		return list(map(self._preprocess, lines))
 
 	@staticmethod
 	def _preprocess(text):

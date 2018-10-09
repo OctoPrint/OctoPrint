@@ -9,6 +9,7 @@ import logging
 import os
 import mimetypes
 import re
+from past.builtins import basestring
 
 import tornado
 import tornado.web
@@ -23,8 +24,6 @@ import tornado.tcpserver
 import tornado.util
 
 import octoprint.util
-
-
 
 def fix_json_encode():
 	"""
@@ -621,7 +620,7 @@ class WsgiInputContainer(object):
 
 		# determine the request_body to supply as wsgi.input
 		if body is not None:
-			if isinstance(body, (bytes, str, unicode)):
+			if isinstance(body, (bytes, basestring)):
 				request_body = io.BytesIO(tornado.escape.utf8(body))
 			else:
 				request_body = body
@@ -1127,7 +1126,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
-def access_validation_factory(app, login_manager, validator):
+def access_validation_factory(app, login_manager, validator, permission):
 	"""
 	Creates an access validation wrapper using the supplied validator.
 
@@ -1147,7 +1146,7 @@ def access_validation_factory(app, login_manager, validator):
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
 			login_manager.reload_user()
-			validator(flask.request)
+			validator(flask.request, permission)
 	return f
 
 def path_validation_factory(path_filter, status_code=404):

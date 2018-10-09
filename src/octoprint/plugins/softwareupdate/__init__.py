@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import octoprint.plugin
 
+import copy
 import flask
 import os
 import threading
@@ -23,14 +24,14 @@ from . import version_checks, updaters, exceptions, util, cli
 
 from flask_babel import gettext
 
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.server import VERSION, REVISION, BRANCH
+from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
-
 ##~~ Plugin
-
 
 class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.SettingsPlugin,
@@ -76,6 +77,22 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="CHECK",
+			     name="Check",
+			     description=gettext("Allows to check for software updates"),
+			     roles=["check"],
+			     default_groups=[USER_GROUP]),
+			dict(key="UPDATE",
+			     name="Update",
+			     description=gettext("Allows to perform software updates"),
+			     roles=["update"],
+			     dangerous=True)
+		]
 
 	def on_startup(self, host, port):
 		console_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), maxBytes=2*1024*1024)
@@ -156,8 +173,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				config_checks = self._settings.get(["checks"])
 				plugin_and_not_enabled = lambda k: k in check_providers and \
 				                                   not check_providers[k] in self._plugin_manager.enabled_plugins
-				obsolete_plugin_checks = filter(plugin_and_not_enabled,
-				                                config_checks.keys())
+				obsolete_plugin_checks = list(filter(plugin_and_not_enabled,
+				                                	 config_checks.keys()))
 				for key in obsolete_plugin_checks:
 					self._logger.debug("Check for key {} was provided by plugin {} that's no longer available, ignoring it".format(key, check_providers[key]))
 					del self._configured_checks[key]
@@ -209,7 +226,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache["__version"] = octoprint_version
 
 		with atomic_write(self._version_cache_path, max_permissions=0o666) as file_obj:
-			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
+			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent=2, allow_unicode=True)
 
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = time.time()
@@ -472,7 +489,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	#~~ BluePrint API
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
-	@restricted_access
+	@require_firstrun
+	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
 		if "check" in flask.request.values:
 			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
@@ -528,8 +546,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
@@ -538,7 +556,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
 
-		json_data = flask.request.json
+		json_data = flask.request.get_json(silent=True)
+		if json_data is None:
+			return flask.make_response("Invalid JSON", 400)
 
 		if "targets" in json_data:
 			targets = map(lambda x: x.strip(), json_data["targets"])
@@ -897,6 +917,20 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		# determine the target version to update to
 		target_version = information["remote"]["value"]
 		target_error = False
+		target_result = None
+
+		def trigger_event(success, **additional_payload):
+			if success:
+				event = "update_succeeded"
+			else:
+				event = "update_failed"
+
+			payload = copy.copy(additional_payload)
+			payload.update(dict(target=target,
+			                    from_version=information["local"]["value"],
+			                    to_version=target_version))
+
+			self._event_bus.fire("plugin_softwareupdate_{}".format(event), payload=payload)
 
 		### The actual update procedure starts here...
 
@@ -911,6 +945,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			update_result = updater.perform_update(target, populated_check, target_version, log_cb=self._log, online=online)
 			target_result = ("success", update_result)
 			self._logger.info("Update of %s to %s successful!" % (target, target_version))
+			trigger_event(True)
 
 		except exceptions.UnknownUpdateType:
 			self._logger.warn("Update of %s can not be performed, unknown update type" % target)
@@ -923,6 +958,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		except Exception as e:
 			self._logger.exception("Update of %s can not be performed, please also check plugin_softwareupdate_console.log for possible causes of this" % target)
+			trigger_event(False)
+
 			if not "ignorable" in populated_check or not populated_check["ignorable"]:
 				target_error = True
 
@@ -960,7 +997,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._logger.info("Restarting...")
 		try:
-			util.execute(restart_command, evaluate_returncode=False, async=True)
+			util.execute(restart_command, evaluate_returncode=False, do_async=True)
 		except exceptions.ScriptError as e:
 			self._logger.exception("Error while restarting via command {}".format(restart_command))
 			self._logger.warn("Restart stdout:\n{}".format(e.stdout))
@@ -1027,7 +1064,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						# we force an exact version & python unequality check, to be able to downgrade
 						result["force_exact_version"] = True
 						result["release_compare"] = "python_unequal"
-
 					elif check.get("pip", None):
 						# we force python unequality check for pip installs, to be able to downgrade
 						result["release_compare"] = "python_unequal"
@@ -1159,7 +1195,6 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli.commands
+		"octoprint.cli.commands": cli.commands,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}
-
-

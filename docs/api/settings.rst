@@ -514,6 +514,8 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      -
    * - ``webcam.ffmpegThreads``
      -
+   * - ``webcam.ffmpegVideoCodec``
+     -
    * - ``webcam.watermark``
      -
    * - ``webcam.flipH``

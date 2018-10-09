@@ -11,6 +11,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import os
 import traceback
+import past.builtins
 import sys
 import re
 import tempfile
@@ -23,6 +24,8 @@ import contextlib
 import collections
 import frozendict
 import copy
+
+PY3 = sys.version_info[0] == 3
 
 try:
 	import queue
@@ -54,6 +57,35 @@ def warning_decorator_factory(warning_type):
 		return decorator
 	return specific_warning
 
+
+def warning_factory(warning_type):
+	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
+		def decorator(o):
+			def wrapper(f):
+				def new(*args, **kwargs):
+					warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
+					return f(*args, **kwargs)
+				return new
+
+			output = o.__class__.__new__(o.__class__, o)
+
+			unwrappable_names = ("__weakref__", "__class__", "__dict__", "__doc__", "__str__", "__unicode__", "__repr__", "__getattribute__", "__setattr__")
+			for method_name in dir(o):
+				if method_name in unwrappable_names: continue
+
+				setattr(output, method_name, wrapper(getattr(o, method_name)))
+
+			if includedoc is not None and since is not None:
+				docstring = "\n.. deprecated:: {since}\n   {message}\n\n".format(since=since, message=includedoc)
+				if extenddoc and hasattr(wrapper, "__doc__") and wrapper.__doc__ is not None:
+					docstring = wrapper.__doc__ + "\n" + docstring
+					wrapper.__doc__ = docstring
+
+			return output
+		return decorator
+	return specific_warning
+
+
 deprecated = warning_decorator_factory(DeprecationWarning)
 """
 A decorator for deprecated methods. Logs a deprecation warning via Python's `:mod:`warnings` module including the
@@ -75,6 +107,24 @@ Arguments:
 
 Returns:
     function: The wrapped function with the deprecation warnings in place.
+"""
+
+variable_deprecated = warning_factory(DeprecationWarning)
+"""
+A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
+supplied ``message``. The call stack level used (for adding the source location of the offending call to the
+warning) can be overridden using the optional ``stacklevel`` parameter.
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
 """
 
 pending_deprecation = warning_decorator_factory(PendingDeprecationWarning)
@@ -99,6 +149,25 @@ Arguments:
 Returns:
     function: The wrapped function with the deprecation warnings in place.
 """
+
+variable_pending_deprecation = warning_factory(PendingDeprecationWarning)
+"""
+A decorator for variables pending deprecation. Logs a pending deprecation warning via Python's `:mod:`warnings` module
+including the supplied ``message``. The call stack level used (for adding the source location of the offending call to
+the warning) can be overridden using the optional ``stacklevel`` parameter.
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
+"""
+
 
 def get_formatted_size(num):
 	"""
@@ -339,15 +408,15 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	    u'test_123.gco'
 	    >>> find_collision_free_name("test1234", "g o", [])
 	    u'test1234.g_o'
-	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
+	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"])
 	    u'test12~2.gco'
-	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
+	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
 	    >>> find_collision_free_name("test12345", "gco", many_files)
 	    u'test1~10.gco'
-	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
+	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files)
 	    u'test1~99.gco'
-	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
+	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
 	    Traceback (most recent call last):
 	    ...
@@ -357,13 +426,15 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	"""
 
-	if not isinstance(filename, unicode):
-		filename = unicode(filename)
-	if not isinstance(extension, unicode):
-		extension = unicode(extension)
+	filename = to_unicode(filename)
+	extension = to_unicode(extension)
+
+	if filename.startswith(u"/"):
+		filename = filename[1:]
+	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
-		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+		return re.sub(u"\s+", u"_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
 
 	filename = make_valid(filename)
 	extension = make_valid(extension)
@@ -433,6 +504,10 @@ def filter_non_ascii(line):
 
 def to_str(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
+	if PY3:
+		if isinstance(s_or_u, bytes):
+			return s_or_u.decode(encoding)
+		return s_or_u
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
@@ -441,6 +516,8 @@ def to_str(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
+	if PY3:
+		return s_or_u
 	if isinstance(s_or_u, str):
 		return s_or_u.decode(encoding, errors=errors)
 	else:
@@ -1573,10 +1650,10 @@ class CaseInsensitiveSet(collections.Set):
 	"""
 
 	def __init__(self, *args):
-		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+		self.data = set([x.lower() if isinstance(x, past.builtins.basestring) else x for x in args])
 
 	def __contains__(self, item):
-		if isinstance(item, (str, unicode)):
+		if isinstance(item, past.builtins.basestring):
 			return item.lower() in self.data
 		else:
 			return item in self.data

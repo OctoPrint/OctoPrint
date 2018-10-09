@@ -1,4 +1,4 @@
-<div id="drop_overlay" data-bind="visible: loginState.isUser()">
+<div id="drop_overlay" data-bind="visible: loginState.hasPermissionKo(access.permissions.FILES_UPLOAD)">
     <div id="drop_overlay_background"></div>
     <div id="drop_overlay_wrapper">
         {% if enableSdSupport %}

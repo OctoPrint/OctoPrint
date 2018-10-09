@@ -1,0 +1,11 @@
+<table class="table table-condensed table-hover settings_accesscontrol_permissions_list">
+    <tbody data-bind="foreach: permissionList()">
+    <tr>
+        <td class="settings_accesscontrol_permissions_list_checkbox"><input type="checkbox" data-bind="checkedValue: key, checked: $parents[1].editor.permissions"></td>
+        <td class="settings_accesscontrol_permissions_list_name" style="cursor: pointer" data-bind="click: function() { $parents[1].editor.togglePermission($data.key) }, attr: {title: description}">
+            <span class="name" data-bind="text: name, style: { fontWeight: ($parents[1].editor.permissionSelected($data.key)) ? 'bold' : 'normal' }"></span> <span class="label label-info" data-bind="visible: typeof(plugin) !== 'undefined'">{{ _('Plugin') }}</span> <span class="label label-important" data-bind="visible: dangerous">{{ _('Warning') }}</span><br>
+            <small class="description muted" data-bind="text: description"></small>
+        </td>
+    </tr>
+    </tbody>
+</table>

@@ -16,7 +16,8 @@ from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer, pluginManager
 from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.access.permissions import Permissions
 
 import octoprint.plugin
 import octoprint.util
@@ -39,8 +40,8 @@ def _etag(lm=None):
 	for key in sorted(plugin_settings.keys()):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
-	if current_user is not None and not current_user.is_anonymous():
-		roles = sorted(current_user.roles)
+	if current_user is not None and not current_user.is_anonymous:
+		roles = sorted(current_user.permissions)
 	else:
 		roles = []
 
@@ -83,13 +84,15 @@ def getSettings():
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"]) if admin_permission.can() else None,
+			"keyEnforced": s.getBoolean(["api", "keyEnforced"]),
+			"key": s.get(["api", "key"]) if Permissions.ADMIN.can() else None,
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
+			"colorIcon": s.getBoolean(["appearance", "colorIcon"]),
 			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
 			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"])
 		},
@@ -106,6 +109,7 @@ def getSettings():
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
 			"ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
+			"ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
 			"watermark": s.getBoolean(["webcam", "watermark"]),
 			"flipH": s.getBoolean(["webcam", "flipH"]),
 			"flipV": s.getBoolean(["webcam", "flipV"]),
@@ -276,15 +280,18 @@ def _get_plugin_settings():
 
 
 @api.route("/settings", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def setSettings():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not isinstance(data, dict):
@@ -298,23 +305,23 @@ def setSettings():
 
 
 @api.route("/settings/apikey", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def generateApiKey():
 	apikey = settings().generateApiKey()
 	return jsonify(apikey=apikey)
 
 
 @api.route("/settings/apikey", methods=["DELETE"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def deleteApiKey():
 	settings().deleteApiKey()
 	return NO_CONTENT
 
 @api.route("/settings/templates", methods=["GET"])
-@restricted_access
-@admin_permission.require(403)
+@require_firstrun
+@Permissions.SETTINGS.require(403)
 def fetchTemplateData():
 	from octoprint.server.views import fetch_template_data
 
@@ -365,12 +372,14 @@ def _saveSettings(data):
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
+		if "keyEnforced" in data["api"]: s.setBoolean(["api", "keyEnforced"], data["api"]["keyEnforced"])
 		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 	if "appearance" in data.keys():
 		if "name" in data["appearance"]: s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"]: s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"]: s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
+		if "colorIcon" in data["appearance"]: s.setBoolean(["appearance", "colorIcon"], data["appearance"]["colorIcon"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 
@@ -387,6 +396,7 @@ def _saveSettings(data):
 		if "ffmpegPath" in data["webcam"]: s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 		if "bitrate" in data["webcam"]: s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
 		if "ffmpegThreads" in data["webcam"]: s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
+		if "ffmpegVideoCodec" in data["webcam"] and data["webcam"]["ffmpegVideoCodec"] in ("mpeg2video", "libx264"): s.set(["webcam", "ffmpegVideoCodec"], data["webcam"]["ffmpegVideoCodec"])
 		if "watermark" in data["webcam"]: s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
 		if "flipH" in data["webcam"]: s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
 		if "flipV" in data["webcam"]: s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])

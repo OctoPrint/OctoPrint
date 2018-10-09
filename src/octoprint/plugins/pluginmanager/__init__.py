@@ -11,8 +11,8 @@ import octoprint.plugin
 import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.access.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os
@@ -98,6 +98,22 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		# set a maximum body size of 50 MB for plugin archive uploads
 		return [("POST", r"/upload_archive", 50 * 1024 * 1024)]
 
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="MANAGE",
+			     name="Manage plugins",
+			     description=gettext("Allows to enable, disable and uninstall installed plugins."),
+			     roles=["manage"]),
+			dict(key="INSTALL",
+			     name="Install new plugins",
+			     description=gettext("Allows to install new plugins. Includes the \"Manage plugins\" permission."),
+			     roles=["install"],
+			     permissions=["PLUGIN_PLUGINMANAGER_MANAGE"],
+			     dangerous=True)
+		]
+
 	##~~ StartupPlugin
 
 	def on_after_startup(self):
@@ -111,7 +127,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.propagate = False
 
 		# decouple repository fetching from server startup
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SettingsPlugin
 
@@ -155,7 +171,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		plugins = sorted(self._get_plugins(), key=lambda x: x["name"].lower())
 		return dict(
 			all=plugins,
-			thirdparty=filter(lambda p: not p["bundled"], plugins),
+			thirdparty=list(filter(lambda p: not p["bundled"], plugins)),
 			archive_extensions=self.__class__.ARCHIVE_EXTENSIONS
 		)
 
@@ -167,8 +183,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	##~~ BlueprintPlugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
 	def upload_archive(self):
 		import flask
 
@@ -181,7 +197,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
-		exts = filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS)
+		exts = list(filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS))
 		if not len(exts):
 			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
 
@@ -208,7 +224,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		from octoprint.events import Events
 		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
 			return
-		self._fetch_all_data(async=True)
+		self._fetch_all_data(do_async=True)
 
 	##~~ SimpleApiPlugin
 
@@ -222,7 +238,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		}
 
 	def on_api_get(self, request):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		from octoprint.server import safe_mode
@@ -276,7 +292,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
 
 	def on_api_command(self, command, data):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		if self._printer.is_printing() or self._printer.is_paused():
@@ -284,6 +300,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("Printer is currently printing or paused", 409)
 
 		if command == "install":
+			if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
+				return make_response("Insufficient rights", 403)
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
@@ -381,8 +399,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					                     .format(source), 500)
 
 		try:
-			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
-			                     stdout)[-1]
+			result_line = list(filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
+			                     stdout))[-1]
 		except IndexError:
 			self._logger.error("Installing the plugin from {} failed, could not parse output from pip. "
 			                   "See plugin_pluginmanager_console.log for generated output".format(source))
@@ -425,7 +443,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		installed = map(lambda x: x.strip(), result_line[len(success_string):].split(" "))
+		installed = list(map(lambda x: x.strip(), result_line[len(success_string):].split(" ")))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 
 		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
@@ -459,6 +477,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._plugin_manager.log_all_plugins()
 
 		self._logger.info("The plugin was installed successfully: {}, version {}".format(new_plugin.name, new_plugin.version))
+		self._event_bus.fire("plugin_pluginmanager_installplugin", dict(id=new_plugin.key,
+		                                                                version=new_plugin.version,
+		                                                                source=source,
+		                                                                source_type=source_type))
+
 		result = dict(result=True,
 		              source=source,
 		              source_type=source_type,
@@ -548,6 +571,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return jsonify(result)
 
 		self._plugin_manager.reload_plugins()
+
+		self._event_bus.fire("plugin_pluginmanager_uninstallplugin", dict(id=plugin.key,
+		                                                                           version=plugin.version))
 
 		result = dict(result=True,
 		              needs_restart=needs_restart,
@@ -665,9 +691,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:
-			lines = map(lambda x: x.strip(), lines)
+			lines = list(map(lambda x: x.strip(), lines))
 
-		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines", loglines=[dict(line=line, stream=stream) for line in lines]))
+		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines",
+		                                                                loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
 			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
 
@@ -688,6 +715,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif not plugin.enabled and plugin.key not in self._pending_enable:
 				self._pending_enable.add(plugin.key)
 
+		self._event_bus.fire("plugin_pluginmanager_enableplugin", dict(id=plugin.key,
+		                                                               version=plugin.version))
+
 	def _mark_plugin_disabled(self, plugin, needs_restart=False):
 		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
 		                                               validator=lambda x: isinstance(x, list),
@@ -705,12 +735,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif (plugin.enabled or plugin.forced_disabled or getattr(plugin, "safe_mode_victim", False)) and plugin.key not in self._pending_disable:
 				self._pending_disable.add(plugin.key)
 
-	def _fetch_all_data(self, async=False):
+		self._event_bus.fire("plugin_pluginmanager_disableplugin", dict(id=plugin.key,
+		                                                                version=plugin.version))
+
+	def _fetch_all_data(self, do_async=False):
 		def run():
 			self._repository_available = self._fetch_repository_from_disk()
 			self._notices_available = self._fetch_notices_from_disk()
 
-		if async:
+		if do_async:
 			thread = threading.Thread(target=run)
 			thread.daemon = True
 			thread.start()
@@ -788,7 +821,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			return result
 
-		self._repository_plugins = map(map_repository_entry, repo_data)
+		self._repository_plugins = list(map(map_repository_entry, repo_data))
 		return True
 
 	def _fetch_notices_from_disk(self):
@@ -955,10 +988,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
-		return filter(lambda x: x is not None,
-		              map(map_notification,
-		                  filter(filter_relevant,
-		                         plugin_notifications)))
+		return list(filter(lambda x: x is not None,
+		              	   map(map_notification,
+		                  	   filter(filter_relevant,
+		                         	  plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
 		return dict(key=key,
@@ -967,6 +1000,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		            link=notification.get("link"),
 		            versions=notification.get("versions", []),
 		            important=notification.get("important", False))
+
+
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
@@ -981,5 +1016,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
-		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types
+		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}

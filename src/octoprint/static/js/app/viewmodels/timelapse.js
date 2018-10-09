@@ -3,7 +3,9 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
+        self.renderProgressBar = undefined;
         self.timelapsePopup = undefined;
 
         self.defaultFps = 25;
@@ -18,6 +20,25 @@ $(function() {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+
+        self.renderProgress = ko.observable();
+        self.renderTarget = ko.observable();
+        self.renderProgressString = ko.pureComputed(function() {
+            if (!self.renderProgress())
+                return 0;
+            return self.renderProgress();
+        });
+        self.renderProgressBarString = ko.pureComputed(function() {
+            if (!self.renderTarget()) {
+                return "";
+            }
+            var progress = self.renderProgress();
+            if (!progress) {
+                progress = 0;
+            }
+            return _.sprintf(gettext("Rendering %(target)s... (%(progress)d%%)"),
+                {target: self.renderTarget(), progress: progress});
+        });
 
         self.serverConfig = ko.observable();
 
@@ -50,7 +71,7 @@ $(function() {
             return ("timed" === self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
-            return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
+            return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN) && self.isDirty() && self.isOperational() && !self.isPrinting();
         });
         self.resetButtonEnabled = ko.pureComputed(function() {
             return self.saveButtonEnabled() && self.serverConfig() !== undefined;
@@ -141,6 +162,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_LIST))
+                return;
+
             OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
@@ -230,6 +254,9 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.delete(filename)
                     .done(function() {
@@ -253,6 +280,9 @@ $(function() {
         };
 
         self.removeMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForFileDeletion(), "files")
                     .done(function() {
@@ -277,6 +307,9 @@ $(function() {
         };
 
         self.removeUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.deleteUnrendered(name)
                     .done(function() {
@@ -290,6 +323,9 @@ $(function() {
         };
 
         self.removeMarkedUnrendered = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForUnrenderedDeletion(), "unrendered")
                     .done(function() {
@@ -361,11 +397,17 @@ $(function() {
         };
 
         self.renderUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN))
+                return;
+
             OctoPrint.timelapse.renderUnrendered(name)
                 .done(self.requestData);
         };
 
         self.save = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN))
+                return;
+
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
@@ -475,6 +517,13 @@ $(function() {
                 text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
                 hide: false
             });
+
+            self.renderProgress(0);
+            self.renderTarget(payload.movie_prefix);
+        };
+
+        self.onRenderProgress = function(percentage) {
+            self.renderProgress(percentage);
         };
 
         self.onEventMovieFailed = function(payload) {
@@ -498,6 +547,9 @@ $(function() {
                 type: "error",
                 hide: false
             });
+
+            self.renderProgress(0);
+            self.renderTarget(undefined);
         };
 
         self.onEventMovieDone = function(payload) {
@@ -514,16 +566,21 @@ $(function() {
                 }
             });
             self.requestData();
+
+            self.renderProgress(0);
+            self.renderTarget(payload.undefined);
         };
 
-        self.onStartup = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
-        };
+
+            self.renderProgressBar = $("#render_progress");
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TimelapseViewModel,
-        dependencies: ["loginStateViewModel"],
-        elements: ["#timelapse"]
+        dependencies: ["loginStateViewModel", "accessViewModel"],
+        elements: ["#timelapse", "#timelapse_link"]
     });
 });

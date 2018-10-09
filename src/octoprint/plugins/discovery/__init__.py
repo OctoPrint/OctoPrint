@@ -601,8 +601,14 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		                alive message
 		"""
 
-		from BaseHTTPServer import BaseHTTPRequestHandler
-		from StringIO import StringIO
+		try:
+			# noinspection PyCompatibility
+			from http.server import BaseHTTPRequestHandler
+		except ImportError:
+			# noinspection PyCompatibility
+			from BaseHTTPServer import BaseHTTPRequestHandler
+
+		from io import BytesIO
 		import socket
 
 		socket.setdefaulttimeout(timeout)
@@ -617,8 +623,9 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		class Request(BaseHTTPRequestHandler):
 
+			# noinspection PyMissingConstructor
 			def __init__(self, request_text):
-				self.rfile = StringIO(request_text)
+				self.rfile = BytesIO(request_text)
 				self.raw_requestline = self.rfile.readline()
 				self.error_code = self.error_message = None
 				self.parse_request()

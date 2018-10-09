@@ -3,7 +3,9 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
+        self.access = parameters[1];
+
+        self.users = self.access.users;
 
         self.userSettingsDialog = undefined;
 
@@ -50,7 +52,7 @@ $(function() {
             };
 
             // make sure we have the current user data, see #2534
-            OctoPrint.users.get(user.name)
+            OctoPrint.access.users.get(user.name)
                 .done(function(data) {
                     process(data);
                 })
@@ -116,7 +118,7 @@ $(function() {
         };
 
         self.updateSettings = function(username, settings) {
-            return OctoPrint.users.saveSettings(username, settings);
+            return OctoPrint.access.users.saveSettings(username, settings);
         };
 
         self.saveEnabled = function() {
@@ -140,7 +142,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: UserSettingsViewModel,
-        dependencies: ["loginStateViewModel", "usersViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel"],
         elements: ["#usersettings_dialog"]
     });
 });

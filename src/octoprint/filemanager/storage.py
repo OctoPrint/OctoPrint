@@ -1033,7 +1033,7 @@ class LocalFileStorage(StorageInterface):
 	def path_in_storage(self, path):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
-		if isinstance(path, (str, unicode, basestring)):
+		if isinstance(path, basestring):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]

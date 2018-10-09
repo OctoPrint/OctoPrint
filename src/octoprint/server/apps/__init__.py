@@ -29,7 +29,10 @@ def verifySessionKey():
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
 
-	data = request.json
+	data = request.get_json()
+	if data is None:
+		return make_response("Malformed JSON body in request", 400)
+
 	for key in ("appid", "key", "_sig"):
 		if not key in data:
 			return make_response("Missing argument: {key}".format(key=key), 400)

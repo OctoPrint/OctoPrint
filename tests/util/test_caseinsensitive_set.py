@@ -18,8 +18,8 @@ class TestCaseInsensitiveSet(unittest.TestCase):
 
 	@ddt.data("A", "a", "foo", True, 23)
 	def test_contained(self, value):
-		self.assertTrue(value in self.set)
+		self.assertIn(value, self.set)
 
 	@ddt.data("b", "fnord", False, 42)
 	def test_not_contained(self, value):
-		self.assertFalse(value in self.set)
+		self.assertNotIn(value, self.set)

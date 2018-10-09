@@ -11,6 +11,7 @@ trim_trailing_whitespace = true
 
 [**.py]
 indent_style = tab
+indent_size = 4
 
 [src/octoprint/static/js/app/**.js]
 indent_style = space

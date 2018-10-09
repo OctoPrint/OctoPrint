@@ -1197,6 +1197,9 @@ Use the following settings to configure webcam support:
      # Should be left at 1 for RPi1.
      ffmpegThreads: 1
 
+     # Videocodec to be used for encoding. Defaults to mpeg2video.
+     ffmpegVideoCodec: mpeg2video
+
      # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
      bitrate: 5000k
 

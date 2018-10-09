@@ -234,12 +234,12 @@ class EventManager(object):
 		Unsubscribe a listener from an event -- pass in the event name (as string) and the callback object
 		"""
 
-		if not callback in self._registeredListeners[event]:
-			# callback not subscribed to event, just return
-			return
-
-		self._registeredListeners[event].remove(callback)
-		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+		try:
+			self._registeredListeners[event].remove(callback)
+			self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+		except ValueError:
+			# not registered
+			pass
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)

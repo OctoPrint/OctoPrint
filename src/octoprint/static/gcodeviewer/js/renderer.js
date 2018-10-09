@@ -10,7 +10,11 @@ GCODE.renderer = (function(){
 // ***** PRIVATE ******
     var canvas;
     var ctx;
-    var zoomFactor= 2.8, zoomFactorDelta = 0.4;
+
+    var viewportChanged = true;
+    var lineWidthFactor = 1 / 2.8;
+
+    var zoomFactorDelta = 0.4;
     var gridStep=10;
     var ctxHeight, ctxWidth;
     var prevX=0, prevY=0;
@@ -18,7 +22,7 @@ GCODE.renderer = (function(){
 
     var layerNumStore, progressStore={from: 0, to: -1};
     var lastX, lastY;
-    var dragStart, dragged;
+    var dragStart;
     var scaleFactor = 1.1;
     var model = undefined;
     var modelInfo = undefined;
@@ -56,7 +60,12 @@ GCODE.renderer = (function(){
         bed: {x: 200, y: 200},
         container: undefined,
 
-        onInternalOptionChange: undefined
+        onInternalOptionChange: undefined,
+
+        onViewportChange: undefined,
+        onDragStart: undefined, // Cancellable (return false)
+        onDrag: undefined,      // Cancellable (return false)
+        onDragStop: undefined
     };
 
     var offsetModelX = 0, offsetModelY = 0;
@@ -66,19 +75,37 @@ GCODE.renderer = (function(){
     var speedsByLayer = {};
     var currentInvertX = false, currentInvertY = false;
 
+    function notifyIfViewportChanged() {
+        if (viewportChanged) {
+            if (renderOptions["onViewportChange"]) {
+                renderOptions["onViewportChange"](ctx.getTransform());
+            }
+            viewportChanged = false;
+        }
+    }
+    
     var reRender = function(){
+        notifyIfViewportChanged();
+
         var p1 = ctx.transformedPoint(0,0);
         var p2 = ctx.transformedPoint(canvas.width,canvas.height);
         ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
+
         drawGrid();
         drawBoundingBox();
-        if (renderOptions['showNextLayer'] && model && model.length && layerNumStore < model.length - 1) {
-            drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
+        if (model && model.length) {
+            if (layerNumStore < model.length) {
+                if (renderOptions['showNextLayer'] && layerNumStore < model.length - 1) {
+                    drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
+                }
+                if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {
+                    drawLayer(layerNumStore - 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore - 1), true);
+                }
+                drawLayer(layerNumStore, progressStore.from, progressStore.to);
+            } else {
+                console.log("Got request to render non-existent layer");
+            }
         }
-        if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {
-            drawLayer(layerNumStore - 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore - 1), true);
-        }
-        drawLayer(layerNumStore, progressStore.from, progressStore.to);
     };
 
     function trackTransforms(ctx){
@@ -95,22 +122,26 @@ GCODE.renderer = (function(){
         var restore = ctx.restore;
         ctx.restore = function(){
             xform = savedTransforms.pop();
+            viewportChanged = true;
             return restore.call(ctx);
         };
 
         var scale = ctx.scale;
         ctx.scale = function(sx,sy){
             xform = xform.scaleNonUniform(sx,sy);
+            viewportChanged = true;
             return scale.call(ctx,sx,sy);
         };
         var rotate = ctx.rotate;
         ctx.rotate = function(radians){
             xform = xform.rotate(radians*180/Math.PI);
+            viewportChanged = true;
             return rotate.call(ctx,radians);
         };
         var translate = ctx.translate;
         ctx.translate = function(dx,dy){
             xform = xform.translate(dx,dy);
+            viewportChanged = true;
             return translate.call(ctx,dx,dy);
         };
         var transform = ctx.transform;
@@ -118,6 +149,7 @@ GCODE.renderer = (function(){
             var m2 = svg.createSVGMatrix();
             m2.a=a; m2.b=b; m2.c=c; m2.d=d; m2.e=e; m2.f=f;
             xform = xform.multiply(m2);
+            viewportChanged = true;
             return transform.call(ctx,a,b,c,d,e,f);
         };
         var setTransform = ctx.setTransform;
@@ -128,6 +160,7 @@ GCODE.renderer = (function(){
             xform.d = d;
             xform.e = e;
             xform.f = f;
+            viewportChanged = true;
             return setTransform.call(ctx,a,b,c,d,e,f);
         };
         var pt  = svg.createSVGPoint();
@@ -152,9 +185,11 @@ GCODE.renderer = (function(){
         ctxWidth = canvas.width;
         lastX = ctxWidth/2;
         lastY = ctxHeight/2;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * lineWidthFactor;
         ctx.lineCap = 'round';
         trackTransforms(ctx);
+
+        ctx.scale(1,-1); // Invert y-axis
 
         // dragging => translating
         canvas.addEventListener('mousedown', function(event){
@@ -163,10 +198,10 @@ GCODE.renderer = (function(){
             // remember starting point of dragging gesture
             lastX = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
             lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
-            dragStart = ctx.transformedPoint(lastX, lastY);
 
-            // not yet dragged anything
-            dragged = false;
+            var pt = ctx.transformedPoint(lastX, lastY);
+            if (!renderOptions["onDragStart"] || (renderOptions["onDragStart"](pt) !== false))
+              dragStart = pt;
         }, false);
 
         canvas.addEventListener('mousemove', function(event){
@@ -175,11 +210,13 @@ GCODE.renderer = (function(){
             lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
 
             // mouse movement => dragged
-            dragged = true;
-
-            if (dragStart !== undefined){
+            if (dragStart !== undefined) {
                 // translate
                 var pt = ctx.transformedPoint(lastX,lastY);
+
+                if (renderOptions["onDrag"] && (renderOptions["onDrag"](pt) === false))
+                    return;
+
                 ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
                 reRender();
 
@@ -207,6 +244,12 @@ GCODE.renderer = (function(){
         canvas.addEventListener('mouseup', function(event){
             // reset dragStart
             dragStart = undefined;
+
+            if (renderOptions["onDragStop"]) {
+                var x = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
+                var y = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
+                renderOptions["onDragStop"](ctx.transformedPoint(x,y));
+            }
         }, false);
 
         // mouse wheel => zooming
@@ -294,45 +337,45 @@ GCODE.renderer = (function(){
         ctx.beginPath();
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.fillStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * lineWidthFactor;
 
         // outline
-        ctx.rect(minX * zoomFactor, -1 * minY * zoomFactor, width * zoomFactor, -1 * height * zoomFactor);
+        ctx.rect(minX, minY, width, height);
 
         // origin
-        ctx.moveTo(minX * zoomFactor, 0);
-        ctx.lineTo(maxX * zoomFactor, 0);
-        ctx.moveTo(0, -1 * minY * zoomFactor);
-        ctx.lineTo(0, -1 * maxY * zoomFactor);
+        ctx.moveTo(minX, 0);
+        ctx.lineTo(maxX, 0);
+        ctx.moveTo(0, minY);
+        ctx.lineTo(0, maxY);
 
         // draw
         ctx.fill();
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
-        ctx.lineWidth = 1;
+        ctx.lineWidth = lineWidthFactor;
 
         //~~ grid starting from origin
         ctx.beginPath();
         for (x = 0; x <= maxX; x += gridStep) {
-            ctx.moveTo(x * zoomFactor, -1 * minY * zoomFactor);
-            ctx.lineTo(x * zoomFactor, -1 * maxY * zoomFactor);
+            ctx.moveTo(x, minY);
+            ctx.lineTo(x, maxY);
 
             if (renderOptions["bed"]["centeredOrigin"]) {
-                ctx.moveTo(-1 * x * zoomFactor, -1 * minY * zoomFactor);
-                ctx.lineTo(-1 * x * zoomFactor, -1 * maxY * zoomFactor);
+                ctx.moveTo(-1 * x, minY);
+                ctx.lineTo(-1 * x, maxY);
             }
         }
         ctx.stroke();
 
         ctx.beginPath();
         for (y = 0; y <= maxY; y += gridStep) {
-            ctx.moveTo(minX * zoomFactor, -1 * y * zoomFactor);
-            ctx.lineTo(maxX * zoomFactor, -1 * y * zoomFactor);
+            ctx.moveTo(minX, y);
+            ctx.lineTo(maxX, y);
 
             if (renderOptions["bed"]["centeredOrigin"]) {
-                ctx.moveTo(minX * zoomFactor, y * zoomFactor);
-                ctx.lineTo(maxX * zoomFactor, y * zoomFactor);
+                ctx.moveTo(minX, -1 * y);
+                ctx.lineTo(maxX, -1 * y);
             }
         }
         ctx.stroke();
@@ -343,44 +386,45 @@ GCODE.renderer = (function(){
 
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.fillStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * lineWidthFactor;
 
         //~~ bed outline & origin
         ctx.beginPath();
 
         // outline
-        ctx.arc(0, 0, renderOptions["bed"]["r"] * zoomFactor, 0, Math.PI * 2, true);
+        var r = renderOptions["bed"]["r"];
+        ctx.arc(0, 0, r, 0, Math.PI * 2, true);
 
         // origin
-        ctx.moveTo(-1 * renderOptions["bed"]["r"] * zoomFactor, 0);
-        ctx.lineTo(renderOptions["bed"]["r"] * zoomFactor, 0);
-        ctx.moveTo(0, -1 * renderOptions["bed"]["r"] * zoomFactor);
-        ctx.lineTo(0, renderOptions["bed"]["r"] * zoomFactor);
+        ctx.moveTo(-1 * r, 0);
+        ctx.lineTo(r, 0);
+        ctx.moveTo(0, r);
+        ctx.lineTo(0, -1 * r);
 
         // draw
         ctx.fill();
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
-        ctx.lineWidth = 1;
+        ctx.lineWidth = lineWidthFactor;
 
         //~~ grid starting from origin
         ctx.beginPath();
-        for (i = 0; i <= renderOptions["bed"]["r"]; i += gridStep) {
+        for (i = 0; i <= r; i += gridStep) {
             var x = i;
-            var y = Math.sqrt(Math.pow(renderOptions["bed"]["r"], 2) - Math.pow(x, 2));
+            var y = Math.sqrt(r*r - x*x);
 
-            ctx.moveTo(x * zoomFactor, y * zoomFactor);
-            ctx.lineTo(x * zoomFactor, -1 * y * zoomFactor);
+            ctx.moveTo(x, -1 * y);
+            ctx.lineTo(x, y);
 
-            ctx.moveTo(y * zoomFactor, x * zoomFactor);
-            ctx.lineTo(-1 * y * zoomFactor, x * zoomFactor);
+            ctx.moveTo(y, -1 * x);
+            ctx.lineTo(-1 * y, -1 * x);
 
-            ctx.moveTo(-1 * x * zoomFactor, y * zoomFactor);
-            ctx.lineTo(-1 * x * zoomFactor, -1 * y * zoomFactor);
+            ctx.moveTo(-1 * x, -1 * y);
+            ctx.lineTo(-1 * x, y);
 
-            ctx.moveTo(y * zoomFactor, -1 * x * zoomFactor);
-            ctx.lineTo(-1 * y * zoomFactor, -1 * x * zoomFactor);
+            ctx.moveTo(y, x);
+            ctx.lineTo(-1 * y, x);
         }
         ctx.stroke();
     };
@@ -391,31 +435,31 @@ GCODE.renderer = (function(){
         var minX, minY, width, height;
 
         if (renderOptions["showFullSize"]) {
-            minX = modelInfo.min.x * zoomFactor;
-            minY = modelInfo.min.y * zoomFactor;
-            width = modelInfo.modelSize.x * zoomFactor;
-            height = modelInfo.modelSize.y * zoomFactor;
+            minX = modelInfo.min.x;
+            minY = modelInfo.min.y;
+            width = modelInfo.modelSize.x;
+            height = modelInfo.modelSize.y;
 
             ctx.beginPath();
             ctx.strokeStyle = "#0000ff";
             ctx.setLineDash([2, 5]);
 
-            ctx.rect(minX, minY * -1, width, height * -1);
+            ctx.rect(minX, minY, width, height);
 
             ctx.stroke();
         }
 
         if (renderOptions["showBoundingBox"]) {
-            minX = modelInfo.boundingBox.minX * zoomFactor;
-            minY = modelInfo.boundingBox.minY * zoomFactor;
-            width = modelInfo.boundingBox.maxX * zoomFactor - minX;
-            height = modelInfo.boundingBox.maxY * zoomFactor - minY;
+            minX = modelInfo.boundingBox.minX;
+            minY = modelInfo.boundingBox.minY;
+            width = modelInfo.boundingBox.maxX - minX;
+            height = modelInfo.boundingBox.maxY - minY;
 
             ctx.beginPath();
             ctx.strokeStyle = "#ff0000";
             ctx.setLineDash([2, 5]);
 
-            ctx.rect(minX, minY * -1, width, height * -1);
+            ctx.rect(minX, minY, width, height);
 
             ctx.stroke();
         }
@@ -439,29 +483,35 @@ GCODE.renderer = (function(){
          */
 
         var ax, bx, cx, ay, by, cy;
-        var h = Math.sqrt(0.75 * length * length);
+        var h = Math.sqrt(0.75 * length * length) / 2;
 
         ax = centerX - length / 2;
-        bx = centerX + length / 2;
+        bx = ax + length;
         cx = centerX;
 
         if (up) {
-            ay = centerY + h / 2;
-            by = centerY + h / 2;
-            cy = centerY - h / 2;
+            ay = centerY - h;
+            by = centerY - h;
+            cy = centerY + h;
         } else {
-            ay = centerY - h / 2;
-            by = centerY - h / 2;
-            cy = centerY + h / 2;
+            ay = centerY + h;
+            by = centerY + h;
+            cy = centerY - h;
         }
+
+        var origLineJoin = ctx.lineJoin;
+        ctx.lineJoin = "miter";
 
         ctx.beginPath();
         ctx.moveTo(ax, ay);
         ctx.lineTo(bx, by);
+        ctx.moveTo(bx, by);
         ctx.lineTo(cx, cy);
         ctx.lineTo(ax, ay);
         ctx.stroke();
         ctx.fill();
+
+        ctx.lineJoin = origLineJoin;
     };
 
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
@@ -472,11 +522,6 @@ GCODE.renderer = (function(){
         //~~ store current layer values
 
         isNotCurrentLayer = isNotCurrentLayer !== undefined ? isNotCurrentLayer : false;
-        if (!isNotCurrentLayer) {
-            // not not current layer == current layer => store layer number and from/to progress
-            layerNumStore = layerNum;
-            progressStore = {from: fromProgress, to: toProgress};
-        }
 
         if (!model || !model[layerNum]) return;
 
@@ -487,19 +532,28 @@ GCODE.renderer = (function(){
 
         if (cmds[0].prevX !== undefined && cmds[0].prevY !== undefined) {
             // command contains prevX/prevY values, use those
-            prevX = cmds[0].prevX * zoomFactor;
-            prevY = -1 * cmds[0].prevY * zoomFactor;
+            prevX = cmds[0].prevX;
+            prevY = cmds[0].prevY;
         } else if (fromProgress > 0) {
             // previous command in same layer exists, use x/y as prevX/prevY
-            prevX = cmds[fromProgress - 1].x * zoomFactor;
-            prevY = -cmds[fromProgress - 1].y * zoomFactor;
+            prevX = cmds[fromProgress - 1].x;
+            prevY = cmds[fromProgress - 1].y;
         } else if (model[layerNum - 1]) {
             // previous layer exists, use last x/y as prevX/prevY
             prevX = undefined;
             prevY = undefined;
-            for (i = model[layerNum-1].length-1; i >= 0; i--) {
-                if (prevX === undefined && model[layerNum - 1][i].x !== undefined) prevX = model[layerNum - 1][i].x * zoomFactor;
-                if (prevY === undefined && model[layerNum - 1][i].y !== undefined) prevY =- model[layerNum - 1][i].y * zoomFactor;
+            var prevModelLayer = model[layerNum-1];
+            for (i = prevModelLayer.length-1; i >= 0; i--) {
+                if (prevX === undefined && prevModelLayer[i].x !== undefined) {
+                    prevX = prevModelLayer[i].x;
+                    if (prevY !== undefined)
+                        break;
+                }
+                if (prevY === undefined && prevModelLayer[i].y !== undefined) {
+                    prevY = prevModelLayer[i].y;
+                    if (prevX !== undefined)
+                        break;
+                }
             }
         }
 
@@ -510,106 +564,160 @@ GCODE.renderer = (function(){
 
         //~~ render this layer's commands
 
+        var sizeRetractSpot = renderOptions["sizeRetractSpot"] * lineWidthFactor * 2;
+
+        // alpha value (100% if current layer is being rendered, 30% otherwise)
+        var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
+        
+        var colorLine = {};
+        var colorMove = {};
+        var colorRetract = {};
+        var colorRestart = {};
+
+        function getColorLineForTool(tool) {
+            var rv = colorLine[tool];
+            if (rv === undefined) {
+                var lineColor = renderOptions["colorLine"][tool];
+                if (lineColor === undefined) lineColor = renderOptions["colorLine"][0];
+                var shade = tool * 0.15;
+                rv = colorLine[tool] = pusher.color(lineColor).shade(shade).alpha(alpha).html();
+            }
+            return rv;
+        }
+
+        function getColorMoveForTool(tool) {
+            var rv = colorMove[tool];
+            if (rv === undefined) {
+                var shade = tool * 0.15;
+                rv = colorMove[tool] = pusher.color(renderOptions["colorMove"]).shade(shade).alpha(alpha).html();
+            }
+            return rv;
+        }
+
+        function getColorRetractForTool(tool) {
+            var rv = colorRetract[tool];
+            if (rv === undefined) {
+                var shade = tool * 0.15;
+                rv = colorRetract[tool] = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
+            }
+            return rv;
+        }
+
+        function getColorRestartForTool(tool) {
+            var rv = colorRestart[tool];
+            if (rv === undefined) {
+                var shade = tool * 0.15;
+                rv = colorRestart[tool] = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
+            }
+            return rv;
+        }
+
+        var prevPathType = "fill";
+        function strokePathIfNeeded(newPathType, strokeStyle) {
+            if ((newPathType != prevPathType) || (newPathType == "fill")) {
+                if (prevPathType != "fill") {
+                    ctx.stroke();
+                }
+                prevPathType = newPathType;
+
+                ctx.beginPath();
+                if (newPathType != "fill") {
+                  ctx.strokeStyle = strokeStyle;
+                  ctx.moveTo(prevX, prevY);
+                }
+            }
+        }
+
+        ctx.lineJoin = "round";
+
         for (i = fromProgress; i <= toProgress; i++) {
-            ctx.lineWidth = 1;
-
             if (typeof(cmds[i]) === 'undefined') continue;
+            var cmd = cmds[i];
 
-            if (typeof(cmds[i].prevX) !== 'undefined' && typeof(cmds[i].prevY) !== 'undefined') {
+            if (cmd.prevX !== undefined && cmd.prevY !== undefined) {
                 // override new (prevX, prevY)
-                prevX = cmds[i].prevX * zoomFactor;
-                prevY = -1 * cmds[i].prevY * zoomFactor;
+                prevX = cmd.prevX;
+                prevY = cmd.prevY;
             }
 
             // new x
-            if (typeof(cmds[i].x) === 'undefined' || isNaN(cmds[i].x)) {
-                x = prevX / zoomFactor;
+            if (cmd.x === undefined || isNaN(cmd.x)) {
+                x = prevX;
             } else {
-                x = cmds[i].x;
+                x = cmd.x;
             }
 
             // new y
-            if (typeof(cmds[i].y) === 'undefined' || isNaN(cmds[i].y)) {
-                y = prevY / zoomFactor;
+            if (cmd.y === undefined || isNaN(cmd.y)) {
+                y = prevY;
             } else {
-                y = -cmds[i].y;
+                y = cmd.y;
             }
 
             // current tool
-            var tool = cmds[i].tool;
-            if (tool === undefined) tool = 0;
+            var tool = cmd.tool || 0;
 
-            // line color based on tool
-            var lineColor = renderOptions["colorLine"][tool];
-            if (lineColor === undefined) lineColor = renderOptions["colorLine"][0];
-
-            // alpha value (100% if current layer is being rendered, 30% otherwise)
-            var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
-            var shade = tool * 0.15;
-
-            if (!cmds[i].extrude && !cmds[i].noMove) {
+            if (!cmd.extrude && !cmd.noMove) {
                 // neither extrusion nor move
-                if (cmds[i].retract === -1) {
+                if (cmd.retract == -1) {
                     // retract => draw dot if configured to do so
                     if (renderOptions["showRetracts"]) {
-                        ctx.strokeStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
-                        ctx.fillStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
-                        drawTriangle(prevX, prevY, renderOptions["sizeRetractSpot"] * 2, true);
+                        strokePathIfNeeded("fill");
+                        ctx.fillStyle = getColorRetractForTool(tool);
+                        ctx.strokeStyle = ctx.fillStyle;
+                        drawTriangle(prevX, prevY, sizeRetractSpot, true);
                     }
                 }
 
+                strokePathIfNeeded("move", getColorMoveForTool(tool));
                 if(renderOptions["showMoves"]){
                     // move => draw line from (prevX, prevY) to (x, y) in move color
-                    ctx.strokeStyle = pusher.color(renderOptions["colorMove"]).shade(shade).alpha(alpha).html();
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineTo(x*zoomFactor,y*zoomFactor);
-                    ctx.stroke();
+                    ctx.lineWidth = lineWidthFactor;
+                    ctx.lineTo(x,y);
                 }
-            } else if(cmds[i].extrude) {
-                if (cmds[i].retract === 0) {
+            } else if(cmd.extrude) {
+                if (cmd.retract == 0) {
                     // no retraction => real extrusion move, use tool color to draw line
-                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
-                    ctx.lineWidth = renderOptions['extrusionWidth'];
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    if (cmds[i].direction !== undefined && cmds[i].direction !== 0){
-                        var cmd = cmds[i];
-                        var di = cmd.i*zoomFactor;
-                        var dj = -1*cmd.j*zoomFactor; // Y-coordinate is inverted
+                    strokePathIfNeeded("extrude", getColorLineForTool(tool));
+                    ctx.lineWidth = renderOptions['extrusionWidth'] * lineWidthFactor;
+                    if (cmd.direction !== undefined && cmd.direction != 0){
+                        var di = cmd.i;
+                        var dj = cmd.j;
                         var centerX = prevX+di;
                         var centerY = prevY+dj;
                         var startAngle = Math.atan2(prevY-centerY, prevX - centerX);
-                        var endAngle = Math.atan2(y*zoomFactor-centerY, x*zoomFactor - centerX);
+                        var endAngle = Math.atan2(y - centerY, x - centerX);
                         var radius=Math.sqrt(di*di+dj*dj);
-                        ctx.arc(centerX,centerY,radius,startAngle,endAngle,cmd.direction<0); // Y-coordinate is inverted so direction is also inverted
+                        ctx.arc(centerX,centerY,radius,startAngle,endAngle,cmd.direction<0); // Y-axis is inverted so direction is also inverted
                     } else {
-                        ctx.lineTo(x*zoomFactor,y*zoomFactor);
+                        ctx.lineTo(x,y);
                     }
-                    ctx.stroke();
                 } else {
                     // we were previously retracting, now we are restarting => draw dot if configured to do so
                     if (renderOptions["showRetracts"]) {
-                        ctx.strokeStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
-                        ctx.fillStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
-                        drawTriangle(prevX, prevY, renderOptions["sizeRetractSpot"] * 2, false);
+                        strokePathIfNeeded("fill");
+                        ctx.fillStyle = getColorRestartForTool(tool);
+                        ctx.strokeStyle = ctx.fillStyle;
+                        drawTriangle(prevX, prevY, sizeRetractSpot, false);
                     }
                 }
             }
 
             // set new (prevX, prevY)
-            prevX = x * zoomFactor;
-            prevY = y * zoomFactor;
+            prevX = x;
+            prevY = y;
+        }
+        
+        if (prevPathType != "fill") {
+            ctx.stroke();
         }
 
-        ctx.stroke();
-
         if (renderOptions["showHead"]) {
-            ctx.strokeStyle = pusher.color(renderOptions["colorHead"]).shade(shade).alpha(alpha).html();
+            var sizeHeadSpot = renderOptions["sizeHeadSpot"] * lineWidthFactor + lineWidthFactor / 2;
+            var shade = tool * 0.15;
             ctx.fillStyle = pusher.color(renderOptions["colorHead"]).shade(shade).alpha(alpha).html();
             ctx.beginPath();
-            ctx.arc(prevX, prevY, renderOptions["sizeHeadSpot"], 0, Math.PI*2, true);
-            ctx.stroke();
+            ctx.arc(prevX, prevY, sizeHeadSpot, 0, Math.PI*2, true);
             ctx.fill();
         }
     };
@@ -622,8 +730,8 @@ GCODE.renderer = (function(){
         if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             if (modelInfo) {
-                offsetModelX = canvasCenter.x - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) * zoomFactor / 2;
-                offsetModelY = canvasCenter.y + (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) * zoomFactor / 2;
+                offsetModelX = canvasCenter.x - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2;
+                offsetModelY = canvasCenter.y - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2;
             } else {
                 offsetModelX = 0;
                 offsetModelY = 0;
@@ -631,10 +739,10 @@ GCODE.renderer = (function(){
             offsetBedX = 0;
             offsetBedY = 0;
         } else if (modelInfo && renderOptions["moveModel"]) {
-            offsetModelX = (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2) * zoomFactor;
-            offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2) * zoomFactor;
-            offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2) * zoomFactor;
-            offsetBedY = (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2) * zoomFactor;
+            offsetModelX = (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2);
+            offsetModelY = (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2);
+            offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2);
+            offsetBedY = -1 * (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2);
         } else if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             offsetModelX = canvasCenter.x;
@@ -671,10 +779,9 @@ GCODE.renderer = (function(){
             var length = modelInfo.boundingBox.maxY - modelInfo.boundingBox.minY;
 
             var scaleF = width > length ? (canvas.width - 10) / width : (canvas.height - 10) / length;
-            scaleF /= zoomFactor;
             if (transform.a && transform.d) {
                 scaleX = scaleF / transform.a * (renderOptions["invertAxes"]["x"] ? -1 : 1);
-                scaleY = scaleF / transform.d * (renderOptions["invertAxes"]["y"] ? -1 : 1);
+                scaleY = scaleF / transform.d * (renderOptions["invertAxes"]["y"] ? 1 : -1);
                 ctx.translate(pt.x,pt.y);
                 ctx.scale(scaleX, scaleY);
                 ctx.translate(-pt.x, -pt.y);
@@ -721,22 +828,30 @@ GCODE.renderer = (function(){
             if(renderOptions["bed"]["circular"]) {
                 bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
             }
-            zoomFactor = Math.min((canvas.width - 10) / bedWidth, (canvas.height - 10) / bedHeight);
 
+            // Ratio of bed to canvas viewport
+            var viewportRatio = Math.min((canvas.width - 10) / bedWidth, (canvas.height - 10) / bedHeight);
+
+            // Apply initial translation to center the bed in the viewport
             var translationX, translationY;
             if (renderOptions["bed"]["circular"]) {
                 translationX = canvas.width / 2;
                 translationY = canvas.height / 2;
             } else {
-                translationX = (canvas.width - bedWidth * zoomFactor) / 2;
-                translationY = bedHeight * zoomFactor + (canvas.height - bedHeight * zoomFactor) / 2;
+                translationX = (canvas.width - bedWidth * viewportRatio) / 2;
+                translationY = bedHeight * viewportRatio + (canvas.height - bedHeight * viewportRatio) / 2;
             }
-            ctx.translate(translationX, translationY);
+            ctx.translate(translationX, -translationY);
 
+            ctx.scale(viewportRatio, viewportRatio);
+            
             offsetModelX = 0;
             offsetModelY = 0;
             offsetBedX = 0;
             offsetBedY = 0;
+
+            // Scaling to apply to move lines and extrusion/retraction markers
+            lineWidthFactor = 1 / viewportRatio;
         },
         setOption: function(options){
             var mustRefresh = false;
@@ -748,7 +863,7 @@ GCODE.renderer = (function(){
 
                 dirty = true;
                 renderOptions[opt] = options[opt];
-                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed", "invertAxes"]) > -1) {
+                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed", "invertAxes", "onViewportChange"]) > -1) {
                     mustRefresh = true;
                 }
             }
@@ -770,25 +885,12 @@ GCODE.renderer = (function(){
         },
         render: function(layerNum, fromProgress, toProgress){
             if (!initialized) this.init();
+            
+            layerNumStore = layerNum;
+            progressStore.from = fromProgress;
+            progressStore.to = toProgress;
 
-            var p1 = ctx.transformedPoint(0, 0);
-            var p2 = ctx.transformedPoint(canvas.width, canvas.height);
-            ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-            drawGrid();
-            drawBoundingBox();
-            if (model && model.length) {
-                if (layerNum < model.length) {
-                    if (renderOptions['showNextLayer'] && layerNum < model.length - 1) {
-                        drawLayer(layerNum + 1, 0, this.getLayerNumSegments(layerNum + 1), true);
-                    }
-                    if (renderOptions['showPreviousLayer'] && layerNum > 0) {
-                        drawLayer(layerNum - 1, 0, this.getLayerNumSegments(layerNum - 1), true);
-                    }
-                    drawLayer(layerNum, fromProgress, toProgress);
-                } else {
-                    console.log("Got request to render non-existent layer");
-                }
-            }
+            reRender();
         },
         getModelNumLayers: function(){
             return model ? model.length : 1;
@@ -838,7 +940,7 @@ GCODE.renderer = (function(){
             this.render(layerNum, 0, toProgress);
         },
         refresh: function(layerNum) {
-            if (!layerNum) layerNum = layerNumStore;
+            if (layerNum === undefined) layerNum = layerNumStore;
             this.doRender(model, layerNum);
         },
         getZ: function(layerNum){

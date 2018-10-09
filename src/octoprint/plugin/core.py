@@ -519,8 +519,8 @@ class PluginInfo(object):
 			                     root.body)
 
 			def extract_target_ids(node):
-				return map(lambda x: x.id,
-				           filter(lambda x: isinstance(x, ast.Name), node.targets))
+				return list(map(lambda x: x.id,
+				                filter(lambda x: isinstance(x, ast.Name), node.targets)))
 
 			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
 			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
@@ -628,7 +628,7 @@ class PluginManager(object):
 
 	@property
 	def plugin_hooks(self):
-		return {key: map(lambda v: (v[1], v[2]), value) for key, value in self._plugin_hooks.items()}
+		return {key: list(map(lambda v: (v[1], v[2]), value)) for key, value in self._plugin_hooks.items()}
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True, incl_all_found=False):
 		added, found = self._find_plugins(existing=existing, ignore_uninstalled=ignore_uninstalled)
@@ -861,7 +861,7 @@ class PluginManager(object):
 		if plugin.check():
 			return plugin
 		else:
-			self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
+			self.logger.info("Plugin {plugin} did not pass check, not loading.".format(plugin=str(plugin)))
 			return None
 
 	def _is_plugin_disabled(self, key):
@@ -1501,7 +1501,7 @@ class PluginManager(object):
 
 		assert callable(f)
 		implementations = self.get_implementations(*types, sorting_context=kwargs.get("sorting_context", None))
-		return filter(f, implementations)
+		return list(filter(f, implementations))
 
 	def get_helpers(self, name, *helpers):
 		"""
@@ -1532,7 +1532,8 @@ class PluginManager(object):
 	def register_message_receiver(self, client):
 		"""
 		Registers a ``client`` for receiving plugin messages. The ``client`` needs to be a callable accepting two
-		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself).
+		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself), and one
+		optional keyword argument, ``permissions`` (an optional list of permissions to test against).
 		"""
 
 		if client is None:
@@ -1544,20 +1545,25 @@ class PluginManager(object):
 		Unregisters a ``client`` for receiving plugin messages.
 		"""
 
-		self.registered_clients.remove(client)
+		try:
+			self.registered_clients.remove(client)
+		except ValueError:
+			# not registered
+			pass
 
-	def send_plugin_message(self, plugin, data):
+	def send_plugin_message(self, plugin, data, permissions=None):
 		"""
 		Sends ``data`` in the name of ``plugin`` to all currently registered message receivers by invoking them
-		with the two arguments.
+		with the three arguments.
 
 		Arguments:
 		    plugin (str): The sending plugin's identifier.
 		    data (object): The message.
+		    permissions (list): A list of permissions to test against in the client.
 		"""
 
 		for client in self.registered_clients:
-			try: client(plugin, data)
+			try: client(plugin, data, permissions=permissions)
 			except: self.logger.exception("Exception while sending plugin data to client")
 
 	def _sort_hooks(self, hook):

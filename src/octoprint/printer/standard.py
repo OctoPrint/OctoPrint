@@ -153,13 +153,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def register_callback(self, callback, *args, **kwargs):
 		if not isinstance(callback, PrinterCallback):
 			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
-
 		self._callbacks.append(callback)
-		self._sendInitialStateUpdate(callback)
 
 	def unregister_callback(self, callback, *args, **kwargs):
-		if callback in self._callbacks:
+		try:
 			self._callbacks.remove(callback)
+		except ValueError:
+			# not registered
+			pass
+
+	def send_initial_callback(self, callback):
+		if callback in self._callbacks:
+			self._sendInitialStateUpdate(callback)
 
 	def _sendAddTemperatureCallbacks(self, data):
 		for callback in self._callbacks:
@@ -349,12 +354,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def home(self, axes, *args, **kwargs):
 		if not isinstance(axes, (list, tuple)):
-			if isinstance(axes, (str, unicode)):
+			if isinstance(axes, basestring):
 				axes = [axes]
 			else:
 				raise ValueError("axes is neither a list nor a string: {axes}".format(axes=axes))
 
-		validated_axes = filter(lambda x: x in PrinterInterface.valid_axes, map(lambda x: x.lower(), axes))
+		validated_axes = list(filter(lambda x: x in PrinterInterface.valid_axes, map(lambda x: x.lower(), axes)))
 		if len(axes) != len(validated_axes):
 			raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
 
@@ -407,8 +412,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not isinstance(offsets, dict):
 			raise ValueError("offsets must be a dict")
 
-		validated_keys = filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys())
-		validated_values = filter(lambda x: isinstance(x, (int, long, float)), offsets.values())
+		validated_keys = list(filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys()))
+		validated_values = list(filter(lambda x: isinstance(x, (int, long, float)), offsets.values()))
 
 		if len(validated_keys) != len(offsets):
 			raise ValueError("offsets contains invalid keys: {offsets}".format(offsets=offsets))
@@ -648,7 +653,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def get_sd_files(self, *args, **kwargs):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
-		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
+		return list(map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles()))
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
