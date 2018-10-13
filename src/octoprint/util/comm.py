@@ -12,6 +12,9 @@ import re
 import threading
 import contextlib
 import copy
+import sys
+
+PY3 = sys.version_info[0] == 3
 
 try:
 	import queue
@@ -2573,6 +2576,9 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
+		if PY3:
+			ret = ret.decode()
+
 		if ret != "":
 			try:
 				self._log("Recv: " + sanitize_ascii(ret))
@@ -3169,7 +3175,10 @@ class MachineCom(object):
 			old_written = written
 
 			try:
-				result = self._serial.write(to_send)
+				if PY3:
+					result = self._serial.write(to_send.encode('utf-8'))
+				else:
+					result = self._serial.write(to_send)
 				if result is None or not isinstance(result, int):
 					# probably some plugin not returning the written bytes, assuming all of them
 					written += len(cmd)
@@ -3178,7 +3187,10 @@ class MachineCom(object):
 			except serial.SerialTimeoutException:
 				self._log("Serial timeout while writing to serial port, trying again.")
 				try:
-					result = self._serial.write(to_send)
+					if PY3:
+						result = self._serial.write(to_send.encode('utf-8'))
+					else:
+						result = self._serial.write(to_send)
 					if result is None or not isinstance(result, int):
 						# probably some plugin not returning the written bytes, assuming all of them
 						written += len(cmd)
