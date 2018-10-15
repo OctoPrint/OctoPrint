@@ -20,7 +20,6 @@ from octoprint.util import atomic_write
 
 """
 TODO:
-  * add key persistence
   * add central management settings panel for *all* user's keys
     * bulk delete: delete all, all on page, all by user?
   * write documentation
