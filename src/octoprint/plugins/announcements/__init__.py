@@ -372,15 +372,24 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		result = []
 		if "entries" in feed:
 			for entry in feed["entries"]:
-				internal_entry = self._to_internal_entry(entry, read_until=read_until)
-				if internal_entry:
-					result.append(internal_entry)
+				try:
+					internal_entry = self._to_internal_entry(entry, read_until=read_until)
+					if internal_entry:
+						result.append(internal_entry)
+				except:
+					self._logger.exception("Error while converting entry from feed, skipping it")
 		return result
 
 	def _to_internal_entry(self, entry, read_until=None):
 		"""Convert feed entries to internal data structure."""
 
-		published = calendar.timegm(entry["published_parsed"])
+		timestamp = entry.get("published_parsed",
+		                      entry.get("updated_parsed",
+		                                None))
+		if timestamp is None:
+			return  None
+
+		published = calendar.timegm(timestamp)
 
 		read = True
 		if read_until is not None:

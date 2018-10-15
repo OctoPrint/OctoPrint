@@ -8,6 +8,7 @@ Bundled Plugins
    :maxdepth: 2
 
    action_command_prompt.rst
+   announcements.rst
    cura.rst
    discovery.rst
    logging.rst
