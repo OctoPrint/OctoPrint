@@ -77,4 +77,4 @@ class PipCallerTest(unittest.TestCase):
 		with mock.patch.object(site, "ENABLE_USER_SITE", user_site):
 			parsed = pkg_resources.parse_version(version)
 			actual = octoprint.util.pip.PipCaller.clean_install_command(args, parsed, virtual_env, use_user, force_user)
-		self.assertEquals(expected, actual)
+		self.assertEqual(expected, actual)

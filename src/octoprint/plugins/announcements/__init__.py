@@ -20,11 +20,12 @@ import flask
 
 from collections import OrderedDict
 
-from octoprint.server import admin_permission
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
+from octoprint.access.permissions import Permissions
+from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
 from octoprint.util import utmify
 from flask_babel import gettext
 from octoprint import __version__ as OCTOPRINT_VERSION
+
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
@@ -41,6 +42,22 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		from slugify import Slugify
 		self._slugify = Slugify()
 		self._slugify.safe_chars = "-_."
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="READ",
+			     name="Read announcements",
+			     description=gettext("Allows to read announcements"),
+			     roles=["read"]),
+			dict(key="MANAGE",
+			     name="Manage announcement subscriptions",
+			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
+			                         "permission"),
+			     roles=["manage"],
+			     permissions=["PLUGIN_ANNOUNCEMENTS_READ"])
+		]
 
 	# StartupPlugin
 
@@ -127,14 +144,14 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="settings", name=gettext("Announcements"), template="announcements_settings.jinja2", custom_bindings=True),
-			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.isAdmin")
+			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)")
 		]
 
 	# Blueprint Plugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels", methods=["GET"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
 
@@ -153,7 +170,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			for key, data in channel_configs.items():
 				read_until = channel_configs[key].get("read_until", None)
 				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-				unread = len(filter(lambda e: not e["read"], entries))
+				unread = len(list(filter(lambda e: not e["read"], entries)))
 
 				if read_until is None and entries:
 					last = entries[0]["published"]
@@ -194,8 +211,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                  unless=lambda: force)(view)()
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@require_firstrun
+	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def channel_command(self, channel):
 		from octoprint.server.util.flask import get_json_command_from_request
 		from octoprint.server import NO_CONTENT
@@ -212,6 +229,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			self._mark_read_until(channel, until)
 
 		elif command == "toggle":
+			if not Permissions.PLUGIN_ANNOUNCEMENTS_MANAGE.can():
+				return flask.make_response("Insufficient rights", 403)
 			self._toggle(channel)
 
 		return NO_CONTENT
@@ -462,8 +481,12 @@ def _strip_tags(text):
 	>>> _strip_tags(u"&#62; &#x3E; Foo")
 	u'&#62; &#x3E; Foo'
 	"""
-
-	from HTMLParser import HTMLParser
+	try:
+		# noinspection PyCompatibility
+		from html.parser import HTMLParser
+	except ImportError:
+		# noinspection PyCompatibility
+		from HTMLParser import HTMLParser
 
 	class TagStripper(HTMLParser):
 
@@ -495,3 +518,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin you might miss i
                                            "regarding security or other critical issues concerning OctoPrint.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = AnnouncementPlugin()
+
+__plugin_hooks__ = {
+	'octoprint.access.permissions': __plugin_implementation__.get_additional_permissions
+}

@@ -7,7 +7,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.events import Events
-from octoprint.server import user_permission
+from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 from octoprint.util.version import get_comparable_version
 
 import flask
@@ -102,7 +103,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	##~~ SimpleApiPlugin API
 
 	def on_api_get(self, request):
-		if not user_permission.can():
+		if not Permissions.PLUGIN_PRINTER_SAFETY_CHECK_DISPLAY.can():
 			return flask.make_response("Insufficient rights", 403)
 		return flask.jsonify(self._warnings)
 
@@ -123,6 +124,17 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_firmware_cap_received(self, comm_instance, cap, enabled, all_caps):
 		self._run_checks("cap", cap, enabled)
+
+	##~~ Additional permissions hook handler
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="DISPLAY",
+			     name="Display printer safety warnings",
+			     description=gettext("Allows to see printer safety warnings"),
+			     roles=["display"],
+			     default_groups=[USER_GROUP])
+		]
 
 	##~~ Helpers
 
@@ -171,6 +183,7 @@ __plugin_implementation__ = PrinterSafetyCheckPlugin()
 __plugin_hooks__ = {
 	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
 	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
-	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received
+	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
 

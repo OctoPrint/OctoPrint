@@ -209,7 +209,8 @@ default_settings = {
 		"snapshotSslValidation": True,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
-		"bitrate": "5000k",
+		"ffmpegVideoCodec": "mpeg2video",
+		"bitrate": "10000k",
 		"watermark": True,
 		"flipH": False,
 		"flipV": False,
@@ -278,11 +279,12 @@ default_settings = {
 		"name": "",
 		"color": "default",
 		"colorTransparent": False,
+		"colorIcon": True,
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
 				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
@@ -292,7 +294,7 @@ default_settings = {
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
-				"about": ["about", "plugin_octopi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
+				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
@@ -312,8 +314,11 @@ default_settings = {
 	"accessControl": {
 		"enabled": True,
 		"salt": None,
-		"userManager": "octoprint.users.FilebasedUserManager",
+		"userManager": "octoprint.access.users.FilebasedUserManager",
+		"groupManager": "octoprint.access.groups.FilebasedGroupManager",
+		"permissionManager": "octoprint.access.permissions.PermissionManager",
 		"userfile": None,
+		"groupfile": None,
 		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": None,
@@ -331,6 +336,7 @@ default_settings = {
 	},
 	"api": {
 		"enabled": True,
+		"keyEnforced": False,
 		"key": None,
 		"allowCrossOrigin": False,
 		"apps": {}
@@ -695,7 +701,7 @@ class Settings(object):
 				templates = []
 				for key in scripts:
 					if isinstance(scripts[key], dict):
-						templates += map(lambda x: key + "/" + x, self._get_templates(scripts[key]))
+						templates += list(map(lambda x: key + "/" + x, self._get_templates(scripts[key])))
 					elif isinstance(scripts[key], basestring):
 						templates.append(key)
 				return templates
@@ -791,11 +797,11 @@ class Settings(object):
 
 			elif "children" in result:
 				# if it has children we need to process them recursively
-				result["children"] = map(process_control, [child for child in result["children"] if child is not None])
+				result["children"] = list(map(process_control, [child for child in result["children"] if child is not None]))
 
 			return result
 
-		return map(process_control, controls)
+		return list(map(process_control, controls))
 
 	@property
 	def effective(self):
@@ -1314,7 +1320,7 @@ class Settings(object):
 		from octoprint.util import atomic_write
 		try:
 			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
-				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
 		except:
 			self._logger.exception("Error while saving config.yaml!")
@@ -1534,7 +1540,7 @@ class Settings(object):
 		return folder
 
 	def listScripts(self, script_type):
-		return map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type)))
+		return list(map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type))))
 
 	def loadScript(self, script_type, name, context=None, source=False):
 		if context is None:

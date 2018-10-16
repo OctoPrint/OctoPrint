@@ -12,14 +12,17 @@ import re
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request
+from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
 
 from octoprint.printer import UnknownScript
+
+from octoprint.access.permissions import Permissions
 
 #~~ Printer
 
 
 @api.route("/printer", methods=["GET"])
+@Permissions.STATUS.require(403)
 def printerState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -29,7 +32,7 @@ def printerState():
 	if "exclude" in request.values:
 		excludeStr = request.values["exclude"]
 		if len(excludeStr.strip()) > 0:
-			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+			excludes = list(filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(","))))
 
 	result = {}
 
@@ -57,7 +60,8 @@ def printerState():
 
 
 @api.route("/printer/tool", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def printerToolCommand():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -146,6 +150,8 @@ def printerToolCommand():
 
 
 @api.route("/printer/tool", methods=["GET"])
+@require_firstrun
+@Permissions.STATUS.require(403)
 def printerToolState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -157,7 +163,8 @@ def printerToolState():
 
 
 @api.route("/printer/bed", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def printerBedCommand():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -203,6 +210,8 @@ def printerBedCommand():
 
 
 @api.route("/printer/bed", methods=["GET"])
+@require_firstrun
+@Permissions.STATUS.require(403)
 def printerBedState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -221,7 +230,8 @@ def printerBedState():
 
 
 @api.route("/printer/printhead", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def printerPrintheadCommand():
 	valid_commands = {
 		"jog": [],
@@ -284,7 +294,8 @@ def printerPrintheadCommand():
 
 
 @api.route("/printer/sd", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def printerSdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
@@ -314,6 +325,8 @@ def printerSdCommand():
 
 
 @api.route("/printer/sd", methods=["GET"])
+@require_firstrun
+@Permissions.STATUS.require(403)
 def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
@@ -325,7 +338,8 @@ def printerSdState():
 
 
 @api.route("/printer/command", methods=["POST"])
-@restricted_access
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def printerCommand():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -334,8 +348,11 @@ def printerCommand():
 		return make_response("Expected content type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if "command" in data and "commands" in data:
@@ -382,6 +399,8 @@ def printerCommand():
 	return NO_CONTENT
 
 @api.route("/printer/command/custom", methods=["GET"])
+@require_firstrun
+@Permissions.CONTROL.require(403)
 def getCustomControls():
 	# TODO: document me
 	customControls = settings().get(["controls"])
@@ -405,7 +424,7 @@ def _get_temperature_data(preprocessor):
 		limit = min(limit, len(history))
 
 		tempData.update({
-			"history": map(lambda x: preprocessor(x), history[-limit:])
+			"history": list(map(lambda x: preprocessor(x), history[-limit:]))
 		})
 
 	return preprocessor(tempData)

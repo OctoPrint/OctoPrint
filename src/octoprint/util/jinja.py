@@ -113,7 +113,7 @@ def get_all_template_paths(loader):
 			result = []
 			for folder in loader.searchpath:
 				result += walk_folder(folder)
-			return filter(loader.path_filter, result)
+			return list(filter(loader.path_filter, result))
 
 		elif isinstance(loader, FileSystemLoader):
 			result = []

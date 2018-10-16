@@ -14,33 +14,32 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=0.10.1,<0.11",
-	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
-	                      # guarantee backwards compatibility for plugins and such with that
-	                      # version, hence we need to pin to a lower version for now. See #1697
-	"werkzeug>=0.8.3,<0.9",
+	"flask>=0.12,<0.13",
+	"werkzeug>=0.11.1,<0.12",
 	"tornado==4.5.3",
+	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                    # guarantee backwards compatibility for plugins and such with that
+	                    # version, hence we need to pin to a lower version for now. See #1697
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
 	                               # vendored one
-	"PyYAML>=3.10,<3.11",
-	"Flask-Login>=0.2.11,<0.3",
-	"Flask-Principal>=0.3.5,<0.4",
-	"Flask-Babel>=0.9,<0.10",
-	"Flask-Assets>=0.10,<0.11",
-	"markdown>=2.6.9,<2.7",
+	"PyYAML>=3.12,<3.13",
+	"Flask-Login>=0.4,<0.5",
+	"Flask-Principal>=0.4,<0.5",
+	"Flask-Babel>=0.11,<0.12",
+	"Flask-Assets>=0.12,<0.13",
+	"markdown>=2.6.4,<2.7",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.8.3,<0.9",
-	"sarge==0.1.4",  # 0.1.5 introduced a breaking change with regards to the async keyword. Pinning
-	                 # to 0.1.4 for now to work around this.
+	"sarge==0.1.5post0",
 	"netifaces>=0.10.6,<0.11",
 	"pylru>=1.0.9,<1.1",
-	"rsa>=3.2.3,<3.3",
+	"rsa>=3.4,<3.5",
 	"pkginfo>=1.4.2,<1.5",
 	"requests>=2.18.4,<3",
-	"semantic_version>=2.4.2,<2.5",
+	"semantic_version>=2.6.0,<2.7",
 	"psutil>=5.4.6,<5.5",
-	"Click>=6.2,<6.3",
+	"Click>=6.7,<6.8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
 	"chainmap>=1.0.2,<1.1",
@@ -76,7 +75,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter>=1.4,<1.7"
+		"cookiecutter>=1.5,<1.7"
 	]
 )
 

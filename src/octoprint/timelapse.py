@@ -17,11 +17,14 @@ except ImportError:
 	import Queue as queue
 import requests
 
+import octoprint.plugin
 import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+from octoprint.plugin import plugin_manager
 from octoprint.util import monotonic_time
+from octoprint.util.commandline import CommandlineCaller
 
 import sarge
 import collections
@@ -42,7 +45,12 @@ current_render_job = None
 
 # filename formats
 _capture_format = "{prefix}-%d.jpg"
-_output_format = "{prefix}.mpg"
+_capture_glob = "{prefix}-*.jpg"
+_output_format = "{prefix}{postfix}.{extension}"
+
+# ffmpeg progress regexes
+_ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
 
 # old capture format, needed to delete old left-overs from
 # versions <1.2.9
@@ -59,6 +67,30 @@ _cleanup_lock = threading.RLock()
 
 # lock for timelapse job
 _job_lock = threading.RLock()
+
+# cached valid timelapse extensions
+_extensions = None
+
+def valid_timelapse(path):
+	global _extensions
+
+	if _extensions is None:
+		# create list of extensions
+		extensions = ["mpg", "mpeg", "mp4", "m4v", "mkv"]
+
+		hooks = plugin_manager().get_hooks("octoprint.timelapse.extensions")
+		for name, hook in hooks.items():
+			try:
+				result = hook()
+				if result is None or not isinstance(result, list):
+					continue
+				extensions += result
+			except:
+				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
+
+		_extensions = list(set(extensions))
+
+	return util.is_allowed_file(path, _extensions)
 
 
 def _extract_prefix(filename):
@@ -86,7 +118,7 @@ def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse", check_writable=False)
 	for entry in scandir(basedir):
-		if not fnmatch.fnmatch(entry.name, "*.m*"):
+		if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
 			continue
 		files.append({
 			"name": entry.name,
@@ -161,13 +193,13 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
 	if fps is None:
 		fps = settings().getInt(["webcam", "timelapse", "fps"])
 	threads = settings().get(["webcam", "ffmpegThreads"])
+	videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
 
 	job = TimelapseRenderJob(capture_dir, output_dir, name,
 	                         postfix=postfix,
-	                         capture_format=_capture_format,
-	                         output_format=_output_format,
 	                         fps=fps,
 	                         threads=threads,
+	                         videocodec=videocodec,
 	                         on_start=_create_render_start_handler(name, gcode=gcode),
 	                         on_success=_create_render_success_handler(name, gcode=gcode),
 	                         on_fail=_create_render_fail_handler(name, gcode=gcode),
@@ -266,8 +298,11 @@ def register_callback(callback):
 
 
 def unregister_callback(callback):
-	if callback in _update_callbacks:
+	try:
 		_update_callbacks.remove(callback)
+	except ValueError:
+		# not registered
+		pass
 
 
 def notify_callbacks(timelapse):
@@ -275,9 +310,19 @@ def notify_callbacks(timelapse):
 		config = None
 	else:
 		config = timelapse.config_data()
+
 	for callback in _update_callbacks:
-		try: callback.sendTimelapseConfig(config)
-		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
+		notify_callback(callback, config)
+
+
+def notify_callback(callback, config=None, timelapse=None):
+	if config is None and timelapse is not None:
+			config = timelapse.config_data()
+
+	try:
+		callback.sendTimelapseConfig(config)
+	except:
+		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
 
 
 def configure_timelapse(config=None, persist=False):
@@ -370,6 +415,11 @@ class Timelapse(object):
 		self._snapshot_validate_ssl = settings().getBoolean(["webcam", "snapshotSslValidation"])
 
 		self._fps = fps
+
+
+		self._pluginManager = octoprint.plugin.plugin_manager()
+		self._pre_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.pre")
+		self._post_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.post")
 
 		self._capture_mutex = threading.Lock()
 		self._capture_queue = queue.Queue()
@@ -580,6 +630,13 @@ class Timelapse(object):
 				entry["callback"](*args, **kwargs)
 
 	def _perform_capture(self, filename, onerror=None):
+		# pre-capture hook
+		for name, hook in self._pre_capture_hooks.items():
+			try:
+				hook(filename)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
@@ -598,17 +655,31 @@ class Timelapse(object):
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
 		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
+			self._capture_errors += 1
+			success = False
+		else:
+			self._capture_success += 1
+			success = True
+
+		# post-capture hook
+		for name, hook in self._post_capture_hooks.items():
+			try:
+				hook(filename, success)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
+		# handle events and onerror call
+		if success:
+			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			return True
+		else:
 			if callable(onerror):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
 			                                                error=str(e),
 			                                                url=self._snapshot_url))
-			self._capture_errors += 1
 			return False
-		else:
-			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
-			self._capture_success += 1
-			return True
+
 
 	def _copying_postroll(self):
 		with self._capture_mutex:
@@ -741,9 +812,9 @@ class TimelapseRenderJob(object):
 
 	render_job_lock = threading.RLock()
 
-	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob="{prefix}-*.jpg",
-	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}.mpg", fps=25, threads=1,
-	             on_start=None, on_success=None, on_fail=None, on_always=None):
+	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob=_capture_glob,
+	             capture_format=_capture_format, output_format=_output_format, fps=25, threads=1,
+	             videocodec="mpeg2video", on_start=None, on_success=None, on_fail=None, on_always=None):
 		self._capture_dir = capture_dir
 		self._output_dir = output_dir
 		self._prefix = prefix
@@ -753,6 +824,7 @@ class TimelapseRenderJob(object):
 		self._output_format = output_format
 		self._fps = fps
 		self._threads = threads
+		self._videocodec = videocodec
 		self._on_start = on_start
 		self._on_success = on_success
 		self._on_fail = on_fail
@@ -760,6 +832,8 @@ class TimelapseRenderJob(object):
 
 		self._thread = None
 		self._logger = logging.getLogger(__name__)
+
+		self._parsed_duration = 0
 
 	def process(self):
 		"""Processes the job."""
@@ -779,12 +853,18 @@ class TimelapseRenderJob(object):
 			self._logger.warn("Cannot create movie, path to ffmpeg or desired bitrate is unset")
 			return
 
+		if self._videocodec == 'mpeg2video':
+			extension = "mpg"
+		else:
+			extension = "mp4"
+
 		input = os.path.join(self._capture_dir,
 		                     self._capture_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
 		output = os.path.join(self._output_dir,
 		                      self._output_format.format(prefix=self._prefix,
-		                                                 postfix=self._postfix if self._postfix is not None else ""))
+		                                                 postfix=self._postfix if self._postfix is not None else "",
+		                                                 extension=extension))
 
 		for i in range(4):
 			if os.path.exists(input % i):
@@ -808,19 +888,25 @@ class TimelapseRenderJob(object):
 
 		# prepare ffmpeg command
 		command_str = self._create_ffmpeg_command_string(ffmpeg, self._fps, bitrate, self._threads, input, output,
-		                                                 hflip=hflip, vflip=vflip, rotate=rotate, watermark=watermark)
+		                                                 self._videocodec, hflip=hflip, vflip=vflip, rotate=rotate,
+		                                                 watermark=watermark)
 		self._logger.debug("Executing command: {}".format(command_str))
 
 		with self.render_job_lock:
 			try:
 				self._notify_callback("start", output)
-				p = sarge.run(command_str, stdout=sarge.Capture(), stderr=sarge.Capture())
-				if p.returncode == 0:
+
+				self._logger.debug("Parsing ffmpeg output")
+
+				c = CommandlineCaller()
+				c.on_log_stderr = self._process_ffmpeg_output
+				returncode, stdout_text, stderr_text = c.call(command_str, universal_newlines=True)
+
+				self._logger.debug("Done with parsing")
+
+				if returncode == 0:
 					self._notify_callback("success", output)
 				else:
-					returncode = p.returncode
-					stdout_text = p.stdout.text
-					stderr_text = p.stderr.text
 					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
 					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
 			except:
@@ -829,8 +915,32 @@ class TimelapseRenderJob(object):
 			finally:
 				self._notify_callback("always", output)
 
+	def _process_ffmpeg_output(self, *lines):
+		for line in lines:
+			# We should be getting the time more often, so try it first
+			current_time = _ffmpeg_current_regex.search(line)
+			if current_time is not None and self._parsed_duration is not 0:
+				current_s = self._convert_time(*current_time.groups())
+				progress = current_s / float(self._parsed_duration) * 100
+
+				# Update progress bar
+				for callback in _update_callbacks:
+					try:
+						callback.sendRenderProgress(progress)
+					except Exception as ex:
+						self._logger.exception("Exception while pushing render progress")
+
+			else:
+				duration = _ffmpeg_duration_regex.search(line)
+				if duration is not None:
+					self._parsed_duration = self._convert_time(*duration.groups())
+
+	@staticmethod
+	def _convert_time(hours, minutes, seconds):
+		return (int(hours) * 60 + int(minutes)) * 60 + int(seconds)
+
 	@classmethod
-	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, hflip=False, vflip=False,
+	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, videocodec, hflip=False, vflip=False,
 	                                  rotate=False, watermark=None, pixfmt="yuv420p"):
 		"""
 		Create ffmpeg command string based on input parameters.
@@ -840,6 +950,7 @@ class TimelapseRenderJob(object):
 		    fps (int): Frames per second for output
 		    bitrate (str): Bitrate of output
 		    threads (int): Number of threads to use for rendering
+		    videocodec (str): Videocodec to be used for encoding
 		    input (str): Absolute path to input files including file mask
 		    output (str): Absolute path to output file
 		    hflip (bool): Perform horizontal flip on input material.
@@ -856,10 +967,16 @@ class TimelapseRenderJob(object):
 
 		logger = logging.getLogger(__name__)
 
+		### Not all players can handle non-mpeg2 in VOB format
+		if videocodec == "mpeg2video":
+			containerformat = "vob"
+		else:
+			containerformat = "mp4"
+
 		command = [
-			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
+			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', videocodec,
 			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
-			'-f', 'vob']
+			'-f', containerformat]
 
 		filter_string = cls._create_filter_string(hflip=hflip,
 		                                          vflip=vflip,

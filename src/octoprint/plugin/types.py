@@ -1483,6 +1483,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		from flask_login import current_user
 		import copy
+		
+		from octoprint.access.permissions import Permissions
 
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
@@ -1527,8 +1529,8 @@ class SettingsPlugin(OctoPrintPlugin):
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and current_user.has_permission(Permissions.SETTINGS),
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():
@@ -1604,8 +1606,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
 
-		Override this in your plugin's implementation to restrict whether a path should only be returned to logged in
-		users & admins, only to admins, or never on the REST API.
+		Override this in your plugin's implementation to restrict whether a path should only be returned to users with
+		the SETTINGS permission, any logged in users, or never on the REST API.
 
 		Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
 		the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``
@@ -1984,7 +1986,7 @@ class SlicerPlugin(OctoPrintPlugin):
 		For jobs that finished successfully, ``result`` should be a :class:`dict` containing additional information
 		about the slicing job under the following keys:
 
-		_analysis
+		analysis
 		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
 		    data structure described for the analysis queue of the matching machine code format, e.g.
 		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.

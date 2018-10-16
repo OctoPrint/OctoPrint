@@ -9,6 +9,7 @@ import octoprint.plugin
 import sys
 import inspect
 from flask_babel import gettext
+from octoprint.access import ADMIN_GROUP, USER_GROUP
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -74,9 +75,9 @@ class AclSubwizard(object):
 		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.hasBeenCustomized():
 			abort(404)
 
-		data = request.values
-		if hasattr(request, "json") and request.json:
-			data = request.json
+		data = request.get_json()
+		if data is None:
+			data = request.values
 
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \
@@ -84,7 +85,8 @@ class AclSubwizard(object):
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
+
+			self._user_manager.add_user(data["user"], data["pass1"], True, [], [USER_GROUP, ADMIN_GROUP], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)

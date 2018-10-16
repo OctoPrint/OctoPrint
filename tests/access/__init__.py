@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Unit tests for octoprint.users
+Unit tests for octoprint.access
 """
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

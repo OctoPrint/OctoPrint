@@ -352,16 +352,56 @@ table {
     &.settings_users_name {
       text-overflow: ellipsis;
       text-align: left;
+      width: 100px;
     }
 
-    &.settings_users_active, &.settings_users_admin {
+    &.settings_users_active {
       text-align: center;
       width: 55px;
     }
 
-    &.settings_users_actions {
+    table.settings_users_details_table {
+      font-size: 0.8em;
+      margin-bottom: 0;
+
+      .settings_users_details_key {
+        width: 100px;
+      }
+
+      th, td {
+        border: 0;
+        padding: 0;
+      }
+    }
+
+    &.settings_groups_default {
+      text-align: center;
+      width: 20px;
+    }
+
+    &.settings_groups_name {
+      width: 180px;
+    }
+
+    &.settings_users_actions,
+    &.settings_groups_actions {
       width: 60px;
       .actioncol;
+    }
+
+    &.settings_accesscontrol_permissions_list_checkbox {
+      width: 20px;
+    }
+
+    &.settings_accesscontrol_groups_list_checkbox {
+      width: 20px;
+    }
+
+    #settings-usersDialogAddUser, #settings-usersDialogEditUser {
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-top: 0 !important;
     }
 
     // Printer profiles
@@ -379,6 +419,7 @@ table {
       width: 80px;
       .actioncol;
     }
+
   }
 }
 
@@ -1439,4 +1480,69 @@ input[type="number"].input-nospin {
   button {
     margin-top: 20px;
   }
+}
+
+// page wide login form
+#page-container-needlogin {
+  background-color: #ffffff;
+  z-index: 12300;
+  .form-signin {
+    max-width: 300px;
+    padding: 19px 29px 29px;
+    margin: 50px auto;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+
+    .form-signin-heading, .checkbox {
+      margin-bottom: 10px;
+    }
+
+    input[type="text"], input[type="password"] {
+      font-size: 16px;
+      height: auto;
+      margin-bottom: 15px;
+      padding: 7px 9px;
+    }
+  }
+}
+
+// loading overlay
+#page-container-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  z-index: 12301;
+
+  .wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    .outer {
+      display: table;
+      width: 100%;
+      height: 100%;
+
+      .inner {
+        display: table-cell;
+        vertical-align: middle;
+
+        .content {
+          text-align: center;
+        }
+      }
+    }
+  }
+
 }

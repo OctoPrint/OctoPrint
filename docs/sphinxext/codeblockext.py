@@ -84,7 +84,7 @@ class CodeBlockExt(CodeBlock):
 				return node
 
 		# replace all created literal_blocks with literal_block_ext instances
-		return map(find_and_wrap_literal_block, code_block)
+		return list(map(find_and_wrap_literal_block, code_block))
 
 	def _wrap_literal_block(self, node):
 		literal = literal_block_ext.from_literal_block(node)
