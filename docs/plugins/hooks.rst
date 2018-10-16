@@ -1035,6 +1035,70 @@ octoprint.printer.estimation.factory
 
 .. _sec-plugins-hook-server-http-bodysize:
 
+octoprint.printer.cardupload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: sd_card_upload_hook(filename, absolutePath, remoteName, on_success, on_error, *args, **kwargs)
+
+   via hook, you can change the upload system on the sd card of the printer.
+
+   when your copy is finished, you must use one of the on_success or on_error functions, depending on the status of the copy.
+   these two methods take into parameter a specific payload :
+   .. code-block:: python
+
+      payload = {
+			"local": filename,
+			"remote": remoteName,
+			"time": time.time() - timestart
+		}
+   This hook must also return the file name on the sd card when done.
+
+   **Example:**
+   .. code-block:: python
+
+      # coding=utf-8
+
+      import octoprint.plugin
+      
+      class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
+      
+      	def sdcard(self, filename, absolutePath, remoteName, on_success=None, on_failure=None, *args, **kwargs):
+      	    self._logger.info("custom sd card upload")
+      	    timestart = time.time()
+      	    # do something
+      	    payload = {
+      	        "local": filename,
+      	        "remote": remoteName,
+      	        "time": time.time() - timestart
+      	    }
+      	    on_success(payload);
+      	    return remoteName
+      
+      __plugin_name__ = "Custom sd card upload plugin"
+      
+      def __plugin_load__():
+      	plugin = CustomSdCardUploadPlugin()
+      
+      	global __plugin_implementation__
+      	__plugin_implementation__ = plugin
+      
+      	global __plugin_hooks__
+      	__plugin_hooks__ = {"octoprint.printer.cardupload": plugin.custom_sd_card_upload_plugin}
+      
+   ``
+
+   .. versionadded:: 1.3.9
+
+   :param str filename: filename inside octoprint
+   :param str absolutePath: absolutePath inside octoprint
+   :param str remoteName: name inside sd card printer
+   :param function on_success: success function
+   :param function on_error: error function
+   :return: remoteName on sdcard
+
+.. _sec-plugins-hook-cli-commands:
+
+
 octoprint.server.http.bodysize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1280,4 +1344,6 @@ octoprint.users.factory
    :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
    :return: The ``userManager`` instance to use globally.
    :rtype: UserManager subclass or None
+   
+
 
