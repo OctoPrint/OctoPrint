@@ -31,13 +31,7 @@ Internet!).
 .. hint::
 
    If you plan to have your OctoPrint instance accessible over the internet,
-   **always enable Access Control** and ideally **don't make it accessible to
-   everyone over the internet but instead use a VPN** or at the very least
-   HTTP basic authentication on a layer above OctoPrint.
-
-   A physical device that includes heaters and stepper motors really should not be
-   publicly reachable by everyone with an internet connection, even with access
-   control enabled.
+   **always enable Access Control**.
 
 .. _sec-features-access_control-rerunning_wizard:
 
@@ -66,6 +60,14 @@ be shown again.
    user accounts are not to be used any more, remove ``.octoprint/users.yaml``.
    If you don't remove this file, the above changes won't lead to the
    configuration being shown again, instead Access Control will just be
+   enabled using the already existing login data. This is to prevent you from
+   resetting access control by accident.
+
+.. rubric:: Footnotes
+
+.. [#f1] For Linux that will be ``~/.octoprint/config.yaml``, for Windows it will be ``%APPDATA%/OctoPrint/config.yaml`` and for
+         Mac ``~/Library/Application Support/OctoPrint/config.yaml``
+ will just be
    enabled using the already existing login data. This is to prevent you from
    resetting access control by accident.
 
