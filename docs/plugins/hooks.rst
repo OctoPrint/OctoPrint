@@ -1064,16 +1064,15 @@ octoprint.printer.cardupload
       
       	def sdcard(self, filename, absolutePath, remoteName, on_success=None, on_failure=None, *args, **kwargs):
       	    self._logger.info("custom sd card upload")
-			timestart = time.time()
-			# do something
-			payload = {
-			    "local": filename,
-			    "remote": remoteName,
-			    "time": time.time() - timestart
-		    }
-		    on_success(payload);
-		
-		    return remoteName
+      	    timestart = time.time()
+      	    # do something
+      	    payload = {
+      	        "local": filename,
+      	        "remote": remoteName,
+      	        "time": time.time() - timestart
+      	    }
+      	    on_success(payload);
+      	    return remoteName
       
       __plugin_name__ = "Custom sd card upload plugin"
       
