@@ -665,6 +665,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().fire(Events.TRANSFER_DONE, payload)
 	
 	def error_hook_sdcopy(payload):
+		tags = {"source:api", "api:printer.sd"}
+		self.release_sd_card(tags=tags)
+		self.init_sd_card(tags=tags)
 		eventManager().fire(Events.TRANSFER_FAILED, payload)
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
