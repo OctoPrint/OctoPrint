@@ -1118,8 +1118,11 @@ octoprint.printer.cardupload
       
       class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
       
+	    def logger(self):
+		    return logging.getLogger("octoprint.plugins." + __name__)
+		
       	def sdcard(self, filename, absolutePath, remoteName, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
-      	    self._logger.info("custom sd card upload")
+      	    self.logger().info("custom sd card upload")
       	    timestart = time.time()
       	    # do something
       	    payload = {
