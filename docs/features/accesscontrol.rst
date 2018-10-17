@@ -67,11 +67,3 @@ be shown again.
 
 .. [#f1] For Linux that will be ``~/.octoprint/config.yaml``, for Windows it will be ``%APPDATA%/OctoPrint/config.yaml`` and for
          Mac ``~/Library/Application Support/OctoPrint/config.yaml``
- will just be
-   enabled using the already existing login data. This is to prevent you from
-   resetting access control by accident.
-
-.. rubric:: Footnotes
-
-.. [#f1] For Linux that will be ``~/.octoprint/config.yaml``, for Windows it will be ``%APPDATA%/OctoPrint/config.yaml`` and for
-         Mac ``~/Library/Application Support/OctoPrint/config.yaml``
