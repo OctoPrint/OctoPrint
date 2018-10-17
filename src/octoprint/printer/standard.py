@@ -658,16 +658,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return list(map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles()))
 	
 	def success_hook_sdcopy(self, payload):
-		tags = {"source:api", "api:printer.sd"}
-		self.release_sd_card(tags=tags)
-		self.init_sd_card(tags=tags)
 		self.on_comm_file_transfer_done(payload["remote"])
 		eventManager().fire(Events.TRANSFER_DONE, payload)
 	
 	def error_hook_sdcopy(payload):
-		tags = {"source:api", "api:printer.sd"}
-		self.release_sd_card(tags=tags)
-		self.init_sd_card(tags=tags)
 		eventManager().fire(Events.TRANSFER_FAILED, payload)
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
@@ -695,7 +689,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				try:
 					self._logger.info("run sd card upload with {}".format(name))
 					#only one impl authorize
-					return hook(filename, absolutePath, remoteName, self.success_hook_sdcopy, self.error_hook_sdcopy)
+					return hook(filename, absolutePath, remoteName, self.init_sd_card, self.release_sd_card, self.refresh_sd_files, self.success_hook_sdcopy, self.error_hook_sdcopy)
 				except:
 					self._logger.exception("Error while processing analysis queues from {}".format(name))
 		else:
