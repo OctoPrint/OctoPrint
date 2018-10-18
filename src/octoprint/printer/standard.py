@@ -661,7 +661,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.on_comm_file_transfer_done(payload["remote"])
 		eventManager().fire(Events.TRANSFER_DONE, payload)
 	
-	def error_hook_sdcopy(payload):
+	def error_hook_sdcopy(self, payload):
 		eventManager().fire(Events.TRANSFER_FAILED, payload)
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):

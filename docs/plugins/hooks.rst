@@ -1113,16 +1113,11 @@ octoprint.printer.cardupload
    .. code-block:: python
 
       # coding=utf-8
-
-      import octoprint.plugin
       
       class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
-      
-	    def logger(self):
-		    return logging.getLogger("octoprint.plugins." + __name__)
 		
       	def sdcard(self, filename, absolutePath, remoteName, is_sd_ready, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
-      	    self.logger().info("custom sd card upload")
+      	    self._logger.info("custom sd card upload")
       	    timestart = time.time()
       	    # do something
       	    payload = {
@@ -1143,6 +1138,10 @@ octoprint.printer.cardupload
       
       	global __plugin_hooks__
       	__plugin_hooks__ = {"octoprint.printer.cardupload": plugin.custom_sd_card_upload_plugin}
+		
+		global __plugin_name__
+	   __plugin_name__ = "custom sd card upload plugin"
+		
       
    ``
 
