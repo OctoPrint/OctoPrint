@@ -1121,7 +1121,7 @@ octoprint.printer.cardupload
 	    def logger(self):
 		    return logging.getLogger("octoprint.plugins." + __name__)
 		
-      	def sdcard(self, filename, absolutePath, remoteName, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
+      	def sdcard(self, filename, absolutePath, remoteName, is_sd_ready, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
       	    self.logger().info("custom sd card upload")
       	    timestart = time.time()
       	    # do something
@@ -1151,6 +1151,7 @@ octoprint.printer.cardupload
    :param str filename: filename inside octoprint
    :param str absolutePath: absolutePath inside octoprint
    :param str remoteName: name inside sd card printer
+   :param function is_sd_ready: check if sd card is ready on printer (no parameter)
    :param function init_sd_card: initialize sd function, take self in parameter
    :param function release_sd_card: release sd function, take self in parameter
    :param function refresh_sd_files: refresh sd function, take self in parameter

@@ -689,7 +689,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				try:
 					self._logger.info("run sd card upload with {}".format(name))
 					#only one impl authorize
-					return hook(filename, absolutePath, remoteName, self.init_sd_card, self.release_sd_card, self.refresh_sd_files, self.success_hook_sdcopy, self.error_hook_sdcopy)
+					return hook(filename, absolutePath, remoteName, self.is_sd_ready, self.init_sd_card, self.release_sd_card, self.refresh_sd_files, self.success_hook_sdcopy, self.error_hook_sdcopy)
 				except:
 					self._logger.exception("Error while processing analysis queues from {}".format(name))
 		else:
