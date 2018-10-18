@@ -126,7 +126,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_position = re.compile("X:(?P<x>{float})\s*Y:(?P<y>{float})\s*Z:(?P<z>{float})\s*((E:(?P<e>{float}))|(?P<es>(E\d+:{float}\s*)+))".format(float=regex_float_pattern))
+regex_position = re.compile("X:\s*(?P<x>{float})\s*Y:\s*(?P<y>{float})\s*Z:\s*(?P<z>{float})\s*((E:\s*(?P<e>{float}))|(?P<es>(E\d+:\s*{float}\s*)+))".format(float=regex_float_pattern))
 """Regex for matching position reporting.
 
 Groups will be as follows:
@@ -138,7 +138,7 @@ Groups will be as follows:
   * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
 """
 
-regex_e_positions = re.compile("E(?P<id>\d+):(?P<value>{float})".format(float=regex_float_pattern))
+regex_e_positions = re.compile("E(?P<id>\d+):\s*(?P<value>{float})".format(float=regex_float_pattern))
 """Regex for matching multiple E coordinates in a position report.
 
 Groups will be as follows:

@@ -333,6 +333,12 @@ class TestCommHelpers(unittest.TestCase):
 		                                                                          e4=0.0,
 		                                                                          e5=0.0)),
 
+		# whitespace after the :, e.g. AlfaWise U20, see #2839
+		("X:150.0 Y:150.0 Z:  0.7 E:  0.0", dict(x=150.0,
+		                                         y=150.0,
+		                                         z=0.7,
+		                                         e=0.0)),
+
 		# invalid
 		("", None),
 		("X:62.417 Y:64.781 Z:0.2", None)
