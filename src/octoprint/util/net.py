@@ -25,6 +25,10 @@ else:
 		HAS_V6 = False
 
 def is_lan_address(address, additional_private=None):
+	if address.lower().startswith("::ffff:" and "." in address):
+		# ipv6 mapped ipv4 address, unmap
+		address = address[len("::ffff:"):]
+
 	ip = netaddr.IPAddress(address)
 	if ip.is_private() or ip.is_loopback():
 		return True
