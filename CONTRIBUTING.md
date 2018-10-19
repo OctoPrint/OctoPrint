@@ -39,11 +39,11 @@ nothing but ticket management.
   [community forum at discourse.octoprint.org](https://discourse.octoprint.org) for
   such support issues.
 - If you are a **developer** that wants to brainstorm a pull request or possible
-  changes to the plugin system, add [Brainstorming] to your issue's title (e.g.
-  `[Brainstorming] New plugin hook for doing some cool stuff`).
+  changes to the plugin system, please get in touch on the 
+  [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/development).
 - If you need **support**, have a **question** or some **other reason** that
   doesn't fit any of the above categories, the issue tracker is not the right place.
-  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org) instead.
+  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/support) instead.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
@@ -53,7 +53,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 > A bot is in place that monitors new tickets, automatically
 > categorizes them and checks new bug reports for usage of the provided template.
 > That bot will only bother you if you open a ticket that appears to be a bug (no
-> `[Request]` or `[Brainstorming]` in the title) without the complete template, and it
+> `[Request]` in the title) without the complete template, and it
 > will do that only to ensure that all information needed to solve the issue is
 > available for the maintainers to directly start tackling that problem.
 
