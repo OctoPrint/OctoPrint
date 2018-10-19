@@ -195,7 +195,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		key = (reg_type, port)
 
-		counter = 0
+		counter = 1
 		while True:
 			try:
 				self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
