@@ -526,6 +526,8 @@ def passive_login():
 			flask.session["usersession.id"] = user.session
 		flask.g.user = user
 
+		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
+
 		response = user.asDict()
 		response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
 		                                                                        additional_private=ipCheckTrusted)
@@ -550,6 +552,9 @@ def passive_login():
 					flask_login.login_user(user)
 					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
 					                                      identity=flask_principal.Identity(user.get_id()))
+
+					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(),
+					                                                                               remoteAddr))
 
 					response = user.asDict()
 					response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
