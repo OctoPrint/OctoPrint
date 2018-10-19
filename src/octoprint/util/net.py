@@ -45,7 +45,12 @@ def is_lan_address(address, additional_private=None):
 			if "/" in prefix:
 				# v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
 				_, prefix = prefix.split("/")
-			return netaddr.IPNetwork("{}/{}".format(address["addr"], prefix))
+
+			addr = address["addr"]
+			if "%" in addr:
+				# interface comment in netifaces output, e.g. "fe80::457f:bbee:d579:1063%wlan0"
+				addr = addr[:addr.find("%")]
+			return netaddr.IPNetwork("{}/{}".format(addr, prefix))
 		except:
 			pass
 
