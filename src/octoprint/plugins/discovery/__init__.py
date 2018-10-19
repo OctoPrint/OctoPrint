@@ -194,8 +194,20 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			params["txtRecord"] = pybonjour.TXTRecord(txt_record)
 
 		key = (reg_type, port)
-		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-		self._logger.info(u"Registered {name} for {reg_type}".format(**locals()))
+
+		counter = 0
+		while True:
+			try:
+				self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
+				self._logger.info(u"Registered '{name}' for {regtype}".format(**params))
+				return True
+			except pybonjour.BonjourError as be:
+				if be.errorCode == pybonjour.kDNSServiceErr_NameConflict:
+					# Name already registered by different service, let's try a counter postfix. See #2852
+					counter += 1
+					params["name"] = u"{} ({})".format(name, counter)
+				else:
+					raise
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
