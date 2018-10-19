@@ -25,7 +25,7 @@ else:
 		HAS_V6 = False
 
 def is_lan_address(address, additional_private=None):
-	if address.lower().startswith("::ffff:" and "." in address):
+	if address.lower().startswith("::ffff:") and "." in address:
 		# ipv6 mapped ipv4 address, unmap
 		address = address[len("::ffff:"):]
 
