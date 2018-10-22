@@ -300,8 +300,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		import click
 
 		@click.command("backup")
-		@click.option("--exclude", multiple=True)
+		@click.option("--exclude", multiple=True,
+		              help="Identifiers of data folders to exclude, e.g. 'uploads' to exclude uploads or "
+		                   "'timelapse' to exclude timelapses.")
 		def backup_command(exclude):
+			"""
+			Creates a new backup.
+			"""
+
 			backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 
@@ -309,16 +315,22 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if not os.path.isdir(datafolder):
 				os.makedirs(datafolder)
 
+			click.echo("Creating backup at {}, please wait...".format(backup_file))
 			self._create_backup(backup_file,
 			                    exclude=exclude,
 			                    settings=settings,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
-			click.echo("Created {}".format(backup_file))
+			click.echo("Done.")
 
 		@click.command("restore")
 		@click.argument("path")
 		def restore_command(path):
+			"""
+			Restores an existing backup from the backup zip provided as argument.
+
+			OctoPrint does not need to run for this to proceed.
+			"""
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 			plugin_manager = cli_group.plugin_manager
 

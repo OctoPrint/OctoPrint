@@ -9,6 +9,7 @@ Bundled Plugins
 
    action_command_prompt.rst
    announcements.rst
+   backup.rst
    cura.rst
    discovery.rst
    logging.rst
