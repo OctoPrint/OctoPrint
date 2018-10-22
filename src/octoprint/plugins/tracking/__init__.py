@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import octoprint.plugin
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 import requests
 import hashlib
