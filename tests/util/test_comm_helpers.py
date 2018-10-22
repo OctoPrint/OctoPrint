@@ -267,11 +267,11 @@ class TestCommHelpers(unittest.TestCase):
 		("NAME. Malyan VER: 3.7 MODEL: M300 HW: HG01",
 		 dict(NAME="Malyan", VER="3.7", MODEL="M300", HW="HG01")),
 		("FIRMWARE_NAME:Marlin 1.1.0 From Archive SOURCE_CODE_URL:http:// ... PROTOCOL_VERSION:1.0 MACHINE_TYPE:www.cxsw3d.com EXTRUDER_COUNT:1 UUID:00000000-0000-0000-0000-000000000000",
-		 dict(FIRMWARE_NAME="Marlin 1.1.0 From Archive", 
-		      SOURCE_CODE_URL="http:// ...", 
-		      PROTOCOL_VERSION="1.0", 
-		      MACHINE_TYPE="www.cxsw3d.com", 
-		      EXTRUDER_COUNT="1", 
+		 dict(FIRMWARE_NAME="Marlin 1.1.0 From Archive",
+		      SOURCE_CODE_URL="http:// ...",
+		      PROTOCOL_VERSION="1.0",
+		      MACHINE_TYPE="www.cxsw3d.com",
+		      EXTRUDER_COUNT="1",
 		      UUID="00000000-0000-0000-0000-000000000000"))
 	)
 	@unpack
@@ -332,6 +332,12 @@ class TestCommHelpers(unittest.TestCase):
 		                                                                          e3=0.0,
 		                                                                          e4=0.0,
 		                                                                          e5=0.0)),
+
+		# whitespace after the :, e.g. AlfaWise U20, see #2839
+		("X:150.0 Y:150.0 Z:  0.7 E:  0.0", dict(x=150.0,
+		                                         y=150.0,
+		                                         z=0.7,
+		                                         e=0.0)),
 
 		# invalid
 		("", None),

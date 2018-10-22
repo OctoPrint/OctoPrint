@@ -1238,6 +1238,45 @@ octoprint.server.http.routes
    :return: a list of 3-tuples with additional routes as defined above
    :rtype: list
 
+.. _sec-plugins-hook-server-sockjs-register:
+
+octoprint.server.sockjs.register
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: socket_registration_hook(socket, user, *args, **kwargs):
+
+   Allows plugins to prevent a new :ref:`push socket client <sec-api-push>` to be registered to the system.
+
+   Handlers should return either ``True`` or ``False``. ``True`` signals to proceed with normal registration. ``False``
+   signals to not register the client.
+
+   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
+
+   :param object socket: the socket object which is about to be registered
+   :param object user: the user currently authenticated on the socket - might be None
+   :return: whether to proceed with registration (``True``) or not (``False``)
+   :rtype: boolean
+
+.. _sec-plugins-hook-server-sockjs-emit:
+
+octoprint.server.sockjs.emit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: socket_emit_hook(socket, user, message, payload, *args, **kwargs):
+
+   Allows plugins to prevent any messages to be emitted on an existing :ref:`push connection <sec-api-push>`.
+
+   Handlers should return either ``True`` to allow the message to be emitted, or ``False`` to prevent it.
+
+   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
+
+   :param object socket: the socket object on which a message is about to be emitted
+   :param object user: the user currently authenticated on the socket - might be None
+   :param string message: the message type about to be emitted
+   :param dict payload: the payload of the message about to be emitted (may be None)
+   :return: whether to proceed with sending the message (``True``) or not (``False``)
+   :rtype: boolean
+
 .. _sec-plugins-hook-timelapse-extensions:
 
 octoprint.timelapse.extensions

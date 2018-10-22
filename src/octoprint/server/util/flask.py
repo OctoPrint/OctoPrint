@@ -526,6 +526,8 @@ def passive_login():
 			flask.session["usersession.id"] = user.session
 		flask.g.user = user
 
+		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
+
 		response = user.asDict()
 		response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
 		                                                                        additional_private=ipCheckTrusted)
@@ -550,6 +552,9 @@ def passive_login():
 					flask_login.login_user(user)
 					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
 					                                      identity=flask_principal.Identity(user.get_id()))
+
+					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(),
+					                                                                               remoteAddr))
 
 					response = user.asDict()
 					response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
@@ -1134,22 +1139,32 @@ def redirect_to_tornado(request, target, code=302):
 
 def restricted_access(func):
 	"""
+	This combines :py:func:`no_firstrun_access` and ``login_required``.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		return no_firstrun_access(flask_login.login_required(func))(*args, **kwargs)
+	return decorated_view
+
+def no_firstrun_access(func):
+	"""
 	If you decorate a view with this, it will ensure that first setup has been
-	done for OctoPrint's Access Control plus that any conditions of the
-	login_required decorator are met (possibly through a session already created
-	by octoprint.server.util.apiKeyRequestHandler earlier in the request processing).
+	done for OctoPrint's Access Control.
 
 	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
 	flag from the settings being set to True and the userManager not indicating
 	that it's user database has been customized from default), the decorator
 	will cause a HTTP 403 status code to be returned by the decorated resource.
 	"""
+
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
-		return flask_login.login_required(no_firstrun_access(func))(*args, **kwargs)
+		# if OctoPrint hasn't been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+			return flask.make_response("OctoPrint isn't setup yet", 403)
+		return func(*args, **kwargs)
 
 	return decorated_view
-
 
 def firstrun_only_access(func):
 	"""
@@ -1164,24 +1179,6 @@ def firstrun_only_access(func):
 			return func(*args, **kwargs)
 		else:
 			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
-
-	return decorated_view
-
-
-def no_firstrun_access(func):
-	"""
-	If you decorate a view with this, it will ensure that first setup as been done for
-	OctoPrint's Access Control. Otherwise it
-	will cause a HTTP 403 status code to be returned by the decorated resource.
-	"""
-
-	@functools.wraps(func)
-	def decorated_view(*args, **kwargs):
-		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and \
-			(octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
-			return flask.make_response("OctoPrint isn't setup yet", 403)
-		return func(*args, **kwargs)
 
 	return decorated_view
 
