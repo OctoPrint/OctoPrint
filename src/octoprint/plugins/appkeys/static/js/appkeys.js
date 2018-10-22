@@ -1,10 +1,10 @@
 $(function() {
-    function AppKeysViewModel(parameters) {
+    function UserAppKeysViewModel(parameters) {
         var self = this;
         self.loginState = parameters[0];
 
         self.keys = new ItemListHelper(
-            "plugin.appkeys.keys",
+            "plugin.appkeys.userkeys",
             {
                 "app": function (a, b) {
                     // sorts descending
@@ -134,9 +134,78 @@ $(function() {
         };
     }
 
+    function AllAppKeysViewModel(parameters) {
+        var self = this;
+        self.loginState = parameters[0];
+
+        self.keys = new ItemListHelper(
+            "plugin.appkeys.allkeys",
+            {
+                "user": function (a, b) {
+                    // sorts ascending
+                    if (a["user_id"] > b["user_id"]) return 1;
+                    if (a["user_id"] < b["user_id"]) return -1;
+                    return 0;
+                },
+                "app": function (a, b) {
+                    // sorts ascending
+                    if (a["app"] > b["app"]) return 1;
+                    if (a["app"] < b["app"]) return -1;
+                    return 0;
+                }
+            },
+            {
+            },
+            "user",
+            [],
+            [],
+            10
+        );
+
+        self.onSettingsShown = function() {
+            self.requestData();
+        };
+
+        self.onUserLoggedIn = function() {
+            self.requestData();
+        };
+
+        self.requestData = function() {
+            OctoPrint.plugins.appkeys.getAllKeys()
+                .done(self.fromResponse);
+        };
+
+        self.fromResponse = function(response) {
+            self.keys.updateItems(response.keys);
+        };
+
+        self.revokeKey = function(key, user) {
+            return OctoPrint.plugins.appkeys.revokeKeyFor(key, user)
+                .done(self.requestData);
+        };
+
+        self.revokeAllForUser = function() {
+            var user = self.revokeUsername();
+            return OctoPrint.plugins.appkeys.revokeAllForUser(user)
+                .done(self.requestData);
+        };
+
+        self.revokeAllForApp = function() {
+            var app = self.revokeApp();
+            return OctoPrint.plugins.appkeys.revokeAlLForApp(app)
+                .done(self.requestData);
+        };
+    }
+
     OCTOPRINT_VIEWMODELS.push([
-        AppKeysViewModel,
+        UserAppKeysViewModel,
         ["loginStateViewModel"],
         ["#usersettings_plugin_appkeys"]
     ]);
+
+    OCTOPRINT_VIEWMODELS.push([
+        AllAppKeysViewModel,
+        ["loginStateViewModel"],
+        ["#settings_plugin_appkeys"]
+    ])
 });

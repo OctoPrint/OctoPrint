@@ -20,8 +20,7 @@ from octoprint.util import atomic_write
 
 """
 TODO:
-  * add central management settings panel for *all* user's keys
-    * bulk delete: delete all, all on page, all by user?
+  * delete all by user/all by app
   * write documentation
     * API docs
     * JS client docs
@@ -100,7 +99,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="usersettings", name=gettext("Application Keys"))]
+		return [dict(type="usersettings", name=gettext("Application Keys")),
+		        dict(type="settings", name=gettext("Application Keys"))]
 
 	##~~ AssetPlugin
 
@@ -171,7 +171,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_api_commands(self):
 		return dict(generate=["app"],
-		            revoke=["key"])
+		            revoke=["key"],
+		            revoke_for=["user_id", "key"])
 
 	def on_api_get(self, request):
 		user_id = current_user.get_name()
@@ -187,24 +188,47 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		                     pending=dict((x.user_token, x.external()) for x in self._get_pending(user_id)))
 
 	def on_api_command(self, command, data):
-		user_id = current_user.get_name()
-		if not user_id:
-			return flask.abort(403)
-
-		if command == "revoke":
+		if command == "revoke_for" and admin_permission.can():
+			user_id = data.get("user_id")
 			api_key = data.get("key")
-			if not api_key:
+			if not api_key or not user_id:
 				return flask.abort(400)
 
 			self._delete_api_key(user_id, api_key)
 
-		elif command == "generate":
-			# manual generateKey
-			app_name = data.get("app")
+		elif command == "revoke_all_for_user" and admin_permission.can():
+			user_id = data.get("user_id")
+			if not user_id:
+				return flask.abort(400)
+
+			self._delete_api_keys_for_user(user_id)
+
+		elif command == "revoke_all_for_app" and admin_permission.can():
+			app_name = data.get("app_name")
 			if not app_name:
 				return flask.abort(400)
 
-			self._add_api_key(user_id, app_name.strip())
+			self._delete_api_keys_for_app(app_name)
+
+		else:
+			user_id = current_user.get_name()
+			if not user_id:
+				return flask.abort(403)
+
+			if command == "revoke":
+				api_key = data.get("key")
+				if not api_key:
+					return flask.abort(400)
+
+				self._delete_api_key(user_id, api_key)
+
+			elif command == "generate":
+				# manual generateKey
+				app_name = data.get("app")
+				if not app_name:
+					return flask.abort(400)
+
+				self._add_api_key(user_id, app_name.strip())
 
 		return NO_CONTENT
 
@@ -290,6 +314,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			self._keys[user_id] = filter(lambda x: x.api_key != api_key, self._keys[user_id])
 			self._save_keys()
 
+	def _delete_api_keys_for_user(self, user_id):
+		with self._keys_lock:
+			del self._keys[user_id]
+			self._save_keys()
+
+	def _delete_api_keys_for_app(self, app_name):
+		app_name = app_name.lower()
+		with self._keys_lock:
+			for user_id in self._keys:
+				self._keys[user_id] = filter(lambda x: x.app_id != app_name, self._keys[user_id])
+			self._save_keys()
+
 	def _user_for_api_key(self, api_key):
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
@@ -326,7 +362,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			if not isinstance(persisted, dict):
 				return
 
-			keys = dict()
+			keys = defaultdict(list)
 			for user_id, persisted_keys in persisted.items():
 				keys[user_id] = [ActiveKey.for_internal(x, user_id) for x in persisted_keys]
 			self._keys = keys
