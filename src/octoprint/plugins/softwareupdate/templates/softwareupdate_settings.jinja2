@@ -15,6 +15,23 @@
         <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
     </p>
 {% endtrans %}</div>
+<div class="alert" data-bind="visible: !environmentSupported()">{% trans %}
+    <p>
+        <strong>This version of the Python environment is not supported for direct updates.</strong>
+    </p>
+    <p>
+        To reduce the likelihood of running into update problems in outdated environments, the following minimal
+        versions are required to use this updater to update OctoPrint or any installed plugins:
+    </p>
+{% endtrans %}
+    <ul data-bind="foreach: environmentVersions">
+        <li><span data-bind="text: name"></span>: <span data-bind="text: minimum"></span> ({{ _('you have') }}: <span data-bind="text: current"></span>)</li>
+    </ul>
+{% trans %}
+    <p>
+        Please take a look at <a href="https://faq.octoprint.org/unsupported-python-environment" target="_blank">this FAQ entry on how to proceed</a>.
+    </p>
+{% endtrans %}</div>
 
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
@@ -59,7 +76,7 @@
     </ul>
 </div>
 
-<button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: !updateInProgress, css: {disabled: updateInProgress}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
+<button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: enableUpdate, css: {disabled: !enableUpdate}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
 <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>

@@ -12,6 +12,9 @@ import octoprint_setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+# Supported python versions
+PYTHON_REQUIRES = ">=2.7.3,<3" # TODO change to >=2.7.9,<3 in 1.3.11
+
 # Requirements for our application
 INSTALL_REQUIRES = [
 	"flask>=1.0.2,<1.1",
@@ -78,9 +81,6 @@ EXTRA_REQUIRES = dict(
 		"cookiecutter>=1.4,<1.7"
 	]
 )
-
-# Additional requirements for setup
-SETUP_REQUIRES = []
 
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
@@ -154,10 +154,10 @@ def params():
 	long_description = read_file_contents(os.path.join(here, "README.md"))
 	long_description_content_type = "text/markdown"
 
+	python_requires = PYTHON_REQUIRES
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
-	setup_requires = SETUP_REQUIRES
 
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",

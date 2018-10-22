@@ -116,6 +116,9 @@ $(function() {
                 && !self.octoprintReleasedVersion();
         });
 
+        self.environmentSupported = ko.observable(true);
+        self.environmentVersions = ko.observableArray([]);
+
         self.cacheTimestamp = ko.observable();
         self.cacheTimestampText = ko.pureComputed(function() {
             return formatDate(self.cacheTimestamp());
@@ -130,6 +133,10 @@ $(function() {
         self.error_checkoutFolder = ko.pureComputed(function() {
             return self.config_checkType() === "git_commit"
                 && (!self.config_checkoutFolder() || self.config_checkoutFolder().trim() === '');
+        });
+
+        self.enableUpdate = ko.pureComputed(function() {
+            return !self.updateInProgress && self.environmentSupported();
         });
 
         self.enable_configSave = ko.pureComputed(function() {
@@ -300,6 +307,9 @@ $(function() {
             var octoprint = data.information["octoprint"];
             self.octoprintReleasedVersion(!octoprint || octoprint.released_version);
 
+            self.environmentSupported(data.environment.supported);
+            self.environmentVersions(data.environment.versions);
+
             if (data.status === "inProgress") {
                 self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
                 return;
@@ -314,7 +324,7 @@ $(function() {
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='fa fa-li " + (update_info.updatePossible ? "fa-check" : "fa-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -322,7 +332,11 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                if (!self.environmentSupported()) {
+                    text += "<p><small>" + gettext("This version of the Python environment is not supported for direct updates.") + "</small></p>";
+                } else {
+                    text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                }
 
                 if (!self.loginState.isAdmin()) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
