@@ -120,3 +120,94 @@ If CORS is not enabled you will get errors like the following::
    XMLHttpRequest cannot load http://localhost:8081/api/files. No 'Access-Control-Allow-Origin'
    header is present on the requested resource.
 
+.. _sec-api-general-login:
+
+Login
+=====
+
+.. http:post:: /api/login
+
+   Creates a login session or retrieves information about the currently existing session ("passive login").
+
+   Can be used in one of two ways: to login a user via username and password and create a persistent session (usually
+   from a UI in the browser), or to retrieve information about the active user (from an existing session or an API key)
+   via the ``passive`` flag.
+
+   Will return a :http:statuscode:`200` with a :ref:`login response <sec-api-general-datamodel-login>` on successful
+   login, whether active or passive. The active (username/password) login may also return a :http:statuscode:`401` in
+   case of a username/password mismatch or unknown user and a :http:statuscode:`403` in case of a deactivated account.
+
+   :json passive:  If present, performs a passive login only, returning information about the current user that's
+                   active either through an existing session or the used API key
+   :json user:     (active login only) Username
+   :json pass:     (active login only) Password
+   :json remember: (active login only) Whether to set a "remember me" cookie on the session
+   :status 200:    Successful login
+   :status 401:    Username/password mismatch or unknown user
+   :status 403:    Deactivated account
+
+.. _sec-api-general-logout:
+
+Logout
+======
+
+.. http:post:: /api/logout
+
+   Ends the current login session of the current user.
+
+   Only makes sense in the context of browser based workflows.
+
+   Will return a :http:statuscode:`204`.
+
+   :status 204: No error
+
+.. _sec-api-general-datamodel:
+
+Data model
+==========
+
+.. _sec-api-general-datamodel-login:
+
+Login response
+--------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``name``
+     - 1
+     - string
+     - the user's name
+   * - ``active``
+     - 1
+     - boolean
+     - Whether the user's account is active or not
+   * - ``admin``
+     - 1
+     - boolean
+     - Whether the user has admin rights or not
+   * - ``user``
+     - 1
+     - boolean
+     - Whether the user has user rights or not (always ``true``)
+   * - ``apikey``
+     - 1
+     - string or None
+     - The user's API key, if set
+   * - ``settings``
+     - 1
+     - dict
+     - The user's settings, if any
+   * - ``session``
+     - 1
+     - string
+     - The session key, can be used to authenticate with the ``auth`` message on the :ref:`push API <sec-api-push>`.
+   * - ``_is_external_client``
+     - 1
+     - boolean
+     - Whether the client that made the request got detected as external from the local network or not.
