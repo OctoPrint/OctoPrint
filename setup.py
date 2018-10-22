@@ -17,11 +17,11 @@ PYTHON_REQUIRES = ">=2.7.3,<3" # TODO change to >=2.7.9,<3 in 1.3.11
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=1.0.2,<1.1",
+	"flask>=0.10.1,<0.11",
 	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                      # guarantee backwards compatibility for plugins and such with that
 	                      # version, hence we need to pin to a lower version for now. See #1697
-	"werkzeug>=0.14.1,<0.15",
+	"werkzeug>=0.8.3,<0.9",
 	"tornado==4.5.3",
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
 	                               # vendored one
@@ -37,7 +37,7 @@ INSTALL_REQUIRES = [
 	"sarge==0.1.5post0",
 	"netifaces>=0.10.6,<0.11",
 	"pylru>=1.0.9,<1.1",
-	"rsa>=4.0,<4.1",
+	"rsa>=3.2.3,<3.3",
 	"pkginfo>=1.4.2,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.4.2,<2.5",
