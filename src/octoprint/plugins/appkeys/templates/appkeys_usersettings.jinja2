@@ -4,17 +4,17 @@
     <p>{{ _('There are no application keys registered yet.') }}</p>
 </div>
 <div data-bind="visible: keys.allSize() > 0">
-    <table class="table table-condensed table-hover" id="settings_plugin_appauth_keys_table">
+    <table class="table table-condensed table-hover" id="settings_plugin_appkeys_userkeys_table">
         <thead>
         <tr>
-            <th class="settings_plugin_appauth_keys_app">{{ _('Application identifier') }}</th>
-            <th class="settings_plugin_appauth_keys_actions">{{ _('Action') }}</th>
+            <th class="settings_plugin_appkeys_app">{{ _('Application identifier') }}</th>
+            <th class="settings_plugin_appkeys_actions">{{ _('Action') }}</th>
         </tr>
         </thead>
         <tbody data-bind="foreach: keys.paginatedItems">
         <tr>
-            <td class="settings_plugin_appauth_keys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
-            <td class="settings_plugin_appauth_keys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
         </tr>
         </tbody>
     </table>

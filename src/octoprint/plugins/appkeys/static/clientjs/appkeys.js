@@ -25,18 +25,6 @@
         return this.base.simpleApiCommand("appkeys", "revoke", {"key": key}, opts);
     };
 
-    OctoPrintAppKeysClient.prototype.revokeKeyFor = function(key, user_id, opts) {
-        return this.base.simpleApiCommand("appkeys", "revoke_for", {"user_id": user_id, "key": key}, opts);
-    };
-
-    OctoPrintAppKeysClient.prototype.revokeAllForUser = function(user_id, opts) {
-        return this.base.simpleApiCommand("appkeys", "revoke_all_for_user", {"user_id": user_id}, opts);
-    };
-
-    OctoPrintAppKeysClient.prototype.revokeAllForApp = function(app_id, opts) {
-        return this.base.simpleApiCommand("appkeys", "revoke_all_for_app", {"app_id": app_id}, opts);
-    };
-
     OctoPrintAppKeysClient.prototype.decide = function(token, decision, opts) {
         return this.base.postJson(this.base.getBlueprintUrl("appkeys") + "decision/" + token, {decision: !!decision}, opts);
     };

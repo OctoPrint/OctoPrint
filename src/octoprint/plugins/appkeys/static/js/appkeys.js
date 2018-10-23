@@ -7,9 +7,9 @@ $(function() {
             "plugin.appkeys.userkeys",
             {
                 "app": function (a, b) {
-                    // sorts descending
-                    if (a["app"] > b["app"]) return -1;
-                    if (a["app"] < b["app"]) return 1;
+                    // sorts ascending
+                    if (a["app_id"].toLowerCase() < b["app_id"].toLowerCase()) return -1;
+                    if (a["app_id"].toLowerCase() > b["app_id"].toLowerCase()) return 1;
                     return 0;
                 }
             },
@@ -18,7 +18,7 @@ $(function() {
             "app",
             [],
             [],
-            10
+            5
         );
         self.pending = {};
         self.openRequests = {};
@@ -44,8 +44,13 @@ $(function() {
         };
 
         self.revokeKey = function(key) {
-            return OctoPrint.plugins.appkeys.revokeKey(key)
-                .done(self.requestData);
+            var perform = function() {
+                OctoPrint.plugins.appkeys.revokeKey(key)
+                    .done(self.requestData);
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: key}),
+                                   perform);
         };
 
         self.allowApp = function(token) {
@@ -141,26 +146,28 @@ $(function() {
         self.keys = new ItemListHelper(
             "plugin.appkeys.allkeys",
             {
-                "user": function (a, b) {
-                    // sorts ascending
+                "user_app": function (a, b) {
+                    // sorts ascending, first by user, then by app
                     if (a["user_id"] > b["user_id"]) return 1;
                     if (a["user_id"] < b["user_id"]) return -1;
-                    return 0;
-                },
-                "app": function (a, b) {
-                    // sorts ascending
-                    if (a["app"] > b["app"]) return 1;
-                    if (a["app"] < b["app"]) return -1;
+
+                    if (a["app_id"].toLowerCase() > b["app_id"].toLowerCase()) return 1;
+                    if (a["app_id"].toLowerCase() < b["app_id"].toLowerCase()) return -1;
+
                     return 0;
                 }
             },
             {
             },
-            "user",
+            "user_app",
             [],
             [],
             10
         );
+        self.users = ko.observableArray([]);
+        self.apps = ko.observableArray([]);
+
+        self.markedForDeletion = ko.observableArray([]);
 
         self.onSettingsShown = function() {
             self.requestData();
@@ -177,23 +184,110 @@ $(function() {
 
         self.fromResponse = function(response) {
             self.keys.updateItems(response.keys);
+
+            var users = [];
+            var apps = [];
+            _.each(response.keys, function(key) {
+                users.push(key.user_id);
+                apps.push(key.app_id.toLowerCase());
+            });
+
+            users = _.uniq(users);
+            users.sort();
+            self.users(users);
+
+            apps = _.uniq(apps);
+            apps.sort();
+            self.apps(apps);
         };
 
-        self.revokeKey = function(key, user) {
-            return OctoPrint.plugins.appkeys.revokeKeyFor(key, user)
-                .done(self.requestData);
+        self.revokeKey = function(key) {
+            var perform = function() {
+                OctoPrint.plugins.appkeys.revokeKey(key)
+                    .done(self.requestData);
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: key}),
+                                   perform);
         };
 
-        self.revokeAllForUser = function() {
-            var user = self.revokeUsername();
-            return OctoPrint.plugins.appkeys.revokeAllForUser(user)
-                .done(self.requestData);
+        self.revokeMarked = function() {
+            var perform = function() {
+                self._bulkRevoke(self.markedForDeletion())
+                    .done(function() {
+                        self.markedForDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to revoke %(count)d application keys."), {count: self.markedForDeletion().length}),
+                                   perform);
         };
 
-        self.revokeAllForApp = function() {
-            var app = self.revokeApp();
-            return OctoPrint.plugins.appkeys.revokeAlLForApp(app)
-                .done(self.requestData);
+        self.markAllOnPageForDeletion = function() {
+            self.markedForDeletion(_.uniq(self.markedForDeletion().concat(_.map(self.keys.paginatedItems(), "api_key"))));
+        };
+
+        self.markAllForDeletion = function() {
+            self.markedForDeletion(_.uniq(_.map(self.keys.allItems, "api_key")));
+        };
+
+        self.markAllByUserForDeletion = function(user) {
+            self.markAllByFilterForDeletion(function(e) { return (e.user_id === user); });
+        };
+
+        self.markAllByAppForDeletion = function(app) {
+            self.markAllByFilterForDeletion(function(e) { return (e.app_id === app); })
+        };
+
+        self.markAllByFilterForDeletion = function(filter) {
+            self.markedForDeletion(_.uniq(self.markedForDeletion().concat(_.map(_.filter(self.keys.allItems, filter), "api_key"))));
+        };
+
+        self.clearMarked = function() {
+            self.markedForDeletion.removeAll();
+        };
+
+        self._bulkRevoke = function(keys) {
+            var title, message, handler;
+
+            title = gettext("Revoking application keys");
+            message = _.sprintf(gettext("Revoking %(count)d application keys..."), {count: keys.length});
+            handler = function(key) {
+                return OctoPrint.plugins.appkeys.revokeKey(key)
+                    .done(function() {
+                        deferred.notify(_.sprintf(gettext("Revoked %(key)s..."), {key: key}), true);
+                    })
+                    .fail(function(jqXHR) {
+                        var short = _.sprintf(gettext("Revocation of %(key)s failed, continuing..."), {key: key});
+                        var long = _.sprintf(gettext("Deletion of %(key)s failed: %(error)s"), {key: key, error: jqXHR.responseText});
+                        deferred.notify(short, long, false);
+                    });
+            };
+
+            var deferred = $.Deferred();
+
+            var promise = deferred.promise();
+
+            var options = {
+                title: title,
+                message: message,
+                max: keys.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var requests = [];
+            _.each(keys, function(key) {
+                var request = handler(key);
+                requests.push(request)
+            });
+            $.when.apply($, _.map(requests, wrapPromiseWithAlways))
+                .done(function() {
+                    deferred.resolve();
+                    self.requestData();
+                });
+
+            return promise;
         };
     }
 
