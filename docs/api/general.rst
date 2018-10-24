@@ -182,7 +182,7 @@ Login response
    * - ``name``
      - 1
      - string
-     - the user's name
+     - the user's name/id
    * - ``active``
      - 1
      - boolean
