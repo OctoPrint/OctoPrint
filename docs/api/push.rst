@@ -55,15 +55,15 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
     (as it is by default), since it will prevent any kind of status messages to be sent to connected unauthenticated
     clients.
 
-    The ``auth`` message expects a session key to be obtained from the successful payload of a
-    :ref:`(passive or active) login via the API <sec-api-general-login>`.
+    The ``auth`` message expects the user id of the user to authenticate followed by ``:`` and a session key to be
+    obtained from the successful payload of a :ref:`(passive or active) login via the API <sec-api-general-login>`.
 
     Example for a ``auth`` client-server-message:
 
     .. sourcecode:: javascript
 
        {
-         "auth": "LGZ0trf8By"
+         "auth": "someuser:LGZ0trf8By"
        }
 
   * ``throttle``: Usually, OctoPrint will push the general state update
