@@ -749,16 +749,14 @@ class Profile(object):
 
 		if key == "start_gcode":
 			contents = self.get_gcode_template("start_gcode", extruder_count=extruder_count)
-			prefix += self.get_start_gcode_prefix(contents)
+			prefix += self.get_start_gcode_prefix(contents, extruder_count=extruder_count)
 
 		else:
 			contents = self.get_gcode_template(key, extruder_count=extruder_count)
 
 		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
 
-	def get_start_gcode_prefix(self, contents):
-		extruder_count = self.get_int("extruder_amount")
-
+	def get_start_gcode_prefix(self, contents, extruder_count=1):
 		prefix = ""
 
 		gcode_parameter_key = "S"
