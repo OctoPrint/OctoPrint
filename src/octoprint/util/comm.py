@@ -1813,6 +1813,11 @@ class MachineCom(object):
 							if not sd_always_available and not self._sdAvailable:
 								self.initSdCard()
 
+						elif "teacup" in firmware_name.lower():
+							self._logger.info("Detected Teacup firmware, enabling relevant features for issue free communication")
+
+							disable_external_heatup_detection = True # see #2854
+
 						self._firmware_info_received = True
 						self._firmware_info = data
 						self._firmware_name = firmware_name
