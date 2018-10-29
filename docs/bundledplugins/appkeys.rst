@@ -110,6 +110,8 @@ of the following steps:
 API
 ---
 
+.. _sec-bundledplugins-appkeys-api-startauthprocess:
+
 Start authorization process
 ...........................
 
@@ -139,6 +141,8 @@ Start authorization process
    :json user: optional user id to restrict the decision to the specified user
    :status 201: authorization process started, polling URL to query can be found in ``Location`` header
 
+.. _sec-bundledplugins-appkeys-api-polldecision:
+
 Poll for decision on existing request
 .....................................
 
@@ -154,6 +158,8 @@ Poll for decision on existing request
    :status 202: no decision has been made yet, continue polling
    :status 404: access denied or request timed out
 
+.. _sec-bundledplugins-appkeys-api-decide:
+
 Decide on existing request
 ..........................
 
@@ -167,6 +173,8 @@ Decide on existing request
 
    :json decision: boolean value to indicate whether to confirm (``True``) or deny (``False``) access
    :status 204: success
+
+.. _sec-bundledplugins-appkeys-api-fetchlist:
 
 Fetch list of existing application keys
 .......................................
@@ -182,6 +190,8 @@ Fetch list of existing application keys
    body upon success.
 
    :query all: Fetch all application keys and pending requests from all users. Requires administrator rights.
+
+.. _sec-bundledplugins-appkeys-api-issuecommand:
 
 Issue an application key command
 ................................
@@ -392,46 +402,103 @@ JavaScript Client Library
 
 .. js:function:: OctoPrintClient.plugins.appkeys.getKeys(opts)
 
+   Retrieves registered keys and pending requests for the current user.
+
+   See :ref:`Fetch list of existing application keys <sec-bundledplugins-appkeys-api-fetchlist>` for more details.
+
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.getAllKeys(opts)
+
+   Retrieves registered keys and pending requests for all users.
+
+   Needs administrator rights.
+
+   See :ref:`Fetch list of existing application keys <sec-bundledplugins-appkeys-api-fetchlist>` for more details.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.generateKey(app, opts)
 
+   Generates a key for the given ``app`` and the current user.
+
+   See :ref:`Issue an application key command <sec-bundledplugins-appkeys-api-issuecommand>` for details.
+
+   :param string app: Application identifier
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.revokeKey(key, opts)
 
+   Revokes the given ``key``. The key must belong to the current user, or the current user must have administrator
+   rights.
+
+   See :ref:`Issue an application key command <sec-bundledplugins-appkeys-api-issuecommand>` for details.
+
+   :param string key: Key to revoke
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.decide(token, decision, opts)
 
+   Decides on an existing authorization request.
+
+   See :ref:`Decide on existing request <sec-bundledplugins-appkeys-api-decide>` for more details.
+
+   :param string token: User token for which to make the decision, as pushed to the client via the socket.
+   :param boolean decision: Whether to grant access (``true``) or not (``false``).
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.request(app, opts)
+
+   Starts a new authorization request for the provided ``app`` identifier.
+
+   See :ref:`Start authorization process <sec-bundledplugins-appkeys-api-startauthprocess>` for more details.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.requestForUser(app, user, opts)
 
+   Starts a new authorization request for the provided ``app`` and ``user`` identifiers.
+
+   See :ref:`Start authorization process <sec-bundledplugins-appkeys-api-startauthprocess>` for more details.
+
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.checkDecision(token, opts)
+
+   Polls for a decision on an existing authorization request identified by ``token``.
+
+   See :ref:`Poll for decision on existing request <sec-bundledplugins-appkeys-api-polldecision>` for more details.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.authenticate(app, user, opts)
 
+   Convenience function that issues a request and then automatically starts polling for a decision on the returned
+   polling endpoint every 1s, until either a positive or negative decision is returned. On success the returned
+   promise is resolved with the generated API key as argument.
+
+   **Example usage**
+
+   .. sourcecode:: javascript
+
+      OctoPrint.plugins.appkeys.authenticate("My App", "some_user")
+          .done(function(api_key) {
+              console.log("Got our API key:", api_key);
+          })
+          .fail(function() {
+              console.log("No API key for us");
+          })
+
+   :param string app: Application identifier
+   :param string user: Optional user identifier
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 

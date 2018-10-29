@@ -1,9 +1,9 @@
 .. _sec-bundledplugins-forcelogin:
 
-Forcelogin Plugin
+ForceLogin Plugin
 =================
 
-The Forcelogin Plugin comes bundled with OctoPrint (starting with version 1.3.10). It removes the anonymous
+The ForceLogin Plugin comes bundled with OctoPrint (starting with version 1.3.10). It removes the anonymous
 read-only access that up until 1.3.10 was standard when accessing OctoPrint instances without being logged in and
 instead forces users to log in if they want to get any kind of information from OctoPrint.
 
@@ -24,12 +24,12 @@ instead forces users to log in if they want to get any kind of information from 
 .. note::
 
    If you want back the old behaviour of allowing anonymous read-only access to your OctoPrint instance, disable
-   the Forcelogin Plugin in OctoPrint's plugin manager.
+   the ForceLogin Plugin in OctoPrint's plugin manager.
 
 .. _sec-bundledplugins-forcelogin-sourcecode:
 
 Source code
 -----------
 
-The source of the Backup plugin is bundled with OctoPrint and can be found in
+The source of the ForceLogin plugin is bundled with OctoPrint and can be found in
 its source repository under ``src/octoprint/plugins/forcelogin``.
