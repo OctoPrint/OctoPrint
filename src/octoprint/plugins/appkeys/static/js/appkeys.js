@@ -40,7 +40,10 @@ $(function() {
 
         self.generateKey = function() {
             return OctoPrint.plugins.appkeys.generateKey(self.editorApp())
-                .done(self.requestData);
+                .done(self.requestData)
+                .done(function() {
+                    self.editorApp("");
+                });
         };
 
         self.revokeKey = function(key) {
@@ -236,7 +239,7 @@ $(function() {
         };
 
         self.markAllByAppForDeletion = function(app) {
-            self.markAllByFilterForDeletion(function(e) { return (e.app_id === app); })
+            self.markAllByFilterForDeletion(function(e) { return (e.app_id.toLowerCase() === app); })
         };
 
         self.markAllByFilterForDeletion = function(filter) {
