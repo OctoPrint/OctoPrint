@@ -12,8 +12,11 @@ Authorization
 =============
 
 OctoPrint's API expects an API key to be supplied with each request. This API key can be either the globally
-configured one, a user specific one if "Access Control" is enabled or an :ref:`App Session Key <sec-api-apps-sessionkey>`.
-Users are able to generate and revoke their custom API key via the "Change password" dialog.
+configured one, a user specific one if "Access Control" is enabled or an app and user specific one as generated
+by the authorization workflow implemented by the bundled :ref:`Application Keys Plugin <sec-bundledplugins-appkeys>` (since 1.3.10).
+
+Clients are advised to implement the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` first and
+fallback on directing the user to manually supply the the user specific API key. The global key should rarely be used.
 
 The API key must be supplied in the custom HTTP header ``X-Api-Key``, e.g.
 

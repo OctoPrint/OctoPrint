@@ -90,6 +90,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_assets(self):
 		return dict(js=("js/printer_safety_check.js",),
+		            clientjs=("clientjs/printer_safety_check.js",),
 		            css=("css/printer_safety_check.css",),
 		            less=("less/printer_safety_check.less",))
 
