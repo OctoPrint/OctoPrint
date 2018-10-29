@@ -15,15 +15,10 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, monotonic_time
 
 
-"""
-TODO:
-  * write documentation
-    * API docs
-    * JS client docs
-"""
+CUTOFF_TIME = 10 * 60 # 10min
 
 
 class AppAlreadyExists(Exception):
@@ -36,6 +31,7 @@ class PendingDecision(object):
 		self.app_token = app_token
 		self.user_id = user_id
 		self.user_token = user_token
+		self.created = monotonic_time()
 
 	def external(self):
 		return dict(app_id=self.app_id,
@@ -224,12 +220,14 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		user_token = self._generate_key()
 
 		with self._pending_lock:
+			self._remove_stale_pending()
 			self._pending_decisions.append(PendingDecision(app_name, app_token, user_id, user_token))
 
 		return app_token, user_token
 
 	def _is_pending(self, app_token):
 		with self._pending_lock:
+			self._remove_stale_pending()
 			for data in self._pending_decisions:
 				if data.app_token == app_token:
 					return True
@@ -239,13 +237,25 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _get_pending(self, user_id):
 		result = []
 		with self._pending_lock:
+			self._remove_stale_pending()
 			for data in self._pending_decisions:
 				if data.user_id == user_id or data.user_id is None:
 					result.append(data)
 		return result
 
+	def _remove_stale_pending(self):
+		with self._pending_lock:
+			cutoff = monotonic_time() - CUTOFF_TIME
+			len_before = len(self._pending_decisions)
+			self._pending_decisions = filter(lambda x: x.created >= cutoff,
+			                                 self._pending_decisions)
+			len_after = len(self._pending_decisions)
+			if len_after < len_before:
+				self._logger.info("Deleted {} stale pending authorization requests".format(len_before - len_after))
+
 	def _set_decision(self, user_token, decision, user_id):
 		with self._pending_lock:
+			self._remove_stale_pending()
 			for data in self._pending_decisions:
 				if data.user_token == user_token and (data.user_id == user_id or data.user_id is None):
 					pending = data
@@ -263,6 +273,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		return True
 
 	def _get_decision(self, app_token):
+		self._remove_stale_pending()
+
 		with self._ready_lock:
 			for data in self._ready_decisions:
 				if data.app_token == app_token:
@@ -348,9 +360,11 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			except:
 				self._logger.exception("Could not write application keys to {}".format(self._key_path))
 
-__plugin_name__ = "Application Keys Plugin"
-__plugin_description__ = "TODO"
-__plugin_author__ = "Gina Häußge, Aldo Hoeben"
+__plugin_name__ = u"Application Keys Plugin"
+__plugin_description__ = u"Implements a workflow for third party clients to obtain API keys"
+__plugin_author__ = u"Gina Häußge, Aldo Hoeben"
+__plugin_disabling_discouraged__ = gettext(u"Without this plugin third party clients will no longer be able to "
+                                           u"obtain an API key without you manually copy-pasting it.")
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
 	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key
