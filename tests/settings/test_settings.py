@@ -27,11 +27,12 @@ class TestSettings(unittest.TestCase):
 
 	def _load_yaml(self, fname):
 		if sys.version_info[0] >= 3:
-			with open(fname, "w+", encoding='utf-8') as f:
+			with open(fname, "r+", encoding='utf-8') as f:
 				return yaml.safe_load(f)
 		else:
-			with open(fname, "wb+") as f:
+			with open(fname, "r+b") as f:
 				return yaml.safe_load(f)
+
 	def _dump_yaml(self, fname, config):
 		if sys.version_info[0] >= 3:
 			with open(fname, "w+", encoding='utf-8') as f:
