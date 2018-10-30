@@ -604,6 +604,8 @@ class Settings(object):
 
 		self._basedir = None
 
+		assert(isinstance(default_settings, dict))
+
 		self._map = HierarchicalChainMap(dict(), default_settings)
 
 		self._config = None
@@ -874,6 +876,7 @@ class Settings(object):
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
+
 				except yaml.YAMLError as e:
 					details = e.message
 
@@ -888,10 +891,12 @@ class Settings(object):
 					                      details=details,
 					                      line=line,
 					                      column=column)
+
 				except:
 					raise
+
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
-		if not self._config:
+		if not self._config or not isinstance(self._config, dict):
 			self._config = dict()
 
 		if migrate:
