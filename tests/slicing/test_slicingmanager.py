@@ -28,6 +28,7 @@ class TestSlicingManager(unittest.TestCase):
 		self._mock_slicer_plugins(self.slicer_plugin)
 
 		# mock profile manager
+		import octoprint.printer.profile
 		self.printer_profile_manager = mock.MagicMock(spec=octoprint.printer.profile.PrinterProfileManager)
 
 		# mock settings

@@ -3,6 +3,8 @@ import unittest
 import ddt
 import mock
 
+import _fixups
+
 OCTOPI_VERSION = "0.14.0"
 
 DT_MODEL = "Raspberry Pi Model F Rev 1.1"
@@ -13,8 +15,9 @@ class PiSupportTestCase(unittest.TestCase):
 
 	def test_get_octopi_version(self):
 		from octoprint.plugins.pi_support import get_octopi_version
+		#import _fixups
 
-		with mock.patch("__builtin__.open", mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			m.return_value.readline.return_value = OCTOPI_VERSION
 			version = get_octopi_version()
 
@@ -23,8 +26,9 @@ class PiSupportTestCase(unittest.TestCase):
 
 	def test_get_proc_dt_model(self):
 		from octoprint.plugins.pi_support import get_proc_dt_model
+		#import _fixups
 
-		with mock.patch("__builtin__.open", mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			m.return_value.readline.return_value = DT_MODEL
 			model = get_proc_dt_model()
 
