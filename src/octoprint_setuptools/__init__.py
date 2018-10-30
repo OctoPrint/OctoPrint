@@ -8,7 +8,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import os
 import shutil
 import glob
-from past.builtins import basestring
 
 from setuptools import Command
 from distutils.command.clean import clean as _clean
@@ -55,9 +54,9 @@ def has_requirement(requirement, requirements):
 	if requirement is None or requirements is None:
 		return False
 
-	assert isinstance(requirement, basestring)
-	assert isinstance(requirements, (list, tuple))
-	assert all(list(map(lambda x: x is not None and isinstance(x, basestring), requirements)))
+	#assert isinstance(requirement, basestring)
+	#assert isinstance(requirements, (list, tuple))
+	#assert all(list(map(lambda x: x is not None and isinstance(x, basestring), requirements)))
 
 	requirement = requirement.lower()
 	requirements = [r.lower() for r in requirements]
