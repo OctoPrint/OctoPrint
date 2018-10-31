@@ -9,7 +9,26 @@ import sys
 import netaddr
 import netifaces
 
-HAS_V6 = socket.has_ipv6
+_cached_check_v6 = None
+def check_v6():
+	global _cached_check_v6
+
+	def f():
+		if not socket.has_ipv6:
+			return False
+
+		try:
+			socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+		except:
+			# "[Errno 97] Address family not supported by protocol" or anything else really...
+			return False
+		return True
+
+	if _cached_check_v6 is None:
+		_cached_check_v6 = f()
+	return _cached_check_v6
+
+HAS_V6 = check_v6()
 
 if hasattr(socket, "IPPROTO_IPV6") and hasattr(socket, "IPV6_V6ONLY"):
 	# Dual stack support, hooray!
@@ -21,7 +40,7 @@ else:
 		IPPROTO_IPV6 = 41
 		IPV6_V6ONLY = 27
 	else:
-		# Whatever we are running on here, it we don't want to use V6 on here due to lack of dual stack support
+		# Whatever we are running on here, we don't want to use V6 on here due to lack of dual stack support
 		HAS_V6 = False
 
 def is_lan_address(address, additional_private=None):
