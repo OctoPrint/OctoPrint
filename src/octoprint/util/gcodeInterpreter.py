@@ -43,15 +43,9 @@ class Vector3D(object):
 	True
 	"""
 
-	def __init__(self, *args, **kwargs):
-		self.x = kwargs.get("x", 0.0)
-		self.y = kwargs.get("y", 0.0)
-		self.z = kwargs.get("z", 0.0)
-
+	def __init__(self, *args):
 		if len(args) == 3:
-			self.x = args[0]
-			self.y = args[1]
-			self.z = args[2]
+			(self.x, self.y, self.z) = args
 
 		elif len(args) == 1:
 			# copy constructor
@@ -134,30 +128,25 @@ class MinMax3D(object):
 	>>> empty = MinMax3D()
 	>>> empty.size == Vector3D(0.0, 0.0, 0.0)
 	True
-	>>> partial = MinMax3D()
-	>>> partial.record(Vector3D(2.0, None, 2.0))
-	>>> partial.min.x == 2.0 == partial.max.x and partial.min.y == None == partial.max.y and partial.min.z == 2.0 == partial.max.z
-	True
-	>>> partial.record(Vector3D(1.0, None, 3.0))
-	>>> partial.min.x == 1.0 and partial.min.y == None and partial.min.z == 2.0
-	True
-	>>> partial.max.x == 2.0 and partial.max.y == None and partial.max.z == 3.0
-	True
-	>>> partial.size == Vector3D(1.0, 0.0, 1.0)
-	True
 	"""
 
 	def __init__(self):
-		self.min = Vector3D(None, None, None)
-		self.max = Vector3D(None, None, None)
+		self.min = Vector3D(float("inf"), float("inf"), float("inf"))
+		self.max = Vector3D(-float("inf"), -float("inf"), -float("inf"))
 
 	def record(self, coordinate):
-		for c in "xyz":
-			current_min = getattr(self.min, c)
-			current_max = getattr(self.max, c)
-			value = getattr(coordinate, c)
-			setattr(self.min, c, value if current_min is None or value < current_min else current_min)
-			setattr(self.max, c, value if current_max is None or value > current_max else current_max)
+		"""
+		Records the coordinate, storing the min and max values.
+
+		The input vector components must not be None.
+		"""
+		self.min.x = min(self.min.x, coordinate.x)
+		self.min.y = min(self.min.y, coordinate.y)
+		self.min.z = min(self.min.z, coordinate.z)
+		self.max.x = max(self.max.x, coordinate.x)
+		self.max.y = max(self.max.y, coordinate.y)
+		self.max.z = max(self.max.z, coordinate.z)
+
 
 	@property
 	def size(self):
@@ -165,7 +154,7 @@ class MinMax3D(object):
 		for c in "xyz":
 			min = getattr(self.min, c)
 			max = getattr(self.max, c)
-			value = abs(max - min) if min is not None and max is not None else 0.0
+			value = abs(max - min) if max >= min else 0.0
 			setattr(result, c, value)
 		return result
 
@@ -199,12 +188,12 @@ class gcode(object):
 
 	@property
 	def printing_area(self):
-		return dict(minX=self._minMax.min.x,
-		            minY=self._minMax.min.y,
-		            minZ=self._minMax.min.z,
-		            maxX=self._minMax.max.x,
-		            maxY=self._minMax.max.y,
-		            maxZ=self._minMax.max.z)
+		return dict(minX=None if math.isinf(self._minMax.min.x) else self._minMax.min.x,
+		            minY=None if math.isinf(self._minMax.min.y) else self._minMax.min.y,
+		            minZ=None if math.isinf(self._minMax.min.z) else self._minMax.min.z,
+		            maxX=None if math.isinf(self._minMax.max.x) else self._minMax.max.x,
+		            maxY=None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
+		            maxZ=None if math.isinf(self._minMax.max.z) else self._minMax.max.z)
 
 	def load(self, filename, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
 		if os.path.isfile(filename):
@@ -498,17 +487,13 @@ def getCodeInt(line, code):
 
 
 def getCodeFloat(line, code):
-	import math
 	n = line.find(code) + 1
 	if n < 1:
 		return None
 	m = line.find(' ', n)
 	try:
 		if m < 0:
-			val = float(line[n:])
-		else:
-			val = float(line[n:m])
-		return val if not (math.isnan(val) or math.isinf(val)) else None
+			return float(line[n:])
+		return float(line[n:m])
 	except:
 		return None
-

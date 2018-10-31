@@ -312,7 +312,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				                                               working_dir))
 
 				import sarge
-				p = sarge.run(args, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+				p = sarge.run(args, cwd=working_dir, async_=True, stdout=sarge.Capture(), stderr=sarge.Capture())
 				p.wait_events()
 				self._slicing_commands[machinecode_path] = p.commands[0]
 

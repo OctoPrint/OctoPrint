@@ -1127,13 +1127,19 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
-def access_validation_factory(app, login_manager, validator):
+def access_validation_factory(app, validator, *args):
 	"""
 	Creates an access validation wrapper using the supplied validator.
 
 	:param validator: the access validator to use inside the validation wrapper
 	:return: an access validator taking a request as parameter and performing the request validation
 	"""
+
+	# TODO remove in 1.4.0
+	if len(args):
+		# old parameters incl. login_manager
+		validator = args[0]
+
 	def f(request):
 		"""
 		Creates a custom wsgi and Flask request context in order to be able to process user information
@@ -1146,7 +1152,7 @@ def access_validation_factory(app, login_manager, validator):
 		wsgi_environ = WsgiInputContainer.environ(request)
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
-			login_manager.reload_user()
+			app.login_manager.reload_user()
 			validator(flask.request)
 	return f
 
@@ -1161,4 +1167,10 @@ def path_validation_factory(path_filter, status_code=404):
 	def f(path):
 		if not path_filter(path):
 			raise tornado.web.HTTPError(status_code)
+	return f
+
+def validation_chain(*validators):
+	def f(request):
+		for validator in validators:
+			validator(request)
 	return f

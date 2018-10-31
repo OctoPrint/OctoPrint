@@ -396,7 +396,7 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      -
    * - ``feature.sdSupport``
      -
-   * - ``feature.sdReleativePath``
+   * - ``feature.sdRelativePath``
      -
    * - ``feature.sdAlwaysAvailable``
      -

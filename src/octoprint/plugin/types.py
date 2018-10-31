@@ -225,6 +225,8 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 		js
 		   JavaScript files, such as additional view models
+		jsclient
+		   JavaScript files containing additional parts for the JS Client Library (since 1.3.10)
 		css
 		   CSS files with additional styles, will be embedded into delivered pages when not running in LESS mode.
 		less
@@ -239,6 +241,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		   def get_assets(self):
 		       return dict(
 		           js=['js/my_file.js', 'js/my_other_file.js'],
+		           clientjs=['clientjs/my_file.js'],
 		           css=['css/my_styles.css'],
 		           less=['less/my_styles.less']
 		        )
@@ -1984,7 +1987,7 @@ class SlicerPlugin(OctoPrintPlugin):
 		For jobs that finished successfully, ``result`` should be a :class:`dict` containing additional information
 		about the slicing job under the following keys:
 
-		_analysis
+		analysis
 		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
 		    data structure described for the analysis queue of the matching machine code format, e.g.
 		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.

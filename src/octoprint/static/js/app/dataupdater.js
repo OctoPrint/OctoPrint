@@ -342,6 +342,12 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         })
     };
 
+    self._onReauthMessage = function(event) {
+        self._ifInitialized(function() {
+            callViewModels(self.allViewModels, "onDataUpdaterReauthRequired", [event.data.reason]);
+        })
+    };
+
     self._onIncreaseRate = function(measurement, minimum) {
         log.debug("We are fast (" + measurement + " < " + minimum + "), increasing refresh rate");
         OctoPrint.socket.increaseRate();
@@ -372,5 +378,6 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         .onMessage("slicingProgress", self._onSlicingProgress)
         .onMessage("event", self._onEvent)
         .onMessage("timelapse", self._onTimelapse)
-        .onMessage("plugin", self._onPluginMessage);
+        .onMessage("plugin", self._onPluginMessage)
+        .onMessage("reauthRequired", self._onReauthMessage);
 }

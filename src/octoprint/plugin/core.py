@@ -861,7 +861,7 @@ class PluginManager(object):
 		if plugin.check():
 			return plugin
 		else:
-			self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
+			self.logger.info("Plugin {plugin} did not pass check, not loading.".format(plugin=str(plugin)))
 			return None
 
 	def _is_plugin_disabled(self, key):

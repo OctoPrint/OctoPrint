@@ -18,6 +18,7 @@ import yaml
 import hashlib
 import ddt
 import time
+import re
 
 import octoprint.settings
 
@@ -114,6 +115,67 @@ class TestSettings(unittest.TestCase):
 					shutil.rmtree(my_configdir)
 				except:
 					self.fail("Could not remove temporary custom basedir")
+
+	##~~ regexes
+	def test_should_have_regex_filters(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+
+		# we *should* have at least three, but we'll ensure there's at least one as a sanity check.
+		self.assertGreater(len(filters), 0)
+
+	def test_should_have_suppress_temperature_regex(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_regex_filters = [x for x in filters if x.get('name') == 'Suppress temperature messages']
+		self.assertEqual(len(temperature_regex_filters), 1)
+
+		# we know there's a 'name' by now, so just ensure we have the regex key
+		temperature_regex_filter = temperature_regex_filters[0]
+		self.assertIn('regex', temperature_regex_filter.keys())
+
+	def test_temperature_regex_should_not_match(self):
+		'''random entries that aren't temperature regex entries'''
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+		bad_terminal_entries = [
+			'Send: N71667 G1 X163.151 Y35.424 E0.02043*83',
+			'Send: N85343 G1 Z29.880 F10800.000*15',
+			'Recv: ok',
+		]
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+
+		matcher = re.compile(temperature_pattern)
+		for terminal_string in bad_terminal_entries:
+			match_result = matcher.match(terminal_string)
+			# can switch to assertIsNone after 3.x upgrade.
+			self.assertFalse(match_result, "string matched and it shouldn't have.")
+
+
+	def test_temperature_regex_matches(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		common_terminal_entries = [
+			'Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:', # monoprice mini delta
+			'Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0', # Prusa mk3
+		]
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+
+		matcher = re.compile(temperature_pattern)
+		for terminal_string in common_terminal_entries:
+			match_result = matcher.match(terminal_string)
+			# can switch to assertIsNotNone after 3.x upgrade.
+			self.assertTrue(match_result, "string did not match and it should have.")
+
 
 	##~~ test getters
 

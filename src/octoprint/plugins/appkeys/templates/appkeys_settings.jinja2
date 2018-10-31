@@ -1,0 +1,59 @@
+<div data-bind="visible: keys.allSize() <= 0">
+    <p>{{ _('There are no application keys registered yet.') }}</p>
+</div>
+<div data-bind="visible: keys.allSize() > 0">
+    <div class="pull-left">
+        <div class="btn-group">
+            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="javascript:void(0)" data-bind="click: markAllOnPageForDeletion">{{ _('Select all on this page') }}</a></li>
+                <li><a href="javascript:void(0)" data-bind="click: markAllForDeletion">{{ _('Select all') }}</a></li>
+                <li class="divider"></li>
+                <li class="dropdown-submenu">
+                    <a href="javascript:void(0)" data-bind="javascript:void(0)">{{ _('Select all by user...') }}</a>
+                    <ul class="dropdown-menu" data-bind="foreach: users">
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.markAllByUserForDeletion($data) }, text: $data"></a></li>
+                    </ul>
+                </li>
+                <li class="dropdown-submenu">
+                    <a href="javascript:void(0)" data-bind="javascript:void(0)">{{ _('Select all by app...') }}</a>
+                    <ul class="dropdown-menu" data-bind="foreach: apps">
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.markAllByAppForDeletion($data) }, text: $data"></a></li>
+                    </ul>
+                </li>
+                <li class="divider"></li>
+                <li><a href="javascript:void(0)" data-bind="click: clearMarked">{{ _('Clear selection') }}</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-small" data-bind="click: revokeMarked, enable: markedForDeletion().length > 0">{{ _('Revoke selected') }}</button>
+    </div>
+    <table class="table table-condensed table-hover" id="settings_plugin_appkeys_allkeys_table">
+        <thead>
+        <tr>
+            <th class="settings_plugin_appkeys_checkbox"></th>
+            <th class="settings_plugin_appkeys_user">{{ _('User') }}</th>
+            <th class="settings_plugin_appkeys_app">{{ _('Application identifier') }}</th>
+            <th class="settings_plugin_appkeys_actions">{{ _('Action') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: keys.paginatedItems">
+        <tr>
+            <td class="settings_plugin_appkeys_checkbox"><input type="checkbox" data-bind="value: api_key, checked: $root.markedForDeletion"></td>
+            <td class="settings_plugin_appkeys_user"><span data-bind="text: user_id"></span></td>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key, $data.user_id) }"></a></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-mini pagination-centered">
+        <ul>
+            <li data-bind="css: {disabled: keys.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: keys.prevPage">«</a></li>
+        </ul>
+        <ul data-bind="foreach: keys.pages">
+            <li data-bind="css: { active: $data.number === $root.keys.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.keys.changePage($data.number); }"></a></li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: keys.currentPage() === keys.lastPage()}"><a href="javascript:void(0)" data-bind="click: keys.nextPage">»</a></li>
+        </ul>
+    </div>
+</div>

@@ -359,6 +359,8 @@ class Profile(object):
 	regex_print_temperature = re.compile("print_temperature(\d?)")
 	regex_strip_comments = re.compile(";.*$", flags=re.MULTILINE)
 
+	regex_broken_replacements = re.compile("\?([a-zA-Z0-9_]*)\?")
+
 	@classmethod
 	def from_cura_ini(cls, path):
 		import logging
@@ -685,9 +687,9 @@ class Profile(object):
 			gcode = defaults[key]
 
 		if key in ("start_gcode", "end_gcode"):
-			return gcode[extruder_count-1]
+			return self.regex_broken_replacements.sub("{\\1}", gcode[extruder_count-1])
 		else:
-			return gcode
+			return self.regex_broken_replacements.sub("{\\1}", gcode)
 
 	def get_profile_string(self):
 		import base64
@@ -749,17 +751,16 @@ class Profile(object):
 
 		if key == "start_gcode":
 			contents = self.get_gcode_template("start_gcode", extruder_count=extruder_count)
-			prefix += self.get_start_gcode_prefix(contents)
+			prefix += self.get_start_gcode_prefix(contents, extruder_count=extruder_count)
 
 		else:
 			contents = self.get_gcode_template(key, extruder_count=extruder_count)
 
 		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
 
-	def get_start_gcode_prefix(self, contents):
-		extruder_count = self.get_int("extruder_amount")
-
+	def get_start_gcode_prefix(self, contents, extruder_count=1):
 		prefix = ""
+		without_comments = Profile.regex_strip_comments.sub("", contents)
 
 		gcode_parameter_key = "S"
 		if self.get("gcode_flavor") == GcodeFlavors.MACH3:
@@ -773,12 +774,12 @@ class Profile(object):
 		bed_temp = 0
 		if self.get_boolean("has_heated_bed"):
 			bed_temp = self.get_float("print_bed_temperature")
-		include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
+		include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in without_comments
 
 		if include_bed_temp:
 			prefix += "M140 {param}{bed_temp}\n".format(param=gcode_parameter_key, bed_temp=bed_temp)
 
-		if temp > 0 and not "{print_temperature}" in Profile.regex_strip_comments.sub("", contents):
+		if temp > 0 and not "{print_temperature}" in without_comments:
 			if extruder_count > 0:
 				def temp_line(temp, extruder, param, template):
 					t = temp
