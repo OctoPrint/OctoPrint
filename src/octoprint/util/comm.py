@@ -952,15 +952,8 @@ class MachineCom(object):
 					continue
 
 				def to_list(data):
-					if PY3:
-						if isinstance(data, str):
-							data = map(str.strip, data.split("\n"))
-					else:
-						if isinstance(data, str):
-							data = map(str.strip, data.split("\n"))
-						elif isinstance(data, unicode):
-							data = map(unicode.strip, data.split("\n"))
-
+					if isinstance(data, basestring):
+						data = map(lambda x: x.strip(), data.split("\n"))
 					if isinstance(data, (list, tuple)):
 						return list(data)
 					else:
