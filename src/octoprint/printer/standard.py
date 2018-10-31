@@ -361,12 +361,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"],
 		              tags=kwargs.get("tags", set) | {"trigger:printer.home"})
 
-	def extrude(self, amount, *args, **kwargs):
+	def extrude(self, amount, speed=None, *args, **kwargs):
 		if not isinstance(amount, (int, long, float)):
 			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
 		printer_profile = self._printerProfileManager.get_current_or_default()
-		extrusion_speed = printer_profile["axes"]["e"]["speed"]
+
+		# Use specified speed (if any)
+		extrusion_speed = speed
+
+		if speed is None:
+			# No speed was specified so default to value configured in printer profile
+			extrusion_speed = printer_profile["axes"]["e"]["speed"]
+
 		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
 
