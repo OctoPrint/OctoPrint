@@ -363,7 +363,7 @@ Issue a tool command
 
      * ``amount``: The amount of filament to extrude in mm. May be negative to retract.
      * ``speed``: Optional. Speed at which to extrude. If not provided, maximum speed for E axis from printer
-       profile will be used. Otherwise interpreted as an integer signifying the speed in mm/s, to append to the command.
+       profile will be used. Otherwise interpreted as an integer signifying the speed in mm/min, to append to the command.
 
    flowrate
      Changes the flow rate factor to apply to extrusion of the tool.
