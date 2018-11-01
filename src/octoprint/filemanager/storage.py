@@ -28,7 +28,7 @@ from slugify import Slugify
 
 import octoprint.filemanager
 
-from octoprint.util import is_hidden_path, to_unicode
+from octoprint.util import is_hidden_path, to_unicode_string
 
 class StorageInterface(object):
 	"""
@@ -461,7 +461,7 @@ class LocalFileStorage(StorageInterface):
 
 	@classmethod
 	def _slugify(cls, text):
-		text = to_unicode(text)
+		text = to_unicode_string(text)
 		text = cls._no_unicode_variations(text)
 		text = demojize(text, delimiters=(u"", u""))
 		return cls._SLUGIFY(text)
@@ -476,7 +476,7 @@ class LocalFileStorage(StorageInterface):
 		"""
 		self._logger = logging.getLogger(__name__)
 
-		self.basefolder = os.path.realpath(os.path.abspath(to_unicode(basefolder)))
+		self.basefolder = os.path.realpath(os.path.abspath(to_unicode_string(basefolder)))
 		if not os.path.exists(self.basefolder) and create:
 			os.makedirs(self.basefolder)
 		if not os.path.exists(self.basefolder) or not os.path.isdir(self.basefolder):
@@ -594,7 +594,7 @@ class LocalFileStorage(StorageInterface):
 
 	def list_files(self, path=None, filter=None, recursive=True):
 		if path:
-			path = self.sanitize_path(to_unicode(path))
+			path = self.sanitize_path(to_unicode_string(path))
 			base = self.path_in_storage(path)
 			if base:
 				base += u"/"
@@ -911,7 +911,7 @@ class LocalFileStorage(StorageInterface):
 		self._save_metadata(path, metadata)
 
 	def split_path(self, path):
-		path = to_unicode(path)
+		path = to_unicode_string(path)
 		split = path.split(u"/")
 		if len(split) == 1:
 			return u"", split[0]
@@ -919,7 +919,7 @@ class LocalFileStorage(StorageInterface):
 			return self.join_path(*split[:-1]), split[-1]
 
 	def join_path(self, *path):
-		return u"/".join(map(to_unicode, path))
+		return u"/".join(map(to_unicode_string, path))
 
 	def sanitize(self, path):
 		"""
@@ -945,18 +945,18 @@ class LocalFileStorage(StorageInterface):
 	def canonicalize(self, path):
 		name = None
 		if isinstance(path, basestring):
-			path = to_unicode(path)
+			path = to_unicode_string(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
 			path = path.replace(os.path.sep, u"/")
 			path = path.split(u"/")
 		if isinstance(path, (list, tuple)):
 			if len(path) == 1:
-				name = to_unicode(path[0])
+				name = to_unicode_string(path[0])
 				path = u""
 			else:
-				name = to_unicode(path[-1])
-				path = self.join_path(*map(to_unicode, path[:-1]))
+				name = to_unicode_string(path[-1])
+				path = self.join_path(*map(to_unicode_string, path[:-1]))
 		if not path:
 			path = u""
 
@@ -968,7 +968,7 @@ class LocalFileStorage(StorageInterface):
 		slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
 		``(``, and ``)`` as is.
 		"""
-		name = to_unicode(name)
+		name = to_unicode_string(name)
 
 		if name is None:
 			return None
@@ -988,7 +988,7 @@ class LocalFileStorage(StorageInterface):
 		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
 		absolute path including leading ``basefolder`` path.
 		"""
-		path = to_unicode(path)
+		path = to_unicode_string(path)
 
 		if len(path):
 			if path[0] == u"/":
@@ -1006,7 +1006,7 @@ class LocalFileStorage(StorageInterface):
 		return path
 
 	def _sanitize_entry(self, entry, path, entry_path):
-		entry = to_unicode(entry)
+		entry = to_unicode_string(entry)
 		sanitized = self.sanitize_name(entry)
 		if sanitized != entry:
 			# entry is not sanitized yet, let's take care of that
@@ -1034,7 +1034,7 @@ class LocalFileStorage(StorageInterface):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
 		if isinstance(path, basestring):
-			path = to_unicode(path)
+			path = to_unicode_string(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
 			path = path.replace(os.path.sep, u"/")
@@ -1307,7 +1307,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
 				if entry_name != new_entry_name or entry_path != new_entry_path:
-					entry_display = to_unicode(entry_name)
+					entry_display = to_unicode_string(entry_name)
 					entry_name = new_entry_name
 					entry_path = new_entry_path
 					entry_stat = os.stat(entry_path)

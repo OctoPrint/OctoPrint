@@ -40,7 +40,7 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
-	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer
+	to_unicode_string, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer
 
 try:
 	import _winreg
@@ -897,7 +897,7 @@ class MachineCom(object):
 
 	def sendCommand(self, cmd, cmd_type=None, part_of_job=False, processed=False, force=False, on_sent=None, tags=None):
 		if not isinstance(cmd, QueueMarker):
-			cmd = to_unicode(cmd, errors="replace")
+			cmd = to_unicode_string(cmd, errors="replace")
 			if not processed:
 				cmd = process_gcode_line(cmd)
 				if not cmd:
@@ -952,15 +952,8 @@ class MachineCom(object):
 					continue
 
 				def to_list(data):
-					if PY3:
-						if isinstance(data, str):
-							data = map(str.strip, data.split("\n"))
-					else:
-						if isinstance(data, str):
-							data = map(str.strip, data.split("\n"))
-						elif isinstance(data, unicode):
-							data = map(unicode.strip, data.split("\n"))
-
+					if isinstance(data, basestring):
+						data = map(lambda x: x.strip(), data.split("\n"))
 					if isinstance(data, (list, tuple)):
 						return list(data)
 					else:

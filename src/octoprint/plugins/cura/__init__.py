@@ -17,7 +17,7 @@ import octoprint.slicing
 import octoprint.settings
 
 from octoprint.util.paths import normalize as normalize_path
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode_string
 
 from .profile import Profile
 from .profile import GcodeFlavors
@@ -270,9 +270,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 						on_progress_kwargs = dict()
 
 				self._cura_logger.info(u"### Slicing {} to {} using profile stored at {}"
-				                       .format(to_unicode(model_path, errors="replace"),
-				                               to_unicode(machinecode_path, errors="replace"),
-				                               to_unicode(profile_path, errors="replace")))
+				                       .format(to_unicode_string(model_path, errors="replace"),
+				                               to_unicode_string(machinecode_path, errors="replace"),
+				                               to_unicode_string(profile_path, errors="replace")))
 
 				executable = normalize_path(self._settings.get(["cura_engine"]))
 				if not executable:
@@ -307,7 +307,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					args += ["-s", "%s=%s" % (k, str(v))]
 				args += ["-o", machinecode_path, model_path]
 
-				self._logger.info(u"Running {!r} in {}".format(u" ".join(map(lambda x: to_unicode(x, errors="replace"),
+				self._logger.info(u"Running {!r} in {}".format(u" ".join(map(lambda x: to_unicode_string(x, errors="replace"),
 				                                                             args)),
 				                                               working_dir))
 
@@ -330,7 +330,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 						p.commands[0].poll()
 						continue
 
-					line = to_unicode(line, errors="replace")
+					line = to_unicode_string(line, errors="replace")
 					self._cura_logger.debug(line.strip())
 
 					if on_progress is not None:
@@ -454,7 +454,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				if command is not None:
 					command.terminate()
 				self._logger.info(u"Cancelled slicing of {}"
-				                  .format(to_unicode(machinecode_path, errors="replace")))
+				                  .format(to_unicode_string(machinecode_path, errors="replace")))
 
 	def _load_profile(self, path):
 		import yaml

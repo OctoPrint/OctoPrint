@@ -28,7 +28,7 @@ from octoprint.server.util.flask import require_firstrun, with_revalidation_chec
 from octoprint.server import VERSION, REVISION, BRANCH
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import dict_merge, to_unicode
+from octoprint.util import dict_merge, to_unicode_string
 import octoprint.settings
 
 ##~~ Plugin
@@ -1015,12 +1015,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			from octoprint.util.version import is_released_octoprint_version, is_stable_octoprint_version
 
-			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
+			result["displayName"] = to_unicode_string(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:
 				# displayName missing or set to None
-				result["displayName"] = to_unicode(gettext("OctoPrint"), errors="replace")
+				result["displayName"] = to_unicode_string(gettext("OctoPrint"), errors="replace")
 
-			result["displayVersion"] = to_unicode(check.get("displayVersion"), errors="replace")
+			result["displayVersion"] = to_unicode_string(check.get("displayVersion"), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion missing or set to None
 				result["displayVersion"] = u"{octoprint_version}"
@@ -1069,12 +1069,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						result["release_compare"] = "python_unequal"
 
 		else:
-			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
+			result["displayName"] = to_unicode_string(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:
 				# displayName missing or None
-				result["displayName"] = to_unicode(target, errors="replace")
+				result["displayName"] = to_unicode_string(target, errors="replace")
 
-			result["displayVersion"] = to_unicode(check.get("displayVersion", check.get("current")), errors="replace")
+			result["displayVersion"] = to_unicode_string(check.get("displayVersion", check.get("current")), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion AND current missing or None
 				result["displayVersion"] = u"unknown"

@@ -31,6 +31,8 @@ OctoPrint.egg-info
 *.codekit
 
 venv
+venv2
+venv3
 venv26
 venv27
 venv33

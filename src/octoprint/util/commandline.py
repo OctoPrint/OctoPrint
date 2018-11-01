@@ -11,7 +11,7 @@ import logging
 import re
 import time
 
-from . import to_unicode
+from . import to_unicode_string
 
 
 # These regexes are based on the colorama package
@@ -103,7 +103,7 @@ class CommandlineCaller(object):
 		def process_lines(lines, logger):
 			if not lines:
 				return []
-			l = self._preprocess_lines(*map(lambda x: to_unicode(x, errors="replace"), lines))
+			l = self._preprocess_lines(*map(lambda x: to_unicode_string(x, errors="replace"), lines))
 			logger(*l)
 			return list(l)
 

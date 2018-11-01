@@ -16,7 +16,7 @@ import os
 import pkg_resources
 
 from .commandline import CommandlineCaller, clean_ansi
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode_string
 
 _cache = dict(version=dict(), setup=dict())
 _cache_mutex = threading.RLock()
@@ -423,7 +423,7 @@ class PipCaller(CommandlineCaller):
 		    >>> PipCaller._preprocess(text)
 		    u'some text with some ANSI codes for red words and also some cursor control codes'
 		"""
-		return to_unicode(clean_ansi(text))
+		return to_unicode_string(clean_ansi(text))
 
 class LocalPipCaller(PipCaller):
 	"""

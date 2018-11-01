@@ -426,12 +426,12 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	"""
 
-	filename = to_unicode(filename)
-	extension = to_unicode(extension)
+	filename = to_unicode_string(filename)
+	extension = to_unicode_string(extension)
 
 	if filename.startswith(u"/"):
 		filename = filename[1:]
-	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
+	existing_filenames = [to_unicode_string(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
 		return re.sub(u"\s+", u"_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
@@ -481,7 +481,7 @@ def silent_remove(file):
 def sanitize_ascii(line):
 	if not isinstance(line, basestring):
 		raise ValueError("Expected either str or unicode but got {} instead".format(line.__class__.__name__ if line is not None else None))
-	return to_unicode(line, encoding="ascii", errors="replace").rstrip()
+	return to_unicode_string(line, encoding="ascii", errors="replace").rstrip()
 
 
 def filter_non_ascii(line):
@@ -496,32 +496,30 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
+		to_byte_representation(to_unicode_string(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
 
 
-def to_str(s_or_u, encoding="utf-8", errors="strict"):
+def to_byte_representation(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
 	if PY3:
 		if isinstance(s_or_u, bytes):
-			return s_or_u.decode(encoding)
-		return s_or_u
+			return s_or_u
+		return s_or_u.decode(encoding)
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
-	else:
-		return s_or_u
+	return s_or_u
 
 
-def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+def to_unicode_string(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
 	if PY3:
 		return s_or_u
 	if isinstance(s_or_u, str):
 		return s_or_u.decode(encoding, errors=errors)
-	else:
-		return s_or_u
+	return s_or_u
 
 
 def chunks(l, n):
@@ -1027,7 +1025,7 @@ def is_hidden_path(path):
 		# we define a None path as not hidden here
 		return False
 
-	path = to_unicode(path)
+	path = to_unicode_string(path)
 
 	filename = os.path.basename(path)
 	if filename.startswith(u"."):

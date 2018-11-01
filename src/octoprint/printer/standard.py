@@ -28,7 +28,7 @@ from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode_string
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -940,7 +940,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		 Callback method for the comm object, called upon log output.
 		"""
-		self._addLog(to_unicode(message, "utf-8", errors="replace"))
+		self._addLog(to_unicode_string(message, "utf-8", errors="replace"))
 
 	def on_comm_temperature_update(self, temp, bedTemp):
 		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp))
@@ -1005,7 +1005,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 Callback method for the comm object, called upon message exchanges via serial.
 		 Stores the message in the message buffer, truncates buffer to the last 300 lines.
 		"""
-		self._addMessage(to_unicode(message, "utf-8", errors="replace"))
+		self._addMessage(to_unicode_string(message, "utf-8", errors="replace"))
 
 	def on_comm_progress(self):
 		"""

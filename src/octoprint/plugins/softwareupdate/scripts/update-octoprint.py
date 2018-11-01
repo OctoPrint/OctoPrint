@@ -29,25 +29,29 @@ def _log(lines, prefix=None, stream=None):
 		output_stream = sys.stderr
 
 	for line in lines:
-		to_print = _to_str(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
+		to_print = _to_byte_representation(u"{} {}".format(prefix, _to_unicode_string(line.rstrip(), errors="replace")),
 		                   errors="replace")
 		print(to_print, file=output_stream)
 
 
-def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, str):
-		return s_or_u.decode(encoding, errors=errors)
-	else:
-		return s_or_u
-
-
-def _to_str(s_or_u, encoding="utf-8", errors="strict"):
+def _to_byte_representation(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
+	if PY3:
+		if isinstance(s_or_u, bytes):
+			return s_or_u
+		return s_or_u.decode(encoding)
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
-	else:
+	return s_or_u
+
+
+def _to_unicode_string(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if PY3:
 		return s_or_u
+	if isinstance(s_or_u, str):
+		return s_or_u.decode(encoding, errors=errors)
+	return s_or_u
 
 
 def _execute(command, **kwargs):
@@ -91,13 +95,13 @@ def _execute(command, **kwargs):
 		while p.commands[0].poll() is None:
 			lines = p.stderr.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = map(lambda x: _to_unicode_string(x, errors="replace"), lines)
 				_log_stderr(*lines)
 				all_stderr += list(lines)
 
 			lines = p.stdout.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = map(lambda x: _to_unicode_string(x, errors="replace"), lines)
 				_log_stdout(*lines)
 				all_stdout += list(lines)
 
@@ -106,13 +110,13 @@ def _execute(command, **kwargs):
 
 	lines = p.stderr.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = map(lambda x: _to_unicode_string(x, errors="replace"), lines)
 		_log_stderr(*lines)
 		all_stderr += lines
 
 	lines = p.stdout.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = map(lambda x: _to_unicode_string(x, errors="replace"), lines)
 		_log_stdout(*lines)
 		all_stdout += lines
 
@@ -172,7 +176,7 @@ def _to_error(*lines):
 			lines = lines[0]
 		elif not isinstance(lines[0], (str, unicode)):
 			lines = [repr(lines[0]),]
-	return u"\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+	return u"\n".join(map(lambda x: _to_unicode_string(x, errors="replace"), lines))
 
 
 def _rescue_changes(git_executable, folder):

@@ -22,7 +22,7 @@ from octoprint.server import app, userManager, groupManager, pluginManager, gett
 from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode_string
 
 import re
 import base64
@@ -474,13 +474,13 @@ def fetch_template_data(refresh=False):
 			# Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
 			# that require to access APIs to function will run into errors since those APIs won't work before ACL
 			# has been configured. See also #2140
-			return u"0:{}".format(to_unicode(d[0]))
+			return u"0:{}".format(to_unicode_string(d[0]))
 		elif d[1].get("mandatory", False):
 			# Other mandatory steps come before the optional ones
-			return u"1:{}".format(to_unicode(d[0]))
+			return u"1:{}".format(to_unicode_string(d[0]))
 		else:
 			# Finally everything else
-			return u"2:{}".format(to_unicode(d[0]))
+			return u"2:{}".format(to_unicode_string(d[0]))
 
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
