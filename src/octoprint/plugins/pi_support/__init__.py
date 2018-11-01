@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import flask
 import os
-import sarge
+import videocore
 
 from flask_babel import gettext
 from octoprint.util import RepeatedTimer
@@ -15,7 +15,6 @@ import octoprint.plugin
 
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
-_VCGENCMD_THROTTLE = "/usr/bin/vcgencmd get_throttled"
 
 ### uncomment for local debugging
 #import sys
@@ -130,17 +129,6 @@ def get_proc_dt_model():
 	return _proc_dt_model
 
 
-def get_vcgencmd_throttled_state(command):
-	output = sarge.get_stdout(command)
-	#output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
-	if not "throttled=0x" in output:
-		raise ValueError("cannot parse \"{}\" output: {}".format(command, output))
-
-	value = output[len("throttled="):].strip(" \t\r\n\0")
-	value = int(value, 0)
-	return ThrottleState.from_value(value)
-
-
 def is_octopi():
 	return os.path.exists(_OCTOPI_VERSION_PATH)
 
@@ -222,11 +210,10 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(vcgencmd_throttle_check_enabled=True,
-		            vcgencmd_throttle_check_command=_VCGENCMD_THROTTLE)
+		return dict(vcgencmd_throttle_check_enabled=True)
 
 	def get_settings_restricted_paths(self):
-		return dict(admin=[["vcgencmd_throttle_check_enabled"], ["vcgencmd_throttle_check_command"]])
+		return dict(admin=[["vcgencmd_throttle_check_enabled"]])
 
 	#~~ Helpers
 
@@ -242,13 +229,13 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		return self._throttle_functional
 
 	def _check_throttled_state(self):
-		command = self._settings.get(["vcgencmd_throttle_check_command"])
+		self._logger.debug("Retrieving throttle state via videocore mailbox")
 
-		self._logger.debug("Retrieving throttle state via \"{}\"".format(command))
 		try:
-			state = get_vcgencmd_throttled_state(command)
+      m = MailBox()
+      state = m.get_throttled()
 		except:
-			self._logger.exception("Got an error while trying to fetch the current throttle state via \"{}\"".format(command))
+			self._logger.exception("Got an error while trying to fetch the current throttle state via videocore mailbox")
 			self._throttle_functional = False
 			return
 
