@@ -219,7 +219,7 @@ Issue a print head command
        axes values are relative amounts) or to absolute position (provided axes values are coordinates)
      * ``speed``: Optional. Speed at which to move. If not provided, minimum speed for all selected axes from printer
        profile will be used. If provided but ``false``, no speed parameter will be appended to the command. Otherwise
-       interpreted as an integer signifying the speed in mm/s, to append to the command.
+       interpreted as an integer signifying the speed in mm/min, to append to the command.
 
    home
      Homes the print head in all of the given axes. Additional parameters are:

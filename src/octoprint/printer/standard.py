@@ -369,10 +369,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		# Use specified speed (if any)
 		extrusion_speed = speed
+		max_e_speed = printer_profile["axes"]["e"]["speed"]
 
 		if speed is None:
 			# No speed was specified so default to value configured in printer profile
-			extrusion_speed = printer_profile["axes"]["e"]["speed"]
+			extrusion_speed = max_e_speed
+		else:
+			# Make sure that specified value is not greater than maximum as defined in printer profile
+			extrusion_speed = min([speed, max_e_speed])
 
 		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
