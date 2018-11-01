@@ -157,9 +157,13 @@ The ``disable_hotends`` snippet is defined as follows:
 .. code-block:: jinja
    :caption: Default ``disable_hotends`` snippet
 
+   {% if printer_profile.extruder.sharedNozzle %}
+   M104 T0 S0
+   {% else %}
    {% for tool in range(printer_profile.extruder.count) %}
    M104 T{{ tool }} S0
    {% endfor %}
+   {% endif %}
 
 The ``disable_bed`` snippet is defined as follows:
 
