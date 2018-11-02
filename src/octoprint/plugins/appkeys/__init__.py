@@ -26,14 +26,16 @@ class AppAlreadyExists(Exception):
 
 
 class PendingDecision(object):
-	def __init__(self, appkeys_plugin, app_id, app_token, user_id, user_token):
+	def __init__(self, app_id, app_token, user_id, user_token, timeout_callback=None):
 		self.app_id = app_id
 		self.app_token = app_token
 		self.user_id = user_id
 		self.user_token = user_token
 		self.created = monotonic_time()
-		self.poll_timeout = ResettableTimer(POLL_TIMEOUT, appkeys_plugin.expire_request, [user_token])
-		self.poll_timeout.start()
+
+		if callable(timeout_callback):
+			self.poll_timeout = ResettableTimer(POLL_TIMEOUT, timeout_callback, [user_token])
+			self.poll_timeout.start()
 
 	def external(self):
 		return dict(app_id=self.app_id,
@@ -92,17 +94,6 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def initialize(self):
 		self._key_path = os.path.join(self.get_plugin_data_folder(), "keys.yaml")
 		self._load_keys()
-
-	def expire_request(self, user_token):
-		len_before = len(self._pending_decisions)
-		self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
-		len_after = len(self._pending_decisions)
-
-		if len_after < len_before:
-			self._plugin_manager.send_plugin_message(self._identifier, dict(
-				type="end_request",
-				user_token=user_token
-			))
 
 	##~~ TemplatePlugin
 
@@ -244,7 +235,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 		with self._pending_lock:
 			self._remove_stale_pending()
-			self._pending_decisions.append(PendingDecision(self, app_name, app_token, user_id, user_token))
+			self._pending_decisions.append(PendingDecision(app_name, app_token, user_id, user_token,
+			                                               timeout_callback=self._expire_pending))
 
 		return app_token, user_token
 
@@ -265,6 +257,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				if data.user_id == user_id or data.user_id is None:
 					result.append(data)
 		return result
+
+	def _expire_pending(self, user_token):
+		with self._pending_lock:
+			len_before = len(self._pending_decisions)
+			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+			len_after = len(self._pending_decisions)
+
+			if len_after < len_before:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(
+					type="end_request",
+					user_token=user_token
+				))
 
 	def _remove_stale_pending(self):
 		with self._pending_lock:
