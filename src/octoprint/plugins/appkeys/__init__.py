@@ -130,7 +130,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		                                                                user_token=user_token,
 		                                                                user_id=user_id))
 		response = flask.jsonify(app_token=app_token)
-		response.status_code = 202
+		response.status_code = 201
 		response.headers["Location"] = flask.url_for(".handle_decision_poll", app_token=app_token, _external=True)
 		return response
 
