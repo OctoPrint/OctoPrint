@@ -157,6 +157,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		if not result:
 			return flask.abort(404)
 
+		# Close access_request dialog for this request on all open OctoPrint connections
+		self._plugin_manager.send_plugin_message(self._identifier, dict(
+			type="end_request",
+			user_token=user_token
+		))
+
 		return NO_CONTENT
 
 	def is_blueprint_protected(self):
