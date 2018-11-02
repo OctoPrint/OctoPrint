@@ -368,7 +368,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		printer_profile = self._printerProfileManager.get_current_or_default()
 
 		# Use specified speed (if any)
-		extrusion_speed = speed
 		max_e_speed = printer_profile["axes"]["e"]["speed"]
 
 		if speed is None:
