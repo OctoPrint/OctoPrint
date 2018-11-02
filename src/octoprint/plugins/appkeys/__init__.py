@@ -15,23 +15,25 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
-from octoprint.util import atomic_write, monotonic_time
+from octoprint.util import atomic_write, monotonic_time, ResettableTimer
 
 
 CUTOFF_TIME = 10 * 60 # 10min
-
+POLL_TIMEOUT = 5 # 5 seconds
 
 class AppAlreadyExists(Exception):
 	pass
 
 
 class PendingDecision(object):
-	def __init__(self, app_id, app_token, user_id, user_token):
+	def __init__(self, appkeys_plugin, app_id, app_token, user_id, user_token):
 		self.app_id = app_id
 		self.app_token = app_token
 		self.user_id = user_id
 		self.user_token = user_token
 		self.created = monotonic_time()
+		self.poll_timeout = ResettableTimer(POLL_TIMEOUT, appkeys_plugin.expire_request, [user_token])
+		self.poll_timeout.start()
 
 	def external(self):
 		return dict(app_id=self.app_id,
@@ -91,6 +93,17 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		self._key_path = os.path.join(self.get_plugin_data_folder(), "keys.yaml")
 		self._load_keys()
 
+	def expire_request(self, user_token):
+		len_before = len(self._pending_decisions)
+		self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+		len_after = len(self._pending_decisions)
+
+		if len_after < len_before:
+			self._plugin_manager.send_plugin_message(self._identifier, dict(
+				type="end_request",
+				user_token=user_token
+			))
+
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
@@ -133,7 +146,11 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	@octoprint.plugin.BlueprintPlugin.route("/request/<app_token>")
 	@no_firstrun_access
 	def handle_decision_poll(self, app_token):
-		if self._is_pending(app_token):
+		result = self._get_pending_by_app_token(app_token)
+		if result:
+			for pending_decision in result:
+				pending_decision.poll_timeout.reset()
+
 			response = flask.jsonify(message="Awaiting decision")
 			response.status_code = 202
 			return response
@@ -157,6 +174,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		if not result:
 			return flask.abort(404)
 
+		# Close access_request dialog for this request on all open OctoPrint connections
+		self._plugin_manager.send_plugin_message(self._identifier, dict(
+			type="end_request",
+			user_token=user_token
+		))
+
 		return NO_CONTENT
 
 	def is_blueprint_protected(self):
@@ -179,7 +202,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			keys = self._api_keys_for_user(user_id)
 
 		return flask.jsonify(keys=map(lambda x: x.external(), keys),
-		                     pending=dict((x.user_token, x.external()) for x in self._get_pending(user_id)))
+		                     pending=dict((x.user_token, x.external()) for x in self._get_pending_by_user_id(user_id)))
 
 	def on_api_command(self, command, data):
 		user_id = current_user.get_name()
@@ -221,20 +244,20 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 		with self._pending_lock:
 			self._remove_stale_pending()
-			self._pending_decisions.append(PendingDecision(app_name, app_token, user_id, user_token))
+			self._pending_decisions.append(PendingDecision(self, app_name, app_token, user_id, user_token))
 
 		return app_token, user_token
 
-	def _is_pending(self, app_token):
+	def _get_pending_by_app_token(self, app_token):
+		result = []
 		with self._pending_lock:
 			self._remove_stale_pending()
 			for data in self._pending_decisions:
 				if data.app_token == app_token:
-					return True
+					result.append(data)
+		return result
 
-		return False
-
-	def _get_pending(self, user_id):
+	def _get_pending_by_user_id(self, user_id):
 		result = []
 		with self._pending_lock:
 			self._remove_stale_pending()
