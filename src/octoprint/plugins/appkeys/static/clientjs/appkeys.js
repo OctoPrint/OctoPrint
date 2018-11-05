@@ -29,6 +29,10 @@
         return this.base.postJson(this.base.getBlueprintUrl("appkeys") + "decision/" + token, {decision: !!decision}, opts);
     };
 
+    OctoPrintAppKeysClient.prototype.probe = function(opts) {
+        return this.base.get(this.base.getBlueprintUrl("appkeys") + "probe", opts);
+    };
+
     OctoPrintAppKeysClient.prototype.request = function(app, opts) {
         return this.requestForUser(app, undefined, opts);
     };
@@ -45,37 +49,44 @@
         var deferred = $.Deferred();
         var client = this;
 
-        client.requestForUser(app, user)
-            .done(function(response) {
-                var token = response.app_token;
-                if (!token) {
-                    // no token received, something went wrong
-                    deferred.reject();
-                    return;
-                }
-
-                var interval = 1000;
-                var poll = function() {
-                    client.checkDecision(token)
-                        .done(function(response) {
-                            if (response.api_key) {
-                                // got a decision, resolve the promise
-                                deferred.resolve(response.api_key);
-                            } else {
-                                // no decision yet, poll a bit more
-                                deferred.notify();
-                                window.setTimeout(poll, interval);
-                            }
-                        })
-                        .fail(function() {
-                            // something went wrong
+        client.probe()
+            .done(function() {
+                client.requestForUser(app, user)
+                    .done(function(response) {
+                        var token = response.app_token;
+                        if (!token) {
+                            // no token received, something went wrong
                             deferred.reject();
-                        });
-                };
-                window.setTimeout(poll, interval);
+                            return;
+                        }
+
+                        var interval = 1000;
+                        var poll = function() {
+                            client.checkDecision(token)
+                                .done(function(response) {
+                                    if (response.api_key) {
+                                        // got a decision, resolve the promise
+                                        deferred.resolve(response.api_key);
+                                    } else {
+                                        // no decision yet, poll a bit more
+                                        deferred.notify();
+                                        window.setTimeout(poll, interval);
+                                    }
+                                })
+                                .fail(function() {
+                                    // something went wrong
+                                    deferred.reject();
+                                });
+                        };
+                        window.setTimeout(poll, interval);
+                    })
+                    .fail(function() {
+                        // something went wrong
+                        deferred.reject();
+                    });
             })
             .fail(function() {
-                // something went wrong
+                // workflow unsupported
                 deferred.reject();
             });
 

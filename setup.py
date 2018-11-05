@@ -74,7 +74,7 @@ EXTRA_REQUIRES = dict(
 		"ddt",
 
 		# Documentation dependencies
-		"sphinx>=1.8.1,<1.9",
+		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",

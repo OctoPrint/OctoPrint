@@ -40,15 +40,18 @@ of the following steps:
 
   1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
      enters their username which is also their user ID into the App.
-  2. The App sends a :ref:`key request <sec-bundledplugins-appkey-datamodel-keyrequest>` to the Server to start the
+  2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
+     doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
+     (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
+  3. The App sends a :ref:`key request <sec-bundledplugins-appkey-datamodel-keyrequest>` to the Server to start the
      authorization process.
-  3. The Server triggers a confirmation dialog for the User on the Webinterface and returns an endpoint to the
+  4. The Server triggers a confirmation dialog for the User on the Webinterface and returns an endpoint to the
      App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`.
-  4. The App uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
+  5. The App uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
      signals that no decision has been made yet.
-  5. The User either accepts or denies the access request which makes the Webinterface send a
+  6. The User either accepts or denies the access request which makes the Webinterface send a
      :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
-  6. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
+  7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
      :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
      an HTTP :http:statuscode:`404`.
 
@@ -61,31 +64,35 @@ of the following steps:
       participant Webinterface
       participant Server
 
-      note over User, Server: Step 1 & 2
+      note over User, Server: Step 1, 2 & 3
 
-      User->>App: enters URL of instance to connect to
+      User->>App: enters URL of instance to connect to and optional user_id
 
-      alt Limit to specific user
-      User->>App: enters user_id
+      App->>Server: GET /plugin/appkeys/probe
+
+      alt Workflow unsupported
+
+      Server->>App: 404
+      App->>User: alternative workflow, copy-paste key manually
+
+      else Workflow supported
+
       App->>Server: POST /plugin/appkeys/request, (app_name, user_id)
-      else
-      App->>Server: POST /plugin/appkeys/request, (app_name)
-      end
 
-      note over User, Server: Step 3
+      note over User, Server: Step 4
 
       Server-->>Webinterface: plugin message for "appkeys" w/ (app_name, user_token, user_id)
       Webinterface-->>User: Display confirmation dialog
       Server->>App: 201, Location: /plugin/appkeys/request/<app_token>
 
-      note over User, Server: Step 4
+      note over User, Server: Step 5
 
-      loop
+      loop Poll for decision
       App->>Server: GET /plugin/appkeys/request/<app_token>
       Server->>App: 202
       end
 
-      note over User, Server: Step 5 & 6
+      note over User, Server: Step 6 & 7
 
       alt User accepts
 
@@ -105,10 +112,26 @@ of the following steps:
 
       end
 
+      end
+
 .. _sec-bundledplugins-appkeys-api:
 
 API
 ---
+
+.. _sec-bundledplugins-appkeys-api-probe:
+
+Probe for workflow support
+..........................
+
+.. http:get:: /plugin/appkeys/probe
+
+   Probes for support of the workflow.
+
+   Normally returns an HTTP :http:statuscode:`204`, indicating workflow availability. If a different status code is returned
+   (usually an HTTP :http:statuscode:`404`), the plugin is disabled or not installed. Fall back to manual api key exchange.
+
+   :status 204: the workflow is supported
 
 .. _sec-bundledplugins-appkeys-api-startauthprocess:
 
@@ -131,12 +154,6 @@ Start authorization process
    it in the ``user`` parameter. OctoPrint will then only display the authorization request on browsers the user ``me``
    is logged in on.
 
-   .. note::
-
-      If this endpoint produces an HTTP :http:statuscode:`404` and the instance URL is correct, the bundled
-      Application Keys Plugin has in all likelihood been disabled by the user. Fall back on manual API key copy-pasting
-      by the user.
-
    :json app: application identifier to use for the request, case insensitive
    :json user: optional user id to restrict the decision to the specified user
    :status 201: authorization process started, polling URL to query can be found in ``Location`` header
@@ -153,6 +170,11 @@ Poll for decision on existing request
    Returns an HTTP :http:statuscode:`202` while no decision has been made yet, an HTTP :http:statuscode:`200` and
    a :ref:`Key response <sec-bundledplugins-appkey-datamodel-keyresponse>` if access has been granted and an
    HTTP :http:statuscode:`404` if the request has been denied or timed out.
+
+   .. note::
+
+      The request will be considered stale and deleted internally if the polling endpoint for it isn't called
+      for more than 5s.
 
    :status 200: access granted, API key in response body
    :status 202: no decision has been made yet, continue polling
@@ -452,6 +474,15 @@ JavaScript Client Library
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. js:function:: OctoPrintClient.plugins.appkeys.probe(opts)
+
+   Probes for workflow support.
+
+   See :ref:`Probe for workflow support <sec-bundledplugins-appkeys-api-probe>` for more details.
+
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrintClient.plugins.appkeys.request(app, opts)
 
    Starts a new authorization request for the provided ``app`` identifier.
@@ -481,9 +512,10 @@ JavaScript Client Library
 
 .. js:function:: OctoPrintClient.plugins.appkeys.authenticate(app, user, opts)
 
-   Convenience function that issues a request and then automatically starts polling for a decision on the returned
-   polling endpoint every 1s, until either a positive or negative decision is returned. On success the returned
-   promise is resolved with the generated API key as argument.
+   Convenience function that probes for support, issues a request and then automatically starts polling for a decision
+   on the returned polling endpoint every 1s, until either a positive or negative decision is returned. On success the
+   returned promise is resolved with the generated API key as argument. If anything goes wrong or there is no support
+   for the workflow, the promise is rejected.
 
    **Example usage**
 

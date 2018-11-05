@@ -111,6 +111,11 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	##~~ BlueprintPlugin mixin
 
+	@octoprint.plugin.BlueprintPlugin.route("/probe", methods=["GET"])
+	@no_firstrun_access
+	def handle_probe(self):
+		return NO_CONTENT
+
 	@octoprint.plugin.BlueprintPlugin.route("/request", methods=["POST"])
 	@no_firstrun_access
 	def handle_request(self):
