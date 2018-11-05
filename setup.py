@@ -17,47 +17,43 @@ PYTHON_REQUIRES = ">=2.7.3,<3" # TODO change to >=2.7.9,<3 in 1.3.11
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
-	# changes that might affect plugins, or due to other observed problems
-
-	"flask>=0.10.1,<0.11",       # newer versions require newer Jinja versions
-	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
-	                             # guarantee backwards compatibility for plugins and such with that
-	                             # version, hence we need to pin to a lower version for now. See #1697
-	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
-	"Flask-Login>=0.2.11,<0.3",  # some functions changed to properties in 0.3
-
-	# anything below this should be checked on releases for new versions
-
-	"Flask-Principal>=0.4,<0.5",
-	"Flask-Babel>=0.12,<0.13",
-	"Flask-Assets>=0.12,<0.13",
-	"werkzeug>=0.14.1,<0.15",
-	"PyYAML>=3.13,<4",
-	"markdown>=3.0,<3.1",
+	"flask>=0.10.1,<0.11",
+	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                      # guarantee backwards compatibility for plugins and such with that
+	                      # version, hence we need to pin to a lower version for now. See #1697
+	"werkzeug>=0.8.3,<0.9",
+	"tornado==4.5.3",
+	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
+	                               # vendored one
+	"PyYAML>=3.10,<3.11",
+	"Flask-Login>=0.2.11,<0.3",
+	"Flask-Principal>=0.3.5,<0.4",
+	"Flask-Babel>=0.9,<0.10",
+	"Flask-Assets>=0.10,<0.11",
+	"markdown>=2.6.9,<2.7",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
-	"watchdog>=0.9.0,<0.10",
+	"watchdog>=0.8.3,<0.9",
 	"sarge==0.1.5post0",
-	"netifaces>=0.10.7,<0.11",
-	"pylru>=1.1,<1.2",
-	"rsa>=4.0,<5",
+	"netifaces>=0.10.6,<0.11",
+	"pylru>=1.0.9,<1.1",
+	"rsa>=3.2.3,<3.3",
 	"pkginfo>=1.4.2,<1.5",
-	"requests>=2.20.0,<3",
-	"semantic_version>=2.6,<2.7",
-	"psutil>=5.4.8,<5.5",
-	"Click>=7,<8",
+	"requests>=2.18.4,<3",
+	"semantic_version>=2.4.2,<2.5",
+	"psutil>=5.4.6,<5.5",
+	"Click>=6.2,<6.3",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
 	"chainmap>=1.0.2,<1.1",
-	"future>=0.17,<0.18",
-	"scandir>=1.9,<1.10",
-	"websocket-client>=0.53,<0.54",
-	"python-dateutil>=2.7.5,<2.8",
+	"future>=0.15.2,<0.16",
+	"scandir>=1.3,<1.4",
+	"websocket-client>=0.40.0,<0.41",
+	"python-dateutil>=2.6.1,<2.7",
 	"wrapt>=1.10.11,<1.11",
-	"futures>=3.2,<3.3",
-	"emoji>=0.5.1,<0.6",
-	"monotonic>=1.5,<1.6",
+	"futures>=3.1.1,<3.2",
+	"emoji>=0.4.5,<0.5",
+	"monotonic>=1.3,<1.4",
 	"frozendict>=1.2,<1.3"
 ]
 
@@ -70,7 +66,7 @@ EXTRA_REQUIRES = dict(
 	develop=[
 		# Testing dependencies
 		"mock>=2.0.0,<3",
-		"nose>=1.3.7,<1.4",
+		"nose>=1.3.0,<1.4",
 		"ddt",
 
 		# Documentation dependencies
@@ -82,7 +78,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter>=1.6,<1.7"
+		"cookiecutter>=1.4,<1.7"
 	]
 )
 
