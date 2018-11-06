@@ -82,14 +82,22 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._environment = environment
 
 	##~~ StartupPlugin
+	def on_startup(self, *args, **kwargs):
+		self._helpers_get_throttle_state = None
 
 	def on_after_startup(self):
-		self._track_startup()
-
 		ping = self._settings.get_int(["ping"])
 		if ping:
 			self._ping_worker = RepeatedTimer(ping, self._track_ping)
 			self._ping_worker.start()
+
+		# cautiously look for the get_throttled helper from pi_support
+		pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if pi_helper and 'get_throttled' in pi_helper:
+			self._helpers_get_throttle_state = pi_helper['get_throttled']
+
+		# now that we have everything set up, phone home.
+		self._track_startup()
 
 	##~~ ShutdownPlugin
 
@@ -160,8 +168,12 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		               freq=self._environment[b"hardware"][b"freq"],
 		               ram=self._environment[b"hardware"][b"ram"])
 
+		if self._helpers_get_throttle_state:
+			payload[b"throttle_state"] = self._helpers_get_throttle_state()
+
 		if b"plugins" in self._environment and b"pi_support" in self._environment[b"plugins"]:
 			payload[b"pi_model"] = self._environment[b"plugins"][b"pi_support"][b"model"]
+
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
@@ -219,6 +231,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
 			track_event = "print_cancelled"
+		else:
+			logger.info("unknown event, skipping: {}".format(event))
+
+		if self._helpers_get_throttle_state:
+			args[b"throttle_state"] = self._helpers_get_throttle_state()
 
 		if track_event is not None:
 			self._track(track_event, **args)
@@ -254,7 +271,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			             params=params,
 			             timeout=3.1,
 			             headers=headers)
-			self._logger.debug("Sent tracking event to {}".format(url))
+			self._logger.info("Sent tracking event to {}, params: {}".format(url, kwargs))
 		except:
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
