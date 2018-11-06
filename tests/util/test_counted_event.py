@@ -88,6 +88,24 @@ class CountedEventTest(unittest.TestCase):
 		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
+	def test_clear_more_than_available_without_minimum(self):
+		"""The counter may sink below zero if initialized without a minimum."""
+
+		event = CountedEvent(1, minimum=None)
+
+		self.assertEqual(1, event._counter)
+		self.assertTrue(event._event.is_set())
+
+		event.clear()
+
+		self.assertEqual(0, event._counter)
+		self.assertFalse(event._event.is_set())
+
+		event.clear()
+
+		self.assertEqual(-1, event._counter)
+		self.assertFalse(event._event.is_set())
+
 	def test_blocked(self):
 		"""Blocked should only be true if the counter is 0."""
 

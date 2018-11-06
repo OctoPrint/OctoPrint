@@ -1,0 +1,49 @@
+<legend>{{ _('Registered application keys') }}</legend>
+
+<div data-bind="visible: keys.allSize() <= 0">
+    <p>{{ _('There are no application keys registered yet.') }}</p>
+</div>
+<div data-bind="visible: keys.allSize() > 0">
+    <table class="table table-condensed table-hover" id="settings_plugin_appkeys_userkeys_table">
+        <thead>
+        <tr>
+            <th class="settings_plugin_appkeys_app">{{ _('Application identifier') }}</th>
+            <th class="settings_plugin_appkeys_actions">{{ _('Action') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: keys.paginatedItems">
+        <tr>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-mini pagination-centered">
+        <ul>
+            <li data-bind="css: {disabled: keys.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: keys.prevPage">«</a></li>
+        </ul>
+        <ul data-bind="foreach: keys.pages">
+            <li data-bind="css: { active: $data.number === $root.keys.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.keys.changePage($data.number); }"></a></li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: keys.currentPage() === keys.lastPage()}"><a href="javascript:void(0)" data-bind="click: keys.nextPage">»</a></li>
+        </ul>
+    </div>
+</div>
+
+<legend>{{ _('Manually generate an application key') }}</legend>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label">{{ _('Application identifier') }}</label>
+        <div class="controls">
+            <input type="text" data-bind="value: editorApp">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="click: generateKey">{{ _('Generate') }}</button>
+        </div>
+    </div>
+</form>

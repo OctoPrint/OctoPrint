@@ -24,12 +24,20 @@ from . import version_checks, updaters, exceptions, util, cli
 
 from flask_babel import gettext
 
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.server import VERSION, REVISION, BRANCH
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
+from octoprint.util.version import get_comparable_version
+from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
+
+
+MINIMUM_PYTHON = "2.7.9"
+MINIMUM_SETUPTOOLS = "5.5.1"
+MINIMUM_PIP = "9.0.1"
+
 
 ##~~ Plugin
 
@@ -43,7 +51,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
 
-	DATA_FORMAT_VERSION = "v3"
+	DATA_FORMAT_VERSION = "v4"
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
@@ -61,6 +69,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_path = None
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = None
+
+		self._environment_supported = False
+		self._environment_versions = dict()
+		self._environment_ready = threading.Event()
 
 		self._console_logger = None
 
@@ -108,6 +120,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		# the server startup
 		def fetch_data():
 			self.get_current_versions()
+			self._check_environment()
 
 		thread = threading.Thread(target=fetch_data)
 		thread.daemon = True
@@ -180,6 +193,24 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					del self._configured_checks[key]
 
 			return self._configured_checks
+
+	def _check_environment(self):
+		from platform import python_version
+		import pkg_resources
+
+		local_pip = LocalPipCaller()
+
+		# check python and setuptools version
+		versions = dict(python=python_version(),
+		                setuptools=pkg_resources.get_distribution("setuptools").version,
+		                pip=local_pip.version_string)
+		supported = get_comparable_version(versions["python"]) >= get_comparable_version(MINIMUM_PYTHON) \
+		       and get_comparable_version(versions["setuptools"]) >= get_comparable_version(MINIMUM_SETUPTOOLS) \
+		       and get_comparable_version(versions["pip"]) >= get_comparable_version(MINIMUM_PIP)
+
+		self._environment_supported = supported
+		self._environment_versions = versions
+		self._environment_ready.set()
 
 	def _load_version_cache(self):
 		if not os.path.isfile(self._version_cache_path):
@@ -489,7 +520,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	#~~ BluePrint API
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
 		if "check" in flask.request.values:
@@ -500,11 +531,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		def view():
+			self._environment_ready.wait()
+
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
+				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible and self._environment_supported else "updateAvailable" if update_available else "current",
 				                          information=information,
-				                          timestamp=self._version_cache_timestamp))
+				                          timestamp=self._version_cache_timestamp,
+				                          environment=dict(supported=self._environment_supported,
+				                                           versions=[dict(name=gettext("Python"), current=self._environment_versions.get("python", "unknown"), minimum=MINIMUM_PYTHON),
+				                                                     dict(name=gettext("pip"), current=self._environment_versions.get("pip", "unknown"), minimum=MINIMUM_PIP),
+				                                                     dict(name=gettext("setuptools"), current=self._environment_versions.get("setuptools", "unknown"), minimum=MINIMUM_SETUPTOOLS)])))
 			except exceptions.ConfigurationInvalid as e:
 				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -531,6 +568,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					hash.update(str(data.get("online", None)))
 
 			hash.update(",".join(targets))
+
+			hash.update(str(self._environment_supported))
 			hash.update(str(self._version_cache_timestamp))
 			hash.update(str(self._connectivity_checker.online))
 			hash.update(str(self._update_in_progress))
@@ -546,12 +585,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
 			return flask.make_response("Printer is currently printing or paused", 409)
+
+		if not self._environment_supported:
+			return flask.make_response("Direct updates are not supported in this Python environment", 409)
 
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
@@ -579,6 +621,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return dict(
 			css=["css/softwareupdate.css"],
 			js=["js/softwareupdate.js"],
+			clientjs=["clientjs/softwareupdate.js"],
 			less=["less/softwareupdate.less"]
 		)
 
@@ -665,6 +708,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							continue
 
 						target_information, target_update_available, target_update_possible, target_online, target_error = future.result()
+						target_update_possible = target_update_possible and self._environment_supported
 
 						target_information = dict_merge(dict(local=dict(name="?", value="?"),
 						                                     remote=dict(name="?", value="?",
@@ -797,6 +841,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		:param targets: an iterable defining the targets to update, if not supplied defaults to all targets
 		"""
+
+		if not self._environment_supported:
+			self._logger.error("Direct updates are unsupported in this environment")
+			return [], dict()
 
 		targets = kwargs.get("targets", kwargs.get("check_targets", None))
 

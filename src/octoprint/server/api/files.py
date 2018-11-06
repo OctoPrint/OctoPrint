@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response, url_for
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT, current_user
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
 from octoprint.access.permissions import Permissions
@@ -20,6 +20,7 @@ import octoprint.filemanager.util
 import octoprint.filemanager.storage
 import octoprint.slicing
 
+import os
 import psutil
 import hashlib
 import logging
@@ -136,7 +137,7 @@ def readGcodeFilesForOrigin(origin):
 
 
 def _getFileDetails(origin, path, recursive=True):
-	parent, path = fileManager.split_path(origin, path)
+	parent, path = os.path.split(path)
 	files = _getFileList(origin, path=parent, recursive=recursive)
 
 	for f in files:
@@ -267,7 +268,7 @@ def _isBusy(target, path):
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
 
 @api.route("/files/<string:target>", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.FILES_UPLOAD.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
@@ -483,7 +484,7 @@ def readGcodeFile(target, filename):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -750,7 +751,7 @@ def gcodeFileCommand(filename, target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.FILES_DELETE.require(403)
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):

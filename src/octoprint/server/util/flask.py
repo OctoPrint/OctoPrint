@@ -32,6 +32,7 @@ import octoprint.plugin
 
 from octoprint.util import DefaultOrderedDict
 from octoprint.util.json import JsonEncoding
+from octoprint.util.net import is_lan_address
 
 from werkzeug.local import LocalProxy
 from werkzeug.contrib.cache import BaseCache
@@ -513,6 +514,10 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 def passive_login():
 	user = flask_login.current_user
 
+	remoteAddr = get_remote_address(flask.request)
+	ipCheckEnabled = settings().getBoolean(["server", "ipCheck", "enabled"])
+	ipCheckTrusted = settings().get(["server", "ipCheck", "trustedSubnets"])
+
 	if isinstance(user, LocalProxy):
 		# noinspection PyProtectedMember
 		user = user._get_current_object()
@@ -531,6 +536,7 @@ def passive_login():
 
 	if user is not None and user.is_active:
 		# login known user
+		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
 		user = login(user)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
@@ -543,17 +549,21 @@ def passive_login():
 			localNetworks.add(ip)
 
 		try:
-			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
 				autologin_user = octoprint.server.userManager.find_user(autologinAs)
 				if autologin_user is not None and user.is_active:
 					autologin_user = octoprint.server.userManager.login_user(autologin_user)
+
+					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(), remoteAddr))
 					user = login(autologin_user)
 		except:
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	return flask.jsonify(user)
+	response = user.as_dict()
+	response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
+	                                                                        additional_private=ipCheckTrusted)
+	return flask.jsonify(response)
 
 
 #~~ cache decorator for cacheable views
@@ -1063,7 +1073,7 @@ def permission_validator(request, permission):
 	:param request: The required permission
 	"""
 
-	user = _get_flask_user_from_request(request)
+	user = get_flask_user_from_request(request)
 	if user is None or not user.is_authenticated or not user.has_permission(permission):
 		raise tornado.web.HTTPError(403)
 
@@ -1076,7 +1086,7 @@ def admin_validator(request):
 def user_validator(request):
 	return True
 
-def _get_flask_user_from_request(request):
+def get_flask_user_from_request(request):
 	"""
 	Retrieves the current flask user from the request context. Uses API key if available, otherwise the current
 	user session if available.
@@ -1121,24 +1131,15 @@ def redirect_to_tornado(request, target, code=302):
 
 def restricted_access(func):
 	"""
-	If you decorate a view with this, it will ensure that first setup has been
-	done for OctoPrint's Access Control plus that any conditions of the
-	login_required decorator are met (possibly through a session already created
-	by octoprint.server.util.apiKeyRequestHandler earlier in the request processing).
-
-	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
-	flag from the settings being set to True and the userManager not indicating
-	that it's user database has been customized from default), the decorator
-	will cause a HTTP 403 status code to be returned by the decorated resource.
+	This combines :py:func:`no_firstrun_access` and ``login_required``.
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
-		return require_firstrun(flask_login.login_required(func))(*args, **kwargs)
-
+		return no_firstrun_access(flask_login.login_required(func))(*args, **kwargs)
 	return decorated_view
 
 
-def require_firstrun(func):
+def no_firstrun_access(func):
 	"""
 	If you decorate a view with this, it will ensure that first setup has been
 	done for OctoPrint's Access Control.
@@ -1151,10 +1152,8 @@ def require_firstrun(func):
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (
-				octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
-
 		return func(*args, **kwargs)
 
 	return decorated_view
@@ -1338,6 +1337,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
+		clientjs=[],
 		css=[],
 		less=[]
 	)
@@ -1381,6 +1381,26 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			'gcodeviewer/js/renderer.js'
 		]
 
+	assets["clientjs"] = [
+		"js/app/client/base.js",
+		"js/app/client/socket.js",
+		"js/app/client/browser.js",
+		"js/app/client/connection.js",
+		"js/app/client/control.js",
+		"js/app/client/files.js",
+		"js/app/client/job.js",
+		"js/app/client/languages.js",
+		"js/app/client/printer.js",
+		"js/app/client/printerprofiles.js",
+		"js/app/client/settings.js",
+		"js/app/client/slicing.js",
+		"js/app/client/system.js",
+		"js/app/client/timelapse.js",
+		"js/app/client/users.js",
+		"js/app/client/util.js",
+		"js/app/client/wizard.js"
+	]
+
 	if preferred_stylesheet == "less":
 		assets["less"].append('less/octoprint.less')
 	elif preferred_stylesheet == "css":
@@ -1395,9 +1415,11 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 	supported_stylesheets = ("css", "less")
 	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
+	                           clientjs=DefaultOrderedDict(list),
 	                           css=DefaultOrderedDict(list),
 	                           less=DefaultOrderedDict(list)),
 	              external=dict(js=DefaultOrderedDict(list),
+	                            clientjs=DefaultOrderedDict(list),
 	                            css=DefaultOrderedDict(list),
 	                            less=DefaultOrderedDict(list)))
 
@@ -1426,6 +1448,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				if not asset_exists("js", asset):
 					continue
 				assets[asset_key]["js"][name].append('plugin/{name}/{asset}'.format(**locals()))
+
+		if "clientjs" in all_assets:
+			for asset in all_assets["clientjs"]:
+				if not asset_exists("clientjs", asset):
+					continue
+				assets[asset_key]["clientjs"][name].append("plugin/{name}/{asset}".format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:

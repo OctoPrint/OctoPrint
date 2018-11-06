@@ -1089,6 +1089,54 @@ octoprint.printer.estimation.factory
    :return: The :class:`~octoprint.printer.estimation.PrintTimeEstimator` class to use, or a factory method
    :rtype: class or function
 
+.. _sec-plugins-hook-server-http-after_request:
+
+octoprint.server.api.after_request
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: after_request_handlers_hook(*args, **kwargs)
+
+   Allows adding additional after-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
+
+   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
+   usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
+.. _sec-plugins-hook-server-http-before_request:
+
+octoprint.server.api.before_request
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: after_request_handlers_hook(*args, **kwargs)
+
+   Allows adding additional before-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
+
+   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
+   usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
+.. _sec-plugins-hook-server-http-access_validator:
+
+octoprint.server.http.access_validator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: access_validator_hook(request, *args, **kwargs)
+
+   Allows adding additional access validators to the default tornado routers.
+
+   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further. See the bundled
+   "Force Login" plugin for a usage example.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
 .. _sec-plugins-hook-server-http-bodysize:
 
 octoprint.server.http.bodysize
@@ -1189,6 +1237,45 @@ octoprint.server.http.routes
    :param list server_routes: read-only list of the currently configured server routes
    :return: a list of 3-tuples with additional routes as defined above
    :rtype: list
+
+.. _sec-plugins-hook-server-sockjs-register:
+
+octoprint.server.sockjs.register
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: socket_registration_hook(socket, user, *args, **kwargs):
+
+   Allows plugins to prevent a new :ref:`push socket client <sec-api-push>` to be registered to the system.
+
+   Handlers should return either ``True`` or ``False``. ``True`` signals to proceed with normal registration. ``False``
+   signals to not register the client.
+
+   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
+
+   :param object socket: the socket object which is about to be registered
+   :param object user: the user currently authenticated on the socket - might be None
+   :return: whether to proceed with registration (``True``) or not (``False``)
+   :rtype: boolean
+
+.. _sec-plugins-hook-server-sockjs-emit:
+
+octoprint.server.sockjs.emit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: socket_emit_hook(socket, user, message, payload, *args, **kwargs):
+
+   Allows plugins to prevent any messages to be emitted on an existing :ref:`push connection <sec-api-push>`.
+
+   Handlers should return either ``True`` to allow the message to be emitted, or ``False`` to prevent it.
+
+   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
+
+   :param object socket: the socket object on which a message is about to be emitted
+   :param object user: the user currently authenticated on the socket - might be None
+   :param string message: the message type about to be emitted
+   :param dict payload: the payload of the message about to be emitted (may be None)
+   :return: whether to proceed with sending the message (``True``) or not (``False``)
+   :rtype: boolean
 
 .. _sec-plugins-hook-timelapse-extensions:
 

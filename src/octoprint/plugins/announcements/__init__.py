@@ -21,7 +21,7 @@ import flask
 from collections import OrderedDict
 
 from octoprint.access.permissions import Permissions
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.util import utmify
 from flask_babel import gettext
 from octoprint import __version__ as OCTOPRINT_VERSION
@@ -150,7 +150,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# Blueprint Plugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
@@ -211,7 +211,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                  unless=lambda: force)(view)()
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def channel_command(self, channel):
 		from octoprint.server.util.flask import get_json_command_from_request
@@ -391,15 +391,24 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		result = []
 		if "entries" in feed:
 			for entry in feed["entries"]:
-				internal_entry = self._to_internal_entry(entry, read_until=read_until)
-				if internal_entry:
-					result.append(internal_entry)
+				try:
+					internal_entry = self._to_internal_entry(entry, read_until=read_until)
+					if internal_entry:
+						result.append(internal_entry)
+				except:
+					self._logger.exception("Error while converting entry from feed, skipping it")
 		return result
 
 	def _to_internal_entry(self, entry, read_until=None):
 		"""Convert feed entries to internal data structure."""
 
-		published = calendar.timegm(entry["published_parsed"])
+		timestamp = entry.get("published_parsed",
+		                      entry.get("updated_parsed",
+		                                None))
+		if timestamp is None:
+			return  None
+
+		published = calendar.timegm(timestamp)
 
 		read = True
 		if read_until is not None:

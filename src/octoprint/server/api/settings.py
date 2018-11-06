@@ -16,7 +16,7 @@ from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer, pluginManager
 from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.access.permissions import Permissions
 
 import octoprint.plugin
@@ -157,6 +157,7 @@ def getSettings():
 			"blockM0M1": s.getBoolean(["serial", "blockM0M1"]),
 			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
 			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
+			"abortHeatupOnCancel": s.getBoolean(["serial", "abortHeatupOnCancel"]),
 			"supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
 			"waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
@@ -174,7 +175,8 @@ def getSettings():
 			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
 			"capAutoreportTemp": s.getBoolean(["serial", "capabilities", "autoreport_temp"]),
 			"capAutoreportSdStatus": s.getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
-			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"])
+			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
+			"capEmergencyParser": s.getBoolean(["serial", "capabilities", "emergency_parser"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -280,7 +282,7 @@ def _get_plugin_settings():
 
 
 @api.route("/settings", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def setSettings():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -305,7 +307,7 @@ def setSettings():
 
 
 @api.route("/settings/apikey", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def generateApiKey():
 	apikey = settings().generateApiKey()
@@ -313,14 +315,14 @@ def generateApiKey():
 
 
 @api.route("/settings/apikey", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteApiKey():
 	settings().deleteApiKey()
 	return NO_CONTENT
 
 @api.route("/settings/templates", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def fetchTemplateData():
 	from octoprint.server.views import fetch_template_data
@@ -419,17 +421,17 @@ def _saveSettings(data):
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 		if "port" in data["serial"]: s.set(["serial", "port"], data["serial"]["port"])
 		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
-		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], minimum=1.0)
-		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"], minimum=1.0)
-		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], minimum=1.0)
-		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"], minimum=1.0)
-		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"], minimum=1.0)
-		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"], minimum=1.0)
-		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"], minimum=0.0)
-		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"], minimum=1.0)
-		if "timeoutSdStatusAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatusAutoreport"], data["serial"]["timeoutSdStatusAutoreport"], minimum=0.0)
-		if "timeoutBaudrateDetectionPause" in data["serial"]: s.setFloat(["serial", "timeout", "baudrateDetectionPause"], data["serial"]["timeoutBaudrateDetectionPause"], minimum=0.0)
-		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"], minimum=1.0)
+		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], min=1.0)
+		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"], min=1.0)
+		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], min=1.0)
+		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"], min=1.0)
+		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"], min=1.0)
+		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"], min=1.0)
+		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"], min=0.0)
+		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"], min=1.0)
+		if "timeoutSdStatusAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatusAutoreport"], data["serial"]["timeoutSdStatusAutoreport"], min=0.0)
+		if "timeoutBaudrateDetectionPause" in data["serial"]: s.setFloat(["serial", "timeout", "baudrateDetectionPause"], data["serial"]["timeoutBaudrateDetectionPause"], min=0.0)
+		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"], min=1.0)
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
@@ -456,12 +458,14 @@ def _saveSettings(data):
 		if "blockWhileDwelling" in data["serial"]: s.setBoolean(["serial", "blockWhileDwelling"], data["serial"]["blockWhileDwelling"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
+		if "abortHeatupOnCancel" in data["serial"]: s.setBoolean(["serial", "abortHeatupOnCancel"], data["serial"]["abortHeatupOnCancel"])
 		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
 		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
 		if "capAutoreportTemp" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_temp"], data["serial"]["capAutoreportTemp"])
 		if "capAutoreportSdStatus" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_sdstatus"], data["serial"]["capAutoreportSdStatus"])
 		if "capBusyProtocol" in data["serial"]: s.setBoolean(["serial", "capabilities", "busy_protocol"], data["serial"]["capBusyProtocol"])
+		if "capEmergencyParser" in data["serial"]: s.setBoolean(["serial", "capabilities", "emergency_parser"], data["serial"]["capEmergencyParser"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"]: s.setBoolean(["serial", "log"], data["serial"]["log"])
