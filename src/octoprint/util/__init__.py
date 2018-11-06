@@ -1299,6 +1299,9 @@ class CountedEvent(object):
 			else:
 				self._internal_set(self._counter - 1)
 
+	def reset(self):
+		self.clear(completely=True)
+
 	def wait(self, timeout=None):
 		self._event.wait(timeout)
 
