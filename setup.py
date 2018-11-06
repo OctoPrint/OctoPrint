@@ -18,6 +18,7 @@ INSTALL_REQUIRES = [
 	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                      # guarantee backwards compatibility for plugins and such with that
 	                      # version, hence we need to pin to a lower version for now. See #1697
+	"regex==2018.11.3",   # Current version as of 2018-11-06 is broken. See #2874
 	"werkzeug>=0.8.3,<0.9",
 	"tornado==4.5.3",
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
