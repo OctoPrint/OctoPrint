@@ -141,7 +141,8 @@ Disconnected
    The server has disconnected from the printer
 
 Error
-   An error has occurred in the printer communication.
+   An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
+   on the connection.
 
    Payload:
 
