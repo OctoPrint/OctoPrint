@@ -244,8 +244,12 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	def _check_throttled_state_condition(self):
 		return self._throttle_functional
 
-	def get_throttle_state(self, run_now=False):
-		'''public method to pass around in plugin_helpers'''
+	def get_throttle_state(self, raw_value_only=False, run_now=False):
+		'''public method to pass around in plugin_helpers.'''
+
+		# Not using the `run_now` yet, but leaving it as a placeholder.
+
+		if raw_value_only: return self._throttle_state._raw_value
 		return self._throttle_state.as_dict()
 
 	def _check_throttled_state(self):

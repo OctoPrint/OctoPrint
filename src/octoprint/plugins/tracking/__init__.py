@@ -169,7 +169,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		               ram=self._environment[b"hardware"][b"ram"])
 
 		if self._helpers_get_throttle_state:
-			payload[b"throttle_state"] = self._helpers_get_throttle_state()
+			payload[b"throttle_state"] = self._helpers_get_throttle_state(raw_value_only=True)
 
 		if b"plugins" in self._environment and b"pi_support" in self._environment[b"plugins"]:
 			payload[b"pi_model"] = self._environment[b"plugins"][b"pi_support"][b"model"]
@@ -263,15 +263,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		server = self._settings.get([b"server"])
 		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
+		# don't print the URL or uuid! That would expose the uuid in forums if pasted.
+		# (it's okay for the user to know their uuid, but it shouldn't be shared)
 
 		headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
 		try:
 			params = urlencode(kwargs, doseq=True).replace("+", "%20")
+
 			requests.get(url,
 			             params=params,
 			             timeout=3.1,
 			             headers=headers)
-			self._logger.info("Sent tracking event to {}, params: {}".format(url, kwargs))
+			self._logger.info("Sent tracking event to /{}, params: {}".format(event, kwargs))
 		except:
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
