@@ -3600,7 +3600,7 @@ class MachineComPrintCallback(object):
 	def on_comm_print_job_started(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_failed(self):
+	def on_comm_print_job_failed(self, reason=None):
 		pass
 
 	def on_comm_print_job_done(self, suppress_script=False):
