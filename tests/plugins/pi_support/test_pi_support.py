@@ -150,4 +150,5 @@ class ThrottleStateTestCase(unittest.TestCase):
 		                                           current_overheat=False,
 		                                           past_overheat=True,
 		                                           current_issue=True,
-		                                           past_issue=True))
+		                                           past_issue=True,
+		                                           raw_value=-1))
