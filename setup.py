@@ -218,6 +218,9 @@ def params():
 			"octoprint = octoprint:main"
 		]
 	}
+	
+	# Don't install on python 3
+	python_requires = '<3'
 
 	return locals()
 
