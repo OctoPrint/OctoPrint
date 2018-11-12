@@ -1334,7 +1334,14 @@ class Settings(object):
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			payload = dict(config_hash=self.config_hash,
+			               effective_hash=self.effective_hash)
+			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter
