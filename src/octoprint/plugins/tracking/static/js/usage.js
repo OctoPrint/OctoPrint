@@ -7,8 +7,8 @@ $(function() {
         self.setup = ko.observable(false);
 
         self.decision = ko.observable();
+        self.active = ko.observable();
         self.required = false;
-        self.active = false;
 
         self.enableUsage = function() {
             self.settingsViewModel.settings.plugins.tracking.enabled(true);
@@ -45,7 +45,7 @@ $(function() {
         };
 
         self.onWizardPreventSettingsRefreshDialog = function() {
-            return self.active;
+            return self.active();
         };
 
         self.onWizardDetails = function(response) {
@@ -68,11 +68,27 @@ $(function() {
                 }
             };
 
-            self.active = true;
+            self.active(true);
             self.settingsViewModel.saveData(data)
                 .done(function() {
                     self.setup(true);
-                    self.active = false;
+                    self.active(false);
+                })
+                .fail(function() {
+                    self.decision(false);
+                    self.setup(true);
+                    self.active(false);
+
+                    var message = "Please open a <a href='%(bugreport)s' target='_blank' rel='noopener noreferrer'>" +
+                            "bug report</a> on this. Make sure to include all requested information, including your " +
+                            "<a href='%(jsconsole)s' target='_blank' rel='noopener noreferrer'>JS console</a> and " +
+                            "<code>octoprint.log</code>.";
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: _.sprintf(gettext(message), {bugreport: "https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report", jsconsole: "https://webmasters.stackexchange.com/a/77337"}),
+                        type: "error",
+                        hide: false
+                    });
                 });
         };
     }
