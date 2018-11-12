@@ -9,8 +9,8 @@
 </p>
 
 <div class="row-fluid">
-    <a href="javascript:void(0)" class="btn span6" data-bind="click: function() { if(!setup()){disableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Anonymous Usage Tracking') }}</a>
-    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enableTracking()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable Anonymous Usage Tracking') }}</a>
+    <a href="javascript:void(0)" class="btn span6" data-bind="click: function() { if(!setup()){disableUsage()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Anonymous Usage Tracking') }}</a>
+    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enableUsage()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable Anonymous Usage Tracking') }}</a>
 </div>
 
 <div class="tracking_decision" style="display: none" data-bind="visible: setup()">

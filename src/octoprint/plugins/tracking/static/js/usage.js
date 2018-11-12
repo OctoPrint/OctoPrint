@@ -1,5 +1,5 @@
 $(function() {
-    function TrackingViewModel(parameters) {
+    function UsageViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
@@ -10,13 +10,13 @@ $(function() {
         self.required = false;
         self.active = false;
 
-        self.enableTracking = function() {
+        self.enableUsage = function() {
             self.settingsViewModel.settings.plugins.tracking.enabled(true);
             self.decision(true);
             self._sendData();
         };
 
-        self.disableTracking = function() {
+        self.disableUsage = function() {
             self.settingsViewModel.settings.plugins.tracking.enabled(false);
             self.decision(false);
             self._sendData();
@@ -78,7 +78,7 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push([
-        TrackingViewModel,
+        UsageViewModel,
         ["settingsViewModel"],
         "#wizard_plugin_tracking"
     ]);

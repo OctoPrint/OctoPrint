@@ -136,7 +136,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/tracking.js"])
+		return dict(js=["js/usage.js"])
 
 	##~~ WizardPlugin
 
