@@ -13,7 +13,7 @@ import octoprint_setuptools
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=2.7.9,<3"
+PYTHON_REQUIRES = ">=2.7.9"      # py 3 marked as supported so that we can migrate... NOT officially supported though!
 
 # Requirements for our application
 INSTALL_REQUIRES = [
