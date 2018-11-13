@@ -2323,7 +2323,7 @@ class MachineCom(object):
 	def _on_external_reset(self):
 		# hold queue processing, clear queues and acknowledgements, reset line number and last lines
 		with self._send_queue.blocked():
-			self._clear_to_send.clear(completely=True)
+			self._clear_to_send.reset()
 			with self._command_queue.blocked():
 				self._command_queue.clear()
 			self._send_queue.clear()
@@ -2494,7 +2494,7 @@ class MachineCom(object):
 				# first hook to succeed wins, but any can pass on to the next
 				self._changeState(self.STATE_OPEN_SERIAL)
 				self._serial = serial_obj
-				self._clear_to_send.clear()
+				self._clear_to_send.reset()
 				return True
 
 		return False
@@ -3601,7 +3601,7 @@ class MachineComPrintCallback(object):
 	def on_comm_print_job_started(self, suppress_script=False):
 		pass
 
-	def on_comm_print_job_failed(self):
+	def on_comm_print_job_failed(self, reason=None):
 		pass
 
 	def on_comm_print_job_done(self, suppress_script=False):

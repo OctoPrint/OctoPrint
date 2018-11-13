@@ -1,6 +1,38 @@
 # OctoPrint Changelog
 
-## 1.3.10rc1 (2018-11-05)
+## 1.3.10rc2 (2018-11-13)
+
+### Improvements
+
+  * Anonymous Usage Tracking: Added elapsed time & reason of print failure to tracking (to be able to distinguish cancelled from errored out prints)
+  * Anonymous Usage Tracking: Added undervoltage/overheat detection on Pis to tracking (to correlate print failures to power issues, see also [#2878](https://github.com/foosel/OctoPrint/pull/2878)).
+  * Printer Safety Plugin: Added Ender 3 stock firmware to detection
+  * Added documentation for `octoprint.util.commandline` module
+
+### Bug fixes
+
+  * [#2872](https://github.com/foosel/OctoPrint/issues/2872) - Fix Timeout when connecting to printer that doesn't send `start` on connect
+  * [#2873](https://github.com/foosel/OctoPrint/issues/2873) - Fix GCODE viewer no longer being able to load files.
+  * [#2876](https://github.com/foosel/OctoPrint/issues/2876) - Fix semi functional UI when access control is disabled
+  * [#2879](https://github.com/foosel/OctoPrint/issues/2879) - Fix favicon in Firefox
+  * Anonymous Usage Tracking: More error resilience for the wizard to possibly work around issues observed with the first RC (for which sadly no information was provided to reproduce and analyse).
+  * Softwareupdate: More resilience against invalid data in config
+
+### Unreproduced issues
+
+The following issues were reported in RC1 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
+
+  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate, especially @tedder for his PR.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc1...1.3.10rc2)
+
+## 1.3.10rc1 (2018-11-06)
 
 ### Heads-up for plugin authors regarding the `sarge` dependency
 

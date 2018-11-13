@@ -978,6 +978,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 							payload = self._payload_for_print_job_event()
 							if payload:
 								payload["time"] = self._comm.getPrintTime()
+								payload["reason"] = "error"
 
 								def finalize():
 									self._fileManager.log_print(payload["origin"],
@@ -1108,8 +1109,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 
-	def on_comm_print_job_failed(self):
+	def on_comm_print_job_failed(self, reason=None):
 		payload = self._payload_for_print_job_event()
+
+		if reason:
+			payload["reason"] = reason
+		else:
+			payload["reason"] = "unknown"
+
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
@@ -1127,6 +1134,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
+			payload["reason"] = "cancelled"
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			if not suppress_script:

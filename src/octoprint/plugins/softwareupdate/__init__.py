@@ -134,6 +134,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
 				check_providers = self._settings.get(["check_providers"], merged=True)
+				if not isinstance(check_providers, dict):
+					check_providers = dict()
+
 				effective_configs = dict()
 
 				for name, hook in update_check_hooks.items():

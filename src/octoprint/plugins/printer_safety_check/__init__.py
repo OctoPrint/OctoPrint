@@ -37,6 +37,10 @@ ANYCUBIC_RECEIVED_TEST = lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower()
 CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
 CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
 
+# Creality Ender 3
+ENDER3_AUTHOR = " | Author: (Ender3)".lower()
+ENDER3_RECEIVED_TEST = lambda line: line and ENDER3_AUTHOR in line.lower()
+
 # Malyan M200 aka Monoprice Select Mini
 MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
 
@@ -48,7 +52,7 @@ THERMAL_PROTECTION_CAP_TEST = lambda cap, enabled: cap == "THERMAL_PROTECTION" a
 
 SAFETY_CHECKS = {
 	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST, REPETIER_BEFORE_092_M115_TEST),
-	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST),
+	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
 	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
 	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
 	                                u"thermal runaway protection). This is a fire risk.")

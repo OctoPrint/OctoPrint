@@ -39,6 +39,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def __init__(self):
 		self._environment = None
+		self._throttle_state = None
+		self._helpers_get_throttle_state = None
 		self._printer_connection_parameters = None
 		self._url = None
 		self._ping_worker = None
@@ -60,7 +62,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		                        printjob=True,
 		                        plugin=True,
 		                        update=True,
-		                        printer=True))
+		                        printer=True,
+		                        throttled=True))
 
 	def get_settings_restricted_paths(self):
 		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
@@ -84,12 +87,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin
 
 	def on_after_startup(self):
-		self._track_startup()
-
 		ping = self._settings.get_int(["ping"])
 		if ping:
 			self._ping_worker = RepeatedTimer(ping, self._track_ping)
 			self._ping_worker.start()
+
+		# cautiously look for the get_throttled helper from pi_support
+		pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if pi_helper and 'get_throttled' in pi_helper:
+			self._helpers_get_throttle_state = pi_helper['get_throttled']
+
+		# now that we have everything set up, phone home.
+		self._track_startup()
 
 	##~~ ShutdownPlugin
 
@@ -101,8 +110,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	def on_event(self, event, payload):
 		if event.startswith("plugin_pluginmanager_"):
 			self._track_plugin_event(event, payload)
-		if event.startswith("plugin_softwareupdate_"):
+		elif event.startswith("plugin_softwareupdate_"):
 			self._track_update_event(event, payload)
+		elif event in ("plugin_pi_support_throttle_state",):
+			self._throttle_state = payload
+			self._track_throttle_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
 		elif event in (Events.CONNECTED,):
@@ -124,7 +136,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/tracking.js"])
+		return dict(js=["js/usage.js"])
 
 	##~~ WizardPlugin
 
@@ -162,6 +174,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		if b"plugins" in self._environment and b"pi_support" in self._environment[b"plugins"]:
 			payload[b"pi_model"] = self._environment[b"plugins"][b"pi_support"][b"model"]
+
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
@@ -195,6 +208,26 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		elif event.endswith("_update_failed"):
 			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 
+	def _track_throttle_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "throttled"]):
+			return
+
+		args = dict(throttled_now=payload[b"current_issue"],
+		            throttled_past=payload[b"past_issue"],
+		            throttled_mask=payload[b"raw_value"],
+		            throttled_voltage_now=payload[b"current_undervoltage"],
+		            throttled_voltage_past=payload[b"past_undervoltage"],
+		            throttled_overheat_now=payload[b"current_overheat"],
+		            throttled_overheat_past=payload[b"past_overheat"])
+
+		if payload[b"current_issue"]:
+			track_event = "system_throttled"
+		else:
+			track_event = "system_unthrottled"
+
+		if track_event is not None:
+			self._track(track_event, **args)
+
 	def _track_printjob_event(self, event, payload):
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
@@ -216,9 +249,26 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			args[b"elapsed"] = elapsed
 			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
+			try:
+				elapsed = int(payload.get(b"time"))
+			except ValueError:
+				elapsed = "unknown"
+			args[b"elapsed"] = elapsed
+			args[b"reason"] = payload.get(b"reason", "unknown")
 			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
 			track_event = "print_cancelled"
+
+		if callable(self._helpers_get_throttle_state):
+			try:
+				throttle_state = self._helpers_get_throttle_state(run_now=True)
+				if throttle_state and (throttle_state.get(b"current_issue", False) or throttle_state.get(b"past_issue", False)):
+					args[b"throttled_now"] = throttle_state[b"current_issue"]
+					args[b"throttled_past"] = throttle_state[b"past_issue"]
+					args[b"throttled_mask"] = throttle_state[b"raw_value"]
+			except:
+				# ignored
+				pass
 
 		if track_event is not None:
 			self._track(track_event, **args)
@@ -246,15 +296,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		server = self._settings.get([b"server"])
 		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
+		# Don't print the URL or UUID! That would expose the UUID in forums/tickets
+		# if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
 
 		headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
 		try:
 			params = urlencode(kwargs, doseq=True).replace("+", "%20")
+
 			requests.get(url,
 			             params=params,
 			             timeout=3.1,
 			             headers=headers)
-			self._logger.debug("Sent tracking event to {}".format(url))
+			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
 		except:
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
