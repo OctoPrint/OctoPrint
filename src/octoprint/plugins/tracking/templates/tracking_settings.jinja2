@@ -37,6 +37,9 @@
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.update"> {{ _('OctoPrint or a plugin updated successfully or unsuccessfully') }}
             </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.throttled"> {{ _('System got throttled/unthrottled (currently only detected on RPis)') }}
+            </label>
         </div>
     </div>
 </form>

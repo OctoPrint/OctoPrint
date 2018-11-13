@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-11-05 10:01+0100\n"
-"PO-Revision-Date: 2018-11-05 11:55+0100\n"
+"POT-Creation-Date: 2018-11-13 12:40+0100\n"
+"PO-Revision-Date: 2018-11-13 12:42+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -136,7 +136,7 @@ msgstr "Ankündigungen aktualisieren"
 msgid "Application Keys"
 msgstr "Application Keys"
 
-#: src/octoprint/plugins/appkeys/__init__.py:393
+#: src/octoprint/plugins/appkeys/__init__.py:398
 msgid "Without this plugin third party clients will no longer be able to obtain an API key without you manually copy-pasting it."
 msgstr "Ohne dieses Plugin können Third Party Clients keine API Keys mehr erlangen, ohne dass du sie manuell übertragen musst."
 
@@ -1065,7 +1065,7 @@ msgstr "Profil entfernen"
 msgid "Without this plugin your OctoPrint instance will no longer be discoverable on the network via Bonjour and uPnP."
 msgstr "Ohne dieses Plugin wird deine OctoPrint Instanz nicht mehr in deinem Netzwerk mittels Bonjour oder uPnP automatisch auffindbar sein."
 
-#: src/octoprint/plugins/forcelogin/__init__.py:131
+#: src/octoprint/plugins/forcelogin/__init__.py:143
 msgid "Without this plugin anonymous users will have read-only access to your OctoPrint instance. Only disable this if you are comfortable with this, your OctoPrint instance is not publicly reachable on the internet and you fully trust everyone who has access to your local network!"
 msgstr "Ohne dieses Plugin haben anonyme Nutzer read-only Zugriff auf deine OctoPrint Instanz. Deaktiviere es nur, wenn du dich bei diesem Gedanken wohlfühlst, deine OctoPrint Instanz nicht öffentlich über das Internet erreichbar ist und du jedem, der Zugriff auf dein lokales Netzwork hat, vollständig vertraust."
 
@@ -1134,12 +1134,12 @@ msgstr "Entfernen"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: src/octoprint/plugins/pi_support/__init__.py:203
+#: src/octoprint/plugins/pi_support/__init__.py:205
 #: src/octoprint/plugins/pi_support/templates/pi_support_settings.jinja2:1
 msgid "Pi Support"
 msgstr "Pi Support"
 
-#: src/octoprint/plugins/pi_support/__init__.py:286
+#: src/octoprint/plugins/pi_support/__init__.py:299
 msgid "Without this plugin OctoPrint will no longer be able to provide additional information about your Pi,which will make it more tricky to help you if you need support."
 msgstr "Ohne dieses Plugin kann OctoPrint nicht mehr zusätzliche Informationen über deinen Pi Instanz zur Verfügung stellen, was es ggf. schwieriger macht, dir zu helfen, falls du Support brauchst."
 
@@ -1244,6 +1244,7 @@ msgstr "Installiere Plugin von hochgeladenem Archiv..."
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:484
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:522
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:712
+#: src/octoprint/plugins/tracking/static/js/usage.js:87
 msgid "Something went wrong"
 msgstr "Etwas ist schief gegangen"
 
@@ -1697,11 +1698,11 @@ msgstr "Abbruch"
 msgid "Save"
 msgstr "Speichern"
 
-#: src/octoprint/plugins/printer_safety_check/__init__.py:83
+#: src/octoprint/plugins/printer_safety_check/__init__.py:87
 msgid "Printer Safety Warning"
 msgstr "Druckersicherheitswarnung"
 
-#: src/octoprint/plugins/printer_safety_check/__init__.py:167
+#: src/octoprint/plugins/printer_safety_check/__init__.py:171
 msgid "Without this plugin OctoPrint will no longer be able to check if the printer it is connected to has a known safetyissue and inform you about that fact."
 msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, dich über bekannte Sicherheitsprobleme mit verbundenen Druckern zu informieren."
 
@@ -1713,24 +1714,24 @@ msgstr "Warnung!"
 msgid "Learn more..."
 msgstr "Mehr erfahren..."
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:524
+#: src/octoprint/plugins/softwareupdate/__init__.py:527
 msgid "Python"
 msgstr "Python"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:525
+#: src/octoprint/plugins/softwareupdate/__init__.py:528
 msgid "pip"
 msgstr "pip"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:526
+#: src/octoprint/plugins/softwareupdate/__init__.py:529
 msgid "setuptools"
 msgstr "setuptools"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:613
+#: src/octoprint/plugins/softwareupdate/__init__.py:616
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:1
 msgid "Software Update"
 msgstr "Software Update"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1049
+#: src/octoprint/plugins/softwareupdate/__init__.py:1052
 #: src/octoprint/server/views.py:577
 #: src/octoprint/static/js/app/viewmodels/appearance.js:99
 #: src/octoprint/static/js/app/viewmodels/appearance.js:104
@@ -1741,7 +1742,7 @@ msgstr "Software Update"
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1209
+#: src/octoprint/plugins/softwareupdate/__init__.py:1212
 msgid "Without this plugin OctoPrint will no longer be able to update itself or any of your installed plugins which might put your system at risk."
 msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, sich selbst oder deine installierten Plugins zu aktualisierten. Das könnte dein System gefährden."
 
@@ -2105,19 +2106,24 @@ msgstr "Stelle sicher, dass du <a href=\"%(url)s\" target=\"_blank\" rel=\"noref
 msgid "OctoPrint version tracking"
 msgstr "OctoPrint Versionstracking"
 
-#: src/octoprint/plugins/tracking/__init__.py:120
-#: src/octoprint/plugins/tracking/__init__.py:121
+#: src/octoprint/plugins/tracking/__init__.py:132
+#: src/octoprint/plugins/tracking/__init__.py:133
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:1
 msgid "Anonymous Usage Tracking"
 msgstr "Anonymous Usage Tracking"
 
-#: src/octoprint/plugins/tracking/static/js/tracking.js:57
+#: src/octoprint/plugins/tracking/static/js/usage.js:57
 msgid "Please set up anonymous usage tracking"
 msgstr "Bitte konfiguriere das Anonymous Usage Tracking"
 
-#: src/octoprint/plugins/tracking/static/js/tracking.js:58
+#: src/octoprint/plugins/tracking/static/js/usage.js:58
 msgid "You haven't yet decided on whether to enable or disable anonymous usage tracking. You need to either enable or disable it before continuing."
 msgstr "Du hast noch nicht entschieden, ob das Anonymous Usage Tracking aktiviert werden soll. Du musst es entweder aktivieren oder deaktivieren bevor du fortfahren kannst."
+
+#: src/octoprint/plugins/tracking/static/js/usage.js:82
+#, python-format
+msgid "Please open a <a href='%(bugreport)s' target='_blank' rel='noopener noreferrer'>bug report</a> on this. Make sure to include all requested information, including your <a href='%(jsconsole)s' target='_blank' rel='noopener noreferrer'>JS console</a> and <code>octoprint.log</code>."
+msgstr "Bitte eröffne einen <a href='%(bugreport)s' target='_blank' rel='noopener noreferrer'>Bugreport</a> zu diesem Problem. Stelle sicher, dass du alle erbetenen Daten zur Verfügung stellst, inklusive deiner <a href='%(jsconsole)s' target='_blank' rel='noopener noreferrer'>JS console</a> und <code>octoprint.log</code>."
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:9
 msgid "Enable anonymous usage tracking"
@@ -2162,6 +2168,10 @@ msgstr "Plugin installiert/deinstalliert/aktiviert/deaktiviert"
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:38
 msgid "OctoPrint or a plugin updated successfully or unsuccessfully"
 msgstr "OctoPrint oder ein Plugin erfolgreich oder erfolglos aktualisiert"
+
+#: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:41
+msgid "System got throttled/unthrottled (currently only detected on RPis)"
+msgstr "Systemleistung wurde begrenzt/freigegeben (aktuell nur auf RPis erkannt)"
 
 #: src/octoprint/plugins/tracking/templates/tracking_wizard.jinja2:1
 msgid "Configure Anonymous Usage Tracking"
