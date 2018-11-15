@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-11-13 12:40+0100\n"
-"PO-Revision-Date: 2018-11-13 12:42+0100\n"
+"POT-Creation-Date: 2018-11-15 14:19+0100\n"
+"PO-Revision-Date: 2018-11-15 14:22+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -1151,25 +1151,29 @@ msgstr "auf"
 msgid "OctoPi"
 msgstr "OctoPi"
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:45
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:67
 msgid "Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi."
 msgstr "Zu niedrige Spannung. Stelle sicher, dass dein Netzteil und die Verkabelung dem Pi genug Strom liefern."
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:46
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:68
 msgid "Frequency capping due to overheating. Improve cooling of the CPU and GPU."
 msgstr "Heruntertaktung aufgrund von Überhitzung. Verbessere die Kühlung von CPU und GPU."
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:47
-msgid "A blinking icon indicates an acute issue!"
-msgstr "Ein blinkendes Symbol zeigt ein akutes Problem an!"
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:69
+msgid "A blinking symbol indicates a current issue, a non blinking symbol one that was observed some time since the Pi booted up."
+msgstr "Ein blinkendes Symbol zeigt ein aktuelles Problem an, ein nicht blinkendes ein Problem, das irgendwann seit dem Bootup des Pis aufgetreten ist."
+
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:70
+msgid "Click the symbol in the navbar for more information."
+msgstr "Klick für weitere Informationen auf das Symbol in der Navbar."
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_about_octopi.jinja2:1
 msgid "About OctoPi"
 msgstr "Über OctoPi"
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_navbar.jinja2:1
-msgid "Issues reported by the Pi"
-msgstr "Vom Pi gemeldete Fehler"
+msgid "What do the symbols mean?"
+msgstr "Was bedeuten die Symbole?"
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_navbar.jinja2:2
 msgid "Undervoltage"
@@ -1697,6 +1701,10 @@ msgstr "Abbruch"
 #: src/octoprint/templates/dialogs/temperature.jinja2:32
 msgid "Save"
 msgstr "Speichern"
+
+#: src/octoprint/plugins/printer_safety_check/__init__.py:56
+msgid "Your printer's firmware is known to lack mandatory safety features (e.g. thermal runaway protection). This is a fire risk."
+msgstr "Die Firmware deines Druckers ist bekannt dafür, obligatorische Sicherheitsfunktionen deaktiviert zu haben (z.B. Thermal Runaway Protection). Das ist ein Brandrisiko."
 
 #: src/octoprint/plugins/printer_safety_check/__init__.py:87
 msgid "Printer Safety Warning"
@@ -5885,3 +5893,9 @@ msgstr "Zeitrafferaufnahme rendern"
 
 #~ msgid "Event based position logging"
 #~ msgstr "Eventbasiertes Positionslogging"
+
+#~ msgid "A blinking icon indicates an acute issue!"
+#~ msgstr "Ein blinkendes Symbol zeigt ein akutes Problem an!"
+
+#~ msgid "Issues reported by the Pi"
+#~ msgstr "Vom Pi gemeldete Fehler"
