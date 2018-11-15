@@ -53,8 +53,8 @@ SAFETY_CHECKS = {
 	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST, REPETIER_BEFORE_092_M115_TEST),
 	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
 	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
-	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
-	                                u"thermal runaway protection). This is a fire risk.")
+	                        message=gettext(u"Your printer's firmware is known to lack mandatory safety features (e.g. "
+	                                        u"thermal runaway protection). This is a fire risk."))
 }
 
 def extract_repetier_version(name):
