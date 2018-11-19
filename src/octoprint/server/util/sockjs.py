@@ -95,6 +95,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._baseRateLimit = 0.5
 
 		self._register_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.register")
+		self._authed_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.authed")
 		self._emit_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.emit")
 
 		self._registered = False
@@ -175,6 +176,12 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 				else:
 					self._user = None
 					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
+
+			for name, hook in self._authed_hooks.items():
+				try:
+					hook(self, self._user)
+				except:
+					self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
 
 			self._register()
 
@@ -270,6 +277,9 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		if not proceed:
 			return
 
+		self._do_emit(type, payload)
+
+	def _do_emit(self, type, payload):
 		try:
 			self.send({type: payload})
 		except Exception as e:

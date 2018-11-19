@@ -1238,6 +1238,20 @@ octoprint.server.http.routes
    :return: a list of 3-tuples with additional routes as defined above
    :rtype: list
 
+.. _sec-plugins-hook-server-sockjs-authed:
+
+octoprint.server.sockjs.authed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: socket_authed_hook(socket, user, *args, **kwargs):
+
+   Allows plugins to be notified that a user got authenticated or deauthenticated on the socket (e.g. due to logout).
+
+   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
+
+   :param object socket: the socket object which is about to be registered
+   :param object user: the user that got authenticated on the socket, or None if the user got deauthenticated
+
 .. _sec-plugins-hook-server-sockjs-register:
 
 octoprint.server.sockjs.register

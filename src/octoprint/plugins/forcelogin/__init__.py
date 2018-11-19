@@ -10,9 +10,18 @@ import flask
 import flask_login
 from flask_babel import gettext
 
+from collections import defaultdict
+import threading
+
 class ForceLoginPlugin(octoprint.plugin.UiPlugin,
                        octoprint.plugin.TemplatePlugin,
                        octoprint.plugin.AssetPlugin):
+	MAX_BACKLOG_LEN = 100
+
+	# noinspection PyMissingConstructor
+	def __init__(self):
+		self._message_backlog = defaultdict(list)
+		self._message_backlog_mutex = threading.RLock()
 
 	def get_assets(self):
 		return dict(
@@ -123,6 +132,15 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 
 		return user is not None and not user.is_anonymous() and user.is_active()
 
+	def socket_authed(self, socket, user):
+		with self._message_backlog_mutex:
+			backlog = self._message_backlog.pop(socket, [])
+
+		if len(backlog):
+			for message, payload in backlog:
+				socket._do_emit(message, payload)
+			self._logger.debug("Sent backlog of {} message(s) via socket".format(len(backlog)))
+
 	def socket_emit_validator(self, socket, user, message, payload):
 		if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
 			# ACL hasn't been configured yet, make an exception
@@ -134,7 +152,17 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 		if message in ("connected", "reauthRequired"):
 			return True
 
-		return user is not None and not user.is_anonymous() and user.is_active()
+		if user is not None and not user.is_anonymous() and user.is_active():
+			return True
+
+		with self._message_backlog_mutex:
+			if len(self._message_backlog[socket]) < self.MAX_BACKLOG_LEN:
+				self._message_backlog[socket].append((message, payload))
+				self._logger.debug("Socket message held back until authed, added to backlog: {}".format(message))
+			else:
+				self._logger.warn("Socket message held back, but backlog full. Throwing message away: {}".format(message))
+
+		return False
 
 
 __plugin_name__ = "Force Login"
@@ -150,5 +178,6 @@ __plugin_hooks__ = {
 	"octoprint.server.api.before_request": __plugin_implementation__.get_before_request_handlers,
 	"octoprint.server.http.access_validator": __plugin_implementation__.access_validator,
 	"octoprint.server.sockjs.register": __plugin_implementation__.socket_register_validator,
+	"octoprint.server.sockjs.authed": __plugin_implementation__.socket_authed,
 	"octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_validator
 }
