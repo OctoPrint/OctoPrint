@@ -10,18 +10,22 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import unittest
 import ddt
 import json
-
-import octoprint.settings
-from octoprint.server import app
-app.testing = True
+from mock import MagicMock
+import psutil
+import unittest
 
 from octoprint.settings import settings
-
+from octoprint.server import app
 from octoprint.server.api import api
+
+settings(init=True)
+app.testing = True
 app.register_blueprint(api, url_prefix="/api")
+
+class UsageStub(object):
+    pass
 
 @ddt.ddt
 class GetFolderUsageTest(unittest.TestCase):
@@ -31,6 +35,16 @@ class GetFolderUsageTest(unittest.TestCase):
         self.test_app = app.test_client()
 
     def test_readUsageForFolder(self):
+        usage_stub = UsageStub()
+        usage_stub.free = 10
+        usage_stub.total = 20
+
+        psutil.disk_usage = MagicMock(return_value=usage_stub)
+
         response = self.test_app.get('/api/folders/local/uploads/usage')
+        data = json.loads(response.data)
+
         self.assertEquals(response.status, '200 OK')
-        self.assertEquals(response.body, json.dumps({'folder': 'uploads', 'free': 10, 'total': 20}))
+        self.assertEquals(data['folder'], 'uploads')
+        self.assertEquals(data['free'], 10)
+        self.assertEquals(data['total'], 20)
