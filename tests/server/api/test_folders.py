@@ -20,7 +20,10 @@ from octoprint.settings import settings
 from octoprint.server import app
 from octoprint.server.api import api
 
+# Initialize settings
 settings(init=True)
+
+# Set up app for testing and register api
 app.testing = True
 app.register_blueprint(api, url_prefix="/api")
 

@@ -77,7 +77,6 @@ def _create_etag(path, filter, recursive, lm=None):
                                                                               request.values.get("recursive", False)),
                             unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
 def readUsageForFolder(folder):
-	# import pry; pry()
 	folder_path = settings().getBaseFolder(folder, check_writable=False)
 
 	if folder_path is None:
