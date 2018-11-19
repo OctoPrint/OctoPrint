@@ -113,6 +113,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			return "Unconnected {!r}".format(self)
 
 	def on_open(self, info):
+		self._pluginManager.register_message_receiver(self.on_plugin_message)
 		self._remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
@@ -148,6 +149,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 
 		self._user = None
 		self._remoteAddress = None
+		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 	def on_message(self, message):
 		try:
@@ -305,7 +307,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)
 		octoprint.timelapse.register_callback(self)
-		self._pluginManager.register_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
@@ -330,7 +331,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregister_callback(self)
-		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
