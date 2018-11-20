@@ -159,6 +159,10 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 		is not actually up yet and none of your plugin's APIs or blueprints will be reachable yet. If you need to be
 		externally reachable, use :func:`on_after_startup` instead or additionally.
 
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server.
+
 		The relevant sorting context is ``StartupPlugin.on_startup``.
 
 		:param string host: the host the server will listen on, may be ``0.0.0.0``
@@ -170,6 +174,11 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	def on_after_startup(self):
 		"""
 		Called just after launch of the server, so when the listen loop is actually running already.
+
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server
+		   in OctoPrint versions earlier than 1.3.10.
 
 		The relevant sorting context is ``StartupPlugin.on_after_startup``.
 		"""
@@ -190,6 +199,10 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 	def on_shutdown(self):
 		"""
 		Called upon the imminent shutdown of OctoPrint.
+
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server.
 
 		The relevant sorting context is ``ShutdownPlugin.on_shutdown``.
 		"""
