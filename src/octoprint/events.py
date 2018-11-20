@@ -165,10 +165,13 @@ class EventManager(object):
 					except:
 						self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
 
+				# We don't want plugins to block or outright kill this thread by accident, so let's call on_event
+				# asynchronously. Not ideal, but too much coding with severe side effects out there...
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
 				                             args=(event, payload),
-				                             initialized=True)
+				                             initialized=True,
+				                             _async=True)
 			self._logger.info("Event loop shut down")
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")

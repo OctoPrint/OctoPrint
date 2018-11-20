@@ -716,9 +716,15 @@ class Server(object):
 			# create a single use thread in which to perform our after-startup-tasks, start that and hand back
 			# control to the ioloop
 			def work():
+				# Since some plugin authors out there apparently will happily block or outright kill this thread
+				# in on_after_startup, we spawn individual threads. Yes, I'm now happy with this either and would
+				# have preferred to use a ThreadPoolExecutor here, but since I can't set a timeout for the workers
+				# on that (only for the future result) everything might _still_ be blocked. So individual threads
+				# via _async it is. Meh.
 				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
 				                             "on_after_startup",
-				                             sorting_context="StartupPlugin.on_after_startup")
+				                             sorting_context="StartupPlugin.on_after_startup",
+				                             _async=True)
 
 				def call_on_after_startup(name, plugin):
 					implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
