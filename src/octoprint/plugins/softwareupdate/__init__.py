@@ -69,7 +69,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = None
 
-		self._environment_supported = False
+		self._environment_supported = True
 		self._environment_versions = dict()
 		self._environment_ready = threading.Event()
 
@@ -516,7 +516,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		def view():
-			self._environment_ready.wait()
+			self._environment_ready.wait(timeout=30.0)
 
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
