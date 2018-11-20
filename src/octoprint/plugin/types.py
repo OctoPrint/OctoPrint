@@ -25,9 +25,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from .core import (Plugin, RestartNeedingPlugin, SortablePlugin)
 
-# noinspection PyCompatibility
-from past.builtins import basestring
-
 class OctoPrintPlugin(Plugin):
 	"""
 	The parent class of all OctoPrint plugin mixins.
