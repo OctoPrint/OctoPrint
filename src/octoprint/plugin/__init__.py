@@ -170,7 +170,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 
 
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None,
-                initialized=True, _async=False):
+                initialized=True):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -208,8 +208,6 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
 	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
 	        is determined be presence of injected ``_identifier`` property.
-	    _async (boolean): Whether the plugins are called asynronously in individual threads, or consecutively.
-
 	"""
 
 	if not isinstance(types, (list, tuple)):
@@ -219,28 +217,23 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if kwargs is None:
 		kwargs = dict()
 
+	logger = logging.getLogger(__name__)
+
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
 		if initialized and not hasattr(plugin, "_identifier"):
 			continue
 
 		if hasattr(plugin, method):
-			def run():
-				try:
-					result = getattr(plugin, method)(*args, **kwargs)
-					if callback:
-						callback(plugin._identifier, plugin, result)
-				except Exception as exc:
-					logging.getLogger(__name__).exception("Error while calling plugin %s" % plugin._identifier)
-					if error_callback:
-						error_callback(plugin._identifier, plugin, exc)
-
-			if _async:
-				thread = threading.Thread(target=run)
-				thread.daemon = True
-				thread.start()
-			else:
-				run()
+			logger.debug("Calling {} on {}".format(method, plugin._identifier))
+			try:
+				result = getattr(plugin, method)(*args, **kwargs)
+				if callback:
+					callback(plugin._identifier, plugin, result)
+			except Exception as exc:
+				logger.exception("Error while calling plugin %s" % plugin._identifier)
+				if error_callback:
+					error_callback(plugin._identifier, plugin, exc)
 
 
 class PluginSettings(object):

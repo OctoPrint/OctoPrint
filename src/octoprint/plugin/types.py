@@ -158,7 +158,7 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 
 		.. warning::
 
-		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server.
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		The relevant sorting context is ``StartupPlugin.on_startup``.
 
@@ -174,8 +174,7 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 
 		.. warning::
 
-		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server
-		   in OctoPrint versions earlier than 1.3.10.
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		The relevant sorting context is ``StartupPlugin.on_after_startup``.
 		"""
@@ -199,7 +198,7 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 
 		.. warning::
 
-		   Do not perform long-running or even blocking operations in your implementation or you **will** block the server.
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		The relevant sorting context is ``ShutdownPlugin.on_shutdown``.
 		"""
@@ -1811,6 +1810,10 @@ class EventHandlerPlugin(OctoPrintPlugin):
 	def on_event(self, event, payload):
 		"""
 		Called by OctoPrint upon processing of a fired event on the platform.
+
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		Arguments:
 		    event (str): The type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
