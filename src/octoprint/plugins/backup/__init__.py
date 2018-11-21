@@ -608,7 +608,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if callable(on_backup_start):
 				on_backup_start(name, temporary_path, exclude)
 
-			with zipfile.ZipFile(temporary_path, "w", compression) as zip:
+			with zipfile.ZipFile(temporary_path, mode="w", compression=compression, allowZip64=True) as zip:
 				def add_to_zip(source, target, ignored=None):
 					if ignored is None:
 						ignored = []
