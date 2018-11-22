@@ -190,6 +190,10 @@ class Server(object):
 
 		if self._settings is None:
 			self._settings = settings()
+
+		self._settings.setBoolean(["server", "incompleteStartup"], True)
+		self._settings.save()
+
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()
 
@@ -711,9 +715,6 @@ class Server(object):
 				self._settings.setBoolean(["server", "startOnceInSafeMode"], False)
 				self._settings.save()
 
-			# make a backup of the current config
-			self._settings.backup(ext="backup")
-
 			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
 			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
 			# or service xmls or the like). While they are working though the ioloop would block. Therefore we'll
@@ -730,6 +731,14 @@ class Server(object):
 						return
 					implementation.on_after_startup()
 				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
+
+				# if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
+				# flag again...
+				self._settings.setBoolean(["server", "incompleteStartup"], False)
+				self._settings.save()
+
+				# make a backup of the current config
+				self._settings.backup(ext="backup")
 
 				# when we are through with that we also run our preemptive cache
 				if settings().getBoolean(["devel", "cache", "preemptive"]):
