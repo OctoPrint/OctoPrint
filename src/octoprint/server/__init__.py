@@ -711,6 +711,9 @@ class Server(object):
 				self._settings.setBoolean(["server", "startOnceInSafeMode"], False)
 				self._settings.save()
 
+			# make a backup of the current config
+			self._settings.backup(ext="backup")
+
 			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
 			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
 			# or service xmls or the like). While they are working though the ioloop would block. Therefore we'll
