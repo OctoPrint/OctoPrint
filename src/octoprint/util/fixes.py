@@ -7,8 +7,12 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import functools
 import warnings
+import sys
 
-def fix_sarge_async():
+def patch_sarge_async_on_py2():
+	if sys.version_info[0] >= 3:
+		return
+
 	def move_async(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
