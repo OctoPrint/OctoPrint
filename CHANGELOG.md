@@ -125,9 +125,16 @@ Special thanks to everyone who contributed to this release candidate, especially
 
 ### Still running OctoPrint 1.3.6? Heads-up!
 
-OctoPrint 1.3.9 includes a couple of dependency updates whose update during switch to 1.3.9 are known to trigger an "update failed" message within OctoPrint's update dialog: 
+OctoPrint 1.3.9 includes a couple of dependency updates whose update during switch to 1.3.9 are known to trigger an "update failed" message within OctoPrint's update dialog:
 
-![](https://i.imgur.com/BbEZTlc.png)
+```
+
+[...]
+OSError: [Errno 2] No such file or directory: '/home/pi/oprint/local/lib/python2.7/site-packages/python_dateutil-2.6.0-py2.7.egg'
+Successfully installed OctoPrint-1.3.9rc4 backports-abc-0.5 frozendict-1.2 markdown-2.6.11 pkginfo-1.4.2 pyserial-3.4 python-dateutil-2.6.1 singledispatch-3.4.0.3 tornado-4.5.3
+The update did not finish successfully. Please consult the log for details.
+
+``` 
 
 The update did in fact succeed and the issue lies with a change in the underlying update mechanism concerning the dependencies. This problem has been fixed in 1.3.7/1.3.8 and versions prior to 1.3.6 aren't yet affected, so there you won't ever see this message there. If you are still running 1.3.6 though and updating from it, **simply run the update a second time through Settings > Software Update > Check for updates and clicking "Update now" in the reshown update notification**.
 
