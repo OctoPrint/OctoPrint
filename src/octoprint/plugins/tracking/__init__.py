@@ -233,7 +233,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		sha = hashlib.sha1()
-		sha.update(payload.get("name"))
+		sha.update(payload.get("path"))
 		sha.update(self._settings.get([b"unique_id"]))
 
 		track_event = None
