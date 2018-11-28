@@ -155,8 +155,21 @@ $(function() {
             if (data.type === "backup_done") {
                 self.requestData();
                 self.backupInProgress(false);
+                new PNotify({
+                    title: gettext("Backup created successfully"),
+                    type: "success"
+                });
             } else if (data.type === "backup_started") {
                 self.backupInProgress(true);
+            } else if (data.type === "backup_error") {
+                self.requestData();
+                self.backupInProgress(false);
+                new PNotify({
+                    title: gettext("Creating the backup failed"),
+                    text: _.sprintf(gettext("OctoPrint could not create your backup. Please consult <code>octoprint.log</code> for details. Error: %(error)s"), {error:data.error}),
+                    type: "error",
+                    hide: false
+                });
             } else if (data.type === "restore_started") {
                 self.restoreInProgress(true);
                 self.loglines.removeAll();

@@ -1,5 +1,37 @@
 # OctoPrint Changelog
 
+### Improvements
+
+  * More resilience against third party plugins that happily block or kill important startup threads
+  * Improved backwards compatibility of the `sarge` dependency by monkey patching it to support the old `async` keyword parameter. Plugin authors are still advised to switch to the new `async_` parameter if running against `sarge>=0.1.5`, unmodified plugins should continue to work now however. For reference, OctoPrint 1.3.10 requires `sarge==0.1.5post0`.
+  * Pi Support plugin: Better wording on the "undervoltage & overheat" popover & added a link to the FAQ entry
+  * Printer Safety plugin: Micro3D printers running stock or iMe firmware are now detected as unsafe
+
+### Bug fixes
+
+  * [#2897](https://github.com/foosel/OctoPrint/issues/2897) - Improved error resilience of `is_lan_address` so an error during its execution no longer nukes requests
+  * [#2898](https://github.com/foosel/OctoPrint/issues/2898) - ForceLogin plugin no longer interferes with websocket messages sent by plugins right on UI load but instead puts them into a (limited) backlog and then sends them out in received order once the user has authenticated on the socket.
+  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Support for ZIP64 extensions for large zip files
+  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Better error reporting
+  * [#2908](https://github.com/foosel/OctoPrint/issues/2908) - Tracking: Use the file's `path` instead of just the `name` for file name hashing.
+  * Fixed homepage link in Anonymous Usage Tracking plugin
+  * Logout socket on UI logout
+
+### Unreproduced issues
+
+The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
+
+  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
+  * ["temperature changes doesn't work"](https://github.com/foosel/OctoPrint/issues/2889#issuecomment-441449215)
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc2...1.3.10rc3)
+
 ## 1.3.10rc2 (2018-11-13)
 
 ### Improvements
@@ -125,9 +157,16 @@ Special thanks to everyone who contributed to this release candidate, especially
 
 ### Still running OctoPrint 1.3.6? Heads-up!
 
-OctoPrint 1.3.9 includes a couple of dependency updates whose update during switch to 1.3.9 are known to trigger an "update failed" message within OctoPrint's update dialog: 
+OctoPrint 1.3.9 includes a couple of dependency updates whose update during switch to 1.3.9 are known to trigger an "update failed" message within OctoPrint's update dialog:
 
-![](https://i.imgur.com/BbEZTlc.png)
+```
+
+[...]
+OSError: [Errno 2] No such file or directory: '/home/pi/oprint/local/lib/python2.7/site-packages/python_dateutil-2.6.0-py2.7.egg'
+Successfully installed OctoPrint-1.3.9rc4 backports-abc-0.5 frozendict-1.2 markdown-2.6.11 pkginfo-1.4.2 pyserial-3.4 python-dateutil-2.6.1 singledispatch-3.4.0.3 tornado-4.5.3
+The update did not finish successfully. Please consult the log for details.
+
+``` 
 
 The update did in fact succeed and the issue lies with a change in the underlying update mechanism concerning the dependencies. This problem has been fixed in 1.3.7/1.3.8 and versions prior to 1.3.6 aren't yet affected, so there you won't ever see this message there. If you are still running 1.3.6 though and updating from it, **simply run the update a second time through Settings > Software Update > Check for updates and clicking "Update now" in the reshown update notification**.
 
