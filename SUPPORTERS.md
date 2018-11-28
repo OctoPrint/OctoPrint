@@ -23,6 +23,7 @@ thanks to everyone who contributed!
   * Ernesto Martinez
   * Frank Sander
   * George Robles
+  * Jared Go
   * Jeff Renfer
   * Jefferson Hunt
   * Jeremiah Avery
@@ -33,6 +34,7 @@ thanks to everyone who contributed!
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
+  * LA 3D Printer Repair
   * Lewis Newby
   * LulzBot®
   * Makespace Madrid
@@ -54,4 +56,4 @@ thanks to everyone who contributed!
   * Timothy D Hoogland
   * Trent Shumay
 
-and 1376 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1436 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
