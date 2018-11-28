@@ -103,15 +103,15 @@ class TestCommHelpers(unittest.TestCase):
 			m.update(input)
 			return m.hexdigest()
 
-		temp_regex = "T:((\d*\.)\d+)"
-		temp_template = "Temp: {}"
-		temp2_template = "Temperature: {}"
+		temp_regex = b'T:((\d*\.)\d+)'
+		temp_template = b"Temp: {}"
+		temp2_template = b"Temperature: {}"
 		temp_key = md5sum(temp_regex)
 		temp_template_key = md5sum(temp_template)
 		temp2_template_key = md5sum(temp2_template)
 
-		x_regex = "X:(?P<x>\d+)"
-		x_template = "X: {x}"
+		x_regex = b"X:(?P<x>\d+)"
+		x_template = b"X: {x}"
 		x_key = md5sum(x_regex)
 		x_template_key = md5sum(x_template)
 

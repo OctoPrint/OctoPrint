@@ -157,7 +157,7 @@ class SlicingManager(object):
 		Returns:
 		    (list of str) Identifiers of all available slicers.
 		"""
-		return self._slicers.keys()
+		return list(self._slicers.keys())
 
 	@property
 	def configured_slicers(self):
