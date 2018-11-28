@@ -17,6 +17,7 @@ import octoprint.timelapse
 import octoprint.server
 import octoprint.events
 import octoprint.plugin
+import octoprint.users
 
 from octoprint.events import Events
 from octoprint.settings import settings
@@ -87,6 +88,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._eventManager = eventManager
 		self._pluginManager = pluginManager
 
+		self._userManager.register_callback(self._user_manager_callback)
+
 		self._remoteAddress = None
 		self._user = None
 
@@ -95,6 +98,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._baseRateLimit = 0.5
 
 		self._register_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.register")
+		self._authed_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.authed")
 		self._emit_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.emit")
 
 		self._registered = False
@@ -112,6 +116,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			return "Unconnected {!r}".format(self)
 
 	def on_open(self, info):
+		self._pluginManager.register_message_receiver(self.on_plugin_message)
 		self._remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
@@ -145,8 +150,9 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 
-		self._user = None
+		self._on_logout()
 		self._remoteAddress = None
+		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 	def on_message(self, message):
 		try:
@@ -169,12 +175,10 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 				user = self._userManager.findUser(userid=user_id, session=user_session)
 
 				if user is not None:
-					self._user = user
-					self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(),
-					                                                                          self._remoteAddress))
+					self._on_login(user)
 				else:
-					self._user = None
 					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
+					self._on_logout()
 
 			self._register()
 
@@ -270,6 +274,9 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		if not proceed:
 			return
 
+		self._do_emit(type, payload)
+
+	def _do_emit(self, type, payload):
 		try:
 			self.send({type: payload})
 		except Exception as e:
@@ -295,7 +302,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)
 		octoprint.timelapse.register_callback(self)
-		self._pluginManager.register_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
@@ -320,11 +326,47 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregister_callback(self)
-		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.unsubscribe(event, self._onEvent)
 
 		self._registered = False
+
+	def _user_manager_callback(self, action, session_user):
+		if action != "logout":
+			# we are only interested in logouts
+			return
+
+		if not self._user or not session_user:
+			# we need both users set
+			return
+
+		if not isinstance(self._user, octoprint.users.SessionUser) or not isinstance(session_user, octoprint.users.SessionUser):
+			# and we need both users to be session users
+			return
+
+		if self._user.get_id() == session_user.get_id() and self._user.session == session_user.session:
+			# our user just logged out
+			self._on_logout()
+
+	def _on_login(self, user):
+		self._user = user
+		self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(),
+		                                                                          self._remoteAddress))
+
+		for name, hook in self._authed_hooks.items():
+			try:
+				hook(self, self._user)
+			except:
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
+
+	def _on_logout(self):
+		self._user = None
+
+		for name, hook in self._authed_hooks.items():
+			try:
+				hook(self, self._user)
+			except:
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
 

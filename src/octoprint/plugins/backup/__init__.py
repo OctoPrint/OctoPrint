@@ -135,6 +135,17 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			self._logger.info(u"... done creating backup zip.")
 
+		def on_backup_error(name, exc_info):
+			with self._in_progress_lock:
+				try:
+					self._in_progress.remove(name)
+				except ValueError:
+					# we'll ignore that
+					pass
+
+			self._send_client_message("backup_error", payload=dict(name=name,
+			                                                       error=u"{}".format(exc_info[1])))
+			self._logger.error(u"Error while creating backup zip", exc_info=exc_info)
 
 		thread = threading.Thread(target=self._create_backup,
 		                          args=(backup_file,),
@@ -143,7 +154,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      plugin_manager=self._plugin_manager,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_backup_start=on_backup_start,
-		                                      on_backup_done=on_backup_done))
+		                                      on_backup_done=on_backup_done,
+		                                      on_backup_error=on_backup_error))
 		thread.daemon = True
 		thread.start()
 
@@ -248,7 +260,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		def on_restore_done(path):
 			self._send_client_message("restore_done")
 
-		def on_restore_failed(path):
+		def on_restore_failed(path, exc_info):
 			self._send_client_message("restore_failed")
 
 		archive = tempfile.NamedTemporaryFile(delete=False)
@@ -571,81 +583,91 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                   plugin_manager=None,
 	                   datafolder=None,
 	                   on_backup_start=None,
-	                   on_backup_done=None):
-		if exclude is None:
-			exclude = []
+	                   on_backup_done=None,
+	                   on_backup_error=None):
+		try:
+			if exclude is None:
+				exclude = []
 
-		configfile = settings._configfile
-		basedir = settings._basedir
+			configfile = settings._configfile
+			basedir = settings._basedir
 
-		temporary_path = os.path.join(datafolder, ".{}".format(name))
-		final_path = os.path.join(datafolder, name)
+			temporary_path = os.path.join(datafolder, ".{}".format(name))
+			final_path = os.path.join(datafolder, name)
 
-		size = cls._get_disk_size(basedir)
-		if not cls._free_space(os.path.dirname(temporary_path), size):
-			raise InsufficientSpace()
+			size = cls._get_disk_size(basedir)
+			if not cls._free_space(os.path.dirname(temporary_path), size):
+				raise InsufficientSpace()
 
-		own_folder = datafolder
-		defaults = [os.path.join(basedir, "config.yaml"),] + \
-		           [os.path.join(basedir, folder) for folder in default_settings["folder"].keys()]
+			own_folder = datafolder
+			defaults = [os.path.join(basedir, "config.yaml"),] + \
+			           [os.path.join(basedir, folder) for folder in default_settings["folder"].keys()]
 
-		compression = zipfile.ZIP_DEFLATED if zlib else zipfile.ZIP_STORED
+			compression = zipfile.ZIP_DEFLATED if zlib else zipfile.ZIP_STORED
 
-		if callable(on_backup_start):
-			on_backup_start(name, temporary_path, exclude)
+			if callable(on_backup_start):
+				on_backup_start(name, temporary_path, exclude)
 
-		with zipfile.ZipFile(temporary_path, "w", compression) as zip:
-			def add_to_zip(source, target, ignored=None):
-				if ignored is None:
-					ignored = []
+			with zipfile.ZipFile(temporary_path, mode="w", compression=compression, allowZip64=True) as zip:
+				def add_to_zip(source, target, ignored=None):
+					if ignored is None:
+						ignored = []
 
-				if source in ignored:
-					return
+					if source in ignored:
+						return
 
-				if os.path.isdir(source):
-					for entry in scandir(source):
-						add_to_zip(entry.path, os.path.join(target, entry.name), ignored=ignored)
-				elif os.path.isfile(source):
-					zip.write(source, arcname=target)
+					if os.path.isdir(source):
+						for entry in scandir(source):
+							add_to_zip(entry.path, os.path.join(target, entry.name), ignored=ignored)
+					elif os.path.isfile(source):
+						zip.write(source, arcname=target)
 
-			# add metadata
-			metadata = dict(version=get_octoprint_version_string(),
-			                excludes=exclude)
-			zip.writestr("metadata.json", json.dumps(metadata))
+				# add metadata
+				metadata = dict(version=get_octoprint_version_string(),
+				                excludes=exclude)
+				zip.writestr("metadata.json", json.dumps(metadata))
 
-			# backup current config file
-			add_to_zip(configfile, "basedir/config.yaml", ignored=[own_folder,])
+				# backup current config file
+				add_to_zip(configfile, "basedir/config.yaml", ignored=[own_folder,])
 
-			# backup configured folder paths
-			for folder in default_settings["folder"].keys():
-				if folder in exclude:
-					continue
-				add_to_zip(settings.global_get_basefolder(folder),
-				           "basedir/" + folder.replace("_", "/"),
-				           ignored=[own_folder,])
+				# backup configured folder paths
+				for folder in default_settings["folder"].keys():
+					if folder in exclude:
+						continue
+					add_to_zip(settings.global_get_basefolder(folder),
+					           "basedir/" + folder.replace("_", "/"),
+					           ignored=[own_folder,])
 
-			# backup anything else that might be lying around in our basedir
-			add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ])
+				# backup anything else that might be lying around in our basedir
+				add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ])
 
-			# add list of installed plugins
-			plugins = []
-			plugin_folder = settings.global_get_basefolder("plugins")
-			for key, plugin in plugin_manager.plugins.items():
-				if plugin.bundled or (isinstance(plugin.origin, FolderOrigin) and plugin.origin.folder == plugin_folder):
-					# ignore anything bundled or from the plugins folder we already include in the backup
-					continue
+				# add list of installed plugins
+				plugins = []
+				plugin_folder = settings.global_get_basefolder("plugins")
+				for key, plugin in plugin_manager.plugins.items():
+					if plugin.bundled or (isinstance(plugin.origin, FolderOrigin) and plugin.origin.folder == plugin_folder):
+						# ignore anything bundled or from the plugins folder we already include in the backup
+						continue
 
-				plugins.append(dict(key=plugin.key,
-				                    name=plugin.name,
-				                    url=plugin.url))
+					plugins.append(dict(key=plugin.key,
+					                    name=plugin.name,
+					                    url=plugin.url))
 
-			if len(plugins):
-				zip.writestr("plugin_list.json", json.dumps(plugins))
+				if len(plugins):
+					zip.writestr("plugin_list.json", json.dumps(plugins))
 
-		os.rename(temporary_path, final_path)
+			os.rename(temporary_path, final_path)
 
-		if callable(on_backup_done):
-			on_backup_done(name, final_path, exclude)
+			if callable(on_backup_done):
+				on_backup_done(name, final_path, exclude)
+		except:
+			if callable(on_backup_error):
+				exc_info = sys.exc_info()
+				try:
+					on_backup_error(name, exc_info)
+				finally:
+					del exc_info
+			raise
 
 	@classmethod
 	def _restore_backup(cls, path,
@@ -808,10 +830,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					shutil.rmtree(temp)
 
 		except:
-			if callable(on_log_error):
-				on_log_error(u"Error while running restore", exc_info=sys.exc_info())
-			if callable(on_restore_failed):
-				on_restore_failed(path)
+			exc_info = sys.exc_info()
+			try:
+				if callable(on_log_error):
+					on_log_error(u"Error while running restore", exc_info=exc_info)
+				if callable(on_restore_failed):
+					on_restore_failed(path, exc_info)
+			finally:
+				del exc_info
 			return False
 
 		finally:

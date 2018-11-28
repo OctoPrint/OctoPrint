@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-11-13 12:40+0100\n"
-"PO-Revision-Date: 2018-11-13 12:42+0100\n"
+"POT-Creation-Date: 2018-11-28 12:25+0100\n"
+"PO-Revision-Date: 2018-11-28 12:28+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -287,11 +287,11 @@ msgstr "Generiere einen Application Key manuell"
 msgid "Generate"
 msgstr "Erzeugen"
 
-#: src/octoprint/plugins/backup/__init__.py:855
+#: src/octoprint/plugins/backup/__init__.py:881
 msgid "Backup & Restore"
 msgstr "Sicherung & Wiederherstellung"
 
-#: src/octoprint/plugins/backup/__init__.py:858
+#: src/octoprint/plugins/backup/__init__.py:884
 msgid "Without this plugin you will no longer be able to backup & restore your OctoPrint settings and data."
 msgstr "Ohne dieses Plugin kannst du deine OctoPrint Einstellung und Daten nicht länger sichern & wiederherstellen."
 
@@ -319,58 +319,71 @@ msgstr "Du bist dabei, die Liste der Plugins zu löschen, die während der letzt
 msgid "You are about to delete %(count)d backups."
 msgstr "Du bist im Begriff, %(count)d Sicherungen zu löschen."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:163
+#: src/octoprint/plugins/backup/static/js/backup.js:159
+msgid "Backup created successfully"
+msgstr "Backup erfolgreich erstellt"
+
+#: src/octoprint/plugins/backup/static/js/backup.js:168
+msgid "Creating the backup failed"
+msgstr "Backuperstellung fehlgeschlagen"
+
+#: src/octoprint/plugins/backup/static/js/backup.js:169
+#, python-format
+msgid "OctoPrint could not create your backup. Please consult <code>octoprint.log</code> for details. Error: %(error)s"
+msgstr "OctoPrint konnte dein Backup nicht erstellen. Bitte konsultiere <code>octoprint.log</code> für Details. Fehler: %(error)s"
+
+#: src/octoprint/plugins/backup/static/js/backup.js:176
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:121
 msgid "Restoring from backup..."
 msgstr "Stelle Sicherung wieder her..."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:168
+#: src/octoprint/plugins/backup/static/js/backup.js:181
 msgid "Restore failed! Check the above output and octoprint.log for reasons as to why."
 msgstr "Wiederherstellung fehlgeschlagen! Prüfe die obige Ausgabe sowie octoprint.log für mögliche Gründe dafür."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:172
+#: src/octoprint/plugins/backup/static/js/backup.js:185
 msgid "Restore successful! The server will now be restarted!"
 msgstr "Wiederherstellung erfolgreich! Der Server wird jetzt neu gestartet!"
 
-#: src/octoprint/plugins/backup/static/js/backup.js:177
+#: src/octoprint/plugins/backup/static/js/backup.js:190
 #, python-format
 msgid "Installing plugin \"%(plugin)s}\"..."
 msgstr "Installiere Plugin \"%(plugin)s\"..."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:183
+#: src/octoprint/plugins/backup/static/js/backup.js:196
 #, python-format
 msgid "Cannot install plugin \"%(plugin)s\" due to it being incompatible to this OctoPrint version and/or underlying operating system"
 msgstr "Kann Plugin \"%(plugin)s\" nicht installieren, da es mit dieser OctoPrint Version oder dem darunter liegenden Betriebssystem inkompatibel ist"
 
-#: src/octoprint/plugins/backup/static/js/backup.js:189
+#: src/octoprint/plugins/backup/static/js/backup.js:202
 #, python-format
 msgid "There are %(count)d plugins you'll need to install manually since they aren't registered on the repository:"
 msgstr "Du musst %(count)d Plugins manuell installieren, da sie nicht im Repository registriert sind:"
 
-#: src/octoprint/plugins/backup/static/js/backup.js:217
+#: src/octoprint/plugins/backup/static/js/backup.js:230
 msgid "Deleting backups"
 msgstr "Lösche Sicherungen"
 
-#: src/octoprint/plugins/backup/static/js/backup.js:218
+#: src/octoprint/plugins/backup/static/js/backup.js:231
 #, python-format
 msgid "Deleting %(count)d backups..."
 msgstr "Lösche %(count)d Sicherungen..."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:222
+#: src/octoprint/plugins/backup/static/js/backup.js:235
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:313
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:327
 #, python-format
 msgid "Deleted %(filename)s..."
 msgstr "%(filename)s gelöscht..."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:225
+#: src/octoprint/plugins/backup/static/js/backup.js:238
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:316
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:330
 #, python-format
 msgid "Deletion of %(filename)s failed, continuing..."
 msgstr "Löschen von %(filename)s fehlgeschlagen, fahre fort..."
 
-#: src/octoprint/plugins/backup/static/js/backup.js:226
+#: src/octoprint/plugins/backup/static/js/backup.js:239
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:317
 #, python-format
 msgid "Deletion of %(filename)s failed: %(error)s"
@@ -1065,7 +1078,7 @@ msgstr "Profil entfernen"
 msgid "Without this plugin your OctoPrint instance will no longer be discoverable on the network via Bonjour and uPnP."
 msgstr "Ohne dieses Plugin wird deine OctoPrint Instanz nicht mehr in deinem Netzwerk mittels Bonjour oder uPnP automatisch auffindbar sein."
 
-#: src/octoprint/plugins/forcelogin/__init__.py:143
+#: src/octoprint/plugins/forcelogin/__init__.py:171
 msgid "Without this plugin anonymous users will have read-only access to your OctoPrint instance. Only disable this if you are comfortable with this, your OctoPrint instance is not publicly reachable on the internet and you fully trust everyone who has access to your local network!"
 msgstr "Ohne dieses Plugin haben anonyme Nutzer read-only Zugriff auf deine OctoPrint Instanz. Deaktiviere es nur, wenn du dich bei diesem Gedanken wohlfühlst, deine OctoPrint Instanz nicht öffentlich über das Internet erreichbar ist und du jedem, der Zugriff auf dein lokales Netzwork hat, vollständig vertraust."
 
@@ -1151,25 +1164,29 @@ msgstr "auf"
 msgid "OctoPi"
 msgstr "OctoPi"
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:45
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:67
 msgid "Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi."
 msgstr "Zu niedrige Spannung. Stelle sicher, dass dein Netzteil und die Verkabelung dem Pi genug Strom liefern."
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:46
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:68
 msgid "Frequency capping due to overheating. Improve cooling of the CPU and GPU."
 msgstr "Heruntertaktung aufgrund von Überhitzung. Verbessere die Kühlung von CPU und GPU."
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:47
-msgid "A blinking icon indicates an acute issue!"
-msgstr "Ein blinkendes Symbol zeigt ein akutes Problem an!"
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:69
+msgid "A blinking symbol indicates a current issue, a non blinking symbol one that was observed some time since the Pi booted up."
+msgstr "Ein blinkendes Symbol zeigt ein aktuelles Problem an, ein nicht blinkendes ein Problem, das irgendwann seit dem Bootup des Pis aufgetreten ist."
+
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:70
+msgid "Click the symbol in the navbar for more information."
+msgstr "Klick für weitere Informationen auf das Symbol in der Navbar."
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_about_octopi.jinja2:1
 msgid "About OctoPi"
 msgstr "Über OctoPi"
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_navbar.jinja2:1
-msgid "Issues reported by the Pi"
-msgstr "Vom Pi gemeldete Fehler"
+msgid "What do the symbols mean?"
+msgstr "Was bedeuten die Symbole?"
 
 #: src/octoprint/plugins/pi_support/templates/pi_support_navbar.jinja2:2
 msgid "Undervoltage"
@@ -1698,11 +1715,15 @@ msgstr "Abbruch"
 msgid "Save"
 msgstr "Speichern"
 
-#: src/octoprint/plugins/printer_safety_check/__init__.py:87
+#: src/octoprint/plugins/printer_safety_check/__init__.py:63
+msgid "Your printer's firmware is known to lack mandatory safety features (e.g. thermal runaway protection). This is a fire risk."
+msgstr "Die Firmware deines Druckers ist bekannt dafür, obligatorische Sicherheitsfunktionen deaktiviert zu haben (z.B. Thermal Runaway Protection). Das ist ein Brandrisiko."
+
+#: src/octoprint/plugins/printer_safety_check/__init__.py:94
 msgid "Printer Safety Warning"
 msgstr "Druckersicherheitswarnung"
 
-#: src/octoprint/plugins/printer_safety_check/__init__.py:171
+#: src/octoprint/plugins/printer_safety_check/__init__.py:178
 msgid "Without this plugin OctoPrint will no longer be able to check if the printer it is connected to has a known safetyissue and inform you about that fact."
 msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, dich über bekannte Sicherheitsprobleme mit verbundenen Druckern zu informieren."
 
@@ -1714,24 +1735,24 @@ msgstr "Warnung!"
 msgid "Learn more..."
 msgstr "Mehr erfahren..."
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:527
+#: src/octoprint/plugins/softwareupdate/__init__.py:520
 msgid "Python"
 msgstr "Python"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:528
+#: src/octoprint/plugins/softwareupdate/__init__.py:521
 msgid "pip"
 msgstr "pip"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:529
+#: src/octoprint/plugins/softwareupdate/__init__.py:522
 msgid "setuptools"
 msgstr "setuptools"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:616
+#: src/octoprint/plugins/softwareupdate/__init__.py:609
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:1
 msgid "Software Update"
 msgstr "Software Update"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1052
+#: src/octoprint/plugins/softwareupdate/__init__.py:1045
 #: src/octoprint/server/views.py:577
 #: src/octoprint/static/js/app/viewmodels/appearance.js:99
 #: src/octoprint/static/js/app/viewmodels/appearance.js:104
@@ -1742,7 +1763,7 @@ msgstr "Software Update"
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1212
+#: src/octoprint/plugins/softwareupdate/__init__.py:1205
 msgid "Without this plugin OctoPrint will no longer be able to update itself or any of your installed plugins which might put your system at risk."
 msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, sich selbst oder deine installierten Plugins zu aktualisierten. Das könnte dein System gefährden."
 
@@ -5885,3 +5906,9 @@ msgstr "Zeitrafferaufnahme rendern"
 
 #~ msgid "Event based position logging"
 #~ msgstr "Eventbasiertes Positionslogging"
+
+#~ msgid "A blinking icon indicates an acute issue!"
+#~ msgstr "Ein blinkendes Symbol zeigt ein akutes Problem an!"
+
+#~ msgid "Issues reported by the Pi"
+#~ msgstr "Vom Pi gemeldete Fehler"
