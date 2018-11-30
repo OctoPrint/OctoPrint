@@ -639,6 +639,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				for folder in default_settings["folder"].keys():
 					if folder in exclude:
 						continue
+
+					if folder in ("generated", "logs", "watched",):
+						continue
+
 					add_to_zip(settings.global_get_basefolder(folder),
 					           "basedir/" + folder.replace("_", "/"),
 					           ignored=[own_folder,])
