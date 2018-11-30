@@ -27,6 +27,7 @@ $(function() {
 
         self.excludeFromBackup = ko.observableArray([]);
         self.backupInProgress = ko.observable(false);
+        self.restoreSupported = ko.observable(true);
 
         self.backupUploadButton = $("#settings-backup-upload");
         self.backupUploadData = undefined;
@@ -66,6 +67,7 @@ $(function() {
         self.fromResponse = function(response) {
             self.backups.updateItems(response.backups);
             self.unknownPlugins(response.unknown_plugins);
+            self.restoreSupported(response.restore_supported);
         };
 
         self.createBackup = function() {
@@ -88,6 +90,8 @@ $(function() {
         };
 
         self.restoreBackup = function(backup) {
+            if (!self.restoreSupported()) return;
+
             var perform = function() {
                 OctoPrint.plugins.backup.restoreBackup(backup);
             };

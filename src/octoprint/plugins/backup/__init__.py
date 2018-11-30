@@ -84,7 +84,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		unknown_plugins = self._get_unknown_plugins()
 		return flask.jsonify(backups=backups,
 		                     backup_in_progress=len(self._in_progress) > 0,
-		                     unknown_plugins=unknown_plugins)
+		                     unknown_plugins=unknown_plugins,
+		                     restore_supported=is_os_compatible(["!windows"]))
 
 	@octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
 	@admin_permission.require(403)
@@ -185,6 +186,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def perform_restore(self):
+		if not is_os_compatible(["!windows"]):
+			return flask.make_response(u"Invalid request, the restores are not supported on the underlying operating system", 400)
+
 		input_name = "file"
 		input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
 
@@ -683,6 +687,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                    on_restore_start=None,
 	                    on_restore_done=None,
 	                    on_restore_failed=None):
+		if not is_os_compatible(["!windows"]):
+			if callable(on_log_error):
+				on_log_error(u"Restore is not supported on this operating system")
+			return False
+
 		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
 
 		basedir = settings._basedir
