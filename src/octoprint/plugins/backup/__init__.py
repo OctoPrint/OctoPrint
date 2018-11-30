@@ -11,7 +11,8 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
+from octoprint.util.platform import is_os_compatible
 from octoprint.util.pip import LocalPipCaller
 
 try:
@@ -212,8 +213,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				self._send_client_message("logline", dict(line=line, type="stdout"))
 
 			for plugin in plugins:
-				octoprint_compatible = plugin["compatibility"]["octoprint"]
-				os_compatible = plugin["compatibility"]["os"]
+				octoprint_compatible = is_octoprint_compatible(*plugin["compatibility"]["octoprint"])
+				os_compatible = is_os_compatible(plugin["compatibility"]["os"])
 				compatible = octoprint_compatible and os_compatible
 				if not compatible:
 					if not octoprint_compatible and not os_compatible:
@@ -384,8 +385,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					click.echo(u"\t{}".format(line))
 
 				for plugin in plugins:
-					octoprint_compatible = plugin["compatibility"]["octoprint"]
-					os_compatible = plugin["compatibility"]["os"]
+					octoprint_compatible = is_octoprint_compatible(*plugin["compatibility"]["octoprint"])
+					os_compatible = is_os_compatible(plugin["compatibility"]["os"])
 					compatible = octoprint_compatible and os_compatible
 					if not compatible:
 						if not octoprint_compatible and not os_compatible:
