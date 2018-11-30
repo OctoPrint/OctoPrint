@@ -881,6 +881,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if callable(on_log_progress):
 				on_log_progress(u"Restarting...")
+			if callable(on_restore_done):
+				on_restore_done(path)
+
 			try:
 				sarge.run(restart_command, async_=True)
 			except:
@@ -890,8 +893,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					on_log_error(u"Please restart OctoPrint manually")
 				return False
 
-		if callable(on_restore_done):
-			on_restore_done(path)
+		else:
+			if callable(on_restore_done):
+				on_restore_done(path)
 
 		return True
 
