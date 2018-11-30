@@ -12,6 +12,7 @@
 from __future__ import absolute_import, division, print_function
 
 import errno
+import io
 import os
 import re
 import subprocess
@@ -130,7 +131,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, 'rb')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -306,7 +307,7 @@ def git_parse_lookup_file(path):
         return []
 
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, 'rb') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.rindex("#")]

@@ -5,6 +5,7 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import logging
 import os
 from functools import partial
@@ -183,7 +184,7 @@ class FilebasedGroupManager(GroupManager):
 	def _load(self):
 		if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
 			try:
-				with open(self._groupfile, "r") as f:
+				with io.open(self._groupfile, 'rb') as f:
 					data = yaml.safe_load(f)
 
 					if not "groups" in data:

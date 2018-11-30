@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import os
 import tarfile
 import zipfile
@@ -49,7 +50,7 @@ def getInstalledLanguagePacks():
 			if os.path.isfile(meta_path):
 				import yaml
 				try:
-					with open(meta_path) as f:
+					with io.open(meta_path, 'rb') as f:
 						meta = yaml.safe_load(f)
 				except:
 					pass

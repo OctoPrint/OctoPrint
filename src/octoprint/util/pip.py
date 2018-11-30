@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import io
 import sarge
 import sys
 import logging
@@ -369,7 +370,7 @@ class PipCaller(CommandlineCaller):
 					return False, False, False, None
 
 				data = dict()
-				with open(testballoon_output_file) as f:
+				with io.open(testballoon_output_file, 'rb') as f:
 					for line in f:
 						key, value = line.split("=", 2)
 						data[key] = value

@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import logging
 import logging.handlers
 import os
@@ -459,7 +460,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def _load_profile(self, path):
 		import yaml
 		profile_dict = dict()
-		with open(path, "r") as f:
+		with io.open(path, 'rb') as f:
 			try:
 				profile_dict = yaml.safe_load(f)
 			except:
@@ -473,7 +474,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
 		import yaml
-		with octoprint.util.atomic_write(path, "wb", max_permissions=0o666) as f:
+		with octoprint.util.atomic_write(path, 'wb', max_permissions=0o666) as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent=2, allow_unicode=True)
 
 	def _convert_to_engine(self, profile_path, printer_profile, pos_x=None, pos_y=None, used_extruders=1):

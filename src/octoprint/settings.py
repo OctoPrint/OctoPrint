@@ -23,6 +23,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import sys
 import os
 import yaml
@@ -867,7 +868,7 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with open(self._configfile, "r") as f:
+			with io.open(self._configfile, 'rb') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
@@ -906,7 +907,7 @@ class Settings(object):
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with open(overlay, "r") as f:
+				with io.open(overlay, 'rb') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
@@ -1319,7 +1320,7 @@ class Settings(object):
 
 		from octoprint.util import atomic_write
 		try:
-			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
+			with atomic_write(self._configfile, 'wb', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
 				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
 		except:
@@ -1733,7 +1734,7 @@ class Settings(object):
 		path, _ = os.path.split(filename)
 		if not os.path.exists(path):
 			os.makedirs(path)
-		with atomic_write(filename, "wb", max_permissions=0o666) as f:
+		with atomic_write(filename, 'wb', max_permissions=0o666) as f:
 			f.write(script)
 
 	def generateApiKey(self):
@@ -1794,7 +1795,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 			# to determine whether things are *actually* writable
 			testfile = os.path.join(folder, ".testballoon.txt")
 			try:
-				with open(testfile, "wb") as f:
+				with io.open(testfile, 'wb') as f:
 					f.write("test")
 				os.remove(testfile)
 			except:

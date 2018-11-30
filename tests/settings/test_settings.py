@@ -9,6 +9,7 @@ Tests for OctoPrint's Settings class
      * tests for settings migration
 """
 
+import io
 import unittest
 import shutil
 import contextlib
@@ -27,18 +28,18 @@ class TestSettings(unittest.TestCase):
 
 	def _load_yaml(self, fname):
 		if sys.version_info[0] >= 3:
-			with open(fname, "r+", encoding='utf-8') as f:
+			with io.open(fname, 'r+b', encoding='utf-8') as f:
 				return yaml.safe_load(f)
 		else:
-			with open(fname, "r+b") as f:
+			with io.open(fname, 'r+b') as f:
 				return yaml.safe_load(f)
 
 	def _dump_yaml(self, fname, config):
 		if sys.version_info[0] >= 3:
-			with open(fname, "w+", encoding='utf-8') as f:
+			with io.open(fname, 'w+', encoding='utf-8') as f:
 				yaml.safe_dump(config, f)
 		else:
-			with open(fname, "wb+") as f:
+			with io.open(fname, 'wb+') as f:
 				yaml.safe_dump(config, f)
 
 	def setUp(self):

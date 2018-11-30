@@ -28,6 +28,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import os
+import io
 import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
@@ -512,7 +513,7 @@ class PluginInfo(object):
 		try:
 			import ast
 
-			with open(path, "rb") as f:
+			with io.open(path, 'rb') as f:
 				root = ast.parse(f.read())
 
 			assignments = filter(lambda x: isinstance(x, ast.Assign) and x.targets,
@@ -1619,7 +1620,7 @@ def is_editable_install(install_dir, package, module, location):
 	if os.path.isfile(package_link):
 		expected_target = os.path.normcase(os.path.realpath(location))
 		try:
-			with open(package_link) as f:
+			with io.open(package_link, 'rb') as f:
 				contents = f.readlines()
 			for line in contents:
 				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))

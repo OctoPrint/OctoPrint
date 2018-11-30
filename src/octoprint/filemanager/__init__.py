@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import io
 import os
 
 import octoprint.plugin
@@ -338,7 +339,7 @@ class FileManager(object):
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
 					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
-					                         io.FileIO(tmp_path, "rb"))
+					                         io.FileIO(tmp_path, 'rb'))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
 					self.add_file(dest_location, dest_path, file_obj,
@@ -642,7 +643,7 @@ class FileManager(object):
 
 		import yaml
 		try:
-			with open(self._recovery_file) as f:
+			with io.open(self._recovery_file, 'rb') as f:
 				data = yaml.safe_load(f)
 			return data
 		except:

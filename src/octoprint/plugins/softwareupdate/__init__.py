@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import octoprint.plugin
 
+import io
 import copy
 import flask
 import os
@@ -187,7 +188,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		import yaml
 		try:
-			with open(self._version_cache_path) as f:
+			with io.open(self._version_cache_path, 'rb') as f:
 				data = yaml.safe_load(f)
 			timestamp = os.stat(self._version_cache_path).st_mtime
 		except:

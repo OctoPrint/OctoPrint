@@ -26,6 +26,7 @@ import octoprint.util.net
 from octoprint.server import util
 from octoprint.util.json import JsonEncoding
 
+import io
 import os
 import logging
 import logging.config
@@ -1600,7 +1601,7 @@ class Server(object):
 			if not os.path.isfile(path):
 				return ""
 
-			with open(path, "rb") as f:
+			with io.open(path, 'rb') as f:
 				data = f.read()
 			return data
 

@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import logging
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
@@ -331,7 +332,7 @@ def _test_path(data):
 	if check_writable_dir and check_type == "dir":
 		try:
 			test_path = os.path.join(path, ".testballoon.txt")
-			with open(test_path, "wb") as f:
+			with io.open(test_path, 'wb') as f:
 				f.write("Test")
 			os.remove(test_path)
 		except:

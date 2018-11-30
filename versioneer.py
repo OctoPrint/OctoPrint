@@ -375,6 +375,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 import errno
+import io
 import json
 import os
 import re
@@ -427,7 +428,7 @@ def get_config_from_root(root):
     # the top of versioneer.py for instructions on writing your setup.cfg .
     setup_cfg = os.path.join(root, "setup.cfg")
     parser = configparser.SafeConfigParser()
-    with open(setup_cfg, "r") as f:
+    with io.open(setup_cfg, 'rb') as f:
         parser.readfp(f)
     VCS = parser.get("versioneer", "VCS")  # mandatory
 
@@ -629,7 +630,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, 'rb')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -806,7 +807,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, 'rb') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -1201,7 +1202,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, 'rt')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -1378,7 +1379,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, 'rb') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -1501,7 +1502,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     files.append(versioneer_file)
     present = False
     try:
-        f = open(".gitattributes", "r")
+        f = io.open('.gitattributes', 'rt')
         for line in f.readlines():
             if line.strip().startswith(versionfile_source):
                 if "export-subst" in line.strip().split()[1:]:
@@ -1510,7 +1511,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     except EnvironmentError:
         pass
     if not present:
-        f = open(".gitattributes", "a+")
+        f = io.open('.gitattributes', 'a+')
         f.write("%s export-subst\n" % versionfile_source)
         f.close()
         files.append(".gitattributes")
@@ -1554,7 +1555,7 @@ def get_versions():
 
 def versions_from_file(filename):
     try:
-        with open(filename) as f:
+        with io.open(filename, 'rb') as f:
             contents = f.read()
     except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
@@ -1569,7 +1570,7 @@ def write_to_version_file(filename, versions):
     os.unlink(filename)
     contents = json.dumps(versions, sort_keys=True,
                           indent=1, separators=(",", ": "))
-    with open(filename, "w") as f:
+    with io.open(filename, 'wb') as f:
         f.write(SHORT_VERSION_PY % contents)
 
     print("set %s to '%s'" % (filename, versions["version"]))
@@ -1982,7 +1983,7 @@ def get_cmdclass():
 
                 _build_exe.run(self)
                 os.unlink(target_versionfile)
-                with open(cfg.versionfile_source, "w") as f:
+                with io.open(cfg.versionfile_source, 'wb') as f:
                     LONG = LONG_VERSION_PY[cfg.VCS]
                     f.write(LONG %
                             {"DOLLAR": "$",
@@ -2079,13 +2080,13 @@ def do_setup():
         if isinstance(e, (EnvironmentError, configparser.NoSectionError)):
             print("Adding sample versioneer config to setup.cfg",
                   file=sys.stderr)
-            with open(os.path.join(root, "setup.cfg"), "a") as f:
+            with io.open(os.path.join(root, "setup.cfg"), 'a') as f:
                 f.write(SAMPLE_CONFIG)
         print(CONFIG_ERROR, file=sys.stderr)
         return 1
 
     print(" creating %s" % cfg.versionfile_source)
-    with open(cfg.versionfile_source, "w") as f:
+    with io.open(cfg.versionfile_source, 'wb') as f:
         LONG = LONG_VERSION_PY[cfg.VCS]
         f.write(LONG % {"DOLLAR": "$",
                         "STYLE": cfg.style,
@@ -2099,13 +2100,13 @@ def do_setup():
                        "__init__.py")
     if os.path.exists(ipy):
         try:
-            with open(ipy, "r") as f:
+            with io.open(ipy, 'rb') as f:
                 old = f.read()
         except EnvironmentError:
             old = ""
         if INIT_PY_SNIPPET not in old:
             print(" appending to %s" % ipy)
-            with open(ipy, "a") as f:
+            with io.open(ipy, 'a') as f:
                 f.write(INIT_PY_SNIPPET)
         else:
             print(" %s unmodified" % ipy)
@@ -2120,7 +2121,7 @@ def do_setup():
     manifest_in = os.path.join(root, "MANIFEST.in")
     simple_includes = set()
     try:
-        with open(manifest_in, "r") as f:
+        with io.open(manifest_in, 'rb') as f:
             for line in f:
                 if line.startswith("include "):
                     for include in line.split()[1:]:
@@ -2133,14 +2134,14 @@ def do_setup():
     # lines is safe, though.
     if "versioneer.py" not in simple_includes:
         print(" appending 'versioneer.py' to MANIFEST.in")
-        with open(manifest_in, "a") as f:
+        with io.open(manifest_in, 'a') as f:
             f.write("include versioneer.py\n")
     else:
         print(" 'versioneer.py' already in MANIFEST.in")
     if cfg.versionfile_source not in simple_includes:
         print(" appending versionfile_source ('%s') to MANIFEST.in" %
               cfg.versionfile_source)
-        with open(manifest_in, "a") as f:
+        with io.open(manifest_in, 'a') as f:
             f.write("include %s\n" % cfg.versionfile_source)
     else:
         print(" versionfile_source already in MANIFEST.in")
@@ -2156,7 +2157,7 @@ def scan_setup_py():
     found = set()
     setters = False
     errors = 0
-    with open("setup.py", "r") as f:
+    with io.open("setup.py", 'rb') as f:
         for line in f.readlines():
             if "import versioneer" in line:
                 found.add("import")

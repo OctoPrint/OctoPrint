@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest
 import yaml
 
+import io
 import os
 
 try:
@@ -145,7 +146,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rb') as f:
 				config_from_file = yaml.safe_load(f)
 		return config_from_file
 

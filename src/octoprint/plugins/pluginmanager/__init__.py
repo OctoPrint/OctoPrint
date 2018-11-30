@@ -20,6 +20,7 @@ from octoprint.util.platform import get_os
 from flask import jsonify, make_response
 from flask_babel import gettext
 
+import io
 import logging
 import sarge
 import sys
@@ -758,7 +759,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if mtime + self._repository_cache_ttl >= time.time() > mtime:
 				try:
 					import json
-					with open(self._repository_cache_path) as f:
+					with io.open(self._repository_cache_path, 'rb') as f:
 						repo_data = json.load(f)
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
 				except:
@@ -784,7 +785,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._repository_cache_path, "wb") as f:
+			with octoprint.util.atomic_write(self._repository_cache_path, 'wb') as f:
 				json.dump(repo_data, f)
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
@@ -832,7 +833,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if mtime + self._notices_cache_ttl >= time.time() > mtime:
 				try:
 					import json
-					with open(self._notices_cache_path) as f:
+					with io.open(self._notices_cache_path, 'rb') as f:
 						notice_data = json.load(f)
 					self._logger.info("Loaded notice data from disk, was still valid")
 				except:

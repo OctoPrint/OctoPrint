@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import io
 import logging
 import os
 import threading
@@ -646,7 +647,7 @@ class Timelapse(object):
 			                 verify=self._snapshot_validate_ssl)
 			r.raise_for_status()
 
-			with open (filename, "wb") as f:
+			with io.open(filename, 'wb') as f:
 				for chunk in r.iter_content(chunk_size=1024):
 					if chunk:
 						f.write(chunk)

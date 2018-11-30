@@ -144,6 +144,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import io
 import os
 import copy
 import re
@@ -430,7 +431,7 @@ class PrinterProfileManager(object):
 			return None
 
 		import yaml
-		with open(path) as f:
+		with io.open(path, 'rb') as f:
 			profile = yaml.safe_load(f)
 
 		if profile is None or not isinstance(profile, dict):
@@ -460,7 +461,7 @@ class PrinterProfileManager(object):
 		from octoprint.util import atomic_write
 		import yaml
 		try:
-			with atomic_write(path, "wb", max_permissions=0o666) as f:
+			with atomic_write(path, 'wb', max_permissions=0o666) as f:
 				yaml.safe_dump(profile, f, default_flow_style=False, indent=2, allow_unicode=True)
 		except Exception as e:
 			self._logger.exception("Error while trying to save profile %s" % profile["id"])

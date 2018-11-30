@@ -4,6 +4,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 
+import io
 import time
 import os
 import re
@@ -1106,7 +1107,7 @@ class VirtualPrinter(object):
 
 		handle = None
 		try:
-			handle = open(file, "w")
+			handle = io.open(file, 'wb')
 		except:
 			self._output("error writing to file")
 			if handle is not None:
@@ -1133,7 +1134,7 @@ class VirtualPrinter(object):
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		try:
-			with open(self._selectedSdFile, "r") as f:
+			with io.open(self._selectedSdFile, 'rb') as f:
 				for line in iter(f.readline, ""):
 					if self._killed or not self._sdPrinting:
 						break

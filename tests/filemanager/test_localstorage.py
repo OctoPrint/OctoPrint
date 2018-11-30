@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import unittest
 import os
 import mock
@@ -22,7 +23,7 @@ class FileWrapper(object):
 		import hashlib
 		blocksize = 65536
 		hash = hashlib.sha1()
-		with open(self.path, "rb") as f:
+		with io.open(self.path, 'rb') as f:
 			buffer = f.read(blocksize)
 			while len(buffer) > 0:
 				hash.update(buffer)
@@ -652,7 +653,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		# prepare
 		import yaml
-		with open(yaml_path, "wb") as f:
+		with io.open(yaml_path, 'wb') as f:
 			yaml.safe_dump(metadata, f)
 
 		# migrate
@@ -663,7 +664,7 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertTrue(os.path.exists(yaml_path)) # TODO 1.3.10 change to assertFalse
 
 		import json
-		with open(json_path) as f:
+		with io.open(json_path, 'rb') as f:
 			json_metadata = json.load(f)
 		self.assertDictEqual(metadata, json_metadata)
 
