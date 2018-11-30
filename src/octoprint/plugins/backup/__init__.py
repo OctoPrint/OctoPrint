@@ -268,6 +268,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		def on_restore_failed(path, exc_info):
 			self._send_client_message("restore_failed")
 
+		def on_invalid_backup(line):
+			on_log_error(line)
+
 		archive = tempfile.NamedTemporaryFile(delete=False)
 		archive.close()
 		shutil.copy(path, archive.name)
@@ -281,6 +284,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_install_plugins=on_install_plugins,
 		                                      on_report_unknown_plugins=on_report_unknown_plugins,
+		                                      on_invalid_backup=on_invalid_backup,
 		                                      on_log_progress=on_log_progress,
 		                                      on_log_error=on_log_error,
 		                                      on_restore_start=on_restore_start,
@@ -437,7 +441,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                        on_install_plugins=on_install_plugins,
 			                        on_report_unknown_plugins=on_report_unknown_plugins,
 			                        on_log_progress=on_log_progress,
-			                        on_log_error=on_log_error):
+			                        on_log_error=on_log_error,
+			                        on_invalid_backup=on_log_error):
 				click.echo(u"Restored from {}".format(path))
 			else:
 				click.echo(u"Restoring from {} failed".format(path), err=True)
@@ -694,6 +699,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		if not is_os_compatible(["!windows"]):
 			if callable(on_log_error):
 				on_log_error(u"Restore is not supported on this operating system")
+			if callable(on_restore_failed):
+				on_restore_failed(path)
 			return False
 
 		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
@@ -719,6 +726,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				except KeyError:
 					if callable(on_invalid_backup):
 						on_invalid_backup(u"Not an OctoPrint backup, lacks metadata.json")
+					if callable(on_restore_failed):
+						on_restore_failed(path)
 					return False
 
 				metadata_bytes = zip.read(metadata_zipinfo)
@@ -728,6 +737,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				if backup_version > get_octoprint_version():
 					if callable(on_invalid_backup):
 						on_invalid_backup(u"Backup is from a newer version of OctoPrint and cannot be applied")
+					if callable(on_restore_failed):
+						on_restore_failed(path)
 					return False
 
 				# unzip to temporary folder
@@ -746,6 +757,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					if not os.path.exists(configfile):
 						if callable(on_invalid_backup):
 							on_invalid_backup(u"Backup lacks config.yaml")
+						if callable(on_restore_failed):
+							on_restore_failed(path)
 						return False
 
 					import yaml
@@ -758,6 +771,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						if not os.path.exists(userfile):
 							if callable(on_invalid_backup):
 								on_invalid_backup(u"Backup lacks users.yaml")
+							if callable(on_restore_failed):
+								on_restore_failed(path)
 							return False
 
 					if callable(on_log_progress):
