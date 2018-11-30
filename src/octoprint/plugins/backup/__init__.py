@@ -265,7 +265,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		def on_restore_done(path):
 			self._send_client_message("restore_done")
 
-		def on_restore_failed(path, exc_info):
+		def on_restore_failed(path):
 			self._send_client_message("restore_failed")
 
 		def on_invalid_backup(line):
@@ -864,7 +864,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				if callable(on_log_error):
 					on_log_error(u"Error while running restore", exc_info=exc_info)
 				if callable(on_restore_failed):
-					on_restore_failed(path, exc_info)
+					on_restore_failed(path)
 			finally:
 				del exc_info
 			return False
