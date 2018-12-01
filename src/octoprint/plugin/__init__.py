@@ -498,7 +498,7 @@ class PluginSettings(object):
 		self.settings.remove(self._prefix_path())
 
 	def __getattr__(self, item):
-		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
+		all_access_methods = list(self.access_methods.keys()) + list(self.deprecated_access_methods.keys())
 		if item in all_access_methods:
 			decorator = None
 			if item in self.deprecated_access_methods:

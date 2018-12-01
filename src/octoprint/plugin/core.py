@@ -892,7 +892,7 @@ class PluginManager(object):
 		                                 incl_all_found=True)
 
 		# let's clean everything we DIDN'T find first
-		removed = [key for key in self.enabled_plugins.keys() + self.disabled_plugins.keys() if key not in found]
+		removed = [key for key in list(self.enabled_plugins.keys()) + list(self.disabled_plugins.keys()) if key not in found]
 		for key in removed:
 			try:
 				del self.enabled_plugins[key]

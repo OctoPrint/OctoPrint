@@ -675,7 +675,7 @@ def dict_minimal_mergediff(source, target):
 
 	from copy import deepcopy
 
-	all_keys = set(source.keys() + target.keys())
+	all_keys = set(list(source.keys()) + list(target.keys()))
 	result = dict()
 	for k in all_keys:
 		if k not in target:

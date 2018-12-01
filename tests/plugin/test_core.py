@@ -174,7 +174,7 @@ class PluginTestCase(unittest.TestCase):
 	def test_sorted_hooks(self):
 		hooks = self.plugin_manager.get_hooks("some.ordered.callback")
 		self.assertEqual(3, len(hooks))
-		self.assertListEqual(["one_ordered_hook_plugin", "another_ordered_hook_plugin", "hook_plugin"], hooks.keys())
+		self.assertListEqual(["one_ordered_hook_plugin", "another_ordered_hook_plugin", "hook_plugin"], list(hooks.keys()))
 
 	def test_get_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin)
