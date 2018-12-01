@@ -69,7 +69,7 @@ date of first contribution):
   * [Philipp Baum](https://github.com/philphilphil)
   * [Kyle Evans](https://github.com/kevans91)
   * [Javier Martínez Arrieta](https://github.com/Javierma)
-  * ["MirceaDan"](https://github.com/ByReaL)
+  * [Mircea Dan Gheorghe](https://github.com/ByReaL)
   * [Ovidiu Hossu](https://github.com/MoonshineSG)
   * [Eyck Jentzsch](https://github.com/eyck)
   * [Mathias Rangel Wulff](https://github.com/mathiasrw)
