@@ -273,7 +273,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 				message += "\n!!! FREQUENCY CAPPING DUE TO OVERHEATING REPORTED !!! Improve cooling on the Pi's " \
 				           "CPU and GPU."
 
-			self._logger.warn(message)
+			self._logger.warning(message)
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
 		                                                                state=self._throttle_state.as_dict()))

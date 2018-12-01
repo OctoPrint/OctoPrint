@@ -592,12 +592,12 @@ class Timelapse(object):
 
 	def capture_image(self):
 		if self._capture_dir is None:
-			self._logger.warn("Cannot capture image, capture directory is unset")
+			self._logger.warning("Cannot capture image, capture directory is unset")
 			return
 
 		with self._capture_mutex:
 			if self._image_number is None:
-				self._logger.warn("Cannot capture image, image number is unset")
+				self._logger.warning("Cannot capture image, image number is unset")
 				return
 
 			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
@@ -696,7 +696,7 @@ class Timelapse(object):
 
 	def clean_capture_dir(self):
 		if not os.path.isdir(self._capture_dir):
-			self._logger.warn("Cannot clean capture directory, it is unset")
+			self._logger.warning("Cannot clean capture directory, it is unset")
 			return
 		delete_unrendered_timelapse(self._file_prefix)
 
@@ -850,7 +850,7 @@ class TimelapseRenderJob(object):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
-			self._logger.warn("Cannot create movie, path to ffmpeg or desired bitrate is unset")
+			self._logger.warning("Cannot create movie, path to ffmpeg or desired bitrate is unset")
 			return
 
 		if self._videocodec == 'mpeg2video':
@@ -870,7 +870,7 @@ class TimelapseRenderJob(object):
 			if os.path.exists(input % i):
 				break
 		else:
-			self._logger.warn("Cannot create a movie, no frames captured")
+			self._logger.warning("Cannot create a movie, no frames captured")
 			self._notify_callback("fail", output, returncode=0, stdout="", stderr="", reason="no_frames")
 			return
 
@@ -907,7 +907,7 @@ class TimelapseRenderJob(object):
 				if returncode == 0:
 					self._notify_callback("success", output)
 				else:
-					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
+					self._logger.warning("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
 					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
 			except:
 				self._logger.exception("Could not render movie due to unknown error")

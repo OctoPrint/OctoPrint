@@ -682,7 +682,7 @@ class PluginManager(object):
 				actual_readonly = not os.access(folder, os.W_OK)
 
 				if not os.path.exists(folder):
-					self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
+					self.logger.warning("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 					continue
 
 				for entry in scandir(folder):
@@ -818,7 +818,7 @@ class PluginManager(object):
 			else:
 				return None
 		except:
-			self.logger.warn("Could not locate plugin {key}".format(key=key))
+			self.logger.warning("Could not locate plugin {key}".format(key=key))
 			return None
 
 		# Create a simple dummy entry first ...
@@ -831,7 +831,7 @@ class PluginManager(object):
 			plugin.forced_disabled = True
 
 		if self._is_plugin_blacklisted(key) or (plugin.version is not None and self._is_plugin_version_blacklisted(key, plugin.version)):
-			self.logger.warn("Plugin {} is blacklisted.".format(plugin))
+			self.logger.warning("Plugin {} is blacklisted.".format(plugin))
 			plugin.blacklisted = True
 
 		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
@@ -925,7 +925,7 @@ class PluginManager(object):
 			try:
 				if plugin.loaded and not plugin.forced_disabled:
 					if plugin.blacklisted:
-						self.logger.warn("Plugin {} is blacklisted. Not enabling it.".format(plugin))
+						self.logger.warning("Plugin {} is blacklisted. Not enabling it.".format(plugin))
 						continue
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
@@ -967,7 +967,7 @@ class PluginManager(object):
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
-			self.logger.warn("Trying to load an unknown plugin {name}".format(**locals()))
+			self.logger.warning("Trying to load an unknown plugin {name}".format(**locals()))
 			return
 
 		if plugin is None:
@@ -990,7 +990,7 @@ class PluginManager(object):
 
 	def unload_plugin(self, name):
 		if not name in self.plugins:
-			self.logger.warn("Trying to unload unknown plugin {name}".format(**locals()))
+			self.logger.warning("Trying to unload unknown plugin {name}".format(**locals()))
 			return
 
 		plugin = self.plugins[name]
@@ -1024,7 +1024,7 @@ class PluginManager(object):
 
 	def enable_plugin(self, name, plugin=None, initialize_implementation=True, startup=False):
 		if not name in self.disabled_plugins:
-			self.logger.warn("Tried to enable plugin {name}, however it is not disabled".format(**locals()))
+			self.logger.warning("Tried to enable plugin {name}, however it is not disabled".format(**locals()))
 			return
 
 		if plugin is None:
@@ -1066,7 +1066,7 @@ class PluginManager(object):
 
 	def disable_plugin(self, name, plugin=None):
 		if not name in self.enabled_plugins:
-			self.logger.warn("Tried to disable plugin {name}, however it is not enabled".format(**locals()))
+			self.logger.warning("Tried to disable plugin {name}, however it is not enabled".format(**locals()))
 			return
 
 		if plugin is None:
@@ -1105,7 +1105,7 @@ class PluginManager(object):
 			try:
 				callback, order = self._get_callback_and_order(definition)
 			except ValueError as e:
-				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				self.logger.warning("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
 				continue
 
 			self._plugin_hooks[hook].append((order, name, callback))
@@ -1124,7 +1124,7 @@ class PluginManager(object):
 			try:
 				callback, order = self._get_callback_and_order(definition)
 			except ValueError as e:
-				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				self.logger.warning("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
 				continue
 
 			try:
@@ -1480,7 +1480,7 @@ class PluginManager(object):
 					try:
 						int(sorting_value)
 					except ValueError:
-						self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
+						self.logger.warning("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
 						sorting_value = None
 
 			return sorting_value is None, sorting_value, impl[0]

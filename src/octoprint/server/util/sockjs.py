@@ -165,7 +165,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			import json
 			message = json.loads(message)
 		except:
-			self._logger.warn("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
+			self._logger.warning("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
 			return
 
 		if "auth" in message:
@@ -174,7 +174,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				if not len(parts) == 2:
 					raise ValueError()
 			except ValueError:
-				self._logger.warn("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
+				self._logger.warning("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
 			else:
 				user_id, user_session = parts
 				user = self._userManager.find_user(userid=user_id, session=user_session)
@@ -186,7 +186,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				else:
 					self._user = self._userManager.anonymous_user_factory()
 					self._reregister()
-					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
+					self._logger.warning("Unknown user/session combo: {}:{}".format(user_id, user_session))
 
 		elif "throttle" in message:
 			try:
@@ -194,7 +194,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				if throttle < 1:
 					raise ValueError()
 			except ValueError:
-				self._logger.warn("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
+				self._logger.warning("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
 			else:
 				self._throttleFactor = throttle
 				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
@@ -373,4 +373,4 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
 			else:
-				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
+				self._logger.warning("Could not send message to client {}: {}".format(self._remoteAddress, e))

@@ -267,11 +267,11 @@ def _get_plugin_settings():
 			result = plugin.on_settings_load()
 			process_plugin_result(plugin._identifier, result)
 		except TypeError:
-			logger.warn("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name,
+			logger.warning("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name,
 			                                                                                                      version=plugin._plugin_version))
-			logger.warn("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
-			logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
-			logger.warn("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
+			logger.warning("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
+			logger.warning("Please contact the plugin's author and ask to update the plugin to use a direct call like")
+			logger.warning("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
 		except:
 			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
 			                                                                                name=plugin._plugin_name))
@@ -544,10 +544,10 @@ def _saveSettings(data):
 				try:
 					plugin.on_settings_save(data["plugins"][plugin_id])
 				except TypeError:
-					logger.warn("Could not save settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name, version=plugin._plugin_version))
-					logger.warn("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
-					logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
-					logger.warn("octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.")
+					logger.warning("Could not save settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name, version=plugin._plugin_version))
+					logger.warning("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
+					logger.warning("Please contact the plugin's author and ask to update the plugin to use a direct call like")
+					logger.warning("octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.")
 				except:
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 

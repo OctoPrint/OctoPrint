@@ -192,7 +192,7 @@ def baudrateList():
 		try:
 			candidates.insert(0, int(additional))
 		except:
-			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
+			_logger.warning("{} is not a valid additional baudrate, ignoring it".format(additional))
 
 	# last used baudrate = first to try, move to start
 	prev = settings().getInt(["serial", "baudrate"])
@@ -1608,7 +1608,7 @@ class MachineCom(object):
 
 					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
-							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+							self._logger.warning("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
 							if not filename.startswith("/"):
 								# file from the root of the sd -- we'll prepend a /
@@ -2005,7 +2005,7 @@ class MachineCom(object):
 								message = "Printer sent 'start' while already operational. External reset? " \
 								          "Resetting line numbers to be on the safe side"
 								self._log(message)
-								self._logger.warn(message)
+								self._logger.warning(message)
 
 								self._on_external_reset()
 
@@ -2014,7 +2014,7 @@ class MachineCom(object):
 								message = "Printer sent 'start' while {}. External reset? " \
 								          "Aborting job since printer lost state.".format(verb)
 								self._log(message)
-								self._logger.warn(message)
+								self._logger.warning(message)
 
 								self._on_external_reset()
 								self.cancelPrint(disable_log_position=True)
@@ -2700,7 +2700,7 @@ class MachineCom(object):
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				error_text = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._log(error_text)
-				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				self._logger.warning(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
 				if self.isPrinting():
 					# abort the print & disconnect, there's nothing we can do to rescue it
 					self._trigger_error(error_text, "resend")
@@ -3729,7 +3729,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		with self._handle_mutex:
 			if self._handle is None:
-				self._logger.warn(u"File {} is not open for reading".format(self._filename))
+				self._logger.warning(u"File {} is not open for reading".format(self._filename))
 				return None, None, None
 
 			try:

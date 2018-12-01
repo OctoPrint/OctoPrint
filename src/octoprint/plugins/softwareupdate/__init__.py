@@ -132,9 +132,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						for key, default_config in hook_checks.items():
 							if key in effective_configs or key == "octoprint":
 								if key == name:
-									self._logger.warn("Software update hook {} provides check for itself but that was already registered by {} - overwriting that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
+									self._logger.warning("Software update hook {} provides check for itself but that was already registered by {} - overwriting that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
 								else:
-									self._logger.warn("Software update hook {} tried to overwrite config for check {} but that was already configured elsewhere".format(name, key))
+									self._logger.warning("Software update hook {} tried to overwrite config for check {} but that was already configured elsewhere".format(name, key))
 									continue
 
 							check_providers[key] = name
@@ -159,7 +159,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							if effective_config:
 								effective_configs[key] = effective_config
 							else:
-								self._logger.warn("Update for {} is empty or None, ignoring it".format(key))
+								self._logger.warning("Update for {} is empty or None, ignoring it".format(key))
 
 				# finally set all our internal representations to our processed results
 				for key, config in effective_configs.items():
@@ -648,7 +648,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							future = executor.submit(self._get_current_version, target, populated_check, force=force)
 							futures_to_result[future] = (target, populated_check)
 						except exceptions.UnknownCheckType:
-							self._logger.warn("Unknown update check type for target {}: {}".format(target,
+							self._logger.warning("Unknown update check type for target {}: {}".format(target,
 							                                                                       check.get("type",
 							                                                                                 "<n/a>")))
 							continue
@@ -763,11 +763,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			update_possible = False
 			information["needs_online"] = True
 		except exceptions.UnknownCheckType:
-			self._logger.warn("Unknown check type %s for %s" % (check["type"], target))
+			self._logger.warning("Unknown check type %s for %s" % (check["type"], target))
 			update_possible = False
 			error = "unknown_check"
 		except exceptions.NetworkError:
-			self._logger.warn("Could not check %s for updates due to a network error" % target)
+			self._logger.warning("Could not check %s for updates due to a network error" % target)
 			update_possible = False
 			error = "network"
 		except:
@@ -911,7 +911,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return False, None
 
 		if not update_possible:
-			self._logger.warn("Cannot perform update for %s, update type is not fully configured" % target)
+			self._logger.warning("Cannot perform update for %s, update type is not fully configured" % target)
 			return False, None
 
 		# determine the target version to update to
@@ -948,12 +948,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			trigger_event(True)
 
 		except exceptions.UnknownUpdateType:
-			self._logger.warn("Update of %s can not be performed, unknown update type" % target)
+			self._logger.warning("Update of %s can not be performed, unknown update type" % target)
 			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="Unknown update type"))
 			return False, None
 
 		except exceptions.CannotUpdateOffline:
-			self._logger.warn("Update of %s can not be performed, it's not marked as 'offline' capable but we are apparently offline right now" % target)
+			self._logger.warning("Update of %s can not be performed, it's not marked as 'offline' capable but we are apparently offline right now" % target)
 			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="No internet connection"))
 
 		except Exception as e:
@@ -1000,8 +1000,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			util.execute(restart_command, evaluate_returncode=False, do_async=True)
 		except exceptions.ScriptError as e:
 			self._logger.exception("Error while restarting via command {}".format(restart_command))
-			self._logger.warn("Restart stdout:\n{}".format(e.stdout))
-			self._logger.warn("Restart stderr:\n{}".format(e.stderr))
+			self._logger.warning("Restart stdout:\n{}".format(e.stdout))
+			self._logger.warning("Restart stderr:\n{}".format(e.stderr))
 			raise exceptions.RestartFailed()
 
 	def _populated_check(self, target, check):

@@ -88,7 +88,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 				commands = hook(self, pass_octoprint_ctx)
 				for command in commands:
 					if not isinstance(command, click.Command):
-						self._logger.warn("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
+						self._logger.warning("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
 						continue
 					result[name + self.sep + command.name] = command
 			except:

@@ -89,7 +89,7 @@ def executeSystemCommand(source, command):
 	except Exception as e:
 		if not do_ignore:
 			error = "Command \"before\" for {}:{} failed: {}".format(source, command, str(e))
-			logger.warn(error)
+			logger.warning(error)
 			return make_response(error, 500)
 
 	try:
@@ -111,7 +111,7 @@ def executeSystemCommand(source, command):
 				                                                                                       returncode,
 				                                                                                       stdout_text,
 				                                                                                       stderr_text)
-				logger.warn(prefix_multilines(error, prefix="! "))
+				logger.warning(prefix_multilines(error, prefix="! "))
 				if not do_async:
 					raise CommandFailed(error)
 
@@ -129,7 +129,7 @@ def executeSystemCommand(source, command):
 	except Exception as e:
 		if not do_ignore:
 			error = "Command for {}:{} failed: {}".format(source, command, str(e))
-			logger.warn(error)
+			logger.warning(error)
 			return make_response(error, 500)
 
 	return NO_CONTENT

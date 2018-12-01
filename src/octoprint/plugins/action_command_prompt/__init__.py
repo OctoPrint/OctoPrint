@@ -124,7 +124,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 		if action == b"prompt_begin":
 			if self._prompt is not None and self._prompt.active:
-				self._logger.warn("Prompt is already defined")
+				self._logger.warning("Prompt is already defined")
 				return
 			self._prompt = Prompt(parameter.strip())
 
@@ -132,7 +132,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			if self._prompt is None:
 				return
 			if self._prompt.active:
-				self._logger.warn("Prompt is already active")
+				self._logger.warning("Prompt is already active")
 				return
 			self._prompt.add_choice(parameter.strip())
 
@@ -140,7 +140,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			if self._prompt is None:
 				return
 			if self._prompt.active:
-				self._logger.warn("Prompt is already active")
+				self._logger.warning("Prompt is already active")
 				return
 			self._show_prompt()
 
