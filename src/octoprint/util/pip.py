@@ -286,7 +286,7 @@ class PipCaller(CommandlineCaller):
 			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
-				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
+				self._logger.warning("Error while trying to run pip --version: {}".format(p.stderr.text))
 				return None, None
 
 			output = PipCaller._preprocess(p.stdout.text)
@@ -297,11 +297,11 @@ class PipCaller(CommandlineCaller):
 			# we'll just split on whitespace and then try to use the second entry
 
 			if not output.startswith("pip"):
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
 			split_output = list(map(lambda x: x.strip(), output.split()))
 			if len(split_output) < 2:
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
 			version_segment = split_output[1]
 

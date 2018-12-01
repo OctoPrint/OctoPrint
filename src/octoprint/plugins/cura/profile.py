@@ -366,7 +366,7 @@ class Profile(object):
 
 		import os
 		if not os.path.exists(path) or not os.path.isfile(path):
-			logger.warn("Path {path} does not exist or is not a file, cannot import".format(**locals()))
+			logger.warning("Path {path} does not exist or is not a file, cannot import".format(**locals()))
 			return None
 
 		import ConfigParser

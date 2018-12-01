@@ -154,7 +154,7 @@ def fix_webassets_cache():
 		import shutil
 
 		if not os.path.exists(self.directory):
-			error_logger.warn("Cache directory {} doesn't exist, not going "
+			error_logger.warning("Cache directory {} doesn't exist, not going "
 			                  "to attempt to write cache file".format(self.directory))
 
 		md5 = '%s' % cache.make_md5(self.V, key)
@@ -177,7 +177,7 @@ def fix_webassets_cache():
 		from webassets.cache import make_md5
 
 		if not os.path.exists(self.directory):
-			error_logger.warn("Cache directory {} doesn't exist, not going "
+			error_logger.warning("Cache directory {} doesn't exist, not going "
 			                  "to attempt to read cache file".format(self.directory))
 			return None
 
@@ -1419,7 +1419,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		def asset_exists(category, asset):
 			exists = os.path.exists(os.path.join(basefolder, asset))
 			if not exists:
-				logger.warn("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
+				logger.warning("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
 			return exists
 
 		if "js" in all_assets:

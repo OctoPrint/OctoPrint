@@ -407,7 +407,7 @@ def index():
 				if response is not None:
 					break
 				else:
-					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+					_logger.warning("UiPlugin {} returned an empty response".format(plugin._identifier))
 		else:
 			response = default_view()
 
@@ -820,7 +820,7 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		if "suffix" in data:
 			data["_div"] = data["_div"] + data["suffix"]
 		if not _valid_div_re.match(data["_div"]):
-			_logger.warn("Template config {} contains invalid div identifier {}, skipping it".format(name, data["_div"]))
+			_logger.warning("Template config {} contains invalid div identifier {}, skipping it".format(name, data["_div"]))
 			return None
 
 	if not "template" in data:

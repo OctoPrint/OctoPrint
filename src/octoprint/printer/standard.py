@@ -152,7 +152,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def register_callback(self, callback, *args, **kwargs):
 		if not isinstance(callback, PrinterCallback):
-			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
+			self._logger.warning("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
 		self._callbacks.append(callback)
 
 	def unregister_callback(self, callback, *args, **kwargs):

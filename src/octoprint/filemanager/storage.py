@@ -1115,7 +1115,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				print_time = float(print_time)
 			except:
-				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
+				self._logger.warning("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
 				continue
 
 			if not printer_profile in former_print_times:

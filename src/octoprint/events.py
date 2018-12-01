@@ -360,7 +360,7 @@ class CommandTrigger(GenericEventListener):
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
 			except KeyError as e:
-				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
+				self._logger.warning("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
 		if commandType == "system":
@@ -388,9 +388,9 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(command)
 			except subprocess.CalledProcessError as e:
 				if debug:
-					self._logger.warn("Command failed with return code {}: {}".format(e.returncode, str(e)))
+					self._logger.warning("Command failed with return code {}: {}".format(e.returncode, str(e)))
 				else:
-					self._logger.warn("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
+					self._logger.warning("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
 			except:
 				self._logger.exception("Command failed")
 

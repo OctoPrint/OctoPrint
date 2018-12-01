@@ -106,11 +106,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				return flask.make_response(u"Something went wrong while converting imported profile: {message}".format(message=str(e)), 500)
 
 		else:
-			self._logger.warn(u"No profile file included for importing, aborting")
+			self._logger.warning(u"No profile file included for importing, aborting")
 			return flask.make_response(u"No file included", 400)
 
 		if profile_dict is None:
-			self._logger.warn(u"Could not convert profile, aborting")
+			self._logger.warning(u"Could not convert profile, aborting")
 			return flask.make_response(u"Could not convert Cura profile", 400)
 
 		name, _ = os.path.splitext(filename)
@@ -143,14 +143,14 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			                                   display_name=profile_display_name,
 			                                   description=profile_description)
 		except octoprint.slicing.ProfileAlreadyExists:
-			self._logger.warn(u"Profile {profile_name} already exists, aborting".format(**locals()))
+			self._logger.warning(u"Profile {profile_name} already exists, aborting".format(**locals()))
 			return flask.make_response(u"A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
 
 		if profile_make_default:
 			try:
 				self._slicing_manager.set_default_profile("cura", profile_name)
 			except octoprint.slicing.UnknownProfile:
-				self._logger.warn(u"Profile {profile_name} could not be set as default, aborting".format(**locals()))
+				self._logger.warning(u"Profile {profile_name} could not be set as default, aborting".format(**locals()))
 				return flask.make_response(u"The profile {profile_name} for slicer cura could not be set as default".format(**locals()), 500)
 
 		result = dict(
@@ -429,7 +429,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			if p.returncode == 0:
 				return True, dict(analysis=analysis)
 			else:
-				self._logger.warn(u"Could not slice via Cura, got return code %r" % p.returncode)
+				self._logger.warning(u"Could not slice via Cura, got return code %r" % p.returncode)
 				return False, "Got returncode %r" % p.returncode
 
 		except octoprint.slicing.SlicingCancelled as e:

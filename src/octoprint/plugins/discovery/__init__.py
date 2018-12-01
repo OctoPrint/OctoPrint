@@ -653,7 +653,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
 						interface_address = octoprint.util.address_for_client(*address)
 						if not interface_address:
-							self._logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
+							self._logger.warning("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
 							continue
 						message = location_message.format(uuid=self.get_uuid(), location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
 						sock.sendto(message, address)

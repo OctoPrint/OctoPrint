@@ -217,7 +217,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			try:
 				os.remove(archive.name)
 			except Exception as e:
-				self._logger.warn("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
+				self._logger.warning("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
 
 	##~~ EventHandlerPlugin
 
@@ -449,7 +449,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
 		if new_plugin is None:
-			self._logger.warn("The plugin was installed successfully, but couldn't be found afterwards to "
+			self._logger.warning("The plugin was installed successfully, but couldn't be found afterwards to "
 			                  "initialize properly during runtime. Please restart OctoPrint.")
 			result = dict(result=True,
 			              source=source,
@@ -505,7 +505,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("Bundled plugins cannot be uninstalled", 403)
 
 		if plugin.origin is None:
-			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
+			self._logger.warning(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
 			return make_response("Could not uninstall plugin, its origin is unknown")
 
 		if plugin.origin.type == "entry_point":
@@ -540,7 +540,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 						os.remove(pyc_file)
 
 		else:
-			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
+			self._logger.warning(u"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
 			return make_response("Could not uninstall plugin, its origin is unknown")
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
@@ -882,7 +882,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				parsed_date = dateutil.parser.parse(notice["date"])
 				notice["timestamp"] = parsed_date.timetuple()
 			except Exception as e:
-				self._logger.warn("Error while parsing date {!r} for plugin notice "
+				self._logger.warning("Error while parsing date {!r} for plugin notice "
 				                  "of plugin {}, ignoring notice: {}".format(notice["date"], key,  str(e)))
 				continue
 
