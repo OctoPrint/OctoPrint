@@ -125,7 +125,7 @@ def get_proc_dt_model():
 	global _proc_dt_model
 
 	if _proc_dt_model is None:
-		with io.open(_PROC_DT_MODEL_PATH, 'rb') as f:
+		with io.open(_PROC_DT_MODEL_PATH, 'rt', encoding='utf-8') as f:
 			_proc_dt_model = f.readline().strip(" \t\r\n\0")
 
 	return _proc_dt_model
@@ -151,7 +151,7 @@ def get_octopi_version():
 	global _octopi_version
 
 	if _octopi_version is None:
-		with io.open(_OCTOPI_VERSION_PATH, 'rb') as f:
+		with io.open(_OCTOPI_VERSION_PATH, 'rt', encoding='utf-8') as f:
 			_octopi_version = f.readline().strip(" \t\r\n\0")
 
 	return _octopi_version

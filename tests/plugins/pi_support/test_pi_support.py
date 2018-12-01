@@ -21,7 +21,7 @@ class PiSupportTestCase(unittest.TestCase):
 			m.return_value.readline.return_value = OCTOPI_VERSION
 			version = get_octopi_version()
 
-		m.assert_called_once_with("/etc/octopi_version", "r")
+		m.assert_called_once_with("/etc/octopi_version", "rb")
 		self.assertEqual(version, OCTOPI_VERSION)
 
 	def test_get_proc_dt_model(self):
@@ -32,7 +32,7 @@ class PiSupportTestCase(unittest.TestCase):
 			m.return_value.readline.return_value = DT_MODEL
 			model = get_proc_dt_model()
 
-		m.assert_called_once_with("/proc/device-tree/model", "r")
+		m.assert_called_once_with("/proc/device-tree/model", "rb")
 		self.assertEqual(model, DT_MODEL)
 
 	def test_get_vcgencmd_throttle_state(self):

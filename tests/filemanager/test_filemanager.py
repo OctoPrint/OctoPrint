@@ -16,9 +16,7 @@ import octoprint.filemanager.util
 
 import octoprint.settings
 
-# we can't seem to get this from six.moves, so we have to work around it to ensure py2/py3 compatability
-BUILTINS = "builtins"
-if six.PY2: BUILTINS = "__builtin__"
+import _fixups
 
 class FilemanagerMethodTest(unittest.TestCase):
 
@@ -292,7 +290,7 @@ class FileManagerTest(unittest.TestCase):
 		mock_time.return_value = now
 		self.local_storage.path_in_storage.return_value = path
 
-		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666)
 
@@ -317,8 +315,8 @@ class FileManagerTest(unittest.TestCase):
 
 		mock_yaml_safe_dump.side_effect = RuntimeError
 
-		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(), create=True) as m:
-		  self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 
 	@mock.patch("os.path.isfile")
 	@mock.patch("os.remove")
@@ -361,7 +359,7 @@ class FileManagerTest(unittest.TestCase):
 		            date=123456789)
 		text_data = yaml.dump(data)
 
-		with mock.patch("{}.open".format(BUILTINS), mock.mock_open(read_data=text_data)) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(read_data=text_data)) as m:
 			# moved safe_load to here so we could mock up the return value properly
 			with mock.patch("yaml.safe_load", return_value=data) as n:
 				result = self.file_manager.get_recovery_data()
