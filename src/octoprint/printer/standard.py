@@ -16,6 +16,10 @@ import threading
 import time
 
 from past.builtins import basestring
+try:
+	unicode
+except:
+	unicode = str
 
 from frozendict import frozendict
 

@@ -24,7 +24,10 @@ import tornado.util
 
 import octoprint.util
 
-
+try:
+	unicode
+except:
+	unicode = str
 
 def fix_json_encode():
 	"""

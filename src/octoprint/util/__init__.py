@@ -31,6 +31,10 @@ except ImportError:
 	import Queue as queue
 
 from past.builtins import basestring
+try:
+	unicode
+except:
+	unicode = str
 
 logger = logging.getLogger(__name__)
 
