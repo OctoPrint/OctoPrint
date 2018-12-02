@@ -1,6 +1,5 @@
+# coding=utf-8
 from __future__ import absolute_import, division, print_function
-import os
-import sys
 
 """
 This "python package" doesn't actually install. This is intentional. It is merely
@@ -16,6 +15,9 @@ behaviour if no such environment variable is set) is sadly not going to work out
 with versions of pip > 8.0.0, which capture all stdout output regardless of used
 --verbose or --log flags.
 """
+
+import os
+import sys
 
 def produce_output(stream):
 	from distutils.command.install import install as cmd_install

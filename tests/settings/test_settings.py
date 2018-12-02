@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
+
 """
 Tests for OctoPrint's Settings class
 

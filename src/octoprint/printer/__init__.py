@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
+
 """
 This module defines the interface for communicating with a connected printer.
 
@@ -14,8 +16,6 @@ abstracted version of the actual printer communication.
 .. autoclass:: PrinterCallback
    :members:
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
+
 """
 In this module resides the core data structures and logic of the plugin system. It is implemented in an OctoPrint-agnostic
 way and could be extracted into a separate Python module in the future.
@@ -19,8 +21,6 @@ way and could be extracted into a separate Python module in the future.
    :members:
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
 
 from setuptools import setup, find_packages
 from distutils.command.build_py import build_py as _build_py
