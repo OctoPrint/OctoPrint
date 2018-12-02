@@ -178,16 +178,16 @@ class PluginTestCase(unittest.TestCase):
 
 	def test_get_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin)
-		self.assertListEqual(["mixed_plugin", "startup_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin", "startup_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.SettingsPlugin)
-		self.assertListEqual(["mixed_plugin", "settings_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin", "settings_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsPlugin)
-		self.assertListEqual(["mixed_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.AssetPlugin)
-		self.assertListEqual(["deprecated_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["deprecated_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 	def test_get_filtered_implementations(self):
 		implementations = self.plugin_manager.get_filtered_implementations(lambda x: x._identifier.startswith("startup"), octoprint.plugin.StartupPlugin)
@@ -195,7 +195,7 @@ class PluginTestCase(unittest.TestCase):
 
 	def test_get_sorted_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, sorting_context="sorting_test")
-		self.assertListEqual(["startup_plugin", "mixed_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["startup_plugin", "mixed_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 	def test_client_registration(self):
 		def test_client(*args, **kwargs):
