@@ -508,7 +508,10 @@ def _extended_header_value(value):
 
 	if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
 		# RFC 5987 section 3.2
-		from urllib import unquote
+		try:
+			from urllib import unquote
+		except ImportError:
+			from urllib.parse import unquote
 		encoding, _, value = value.split("'", 2)
 		return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
 
