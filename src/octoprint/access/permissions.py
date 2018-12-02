@@ -5,6 +5,7 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import six
 
 from flask import g, abort
 from flask_babel import gettext
@@ -249,8 +250,8 @@ class PermissionsMetaClass(type):
 		return None
 
 
+@six.add_metaclass(PermissionsMetaClass)
 class Permissions(object):
-	__metaclass__ = PermissionsMetaClass
 
 	# Special permission
 	ADMIN                  = OctoPrintPermission("Admin",
