@@ -187,10 +187,7 @@ def _get_core_command_specs():
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue
-		spec.update(dict(action=action,
-		                 source="core",
-		                 async=True,
-		                 debug=True))
+		spec.update({'action': action, 'source': 'core', 'async': True, 'debug': True})
 		available_commands[action] = spec
 	return available_commands
 
