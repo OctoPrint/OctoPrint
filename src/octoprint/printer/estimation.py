@@ -220,20 +220,20 @@ class TimeEstimationHelper(object):
 	@property
 	def average_total(self):
 		if not self._count:
-			return None
+			return -1
 		else:
 			return self._sum_total / self._count
 
 	@property
 	def average_total_rolling(self):
 		if not self._count or self._count < self._rolling_window:
-			return None
+			return -1
 		else:
 			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):
 		if not self._count or self._count < self._rolling_window + 1:
-			return None
+			return -1
 		else:
 			return sum(self._distances) / len(self._distances)
