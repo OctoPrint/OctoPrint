@@ -9,6 +9,7 @@ import logging
 import os
 import mimetypes
 import re
+import sys
 
 import tornado
 import tornado.web
@@ -25,6 +26,7 @@ import tornado.util
 import octoprint.util
 
 
+PY3 = sys.version_info[0] == 3
 
 def fix_json_encode():
 	"""
@@ -513,8 +515,10 @@ def _extended_header_value(value):
 		except ImportError:
 			from urllib.parse import unquote
 		encoding, _, value = value.split("'", 2)
-		return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
-
+		if PY3:
+			return unquote(value, encoding=encoding)
+		else:
+			return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
 	else:
 		# no encoding provided, strip potentially present quotes and call it a day
 		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
