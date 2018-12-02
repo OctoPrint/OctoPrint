@@ -370,7 +370,7 @@ class PipCaller(CommandlineCaller):
 					return False, False, False, None
 
 				data = dict()
-				with io.open(testballoon_output_file, 'rb') as f:
+				with io.open(testballoon_output_file, 'rt', encoding='utf-8') as f:
 					for line in f:
 						key, value = line.split("=", 2)
 						data[key] = value

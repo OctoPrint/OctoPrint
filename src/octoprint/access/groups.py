@@ -184,7 +184,7 @@ class FilebasedGroupManager(GroupManager):
 	def _load(self):
 		if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
 			try:
-				with io.open(self._groupfile, 'rb') as f:
+				with io.open(self._groupfile, 'rt', encoding='utf-8') as f:
 					data = yaml.safe_load(f)
 
 					if not "groups" in data:

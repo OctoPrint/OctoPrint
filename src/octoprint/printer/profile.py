@@ -431,7 +431,7 @@ class PrinterProfileManager(object):
 			return None
 
 		import yaml
-		with io.open(path, 'rb') as f:
+		with io.open(path, 'rt', encoding='utf-8') as f:
 			profile = yaml.safe_load(f)
 
 		if profile is None or not isinstance(profile, dict):

@@ -759,7 +759,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if mtime + self._repository_cache_ttl >= time.time() > mtime:
 				try:
 					import json
-					with io.open(self._repository_cache_path, 'rb') as f:
+					with io.open(self._repository_cache_path, 'rt', encoding='utf-8') as f:
 						repo_data = json.load(f)
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
 				except:
@@ -833,7 +833,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if mtime + self._notices_cache_ttl >= time.time() > mtime:
 				try:
 					import json
-					with io.open(self._notices_cache_path, 'rb') as f:
+					with io.open(self._notices_cache_path, 'rt', encoding='utf-8') as f:
 						notice_data = json.load(f)
 					self._logger.info("Loaded notice data from disk, was still valid")
 				except:

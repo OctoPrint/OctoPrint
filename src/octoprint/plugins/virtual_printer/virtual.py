@@ -1107,7 +1107,7 @@ class VirtualPrinter(object):
 
 		handle = None
 		try:
-			handle = io.open(file, 'wb')
+			handle = io.open(file, 'wt', encoding='utf-8')
 		except:
 			self._output("error writing to file")
 			if handle is not None:
@@ -1134,7 +1134,7 @@ class VirtualPrinter(object):
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		try:
-			with io.open(self._selectedSdFile, 'rb') as f:
+			with io.open(self._selectedSdFile, 'rt', encoding='utf-8') as f:
 				for line in iter(f.readline, ""):
 					if self._killed or not self._sdPrinting:
 						break

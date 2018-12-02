@@ -809,7 +809,7 @@ class PreemptiveCache(object):
 		cache_data = None
 		with self._lock:
 			try:
-				with io.open(self.cachefile, 'rb') as f:
+				with io.open(self.cachefile, 'rt', encoding='utf-8') as f:
 					cache_data = yaml.safe_load(f)
 			except IOError as e:
 				import errno

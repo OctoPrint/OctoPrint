@@ -131,7 +131,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = io.open(versionfile_abs, 'rb')
+        f = io.open(versionfile_abs, 'rt', encoding='utf-8')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)

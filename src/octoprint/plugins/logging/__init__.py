@@ -146,7 +146,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with io.open(logging_file, 'rb') as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 		return config_from_file
 

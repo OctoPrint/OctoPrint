@@ -50,7 +50,7 @@ def getInstalledLanguagePacks():
 			if os.path.isfile(meta_path):
 				import yaml
 				try:
-					with io.open(meta_path, 'rb') as f:
+					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
 				except:
 					pass

@@ -1620,7 +1620,7 @@ def is_editable_install(install_dir, package, module, location):
 	if os.path.isfile(package_link):
 		expected_target = os.path.normcase(os.path.realpath(location))
 		try:
-			with io.open(package_link, 'rb') as f:
+			with io.open(package_link, 'rt', encoding='utf-8') as f:
 				contents = f.readlines()
 			for line in contents:
 				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))

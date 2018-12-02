@@ -643,7 +643,7 @@ class FileManager(object):
 
 		import yaml
 		try:
-			with io.open(self._recovery_file, 'rb') as f:
+			with io.open(self._recovery_file, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			return data
 		except:

@@ -188,7 +188,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		import yaml
 		try:
-			with io.open(self._version_cache_path, 'rb') as f:
+			with io.open(self._version_cache_path, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			timestamp = os.stat(self._version_cache_path).st_mtime
 		except:

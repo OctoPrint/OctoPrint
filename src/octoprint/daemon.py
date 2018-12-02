@@ -61,9 +61,9 @@ class Daemon:
 		# redirect standard file descriptors
 		sys.stdout.flush()
 		sys.stderr.flush()
-		si = io.open(os.devnull, 'rb')
-		so = io.open(os.devnull, 'a+')
-		se = io.open(os.devnull, 'a+')
+		si = io.open(os.devnull, 'rt', encoding='utf-8')
+		so = io.open(os.devnull, 'at+', encoding='utf-8')
+		se = io.open(os.devnull, 'at+', encoding='utf-8')
 
 		os.dup2(si.fileno(), sys.stdin.fileno())
 		os.dup2(so.fileno(), sys.stdout.fileno())
@@ -143,7 +143,7 @@ class Daemon:
 	def get_pid(self):
 		"""Get the pid from the pidfile."""
 		try:
-			with io.open(self.pidfile,'rb') as pf:
+			with io.open(self.pidfile,'rt', encoding='utf-8') as pf:
 				pid = int(pf.read().strip())
 		except (IOError, ValueError):
 			pid = None
@@ -151,7 +151,7 @@ class Daemon:
 
 	def set_pid(self, pid):
 		"""Write the pid to the pidfile."""
-		with io.open(self.pidfile,'wb+') as f:
+		with io.open(self.pidfile,'wt+', encoding='utf-8') as f:
 			f.write(str(pid) + '\n')
 
 	def remove_pidfile(self):

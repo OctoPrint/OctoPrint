@@ -868,7 +868,7 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with io.open(self._configfile, 'rb') as f:
+			with io.open(self._configfile, 'rt', encoding='utf-8') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
@@ -907,7 +907,7 @@ class Settings(object):
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with io.open(overlay, 'rb') as f:
+				with io.open(overlay, 'rt', encoding='utf-8') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
@@ -1795,8 +1795,8 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 			# to determine whether things are *actually* writable
 			testfile = os.path.join(folder, ".testballoon.txt")
 			try:
-				with io.open(testfile, 'wb') as f:
-					f.write("test")
+				with io.open(testfile, 'wt', encoding='utf-8') as f:
+					f.write("test".decode('utf-8'))
 				os.remove(testfile)
 			except:
 				if log_error:

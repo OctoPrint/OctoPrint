@@ -500,7 +500,7 @@ class LocalFileStorage(StorageInterface):
 		if os.path.exists(old_metadata_path):
 			# load the old metadata file
 			try:
-				with io.open(old_metadata_path, 'rb') as f:
+				with io.open(old_metadata_path, 'rt', encoding='utf-8') as f:
 					import yaml
 					self._old_metadata = yaml.safe_load(f)
 			except:
@@ -1522,7 +1522,7 @@ class LocalFileStorage(StorageInterface):
 
 			metadata_path = os.path.join(path, ".metadata.json")
 			if os.path.exists(metadata_path):
-				with io.open(metadata_path, 'rb') as f:
+				with io.open(metadata_path, 'rt', encoding='utf-8') as f:
 					try:
 						import json
 						metadata = json.load(f)
@@ -1577,7 +1577,7 @@ class LocalFileStorage(StorageInterface):
 				# TODO 1.3.10 Remove ".metadata.yaml" files
 				return
 
-			with io.open(metadata_path_yaml, 'rb') as f:
+			with io.open(metadata_path_yaml, 'rt', encoding='utf-8') as f:
 				try:
 					metadata = yaml.safe_load(f)
 				except:

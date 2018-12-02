@@ -460,7 +460,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def _load_profile(self, path):
 		import yaml
 		profile_dict = dict()
-		with io.open(path, 'rb') as f:
+		with io.open(path, 'rt', encoding='utf-8') as f:
 			try:
 				profile_dict = yaml.safe_load(f)
 			except:

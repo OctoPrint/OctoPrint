@@ -443,7 +443,7 @@ class TestSettings(unittest.TestCase):
 	def test_effective_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.expected_effective))
+			hash.update(yaml.safe_dump(self.expected_effective).encode('utf-8'))
 			expected_effective_hash = hash.hexdigest()
 			print(yaml.safe_dump(self.expected_effective))
 
@@ -456,7 +456,7 @@ class TestSettings(unittest.TestCase):
 	def test_config_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.config))
+			hash.update(yaml.safe_dump(self.config).encode('utf-8'))
 			expected_config_hash = hash.hexdigest()
 
 			settings = octoprint.settings.Settings()

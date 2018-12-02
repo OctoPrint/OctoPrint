@@ -433,7 +433,7 @@ class FilebasedUserManager(UserManager):
 	def _load(self):
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			self._customized = True
-			with io.open(self._userfile, 'rb') as f:
+			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]

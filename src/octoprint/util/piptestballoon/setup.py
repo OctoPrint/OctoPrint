@@ -40,7 +40,7 @@ path = os.environ.get("TESTBALLOON_OUTPUT", None)
 if path is not None:
 	# environment variable set, write to a log
 	path = os.path.abspath(path)
-	with io.open(path, 'w+b') as output:
+	with io.open(path, 'wb+') as output:
 		produce_output(output)
 else:
 	# write to stdout
