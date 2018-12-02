@@ -27,20 +27,12 @@ import octoprint.settings
 class TestSettings(unittest.TestCase):
 
 	def _load_yaml(self, fname):
-		if sys.version_info[0] >= 3:
-			with io.open(fname, 'r+b', encoding='utf-8') as f:
-				return yaml.safe_load(f)
-		else:
-			with io.open(fname, 'r+b') as f:
-				return yaml.safe_load(f)
+		with io.open(fname, 'rt+', encoding='utf-8') as f:
+			return yaml.safe_load(f)
 
 	def _dump_yaml(self, fname, config):
-		if sys.version_info[0] >= 3:
-			with io.open(fname, 'w+', encoding='utf-8') as f:
-				yaml.safe_dump(config, f)
-		else:
-			with io.open(fname, 'wb+') as f:
-				yaml.safe_dump(config, f)
+		with io.open(fname, 'wt+', encoding='utf-8') as f:
+			yaml.safe_dump(config, f)
 
 	def setUp(self):
 		self.base_path = os.path.join(os.path.dirname(__file__), "_files")

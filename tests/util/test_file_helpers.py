@@ -336,12 +336,8 @@ class IsHiddenPathTest(unittest.TestCase):
 		import sys
 		for attr in ("path_always_visible", "path_hidden_on_windows", "path_always_hidden"):
 			path = getattr(self, attr)
-			if sys.version_info[0] >= 3:
-				with io.open(path, 'w+b', encoding='utf-8') as f:
-					f.write(attr)
-			else:
-				with io.open(path, 'wb+') as f:
-					f.write(attr)
+			with io.open(path, 'wt+', encoding='utf-8') as f:
+				f.write(attr)
 
 		if sys.platform == "win32":
 			# we use ctypes and the windows API to set the hidden attribute on the file

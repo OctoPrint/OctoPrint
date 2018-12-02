@@ -307,7 +307,7 @@ def git_parse_lookup_file(path):
         return []
 
     lookup = []
-    with io.open(path, 'rb') as f:
+    with io.open(path, 'rt', encoding='utf-8') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.rindex("#")]
