@@ -11,7 +11,8 @@ from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
 from octoprint.util import is_hidden_path
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
+from octoprint.util.platform import is_os_compatible
 from octoprint.util.pip import LocalPipCaller
 
 try:
@@ -83,7 +84,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		unknown_plugins = self._get_unknown_plugins()
 		return flask.jsonify(backups=backups,
 		                     backup_in_progress=len(self._in_progress) > 0,
-		                     unknown_plugins=unknown_plugins)
+		                     unknown_plugins=unknown_plugins,
+		                     restore_supported=is_os_compatible(["!windows"]))
 
 	@octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
 	@admin_permission.require(403)
@@ -184,6 +186,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def perform_restore(self):
+		if not is_os_compatible(["!windows"]):
+			return flask.make_response(u"Invalid request, the restores are not supported on the underlying operating system", 400)
+
 		input_name = "file"
 		input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
 
@@ -212,8 +217,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				self._send_client_message("logline", dict(line=line, type="stdout"))
 
 			for plugin in plugins:
-				octoprint_compatible = plugin["compatibility"]["octoprint"]
-				os_compatible = plugin["compatibility"]["os"]
+				octoprint_compatible = is_octoprint_compatible(*plugin["compatibility"]["octoprint"])
+				os_compatible = is_os_compatible(plugin["compatibility"]["os"])
 				compatible = octoprint_compatible and os_compatible
 				if not compatible:
 					if not octoprint_compatible and not os_compatible:
@@ -260,8 +265,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		def on_restore_done(path):
 			self._send_client_message("restore_done")
 
-		def on_restore_failed(path, exc_info):
+		def on_restore_failed(path):
 			self._send_client_message("restore_failed")
+
+		def on_invalid_backup(line):
+			on_log_error(line)
 
 		archive = tempfile.NamedTemporaryFile(delete=False)
 		archive.close()
@@ -276,6 +284,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_install_plugins=on_install_plugins,
 		                                      on_report_unknown_plugins=on_report_unknown_plugins,
+		                                      on_invalid_backup=on_invalid_backup,
 		                                      on_log_progress=on_log_progress,
 		                                      on_log_error=on_log_error,
 		                                      on_restore_start=on_restore_start,
@@ -384,8 +393,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					click.echo(u"\t{}".format(line))
 
 				for plugin in plugins:
-					octoprint_compatible = plugin["compatibility"]["octoprint"]
-					os_compatible = plugin["compatibility"]["os"]
+					octoprint_compatible = is_octoprint_compatible(*plugin["compatibility"]["octoprint"])
+					os_compatible = is_os_compatible(plugin["compatibility"]["os"])
 					compatible = octoprint_compatible and os_compatible
 					if not compatible:
 						if not octoprint_compatible and not os_compatible:
@@ -432,7 +441,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                        on_install_plugins=on_install_plugins,
 			                        on_report_unknown_plugins=on_report_unknown_plugins,
 			                        on_log_progress=on_log_progress,
-			                        on_log_error=on_log_error):
+			                        on_log_error=on_log_error,
+			                        on_invalid_backup=on_log_error):
 				click.echo(u"Restored from {}".format(path))
 			else:
 				click.echo(u"Restoring from {} failed".format(path), err=True)
@@ -634,6 +644,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				for folder in default_settings["folder"].keys():
 					if folder in exclude:
 						continue
+
+					if folder in ("generated", "logs", "watched",):
+						continue
+
 					add_to_zip(settings.global_get_basefolder(folder),
 					           "basedir/" + folder.replace("_", "/"),
 					           ignored=[own_folder,])
@@ -682,6 +696,13 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                    on_restore_start=None,
 	                    on_restore_done=None,
 	                    on_restore_failed=None):
+		if not is_os_compatible(["!windows"]):
+			if callable(on_log_error):
+				on_log_error(u"Restore is not supported on this operating system")
+			if callable(on_restore_failed):
+				on_restore_failed(path)
+			return False
+
 		restart_command = settings.global_get(["server", "commands", "serverRestartCommand"])
 
 		basedir = settings._basedir
@@ -705,15 +726,19 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				except KeyError:
 					if callable(on_invalid_backup):
 						on_invalid_backup(u"Not an OctoPrint backup, lacks metadata.json")
+					if callable(on_restore_failed):
+						on_restore_failed(path)
 					return False
 
 				metadata_bytes = zip.read(metadata_zipinfo)
 				metadata = json.loads(metadata_bytes)
 
-				backup_version = get_comparable_version(metadata["version"])
-				if backup_version > get_octoprint_version():
+				backup_version = get_comparable_version(metadata["version"], base=True)
+				if backup_version > get_octoprint_version(base=True):
 					if callable(on_invalid_backup):
 						on_invalid_backup(u"Backup is from a newer version of OctoPrint and cannot be applied")
+					if callable(on_restore_failed):
+						on_restore_failed(path)
 					return False
 
 				# unzip to temporary folder
@@ -732,6 +757,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					if not os.path.exists(configfile):
 						if callable(on_invalid_backup):
 							on_invalid_backup(u"Backup lacks config.yaml")
+						if callable(on_restore_failed):
+							on_restore_failed(path)
 						return False
 
 					import yaml
@@ -744,6 +771,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						if not os.path.exists(userfile):
 							if callable(on_invalid_backup):
 								on_invalid_backup(u"Backup lacks users.yaml")
+							if callable(on_restore_failed):
+								on_restore_failed(path)
 							return False
 
 					if callable(on_log_progress):
@@ -835,7 +864,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				if callable(on_log_error):
 					on_log_error(u"Error while running restore", exc_info=exc_info)
 				if callable(on_restore_failed):
-					on_restore_failed(path, exc_info)
+					on_restore_failed(path)
 			finally:
 				del exc_info
 			return False
@@ -852,6 +881,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if callable(on_log_progress):
 				on_log_progress(u"Restarting...")
+			if callable(on_restore_done):
+				on_restore_done(path)
+
 			try:
 				sarge.run(restart_command, async_=True)
 			except:
@@ -861,8 +893,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					on_log_error(u"Please restart OctoPrint manually")
 				return False
 
-		if callable(on_restore_done):
-			on_restore_done(path)
+		else:
+			if callable(on_restore_done):
+				on_restore_done(path)
 
 		return True
 

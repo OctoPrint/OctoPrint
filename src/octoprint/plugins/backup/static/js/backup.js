@@ -27,6 +27,7 @@ $(function() {
 
         self.excludeFromBackup = ko.observableArray([]);
         self.backupInProgress = ko.observable(false);
+        self.restoreSupported = ko.observable(true);
 
         self.backupUploadButton = $("#settings-backup-upload");
         self.backupUploadData = undefined;
@@ -66,6 +67,7 @@ $(function() {
         self.fromResponse = function(response) {
             self.backups.updateItems(response.backups);
             self.unknownPlugins(response.unknown_plugins);
+            self.restoreSupported(response.restore_supported);
         };
 
         self.createBackup = function() {
@@ -88,7 +90,15 @@ $(function() {
         };
 
         self.restoreBackup = function(backup) {
+            if (!self.restoreSupported()) return;
+
             var perform = function() {
+                self.restoreInProgress(true);
+                self.loglines.removeAll();
+                self.loglines.push({line: "Preparing to restore...", stream: "message"});
+                self.loglines.push({line: " ", stream: "message"});
+                self.restoreDialog.modal({keyboard: false, backdrop: "static", show: true});
+
                 OctoPrint.plugins.backup.restoreBackup(backup);
             };
             showConfirmationDialog(_.sprintf(gettext("You are about to restore the backup file \"%(name)s\". This cannot be undone."), {name: backup}),
@@ -99,6 +109,12 @@ $(function() {
             if (self.backupUploadData === undefined) return;
 
             var perform = function() {
+                self.restoreInProgress(true);
+                self.loglines.removeAll();
+                self.loglines.push({line: "Uploading backup, this can take a while. Please wait...", stream: "message"});
+                self.loglines.push({line: " ", stream: "message"});
+                self.restoreDialog.modal({keyboard: false, backdrop: "static", show: true});
+
                 self.backupUploadData.submit();
             };
             showConfirmationDialog(_.sprintf(gettext("You are about to upload and restore the backup file \"%(name)s\". This cannot be undone."), {name: self.backupUploadName()}),
@@ -171,11 +187,8 @@ $(function() {
                     hide: false
                 });
             } else if (data.type === "restore_started") {
-                self.restoreInProgress(true);
-                self.loglines.removeAll();
                 self.loglines.push({line: gettext("Restoring from backup..."), stream: "message"});
                 self.loglines.push({line: " ", stream: "message"});
-                self.restoreDialog.modal({keyboard: false, backdrop: "static", show: true});
             } else if (data.type === "restore_failed") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({line: gettext("Restore failed! Check the above output and octoprint.log for reasons as to why."), stream: "error"});

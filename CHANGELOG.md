@@ -1,5 +1,37 @@
 # OctoPrint Changelog
 
+## 1.3.10rc4 (2018-12-03)
+
+### Improvements
+
+  * Backup: Exclude `generated`, `logs` and `watched` folders from backup
+  * Backup: Use base version for version check on restore
+
+### Bug fixes
+
+  * [#2920](https://github.com/foosel/OctoPrint/issues/2920) - Backup: Fix wrong compatibility check logic in plugin install during restore
+  * Backup: Disable restore on Windows servers where it's not supported thanks to the Windows file system
+  * Backup: Fix reporting of restore failure due to version mismatch or other cases of an invalid backup
+  * Backup: Fix feedback in UI during restore, start feedback right on upload of backup
+  * Printer Safety: Fix localization of warning message
+
+### Unreproduced issues
+
+The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
+
+  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
+  * ["temperature changes doesn't work"](https://github.com/foosel/OctoPrint/issues/2889#issuecomment-441449215)
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc3...1.3.10rc4)
+
+## 1.3.10rc3 (2018-11-28)
+
 ### Improvements
 
   * More resilience against third party plugins that happily block or kill important startup threads

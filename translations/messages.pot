@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.3.10rc2.dev27+g13260fa21\n"
+"Project-Id-Version: OctoPrint 1.3.10rc4.dev10+g38fce1665\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2018-11-28 12:25+0100\n"
+"POT-Creation-Date: 2018-12-03 11:55+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -97,7 +97,7 @@ msgid "Mark as last read"
 msgstr ""
 
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:44
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:127
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:133
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:121
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:235
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:136
@@ -299,119 +299,119 @@ msgstr ""
 msgid "Generate"
 msgstr ""
 
-#: src/octoprint/plugins/backup/__init__.py:881
+#: src/octoprint/plugins/backup/__init__.py:914
 msgid "Backup & Restore"
 msgstr ""
 
-#: src/octoprint/plugins/backup/__init__.py:884
+#: src/octoprint/plugins/backup/__init__.py:917
 msgid ""
 "Without this plugin you will no longer be able to backup & restore your "
 "OctoPrint settings and data."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:86
+#: src/octoprint/plugins/backup/static/js/backup.js:88
 #, python-format
 msgid "You are about to delete backup file \"%(name)s\"."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:94
+#: src/octoprint/plugins/backup/static/js/backup.js:104
 #, python-format
 msgid ""
 "You are about to restore the backup file \"%(name)s\". This cannot be "
 "undone."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:104
+#: src/octoprint/plugins/backup/static/js/backup.js:120
 #, python-format
 msgid ""
 "You are about to upload and restore the backup file \"%(name)s\". This "
 "cannot be undone."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:115
+#: src/octoprint/plugins/backup/static/js/backup.js:131
 msgid ""
 "You are about to delete the record of plugins unknown during the last "
 "restore."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:139
+#: src/octoprint/plugins/backup/static/js/backup.js:155
 #, python-format
 msgid "You are about to delete %(count)d backups."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:159
+#: src/octoprint/plugins/backup/static/js/backup.js:175
 msgid "Backup created successfully"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:168
+#: src/octoprint/plugins/backup/static/js/backup.js:184
 msgid "Creating the backup failed"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:169
+#: src/octoprint/plugins/backup/static/js/backup.js:185
 #, python-format
 msgid ""
 "OctoPrint could not create your backup. Please consult "
 "<code>octoprint.log</code> for details. Error: %(error)s"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:176
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:121
+#: src/octoprint/plugins/backup/static/js/backup.js:190
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:127
 msgid "Restoring from backup..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:181
+#: src/octoprint/plugins/backup/static/js/backup.js:194
 msgid ""
 "Restore failed! Check the above output and octoprint.log for reasons as "
 "to why."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:185
+#: src/octoprint/plugins/backup/static/js/backup.js:198
 msgid "Restore successful! The server will now be restarted!"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:190
+#: src/octoprint/plugins/backup/static/js/backup.js:203
 #, python-format
 msgid "Installing plugin \"%(plugin)s}\"..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:196
+#: src/octoprint/plugins/backup/static/js/backup.js:209
 #, python-format
 msgid ""
 "Cannot install plugin \"%(plugin)s\" due to it being incompatible to this"
 " OctoPrint version and/or underlying operating system"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:202
+#: src/octoprint/plugins/backup/static/js/backup.js:215
 #, python-format
 msgid ""
 "There are %(count)d plugins you'll need to install manually since they "
 "aren't registered on the repository:"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:230
+#: src/octoprint/plugins/backup/static/js/backup.js:243
 msgid "Deleting backups"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:231
+#: src/octoprint/plugins/backup/static/js/backup.js:244
 #, python-format
 msgid "Deleting %(count)d backups..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:235
+#: src/octoprint/plugins/backup/static/js/backup.js:248
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:313
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:327
 #, python-format
 msgid "Deleted %(filename)s..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:238
+#: src/octoprint/plugins/backup/static/js/backup.js:251
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:316
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:330
 #, python-format
 msgid "Deletion of %(filename)s failed, continuing..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:239
+#: src/octoprint/plugins/backup/static/js/backup.js:252
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:317
 #, python-format
 msgid "Deletion of %(filename)s failed: %(error)s"
@@ -502,27 +502,36 @@ msgstr ""
 msgid "Create backup now"
 msgstr ""
 
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:94
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:95
 msgid "Restore from uploaded backup"
 msgstr ""
 
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:96
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:97
 msgid "Restore settings & files from an uploaded backup archive."
 msgstr ""
 
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:100
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:101
 msgid "Backup file"
 msgstr ""
 
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:104
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:105
 #: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:13
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:209
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:104
 msgid "Browse..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:114
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:115
 msgid "Upload & restore"
+msgstr ""
+
+#: src/octoprint/plugins/backup/templates/backup_settings.jinja2:122
+#, python-format
+msgid ""
+"Please note that the operating system that this OctoPrint server is "
+"running on does not support automatically restoring backups. You will "
+"have to <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener "
+"noreferrer\">restore your backups manually for now</a>."
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/__init__.py:123
