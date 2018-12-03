@@ -51,7 +51,8 @@ INSTALL_REQUIRES = [
 	"futures>=3.1.1,<3.2",
 	"emoji>=0.4.5,<0.5",
 	"monotonic>=1.3,<1.4",
-	"frozendict>=1.2,<1.3"
+	"frozendict>=1.2,<1.3",
+	"six>=1.11.0"
 ]
 
 if sys.platform == "darwin":
