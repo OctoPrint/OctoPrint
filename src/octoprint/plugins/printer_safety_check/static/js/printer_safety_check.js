@@ -24,7 +24,7 @@ $(function() {
         self.fromResponse = function(data) {
             var warnings = [];
             _.each(data, function(message, warning_type) {
-                warnings.push({type: warning_type, message: message});
+                warnings.push({type: warning_type, message: gettext(message)});
             });
             self.warnings(warnings);
         };
