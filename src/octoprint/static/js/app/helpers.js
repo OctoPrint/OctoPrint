@@ -574,15 +574,15 @@ function formatFilament(filament) {
     return _.sprintf(result, {length: filament["length"] / 1000, volume: filament["volume"]});
 }
 
-function cleanTemperature(temp) {
+function cleanTemperature(temp, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     return temp;
 }
 
-function formatTemperature(temp, showF) {
+function formatTemperature(temp, showF, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     if (showF) {
         return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
     } else {
