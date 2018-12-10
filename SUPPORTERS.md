@@ -11,7 +11,6 @@ thanks to everyone who contributed!
   * Arnljot Arntsen
   * Boris Hussein
   * Brad Jackson
-  * Charles Haislip
   * Christian Petropolis
   * Christian Wolf
   * COLLE+McVOY
@@ -39,15 +38,14 @@ thanks to everyone who contributed!
   * LulzBot®
   * Makespace Madrid
   * Mark Walker
-  * Martin Beattie
   * Michael Aumock
   * Miles Flavel
+  * Mosaic Manufacturing
   * Patrick McGinnis
   * Prof Yuh Wen Chen
   * Randy C. Will
   * Robert Gusek
   * Roger Strolz
-  * Rudolff Vang
   * Samer Najia
   * Simon Hallam
   * Stefan Krister
@@ -56,4 +54,4 @@ thanks to everyone who contributed!
   * Timothy D Hoogland
   * Trent Shumay
 
-and 1436 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1446 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
