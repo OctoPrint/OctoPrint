@@ -49,7 +49,8 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/action_command_prompt.js"])
+		return dict(js=["js/action_command_prompt.js"],
+		            clientjs=["clientjs/action_command_prompt.js"])
 
 	#~ SettingsPlugin
 

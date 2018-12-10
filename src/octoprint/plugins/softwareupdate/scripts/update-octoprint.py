@@ -59,7 +59,9 @@ def _execute(command, **kwargs):
 		joined_command = command
 	_log_call(joined_command)
 
-	kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+	kwargs.update(dict(async_=True,
+	                   stdout=sarge.Capture(),
+	                   stderr=sarge.Capture()))
 
 	try:
 		p = sarge.run(command, **kwargs)

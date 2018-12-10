@@ -12,13 +12,16 @@ import octoprint_setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+# Supported python versions
+PYTHON_REQUIRES = ">=2.7.3,<3" # TODO change to >=2.7.9,<3 in 1.3.11
+
 # Requirements for our application
 INSTALL_REQUIRES = [
 	"flask>=0.10.1,<0.11",
 	"Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                      # guarantee backwards compatibility for plugins and such with that
 	                      # version, hence we need to pin to a lower version for now. See #1697
-	"regex==2018.11.3",   # Current version as of 2018-11-06 is broken. See #2874
+	"regex!=2018.11.6", # avoid broken 2018.11.6. See #2874
 	"werkzeug>=0.8.3,<0.9",
 	"tornado==4.5.3",
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
@@ -32,8 +35,7 @@ INSTALL_REQUIRES = [
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.8.3,<0.9",
-	"sarge==0.1.4",  # 0.1.5 introduced a breaking change with regards to the async keyword. Pinning
-	                 # to 0.1.4 for now to work around this.
+	"sarge==0.1.5post0",
 	"netifaces>=0.10.6,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.2.3,<3.3",
@@ -80,9 +82,6 @@ EXTRA_REQUIRES = dict(
 		"cookiecutter>=1.4,<1.7"
 	]
 )
-
-# Additional requirements for setup
-SETUP_REQUIRES = []
 
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
@@ -156,10 +155,10 @@ def params():
 	long_description = read_file_contents(os.path.join(here, "README.md"))
 	long_description_content_type = "text/markdown"
 
+	python_requires = PYTHON_REQUIRES
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
-	setup_requires = SETUP_REQUIRES
 
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",

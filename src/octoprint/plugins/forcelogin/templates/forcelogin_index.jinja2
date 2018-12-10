@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>OctoPrint Login</title>
+
+    {% include "parts/forcelogin_css.jinja2" %}
+
+    {% include "parts/forcelogin_javascripts.jinja2" %}
+</head>
+<body>
+    <div class="container">
+        <form class="form-signin">
+            <h2 class="form-signin-heading">{{ _('Please log in') }}</h2>
+
+            <div id="login-error" class="alert alert-error">{{ _('Incorrect username or password.') }}</div>
+            <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
+
+            <input type="text" id="login-user" class="input-block-level" placeholder="{{ _('Username') }}">
+            <input type="password" id="login-password" class="input-block-level" placeholder="{{ _('Password') }}">
+            <label class="checkbox">
+                <input type="checkbox" id="login-remember"> {{ _('Remember me') }}
+            </label>
+            <button class="btn btn-block btn-large btn-primary" id="login-button" type="submit">{{ _('Log in') }}</button>
+        </form>
+    </div>
+
+    <div id="login-overlay">
+        <div class="background"></div>
+        <div class="wrapper">
+            <div class="outer">
+                <div class="inner">
+                    <div class="content">
+                        <i class="fa fa-spinner fa-spin fa-4x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

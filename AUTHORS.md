@@ -91,6 +91,9 @@ date of first contribution):
   * [Ganey](https://github.com/ganey)
   * [Sven Lohrmann](https://github.com/malnvenshorn)
   * [Andy Castille](https://github.com/klikini)
+  * [Gaston Dombiak](https://github.com/gdombiak)
+  * [Brad Fisher](https://github.com/bradcfisher)
+  * [Aldo Hoeben](https://github.com/fieldofview)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

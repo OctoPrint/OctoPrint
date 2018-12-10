@@ -562,6 +562,9 @@ Use the following settings to enable or disable OctoPrint features:
      - M117
      - M118
 
+     # whether G90/G91 also influence absolute/relative mode of extruders
+     g90InfluencesExtruder: false
+
 .. _sec-configuration-config_yaml-folder:
 
 Folder
@@ -1058,6 +1061,15 @@ Use the following settings to configure the server:
        # How many days to leave unused entries in the preemptive cache config
        until: 7
 
+     # Configuration of the client IP check to warn about connections from external networks
+     ipCheck:
+
+       # whether to enable the check, defaults to true
+       enabled: true
+
+       # additional non-local subnets to consider trusted, in CIDR notation, e.g. "192.168.1.0/24"
+       trustedSubnets: []
+
 
 .. note::
 
@@ -1165,7 +1177,7 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
    # A list of filters to display in the terminal tab. Defaults to the filters shown below
    terminalFilters:
    - name: Suppress temperature messages
-     regex: '(Send: (N\d+\s+)?M105)|(Recv: ok T:)'
+     regex: '(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)'
    - name: Suppress SD status messages
      regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
    - name: Suppress wait responses

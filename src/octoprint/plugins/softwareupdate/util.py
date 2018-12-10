@@ -9,12 +9,14 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from .exceptions import ScriptError
 
 
-def execute(command, cwd=None, evaluate_returncode=True, async=False):
+def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
+	do_async = kwargs.get("do_async", kwargs.get("async", False))
+
 	import sarge
 	p = None
 
 	try:
-		p = sarge.run(command, cwd=cwd, stdout=sarge.Capture(), stderr=sarge.Capture(), async=async)
+		p = sarge.run(command, cwd=cwd, stdout=sarge.Capture(), stderr=sarge.Capture(), async_=do_async)
 	except:
 		returncode = p.returncode if p is not None else None
 		stdout = p.stdout.text if p is not None and p.stdout is not None else ""

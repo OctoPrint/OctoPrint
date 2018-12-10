@@ -31,6 +31,8 @@ class UserManager(object):
 		self._sessionids_by_userid = dict()
 		self._enabled = True
 
+		self._callbacks = []
+
 	@property
 	def enabled(self):
 		return self._enabled
@@ -44,6 +46,16 @@ class UserManager(object):
 
 	def disable(self):
 		self._enabled = False
+
+	def register_callback(self, callback):
+		self._callbacks.append(callback)
+
+	def unregister_callback(self, callback):
+		try:
+			self._callbacks.remove(callback)
+		except ValueError:
+			# just wasn't registered
+			pass
 
 	def login_user(self, user):
 		self._cleanup_sessions()
@@ -70,6 +82,12 @@ class UserManager(object):
 
 		self._logger.debug("Logged in user: %r" % user)
 
+		for callback in self._callbacks:
+			try:
+				callback("login", user)
+			except:
+				self._logger.exception("Error while calling login callback {!r}".format(callback))
+
 		return user
 
 	def logout_user(self, user):
@@ -95,6 +113,12 @@ class UserManager(object):
 			del self._session_users_by_session[sessionid]
 
 		self._logger.debug("Logged out user: %r" % user)
+
+		for callback in self._callbacks:
+			try:
+				callback("logout", user)
+			except:
+				self._logger.exception("Error while calling logout callback {!r}".format(callback))
 
 	def _cleanup_sessions(self):
 		import time
@@ -517,6 +541,11 @@ class SessionUser(wrapt.ObjectProxy):
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
 		self._self_session = "".join(random.choice(chars) for _ in range(10))
 		self._self_created = time.time()
+
+	def asDict(self):
+		result = self.__wrapped__.asDict()
+		result.update(dict(session=self.session))
+		return result
 
 	@property
 	def session(self):

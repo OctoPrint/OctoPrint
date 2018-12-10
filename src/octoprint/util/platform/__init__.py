@@ -49,9 +49,38 @@ _OPERATING_SYSTEMS = dict(windows=["win32"],
                           freebsd=lambda x: x.startswith("freebsd"))
 OPERATING_SYSTEM_UNMAPPED = "unmapped"
 
+
 def get_os():
 	for identifier, platforms in _OPERATING_SYSTEMS.items():
 		if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
 			return identifier
 	else:
 		return OPERATING_SYSTEM_UNMAPPED
+
+
+def is_os_compatible(compatibility_entries, current_os=None):
+	"""
+	Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
+	"""
+	if len(compatibility_entries) == 0:
+		# shortcut - no compatibility info means we are compatible
+		return True
+
+	if current_os is None:
+		current_os = get_os()
+
+	negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
+	positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
+
+	negative_match = False
+	if negative_entries:
+		# check if we are blacklisted
+		negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
+
+	positive_match = True
+	if positive_entries:
+		# check if we are whitelisted
+		positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
+
+	return positive_match and not negative_match
+

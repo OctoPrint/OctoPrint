@@ -1,0 +1,23 @@
+<h3>{{ _('Configure Anonymous Usage Tracking') }}</h3>
+
+{% include "snippets/plugins/tracking/trackingDescription.jinja2" %}
+
+{% include "snippets/plugins/tracking/trackingDetails.jinja2" %}
+
+<p>
+    {{ _('<strong>Note:</strong> You can always change your decision and also access more granular controls via Settings > Anonymous Usage Tracking.') }}
+</p>
+
+<div class="row-fluid">
+    <a href="javascript:void(0)" class="btn span6" data-bind="click: function() { if(!setup()){disableUsage()}}, enable: !setup(), css: {disabled: setup()}"><i class="fa fa-spinner fa-spin" style="display: none" data-bind="visible: active() && decision() === false"></i> {{ _('Disable Anonymous Usage Tracking') }}</a>
+    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enableUsage()}}, enable: !setup(), css: {disabled: setup()}"><i class="fa fa-spinner fa-spin" style="display: none" data-bind="visible: active() && decision() === true"></i> {{ _('Enable Anonymous Usage Tracking') }}</a>
+</div>
+
+<div class="tracking_decision" style="display: none" data-bind="visible: setup()">
+    <div class="text-center" style="display: none" data-bind="visible: decision()">{% trans %}
+        Anonymous Usage Tracking is <strong class="text-success">enabled</strong>.
+    {% endtrans %}</div>
+    <div class="text-center" style="display: none" data-bind="visible: !decision()">{% trans %}
+        Anonymous Usage Tracking is <strong class="text-danger">disabled</strong>.
+    {% endtrans %}</div>
+</div>

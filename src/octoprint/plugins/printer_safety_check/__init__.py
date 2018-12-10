@@ -36,8 +36,18 @@ ANYCUBIC_RECEIVED_TEST = lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower()
 CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
 CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
 
+# Creality Ender 3
+ENDER3_AUTHOR = " | Author: (Ender3)".lower()
+ENDER3_RECEIVED_TEST = lambda line: line and ENDER3_AUTHOR in line.lower()
+
+# iMe on Micro3D
+IME_M115_TEST = lambda name, data: name and name.lower().startswith("ime")
+
 # Malyan M200 aka Monoprice Select Mini
 MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
+
+# Stock Micro3D
+MICRO3D_M115_TEST = lambda name, data: name and name.lower().startswith("micro3d")
 
 # Any Repetier versions < 0.92
 REPETIER_BEFORE_092_M115_TEST = lambda name, data: name and name.lower().startswith("repetier") and extract_repetier_version(name) is not None and extract_repetier_version(name) < get_comparable_version("0.92")
@@ -46,11 +56,12 @@ REPETIER_BEFORE_092_M115_TEST = lambda name, data: name and name.lower().startsw
 THERMAL_PROTECTION_CAP_TEST = lambda cap, enabled: cap == "THERMAL_PROTECTION" and not enabled
 
 SAFETY_CHECKS = {
-	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, MALYANM200_M115_TEST, REPETIER_BEFORE_092_M115_TEST),
-	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST),
+	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, IME_M115_TEST, MALYANM200_M115_TEST, MICRO3D_M115_TEST,
+	                              REPETIER_BEFORE_092_M115_TEST),
+	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
 	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
-	                        message=u"Your printer's firmware is known to lack mandatory safety features (e.g. " \
-	                                u"thermal runaway protection). This is a fire risk.")
+	                        message=gettext(u"Your printer's firmware is known to lack mandatory safety features (e.g. "
+	                                        u"thermal runaway protection). This is a fire risk."))
 }
 
 def extract_repetier_version(name):
@@ -90,6 +101,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_assets(self):
 		return dict(js=("js/printer_safety_check.js",),
+		            clientjs=("clientjs/printer_safety_check.js",),
 		            css=("css/printer_safety_check.css",),
 		            less=("less/printer_safety_check.less",))
 

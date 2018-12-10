@@ -1,0 +1,8 @@
+#octopi_support_footer {
+    white-space: nowrap;
+}
+
+.pi_support_state_pulsate {
+    animation: pulsate 1s ease-out;
+    animation-iteration-count: infinite;
+}

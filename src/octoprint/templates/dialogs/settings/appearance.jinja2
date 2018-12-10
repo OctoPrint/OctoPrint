@@ -15,7 +15,14 @@
     <div class="control-group" title="{{ _('For acrylic printers ;)') }}">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: appearance_colorTransparent"> {{ _('Transparent Color') }}
+                <input type="checkbox" data-bind="checked: appearance_colorTransparent"> {{ _('Transparent color') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Also personalize the icon of the browser tab') }}">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: appearance_colorIcon"> {{ _('Colorize favicon (in supported browsers)') }}
             </label>
         </div>
     </div>

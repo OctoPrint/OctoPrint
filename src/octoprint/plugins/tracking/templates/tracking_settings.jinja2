@@ -1,0 +1,47 @@
+<h3>{{ _('Anonymous Usage Tracking') }}</h3>
+
+{% include "snippets/plugins/tracking/trackingDescription.jinja2" %}
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.enabled"> {{ _('Enable anonymous usage tracking') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" title="{{ _('Random unique instance ID') }}">{{ _('Instance ID') }}</label>
+        <div class="controls">
+            <span style="padding-top: 5px; margin-bottom: 5px; display: inline-block" data-bind="text: settings.plugins.tracking.unique_id() || 'N/A'"></span>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" title="{{ _('Events to track. The ping is mandatory.') }}">{{ _('Tracked events') }}</label>
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" checked="checked" disabled="disabled"> {{ _('Regular ping') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.startup"> {{ _('Server startup & shutdown') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printer"> {{ _('Connected to printer') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printjob"> {{ _('Print started/cancelled/finished') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.plugin"> {{ _('Plugin installed/uninstalled/enabled/disabled') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.update"> {{ _('OctoPrint or a plugin updated successfully or unsuccessfully') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.throttled"> {{ _('System got throttled/unthrottled (currently only detected on RPis)') }}
+            </label>
+        </div>
+    </div>
+</form>
+
+{% include "snippets/plugins/tracking/trackingDetails.jinja2" %}

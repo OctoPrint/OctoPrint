@@ -47,6 +47,14 @@ def clean_ansi(line):
 
 
 class CommandlineError(Exception):
+	"""
+	Raised by :py:func:`~octoprint.util.commandline.CommandLineCaller.checked_call` on non zero return codes
+
+	Arguments:
+	    returncode (int): the return code of the command
+	    stdout (str): the stdout output produced by the command
+	    stderr (str): the stderr output produced by the command
+	"""
 	def __init__(self, returncode, stdout, stderr):
 		self.returncode = returncode
 		self.stdout = stdout
@@ -54,15 +62,78 @@ class CommandlineError(Exception):
 
 
 class CommandlineCaller(object):
+	"""
+	The CommandlineCaller is a utility class that allows running command line commands while logging there stdout
+	and stderr via configurable callback functions.
+
+	Callbacks are expected to have a signature matching
+
+	.. code-block:: python
+
+	   def callback(*lines):
+	       do_something_with_the_passed_lines()
+
+	The class utilizes sarge underneath.
+
+	Example:
+
+	.. code-block:: python
+
+	   from octoprint.util.commandline import CommandLineCaller, CommandLineError
+
+	   def log(prefix, *lines):
+	       for line in lines:
+	           print(u"{} {}".format(prefix, line))
+
+	   def log_stdout(*lines):
+	       log(u">>>", *lines)
+
+	   def log_stderr(*lines):
+	       log(u"!!!", *lines)
+
+	   def log_call(*lines)
+	       log(u"---", *lines)
+
+	   caller = CommandLineCaller()
+	   caller.on_log_call = log_call
+	   caller.on_log_stdout = log_stdout
+	   caller.on_log_stderr = log_stderr
+
+	   try:
+	       caller.checked_call(["some", "command", "with", "parameters"])
+	   except CommandLineError as err:
+	       print(u"Command returned {}".format(err.returncode))
+	   else:
+	       print(u"Command finished successfully")
+	"""
 
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 
 		self.on_log_call = lambda *args, **kwargs: None
+		"""Callback for the called command line"""
+
 		self.on_log_stdout = lambda *args, **kwargs: None
+		"""Callback for stdout output"""
+
 		self.on_log_stderr = lambda *args, **kwargs: None
+		"""Callback for stderr output"""
 
 	def checked_call(self, command, **kwargs):
+		"""
+		Calls a command and raises an error if it doesn't return with return code 0
+
+		Args:
+		    command (list, tuple or str): command to call
+		    kwargs (dict): additional keyword arguments to pass to the sarge ``run`` call (note that ``_async``,
+		                   ``stdout`` and ``stderr`` will be overwritten)
+
+		Returns:
+		    (tuple) a 3-tuple of return code, full stdout and full stderr output
+
+		Raises:
+		    CommandlineError
+		"""
 		returncode, stdout, stderr = self.call(command, **kwargs)
 
 		if returncode != 0:
@@ -71,6 +142,18 @@ class CommandlineCaller(object):
 		return returncode, stdout, stderr
 
 	def call(self, command, **kwargs):
+		"""
+		Calls a command
+
+		Args:
+		    command (list, tuple or str): command to call
+		    kwargs (dict): additional keyword arguments to pass to the sarge ``run`` call (note that ``_async``,
+		                   ``stdout`` and ``stderr`` will be overwritten)
+
+		Returns:
+		    (tuple) a 3-tuple of return code, full stdout and full stderr output
+		"""
+
 		if isinstance(command, (list, tuple)):
 			joined_command = " ".join(command)
 		else:
@@ -78,7 +161,7 @@ class CommandlineCaller(object):
 		self._logger.debug(u"Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
 
-		kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
 		p = sarge.run(command, **kwargs)
 		while len(p.commands) == 0:

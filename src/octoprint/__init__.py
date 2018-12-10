@@ -595,6 +595,9 @@ def main():
 		# cut off stuff from the beginning
 		args = args[-1 * sys_args_length:] if sys_args_length else []
 
+	from octoprint.util.fixes import patch_sarge_async_on_py2
+	patch_sarge_async_on_py2()
+
 	from octoprint.cli import octo
 	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
 

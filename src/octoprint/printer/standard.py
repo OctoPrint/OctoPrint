@@ -361,12 +361,22 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"],
 		              tags=kwargs.get("tags", set) | {"trigger:printer.home"})
 
-	def extrude(self, amount, *args, **kwargs):
+	def extrude(self, amount, speed=None, *args, **kwargs):
 		if not isinstance(amount, (int, long, float)):
 			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
 		printer_profile = self._printerProfileManager.get_current_or_default()
-		extrusion_speed = printer_profile["axes"]["e"]["speed"]
+
+		# Use specified speed (if any)
+		max_e_speed = printer_profile["axes"]["e"]["speed"]
+
+		if speed is None:
+			# No speed was specified so default to value configured in printer profile
+			extrusion_speed = max_e_speed
+		else:
+			# Make sure that specified value is not greater than maximum as defined in printer profile
+			extrusion_speed = min([speed, max_e_speed])
+
 		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
 
@@ -963,6 +973,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 							payload = self._payload_for_print_job_event()
 							if payload:
 								payload["time"] = self._comm.getPrintTime()
+								payload["reason"] = "error"
 
 								def finalize():
 									self._fileManager.log_print(payload["origin"],
@@ -1093,8 +1104,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 
-	def on_comm_print_job_failed(self):
+	def on_comm_print_job_failed(self, reason=None):
 		payload = self._payload_for_print_job_event()
+
+		if reason:
+			payload["reason"] = reason
+		else:
+			payload["reason"] = "unknown"
+
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
@@ -1112,6 +1129,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
+			payload["reason"] = "cancelled"
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			if not suppress_script:

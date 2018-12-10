@@ -1,22 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintPrinterSafetyCheckClient = function(base) {
-        this.base = base;
-    };
-
-    OctoPrintPrinterSafetyCheckClient.prototype.get = function(opts) {
-        return this.base.get(this.base.getSimpleApiUrl("printer_safety_check"), opts);
-    };
-
-    OctoPrintClient.registerPluginComponent("printer_safety_check", OctoPrintPrinterSafetyCheckClient);
-    return OctoPrintPrinterSafetyCheckClient;
-});
-
 $(function() {
     function PrinterSafetyCheckViewModel(parameters) {
         var self = this;
@@ -42,7 +23,7 @@ $(function() {
         self.fromResponse = function(data) {
             var warnings = [];
             _.each(data, function(message, warning_type) {
-                warnings.push({type: warning_type, message: message});
+                warnings.push({type: warning_type, message: gettext(message)});
             });
             self.warnings(warnings);
         };
