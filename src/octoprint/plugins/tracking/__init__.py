@@ -60,6 +60,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            ping=15*60,
 		            events=dict(startup=True,
 		                        printjob=True,
+		                        commerror=True,
 		                        plugin=True,
 		                        update=True,
 		                        printer=True,
@@ -117,6 +118,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track_throttle_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
+		elif event in (Events.ERROR,):
+			self._track_commerror_event(event, payload)
 		elif event in (Events.CONNECTED,):
 			self._printer_connection_parameters = dict(port=payload["port"],
 			                                           baudrate=payload["baudrate"])
@@ -228,6 +231,29 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if track_event is not None:
 			self._track(track_event, **args)
 
+	def _track_commerror_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "commerror"]):
+			return
+
+		if not b"reason" in payload or not b"error" in payload:
+			return
+
+		track_event = "commerror_{}".format(payload[b"reason"])
+		args = dict(commerror_text=payload[b"error"])
+
+		if callable(self._helpers_get_throttle_state):
+			try:
+				throttle_state = self._helpers_get_throttle_state(run_now=True)
+				if throttle_state and (throttle_state.get(b"current_issue", False) or throttle_state.get(b"past_issue", False)):
+					args[b"throttled_now"] = throttle_state[b"current_issue"]
+					args[b"throttled_past"] = throttle_state[b"past_issue"]
+					args[b"throttled_mask"] = throttle_state[b"raw_value"]
+			except:
+				# ignored
+				pass
+
+		self._track(track_event, **args)
+
 	def _track_printjob_event(self, event, payload):
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
@@ -255,6 +281,10 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = "unknown"
 			args[b"elapsed"] = elapsed
 			args[b"reason"] = payload.get(b"reason", "unknown")
+
+			if b"error" in payload and self._settings.get_boolean(["events", "commerror"]):
+				args[b"commerror_text"] = payload[b"error"]
+
 			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
 			track_event = "print_cancelled"
