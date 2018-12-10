@@ -1,106 +1,13 @@
 # OctoPrint Changelog
 
-## 1.3.10rc4 (2018-12-03)
-
-### Improvements
-
-  * Backup: Exclude `generated`, `logs` and `watched` folders from backup
-  * Backup: Use base version for version check on restore
-
-### Bug fixes
-
-  * [#2920](https://github.com/foosel/OctoPrint/issues/2920) - Backup: Fix wrong compatibility check logic in plugin install during restore
-  * Backup: Disable restore on Windows servers where it's not supported thanks to the Windows file system
-  * Backup: Fix reporting of restore failure due to version mismatch or other cases of an invalid backup
-  * Backup: Fix feedback in UI during restore, start feedback right on upload of backup
-  * Printer Safety: Fix localization of warning message
-
-### Unreproduced issues
-
-The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
-
-  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
-  * ["temperature changes doesn't work"](https://github.com/foosel/OctoPrint/issues/2889#issuecomment-441449215)
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc3...1.3.10rc4)
-
-## 1.3.10rc3 (2018-11-28)
-
-### Improvements
-
-  * More resilience against third party plugins that happily block or kill important startup threads
-  * Improved backwards compatibility of the `sarge` dependency by monkey patching it to support the old `async` keyword parameter. Plugin authors are still advised to switch to the new `async_` parameter if running against `sarge>=0.1.5`, unmodified plugins should continue to work now however. For reference, OctoPrint 1.3.10 requires `sarge==0.1.5post0`.
-  * Pi Support plugin: Better wording on the "undervoltage & overheat" popover & added a link to the FAQ entry
-  * Printer Safety plugin: Micro3D printers running stock or iMe firmware are now detected as unsafe
-
-### Bug fixes
-
-  * [#2897](https://github.com/foosel/OctoPrint/issues/2897) - Improved error resilience of `is_lan_address` so an error during its execution no longer nukes requests
-  * [#2898](https://github.com/foosel/OctoPrint/issues/2898) - ForceLogin plugin no longer interferes with websocket messages sent by plugins right on UI load but instead puts them into a (limited) backlog and then sends them out in received order once the user has authenticated on the socket.
-  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Support for ZIP64 extensions for large zip files
-  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Better error reporting
-  * [#2908](https://github.com/foosel/OctoPrint/issues/2908) - Tracking: Use the file's `path` instead of just the `name` for file name hashing.
-  * Fixed homepage link in Anonymous Usage Tracking plugin
-  * Logout socket on UI logout
-
-### Unreproduced issues
-
-The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
-
-  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
-  * ["temperature changes doesn't work"](https://github.com/foosel/OctoPrint/issues/2889#issuecomment-441449215)
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc2...1.3.10rc3)
-
-## 1.3.10rc2 (2018-11-13)
-
-### Improvements
-
-  * Anonymous Usage Tracking: Added elapsed time & reason of print failure to tracking (to be able to distinguish cancelled from errored out prints)
-  * Anonymous Usage Tracking: Added undervoltage/overheat detection on Pis to tracking (to correlate print failures to power issues, see also [#2878](https://github.com/foosel/OctoPrint/pull/2878)).
-  * Printer Safety Plugin: Added Ender 3 stock firmware to detection
-  * Added documentation for `octoprint.util.commandline` module
-
-### Bug fixes
-
-  * [#2872](https://github.com/foosel/OctoPrint/issues/2872) - Fix Timeout when connecting to printer that doesn't send `start` on connect
-  * [#2873](https://github.com/foosel/OctoPrint/issues/2873) - Fix GCODE viewer no longer being able to load files.
-  * [#2876](https://github.com/foosel/OctoPrint/issues/2876) - Fix semi functional UI when access control is disabled
-  * [#2879](https://github.com/foosel/OctoPrint/issues/2879) - Fix favicon in Firefox
-  * Anonymous Usage Tracking: More error resilience for the wizard to possibly work around issues observed with the first RC (for which sadly no information was provided to reproduce and analyse).
-  * Softwareupdate: More resilience against invalid data in config
-
-### Unreproduced issues
-
-The following issues were reported in RC1 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
-
-  * [Not possible to complete Anonymous Usage Tracking setup wizard](https://discourse.octoprint.org/t/anonymous-usage-setup/5151)
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate, especially @tedder for his PR.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10rc1...1.3.10rc2)
-
-## 1.3.10rc1 (2018-11-06)
+## 1.3.10 (2018-12-10)
 
 ### Heads-up for plugin authors regarding the `sarge` dependency
 
-OctoPrint has updated its `sarge` dependency. The new version 0.1.5 has a small breaking change - the `async` keyword was renamed to `async_` for compatibility reasons with Python 3.7. This might also affect your plugin if you happen to use `sarge` somewhere therein. If so, make sure you to update your plugin to use `async_` instead of `async` (or just use OctoPrint's own `octoprint.util.commandline.CommandlineCaller` class which takes care of this and various other things).
+OctoPrint has updated its `sarge` dependency. The new version 0.1.5 has a small breaking change - the `async` keyword 
+was renamed to `async_` for compatibility reasons with Python 3.7. This might also affect your plugin if you happen to 
+use `sarge` somewhere therein. OctoPrint has a workaround for this in place so your plugin will continue to function for
+now. However, you should look into updating it to use `async_` instead of `async` if running against OctoPrint 1.3.10+.
 
 See also [here](https://sarge.readthedocs.io/en/latest/overview.html#id1) for the `sarge` changelog.
 
@@ -122,15 +29,15 @@ See also [here](https://sarge.readthedocs.io/en/latest/overview.html#id1) for th
   * [#2854](https://github.com/foosel/OctoPrint/issues/2854) - Auto detect Teacup firmware.
   * [#2865](https://github.com/foosel/OctoPrint/pull/2865) - Added `speed` parameter to `extrude` command on the `/api/printer/tool` API endpoint which allows to set the feedrate to use for the extrude per request.
   * Improve SD print detection
-  * Added the Anonymous Usage Tracking Plugin. Tracking will only take place if the plugin is enabled and you’ve decided to opt-in during initial setup (or enabled it manually afterwards, through the corresponding switch in the settings). The tracking data will allow to get an insight into how OctoPrint is used, which versions are running and on what kind of hardware OctoPrint gets installed. You can learn about what - if you opt-in - will get tracked on [tracking.octoprint.org](https://tracking.octoprint.org). Please consider helping development by participating in the anonymous usage tracking. 
+  * Added the Anonymous Usage Tracking Plugin. Tracking will only take place if the plugin is enabled and you’ve decided to opt-in during initial setup (or enabled it manually afterwards, through the corresponding switch in the settings). The tracking data will give insight into how OctoPrint is used, which versions are running and on what kind of hardware OctoPrint gets installed. You can learn about what will get tracked (if you opt-in) on [tracking.octoprint.org](https://tracking.octoprint.org). Please consider helping development by participating in the anonymous usage tracking. 
   * The OctoPi Support Plugin is now the Pi Support Plugin:
     * Always enabled when running on a Raspberry Pi, regardless of whether OctoPi is used or not.
     * Now detects undervoltage/overheat issues and displays an alert on the UI if such an issue is found.
     * Changed detection method of the Raspberry Pi Model to something a bit more future proof.
   * Added the Application Keys Plugin: The new bundled plugin offers an authorization for third party apps that doesn't involve manually copying API keys or using QR codes. Third party client developers are strongly advised to implement this workflow in their apps. Read more [in the documentation](http://docs.octoprint.org/en/maintenance/bundledplugins/appkeys.html).
-  * Added the Backup & Restore Plugin: The new bundled plugin will allow to make a backup of your OctoPrint settings, files and list of installed plugins, and to restore from such a backup on the
-    same or another instance. This should make miration paths from outdated installations to newer ones easier.
-  * Software Update Plugin: Automatic updates in outdated environments are no longer allowed. After repeated issues out in the fields with ancient installations and accordingly ancient underlying Python environments, OctoPrint will no longer support automatic updates of it via the Software Update Plugin  if a certain set of minimum versions of Python, `pip` and `setuptools` isn't detected. The current minimum versions reflect the environment found on OctoPi 0.14.0.
+  * Added the Backup & Restore Plugin: The new bundled plugin will allow you to make a backup of your OctoPrint settings, files and list of installed plugins, and to restore from such a backup on the
+    same or another instance. This should make migration paths from outdated installations to newer ones easier.
+  * Software Update Plugin: Automatic updates in outdated environments are no longer supported. After repeated issues out in the fields with ancient installations and ancient underlying Python environments, OctoPrint will no longer allow automatic updates of itself or plugins via the Software Update Plugin if a certain set of minimum versions of Python, `pip` and `setuptools` isn't detected. The current minimum versions reflect the environment found on OctoPi 0.14.0: Python 2.7.9, pip 9.0.1, setuptools 5.5.1. See also the [related FAQ entry](https://faq.octoprint.org/unsupported-python-environment).
   * OctoPrint will now longer allow itself to be installed on Python versions less than 2.7.3 or higher than 2.7.x, to avoid peope running into issues in unsupported environments.
   * Protect/educate against the dangers of opening up OctoPrint on the public internet:
     * Detect connections to the UI from external IPs and display a warning in such cases.
@@ -139,7 +46,7 @@ See also [here](https://sarge.readthedocs.io/en/latest/overview.html#id1) for th
     * Added the ForcedLogin Plugin: Disables anonymous read-only access. To get back the old behaviour you'll have to explicitely disable this plugin.
   * Removed printed/visited layer counts from the GCODE viewer since it was confusing people more than helping them.
   * Added a warning to the documentation re expensive code in gcode hooks.  
-  * Added the `no_firstun_access` decorator.
+  * Added the `no_firstrun_access` decorator.
   * Only disable autoscroll in the terminal when scrolling up, not when scrolling down.
   * Added a new asset type `clientjs` for JS client library components.
   * Added new options for the `showConfirmationDialog` UI helper:
@@ -147,9 +54,18 @@ See also [here](https://sarge.readthedocs.io/en/latest/overview.html#id1) for th
     * `noclose`: don't allow dismissing/closing the dialog without having chosen to proceed or cancel.
   * Allow further access restrictions on API and Tornado routes by third party plugins.
   * Support using the JS client library with an unset API key.
-  * Announcements Plugin: Add documentation.
+  * Added documentation for `octoprint.util.commandline` module
+  * More resilience against third party plugins that happily block or kill important startup threads
+  * Improved backwards compatibility of the `sarge` dependency by monkey patching it to support the old `async` keyword parameter. Plugin authors are still advised to switch to the new `async_` parameter if running against `sarge>=0.1.5`, unmodified plugins should continue to work now however. For reference, OctoPrint 1.3.10 requires `sarge==0.1.5post0`.
   * Better detection of ipv6 support by the underlying OS.
   * Updated several dependencies to current versions where possible.
+  * Announcements Plugin: Add documentation.
+  * Anonymous Usage Tracking: Added elapsed time & reason of print failure to tracking (to be able to distinguish cancelled from errored out prints)
+  * Anonymous Usage Tracking: Added undervoltage/overheat detection on Pis to tracking (to correlate print failures to power issues, see also [#2878](https://github.com/foosel/OctoPrint/pull/2878)).
+  * Backup: Exclude `generated`, `logs` and `watched` folders from backup
+  * Backup: Use base version for version check on restore
+  * Pi Support plugin: Better wording on the "undervoltage & overheat" popover & added a link to the FAQ entry
+  * Printer Safety Plugin: Added Ender 3 stock firmware, Micro3D stock firmware and iME firmware to detection
 
 ### Bug fixes
 
@@ -169,21 +85,48 @@ See also [here](https://sarge.readthedocs.io/en/latest/overview.html#id1) for th
   * [#2846](https://github.com/foosel/OctoPrint/issues/2846) - Removed requirement to have `messages.pot` exist to use `babel_extract` for translating plugins (see also [#2846](https://github.com/foosel/OctoPrint/pull/2847)).
   * [#2850](https://github.com/foosel/OctoPrint/issues/2850) - Fixed a race condition in the web socket causing the push connection to fail (see also [#2858](https://github.com/foosel/OctoPrint/pull/2858)).
   * [#2852](https://github.com/foosel/OctoPrint/issues/2852) - Fixed issue with zeroconf announcement failing for the second instance of OctoPrint on the same Linux host due to a name conflict.
+  * [#2872](https://github.com/foosel/OctoPrint/issues/2872) (regression) - Fix Timeout when connecting to printer that doesn't send `start` on connect
+  * [#2873](https://github.com/foosel/OctoPrint/issues/2873) (regression) - Fix GCODE viewer no longer being able to load files.
+  * [#2876](https://github.com/foosel/OctoPrint/issues/2876) (regression) - Fix semi functional UI when access control is disabled
+  * [#2879](https://github.com/foosel/OctoPrint/issues/2879) (regression) - Fix favicon in Firefox
+  * [#2897](https://github.com/foosel/OctoPrint/issues/2897) (regression) - Improved error resilience of `is_lan_address` so an error during its execution no longer nukes requests
+  * [#2898](https://github.com/foosel/OctoPrint/issues/2898) (regression) - ForceLogin plugin no longer interferes with websocket messages sent by plugins right on UI load but instead puts them into a (limited) backlog and then sends them out in received order once the user has authenticated on the socket.
+  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Support for ZIP64 extensions for large zip files
+  * [#2903](https://github.com/foosel/OctoPrint/issues/2903) - Backup plugin: Better error reporting
+  * [#2908](https://github.com/foosel/OctoPrint/issues/2908) (regression) - Tracking: Use the file's `path` instead of just the `name` for file name hashing.
+  * [#2920](https://github.com/foosel/OctoPrint/issues/2920) - Backup plugin: Fix wrong compatibility check logic in plugin install during restore
   * Fixed an issue with collision free SD name detection.
   * Fixed some JS warnings in the GCODE viewer.
-  * Software Update Plugin: Fixed the update button being visible although the update is impossible.
   * Fixed wrongly used `.error` instead of the correct `.fail` in the UI's logout handler.
-  * Software Update Plugin: Fixed version output of CLI update message
-  * Announcements Plugin: Fix an issue with atom feeds.
   * Fixed the `disable_hotends` snippet in case of a shared nozzle setup.
+  * Logout socket on UI logout
+  * Announcements Plugin: Fix an issue with atom feeds.
+  * Anonymous Usage Tracking: More error resilience for the wizard to possibly work around issues observed with the first RC (for which sadly no information was provided to reproduce and analyse).
+  * Anonymous Usage Tracking: Fixed homepage link in plugin manager
+  * Backup: Disable restore on Windows servers where it's not supported thanks to the Windows file system
+  * Backup: Fix reporting of restore failure due to version mismatch or other cases of an invalid backup
+  * Backup: Fix feedback in UI during restore, start feedback right on upload of backup
+  * Printer Safety: Fix localization of warning message
+  * Software Update Plugin: Fixed the update button being visible although the update is impossible.
+  * Software Update Plugin: More resilience against invalid data in config
+  * Software Update Plugin: Fixed version output of CLI update message
 
 ### Special thanks to all the contributors!
 
-Special thanks to everyone who contributed to this release candidate, especially @bradcfisher, @eyal0, @gdombiak, @gerfderp, @hashashin and @tedder for their PRs.
+Special thanks to everyone who contributed to this release candidate, especially [@BillyBlaze](https://github.com/BillyBlaze), 
+[@bradcfisher](https://github.com/bradcfisher), [@eyal0](https://github.com/eyal0), [@fieldOfView](https://github.com/fieldOfView), 
+[@gdombiak](https://github.com/gdombiak), [@gerfderp](https://github.com/gerfderp), [@hashashin](https://github.com/hashashin) 
+and [@tedder](https://github.com/tedder) for their PRs.
 
 ### More information
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9...1.3.10rc1)
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.9...1.3.10)
+  * Release Candidates:
+    * [1.3.10rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.10rc1)
+    * [1.3.10rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.10rc2)
+    * [1.3.10rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.10rc3)
+    * [1.3.10rc4](https://github.com/foosel/OctoPrint/releases/tag/1.3.10rc4)
+    * A big **Thank you!** to everyone who reported back on these release candidates this time: [@andrivet](https://github.com/andrivet), [@arminth](https://github.com/arminth), [@autonumous](https://github.com/autonumous), [@benlye](https://github.com/benlye), [@BillyBlaze](https://github.com/BillyBlaze), [@bradcfisher](https://github.com/bradcfisher), [@Charly333](https://github.com/Charly333), [@ChrisHeerschap](https://github.com/ChrisHeerschap), [@Crowlord](https://github.com/Crowlord), [@ctgreybeard](https://github.com/ctgreybeard), [@devildant](https://github.com/devildant), [@dimkin-eu](https://github.com/dimkin-eu), [@DominikPalo](https://github.com/DominikPalo), [@duncanlovett](https://github.com/duncanlovett), [@EddyMI3d](https://github.com/EddyMI3d), [@FanDjango](https://github.com/FanDjango), [@FormerLurker](https://github.com/FormerLurker), [@gdombiak](https://github.com/gdombiak), [@GhostlyCrowd](https://github.com/GhostlyCrowd), [@goeland86](https://github.com/goeland86), [@Goodeid](https://github.com/Goodeid), [@hamster65](https://github.com/hamster65), [@hashashin](https://github.com/hashashin), [@jenilliii](https://github.com/jenilliii), [@JohnOCFII](https://github.com/JohnOCFII), [@kmanley57](https://github.com/kmanley57), [@louispires](https://github.com/louispires), [@markuskruse](https://github.com/markuskruse), [@Nervemanna](https://github.com/Nervemanna), [@nionio6915](https://github.com/nionio6915), [@ntoff](https://github.com/ntoff), [@paukstelis](https://github.com/paukstelis), [@racenviper](https://github.com/racenviper), [@ramsesiden](https://github.com/ramsesiden), [@rtbon](https://github.com/rtbon), [@skohls](https://github.com/skohls), [@stough](https://github.com/stough), [@tech-rat](https://github.com/tech-rat), [@tedder](https://github.com/tedder), [@ThaliaFromPrussia](https://github.com/ThaliaFromPrussia), [@thisiskeithb](https://github.com/thisiskeithb), [@trendelkamp](https://github.com/trendelkamp), [@truglodite](https://github.com/truglodite), [@tteckenburg](https://github.com/tteckenburg), [@varazir](https://github.com/varazir), [@Webstas](https://github.com/Webstas) and [@zeroflow](https://github.com/zeroflow)
 
 ## 1.3.9 (2018-07-25)
 
