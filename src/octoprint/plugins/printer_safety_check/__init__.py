@@ -43,8 +43,8 @@ ENDER3_RECEIVED_TEST = lambda line: line and ENDER3_AUTHOR in line.lower()
 # iMe on Micro3D
 IME_M115_TEST = lambda name, data: name and name.lower().startswith("ime")
 
-# Malyan M200 aka Monoprice Select Mini
-MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
+# Malyan M200 aka Monoprice Select Mini, versions less than 4.0
+MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200" and get_comparable_version(data.get("VER", "0")) < get_comparable_version("4.0")
 
 # Stock Micro3D
 MICRO3D_M115_TEST = lambda name, data: name and name.lower().startswith("micro3d")
