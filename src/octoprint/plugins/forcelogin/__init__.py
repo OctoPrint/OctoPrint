@@ -12,6 +12,7 @@ from flask_babel import gettext
 
 from collections import defaultdict
 import threading
+import json
 
 class ForceLoginPlugin(octoprint.plugin.UiPlugin,
                        octoprint.plugin.TemplatePlugin,
@@ -37,10 +38,15 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 
 		result = passive_login()
 		if hasattr(result, "status_code") and result.status_code == 200:
-			# passive login successful, no need to handle that
-			return False
-		else:
-			return True
+			try:
+				data = json.loads(result.data)
+				if "name" in data:
+					# passive login successful, no need to handle that
+					return False
+			except:
+				self._logger.exception("Error while trying to decode passive login response")
+
+		return True
 
 	def on_ui_render(self, now, request, render_kwargs):
 		from flask import render_template, make_response

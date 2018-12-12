@@ -98,8 +98,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._eventManager = eventManager
 		self._pluginManager = pluginManager
 
-		self._userManager.register_callback(self._user_manager_callback)
-
 		self._remoteAddress = None
 		self._user = self._userManager.anonymous_user_factory()
 
@@ -118,11 +116,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		forwarded_for = info.headers.get("X-Forwarded-For")
 		if forwarded_for is not None:
 			return forwarded_for.split(",")[0]
-
-	def _getRemoteAddress(self, info):
-		forwardedFor = info.headers.get("X-Forwarded-For")
-		if forwardedFor is not None:
-			return forwardedFor.split(",")[0]
 		return info.ip
 
 	def __str__(self):
@@ -380,7 +373,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 	def _sendReauthRequired(self, reason):
 		self._emit("reauthRequired", payload=dict(reason=reason))
 
-	def _emit(self, type, payload):
+	def _emit(self, type, payload=None, permissions=None):
 		proceed = True
 		for name, hook in self._emit_hooks.items():
 			try:
@@ -407,37 +400,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
 			else:
 				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
-
-	def _emit(self, type, payload=None, permissions=None):
-		if payload is None:
-			payload = dict()
-
-		proceed = True
-		for name, hook in self._emit_hooks.items():
-			try:
-				proceed = proceed and hook(self, self._user, type, payload)
-			except:
-				self._logger.exception("Error processing emit hook handler from plugin {}".format(name))
-
-		if not proceed:
-			return
-
-	def _user_manager_callback(self, action, session_user):
-		if action != "logout":
-			# we are only interested in logouts
-			return
-
-		if not self._user or not session_user:
-			# we need both users set
-			return
-
-		if not isinstance(self._user, octoprint.users.SessionUser) or not isinstance(session_user, octoprint.users.SessionUser):
-			# and we need both users to be session users
-			return
-
-		if self._user.get_id() == session_user.get_id() and self._user.session == session_user.session:
-			# our user just logged out
-			self._on_logout()
 
 	def _on_login(self, user):
 		self._user = user
