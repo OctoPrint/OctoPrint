@@ -161,9 +161,15 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._settings.save()
 
 	def _track_ping(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		self._track("ping")
 
 	def _track_startup(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "startup"]):
 			return
 
@@ -184,12 +190,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("startup", **payload)
 
 	def _track_shutdown(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "startup"]):
 			return
 
 		self._track("shutdown")
 
 	def _track_plugin_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "plugin"]):
 			return
 
@@ -203,6 +215,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 
 	def _track_update_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "update"]):
 			return
 
@@ -212,6 +227,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 
 	def _track_throttle_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "throttled"]):
 			return
 
@@ -232,6 +250,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track(track_event, **args)
 
 	def _track_commerror_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "commerror"]):
 			return
 
@@ -255,6 +276,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track(track_event, **args)
 
 	def _track_printjob_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
 
@@ -304,6 +328,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track(track_event, **args)
 
 	def _track_printer_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if not self._settings.get_boolean(["events", "printer"]):
 			return
 
