@@ -94,7 +94,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._logger.exception("Error while processing analysis queues from {}".format(name))
 
 		#hook card upload
-		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.cardupload")
+		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
 		
 		# comm
 		self._comm = None
@@ -652,14 +652,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
-
-	def success_hook_sdcopy(self, payload):
-		self.on_comm_file_transfer_done(payload["remote"])
-		eventManager().fire(Events.TRANSFER_DONE, payload)
 	
-	def error_hook_sdcopy(self, payload):
-		eventManager().fire(Events.TRANSFER_FAILED, payload)
-		
+	def default_add_sd_file(self, printer, filename, remoteName, absolutePath, *args, **kwargs):
+		self._create_estimator("stream")
+		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
+								 special=not valid_file_type(filename, "gcode"),
+								 tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
+		return None
+								 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
@@ -679,22 +679,32 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			# probably something else added through a plugin, use it's basename as-is
 			remoteName = os.path.basename(filename)
+			default_add_sd_file
+		sd_card_uploads = self.sd_card_upload_hooks.items() + [("default", self.default_add_sd_file)]
+		for name, hook in sd_card_uploads:
+			try:
+				payload = {
+					"local": filename,
+					"remote": remoteName,
+					"time": 0
+				}
+				self._logger.info("run sd card upload with {}".format(name))
+				#Start calculates total processing time
+				timestart = time.time()
+				resultHook = hook(self, filename, remoteName, absolutePath)
+				if not resultHook is None:
+					payload["time"] = round(time.time() - timestart, 2)
+					#End calculates total processing time
+					if resultHook:
+						self.on_comm_file_transfer_done(payload["remote"])
+						eventManager().fire(Events.TRANSFER_DONE, payload)
+					else:
+						eventManager().fire(Events.TRANSFER_FAILED, payload)
+				#only one impl authorize
+				break
+			except:
+				self._logger.exception("Error while processing analysis queues from {}".format(name))
 			
-		if len(self.sd_card_upload_hooks.items()) > 0:
-			for name, hook in self.sd_card_upload_hooks.items():
-				try:
-					self._logger.info("run sd card upload with {}".format(name))
-					#only one impl authorize
-					return hook(filename, absolutePath, remoteName, self.is_sd_ready, self.init_sd_card, self.release_sd_card, self.refresh_sd_files, self.success_hook_sdcopy, self.error_hook_sdcopy)
-				except:
-					self._logger.exception("Error while processing analysis queues from {}".format(name))
-		else:
-			self._logger.info("Use default sd card upload")
-			self._create_estimator("stream")
-			self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
-		                             special=not valid_file_type(filename, "gcode"),
-		                             tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
-
 		return remoteName
 
 	def delete_sd_file(self, filename, *args, **kwargs):
