@@ -1151,10 +1151,10 @@ octoprint.printer.cardupload
    .. code-block:: python
 
       payload = {
-			"local": filename,
-			"remote": remoteName,
-			"time": time.time() - timestart
-		}
+            "local": filename,
+            "remote": remoteName,
+            "time": time.time() - timestart
+     }
    This hook must also return the file name on the sd card when done.
 
    **Example:**
@@ -1163,33 +1163,33 @@ octoprint.printer.cardupload
       # coding=utf-8
       
       class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
-		
-      	def sdcard(self, filename, absolutePath, remoteName, is_sd_ready, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
-      	    self._logger.info("custom sd card upload")
-      	    timestart = time.time()
-      	    # do something
-      	    payload = {
-      	        "local": filename,
-      	        "remote": remoteName,
-      	        "time": time.time() - timestart
-      	    }
-      	    on_success(payload);
-      	    return remoteName
-      
+
+        def sdcard(self, filename, absolutePath, remoteName, is_sd_ready, init_sd_card, release_sd_card, refresh_sd_files, on_success=None, on_failure=None, *args, **kwargs):
+            self._logger.info("custom sd card upload")
+            timestart = time.time()
+            # do something
+            payload = {
+                "local": filename,
+                "remote": remoteName,
+                "time": time.time() - timestart
+            }
+            on_success(payload);
+            return remoteName
+
       __plugin_name__ = "Custom sd card upload plugin"
       
       def __plugin_load__():
-      	plugin = CustomSdCardUploadPlugin()
+        plugin = CustomSdCardUploadPlugin()
       
-      	global __plugin_implementation__
-      	__plugin_implementation__ = plugin
+        global __plugin_implementation__
+        __plugin_implementation__ = plugin
       
-      	global __plugin_hooks__
-      	__plugin_hooks__ = {"octoprint.printer.cardupload": plugin.custom_sd_card_upload_plugin}
-		
-		global __plugin_name__
-	   __plugin_name__ = "custom sd card upload plugin"
-		
+        global __plugin_hooks__
+        __plugin_hooks__ = {"octoprint.printer.cardupload": plugin.custom_sd_card_upload_plugin}
+
+        global __plugin_name__
+        __plugin_name__ = "custom sd card upload plugin"
+
       
    ``
 
