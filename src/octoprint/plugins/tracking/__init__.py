@@ -64,6 +64,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		                        plugin=True,
 		                        update=True,
 		                        printer=True,
+		                        printer_safety_check=True,
 		                        throttled=True))
 
 	def get_settings_restricted_paths(self):
@@ -116,6 +117,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		elif event in ("plugin_pi_support_throttle_state",):
 			self._throttle_state = payload
 			self._track_throttle_event(event, payload)
+		elif event in ("plugin_printer_safety_check_warning",):
+			self._track_printer_safety_event(event, payload)
 		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
 		elif event in (Events.ERROR,):
@@ -340,6 +343,17 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				args["printer_port"] = self._printer_connection_parameters["port"]
 				args["printer_baudrate"] = self._printer_connection_parameters["baudrate"]
 			self._track("printer_connected", **args)
+
+	def _track_printer_safety_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
+		if not self._settings.get_boolean(["events", "printer_safety_check"]):
+			return
+
+		self._track("printer_safety_warning",
+		            printer_safety_warning_type=payload.get(b"warning_type", "unknown"),
+		            printer_safety_check_name=payload.get(b"check_name", "unknown"))
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
