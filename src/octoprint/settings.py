@@ -324,7 +324,7 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
