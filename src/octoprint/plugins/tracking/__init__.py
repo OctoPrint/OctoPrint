@@ -21,7 +21,7 @@ except ImportError:
 # noinspection PyCompatibility
 import concurrent.futures
 
-from octoprint.util import RepeatedTimer
+from octoprint.util import RepeatedTimer, monotonic_time
 from octoprint.util.version import get_octoprint_version_string
 from octoprint.events import Events
 
@@ -47,6 +47,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 		self._record_next_firmware_info = False
+
+		self._startup_time = monotonic_time()
 
 	def initialize(self):
 		self._init_tracking()
@@ -91,7 +93,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	def on_after_startup(self):
 		ping = self._settings.get_int(["ping"])
 		if ping:
-			self._ping_worker = RepeatedTimer(ping, self._track_ping)
+			self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
 			self._ping_worker.start()
 
 		# cautiously look for the get_throttled helper from pi_support
@@ -167,7 +169,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean([b"enabled"]):
 			return
 
-		self._track("ping")
+		uptime = int(monotonic_time() - self._startup_time)
+		self._track("ping", octoprint_uptime=uptime)
 
 	def _track_startup(self):
 		if not self._settings.get_boolean([b"enabled"]):
