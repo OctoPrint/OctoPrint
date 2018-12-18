@@ -665,7 +665,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._logger.error("No connection to printer or printer is busy")
 			return
 
-		def default_add_sd_file(self, printer, filename, remoteName, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
+		def default_add_sd_file(printer, filename, remoteName, absolutePath, on_success, on_failure):
 			self._create_estimator("stream")
 			self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
 									 special=not valid_file_type(filename, "gcode"),
