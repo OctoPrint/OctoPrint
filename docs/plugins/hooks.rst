@@ -1146,8 +1146,18 @@ octoprint.printer.sdcardupload
 
    via hook, you can change the upload system on the sd card of the printer.
 
-   when your copy is finished, you must return the status of the copy (true or false)
-
+   when your copy is finished, you must call the callback (success_hook_sdcopy or error_hook_sdcopy) for notify the status (it's important)
+   
+   these callback take into parameter a specific payload :
+   .. code-block:: python
+        payload = {
+			"local": filename,
+			"remote": remoteName,
+			"time": time.time() - timestart
+		}
+		
+   ``
+	  
    **Example:**
    .. code-block:: python
 
@@ -1155,15 +1165,21 @@ octoprint.printer.sdcardupload
       
       class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
 
-        def sdcard(self, printer, filename, remoteName, absolutePath, *args, **kwargs):
+        def sdcard(self, printer, filename, remoteName, absolutePath, success_hook_sdcopy, error_hook_sdcopy, *args, **kwargs):
             self._logger.info("custom sd card upload")
+            timestart = time.time()
             # you can use the printer methode...
             # for exemple :
             # printer.release_sd_card(self)
             # printer.init_sd_card(self)
             # printer.refresh_sd_files()
             # do something
-            return True
+            payload = {
+                 "local": filename,
+                 "remote": remoteName,
+                 "time": time.time() - timestart
+            }
+            success_hook_sdcopy(payload);
 
       __plugin_name__ = "Custom sd card upload plugin"
       
@@ -1188,7 +1204,10 @@ octoprint.printer.sdcardupload
    :param str filename: filename inside octoprint
    :param str remoteName: name inside sd card printer
    :param str absolutePath: absolutePath inside octoprint
-   :return: True if success of False if error
+   :param callback : absolutePath inside octoprint
+   :param str absolutePath: absolutePath inside octoprint
+   :return success_hook_sdcopy: for notify success (important), this callback take payload parameter
+   :return error_hook_sdcopy: for notify error (important), this callback take payload parameter
    
 .. _sec-plugins-hook-server-http-bodysize:
 

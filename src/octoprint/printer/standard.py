@@ -653,19 +653,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
 	
-	
+	def success_hook_sdcopy(self, payload, *args, **kwargs):
+		self.on_comm_file_transfer_done(payload["remote"])
+		eventManager().fire(Events.TRANSFER_DONE, payload)
+		
+	def error_hook_sdcopy(self, payload, *args, **kwargs):
+		eventManager().fire(Events.TRANSFER_FAILED, payload)
 								 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
 			return
 
-		def default_add_sd_file(self, printer, filename, remoteName, absolutePath, *args, **kwargs):
+		def default_add_sd_file(self, printer, filename, remoteName, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 			self._create_estimator("stream")
 			self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
 									 special=not valid_file_type(filename, "gcode"),
 									 tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
-			return None
 		
 		self._streamingFinishedCallback = on_success
 		self._streamingFailedCallback = on_failure
@@ -681,26 +685,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			# probably something else added through a plugin, use it's basename as-is
 			remoteName = os.path.basename(filename)
-		sd_card_uploads = self.sd_card_upload_hooks.items() + [("default", self.default_add_sd_file)]
+		sd_card_uploads = self.sd_card_upload_hooks.items() + [("default", default_add_sd_file)]
 		for name, hook in sd_card_uploads:
 			try:
-				payload = {
-					"local": filename,
-					"remote": remoteName,
-					"time": 0
-				}
 				self._logger.info("run sd card upload with {}".format(name))
-				#Start calculates total processing time
-				timestart = time.time()
-				result_hook = hook(self, filename, remoteName, absolutePath)
-				if result_hook is not None:
-					payload["time"] = round(time.time() - timestart, 2)
-					#End calculates total processing time
-					if result_hook:
-						self.on_comm_file_transfer_done(payload["remote"])
-						eventManager().fire(Events.TRANSFER_DONE, payload)
-					else:
-						eventManager().fire(Events.TRANSFER_FAILED, payload)
+				hook(self, filename, remoteName, absolutePath, self.success_hook_sdcopy, self.error_hook_sdcopy)
 				#only one impl authorize
 				break
 			except:
