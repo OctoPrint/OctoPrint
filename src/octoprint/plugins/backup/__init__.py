@@ -528,11 +528,17 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			thread.start()
 
 	@classmethod
-	def _get_disk_size(cls, path):
+	def _get_disk_size(cls, path, ignored=None):
+		if ignored is None:
+			ignored = []
+
+		if path in ignored:
+			return 0
+
 		total = 0
 		for entry in scandir(path):
 			if entry.is_dir():
-				total += cls._get_disk_size(entry.path)
+				total += cls._get_disk_size(entry.path, ignored=ignored)
 			elif entry.is_file():
 				total += entry.stat().st_size
 		return total
@@ -609,6 +615,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                   on_backup_start=None,
 	                   on_backup_done=None,
 	                   on_backup_error=None):
+		exclude_by_default = ("generated", "logs", "watched",)
+
 		try:
 			if exclude is None:
 				exclude = []
@@ -619,13 +627,22 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			temporary_path = os.path.join(datafolder, ".{}".format(name))
 			final_path = os.path.join(datafolder, name)
 
-			size = cls._get_disk_size(basedir)
-			if not cls._free_space(os.path.dirname(temporary_path), size):
-				raise InsufficientSpace()
-
 			own_folder = datafolder
 			defaults = [os.path.join(basedir, "config.yaml"),] + \
 			           [os.path.join(basedir, folder) for folder in default_settings["folder"].keys()]
+
+			# check how much many bytes we are about to backup
+			size = os.stat(configfile).st_size
+			for folder in default_settings["folder"].keys():
+				if folder in exclude or folder in exclude_by_default:
+					continue
+				size += cls._get_disk_size(settings.global_get_basefolder(folder),
+				                           ignored=[own_folder,])
+			size += cls._get_disk_size(basedir, ignored=defaults + [own_folder,])
+
+			# since we can't know the compression ratio beforehand, we assume we need the same amount of space
+			if not cls._free_space(os.path.dirname(temporary_path), size):
+				raise InsufficientSpace()
 
 			compression = zipfile.ZIP_DEFLATED if zlib else zipfile.ZIP_STORED
 
@@ -656,10 +673,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 				# backup configured folder paths
 				for folder in default_settings["folder"].keys():
-					if folder in exclude:
-						continue
-
-					if folder in ("generated", "logs", "watched",):
+					if folder in exclude or folder in exclude_by_default:
 						continue
 
 					add_to_zip(settings.global_get_basefolder(folder),

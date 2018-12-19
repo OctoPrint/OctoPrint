@@ -179,7 +179,8 @@ def apiPrinterState():
 def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
-		"api": VERSION
+		"api": VERSION,
+		"text": "OctoPrint {}".format(octoprint.server.DISPLAY_VERSION)
 	})
 
 

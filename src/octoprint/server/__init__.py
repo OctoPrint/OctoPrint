@@ -27,6 +27,7 @@ from octoprint.server import util
 from octoprint.util.json import JsonEncoding
 
 import os
+import sys
 import logging
 import logging.config
 import atexit
@@ -724,11 +725,16 @@ class Server(object):
 		if not isinstance(trusted_downstream, list):
 			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
 			trusted_downstreams = []
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
-		                                             max_body_sizes=max_body_sizes,
-		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
-		                                             xheaders=True,
-		                                             trusted_downstream=trusted_downstream)
+
+		server_kwargs = dict(max_body_sizes=max_body_sizes,
+		                     default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                     xheaders=True,
+		                     trusted_downstream=trusted_downstream)
+		if sys.platform == "win32":
+			# set 10min idle timeout under windows to hopefully make #2916 less likely
+			server_kwargs.update(dict(idle_connection_timeout=600))
+
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
 		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
 		                                                                                    # only listens on v4 & v6
 		                                                                                    # if we use None as address

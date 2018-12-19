@@ -979,6 +979,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 							if payload:
 								payload["time"] = self._comm.getPrintTime()
 								payload["reason"] = "error"
+								payload["error"] = self._comm.getErrorString()
 
 								def finalize():
 									self._fileManager.log_print(payload["origin"],
@@ -1108,17 +1109,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._updateProgressData()
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
-
-	def on_comm_print_job_failed(self, reason=None):
-		payload = self._payload_for_print_job_event()
-
-		if reason:
-			payload["reason"] = reason
-		else:
-			payload["reason"] = "unknown"
-
-		if payload:
-			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_comm_print_job_cancelling(self, firmware_error=None):
 		payload = self._payload_for_print_job_event()
