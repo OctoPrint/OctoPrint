@@ -24,57 +24,212 @@ Learn more at https://faq.octoprint.org/warning-{warning_type}
 
 """
 
-# Anet A8
-ANETA8_M115_TEST = ("aneta8", lambda name, data: name and name.lower().startswith("anet_a8_"))
+class Check(object):
+	name = None
 
-# Anycubic MEGA
-ANYCUBIC_AUTHOR1 = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
-ANYCUBIC_AUTHOR2 = "| Author: (**Jolly, xxxxxxxx.CO.**)".lower()
-ANYCUBIC_RECEIVED_TEST = ("anycubic", lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower() or ANYCUBIC_AUTHOR2 in line.lower()))
+	def __init__(self):
+		self._active = True
+		self._triggered = False
 
-# Creality CR-10s
-CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
-CR10S_RECEIVED_TEST = ("cr10s", lambda line: line and CR10S_AUTHOR in line.lower())
+	def received(self, line):
+		"""Called when receiving a new line from the printer"""
+		pass
 
-# Creality Ender 3
-ENDER3_AUTHOR = " | Author: (Ender3)".lower()
-ENDER3_RECEIVED_TEST = ("ender3", lambda line: line and ENDER3_AUTHOR in line.lower())
+	def m115(self, name, data):
+		"""Called when receiving the response to an M115 from the printer"""
+		pass
 
-# iMe on Micro3D
-IME_M115_TEST = ("ime", lambda name, data: name and name.lower().startswith("ime"))
+	def cap(self, cap, enabled):
+		"""Called when receiving a capability report line"""
+		pass
 
-# Malyan M200 aka Monoprice Select Mini, versions less than 4.0
-MALYANM200_M115_TEST = ("malyan_m200", lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200" and get_comparable_version(data.get("VER", "0")) < get_comparable_version("4.0"))
+	@property
+	def active(self):
+		"""Whether this check is still active"""
+		return self._active
 
-# Stock Micro3D
-MICRO3D_M115_TEST = ("micro3d", lambda name, data: name and name.lower().startswith("micro3d"))
+	@property
+	def triggered(self):
+		"""Whether the check has been triggered"""
+		return self._triggered
 
-# Any Repetier versions < 0.92
-REPETIER_BEFORE_092_M115_TEST = ("repetier_before_092", lambda name, data: name and name.lower().startswith("repetier") and extract_repetier_version(name) is not None and extract_repetier_version(name) < get_comparable_version("0.92"))
+class AuthorCheck(Check):
+	authors = ()
 
-# THERMAL_PROTECTION capability reported as disabled
-THERMAL_PROTECTION_CAP_TEST = ("capability", lambda cap, enabled: cap == "THERMAL_PROTECTION" and not enabled)
+	AUTHOR = "| Author: ".lower()
+
+	def received(self, line):
+		if not line:
+			return
+
+		lower_line = line.lower()
+		if self.AUTHOR in lower_line:
+			self._triggered = any(map(lambda x: x in lower_line, self.authors))
+			self._active = False
+
+class AnetA8Check(Check):
+	"""
+	Anet A8 stock firmware
+
+	Identified through firmware name "ANET_A8_".
+	"""
+	name = "anet_a8"
+
+	def m115(self, name, data):
+		self._triggered = name and name.lower().startswith("anet_a8_")
+		self._active = False
+
+class AnycubicCheck(Check):
+	"""
+	Anycubic MEGA stock firmware
+
+	Identified through "Author: (Jolly, xxxxxxxx.CO.)" or "| Author: (**Jolly, xxxxxxxx.CO.**)" in startup messages
+	combined with "echo:Vx.y.z" in startup messages, with x.y.z < 1.1.2.
+	"""
+	name = "anycubic"
+
+	AUTHOR = "| Author: "
+	VERSION = "echo:V"
+
+	CRITICAL_AUTHOR1 = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
+	CRITICAL_AUTHOR2 = "| Author: (**Jolly, xxxxxxxx.CO.**)".lower()
+
+	FIXED_VERSION = get_comparable_version("1.1.2")
+
+	def __init__(self):
+		Check.__init__(self)
+		self._author_matches = None
+		self._version_matches = None
+
+	def received(self, line):
+		if not line:
+			return
+
+		lower_line = line.lower()
+		if self.AUTHOR in lower_line:
+			self._author_matches = self.CRITICAL_AUTHOR1 in lower_line or self.CRITICAL_AUTHOR2 in lower_line
+		elif line.startswith(self.VERSION):
+			self._version_matches = self._broken_version(line)
+		else:
+			return
+
+		self._evaluate()
+
+	def _broken_version(self, line):
+		version_str = line[len(self.VERSION):]
+		version = get_comparable_version(version_str, base=True)
+		if version is not None and version <= self.FIXED_VERSION:
+			return True
+		else:
+			return False
+
+	def _evaluate(self):
+		if self._author_matches is None or self._version_matches is None:
+			return
+		self._triggered = self._author_matches and self._version_matches
+		self._active = False
+
+class CrealityCR10sCheck(AuthorCheck):
+	"""
+	Creality CR10s
+
+	Identified through " | Author: (CR-10Slanguage)" in startup messages.
+	"""
+	name = "creality_cr10s"
+	authors = (" | Author: (CR-10Slanguage)".lower(),)
+
+class CrealityEnder3Check(AuthorCheck):
+	"""
+	Creality Ender3
+
+	Identified through " | Author: (Ender3)" in startup messages.
+	"""
+	name = "creality_ender3"
+	authors = (" | Author: (Ender3)".lower(),)
+
+class MalyanM200Check(Check):
+	"""
+	Malyan M200 stock firmware prior to version 4.0
+
+	Identified through firmware name "Malyan*", model "M200" and version < 4.0.
+	"""
+	name = "malyan_m200"
+
+	FIXED_VERSION = get_comparable_version("4.0")
+
+	def m115(self, name, data):
+		self._triggered = name and name.lower().startswith("malyan") and data.get("MODEL") == "M200" and get_comparable_version(data.get("VER", "0")) < self.FIXED_VERSION
+		self._active = False
+
+class Micro3DIMECheck(Check):
+	"""
+	Micro3D with IME firmware
+
+	Identified through firmware name "iME*".
+	"""
+	name = "micro3d_ime"
+
+	def m115(self, name, data):
+		self._triggered = name and name.lower().startswith("ime")
+		self._active = False
+
+class Micro3DStockCheck(Check):
+	"""
+	Micro3D with IME firmware
+
+	Identified through firmware name "Micro3D*".
+	"""
+	name = "micro3d"
+
+	def m115(self, name, data):
+		self._triggered = name and name.lower().startswith("micro3d")
+		self._active = False
+
+class RepetierBefore092Check(Check):
+	"""
+	Repetier firmware prior to version 0.92
+
+	Identified through firmware name "Repetier_x.y.z" with x.y.z < 0.92
+	"""
+	name = "repetier_before_092"
+
+	FIXED_VERSION = get_comparable_version("0.92")
+
+	def m115(self, name, data):
+		if name and name.lower().startswith("repetier"):
+			version = self._extract_repetier_version(name)
+			self._triggered = version is not None and version < self.FIXED_VERSION
+		self._active = False
+
+	def _extract_repetier_version(self, name):
+		"""
+		Extracts the Repetier version number from the firmware name.
+
+		Example: "Repetier_0.91" => 0.91
+		"""
+		version = None
+		if "_" in name:
+			_, version = name.split("_", 1)
+			version = get_comparable_version(version, base=True)
+		return version
+
+class ThermalProtectionCapCheck(Check):
+	"""
+	Firmware reporting disabled THERMAL_PROTECTION capability
+	"""
+	name = "capability"
+
+	def cap(self, cap, enabled):
+		if cap == "THERMAL_PROTECTION":
+			self._triggered = not enabled
 
 SAFETY_CHECKS = {
-	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, IME_M115_TEST, MALYANM200_M115_TEST, MICRO3D_M115_TEST,
-	                              REPETIER_BEFORE_092_M115_TEST),
-	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
-	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
+	"firmware-unsafe": dict(checks=(AnetA8Check(), AnycubicCheck(), CrealityCR10sCheck(), CrealityEnder3Check(),
+	                                MalyanM200Check(), Micro3DIMECheck(), Micro3DStockCheck(), RepetierBefore092Check(),
+	                                ThermalProtectionCapCheck()),
 	                        message=gettext(u"Your printer's firmware is known to lack mandatory safety features (e.g. "
 	                                        u"thermal runaway protection). This is a fire risk."))
 }
-
-def extract_repetier_version(name):
-	"""
-	Extracts the Repetier version number from the firmware name.
-
-	Example: "Repetier_0.91" => 0.91
-	"""
-	version = None
-	if "_" in name:
-		_, version = name.split("_", 1)
-		version = get_comparable_version(version, base=True)
-	return version
 
 class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
                                octoprint.plugin.EventHandlerPlugin,
@@ -142,16 +297,32 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		changes = False
 
 		for warning_type, check_data in SAFETY_CHECKS.items():
-			checks = check_data.get(check_type)
+			checks = check_data.get("checks")
 			message = check_data.get("message")
 			if not checks or not message:
 				continue
 
-			for check_name, check in checks:
-				if check(*args, **kwargs):
+			for check in checks:
+				if not check.active:
+					# skip non active checks
+					continue
+
+				method = getattr(check, check_type, None)
+				if not callable(method):
+					# skip uncallable checks
+					continue
+
+				# execute method
+				try:
+					method(*args, **kwargs)
+				except:
+					self._logger.exception("There was an error running method {} on check {!r}".format(check_type, check))
+					continue
+
+				# check if now triggered
+				if check.triggered:
 					self._register_warning(warning_type, message)
-					self._event_bus.fire("plugin_printer_safety_check_warning", dict(check_type=check_type,
-					                                                                 check_name=check_name,
+					self._event_bus.fire("plugin_printer_safety_check_warning", dict(check_name=check.name,
 					                                                                 warning_type=warning_type))
 					changes = True
 					break
