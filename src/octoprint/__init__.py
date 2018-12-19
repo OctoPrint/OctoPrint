@@ -142,7 +142,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		                                   ignore_blacklist=ignore_blacklist,
 		                                   connectivity_checker=connectivity_checker)
 	except Exception as ex:
-		raise FatalStartupError("Could not initialize settings manager", cause=ex)
+		raise FatalStartupError("Could not initialize plugin manager", cause=ex)
 
 	kwargs["plugin_manager"] = plugin_manager
 	if callable(after_plugin_manager):
