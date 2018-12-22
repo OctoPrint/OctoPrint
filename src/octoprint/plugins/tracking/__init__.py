@@ -160,7 +160,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.info("Initialized anonymous tracking")
 
 	def _init_id(self):
-		if self._settings.get_boolean([b"enabled"]) and not self._settings.get([b"unique_id"]):
+		if not self._settings.get([b"unique_id"]):
 			import uuid
 			self._settings.set([b"unique_id"], str(uuid.uuid4()))
 			self._settings.save()
@@ -290,7 +290,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		sha = hashlib.sha1()
 		sha.update(payload.get("path"))
-		sha.update(self._settings.get([b"unique_id"]))
+		sha.update(self._settings.get([b"unique_id"]) or '')
 
 		track_event = None
 		args = dict(origin=payload.get(b"origin"), file=sha.hexdigest())
@@ -369,7 +369,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		server = self._settings.get([b"server"])
-		url = server.format(id=self._settings.get([b"unique_id"]), event=event)
+		url = server.format(id=self._settings.get([b"unique_id"]) or 'no_uuid', event=event)
 		# Don't print the URL or UUID! That would expose the UUID in forums/tickets
 		# if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
 
