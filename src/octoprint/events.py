@@ -31,6 +31,7 @@ class Events(object):
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
 	CONNECTIVITY_CHANGED = "ConnectivityChanged"
+	EXCEPTION = "Exception"
 
 	# connect/disconnect to printer
 	CONNECTING = "Connecting"
@@ -165,6 +166,10 @@ class EventManager(object):
 					except:
 						self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
 
+				# inject our event objects to the plugin manager. We import the plugin class, which
+				# means it can't import this events class without issues.
+				octoprint.plugin._eventmanager = eventManager()
+				octoprint.plugin._events = Events
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
 				                             args=(event, payload),

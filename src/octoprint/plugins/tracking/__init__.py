@@ -132,6 +132,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
 			self._record_next_firmware_info = False
 			self._track_printer_event(event, payload)
+		elif event in (Events.EXCEPTION,):
+			self._track_server_exception_event(event, payload)
 
 	##~~ TemplatePlugin
 
@@ -357,6 +359,19 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("printer_safety_warning",
 		            printer_safety_warning_type=payload.get(b"warning_type", "unknown"),
 		            printer_safety_check_name=payload.get(b"check_name", "unknown"))
+
+	def _track_server_exception_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
+		path = '' # hopefully unique path to the code that failed
+		if payload.get(b'plugin_identifier'):
+			path = "/".join(["plugin", payload.get(b'plugin_identifier', ''), payload.get(b'plugin_method', '')])
+
+		self._track("server_exception",
+		            path=path,
+		            plugin_name=payload.get(b"plugin_name", ""),
+		            exception_trace=payload.get(b"exception_trace", ""))
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):

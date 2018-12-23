@@ -22,6 +22,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import os
 import logging
 import threading
+import traceback
 
 from octoprint.settings import settings as s
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
@@ -31,6 +32,10 @@ from octoprint.util import deprecated
 
 # singleton
 _instance = None
+
+# injected in from 'events'. We can't import that class without circular issues.
+_eventmanager = None
+_events = None
 
 def _validate_plugin(phase, plugin_info):
 	if phase == "after_load":
@@ -234,6 +239,13 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 				logger.exception("Error while calling plugin %s" % plugin._identifier)
 				if error_callback:
 					error_callback(plugin._identifier, plugin, exc)
+
+				if _eventmanager:
+					_eventmanager.fire(_events.EXCEPTION, payload={
+						'plugin_identifier': plugin._identifier,
+						'plugin_method': method,
+						'exception_trace': traceback.format_exc(exc)
+					})
 
 
 class PluginSettings(object):
