@@ -221,7 +221,7 @@ class PrinterProfileManager(object):
 		extruder=dict(
 			count = 1,
 			offsets = [
-				(0, 0)
+				(0, 0, 0)
 			],
 			nozzleDiameter = 0.4,
 			sharedNozzle = False
@@ -506,7 +506,7 @@ class PrinterProfileManager(object):
 			modified = True
 
 		if "extruder" in profile and "sharedNozzle" in profile["extruder"] and profile["extruder"]["sharedNozzle"]:
-			profile["extruder"]["offsets"] = [(0.0, 0.0)]
+			profile["extruder"]["offsets"] = [(0.0, 0.0, 0.0)]
 			modified = True
 
 		return modified
@@ -604,12 +604,16 @@ class PrinterProfileManager(object):
 		# validate offsets
 		offsets = []
 		for offset in profile["extruder"]["offsets"]:
-			if not len(offset) == 2:
+			if len(offset) == 2:
+				x_offset, y_offset = offset
+				z_offset = 0
+			elif len(offset) == 3:
+				x_offset, y_offset, z_offset = offset
+			else:
 				self._logger.warn("Profile has an invalid extruder.offsets entry: {entry!r}".format(entry=offset))
 				return False
-			x_offset, y_offset = offset
 			try:
-				offsets.append((float(x_offset), float(y_offset)))
+				offsets.append((float(x_offset), float(y_offset), float(z_offset)))
 			except:
 				self._logger.warn("Profile has an extruder.offsets entry with non-float values: {entry!r}".format(entry=offset))
 				return False

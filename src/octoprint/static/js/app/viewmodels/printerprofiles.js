@@ -23,7 +23,7 @@ $(function() {
             extruder: {
                 count: 1,
                 offsets: [
-                    [0,0]
+                    [0,0,0]
                 ],
                 nozzleDiameter: 0.4,
                 sharedNozzle: false
@@ -102,7 +102,8 @@ $(function() {
                     extruderOffsets[i] = {
                         idx: i + 1,
                         x: ko.observable(0),
-                        y: ko.observable(0)
+                        y: ko.observable(0),
+                        z: ko.observable(0)
                     }
                 }
                 self.extruderOffsets(extruderOffsets);
@@ -219,7 +220,8 @@ $(function() {
                     offsets.push({
                         idx: index + 1,
                         x: ko.observable(offset[0]),
-                        y: ko.observable(offset[1])
+                        y: ko.observable(offset[1]),
+                        z: ko.observable(offset[2])
                     });
                 });
             }
@@ -272,7 +274,7 @@ $(function() {
                 extruder: {
                     count: parseInt(self.extruders()),
                     offsets: [
-                        [0.0, 0.0]
+                        [0.0, 0.0, 0.0]
                     ],
                     nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter),
                     sharedNozzle: self.sharedNozzle()
@@ -306,7 +308,8 @@ $(function() {
                     if (i < self.extruderOffsets().length) {
                         offsetX = validFloat(self.extruderOffsets()[i]["x"](), 0.0);
                         offsetY = validFloat(self.extruderOffsets()[i]["y"](), 0.0);
-                        offset = [offsetX, offsetY];
+                        offsetZ = validFloat(self.extruderOffsets()[i]["z"](), 0.0);
+                        offset = [offsetX, offsetY, offsetZ];
                     }
                     profile.extruder.offsets.push(offset);
                 }

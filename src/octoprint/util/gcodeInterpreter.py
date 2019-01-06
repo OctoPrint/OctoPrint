@@ -435,11 +435,13 @@ class gcode(object):
 				else:
 					pos.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
 					pos.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.z -= offsets[currentExtruder][2] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
 					pos.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
 					pos.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.z += offsets[currentExtruder][2] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):
