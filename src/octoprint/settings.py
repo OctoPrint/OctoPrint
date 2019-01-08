@@ -155,6 +155,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"heartbeat": 15 * 60, # 15 min
@@ -323,7 +324,7 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
@@ -1309,15 +1310,25 @@ class Settings(object):
 				return True
 		return False
 
-	def backup(self, suffix, path=None):
+	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
 		if path is None:
 			path = os.path.dirname(self._configfile)
-		basename = os.path.basename(self._configfile)
-		name, ext = os.path.splitext(basename)
 
-		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		basename = os.path.basename(self._configfile)
+		name, default_ext = os.path.splitext(basename)
+
+		if ext is None:
+			ext = default_ext
+
+		if suffix is None and ext == default_ext:
+			raise ValueError("Need a suffix or a different extension")
+
+		if suffix is None:
+			suffix = ""
+
+		backup = os.path.join(path, "{}{}.{}{}".format("." if hidden else "", name, suffix, ext))
 		shutil.copy(self._configfile, backup)
 		return backup
 
@@ -1334,7 +1345,14 @@ class Settings(object):
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			payload = dict(config_hash=self.config_hash,
+			               effective_hash=self.effective_hash)
+			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter

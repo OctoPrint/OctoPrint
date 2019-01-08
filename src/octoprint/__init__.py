@@ -103,8 +103,9 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	if callable(after_logging):
 		after_logging(**kwargs)
 
-	settings_safe_mode = settings.getBoolean(["server", "startOnceInSafeMode"])
-	safe_mode = safe_mode or settings_safe_mode
+	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" if settings.getBoolean(["server", "incompleteStartup"]) else None
+	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):
 		after_safe_mode(**kwargs)
@@ -141,7 +142,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		                                   ignore_blacklist=ignore_blacklist,
 		                                   connectivity_checker=connectivity_checker)
 	except Exception as ex:
-		raise FatalStartupError("Could not initialize settings manager", cause=ex)
+		raise FatalStartupError("Could not initialize plugin manager", cause=ex)
 
 	kwargs["plugin_manager"] = plugin_manager
 	if callable(after_plugin_manager):
