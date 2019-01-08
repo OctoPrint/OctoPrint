@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, url_for
 from werkzeug.exceptions import BadRequest
 
 from octoprint.server import slicingManager
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.access.permissions import Permissions
 
@@ -103,7 +103,7 @@ def slicingListAll():
 	return jsonify(result)
 
 @api.route("/slicing/<string:slicer>/profiles", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SLICE.require(403)
 def slicingListSlicerProfiles(slicer):
 	configured = False
@@ -116,7 +116,7 @@ def slicingListSlicerProfiles(slicer):
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SLICE.require(403)
 def slicingGetSlicerProfile(slicer, name):
 	try:
@@ -131,7 +131,7 @@ def slicingGetSlicerProfile(slicer, name):
 	return jsonify(result)
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PUT"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
@@ -167,7 +167,7 @@ def slicingAddSlicerProfile(slicer, name):
 	return r
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PATCH"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
@@ -211,7 +211,7 @@ def slicingPatchSlicerProfile(slicer, name):
 	return jsonify(_getSlicingProfileData(slicer, name, saved_profile))
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingDelSlicerProfile(slicer, name):
 	try:

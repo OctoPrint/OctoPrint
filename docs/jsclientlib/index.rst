@@ -80,9 +80,13 @@ connection options (``baseurl`` and ``apikey``) directly in the constructor or s
 
 .. seealso::
 
-   `OctoPrint-ForceLogin <https://github.com/OctoPrint/OctoPrint-ForceLogin>`_
-       A plugin that disables anonymous access to the regular OctoPrint UI by implementing a custom UI. Utilizes the
-       client library's :ref:`browser component <sec-jsclientlib-browser>` to login the user.
+   :ref:`Application Key Plugin <sec-bundledplugins-appkeys>`
+       A bundled plugin that implements an authorization workflow for third party clients. It adds various additional
+       methods to the JS Client Library.
+   :ref:`ForceLogin Plugin <sec-bundledplugins-forcelogin>`
+       A bundled plugin that disables anonymous access to the regular OctoPrint UI by implementing a custom UI and
+       various hooks. Utilizes the client library's :ref:`browser component <sec-jsclientlib-browser>` to login the
+       user.
 
 .. toctree::
    :maxdepth: 3

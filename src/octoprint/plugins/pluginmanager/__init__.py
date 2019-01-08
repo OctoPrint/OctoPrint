@@ -11,11 +11,11 @@ import octoprint.plugin
 import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.access.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
-from octoprint.util.platform import get_os
+from octoprint.util.platform import get_os, is_os_compatible
 
 from flask import jsonify, make_response
 from flask_babel import gettext
@@ -32,6 +32,35 @@ import time
 import threading
 
 _DATA_FORMAT_VERSION = "v2"
+
+
+def map_repository_entry(entry):
+	result = copy.deepcopy(entry)
+
+	if not "follow_dependency_links" in result:
+		result["follow_dependency_links"] = False
+
+	result["is_compatible"] = dict(
+		octoprint=True,
+		os=True
+	)
+
+	if "compatibility" in entry:
+		if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(
+			entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
+			result["is_compatible"]["octoprint"] = is_octoprint_compatible(*entry["compatibility"]["octoprint"])
+
+		if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(
+			entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
+			result["is_compatible"]["os"] = is_os_compatible(entry["compatibility"]["os"])
+
+	return result
+
+
+already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
+success_string = "Successfully installed"
+failure_string = "Could not install"
+
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -155,6 +184,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def get_assets(self):
 		return dict(
 			js=["js/pluginmanager.js"],
+			clientjs=["clientjs/pluginmanager.js"],
 			css=["css/pluginmanager.css"],
 			less=["less/pluginmanager.less"]
 		)
@@ -183,7 +213,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	##~~ BlueprintPlugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
 	def upload_archive(self):
 		import flask
@@ -357,10 +387,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			pip_args.append("--process-dependency-links")
 
 		all_plugins_before = self._plugin_manager.find_plugins(existing=dict())
-
-		already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
-		success_string = "Successfully installed"
-		failure_string = "Could not install"
 
 		try:
 			returncode, stdout, stderr = self._call_pip(pip_args)
@@ -797,31 +823,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		current_os = get_os()
-		octoprint_version = get_octoprint_version(base=True)
-
-		def map_repository_entry(entry):
-			result = copy.deepcopy(entry)
-
-			if not "follow_dependency_links" in result:
-				result["follow_dependency_links"] = False
-
-			result["is_compatible"] = dict(
-				octoprint=True,
-				os=True
-			)
-
-			if "compatibility" in entry:
-				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
-					result["is_compatible"]["octoprint"] = is_octoprint_compatible(*entry["compatibility"]["octoprint"],
-					                                                               octoprint_version=octoprint_version)
-
-				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
-					result["is_compatible"]["os"] = self._is_os_compatible(current_os, entry["compatibility"]["os"])
-
-			return result
-
-		self._repository_plugins = list(map(map_repository_entry, repo_data))
+		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
 
 	def _fetch_notices_from_disk(self):
@@ -891,30 +893,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._notices = notices
 		return True
-
-	@staticmethod
-	def _is_os_compatible(current_os, compatibility_entries):
-		"""
-		Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
-		"""
-		if len(compatibility_entries) == 0:
-			# shortcut - no compatibility info means we are compatible
-			return True
-
-		negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
-		positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
-
-		negative_match = False
-		if negative_entries:
-			# check if we are blacklisted
-			negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
-
-		positive_match = True
-		if positive_entries:
-			# check if we are whitelisted
-			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
-
-		return positive_match and not negative_match
 
 	@property
 	def _reconnect_hooks(self):

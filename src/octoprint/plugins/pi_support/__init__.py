@@ -35,10 +35,9 @@ _FLAG_PAST_UNDERVOLTAGE = 1 << 16
 _FLAG_PAST_FREQ_CAPPED = 1 << 17
 _FLAG_PAST_THROTTLED = 1 << 18
 
-
 class ThrottleState(object):
 	@classmethod
-	def from_value(cls, value):
+	def from_value(cls, value=0):
 		if value == 0:
 			return ThrottleState()
 
@@ -47,10 +46,12 @@ class ThrottleState(object):
 		              throttled=_FLAG_THROTTLED & value == _FLAG_THROTTLED,
 		              past_undervoltage=_FLAG_PAST_UNDERVOLTAGE & value == _FLAG_PAST_UNDERVOLTAGE,
 		              past_freq_capped=_FLAG_PAST_FREQ_CAPPED & value == _FLAG_PAST_FREQ_CAPPED,
-		              past_throttled=_FLAG_PAST_THROTTLED & value == _FLAG_PAST_THROTTLED)
+		              past_throttled=_FLAG_PAST_THROTTLED & value == _FLAG_PAST_THROTTLED,
+		              raw_value=value)
 		return ThrottleState(**kwargs)
 
 	def __init__(self, **kwargs):
+		self._raw_value = kwargs.get('raw_value', -1)
 		self._undervoltage = False
 		self._freq_capped = False
 		self._throttled = False
@@ -111,7 +112,8 @@ class ThrottleState(object):
 		       and self._past_throttled == other._past_throttled
 
 	def as_dict(self):
-		return dict(current_undervoltage=self.current_undervoltage,
+		return dict(raw_value=self._raw_value,
+		            current_undervoltage=self.current_undervoltage,
 		            past_undervoltage=self.past_undervoltage,
 		            current_overheat=self.current_overheat,
 		            past_overheat=self.past_overheat,
@@ -193,6 +195,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	def get_assets(self):
 		return dict(
 			js=["js/pi_support.js"],
+			clientjs=["clientjs/pi_support.js"],
 			css=["css/pi_support.css"]
 		)
 
@@ -241,6 +244,16 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	def _check_throttled_state_condition(self):
 		return self._throttle_functional
 
+	def get_throttle_state(self, run_now=False):
+		"""Exposed as public helper."""
+		if run_now:
+			self._check_throttled_state()
+
+		if not self._throttle_functional:
+			return False
+
+		return self._throttle_state.as_dict()
+
 	def _check_throttled_state(self):
 		command = self._settings.get(["vcgencmd_throttle_check_command"])
 
@@ -277,6 +290,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
 		                                                                state=self._throttle_state.as_dict()))
+		self._event_bus.fire("plugin_pi_support_throttle_state", self._throttle_state.as_dict())
 
 
 __plugin_name__ = "Pi Support Plugin"
@@ -298,5 +312,9 @@ def __plugin_check__():
 	return "raspberry pi" in proc_dt_model.lower()
 
 def __plugin_load__():
+	plugin = PiSupportPlugin()
 	global __plugin_implementation__
-	__plugin_implementation__ = PiSupportPlugin()
+	__plugin_implementation__ = plugin
+
+	global __plugin_helpers__
+	__plugin_helpers__ = dict(get_throttled=plugin.get_throttle_state)

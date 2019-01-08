@@ -47,23 +47,41 @@ Clients must ignore any unknown messages.
 
 The data model of the attached payloads is described further below.
 
-OctoPrint's SockJS socket also accepts one command from the client to the server,
-the ``throttle`` command. Usually, OctoPrint will push the general state update
-in the ``current`` message twice per second. For some clients that might still
-be too fast, so they can signal a different factor to OctoPrint utilizing the
-``throttle`` message. OctoPrint expects a single integer here which represents
-the multiplier for the base rate limit of one message every 500ms. A value of
-1 hence will produce the default behaviour of getting every update. A value of
-2 will set the rate limit to maximally one message every 1s, 3 to maximally one
-message every 1.5s and so on.
+OctoPrint's SockJS socket also accepts two commands from the client to the server.
 
-Example for a ``throttle`` client-server-message:
+  * ``auth`` (since 1.3.10): With the ``auth`` message, clients may associate an
+    existing user session with the socket. That is of special importance to receive
+    any kind of messages if the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` is enabled
+    (as it is by default), since it will prevent any kind of status messages to be sent to connected unauthenticated
+    clients.
 
-.. sourcecode:: javascript
+    The ``auth`` message expects the user id of the user to authenticate followed by ``:`` and a session key to be
+    obtained from the successful payload of a :ref:`(passive or active) login via the API <sec-api-general-login>`.
 
-   {
-     "throttle": 2
-   }
+    Example for a ``auth`` client-server-message:
+
+    .. sourcecode:: javascript
+
+       {
+         "auth": "someuser:LGZ0trf8By"
+       }
+
+  * ``throttle``: Usually, OctoPrint will push the general state update
+    in the ``current`` message twice per second. For some clients that might still
+    be too fast, so they can signal a different factor to OctoPrint utilizing the
+    ``throttle`` message. OctoPrint expects a single integer here which represents
+    the multiplier for the base rate limit of one message every 500ms. A value of
+    1 hence will produce the default behaviour of getting every update. A value of
+    2 will set the rate limit to maximally one message every 1s, 3 to maximally one
+    message every 1.5s and so on.
+
+    Example for a ``throttle`` client-server-message:
+
+    .. sourcecode:: javascript
+
+       {
+         "throttle": 2
+       }
 
 .. _sec-api-push-datamodel:
 
