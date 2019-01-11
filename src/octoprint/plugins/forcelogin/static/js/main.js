@@ -17,7 +17,7 @@ $(function() {
 
         var username = usernameElement.val();
         var password = passwordElement.val();
-        var remember = rememberElement.checked;
+        var remember = rememberElement.prop("checked");
 
         overlayElement.addClass("in");
         errorElement.removeClass("in");
