@@ -1721,6 +1721,7 @@ class MachineCom(object):
 
 				##~~ temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') \
+						or '==T:' in line or '==B:' in line \
 						or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
 
 					if not disable_external_heatup_detection and not self._temperature_autoreporting \
