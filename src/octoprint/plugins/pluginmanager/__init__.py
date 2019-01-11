@@ -363,7 +363,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			raise ValueError("Either URL or path must be provided")
 
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["install", sarge.shell_quote(source), '--no-cache-dir']
+		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(source), "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
@@ -521,7 +521,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if origin is None:
 				origin = plugin.origin[2]
 
-			pip_args = ["uninstall", "--yes", origin]
+			pip_args = ["--disable-pip-version-check", "uninstall", "--yes", origin]
 			try:
 				self._call_pip(pip_args)
 			except:

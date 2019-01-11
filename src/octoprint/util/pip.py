@@ -27,6 +27,7 @@ class UnknownPip(Exception):
 class PipCaller(CommandlineCaller):
 	process_dependency_links = pkg_resources.Requirement.parse("pip>=1.5")
 	no_cache_dir = pkg_resources.Requirement.parse("pip>=1.6")
+	disable_pip_version_check = pkg_resources.Requirement.parse("pip>=6.0")
 	no_use_wheel = pkg_resources.Requirement.parse("pip==1.5.0")
 	broken = pkg_resources.Requirement.parse("pip>=6.0.1,<=6.0.3")
 
@@ -46,6 +47,11 @@ class PipCaller(CommandlineCaller):
 		if not pip_version in cls.no_cache_dir and "--no-cache-dir" in args:
 			logger.debug("Found --no-cache-dir flag, version {} doesn't support that yet though, removing.".format(pip_version))
 			args.remove("--no-cache-dir")
+
+		# strip --disable-pip-version-check for versions that don't support it
+		if not pip_version in cls.disable_pip_version_check and "--disable-pip-version-check" in args:
+			logger.debug("Found --disable-pip-version-check flag, version {} doesn't support that yet though, removing.".format(pip_version))
+			args.remove("--disable-pip-version-check")
 
 		# add --no-use-wheel for versions that otherwise break
 		if pip_version in cls.no_use_wheel and not "--no-use-wheel" in args:
