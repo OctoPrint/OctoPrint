@@ -12,12 +12,28 @@ import threading
 from flask import request, make_response, jsonify, url_for
 from flask_babel import gettext
 
+import psutil
+
 from octoprint.settings import settings as s
 
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_remote_address
 from octoprint.logging import prefix_multilines
+
+
+@api.route("/system/usage", methods=["GET"])
+@restricted_access
+@admin_permission.require(403)
+def readUsageForFolder():
+	data = {}
+	for folder_name in s().get(['folder']).keys():
+		path = s().getBaseFolder(folder_name, check_writable=False)
+		if path is not None:
+			usage = psutil.disk_usage(path)
+			data[folder_name] = { 'free': usage.free, 'total': usage.total }
+
+	return jsonify(usage=data)
 
 
 @api.route("/system", methods=["POST"])
@@ -133,7 +149,6 @@ def executeSystemCommand(source, command):
 			return make_response(error, 500)
 
 	return NO_CONTENT
-
 
 def _to_client_specs(specs):
 	result = list()
