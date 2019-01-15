@@ -208,6 +208,10 @@ octoprint.accesscontrol.appkey
 
 .. py:function:: acl_appkey_hook(*args, **kwargs)
 
+   .. deprecated:: 1.3.11
+
+      This functionality will be removed in 1.4.0. Use the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` instead.
+
    By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
    within the system.
 
