@@ -111,27 +111,38 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ EventHandlerPlugin
 
+	# noinspection PyUnresolvedReferences
 	def on_event(self, event, payload):
-		if event.startswith("plugin_pluginmanager_"):
-			self._track_plugin_event(event, payload)
-		elif event.startswith("plugin_softwareupdate_"):
-			self._track_update_event(event, payload)
-		elif event in ("plugin_pi_support_throttle_state",):
-			self._throttle_state = payload
-			self._track_throttle_event(event, payload)
-		elif event in ("plugin_printer_safety_check_warning",):
-			self._track_printer_safety_event(event, payload)
-		elif event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
+		if event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
 			self._track_printjob_event(event, payload)
+
 		elif event in (Events.ERROR,):
 			self._track_commerror_event(event, payload)
+
 		elif event in (Events.CONNECTED,):
 			self._printer_connection_parameters = dict(port=payload["port"],
 			                                           baudrate=payload["baudrate"])
 			self._record_next_firmware_info = True
+
 		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
 			self._record_next_firmware_info = False
 			self._track_printer_event(event, payload)
+
+		elif hasattr(Events, "PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN") and \
+			event in (Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN, Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN,
+			          Events.PLUGIN_PLUGINMANAGER_ENABLE_PLUGIN, Events.PLUGIN_PLUGINMANAGER_DISABLE_PLUGIN):
+			self._track_plugin_event(event, payload)
+
+		elif hasattr(Events, "PLUGIN_SOFTWAREUPDATE_UPDATE_SUCCEEDED") and \
+			event in (Events.PLUGIN_SOFTWAREUPDATE_UPDATE_SUCCEEDED, Events.PLUGIN_SOFTWAREUPDATE_UPDATE_FAILED):
+			self._track_update_event(event, payload)
+
+		elif hasattr(Events, "PLUGIN_PI_SUPPORT_THROTTLE_STATE") and event in (Events.PLUGIN_PI_SUPPORT_THROTTLE_STATE,):
+			self._throttle_state = payload
+			self._track_throttle_event(event, payload)
+
+		elif hasattr(Events, "PLUGIN_PRINTER_SAFETY_CHECK_WARNING") and event in (Events.PLUGIN_PRINTER_SAFETY_CHECK_WARNING,):
+			self._track_printer_safety_event(event, payload)
 
 	##~~ TemplatePlugin
 
@@ -211,13 +222,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "plugin"]):
 			return
 
-		if event.endswith("_installplugin"):
+		if event.endswith("_install_plugin"):
 			self._track("install_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
-		elif event.endswith("_uninstallplugin"):
+		elif event.endswith("_uninstall_plugin"):
 			self._track("uninstall_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
-		elif event.endswith("_enableplugin"):
+		elif event.endswith("_enable_plugin"):
 			self._track("enable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
-		elif event.endswith("_disableplugin"):
+		elif event.endswith("_disable_plugin"):
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 
 	def _track_update_event(self, event, payload):

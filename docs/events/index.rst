@@ -6,15 +6,6 @@ Events
 
 .. contents::
 
-
-.. note::
-
-   With release of OctoPrint 1.1.0, the payload data has been harmonized, it is now a key-value-map for all events.
-   Additionally, the format of the placeholders in both system command and gcode command triggers has been changed to
-   accommodate for this new format. Last but not least, the way of specifying event hooks has changed, OctoPrint no longer
-   separates hooks into two sections (gcodeCommandTrigger and systemCommandTrigger) but instead event hooks are now typed
-   to indicate what to do with the command contained.
-
 .. _sec-events-configuration:
 
 Configuration
@@ -84,6 +75,10 @@ and its origin via the placeholder ``{origin}``.
 
 Available Events
 ================
+
+.. note::
+
+   Plugins may add additional events via the :ref:`octoprint.events.register_custom_events hook <sec-plugins-hook-events-register_custom_events>`.
 
 Server
 ------

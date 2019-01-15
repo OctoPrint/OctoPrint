@@ -903,6 +903,34 @@ octoprint.comm.transport.serial.factory
    :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
 
+.. _sec-plugins-hook-events-register_custom_events:
+
+octoprint.events.register_custom_events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: register_custom_events_hook(*args, **kwargs)
+
+   Return a list of custom :ref:`events <sec-events>` to register in the system for your plugin.
+
+   Should return a list of strings which represent the custom events. Their name on the `octoprint.events.Events` object
+   will be the returned value transformed into upper case ``CAMEL_CASE`` and prefixed with ``PLUGIN_<IDENTIFIER>``. Their
+   value will be prefixed with ``plugin_<identifier>_``.
+
+   Example:
+
+   Consider the following hook part of a plugin with the identifier ``myplugin``. It will register two custom events
+   in the system, ``octoprint.events.Events.PLUGIN_MYPLUGIN_MY_CUSTOM_EVENT`` with value ``plugin_myplugin_my_custom_event``
+   and ``octoprint.events.Events.PLUGIN_MYPLUGIN_MY_OTHER_CUSTOM_EVENT`` with value ``plugin_myplugin_my_other_custom_event``.
+
+   .. code-block:: python
+      :linenos:
+
+      def register_custom_events(*args, **kwargs):
+          return ["my_custom_event", "my_other_custom_event"]
+
+   :return: A list of custom events to register
+   :rtype: list
+
 .. _sec-plugins-hook-filemanager-analysis-factory:
 
 octoprint.filemanager.analysis.factory
