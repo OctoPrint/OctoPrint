@@ -1359,6 +1359,7 @@ class Server(object):
 			"js/lib/pnotify/pnotify.nonblock.min.js",
 			"js/lib/pnotify/pnotify.reference.min.js",
 			"js/lib/pnotify/pnotify.tooltip.min.js",
+			"js/lib/pnotify/pnotify.maxheight.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
