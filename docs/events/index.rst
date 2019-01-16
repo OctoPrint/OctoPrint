@@ -318,6 +318,9 @@ PrintStarted
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``user``: the user who started the print job (if available)
 
    .. deprecated:: 1.3.0
 
@@ -334,6 +337,8 @@ PrintFailed
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
      * ``time``: the elapsed time of the print when it failed, in seconds (float)
      * ``reason``: the reason the print failed, either ``cancelled`` or ``error``
 
@@ -352,6 +357,8 @@ PrintDone
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
      * ``time``: the time needed for the print, in seconds (float)
 
    .. deprecated:: 1.3.0
@@ -369,6 +376,9 @@ PrintCancelling
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``user``: the user who cancelled the print job (if available)
      * ``firmwareError``: the firmware error that caused cancelling the print job, if any
 
 PrintCancelled
@@ -379,7 +389,10 @@ PrintCancelled
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
-     * ``position``: the print head position at the time of cancelling, if available
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``user``: the user who cancelled the print job (if available)
+     * ``position``: the print head position at the time of cancelling (if available)
      * ``position.x``: x coordinate, as reported back from the firmware through `M114`
      * ``position.y``: y coordinate, as reported back from the firmware through `M114`
      * ``position.z``: z coordinate, as reported back from the firmware through `M114`
@@ -406,7 +419,10 @@ PrintPaused
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
-     * ``position``: the print head position at the time of pausing, if available
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``user``: the user who paused the print job (if available)
+     * ``position``: the print head position at the time of pausing (if available)
      * ``position.x``: x coordinate, as reported back from the firmware through `M114`
      * ``position.y``: y coordinate, as reported back from the firmware through `M114`
      * ``position.z``: z coordinate, as reported back from the firmware through `M114`
@@ -433,6 +449,9 @@ PrintResumed
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``user``: the user who resumed the print job (if available)
 
    .. deprecated:: 1.3.0
 

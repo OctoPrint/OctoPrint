@@ -153,6 +153,7 @@ class EventManager(object):
 	def __init__(self):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
+		self._logger_fire = logging.getLogger("{}.fire".format(__name__))
 
 		self._startup_signaled = False
 		self._shutdown_signaled = False
@@ -174,14 +175,14 @@ class EventManager(object):
 					self._shutdown_signaled = True
 
 				eventListeners = self._registeredListeners[event]
-				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
+				self._logger_fire.debug("Firing event: {} (Payload: {!r})".format(event, payload))
 
 				for listener in eventListeners:
-					self._logger.debug("Sending action to %r" % listener)
+					self._logger.debug("Sending action to {!r}".format(listener))
 					try:
 						listener(event, payload)
 					except:
-						self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
+						self._logger.exception("Got an exception while sending event {} (Payload: {!r}) to {}".format(event, payload, listener))
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
@@ -245,7 +246,7 @@ class EventManager(object):
 			return
 
 		self._registeredListeners[event].append(callback)
-		self._logger.debug("Subscribed listener %r for event %s" % (callback, event))
+		self._logger.debug("Subscribed listener {!r} for event {}".format(callback, event))
 
 	def unsubscribe (self, event, callback):
 		"""
@@ -257,7 +258,7 @@ class EventManager(object):
 			return
 
 		self._registeredListeners[event].remove(callback)
-		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+		self._logger.debug("Unsubscribed listener {!r} for event {}".format(callback, event))
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)
