@@ -79,8 +79,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		if enabled is None and self._settings.get([b"enabled"]):
-			# tracking was just enabled, let's send a startup event
-			self._track_startup()
+			# tracking was just enabled, let's start up tracking
+			self._start_tracking()
 
 	##~~ EnvironmentDetectionPlugin
 
@@ -90,21 +90,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin
 
 	def on_after_startup(self):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
-		ping = self._settings.get_int(["ping"])
-		if ping:
-			self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
-			self._ping_worker.start()
-
-		# cautiously look for the get_throttled helper from pi_support
-		pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
-		if pi_helper and 'get_throttled' in pi_helper:
-			self._helpers_get_throttle_state = pi_helper['get_throttled']
-
-		# now that we have everything set up, phone home.
-		self._track_startup()
+		self._start_tracking()
 
 	##~~ ShutdownPlugin
 
@@ -176,6 +162,25 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			import uuid
 			self._settings.set([b"unique_id"], str(uuid.uuid4()))
 			self._settings.save()
+
+	def _start_tracking(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
+		if self._ping_worker is None:
+			ping = self._settings.get_int(["ping"])
+			if ping:
+				self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
+				self._ping_worker.start()
+
+		if self._helpers_get_throttle_state is None:
+			# cautiously look for the get_throttled helper from pi_support
+			pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+			if pi_helper and 'get_throttled' in pi_helper:
+				self._helpers_get_throttle_state = pi_helper['get_throttled']
+
+		# now that we have everything set up, phone home.
+		self._track_startup()
 
 	def _track_ping(self):
 		if not self._settings.get_boolean([b"enabled"]):
