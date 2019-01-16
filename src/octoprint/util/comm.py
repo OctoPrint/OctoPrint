@@ -2475,13 +2475,13 @@ class MachineCom(object):
 				serial_obj = serial.Serial(str(port),
 				                           baudrates[0],
 				                           timeout=read_timeout,
-				                           write_timeout=10000,
+				                           write_timeout=0,
 				                           parity=serial.PARITY_ODD)
 			else:
 				serial_obj = serial.Serial(str(port),
 				                           baudrate,
 				                           timeout=read_timeout,
-				                           write_timeout=10000,
+				                           write_timeout=0,
 				                           parity=serial.PARITY_ODD)
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
@@ -3288,6 +3288,11 @@ class MachineCom(object):
 					self._errorValue = "Could not write to serial port"
 					self.close(is_error=True)
 					break
+				# if we have failed to write data after an initial retry then the printer/system
+				# may be busy, so give things a little time before we try again. Extend this
+				# period each time we fail until either we write the data or run out of retry attempts.
+				if passes > 1:
+					sleep((passes-1)/10.0)
 
 	##~~ command handlers
 
