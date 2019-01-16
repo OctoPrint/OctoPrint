@@ -51,7 +51,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._startup_time = monotonic_time()
 
 	def initialize(self):
-		self._init_tracking()
+		self._init_id()
 
 	##~~ SettingsPlugin
 
@@ -79,8 +79,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		if enabled is None and self._settings.get([b"enabled"]):
-			# tracking was just enabled, let's init it and send a startup event
-			self._init_tracking()
+			# tracking was just enabled, let's send a startup event
 			self._track_startup()
 
 	##~~ EnvironmentDetectionPlugin
@@ -152,12 +151,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		return self._settings.get([b"enabled"]) is None
 
 	##~~ helpers
-
-	def _init_tracking(self):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-		self._init_id()
-		self._logger.info("Initialized anonymous tracking")
 
 	def _init_id(self):
 		if not self._settings.get([b"unique_id"]):
@@ -288,9 +281,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
 
+		unique_id = self._settings.get([b"unique_id"])
+		if not unique_id:
+			return
+
 		sha = hashlib.sha1()
 		sha.update(payload.get("path"))
-		sha.update(self._settings.get([b"unique_id"]) or '')
+		sha.update(unique_id)
 
 		track_event = None
 		args = dict(origin=payload.get(b"origin"), file=sha.hexdigest())
@@ -368,8 +365,12 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._connectivity_checker.online:
 			return
 
+		unique_id = self._settings.get([b"unique_id"])
+		if not unique_id:
+			return
+
 		server = self._settings.get([b"server"])
-		url = server.format(id=self._settings.get([b"unique_id"]) or 'no_uuid', event=event)
+		url = server.format(id=unique_id, event=event)
 		# Don't print the URL or UUID! That would expose the UUID in forums/tickets
 		# if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
 
