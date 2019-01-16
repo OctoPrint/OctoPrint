@@ -391,6 +391,7 @@ PrintCancelled
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
      * ``size``: the file's size in bytes (if available)
      * ``owner``: the user who started the print job (if available)
+     * ``time``: the elapsed time of the print when it was cancelled, in seconds (float)
      * ``user``: the user who cancelled the print job (if available)
      * ``position``: the print head position at the time of cancelling (if available)
      * ``position.x``: x coordinate, as reported back from the firmware through `M114`
