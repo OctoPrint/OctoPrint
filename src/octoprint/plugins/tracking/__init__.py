@@ -90,6 +90,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin
 
 	def on_after_startup(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		ping = self._settings.get_int(["ping"])
 		if ping:
 			self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
@@ -106,11 +109,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ ShutdownPlugin
 
 	def on_shutdown(self):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
 		self._track_shutdown()
 
 	##~~ EventHandlerPlugin
 
 	def on_event(self, event, payload):
+		if not self._settings.get_boolean([b"enabled"]):
+			return
+
 		if event.startswith("plugin_pluginmanager_"):
 			self._track_plugin_event(event, payload)
 		elif event.startswith("plugin_softwareupdate_"):
@@ -166,9 +174,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("ping", octoprint_uptime=uptime)
 
 	def _track_startup(self):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "startup"]):
 			return
 
@@ -198,9 +203,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("shutdown")
 
 	def _track_plugin_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "plugin"]):
 			return
 
@@ -214,9 +216,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
 
 	def _track_update_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "update"]):
 			return
 
@@ -226,9 +225,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("update_failed", target=payload.get("target"), from_version=payload.get("from_version"), to_version=payload.get("to_version"))
 
 	def _track_throttle_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "throttled"]):
 			return
 
@@ -249,9 +245,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track(track_event, **args)
 
 	def _track_commerror_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "commerror"]):
 			return
 
@@ -275,9 +268,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track(track_event, **args)
 
 	def _track_printjob_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
 
@@ -331,9 +321,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track(track_event, **args)
 
 	def _track_printer_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "printer"]):
 			return
 
@@ -345,9 +332,6 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track("printer_connected", **args)
 
 	def _track_printer_safety_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
-			return
-
 		if not self._settings.get_boolean(["events", "printer_safety_check"]):
 			return
 
@@ -363,6 +347,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def _do_track(self, event, **kwargs):
 		if not self._connectivity_checker.online:
+			return
+
+		if not self._settings.get_boolean([b"enabled"]):
 			return
 
 		unique_id = self._settings.get([b"unique_id"])
