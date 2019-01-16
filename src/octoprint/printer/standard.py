@@ -1205,7 +1205,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                                            action_user=user)
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
-			payload["reason"] = "cancelled"
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self._logger_job.info("Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
@@ -1218,6 +1217,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				            context=dict(event=payload),
 				            part_of_job=True,
 				            must_be_set=False)
+
+			payload["reason"] = "cancelled"
 
 			def finalize():
 				self._fileManager.log_print(payload["origin"],
