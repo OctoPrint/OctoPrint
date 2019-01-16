@@ -10,6 +10,7 @@ import logging
 import pkg_resources
 
 from octoprint.util.pip import PipCaller, UnknownPip
+from octoprint.util.version import get_comparable_version
 from .. import exceptions
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip")
@@ -23,8 +24,13 @@ _pip_callers = dict()
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 def can_perform_update(target, check, online=True):
+	from .. import MINIMUM_PIP
 	pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
-	return "pip" in check and pip_caller is not None and pip_caller.available and (online or check.get("offline", False))
+	return "pip" in check \
+	       and pip_caller is not None \
+	       and pip_caller.available \
+	       and pip_caller.version >= get_comparable_version(MINIMUM_PIP) \
+	       and (online or check.get("offline", False))
 
 def _get_pip_caller(command=None):
 	key = command
@@ -80,7 +86,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 	install_arg = check["pip"].format(target_version=target_version, target=target_version)
 
 	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
-	pip_args = ["install", install_arg, "--no-cache-dir"]
+	pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
 	pip_kwargs = dict()
 	if pip_working_directory is not None:
 		pip_kwargs.update(cwd=pip_working_directory)

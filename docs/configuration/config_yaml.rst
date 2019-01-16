@@ -81,7 +81,8 @@ Settings for the REST API:
      # Whether to allow cross origin access to the API or not
      allowCrossOrigin: false
 
-     # Additional app api keys, see REST API > Apps in the docs
+     # Additional app api keys, see REST API > Apps in the docs.
+     # Deprecated since 1.3.11, to be removed in 1.4.0!
      apps:
        "some.app.identifier:some_version":
          pubkey: <RSA pubkey>
@@ -561,6 +562,9 @@ Use the following settings to enable or disable OctoPrint features:
      autoUppercaseBlacklist:
      - M117
      - M118
+
+     # whether G90/G91 also influence absolute/relative mode of extruders
+     g90InfluencesExtruder: false
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -1057,6 +1061,15 @@ Use the following settings to configure the server:
 
        # How many days to leave unused entries in the preemptive cache config
        until: 7
+
+     # Configuration of the client IP check to warn about connections from external networks
+     ipCheck:
+
+       # whether to enable the check, defaults to true
+       enabled: true
+
+       # additional non-local subnets to consider trusted, in CIDR notation, e.g. "192.168.1.0/24"
+       trustedSubnets: []
 
 
 .. note::

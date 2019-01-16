@@ -177,7 +177,8 @@ def apiPrinterState():
 def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
-		"api": VERSION
+		"api": VERSION,
+		"text": "OctoPrint {}".format(octoprint.server.DISPLAY_VERSION)
 	})
 
 
@@ -215,9 +216,12 @@ def login():
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 
+				remote_addr = get_remote_address(request)
+				logging.getLogger(__name__).info("Actively logging in user {} from {}".format(user.get_id(), remote_addr))
+
 				response = user.asDict()
 				response["_is_external_client"] = s().getBoolean(["server", "ipCheck", "enabled"]) \
-				                                  and not util_net.is_lan_address(get_remote_address(request),
+				                                  and not util_net.is_lan_address(remote_addr,
 				                                                                  additional_private=s().get(["server", "ipCheck", "trustedSubnets"]))
 				return jsonify(response)
 

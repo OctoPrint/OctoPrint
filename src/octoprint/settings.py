@@ -155,6 +155,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"heartbeat": 15 * 60, # 15 min
@@ -294,9 +295,9 @@ default_settings = {
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api",
+					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
 					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
-					"plugin_softwareupdate", "plugin_announcements", "plugin_backup"
+					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
@@ -323,7 +324,7 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
@@ -355,7 +356,7 @@ default_settings = {
 		"gcode": {
 			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
 			"snippets": {
-				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}",
+				"disable_hotends": "{% if printer_profile.extruder.sharedNozzle %}M104 T0 S0\n{% else %}{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}{% endif %}",
 				"disable_bed": "{% if printer_profile.heatedBed %}M140 S0\n{% endif %}"
 			}
 		}
@@ -603,6 +604,8 @@ class Settings(object):
 		self._logger = logging.getLogger(__name__)
 
 		self._basedir = None
+
+		assert(isinstance(default_settings, dict))
 
 		self._map = HierarchicalChainMap(dict(), default_settings)
 
@@ -874,6 +877,7 @@ class Settings(object):
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
+
 				except yaml.YAMLError as e:
 					details = e.message
 
@@ -888,10 +892,12 @@ class Settings(object):
 					                      details=details,
 					                      line=line,
 					                      column=column)
+
 				except:
 					raise
+
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
-		if not self._config:
+		if not self._config or not isinstance(self._config, dict):
 			self._config = dict()
 
 		if migrate:
@@ -1304,15 +1310,25 @@ class Settings(object):
 				return True
 		return False
 
-	def backup(self, suffix, path=None):
+	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
 		if path is None:
 			path = os.path.dirname(self._configfile)
-		basename = os.path.basename(self._configfile)
-		name, ext = os.path.splitext(basename)
 
-		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		basename = os.path.basename(self._configfile)
+		name, default_ext = os.path.splitext(basename)
+
+		if ext is None:
+			ext = default_ext
+
+		if suffix is None and ext == default_ext:
+			raise ValueError("Need a suffix or a different extension")
+
+		if suffix is None:
+			suffix = ""
+
+		backup = os.path.join(path, "{}{}.{}{}".format("." if hidden else "", name, suffix, ext))
 		shutil.copy(self._configfile, backup)
 		return backup
 
@@ -1329,7 +1345,14 @@ class Settings(object):
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			payload = dict(config_hash=self.config_hash,
+			               effective_hash=self.effective_hash)
+			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter

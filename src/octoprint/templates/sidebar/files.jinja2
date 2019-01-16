@@ -1,5 +1,8 @@
 <form class="form-search" data-bind="submit: performSearch">
-    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+    <div class="search-query-with-clear" data-bind="css: {'active-clear': searchQuery}">
+        <input type="search" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+        <span class="search-clear" data-bind="click: clearSearchQuery"><i class="fa fa-remove"></i></span>
+    </div>
 </form>
 <div class="gcode_files">
     <div class="entry back clickable" data-bind="visible: currentPath() != '', click: function() { $root.navigateUp(); }" style="display: none">

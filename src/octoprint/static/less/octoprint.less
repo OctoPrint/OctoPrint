@@ -1415,6 +1415,46 @@ input[type="number"].input-nospin {
   }
 }
 
+// search boxes with clear button
+
+.search-query-with-clear {
+  position: relative;
+
+  .search-clear {
+    display: inline-block;
+    color: #ccc;
+    position: absolute;
+    right: 28px;
+    height: 20px;
+    padding: 4px 0;
+    cursor: pointer;
+
+    visibility: hidden;
+  }
+
+  &.active-clear {
+    .search-query {
+      padding-right: 28px;
+      width: 192px;
+    }
+
+    .search-clear {
+      visibility: visible;
+    }
+  }
+
+  input::-ms-clear {
+    display: none;
+  }
+
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance:none;
+  }
+}
+
 // Navbar loginForm
 // Make the overlay always visible so that extensions are able to auto-submit (i.e. password-managers)
 #navbar_login:not(.open) #login_dropdown_loggedout {

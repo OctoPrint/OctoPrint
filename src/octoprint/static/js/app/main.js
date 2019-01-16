@@ -194,6 +194,11 @@ $(function() {
         PNotify.prototype.options.delay = 5000;
         PNotify.prototype.options.animate_speed = "fast";
 
+        PNotify.prototype.options.maxheight.maxheight = function() {
+            return $(window).height() - 170; // top margin + header + footer + some safety margin
+        };
+
+        // single button notify
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
                 return new PNotify(options);

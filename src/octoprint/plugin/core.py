@@ -839,12 +839,15 @@ class PluginManager(object):
 
 		# ... then create and return the real one
 		return self._import_plugin(key, *module,
-		                           name=name, version=version, summary=summary, author=author, url=url,
+		                           module_name=module_name, name=name, version=version, summary=summary, author=author, url=url,
 		                           license=license, bundled=bundled, parsed_metadata=plugin.parsed_metadata)
 
-	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
+	def _import_plugin(self, key, f, filename, description, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
 		try:
-			instance = imp.load_module(key, f, filename, description)
+			if module_name:
+				instance = imp.load_module(module_name, f, filename, description)
+			else:
+				instance = imp.load_module(key, f, filename, description)
 			plugin = PluginInfo(key, filename, instance,
 			                    name=name,
 			                    version=version,

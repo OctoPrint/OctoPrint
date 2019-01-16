@@ -574,15 +574,15 @@ function formatFilament(filament) {
     return _.sprintf(result, {length: filament["length"] / 1000, volume: filament["volume"]});
 }
 
-function cleanTemperature(temp) {
+function cleanTemperature(temp, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     return temp;
 }
 
-function formatTemperature(temp, showF) {
+function formatTemperature(temp, showF, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     if (showF) {
         return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
     } else {
@@ -708,11 +708,19 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var oncancel = options.oncancel || undefined;
     var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
     var nofade = options.nofade || false;
+    var noclose = options.noclose || false;
 
-    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalHeader;
+    if (noclose) {
+        modalHeader = $('<h3>' + title + '</h3>');
+    } else {
+        modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    }
+
     var modalBody;
     if (html) {
         modalBody = $(html);
@@ -740,7 +748,13 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onclose(event);
         }
     });
-    modal.modal("show");
+
+    var modalOptions = {};
+    if (noclose) {
+        modalOptions.backdrop = "static";
+        modalOptions.keyboard = false;
+    }
+    modal.modal(modalOptions);
 
     proceedButton.click(function(e) {
         e.preventDefault();
@@ -748,6 +762,11 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onproceed(e);
         }
         modal.modal("hide");
+    });
+    cancelButton.click(function(e) {
+        if (oncancel && _.isFunction(oncancel)) {
+            oncancel(e);
+        }
     });
 
     return modal;

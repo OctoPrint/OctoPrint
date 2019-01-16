@@ -21,6 +21,7 @@ from builtins import bytes, range
 from past.builtins import basestring
 
 import os
+import sys
 import logging
 import logging.config
 import atexit
@@ -190,6 +191,10 @@ class Server(object):
 
 		if self._settings is None:
 			self._settings = settings()
+
+		self._settings.setBoolean(["server", "incompleteStartup"], True)
+		self._settings.save()
+
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()
 
@@ -242,6 +247,7 @@ class Server(object):
 
 		# monkey patch a bunch of stuff
 		util.tornado.fix_json_encode()
+		util.flask.fix_flask_jsonify()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -439,6 +445,17 @@ class Server(object):
 			implementation._settings.save()
 
 			implementation.on_settings_initialized()
+
+		custom_events_hooks = pluginManager.get_hooks("octoprint.events.register_custom_events")
+		for name, hook in custom_events_hooks.items():
+			try:
+				result = hook()
+				if isinstance(result, (list, tuple)):
+					for event in result:
+						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
+						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
+			except:
+				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name))
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
 		                                               settings_plugin_inject_factory]
@@ -650,11 +667,16 @@ class Server(object):
 		if not isinstance(trusted_downstream, list):
 			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
 			trusted_downstreams = []
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
-		                                             max_body_sizes=max_body_sizes,
-		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
-		                                             xheaders=True,
-		                                             trusted_downstream=trusted_downstream)
+
+		server_kwargs = dict(max_body_sizes=max_body_sizes,
+		                     default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                     xheaders=True,
+		                     trusted_downstream=trusted_downstream)
+		if sys.platform == "win32":
+			# set 10min idle timeout under windows to hopefully make #2916 less likely
+			server_kwargs.update(dict(idle_connection_timeout=600))
+
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
 		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
 		                                                                                    # only listens on v4 & v6
 		                                                                                    # if we use None as address
@@ -726,6 +748,14 @@ class Server(object):
 						return
 					implementation.on_after_startup()
 				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
+
+				# if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
+				# flag again...
+				self._settings.setBoolean(["server", "incompleteStartup"], False)
+				self._settings.save()
+
+				# make a backup of the current config
+				self._settings.backup(ext="backup")
 
 				# when we are through with that we also run our preemptive cache
 				if settings().getBoolean(["devel", "cache", "preemptive"]):
@@ -1340,6 +1370,7 @@ class Server(object):
 			"js/lib/pnotify/pnotify.nonblock.min.js",
 			"js/lib/pnotify/pnotify.reference.min.js",
 			"js/lib/pnotify/pnotify.tooltip.min.js",
+			"js/lib/pnotify/pnotify.maxheight.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
@@ -1347,25 +1378,6 @@ class Server(object):
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.js"
-		]
-		js_client = [
-			"js/app/client/base.js",
-			"js/app/client/socket.js",
-			"js/app/client/browser.js",
-			"js/app/client/connection.js",
-			"js/app/client/control.js",
-			"js/app/client/files.js",
-			"js/app/client/job.js",
-			"js/app/client/languages.js",
-			"js/app/client/printer.js",
-			"js/app/client/printerprofiles.js",
-			"js/app/client/settings.js",
-			"js/app/client/slicing.js",
-			"js/app/client/system.js",
-			"js/app/client/timelapse.js",
-			"js/app/client/users.js",
-			"js/app/client/util.js",
-			"js/app/client/wizard.js"
 		]
 
 		css_libs = [
@@ -1419,13 +1431,15 @@ class Server(object):
 		js_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["js"],
 		                                    filters="js_delimiter_bundler")
 
+		clientjs_core = dynamic_core_assets["clientjs"] + \
+			all_assets_for_plugins(dynamic_plugin_assets["bundled"]["clientjs"])
+		clientjs_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["clientjs"],
+		                                          filters="js_delimiter_bundler")
+
 		js_libs_bundle = Bundle(*js_libs,
 		                        output="webassets/packed_libs.js",
 		                        filters=",".join(js_filters))
 
-		js_client_bundle = Bundle(*js_client,
-		                          output="webassets/packed_client.js",
-		                          filters=",".join(js_filters))
 		js_core_bundle = Bundle(*js_core,
 		                        output="webassets/packed_core.js",
 		                        filters=",".join(js_filters))
@@ -1440,6 +1454,21 @@ class Server(object):
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle,
 		                       output="webassets/packed_app.js",
 		                       filters=",".join(js_filters))
+
+		js_client_core_bundle = Bundle(*clientjs_core,
+		                               output="webassets/packed_client_core.js",
+		                               filters=",".join(js_filters))
+
+		if len(clientjs_plugins) == 0:
+			js_client_plugins_bundle = Bundle(*[])
+		else:
+			js_client_plugins_bundle = Bundle(*clientjs_plugins.values(),
+			                                  output="webassets/packed_client_plugins.js",
+			                                  filters=",".join(js_plugin_filters))
+
+		js_client_bundle = Bundle(js_client_core_bundle, js_client_plugins_bundle,
+		                          output="webassets/packed_client.js",
+		                          filters=",".join(js_filters))
 
 		# -- CSS -------------------------------------------------------------------------------------------------------
 
@@ -1500,6 +1529,11 @@ class Server(object):
 		# -- asset registration ----------------------------------------------------------------------------------------
 
 		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_client_core", js_client_core_bundle)
+		for plugin, bundle in clientjs_plugins.items():
+			# register our collected clientjs plugin bundles so that they are bound to the environment
+			assets.register("js_client_plugin_{}".format(plugin), bundle)
+		assets.register("js_client_plugins", js_client_plugins_bundle)
 		assets.register("js_client", js_client_bundle)
 		assets.register("js_core", js_core_bundle)
 		for plugin, bundle in js_plugins.items():

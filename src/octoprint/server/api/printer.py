@@ -129,9 +129,10 @@ def printerToolCommand():
 			return make_response("Printer is currently printing", 409)
 
 		amount = data["amount"]
+		speed = data.get("speed", None)
 		if not isinstance(amount, (int, long, float)):
 			return make_response("Not a number for extrusion amount: %r" % amount, 400)
-		printer.extrude(amount, tags=tags)
+		printer.extrude(amount, speed=speed, tags=tags)
 
 	elif command == "flowrate":
 		factor = data["factor"]

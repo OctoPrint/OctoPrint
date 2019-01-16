@@ -38,6 +38,8 @@ class UtilNetTest(unittest.TestCase):
 		("10.1.2.3", [], True),
 		("fc00::1", [], True),
 		("::1", [], True),
+		("::ffff:192.168.1.1", [], True),
+		("::ffff:8.8.8.8", [], False),
 		("11.1.2.3", [], False),
 		("11.1.2.3", ["11/8"], True),
 		("12.1.1.123", [], True),

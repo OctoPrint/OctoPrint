@@ -25,9 +25,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from .core import (Plugin, RestartNeedingPlugin, SortablePlugin)
 
-# noinspection PyCompatibility
-from past.builtins import basestring
-
 class OctoPrintPlugin(Plugin):
 	"""
 	The parent class of all OctoPrint plugin mixins.
@@ -159,6 +156,10 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 		is not actually up yet and none of your plugin's APIs or blueprints will be reachable yet. If you need to be
 		externally reachable, use :func:`on_after_startup` instead or additionally.
 
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
+
 		The relevant sorting context is ``StartupPlugin.on_startup``.
 
 		:param string host: the host the server will listen on, may be ``0.0.0.0``
@@ -170,6 +171,10 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	def on_after_startup(self):
 		"""
 		Called just after launch of the server, so when the listen loop is actually running already.
+
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		The relevant sorting context is ``StartupPlugin.on_after_startup``.
 		"""
@@ -190,6 +195,10 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 	def on_shutdown(self):
 		"""
 		Called upon the imminent shutdown of OctoPrint.
+
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
 
 		The relevant sorting context is ``ShutdownPlugin.on_shutdown``.
 		"""
@@ -225,6 +234,8 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 		js
 		   JavaScript files, such as additional view models
+		jsclient
+		   JavaScript files containing additional parts for the JS Client Library (since 1.3.10)
 		css
 		   CSS files with additional styles, will be embedded into delivered pages when not running in LESS mode.
 		less
@@ -239,6 +250,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		   def get_assets(self):
 		       return dict(
 		           js=['js/my_file.js', 'js/my_other_file.js'],
+		           clientjs=['clientjs/my_file.js'],
 		           css=['css/my_styles.css'],
 		           less=['less/my_styles.less']
 		        )
@@ -1799,6 +1811,10 @@ class EventHandlerPlugin(OctoPrintPlugin):
 		"""
 		Called by OctoPrint upon processing of a fired event on the platform.
 
+		.. warning::
+
+		   Do not perform long-running or even blocking operations in your implementation or you **will** block and break the server.
+
 		Arguments:
 		    event (str): The type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
 		        for possible values
@@ -2043,20 +2059,3 @@ class ProgressPlugin(OctoPrintPlugin):
 		:param int progress:                Current progress as a value between 0 and 100
 		"""
 		pass
-
-
-class AppPlugin(OctoPrintPlugin):
-	"""
-	Using the :class:`AppPlugin mixin` plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
-	within the system.
-
-	.. deprecated:: 1.2.0
-
-	   Refer to the :ref:`octoprint.accesscontrol.appkey hook <sec-plugins-hook-accesscontrol-appkey>` instead.
-
-	"""
-
-	# noinspection PyMethodMayBeStatic
-	def get_additional_apps(self):
-		return []
-

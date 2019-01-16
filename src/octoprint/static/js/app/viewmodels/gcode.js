@@ -530,6 +530,7 @@ $(function() {
                 output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
                 output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
                 output.push(gettext("Estimated total print time") + ": " + formatFuzzyPrintTime(model.printTime));
+                output.push(gettext("Layers with extrusion") + ": " + model.layersPrinted.toFixed(0));
 
                 self.ui_modelInfo(output.join("<br>"));
 
