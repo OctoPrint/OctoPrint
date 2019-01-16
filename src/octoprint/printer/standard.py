@@ -653,49 +653,75 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
 	
-	def success_hook_sdcopy(self, payload, *args, **kwargs):
-		self.on_comm_file_transfer_done(payload["remote"])
-		eventManager().fire(Events.TRANSFER_DONE, payload)
-		
-	def error_hook_sdcopy(self, payload, *args, **kwargs):
-		eventManager().fire(Events.TRANSFER_FAILED, payload)
-								 
-	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
+	def add_sd_file(self, filename, path, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
 			return
 
-		def default_add_sd_file(printer, filename, remoteName, absolutePath, on_success, on_failure):
-			self._create_estimator("stream")
-			self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
-									 special=not valid_file_type(filename, "gcode"),
-									 tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
-		
 		self._streamingFinishedCallback = on_success
 		self._streamingFailedCallback = on_failure
 
+		def sd_upload_started(local_filename, remote_filename):
+			eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
+			                                                  remote=remote_filename))
+
+		def sd_upload_succeeded(local_filename, remote_filename, elapsed):
+			payload = dict(local=local_filename,
+			               remote=remote_filename,
+			               time=elapsed)
+			eventManager().fire(Events.TRANSFER_DONE, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
+
+		def sd_upload_failed(local_filename, remote_filename, elapsed):
+			payload = dict(local=local_filename,
+			               remote=remote_filename,
+			               time=elapsed)
+			eventManager().fire(Events.TRANSFER_FAILED, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFailedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
+
+		for name, hook in self.sd_card_upload_hooks.items():
+			# first sd card upload plugin that feels responsible gets the job
+			try:
+				result = hook(self, filename, path, sd_upload_started, sd_upload_succeeded, sd_upload_failed,
+				              *args, **kwargs)
+				if result is not None:
+					return result
+			except:
+				self._logger.exception("There was an error running the sd upload hook provided by plugin {}".format(name))
+
+		else:
+			# no plugin feels responsible, use the default implementation
+			return self._add_sd_file(filename, path, tags=kwargs.get("tags"))
+
+	def _get_free_remote_name(self, filename):
 		self.refresh_sd_files(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
 		if valid_file_type(filename, "gcode"):
-			remoteName = util.get_dos_filename(filename,
-			                                   existing_filenames=existingSdFiles,
-			                                   extension="gco",
-			                                   whitelisted_extensions=["gco", "g"])
+			# figure out remote filename
+			remote_name = util.get_dos_filename(filename,
+			                                    existing_filenames=existingSdFiles,
+			                                    extension="gco",
+			                                    whitelisted_extensions=["gco", "g"])
 		else:
 			# probably something else added through a plugin, use it's basename as-is
-			remoteName = os.path.basename(filename)
-		sd_card_uploads = self.sd_card_upload_hooks.items() + [("default", default_add_sd_file)]
-		for name, hook in sd_card_uploads:
-			try:
-				self._logger.info("run sd card upload with {}".format(name))
-				hook(self, filename, remoteName, absolutePath, self.success_hook_sdcopy, self.error_hook_sdcopy)
-				#only one impl authorize
-				break
-			except:
-				self._logger.exception("Error while processing copy to sd from {}".format(name))
-			
-		return remoteName
+			remote_name = os.path.basename(filename)
+
+		return remote_name
+
+	def _add_sd_file(self, filename, path, tags=None):
+		if tags is None:
+			tags = set()
+
+		remote_name = self._get_free_remote_name(filename)
+		self._create_estimator("stream")
+		self._comm.startFileTransfer(path, filename, "/" + remote_name,
+		                             special=not valid_file_type(filename, "gcode"),
+		                             tags=tags | {"trigger:printer.add_sd_file"})
+
+		return remote_name
 
 	def delete_sd_file(self, filename, *args, **kwargs):
 		if not self._comm or not self._comm.isSdReady():
@@ -1174,32 +1200,39 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				            part_of_job=True,
 				            must_be_set=False)
 
-	def on_comm_file_transfer_started(self, filename, filesize, user=None):
+	def on_comm_file_transfer_started(self, local_filename, remote_filename, filesize, user=None):
+		eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
+		                                                  remote=remote_filename))
+
 		self._sdStreaming = True
 
-		self._setJobData(filename, filesize, True, user=user)
+		self._setJobData(remote_filename, filesize, True, user=user)
 		self._updateProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
-	def on_comm_file_transfer_done(self, filename, failed=False):
+	def on_comm_file_transfer_done(self, local_filename, remote_filename, elapsed, failed=False):
 		self._sdStreaming = False
 
-		# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
-		# both parameters
+		payload = dict(local=local_filename,
+		               remote=remote_filename,
+		               time=elapsed)
+
 		if failed:
-			if self._streamingFailedCallback is not None:
-				self._streamingFailedCallback(filename, filename, FileDestinations.SDCARD)
+			eventManager().fire(Events.TRANSFER_FAILED, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFailedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 		else:
-			if self._streamingFinishedCallback is not None:
-				self._streamingFinishedCallback(filename, filename, FileDestinations.SDCARD)
+			eventManager().fire(Events.TRANSFER_DONE, payload)
+			if callable(self._streamingFinishedCallback):
+				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._updateProgressData()
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
-	def on_comm_file_transfer_failed(self, filename):
-		self.on_comm_file_transfer_done(filename, failed=True)
+	def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):
+		self.on_comm_file_transfer_done(local_filename, remote_filename, elapsed, failed=True)
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()

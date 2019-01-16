@@ -1089,6 +1089,91 @@ octoprint.printer.estimation.factory
    :return: The :class:`~octoprint.printer.estimation.PrintTimeEstimator` class to use, or a factory method
    :rtype: class or function
 
+.. _sec-plugins-hook-octoprint-printer-sdcardupload:
+
+octoprint.printer.sdcardupload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: sd_card_upload_hook(printer, filename, path, start_callback, success_callback, failure_callback, *args, **kwargs)
+
+   Via this hook plugins can change the way files are being uploaded to the sd card of the printer.
+
+   Implementations **must** call the provided ``start_callback`` on start of the file transfer and either the ``success_callback``
+   or ``failure_callback`` on the end of the file transfer, depending on whether it was successful or not.
+
+   The ``start_callback`` has the following signature:
+
+   .. code-block:: python
+
+      def start_callback(local_filename, remote_filename):
+          # ...
+
+   ``local_filename`` must be the name of the file on the ``local`` storage, ``remote_filename`` the name of the file
+   to be created on the ``sdcard`` storage.
+
+   ``success_callback`` and ``failure_callback`` both have the following signature:
+
+   .. code-block:: python
+
+      def success_or_failure_callback(local_filename, remote_filename, elapsed):
+          # ...
+
+   ``local_filename`` must be the name of the file on the ``local`` storage, ``remote_filename`` the name of the file
+   to be created on the ``sdcard`` storage. ``elapsed`` is the elapsed time in seconds.
+
+   If the hook is going to handle the upload, it must return the (future) remote filename of the file on the ``sdcard``
+   storage. If it returns ``None`` (or an otherwise falsy value), OctoPrint will interpret this as the hook not going to
+   handle the file upload, in which case the next hook or - if no other hook is registered - the default implementation
+   will be called.
+
+   **Example**
+
+   The following example creates a dummy SD card uploader that does nothing but sleep for ten seconds when a file
+   is supposed to be uploaded. Note that the long running process of sleeping for ten seconds is extracted into its
+   own thread, which is important in order to not block the main application!
+
+   .. code-block:: python
+
+      import threading
+      import logging
+      import time
+
+      def nop_upload_to_sd(printer, filename, path, sd_upload_started, sd_upload_succeeded, sd_upload_failed, *args, **kwargs):
+          logger = logging.getLogger(__name__)
+
+          remote_name = printer._get_free_remote_name(filename)
+          logger.info("Starting dummy SDCard upload from {} to {}".format(filename, remote_name))
+
+          sd_upload_started(filename, remote_name)
+
+          def process():
+              logger.info("Sleeping 10s...")
+              time.sleep(10)
+              logger.info("And done!")
+              sd_upload_succeeded(filename, remote_name, 10)
+
+          thread = threading.Thread(target=process)
+          thread.daemon = True
+          thread.start()
+
+          return remote_name
+
+      __plugin_name__ = "No-op SDCard Upload Test"
+      __plugin_hooks__ = {
+          "octoprint.printer.sdcardupload": nop_upload_to_sd
+      }
+
+   .. versionadded:: 1.3.11
+
+   :param object printer: the :py:class:`~octoprint.printer.PrinterInterface` instance the hook was called from
+   :param str filename: filename on the ``local`` storage
+   :param str path: path of the file in the local file system
+   :param function sd_upload_started: callback for when the upload started
+   :param function sd_upload_success: callback for successful finish of upload
+   :param function sd_upload_failure: callback for failure of upload
+   :return: the name of the file on the ``sdcard`` storage or ``None``
+   :rtype: string or ``None``
+
 .. _sec-plugins-hook-server-http-after_request:
 
 octoprint.server.api.after_request
@@ -1137,78 +1222,6 @@ octoprint.server.http.access_validator
 
       Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
-.. _sec-plugins-hook-octoprint-printer-sdcardupload:
-
-octoprint.printer.sdcardupload
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. py:function:: sd_card_upload_hook(printer, filename, absolutePath, remoteName, *args, **kwargs)
-
-   via hook, you can change the upload system on the sd card of the printer.
-
-   when your copy is finished, you must call the callback (success_hook_sdcopy or error_hook_sdcopy) for notify the status (it's important)
-   
-   these callback take into parameter a specific payload :
-   .. code-block:: python
-        payload = {
-			"local": filename,
-			"remote": remoteName,
-			"time": time.time() - timestart
-		}
-		
-   ``
-	  
-   **Example:**
-   .. code-block:: python
-
-      # coding=utf-8
-      
-      class CustomSdCardUploadPlugin(octoprint.plugin.OctoPrintPlugin):
-
-        def sdcard(self, printer, filename, remoteName, absolutePath, success_hook_sdcopy, error_hook_sdcopy, *args, **kwargs):
-            self._logger.info("custom sd card upload")
-            timestart = time.time()
-            # you can use the printer methode...
-            # for exemple :
-            # printer.release_sd_card(self)
-            # printer.init_sd_card(self)
-            # printer.refresh_sd_files()
-            # do something
-            payload = {
-                 "local": filename,
-                 "remote": remoteName,
-                 "time": time.time() - timestart
-            }
-            success_hook_sdcopy(payload);
-
-      __plugin_name__ = "Custom sd card upload plugin"
-      
-      def __plugin_load__():
-        plugin = CustomSdCardUploadPlugin()
-      
-        global __plugin_implementation__
-        __plugin_implementation__ = plugin
-      
-        global __plugin_hooks__
-        __plugin_hooks__ = {"octoprint.printer.sdcardupload": plugin.custom_sd_card_upload_plugin}
-
-        global __plugin_name__
-        __plugin_name__ = "custom sd card upload plugin"
-
-      
-   ``
-
-   .. versionadded:: 1.3.11
-
-   :param object printer: access to printer methode
-   :param str filename: filename inside octoprint
-   :param str remoteName: name inside sd card printer
-   :param str absolutePath: absolutePath inside octoprint
-   :param callback : absolutePath inside octoprint
-   :param str absolutePath: absolutePath inside octoprint
-   :return success_hook_sdcopy: for notify success (important), this callback take payload parameter
-   :return error_hook_sdcopy: for notify error (important), this callback take payload parameter
-   
 .. _sec-plugins-hook-server-http-bodysize:
 
 octoprint.server.http.bodysize

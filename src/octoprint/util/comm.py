@@ -1053,7 +1053,7 @@ class MachineCom(object):
 			self._logger.exception("Error while trying to start printing")
 			self._trigger_error(get_exception_string(), "start_print")
 
-	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False, tags=None):
+	def startFileTransfer(self, path, localFilename, remoteFilename, special=False, tags=None):
 		if not self.isOperational() or self.isBusy():
 			self._logger.info("Printer is not operational or busy")
 			return
@@ -1065,14 +1065,16 @@ class MachineCom(object):
 			self.resetLineNumbers(tags={"trigger:comm.start_file_transfer"})
 
 			if special:
-				self._currentFile = SpecialStreamingGcodeFileInformation(filename, localFilename, remoteFilename)
+				self._currentFile = SpecialStreamingGcodeFileInformation(path, localFilename, remoteFilename)
 			else:
-				self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
+				self._currentFile = StreamingGcodeFileInformation(path, localFilename, remoteFilename)
 			self._currentFile.start()
 
 			self.sendCommand("M28 %s" % remoteFilename, tags=tags | {"trigger:comm.start_file_transfer",})
-			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
-			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize(), user=self._currentFile.getUser())
+			self._callback.on_comm_file_transfer_started(localFilename,
+			                                             remoteFilename,
+			                                             self._currentFile.getFilesize(),
+			                                             user=self._currentFile.getUser())
 
 	def cancelFileTransfer(self, tags=None):
 		if not self.isOperational() or not self.isStreaming():
@@ -1092,22 +1094,17 @@ class MachineCom(object):
 			if failed:
 				self.deleteSdFile(remote)
 
-			payload = {
-				"local": self._currentFile.getLocalFilename(),
-				"remote": remote,
-				"time": self.getPrintTime()
-			}
+			local = self._currentFile.getLocalFilename()
+			elapsed = self.getPrintTime()
 
 			def finalize():
 				self._currentFile = None
 				self._changeState(self.STATE_OPERATIONAL)
 
 				if failed:
-					self._callback.on_comm_file_transfer_failed(remote)
-					eventManager().fire(Events.TRANSFER_FAILED, payload)
+					self._callback.on_comm_file_transfer_failed(local, remote, elapsed)
 				else:
-					self._callback.on_comm_file_transfer_done(remote)
-					eventManager().fire(Events.TRANSFER_DONE, payload)
+					self._callback.on_comm_file_transfer_done(local, remote, elapsed)
 
 				self.refreshSdFiles(tags={"trigger:comm.finish_file_transfer",})
 			self._sendCommand(SendQueueMarker(finalize))
@@ -3625,13 +3622,13 @@ class MachineComPrintCallback(object):
 	def on_comm_sd_files(self, files):
 		pass
 
-	def on_comm_file_transfer_started(self, filename, filesize, user=None):
+	def on_comm_file_transfer_started(self, local_filename, remote_filename, filesize, user=None):
 		pass
 
-	def on_comm_file_transfer_done(self, filename):
+	def on_comm_file_transfer_done(self, local_filename, remote_filename, elapsed):
 		pass
 
-	def on_comm_file_transfer_failed(self, filename):
+	def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):
 		pass
 
 	def on_comm_force_disconnect(self):
