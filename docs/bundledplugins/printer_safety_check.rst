@@ -29,6 +29,20 @@ If you know of further printers/printer firmwares that need to be added here, pl
    unexpectedly and with `catastrophic <https://www.thissmarthouse.net/dont-burn-your-house-down-3d-printing-a-cautionary-tale/>`_
    `results <https://www.reddit.com/r/3Dprinting/comments/6cekgk/house_fire_thanks_to_cheap_printer_from_china/>`_.
 
+.. _sec-bundledplugins-printer_safety_check-events:
+
+Events
+------
+
+warning
+  A printer safety warning was triggered.
+
+  Payload:
+
+    * ``check_type``: type of check that was triggered (e.g. ``m115``, ``received`` or ``cap``)
+    * ``check_name``: name of check that was triggered (e.g. ``aneta8``)
+    * ``warning_type``: type of warning that was triggered (e.g. ``firmware-unsafe``)
+
 .. _sec-bundledplugins-printer_safety_check-source:
 
 Source Code

@@ -9,6 +9,8 @@ $(function() {
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
 
+        self.markedForDeletion = ko.observableArray([]);
+
         self.availableLoggersSorted = ko.computed(function() {
             return _.sortBy(self.availableLoggers());
         });
@@ -114,8 +116,37 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            OctoPrint.plugins.logging.deleteLog(filename)
-                .done(self.requestData);
+            var perform = function() {
+                OctoPrint.plugins.logging.deleteLog(filename)
+                    .done(self.requestData);
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete log file \"%(name)s\"."), {name: filename}),
+                                   perform);
+        };
+
+        self.markFilesOnPage = function() {
+            self.markedForDeletion(_.uniq(self.markedForDeletion().concat(_.map(self.listHelper.paginatedItems(), "name"))));
+        };
+
+        self.markAllFiles = function() {
+            self.markedForDeletion(_.map(self.listHelper.allItems, "name"));
+        };
+
+        self.clearMarkedFiles = function() {
+            self.markedForDeletion.removeAll();
+        };
+
+        self.removeMarkedFiles = function() {
+            var perform = function() {
+                self._bulkRemove(self.markedForDeletion(), "files")
+                    .done(function() {
+                        self.markedForDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete %(count)d log files."), {count: self.markedForDeletion().length}),
+                                   perform);
         };
 
         self.onSettingsShown = function() {
@@ -133,6 +164,47 @@ $(function() {
             } else {
                 console.log("ConfiguredLoggers has not changed. Not saving.");
             }
+        };
+
+        self._bulkRemove = function(files) {
+            var title = gettext("Deleting log files");
+            var message = _.sprintf(gettext("Deleting %(count)d log files..."), {count: files.length});
+            var handler = function(filename) {
+                return OctoPrint.plugins.logging.deleteLog(filename)
+                    .done(function() {
+                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                    })
+                    .fail(function(jqXHR) {
+                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                        deferred.notify(short, long, false);
+                    });
+            };
+
+            var deferred = $.Deferred();
+
+            var promise = deferred.promise();
+
+            var options = {
+                title: title,
+                message: message,
+                max: files.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var requests = [];
+            _.each(files, function(filename) {
+                var request = handler(filename);
+                requests.push(request)
+            });
+            $.when.apply($, _.map(requests, wrapPromiseWithAlways))
+                .done(function() {
+                    deferred.resolve();
+                    self.requestData();
+                });
+
+            return promise;
         };
     }
 

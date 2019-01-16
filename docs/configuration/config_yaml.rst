@@ -81,7 +81,8 @@ Settings for the REST API:
      # Whether to allow cross origin access to the API or not
      allowCrossOrigin: false
 
-     # Additional app api keys, see REST API > Apps in the docs
+     # Additional app api keys, see REST API > Apps in the docs.
+     # Deprecated since 1.3.11, to be removed in 1.4.0!
      apps:
        "some.app.identifier:some_version":
          pubkey: <RSA pubkey>

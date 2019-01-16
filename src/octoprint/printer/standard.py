@@ -41,6 +41,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
+		self._logger_job = logging.getLogger("{}.job".format(__name__))
 
 		self._dict = frozendict if settings().getBoolean(["devel", "useFrozenDictForPrinterState"]) else dict
 
@@ -93,6 +94,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			except:
 				self._logger.exception("Error while processing analysis queues from {}".format(name))
 
+		#hook card upload
+		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
+		
 		# comm
 		self._comm = None
 
@@ -521,9 +525,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._updateProgressData()
 		self._setCurrentZ(None)
 		self._comm.startPrint(pos=pos,
+		                      user=user,
 		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
-	def pause_print(self, *args, **kwargs):
+	def pause_print(self, user=None, *args, **kwargs):
 		"""
 		Pause the current printjob.
 		"""
@@ -533,9 +538,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm.isPaused():
 			return
 
-		self._comm.setPause(True, tags=kwargs.get("tags", set()) | {"trigger:printer.pause_print"})
+		self._comm.setPause(True,
+		                    user=user,
+		                    tags=kwargs.get("tags", set()) | {"trigger:printer.pause_print"})
 
-	def resume_print(self, *args, **kwargs):
+	def resume_print(self, user=None, *args, **kwargs):
 		"""
 		Resume the current printjob.
 		"""
@@ -545,9 +552,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not self._comm.isPaused():
 			return
 
-		self._comm.setPause(False, tags=kwargs.get("tags", set()) | {"trigger:printer.resume_print"})
+		self._comm.setPause(False,
+		                    user=user,
+		                    tags=kwargs.get("tags", set()) | {"trigger:printer.resume_print"})
 
-	def cancel_print(self, *args, **kwargs):
+	def cancel_print(self, user=None, *args, **kwargs):
 		"""
 		 Cancel the current printjob.
 		"""
@@ -556,7 +565,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		# tell comm layer to cancel - will also trigger our cancelled handler
 		# for further processing
-		self._comm.cancelPrint(tags=kwargs.get("tags", set()) | {"trigger:printer.cancel_print"})
+		self._comm.cancelPrint(user=user,
+		                       tags=kwargs.get("tags", set()) | {"trigger:printer.cancel_print"})
 
 	def log_lines(self, *lines):
 		serial_logger = logging.getLogger("SERIAL")
@@ -659,8 +669,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
-
-	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
+	
+	def add_sd_file(self, filename, path, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
 			return
@@ -668,23 +678,67 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._streamingFinishedCallback = on_success
 		self._streamingFailedCallback = on_failure
 
+		def sd_upload_started(local_filename, remote_filename):
+			eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
+			                                                  remote=remote_filename))
+
+		def sd_upload_succeeded(local_filename, remote_filename, elapsed):
+			payload = dict(local=local_filename,
+			               remote=remote_filename,
+			               time=elapsed)
+			eventManager().fire(Events.TRANSFER_DONE, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
+
+		def sd_upload_failed(local_filename, remote_filename, elapsed):
+			payload = dict(local=local_filename,
+			               remote=remote_filename,
+			               time=elapsed)
+			eventManager().fire(Events.TRANSFER_FAILED, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFailedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
+
+		for name, hook in self.sd_card_upload_hooks.items():
+			# first sd card upload plugin that feels responsible gets the job
+			try:
+				result = hook(self, filename, path, sd_upload_started, sd_upload_succeeded, sd_upload_failed,
+				              *args, **kwargs)
+				if result is not None:
+					return result
+			except:
+				self._logger.exception("There was an error running the sd upload hook provided by plugin {}".format(name))
+
+		else:
+			# no plugin feels responsible, use the default implementation
+			return self._add_sd_file(filename, path, tags=kwargs.get("tags"))
+
+	def _get_free_remote_name(self, filename):
 		self.refresh_sd_files(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
 		if valid_file_type(filename, "gcode"):
-			remoteName = util.get_dos_filename(filename,
-			                                   existing_filenames=existingSdFiles,
-			                                   extension="gco",
-			                                   whitelisted_extensions=["gco", "g"])
+			# figure out remote filename
+			remote_name = util.get_dos_filename(filename,
+			                                    existing_filenames=existingSdFiles,
+			                                    extension="gco",
+			                                    whitelisted_extensions=["gco", "g"])
 		else:
 			# probably something else added through a plugin, use it's basename as-is
-			remoteName = os.path.basename(filename)
-		self._create_estimator("stream")
-		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
-		                             special=not valid_file_type(filename, "gcode"),
-		                             tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
+			remote_name = os.path.basename(filename)
 
-		return remoteName
+		return remote_name
+
+	def _add_sd_file(self, filename, path, tags=None):
+		if tags is None:
+			tags = set()
+
+		remote_name = self._get_free_remote_name(filename)
+		self._create_estimator("stream")
+		self._comm.startFileTransfer(path, filename, "/" + remote_name,
+		                             special=not valid_file_type(filename, "gcode"),
+		                             tags=tags | {"trigger:printer.add_sd_file"})
+
+		return remote_name
 
 	def delete_sd_file(self, filename, *args, **kwargs):
 		if not self._comm or not self._comm.isSdReady():
@@ -914,6 +968,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                                           filament=filament,
 			                                           user=user))
 
+	def _updateJobUser(self, user):
+		with self._selectedFileMutex:
+			if self._selectedFile is not None and self._selectedFile.get("user", None) != user:
+				self._selectedFile["user"] = user
+
+				job_data = self.get_current_job()
+				self._stateMonitor.set_job_data(self._dict(file=job_data["file"],
+				                                           estimatedPrintTime=job_data["estimatedPrintTime"],
+				                                           averagePrintTime=job_data["averagePrintTime"],
+				                                           lastPrintTIme=job_data["lastPrintTime"],
+				                                           filament=job_data["filament"],
+				                                           user=user))
+
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.get_current_data()
@@ -1044,10 +1111,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_file_selected(self, full_path, size, sd, user=None):
 		if full_path is not None:
 			payload = self._payload_for_print_job_event(location=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
-			                                            print_job_file=full_path)
+			                                            print_job_file=full_path,
+			                                            print_job_user=user,
+			                                            action_user=user)
 			eventManager().fire(Events.FILE_SELECTED, payload)
+			self._logger_job.info("Print job selected - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                              payload.get("path"),
+			                                                                                              payload.get("owner"),
+			                                                                                              payload.get("user")))
 		else:
 			eventManager().fire(Events.FILE_DESELECTED)
+			self._logger_job.info("Print job deselected - user: {}".format(user if user else "n/a"))
 
 		self._setJobData(full_path, size, sd, user=user)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
@@ -1058,11 +1132,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._printAfterSelect = False
 			self.start_print(pos=self._posAfterSelect, user=user)
 
-	def on_comm_print_job_started(self, suppress_script=False):
+	def on_comm_print_job_started(self, suppress_script=False, user=None):
+		self._updateJobUser(user) # the final job owner should always be whoever _started_ the job
 		self._stateMonitor.trigger_progress_update()
-		payload = self._payload_for_print_job_event()
+		payload = self._payload_for_print_job_event(print_job_user=user,
+		                                            action_user=user)
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
+			self._logger_job.info("Print job started - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                             payload.get("path"),
+			                                                                                             payload.get("owner"),
+			                                                                                             payload.get("user")))
+
 			if not suppress_script:
 				self.script("beforePrintStarted",
 				            context=dict(event=payload),
@@ -1082,6 +1163,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 			eventManager().fire(Events.PRINT_DONE, payload)
+			self._logger_job.info("Print job done - origin: {}, path: {}, owner: {}".format(payload.get("origin"),
+			                                                                                payload.get("path"),
+			                                                                                payload.get("owner")))
+
 			if not suppress_script:
 				self.script("afterPrintDone",
 				            context=dict(event=payload),
@@ -1105,23 +1190,29 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 
-	def on_comm_print_job_cancelling(self, firmware_error=None):
-		payload = self._payload_for_print_job_event()
+	def on_comm_print_job_cancelling(self, firmware_error=None, user=None):
+		payload = self._payload_for_print_job_event(action_user=user)
 		if payload:
 			if firmware_error:
 				payload["firmwareError"] = firmware_error
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
-	def on_comm_print_job_cancelled(self, suppress_script=False):
+	def on_comm_print_job_cancelled(self, suppress_script=False, user=None):
 		self._setCurrentZ(None)
 		self._updateProgressData()
 
-		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
+		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None,
+		                                            action_user=user)
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
 			payload["reason"] = "cancelled"
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
+			self._logger_job.info("Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                               payload.get("path"),
+			                                                                                               payload.get("owner"),
+			                                                                                               payload.get("user")))
+
 			if not suppress_script:
 				self.script("afterPrintCancelled",
 				            context=dict(event=payload),
@@ -1141,52 +1232,69 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			thread.daemon = True
 			thread.start()
 
-	def on_comm_print_job_paused(self, suppress_script=False):
-		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
+	def on_comm_print_job_paused(self, suppress_script=False, user=None):
+		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None,
+		                                            action_user=user)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
+			self._logger_job.info("Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                            payload.get("path"),
+			                                                                                            payload.get("owner"),
+			                                                                                            payload.get("user")))
 			if not suppress_script:
 				self.script("afterPrintPaused",
 				            context=dict(event=payload),
 				            part_of_job=True,
 				            must_be_set=False)
 
-	def on_comm_print_job_resumed(self, suppress_script=False):
-		payload = self._payload_for_print_job_event()
+	def on_comm_print_job_resumed(self, suppress_script=False, user=None):
+		payload = self._payload_for_print_job_event(action_user=user)
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
+			self._logger_job.info("Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                             payload.get("path"),
+			                                                                                             payload.get("owner"),
+			                                                                                             payload.get("user")))
+
 			if not suppress_script:
 				self.script("beforePrintResumed",
 				            context=dict(event=payload),
 				            part_of_job=True,
 				            must_be_set=False)
 
-	def on_comm_file_transfer_started(self, filename, filesize, user=None):
+	def on_comm_file_transfer_started(self, local_filename, remote_filename, filesize, user=None):
+		eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
+		                                                  remote=remote_filename))
+
 		self._sdStreaming = True
 
-		self._setJobData(filename, filesize, True, user=user)
+		self._setJobData(remote_filename, filesize, True, user=user)
 		self._updateProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
-	def on_comm_file_transfer_done(self, filename, failed=False):
+	def on_comm_file_transfer_done(self, local_filename, remote_filename, elapsed, failed=False):
 		self._sdStreaming = False
 
-		# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
-		# both parameters
+		payload = dict(local=local_filename,
+		               remote=remote_filename,
+		               time=elapsed)
+
 		if failed:
-			if self._streamingFailedCallback is not None:
-				self._streamingFailedCallback(filename, filename, FileDestinations.SDCARD)
+			eventManager().fire(Events.TRANSFER_FAILED, payload)
+			if callable(self._streamingFailedCallback):
+				self._streamingFailedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 		else:
-			if self._streamingFinishedCallback is not None:
-				self._streamingFinishedCallback(filename, filename, FileDestinations.SDCARD)
+			eventManager().fire(Events.TRANSFER_DONE, payload)
+			if callable(self._streamingFinishedCallback):
+				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._updateProgressData()
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
-	def on_comm_file_transfer_failed(self, filename):
-		self.on_comm_file_transfer_done(filename, failed=True)
+	def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):
+		self.on_comm_file_transfer_done(local_filename, remote_filename, elapsed, failed=True)
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()
@@ -1199,7 +1307,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
-	def _payload_for_print_job_event(self, location=None, print_job_file=None, print_job_size=None, position=None):
+	def _payload_for_print_job_event(self, location=None, print_job_file=None, print_job_size=None, print_job_user=None,
+	                                 position=None, action_user=None):
 		if print_job_file is None:
 			with self._selectedFileMutex:
 				selected_file = self._selectedFile
@@ -1208,6 +1317,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 				print_job_file = selected_file.get("filename", None)
 				print_job_size = selected_file.get("filesize", None)
+				print_job_user = selected_file.get("user", None)
 				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
 		if not print_job_file or not location:
@@ -1237,6 +1347,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		if position is not None:
 			result["position"] = position
+
+		if print_job_user is not None:
+			result["owner"] = print_job_user
+
+		if action_user is not None:
+			result["user"] = action_user
 
 		return result
 
