@@ -167,7 +167,8 @@ $(function() {
         moment.locale(LOCALE);
 
         // Dummy translation requests for dynamic strings supplied by the backend
-        var dummyTranslations = [
+        // noinspection BadExpressionStatementJS
+        [
             // printer states
             gettext("Offline"),
             gettext("Opening serial port"),
@@ -175,12 +176,18 @@ $(function() {
             gettext("Detecting baudrate"),
             gettext("Connecting"),
             gettext("Operational"),
+            gettext("Starting"),
+            gettext("Starting print from SD")
             gettext("Printing from SD"),
             gettext("Sending file to SD"),
             gettext("Printing"),
             gettext("Paused"),
             gettext("Closed"),
-            gettext("Transferring file to SD")
+            gettext("Transferring file to SD"),
+            gettext("Pausing"),
+            gettext("Resuming"),
+            gettext("Cancelling"),
+            gettext("Finishing")
         ];
 
         //~~ Initialize PNotify
