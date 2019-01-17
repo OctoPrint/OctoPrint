@@ -177,7 +177,7 @@ $(function() {
             gettext("Connecting"),
             gettext("Operational"),
             gettext("Starting"),
-            gettext("Starting print from SD")
+            gettext("Starting print from SD"),
             gettext("Printing from SD"),
             gettext("Sending file to SD"),
             gettext("Printing"),
