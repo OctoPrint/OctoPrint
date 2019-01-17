@@ -103,6 +103,14 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 	def get_ui_preemptive_caching_enabled(self):
 		return False
 
+	def get_sorting_key(self, context=None):
+		if context == "UiPlugin.on_ui_render":
+			# If a plugin *really* wants to come before this plugin, it'll have to turn to negative numbers.
+			#
+			# This is obviously discouraged for security reasons, but very specific setups might make it necessary,
+			# so we make it possible. If this should get abused long term we can always turn this into -inf.
+			return 0
+
 	def get_before_request_handlers(self):
 		def check_login_required():
 			if self._user_manager.enabled and not self._user_manager.hasBeenCustomized():
