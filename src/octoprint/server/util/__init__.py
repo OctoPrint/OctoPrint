@@ -59,33 +59,46 @@ def loginFromApiKeyRequestHandler():
 
 	UI_API_KEY and app session keys are handled as anonymous keys here and ignored.
 	"""
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey:
-		return
-
-	if apikey == octoprint.server.UI_API_KEY:
-		return
-
-	if octoprint.server.appSessionManager.validate(apikey):
-		return
-
-	user = get_user_for_apikey(apikey)
-	if not loginUser(user):
+	try:
+		if loginUserFromApiKey():
+			_flask.g.login_via_apikey = True
+	except InvalidApiKeyException:
 		return _flask.make_response("Invalid API key", 403)
-
-	_flask.g.login_via_apikey = True
 
 
 def loginFromAuthorizationHeaderRequestHandler():
 	"""
 	``before_request`` handler for creating login sessions based on the Authorization header.
 	"""
+	loginUserFromApiKey()
 
+
+class InvalidApiKeyException(Exception): pass
+
+
+def loginUserFromApiKey():
+	apikey = get_api_key(_flask.request)
+
+	if not apikey:
+		return False
+
+	if apikey == octoprint.server.UI_API_KEY:
+		return False
+
+	if octoprint.server.appSessionManager.validate(apikey):
+		return False
+
+	user = get_user_for_apikey(apikey)
+	if not loginUser(user):
+		raise InvalidApiKeyException()
+	else:
+		return True
+
+
+def loginUserFromAuthorizationHeader():
 	authorization_header = get_authorization_header(_flask.request)
 	user = get_user_for_authorization_header(authorization_header)
-	loginUser(user)
+	return loginUser(user)
 
 
 def loginUser(user, remember=False):

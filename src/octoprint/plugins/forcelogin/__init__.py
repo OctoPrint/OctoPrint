@@ -33,11 +33,25 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 			# ACL hasn't been configured yet, make an exception
 			return False
 
+		from octoprint.server.util import loginUserFromApiKey, loginUserFromAuthorizationHeader, InvalidApiKeyException
 		from octoprint.server.util.flask import passive_login
 
+		# first try to login via api key & authorization header, just in case that's set
+		try:
+			if loginUserFromApiKey():
+				# successful? No need for handling the UI
+				return False
+		except InvalidApiKeyException:
+			pass # ignored
+
+		if loginUserFromAuthorizationHeader():
+			# successful? No need for handling the UI
+			return False
+
+		# then try a passive login
 		result = passive_login()
 		if hasattr(result, "status_code") and result.status_code == 200:
-			# passive login successful, no need to handle that
+			# successful? No need for handling the UI
 			return False
 		else:
 			return True
