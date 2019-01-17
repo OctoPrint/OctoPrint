@@ -687,7 +687,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			               remote=remote_filename,
 			               time=elapsed)
 			eventManager().fire(Events.TRANSFER_DONE, payload)
-			if callable(self._streamingFailedCallback):
+			if callable(self._streamingFinishedCallback):
 				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 
 		def sd_upload_failed(local_filename, remote_filename, elapsed):
