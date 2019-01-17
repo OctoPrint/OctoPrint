@@ -1481,12 +1481,13 @@ class PluginManager(object):
 
 				if sorting_value is not None:
 					try:
-						int(sorting_value)
+						sorting_value = int(sorting_value)
 					except ValueError:
 						self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
 						sorting_value = None
 
-			return sorting_value is None, sorting_value, impl[0]
+			plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
+			return sorting_value is None, sorting_value, not plugin_info.bundled, impl[0]
 
 		return [impl[1] for impl in sorted(result, key=sort_func)]
 
