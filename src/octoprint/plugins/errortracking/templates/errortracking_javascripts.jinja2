@@ -1,0 +1,21 @@
+<script type="text/javascript">
+    var ERRORTRACKING_ENABLED = {% if plugin_errortracking_enabled -%} true; {% else %} false; {%- endif %}
+
+    $(function() {
+        var errortracking_url_coreui = "{{ plugin_errortracking_url_coreui }}";
+        var errortracking_unique_id = "{{ plugin_errortracking_unique_id }}";
+
+        if (ERRORTRACKING_ENABLED) {
+            Sentry.init({
+                dsn: errortracking_url_coreui,
+                release: VERSION
+            });
+            Sentry.configureScope(function (scope) {
+                scope.setUser({"id": errortracking_unique_id});
+            });
+            log.info("Initialized error tracking");
+
+            throw Error("Omg!");
+        }
+    });
+</script>
