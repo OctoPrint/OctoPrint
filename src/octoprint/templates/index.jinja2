@@ -141,14 +141,14 @@
             {% include 'overlays/reloadui.jinja2' %}
             <!-- End of overlays -->
 
+            {% include 'javascripts.jinja2' %}
+
             <!-- Generic plugin template files -->
             {% for key in templates.generic.order %}
                 {% set data = templates.generic.entries[key] %}
                 {% try "<!-- There was an error with the template {filename} at line number {lineno}: {exception} -->" %}{% include data.template ignore missing %}{% endtry %}
             {% endfor %}
             <!-- End of generic plugin template files -->
-
-            {% include 'javascripts.jinja2' %}
         </div>
     </body>
 </html>
