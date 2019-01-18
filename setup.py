@@ -60,7 +60,7 @@ INSTALL_REQUIRES = [
 	"emoji>=0.5.1,<0.6",
 	"monotonic>=1.5,<1.6",
 	"frozendict>=1.2,<1.3",
-	"sentry-sdk=0.6.6"
+	"sentry-sdk==0.6.6"
 ]
 
 if sys.platform == "darwin":
