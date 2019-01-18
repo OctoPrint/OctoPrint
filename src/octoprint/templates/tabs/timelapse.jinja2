@@ -1,93 +1,104 @@
 <div style="display: none;" data-bind="visible: loginState.isUser">
-    <div class="alert" data-bind="visible: isPrinting()">
-        {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
+    <div style="display: none;" data-bind="visible: settings.webcam_snapshotUrl() && settings.webcam_ffmpegPath()">
+        <div class="alert" data-bind="visible: isPrinting()">
+            {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
+        </div>
+
+        <h1>{{ _('Timelapse Configuration') }}</h1>
+
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label" for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
+                <div class="controls">
+                    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: !isPrinting() && loginState.isUser()">
+                        <option value="off">{{ _('Off') }}</option>
+                        <option value="timed">{{ _('Timed') }}</option>
+                        <option value="zchange">{{ _('On Z Change') }}</option>
+                    </select>
+                    <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-info">{{ _('Note') }}</span> {% trans %}Does not work when printing from the printer's SD Card (no way to detect the change in Z reliably). Use "Timed" mode for those prints instead.{% endtrans %}</span>
+                </div>
+            </div>
+
+            <div id="webcam_timelapse_mindelay" class="control-group" data-bind="visible: timelapseType() == 'zchange'">
+                <label class="control-label" for="webcam_timelapse_minDelay">{{ _('Minimum interval') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_minDelay" data-bind="value: timelapseMinDelay, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <span class="add-on">{{ _('sec') }}</span>
+                    </div>
+                    <span class="help-block">{{ _('OctoPrint will rate limit snapshots to this minimum interval. This it to prevent against performance issues with vase mode/continous z prints.') }}</span>
+                </div>
+            </div>
+
+            <div id="webcam_timelapse_timedsettings" class="control-group" data-bind="visible: intervalInputEnabled">
+                <label class="control-label" for="webcam_timelapse_interval">{{ _('Snapshot interval') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <span class="add-on">{{ _('sec') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="webcam_timelapse_fps">{{ _('Timelapse frame rate') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                        <span class="add-on">{{ _('fps') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="webcam_timelapse_postRoll">{{ _('Timelapse post roll') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" min="0" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                        <span class="add-on">{{ _('sec') }}</span>
+                    </div>
+                    <span class="help-block">{{ _('OctoPrint will use the final picture to add this many seconds to the end of your rendered timelapse.') }}</span>
+                </div>
+            </div>
+
+            <div id="webcam_timelapse_retractionsettings" class="control-group" data-bind="visible: timelapseType() == 'zchange'">
+                <label class="control-label" for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" min="0.0" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <span class="add-on">{{ _('mm') }}</span>
+                    </div>
+                    <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
+                </div>
+            </div>
+
+            <div class="control-group" data-bind="visible: loginState.isAdmin">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: persist, enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Save as default') }}
+                        <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <strong class="text-center text-block" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes. Don\'t forget to save them.') }}</strong>
+                    <button class="btn btn-primary btn-block" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save changes') }}</button>
+                    <button class="btn btn-block" data-bind="click: reset, enable: resetButtonEnabled">{{ _('Reset to active configuration') }}</button>
+                </div>
+            </div>
+        </form>
     </div>
-
-    <h1>{{ _('Timelapse Configuration') }}</h1>
-
-    <form class="form-horizontal">
-        <div class="control-group">
-            <label class="control-label" for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
-            <div class="controls">
-                <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: !isPrinting() && loginState.isUser()">
-                    <option value="off">{{ _('Off') }}</option>
-                    <option value="timed">{{ _('Timed') }}</option>
-                    <option value="zchange">{{ _('On Z Change') }}</option>
-                </select>
-                <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-info">{{ _('Note') }}</span> {% trans %}Does not work when printing from the printer's SD Card (no way to detect the change in Z reliably). Use "Timed" mode for those prints instead.{% endtrans %}</span>
-            </div>
-        </div>
-
-        <div id="webcam_timelapse_mindelay" class="control-group" data-bind="visible: timelapseType() == 'zchange'">
-            <label class="control-label" for="webcam_timelapse_minDelay">{{ _('Minimum interval') }}</label>
-            <div class="controls">
-                <div class="input-append">
-                    <input type="number" min="1" class="input-mini" id="webcam_timelapse_minDelay" data-bind="value: timelapseMinDelay, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
-                    <span class="add-on">{{ _('sec') }}</span>
-                </div>
-                <span class="help-block">{{ _('OctoPrint will rate limit snapshots to this minimum interval. This it to prevent against performance issues with vase mode/continous z prints.') }}</span>
-            </div>
-        </div>
-
-        <div id="webcam_timelapse_timedsettings" class="control-group" data-bind="visible: intervalInputEnabled">
-            <label class="control-label" for="webcam_timelapse_interval">{{ _('Snapshot interval') }}</label>
-            <div class="controls">
-                <div class="input-append">
-                    <input type="number" min="1" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
-                    <span class="add-on">{{ _('sec') }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="webcam_timelapse_fps">{{ _('Timelapse frame rate') }}</label>
-            <div class="controls">
-                <div class="input-append">
-                    <input type="number" min="1" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
-                    <span class="add-on">{{ _('fps') }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label" for="webcam_timelapse_postRoll">{{ _('Timelapse post roll') }}</label>
-            <div class="controls">
-                <div class="input-append">
-                    <input type="number" min="0" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
-                    <span class="add-on">{{ _('sec') }}</span>
-                </div>
-                <span class="help-block">{{ _('OctoPrint will use the final picture to add this many seconds to the end of your rendered timelapse.') }}</span>
-            </div>
-        </div>
-
-        <div id="webcam_timelapse_retractionsettings" class="control-group" data-bind="visible: timelapseType() == 'zchange'">
-            <label class="control-label" for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop') }}</label>
-            <div class="controls">
-                <div class="input-append">
-                    <input type="number" min="0.0" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
-                    <span class="add-on">{{ _('mm') }}</span>
-                </div>
-                <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
-            </div>
-        </div>
-
-        <div class="control-group" data-bind="visible: loginState.isAdmin">
-            <div class="controls">
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: persist, enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Save as default') }}
-                    <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
-                </label>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <div class="controls">
-                <strong class="text-center text-block" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes. Don\'t forget to save them.') }}</strong>
-                <button class="btn btn-primary btn-block" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save changes') }}</button>
-                <button class="btn btn-block" data-bind="click: reset, enable: resetButtonEnabled">{{ _('Reset to active configuration') }}</button>
-            </div>
-        </div>
-    </form>
+    <div class="alert" style="display: none" data-bind="visible: !settings.webcam_snapshotUrl() || !settings.webcam_ffmpegPath()">
+        <p><strong>{{ _('Timelapse not fully configured') }}</strong></p>
+        <p data-bind="visible: !loginState.isAdmin()">{{ _('The snapshot URL and/or the path to FFMPEG are missing. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</p>
+        <p data-bind="visible: loginState.isAdmin">{{ _('The snapshot URL and/or the path to FFMPEG are missing. You can change both under "Settings" > "Webcam & Timelapse" > "Timelapse". If you don\'t have a webcam or don\'t want to enable timelapse support you can also just disable it there.') }}</p>
+        <p data-bind="visible: loginState.isUser"><small>
+            {{ _('Currently configured snapshot URL') }}: <span data-bind="text: settings.webcam_snapshotUrl"></span><br/>
+            {{ _('Currently configured path to FFMPEG') }}: <span data-bind="text: settings.webcam_ffmpegPath"></span>
+        </small></p>
+    </div>
 </div>
 
 <h1>{{ _('Finished Timelapses') }}</h1>

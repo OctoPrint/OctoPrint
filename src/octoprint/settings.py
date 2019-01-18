@@ -209,6 +209,8 @@ default_settings = {
 		}
 	},
 	"webcam": {
+		"webcamEnabled": True,
+		"timelapseEnabled": True,
 		"stream": None,
 		"streamRatio": "16:9",
 		"streamTimeout": 5,

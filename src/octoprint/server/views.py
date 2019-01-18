@@ -179,7 +179,7 @@ def index():
 
 	enable_accesscontrol = userManager.enabled
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
-	enable_timelapse = bool(settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
+	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
@@ -355,7 +355,7 @@ def index():
 		                                   now)
 
 		render_kwargs.update(dict(
-			webcamStream=settings().get(["webcam", "stream"]),
+			enableWebcam=settings().getBoolean(["webcam", "enableWebcam"]) and bool(settings().get(["webcam", "stream"])),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
