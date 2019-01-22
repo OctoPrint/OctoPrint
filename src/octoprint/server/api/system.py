@@ -25,16 +25,17 @@ from octoprint.logging import prefix_multilines
 @api.route("/system/usage", methods=["GET"])
 @restricted_access
 @admin_permission.require(403)
-def readUsageForFolder():
+def readUsageForFolders():
+	return jsonify(usage=_usageForFolders())
+
+def _usageForFolders():
 	data = {}
 	for folder_name in s().get(['folder']).keys():
 		path = s().getBaseFolder(folder_name, check_writable=False)
 		if path is not None:
 			usage = psutil.disk_usage(path)
 			data[folder_name] = { 'free': usage.free, 'total': usage.total }
-
-	return jsonify(usage=data)
-
+	return data
 
 @api.route("/system", methods=["POST"])
 @restricted_access
