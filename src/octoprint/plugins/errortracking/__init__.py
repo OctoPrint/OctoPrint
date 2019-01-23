@@ -7,10 +7,13 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 import octoprint.plugin
 import logging
 
+from octoprint.util.version import get_octoprint_version_string, is_released_octoprint_version
+
 SENTRY_URL_SERVER = "https://827d1f11ccda4b31b924f29aaacab493@sentry.io/1373987"
 SENTRY_URL_COREUI = "https://30bdc39d2248444c8bc01484f38c9444@sentry.io/1374096"
 
-SETTINGS_DEFAULTS = dict(enabled=None,
+SETTINGS_DEFAULTS = dict(enabled=False,
+                         enabled_unreleased=False,
                          unique_id=None,
                          url_server=SENTRY_URL_SERVER,
                          url_coreui=SENTRY_URL_COREUI)
@@ -26,7 +29,10 @@ class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
 		]
 
 	def get_template_vars(self):
-		return dict(enabled=self._settings.get_boolean(["enabled"]),
+		enabled = self._settings.get_boolean(["enabled"])
+		enabled_unreleased = self._settings.get_boolean(["enabled_unreleased"])
+
+		return dict(enabled=enabled and (enabled_unreleased or is_released_octoprint_version()),
 		            unique_id=self._settings.get(["unique_id"]),
 		            url_coreui=self._settings.get(["url_coreui"]))
 
@@ -41,13 +47,15 @@ def __plugin_enable__():
 	# this is a bit hackish, but we want to enable error tracking as early in the platform lifecycle as possible
 	# and hence can't wait until our implementation is initialized and injected with settings
 
-	from octoprint import __version__ as version
 	from octoprint.settings import settings
+
+	version = get_octoprint_version_string()
 
 	s = settings()
 	plugin_defaults = dict(plugins=dict(errortracking=SETTINGS_DEFAULTS))
 
 	enabled = s.getBoolean(["plugins", "errortracking", "enabled"], defaults=plugin_defaults)
+	enabled_unreleased = s.getBoolean(["plugins", "errortracking", "enabled_unreleased"], defaults=plugin_defaults)
 	url_server = s.get(["plugins", "errortracking", "url_server"], defaults=plugin_defaults)
 	unique_id = s.get(["plugins", "errortracking", "unique_id"], defaults=plugin_defaults)
 	if unique_id is None:
@@ -56,7 +64,7 @@ def __plugin_enable__():
 		s.set(["plugins", "errortracking", "unique_id"], unique_id, defaults=plugin_defaults)
 		s.save()
 
-	if enabled:
+	if enabled and (enabled_unreleased or is_released_octoprint_version()):
 		import sentry_sdk
 		sentry_sdk.init(url_server,
 		                release=version)
