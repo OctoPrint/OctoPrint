@@ -60,7 +60,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		self._in_progress = []
 		self._in_progress_lock = threading.RLock()
 
-	##~~ StarupPlugin
+	##~~ StartupPlugin
 
 	def on_after_startup(self):
 		self._clean_dir_backup(self._settings._basedir,
@@ -73,6 +73,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		            clientjs=["clientjs/backup.js"],
 		            css=["css/backup.css"],
 		            less=["less/backup.less"])
+
+	##~~ TemplatePlugin
+
+	def get_template_configs(self):
+		return [dict(type="settings", name=gettext(u"Backup & Restore"))]
 
 	##~~ BlueprintPlugin
 
@@ -925,7 +930,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 class InsufficientSpace(Exception):
 	pass
 
-__plugin_name__ = gettext(u"Backup & Restore")
+__plugin_name__ = u"Backup & Restore"
 __plugin_author__ = u"Gina Häußge"
 __plugin_description__ = u"Backup & restore your OctoPrint settings and data"
 __plugin_disabling_discouraged__ = gettext(u"Without this plugin you will no longer be able to backup "
