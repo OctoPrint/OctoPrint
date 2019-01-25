@@ -1491,7 +1491,7 @@ class PluginManager(object):
 						sorting_value = None
 
 			plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
-			return sorting_value is None, sorting_value, not plugin_info.bundled, impl[0]
+			return sorting_value is None, sorting_value, not plugin_info.bundled if plugin_info else True, impl[0]
 
 		return [impl[1] for impl in sorted(result, key=sort_func)]
 
