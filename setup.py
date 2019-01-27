@@ -8,6 +8,8 @@ import os
 import versioneer
 
 import sys
+PY3 = sys.version_info[0] == 3
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
 import octoprint_setuptools
 
@@ -17,12 +19,28 @@ import octoprint_setuptools
 PYTHON_REQUIRES = ">=2.7.9"      # py 3 marked as supported so that we can migrate... NOT officially supported though!
 
 # Requirements for our application
-INSTALL_REQUIRES = [
-	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
-	# changes that might affect plugins, or due to other observed problems
+FLASK_VERSION_STRING = "flask>=0.12,<0.13"
+JINJA_VERSION_STRING = "Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                    # guarantee backwards compatibility for plugins and such with that
+	                    # version, hence we need to pin to a lower version for now. See #1697
+PYYAML_VERSION_STRING = "PyYAML>=3.12,<3.13"
+WERKZEUG_VERSION_STRING = "werkzeug>=0.11.1,<0.12"
+NOSE_VERSION_STRING = "nose>=1.3.7,<1.4",
 
-	"flask>=0.12,<0.13",         # newer versions require newer Jinja versions
-	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
+if PY3:
+	PYTHON_REQUIRES = ">=3.5"
+	FLASK_VERSION_STRING = "flask>=1.0.2"
+	PYYAML_VERSION_STRING = "PyYAML>=3.13"
+	JINJA_VERSION_STRING = "Jinja2>=2.10"
+	WERKZEUG_VERSION_STRING = "werkzeug>=0.14"
+	NOSE_VERSION_STRING = "nose>=1.3.7"
+INSTALL_REQUIRES = [
+	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
+	                               # vendored one
+	PYYAML_VERSION_STRING,
+	FLASK_VERSION_STRING,        # newer versions require newer Jinja versions
+	WERKZEUG_VERSION_STRING,
+	JINJA_VERSION_STRING,        # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
@@ -34,7 +52,6 @@ INSTALL_REQUIRES = [
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
-	"werkzeug>=0.14.1,<0.15",
 	"PyYAML>=3.13,<4",
 	"markdown>=3.0,<3.1",
 	"pyserial>=3.4,<3.5",
@@ -57,11 +74,10 @@ INSTALL_REQUIRES = [
 	"websocket-client>=0.53,<0.54",
 	"python-dateutil>=2.7.5,<2.8",
 	"wrapt>=1.10.11,<1.11",
-	"futures>=3.1.1,<3.2",
-	"emoji>=0.4.5,<0.5",
-	"monotonic>=1.3,<1.4",
-	"frozendict>=1.2,<1.3",
-	"six>=1.11.0"
+	"futures>=3.2,<3.3",
+	"emoji>=0.5.1,<0.6",
+	"monotonic>=1.5,<1.6",
+	"frozendict>=1.2,<1.3"
 ]
 
 if sys.platform == "darwin":
@@ -73,7 +89,7 @@ EXTRA_REQUIRES = dict(
 	develop=[
 		# Testing dependencies
 		"mock>=2.0.0,<3",
-		"nose>=1.3.7,<1.4",
+		NOSE_VERSION_STRING,
 		"ddt",
 
 		# Documentation dependencies
