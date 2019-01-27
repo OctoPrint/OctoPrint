@@ -87,7 +87,7 @@ class StreamWrapper(AbstractFileWrapper):
 		"""
 		import shutil
 
-		with atomic_write(path, 'wb') as dest:
+		with atomic_write(path, mode='wb') as dest:
 			with self.stream() as source:
 				shutil.copyfileobj(source, dest)
 
