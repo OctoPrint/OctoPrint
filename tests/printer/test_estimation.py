@@ -35,8 +35,8 @@ class EstimationTestCase(unittest.TestCase):
 		self.assertEqual(self.estimation_helper.average_total, expected)
 
 	@data(
-		((1.0, 2.0), None),                    # not enough values, have 1, need 3
-		((1.0, 2.0, 3.0), None),               # not enough values, have 2, need 3
+		((1.0, 2.0), -1),                      # not enough values, have 1, need 3
+		((1.0, 2.0, 3.0), -1),                 # not enough values, have 2, need 3
 		((1.0, 2.0, 3.0, 4.0), 0.5),           # average totals: 1.0, 1.5, 2.0, 2.5 => (3 * 0.5 / 3 = 0.5
 		((1.0, 2.0, 3.0, 4.0, 5.0), 0.5),      # average totals: 1.0, 1.5, 2.0, 2.5, 3.0 => (0.5 + 0.5 + 0.5) / 3 = 0.5
 		((1.0, 2.0, 0.0, 1.0, 2.0), 0.7 / 3)   # average totals: 1.0, 1.5, 1.0, 1.0, 1.2 => (0.5 + 0.0 + 0.2) / 3 = 0.7 / 3
@@ -49,7 +49,7 @@ class EstimationTestCase(unittest.TestCase):
 		self.assertEqual(self.estimation_helper.average_distance, expected)
 
 	@data(
-		((1.0, 1.0), None),
+		((1.0, 1.0), -1),
 		((1.0, 1.0, 1.0), 1.0),
 		((1.0, 2.0, 3.0, 4.0, 5.0), 4.0),
 	)

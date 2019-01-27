@@ -189,10 +189,10 @@ class TimeEstimationHelper(object):
 		self._totals = collections.deque([], self._rolling_window)
 		self._sum_total = 0
 		self._count = 0
-		self._stable_counter = None
+		self._stable_counter = -1
 
 	def is_stable(self):
-		return self._stable_counter is not None and self._stable_counter >= self._countdown
+		return self._stable_counter >= self._countdown
 
 	def update(self, new_estimate):
 		old_average_total = self.average_total
@@ -205,12 +205,9 @@ class TimeEstimationHelper(object):
 			self._distances.append(abs(self.average_total - old_average_total))
 
 		if -1.0 * self._threshold < self.average_distance < self._threshold:
-			if self._stable_counter is None:
-				self._stable_counter = 0
-			else:
-				self._stable_counter += 1
+			self._stable_counter += 1
 		else:
-			self._stable_counter = None
+			self._stable_counter = -1
 
 		if self.is_stable():
 			return self.average_total_rolling
@@ -220,20 +217,20 @@ class TimeEstimationHelper(object):
 	@property
 	def average_total(self):
 		if not self._count:
-			return None
+			return 0
 		else:
 			return self._sum_total / self._count
 
 	@property
 	def average_total_rolling(self):
 		if not self._count or self._count < self._rolling_window:
-			return None
+			return -1
 		else:
 			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):
 		if not self._count or self._count < self._rolling_window + 1:
-			return None
+			return -1
 		else:
 			return sum(self._distances) / len(self._distances)
