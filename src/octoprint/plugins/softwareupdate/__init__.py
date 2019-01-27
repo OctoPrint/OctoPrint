@@ -1254,6 +1254,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.cli.commands": cli.commands,
-		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
 		"octoprint.events.register_custom_events": _register_custom_events
 	}
