@@ -374,11 +374,12 @@
                             <input type="radio" name="errorHandlingGroup" value="disconnect" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourDisconnect"> {{ _('Disconnect from the printer') }}
                         </label>
                         <label class="radio">
-                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }}
+                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }} <span></span>
+                            <span class="help-block">{{ _('Please note that if you choose this, OctoPrint will still disconnect from the printer in case of <em>fatal</em> errors reported by your firmware (e.g. <code>kill() called</code>, <code>fatal:</code>).') }}</span>
                         </label>
                         <label class="radio">
                             <input type="radio" name="errorHandlingGroup" value="ignore" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourIgnore"> {{ _('Ignore') }} <span class="label label-important">{{ _('Warning') }}</span>
-                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues, be careful!') }}</span>
+                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!') }}</span>
                         </label>
                     </div>
                 </div>

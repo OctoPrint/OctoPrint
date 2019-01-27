@@ -34,14 +34,28 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 			# ACL hasn't been configured yet, make an exception
 			return False
 
+		from octoprint.server.util import loginUserFromApiKey, loginUserFromAuthorizationHeader, InvalidApiKeyException
 		from octoprint.server.util.flask import passive_login
 
+		# first try to login via api key & authorization header, just in case that's set
+		try:
+			if loginUserFromApiKey():
+				# successful? No need for handling the UI
+				return False
+		except InvalidApiKeyException:
+			pass # ignored
+
+		if loginUserFromAuthorizationHeader():
+			# successful? No need for handling the UI
+			return False
+
+		# then try a passive login
 		result = passive_login()
 		if hasattr(result, "status_code") and result.status_code == 200:
 			try:
 				data = json.loads(result.data)
 				if "name" in data:
-					# passive login successful, no need to handle that
+					# successful? No need for handling the UI
 					return False
 			except:
 				self._logger.exception("Error while trying to decode passive login response")
@@ -94,6 +108,14 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 
 	def get_ui_preemptive_caching_enabled(self):
 		return False
+
+	def get_sorting_key(self, context=None):
+		if context == "UiPlugin.on_ui_render":
+			# If a plugin *really* wants to come before this plugin, it'll have to turn to negative numbers.
+			#
+			# This is obviously discouraged for security reasons, but very specific setups might make it necessary,
+			# so we make it possible. If this should get abused long term we can always turn this into -inf.
+			return 0
 
 	def get_before_request_handlers(self):
 		def check_login_required():

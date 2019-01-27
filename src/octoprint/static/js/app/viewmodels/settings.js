@@ -122,6 +122,8 @@ $(function() {
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
+        self.webcam_webcamEnabled = ko.observable(undefined);
+        self.webcam_timelapseEnabled = ko.observable(undefined);
         self.webcam_streamUrl = ko.observable(undefined);
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);

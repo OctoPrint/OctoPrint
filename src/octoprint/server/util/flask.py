@@ -538,54 +538,78 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 
 #~~ passive login helper
 
-def passive_login():
-	user = flask_login.current_user
+_cached_local_networks = None
+def _local_networks():
+	global _cached_local_networks
 
-	remoteAddr = get_remote_address(flask.request)
-	ipCheckEnabled = settings().getBoolean(["server", "ipCheck", "enabled"])
-	ipCheckTrusted = settings().get(["server", "ipCheck", "trustedSubnets"])
+	if _cached_local_networks is None:
+		logger = logging.getLogger(__name__)
+		local_networks = netaddr.IPSet([])
+		for entry in settings().get(["accessControl", "localNetworks"]):
+			network = netaddr.IPNetwork(entry)
+			local_networks.add(network)
+			logger.debug("Added network {} to localNetworks".format(network))
+
+			if network.version == 4:
+				network_v6 = network.ipv6()
+				local_networks.add(network_v6)
+				logger.debug("Also added v6 representation of v4 network {} = {} to localNetworks".format(network, network_v6))
+
+		_cached_local_networks = local_networks
+
+	return _cached_local_networks
+
+def passive_login():
+	logger = logging.getLogger(__name__)
+
+	if octoprint.server.userManager.enabled:
+		user = octoprint.server.userManager.login_user(flask_login.current_user)
+	else:
+		user = flask_login.current_user
+
+	remote_address = get_remote_address(flask.request)
+	ip_check_enabled = settings().getBoolean(["server", "ipCheck", "enabled"])
+	ip_check_trusted = settings().get(["server", "ipCheck", "trustedSubnets"])
 
 	if isinstance(user, LocalProxy):
 		# noinspection PyProtectedMember
 		user = user._get_current_object()
 
-	def login(u):
-		# login known user
-		if not u.is_anonymous:
-			u = octoprint.server.userManager.login_user(u)
-		flask_login.login_user(u)
-		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
-		                                      identity=flask_principal.Identity(u.get_id()))
-		if hasattr(u, "session"):
-			flask.session["usersession.id"] = u.session
-		flask.g.user = u
-		return u
+		logger.info("Passively logging in user {} from {}".format(user.get_id(), remote_address))
 
-	if user is not None and user.is_active:
-		# login known user
-		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
-		user = login(user)
+		response = user.asDict()
+		response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
+		                                                                          additional_private=ip_check_trusted)
+		return flask.jsonify(response)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
 
-		autologinAs = settings().get(["accessControl", "autologinAs"])
-		localNetworks = netaddr.IPSet([])
-		for ip in settings().get(["accessControl", "localNetworks"]):
-			localNetworks.add(ip)
+		autologin_as = settings().get(["accessControl", "autologinAs"])
+		local_networks = _local_networks()
+		logger.debug("Checking if remote address {} is in localNetworks ({!r})".format(remote_address, local_networks))
 
 		try:
-			if netaddr.IPAddress(remoteAddr) in localNetworks:
-				autologin_user = octoprint.server.userManager.find_user(autologinAs)
-				if autologin_user is not None and user.is_active:
-					autologin_user = octoprint.server.userManager.login_user(autologin_user)
+			if netaddr.IPAddress(remote_address) in local_networks:
+				user = octoprint.server.userManager.findUser(autologin_as)
+				if user is not None and user.is_active():
+					user = octoprint.server.userManager.login_user(user)
+					flask.session["usersession.id"] = user.session
+					flask.g.user = user
+					flask_login.login_user(user)
+					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+					                                      identity=flask_principal.Identity(user.get_id()))
 
-					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(), remoteAddr))
-					user = login(autologin_user)
+					logger.info("Passively logging in user {} from {} via autologin".format(user.get_id(),
+					                                                                        remote_address))
+
+					response = user.asDict()
+					response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
+					                                                                          additional_private=ip_check_trusted)
+					return flask.jsonify(response)
 		except:
-			logger = logging.getLogger(__name__)
-			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
+			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, localNetworks))
 
 	response = user.as_dict()
 	response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,

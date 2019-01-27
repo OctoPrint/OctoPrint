@@ -162,9 +162,12 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 			for check_name, check in checks:
 				if check(*args, **kwargs):
 					self._register_warning(warning_type, message)
-					self._event_bus.fire("plugin_printer_safety_check_warning", dict(check_type=check_type,
-					                                                                 check_name=check_name,
-					                                                                 warning_type=warning_type))
+
+					# noinspection PyUnresolvedReferences
+					self._event_bus.fire(Events.PLUGIN_PRINTER_SAFETY_CHECK_WARNING, dict(check_type=check_type,
+					                                                                      check_name=check_name,
+					                                                                      warning_type=warning_type))
+
 					changes = True
 					break
 
@@ -188,6 +191,11 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	def _ping_clients(self):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="update"))
 
+
+def register_custom_events(*args, **kwargs):
+	return ["warning",]
+
+
 __plugin_name__ = "Printer Safety Check"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/printer_safety_check.html"
@@ -202,5 +210,6 @@ __plugin_hooks__ = {
 	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
 	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+	"octoprint.events.register_custom_events": register_custom_events
 }
 

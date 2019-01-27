@@ -33,16 +33,6 @@ from octoprint.util import deprecated
 _instance = None
 
 def _validate_plugin(phase, plugin_info):
-	if phase == "after_load":
-		if plugin_info.implementation is not None and isinstance(plugin_info.implementation, AppPlugin):
-			# transform app plugin into hook
-			import warnings
-			warnings.warn("{name} uses deprecated plugin mixin AppPlugin, use octoprint.accesscontrol.appkey hook instead".format(name=plugin_info.key), DeprecationWarning)
-
-			hooks = plugin_info.hooks
-			if not "octoprint.accesscontrol.appkey" in hooks:
-				hooks["octoprint.accesscontrol.appkey"] = plugin_info.implementation.get_additional_apps
-			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
 	return True
 
 def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_entry_points=None, plugin_disabled_list=None,

@@ -130,6 +130,7 @@ default_settings = {
 		"unknownCommandsNeedAck": False,
 		"sdRelativePath": False,
 		"sdAlwaysAvailable": False,
+		"maxNotSdPrinting": 2,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
@@ -209,6 +210,8 @@ default_settings = {
 		}
 	},
 	"webcam": {
+		"webcamEnabled": True,
+		"timelapseEnabled": True,
 		"stream": None,
 		"streamRatio": "16:9",
 		"streamTimeout": 5,

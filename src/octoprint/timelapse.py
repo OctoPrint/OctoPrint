@@ -338,24 +338,16 @@ def configure_timelapse(config=None, persist=False):
 
 	snapshot_url = settings().get(["webcam", "snapshot"])
 	ffmpeg_path = settings().get(["webcam", "ffmpeg"])
+	timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
 	timelapse_precondition = snapshot_url is not None and snapshot_url.strip() != "" \
 	                         and ffmpeg_path is not None and ffmpeg_path.strip() != ""
 
 	type = config["type"]
-	if not timelapse_precondition and type is not None and type != "off":
+	if not timelapse_precondition and timelapse_precondition:
 		logging.getLogger(__name__).warn("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
-		                                 "but timelapse enabled, forcing disabled timelapse and disabling it "
-		                                 "in the config as well.")
-		type = "off"
-		config["type"] = "off"
+		                                 "but timelapse enabled.")
 
-		if not persist:
-			# make sure we persist at least that timelapse is now disabled by default - we don't want the above
-			# warning to log
-			settings().set(["webcam", "timelapse", "type"], "off")
-			settings().save()
-
-	if type is None or "off" == type:
+	if not timelapse_enabled or not timelapse_precondition or type is None or "off" == type:
 		current = None
 
 	else:

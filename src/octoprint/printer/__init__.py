@@ -419,9 +419,9 @@ class PrinterInterface(object):
 		    tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
 		"""
 		if self.is_printing():
-			self.pause_print(tags=tags)
+			self.pause_print(tags=tags, *args, **kwargs)
 		elif self.is_paused():
-			self.resume_print(tags=tags)
+			self.resume_print(tags=tags, *args, **kwargs)
 
 	def cancel_print(self, tags=None, *args, **kwargs):
 		"""

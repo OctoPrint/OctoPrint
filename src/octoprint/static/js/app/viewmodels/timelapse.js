@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
+        self.settings = parameters[1];
 
         self.renderProgressBar = undefined;
         self.timelapsePopup = undefined;
@@ -580,7 +581,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TimelapseViewModel,
-        dependencies: ["loginStateViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
         elements: ["#timelapse", "#timelapse_link"]
     });
 });

@@ -2061,20 +2061,3 @@ class ProgressPlugin(OctoPrintPlugin):
 		:param int progress:                Current progress as a value between 0 and 100
 		"""
 		pass
-
-
-class AppPlugin(OctoPrintPlugin):
-	"""
-	Using the :class:`AppPlugin mixin` plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
-	within the system.
-
-	.. deprecated:: 1.2.0
-
-	   Refer to the :ref:`octoprint.accesscontrol.appkey hook <sec-plugins-hook-accesscontrol-appkey>` instead.
-
-	"""
-
-	# noinspection PyMethodMayBeStatic
-	def get_additional_apps(self):
-		return []
-

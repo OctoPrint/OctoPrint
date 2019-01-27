@@ -16,6 +16,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os, is_os_compatible
+from octoprint.events import Events
 
 from flask import jsonify, make_response
 from flask_babel import gettext
@@ -382,7 +383,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			raise ValueError("Either URL or path must be provided")
 
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["install", sarge.shell_quote(source), '--no-cache-dir']
+		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(source), "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
@@ -504,10 +505,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._plugin_manager.log_all_plugins()
 
 		self._logger.info("The plugin was installed successfully: {}, version {}".format(new_plugin.name, new_plugin.version))
-		self._event_bus.fire("plugin_pluginmanager_installplugin", dict(id=new_plugin.key,
-		                                                                version=new_plugin.version,
-		                                                                source=source,
-		                                                                source_type=source_type))
+
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN, dict(id=new_plugin.key,
+		                                                                      version=new_plugin.version,
+		                                                                      source=source,
+		                                                                      source_type=source_type))
 
 		result = dict(result=True,
 		              source=source,
@@ -540,7 +543,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if origin is None:
 				origin = plugin.origin[2]
 
-			pip_args = ["uninstall", "--yes", origin]
+			pip_args = ["--disable-pip-version-check", "uninstall", "--yes", origin]
 			try:
 				self._call_pip(pip_args)
 			except:
@@ -599,8 +602,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._plugin_manager.reload_plugins()
 
-		self._event_bus.fire("plugin_pluginmanager_uninstallplugin", dict(id=plugin.key,
-		                                                                           version=plugin.version))
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN, dict(id=plugin.key,
+		                                                                        version=plugin.version))
 
 		result = dict(result=True,
 		              needs_restart=needs_restart,
@@ -742,8 +746,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif not plugin.enabled and plugin.key not in self._pending_enable:
 				self._pending_enable.add(plugin.key)
 
-		self._event_bus.fire("plugin_pluginmanager_enableplugin", dict(id=plugin.key,
-		                                                               version=plugin.version))
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(Events.PLUGIN_PLUGINMANAGER_ENABLE_PLUGIN, dict(id=plugin.key,
+		                                                                     version=plugin.version))
 
 	def _mark_plugin_disabled(self, plugin, needs_restart=False):
 		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
@@ -762,8 +767,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif (plugin.enabled or plugin.forced_disabled or getattr(plugin, "safe_mode_victim", False)) and plugin.key not in self._pending_disable:
 				self._pending_disable.add(plugin.key)
 
-		self._event_bus.fire("plugin_pluginmanager_disableplugin", dict(id=plugin.key,
-		                                                                version=plugin.version))
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(Events.PLUGIN_PLUGINMANAGER_DISABLE_PLUGIN, dict(id=plugin.key,
+		                                                                      version=plugin.version))
 
 	def _fetch_all_data(self, do_async=False):
 		def run():
@@ -981,6 +987,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		            important=notification.get("important", False))
 
 
+def _register_custom_events(*args, **kwargs):
+	return ["install_plugin", "uninstall_plugin", "enable_plugin", "disable_plugin"]
+
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
@@ -997,4 +1006,5 @@ def __plugin_load__():
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
 		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+		"octoprint.events.register_custom_events": _register_custom_events
 	}

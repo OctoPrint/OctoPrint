@@ -965,17 +965,21 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		target_result = None
 
 		def trigger_event(success, **additional_payload):
+			from octoprint.events import Events
+
 			if success:
-				event = "update_succeeded"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_SUCCEEDED
 			else:
-				event = "update_failed"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_FAILED
 
 			payload = copy.copy(additional_payload)
 			payload.update(dict(target=target,
 			                    from_version=information["local"]["value"],
 			                    to_version=target_version))
 
-			self._event_bus.fire("plugin_softwareupdate_{}".format(event), payload=payload)
+			self._event_bus.fire(event, payload=payload)
 
 		### The actual update procedure starts here...
 
@@ -1218,6 +1222,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return None
 
 
+def _register_custom_events(*args, **kwargs):
+	return ["update_succeeded", "update_failed"]
+
+
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
@@ -1242,4 +1250,5 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.cli.commands": cli.commands,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+		"octoprint.events.register_custom_events": _register_custom_events
 	}

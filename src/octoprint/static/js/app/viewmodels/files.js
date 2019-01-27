@@ -762,6 +762,10 @@ $(function() {
             }
         };
 
+        self.clearSearchQuery = function() {
+            self.searchQuery("");
+        };
+
         self.performSearch = function(e) {
             var query = self.searchQuery();
             if (query !== undefined && query.trim() !== "") {
