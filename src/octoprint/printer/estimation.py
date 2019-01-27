@@ -126,7 +126,7 @@ class PrintTimeEstimator(object):
 					printTimeLeftOrigin = "estimate"
 
 				# combine
-				totalPrintTime = (1.0 - sub_progress) * statisticalTotalPrintTime \
+				totalPrintTime = - sub_progress * statisticalTotalPrintTime \
 				                 + sub_progress * estimatedTotalPrintTime
 
 		printTimeLeft = None
@@ -204,7 +204,7 @@ class TimeEstimationHelper(object):
 		if old_average_total:
 			self._distances.append(abs(self.average_total - old_average_total))
 
-		if -1.0 * self._threshold < self.average_distance < self._threshold:
+		if -self._threshold < self.average_distance < self._threshold:
 			self._stable_counter += 1
 		else:
 			self._stable_counter = -1
