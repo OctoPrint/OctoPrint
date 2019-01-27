@@ -1,4 +1,6 @@
+# coding=utf-8
 from __future__ import absolute_import, division, print_function
+
 avrChipDB = {
 	'ATMega1280': {
 		'signature': [0x1E, 0x97, 0x03],

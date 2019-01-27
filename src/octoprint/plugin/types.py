@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
+
 """
 This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
 class, :class:`OctoPrintPlugin`.
@@ -15,8 +17,6 @@ Please note that the plugin implementation types are documented in the section
    :members:
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

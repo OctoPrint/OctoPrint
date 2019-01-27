@@ -1,3 +1,5 @@
+# coding=utf-8
+from __future__ import absolute_import, division, print_function
 
 # Version: 0.15+dev
 
@@ -369,7 +371,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 
 """
 
-from __future__ import print_function
 try:
     import configparser
 except ImportError:

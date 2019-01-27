@@ -1,3 +1,5 @@
+# coding=utf-8
+from __future__ import absolute_import, division, print_function
 
 # This file helps to compute a version number in source trees obtained from
 # git-archive tarball (such as those provided by githubs download-from-tag
@@ -9,7 +11,6 @@
 # versioneer-0.15+dev (https://github.com/warner/python-versioneer)
 
 """Git implementation of _version.py."""
-from __future__ import absolute_import, division, print_function
 
 import errno
 import io

@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import, division, print_function
+
 """
 This module represents OctoPrint's settings management. Within this module the default settings for the core
 application are defined and the instance of the :class:`Settings` is held, which offers getter and setter
@@ -16,8 +18,6 @@ of various types and the configuration file itself.
    :members:
    :undoc-members:
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
