@@ -198,7 +198,7 @@ def baudrateList():
 	for additional in sorted(additionalBaudrates, reverse=True):
 		try:
 			candidates.insert(0, int(additional))
-		except:
+		except Exception:
 			_logger.warning("{} is not a valid additional baudrate, ignoring it".format(additional))
 
 	# last used baudrate = first to try, move to start
@@ -250,7 +250,7 @@ class PositionRecord(object):
 
 		try:
 			int(attr[1:])
-		except:
+		except Exception:
 			return False
 
 		return True
@@ -415,7 +415,7 @@ class MachineCom(object):
 		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
 			try:
 				self._timeout_intervals[key] = float(value)
-			except:
+			except Exception:
 				pass
 
 		self._consecutive_timeouts = 0
@@ -423,7 +423,7 @@ class MachineCom(object):
 		for key, value in settings().get(["serial", "maxCommunicationTimeouts"], merged=True, asdict=True).items():
 			try:
 				self._consecutive_timeout_maximums[key] = int(value)
-			except:
+			except Exception:
 				pass
 
 		self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
@@ -857,13 +857,13 @@ class MachineCom(object):
 		if self._temperature_timer is not None:
 			try:
 				self._temperature_timer.cancel()
-			except:
+			except Exception:
 				pass
 
 		if self._sd_status_timer is not None:
 			try:
 				self._sd_status_timer.cancel()
-			except:
+			except Exception:
 				pass
 
 		def deactivate_monitoring_and_send_queue():
@@ -887,18 +887,18 @@ class MachineCom(object):
 			try:
 				if hasattr(self._serial, "cancel_read") and callable(self._serial.cancel_read):
 					self._serial.cancel_read()
-			except:
+			except Exception:
 				self._logger.exception("Error while cancelling pending reads from the serial port")
 
 			try:
 				if hasattr(self._serial, "cancel_write") and callable(self._serial.cancel_write):
 					self._serial.cancel_write()
-			except:
+			except Exception:
 				self._logger.exception("Error while cancelling pending writes to the serial port")
 
 			try:
 				self._serial.close()
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to close serial port")
 				is_error = True
 
@@ -968,7 +968,7 @@ class MachineCom(object):
 		for name, hook in self._gcodescript_hooks.items():
 			try:
 				retval = hook(self, "gcode", scriptName)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 			else:
 				if retval is None:
@@ -1072,7 +1072,7 @@ class MachineCom(object):
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._continue_sending()
-		except:
+		except Exception:
 			self._logger.exception("Error while trying to start printing")
 			self._trigger_error(get_exception_string(), "start_print")
 
@@ -1493,7 +1493,7 @@ class MachineCom(object):
 				parsedTemps = hook(self, parsedTemps)
 				if parsedTemps is None or not parsedTemps:
 					return
-			except:
+			except Exception:
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
 		if current_tool_key in parsedTemps.keys():
@@ -1632,7 +1632,7 @@ class MachineCom(object):
 							for hook in self._printer_action_hooks:
 								try:
 									self._printer_action_hooks[hook](self, line, action_command)
-								except:
+								except Exception:
 									self._logger.exception("Error while calling hook {} with action command {}".format(self._printer_action_hooks[hook], action_command))
 									continue
 
@@ -1871,7 +1871,7 @@ class MachineCom(object):
 						for name, hook in self._firmware_info_hooks["info"].items():
 							try:
 								hook(self, firmware_name, copy.copy(data))
-							except:
+							except Exception:
 								self._logger.exception("Error processing firmware info hook {}:".format(name))
 
 				##~~ Firmware capability report triggered by M115
@@ -1895,7 +1895,7 @@ class MachineCom(object):
 						for name, hook in self._firmware_info_hooks["capabilities"].items():
 							try:
 								hook(self, capability, enabled, copy.copy(self._firmware_capabilities))
-							except:
+							except Exception:
 								self._logger.exception("Error processing firmware capability hook {}:".format(name))
 
 				##~~ invalid extruder
@@ -2037,7 +2037,7 @@ class MachineCom(object):
 				if feedback_controls and feedback_matcher and not "_all" in feedback_errors:
 					try:
 						self._process_registered_message(line, feedback_matcher, feedback_controls, feedback_errors)
-					except:
+					except Exception:
 						# something went wrong while feedback matching
 						self._logger.exception("Error while trying to apply feedback control matching, disabling it")
 						feedback_errors.append("_all")
@@ -2103,7 +2103,7 @@ class MachineCom(object):
 
 							eventManager().fire(Events.PRINTER_RESET, payload=dict(idle=idle))
 
-			except:
+			except Exception:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
 
 				errorMsg = "See octoprint.log for details"
@@ -2231,7 +2231,7 @@ class MachineCom(object):
 				self._baudrateDetectRetry = 4
 				self._do_send_without_checksum("", log=False) # new line to reset things
 				self.sayHello(tags={"trigger:baudrate_detection", })
-			except:
+			except Exception:
 				self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
 				self._logger.exception("Unexpected error while setting baudrate {}".format(baudrate))
 
@@ -2297,13 +2297,13 @@ class MachineCom(object):
 						output = template.format(*match.groups())
 					except KeyError:
 						output = template.format(**match.groupdict())
-					except:
+					except Exception:
 						output = None
 
 					if output is not None:
 						outputs[template_key] = output
 				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED, dict(key=feedback_key, matched=matched_part, outputs=outputs))
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to match feedback control output, disabling key {key}".format(key=match_key))
 				feedback_errors.append(match_key)
 
@@ -2346,7 +2346,7 @@ class MachineCom(object):
 		if interval is None:
 			try:
 				interval = int(self._timeout_intervals.get("temperatureAutoreport", 2))
-			except:
+			except Exception:
 				interval = 2
 		self.sendCommand("M155 S{}".format(interval), tags={"trigger:comm.set_autoreport_temperature_interval"})
 
@@ -2354,7 +2354,7 @@ class MachineCom(object):
 		if interval is None:
 			try:
 				interval = int(self._timeout_intervals.get("sdStatusAutoreport", 1))
-			except:
+			except Exception:
 				interval = 1
 		self.sendCommand("M27 S{}".format(interval), tags={"trigger:comm.set_autoreport_sdstatus_interval"})
 
@@ -2362,7 +2362,7 @@ class MachineCom(object):
 		if interval is None:
 			try:
 				interval = max(int(self._timeout_intervals.get("communicationBusy", 3)) - 1, 1)
-			except:
+			except Exception:
 				interval = 2
 		self.sendCommand("M113 S{}".format(interval),
 		                 tags={"trigger:comm.set_busy_protocol_interval"},
@@ -2517,7 +2517,7 @@ class MachineCom(object):
 				except ispBase.IspError as e:
 					self._log("Could not enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
 					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
-				except:
+				except Exception:
 					self._log("Could not connect to {}: {}".format(p, get_exception_string()))
 					self._logger.exception("Could not connect to {}".format(p))
 
@@ -2566,7 +2566,7 @@ class MachineCom(object):
 		for name, factory in serial_factories:
 			try:
 				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
-			except:
+			except Exception:
 				exception_string = get_exception_string()
 				self._trigger_error("Connection error, see Terminal tab", "connection")
 
@@ -2656,7 +2656,7 @@ class MachineCom(object):
 				for name, hook in self._error_message_hooks.items():
 					try:
 						ret = hook(self, stripped_error)
-					except:
+					except Exception:
 						self._logger.exception("Error while processing hook {name}:".format(**locals()))
 					else:
 						if ret:
@@ -2719,7 +2719,7 @@ class MachineCom(object):
 		for name, hook in self._received_message_hooks.items():
 			try:
 				ret = hook(self, ret)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}:".format(**locals()))
 			else:
 				if ret is None:
@@ -3142,7 +3142,7 @@ class MachineCom(object):
 
 				# now we just wait for the next clear and then start again
 				self._clear_to_send.wait()
-			except:
+			except Exception:
 				self._logger.exception("Caught an exception in the send loop")
 		self._log("Closing down send loop")
 
@@ -3178,7 +3178,7 @@ class MachineCom(object):
 			for command, command_type, gcode, subcode, tags in results:
 				try:
 					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode, tags=tags)
-				except:
+				except Exception:
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
@@ -3259,7 +3259,7 @@ class MachineCom(object):
 		for name, hook in self._atcommand_hooks[phase].items():
 			try:
 				hook(self, phase, atcommand, parameters, tags=tags)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {} for phase {} and command {}:".format(name, phase, atcommand))
 
 		# trigger built-in handler if available
@@ -3267,7 +3267,7 @@ class MachineCom(object):
 		if callable(handler):
 			try:
 				handler(atcommand, parameters, tags=tags)
-			except:
+			except Exception:
 				self._logger.exception("Error in handler for phase {} and command {}".format(phase, atcommand))
 
 	##~~ actual sending via serial
@@ -3530,7 +3530,7 @@ class MachineCom(object):
 				interval = int(match.group("value"))
 				self._temperature_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_TEMP, False) \
 				                                  and (interval > 0)
-			except:
+			except Exception:
 				pass
 
 	def _gcode_M27_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
@@ -3540,7 +3540,7 @@ class MachineCom(object):
 				interval = int(match.group("value"))
 				self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
 				                               and (interval > 0)
-			except:
+			except Exception:
 				pass
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
@@ -3549,7 +3549,7 @@ class MachineCom(object):
 		if match:
 			try:
 				newLineNumber = int(match.group("value"))
-			except:
+			except Exception:
 				pass
 
 		with self._line_mutex:
@@ -3906,7 +3906,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			if self._handle is not None:
 				try:
 					self._handle.close()
-				except:
+				except Exception:
 					pass
 			self._handle = None
 
@@ -4237,7 +4237,7 @@ def convert_pause_triggers(configured_triggers):
 				re.compile(regex)
 				# add to type list
 				triggers[t].append(regex)
-		except:
+		except Exception:
 			# invalid regex or something like this, we'll just skip this entry
 			pass
 
@@ -4738,7 +4738,7 @@ class QueueMarker(object):
 		if callable(self.callback):
 			try:
 				self.callback()
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Error while running callback of QueueMarker")
 
 class SendQueueMarker(QueueMarker):

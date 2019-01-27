@@ -17,7 +17,7 @@ def get_latest(target, check, full_data=False, online=True):
 
 	try:
 		return check["python_checker"].get_latest(target, check, full_data=full_data, online=online)
-	except:
+	except Exception:
 		import inspect
 		args, _, _, _ = inspect.getargspec(check["python_checker"].get_latest)
 		if "online" not in args:

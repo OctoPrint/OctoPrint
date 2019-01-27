@@ -98,7 +98,7 @@ class TemporaryProfile(object):
 		import os
 		try:
 			os.remove(self.temp_path)
-		except:
+		except Exception:
 			pass
 
 
@@ -138,7 +138,7 @@ class SlicingManager(object):
 		for plugin in plugins:
 			try:
 				slicers[plugin.get_slicer_properties()["type"]] = plugin
-			except:
+			except Exception:
 				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier))
 				continue
 		self._slicers = slicers

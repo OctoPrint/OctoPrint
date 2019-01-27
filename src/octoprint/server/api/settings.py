@@ -261,7 +261,7 @@ def _get_plugin_settings():
 		if result:
 			try:
 				jsonify(test=result)
-			except:
+			except Exception:
 				logger.exception("Error while jsonifying settings from plugin {}, please contact the plugin author about this".format(name))
 				raise
 			else:
@@ -279,7 +279,7 @@ def _get_plugin_settings():
 			logger.warning("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
 			logger.warning("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 			logger.warning("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
-		except:
+		except Exception:
 			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
 			                                                                                name=plugin._plugin_name))
 
@@ -559,7 +559,7 @@ def _saveSettings(data):
 					logger.warning("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
 					logger.warning("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 					logger.warning("octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.")
-				except:
+				except Exception:
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 
 	s.save()

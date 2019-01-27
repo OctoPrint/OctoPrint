@@ -92,7 +92,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 						self._logger.warning("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
 						continue
 					result[name + self.sep + command.name] = command
-			except:
+			except Exception:
 				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name))
 
 		return result

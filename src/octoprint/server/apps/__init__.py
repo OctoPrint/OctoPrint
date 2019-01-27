@@ -72,7 +72,7 @@ def verifySessionKey():
 	pubkey_string = "\n".join([pubkey_string[x:x+64] for x in range(0, len(pubkey_string), 64)])
 	try:
 		pubkey = rsa.PublicKey.load_pkcs1("-----BEGIN RSA PUBLIC KEY-----\n" + pubkey_string + "\n-----END RSA PUBLIC KEY-----\n")
-	except:
+	except Exception:
 		octoprint.server.appSessionManager.remove(key)
 		return make_response("Invalid pubkey stored in server", 500)
 
@@ -108,7 +108,7 @@ def _get_registered_apps():
 		try:
 			additional_apps = hook()
 			logger.warn("Plugin {} is still implementing the appkey hook that is deprecated since 1.3.11 and will be removed in 1.4.0. Switch it over to the Application Keys Plugin workflow.".format(name))
-		except:
+		except Exception:
 			import logging
 			logging.getLogger(__name__).exception("Error while retrieving additional appkeys from plugin {name}".format(**locals()))
 			continue

@@ -37,7 +37,8 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			# determine future filename of file to be uploaded, abort if it can't be uploaded
 			try:
 				futurePath, futureFilename = self._file_manager.sanitize(octoprint.filemanager.FileDestinations.LOCAL, file_wrapper.filename)
-			except:
+			except Exception:
+				# TODO really ignore?
 				futurePath = None
 				futureFilename = None
 
@@ -60,14 +61,14 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			if os.path.exists(path):
 				try:
 					os.remove(path)
-				except:
+				except Exception:
 					pass
 
 			if reselect:
 				self._printer.select_file(self._file_manager.path_on_disk(octoprint.filemanager.FileDestinations.LOCAL,
 				                                                          added_file),
 				                          False)
-		except:
+		except Exception:
 			self._logger.exception("There was an error while processing the file {} in the watched folder".format(path))
 
 	def on_created(self, event):
@@ -82,7 +83,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 	def _repeatedly_check(self, path, interval=1, stable=5):
 		try:
 			last_size = os.stat(path).st_size
-		except:
+		except Exception:
 			return
 
 		countdown = stable
@@ -90,7 +91,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		while True:
 			try:
 				new_size = os.stat(path).st_size
-			except:
+			except Exception:
 				return
 
 			if new_size == last_size:

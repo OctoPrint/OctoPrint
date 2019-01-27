@@ -76,7 +76,7 @@ def _preemptive_data(key, path=None, base_url=None, data=None, additional_reques
 				if "query_string" in data:
 					data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
 				d.update(data)
-		except:
+		except Exception:
 			_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
 
 	# add additional request data if we have any
@@ -87,7 +87,7 @@ def _preemptive_data(key, path=None, base_url=None, data=None, additional_reques
 				d.update(dict(
 					_additional_request_data=ard
 				))
-		except:
+		except Exception:
 			_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
 
 	return d
@@ -107,7 +107,7 @@ def _cache_key(ui, url=None, locale=None, additional_key_data=None):
 				if not isinstance(ak, (list, tuple)):
 					ak = [ak]
 				k = "{}:{}".format(k, ":".join(ak))
-		except:
+		except Exception:
 			_logger.exception("Error while trying to retrieve additional cache key parts for ui {}".format(ui))
 	return k
 
@@ -239,7 +239,7 @@ def index():
 					files = custom_files()
 					if files:
 						return files
-				except:
+				except Exception:
 					_logger.exception("Error while trying to retrieve tracked files for plugin {}".format(key))
 
 			templates = _get_all_templates()
@@ -254,7 +254,7 @@ def index():
 					af = additional_files()
 					if af:
 						files += af
-				except:
+				except Exception:
 					_logger.exception("Error while trying to retrieve additional tracked files for plugin {}".format(key))
 
 			return sorted(set(files))
@@ -265,7 +265,7 @@ def index():
 					lastmodified = custom_lastmodified()
 					if lastmodified:
 						return lastmodified
-				except:
+				except Exception:
 					_logger.exception("Error while trying to retrieve custom LastModified value for plugin {}".format(key))
 
 			if files is None:
@@ -278,7 +278,7 @@ def index():
 					etag = custom_etag()
 					if etag:
 						return etag
-				except:
+				except Exception:
 					_logger.exception("Error while trying to retrieve custom ETag value for plugin {}".format(key))
 
 			if files is None:
@@ -499,7 +499,7 @@ def fetch_template_data(refresh=False):
 	for name, hook in hooks.items():
 		try:
 			result = hook(dict(template_sorting), dict(template_rules))
-		except:
+		except Exception:
 			_logger.exception("Error while retrieving custom template type definitions from plugin {name}".format(**locals()))
 		else:
 			if not isinstance(result, list):
@@ -640,7 +640,7 @@ def fetch_template_data(refresh=False):
 			if isinstance(implementation, octoprint.plugin.WizardPlugin):
 				wizard_required = implementation.is_wizard_required()
 				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
-		except:
+		except Exception:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue
 
@@ -715,7 +715,7 @@ def fetch_template_data(refresh=False):
 					def f(x, k):
 						try:
 							return extractor(x, k)
-						except:
+						except Exception:
 							_logger.exception("Error while extracting sorting keys for template {}".format(t))
 							return None
 					return f
@@ -794,7 +794,7 @@ def _process_template_configs(name, implementation, configs, rules):
 					app.jinja_env.get_or_select_template(data["template"])
 				except TemplateNotFound:
 					pass
-				except:
+				except Exception:
 					_logger.exception("Error in template {}, not going to include it".format(data["template"]))
 				else:
 					includes[template_type].append(rule["to_entry"](data))

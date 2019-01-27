@@ -14,7 +14,7 @@ import time
 
 try:
 	unicode
-except:
+except NameError:
 	unicode = str
 
 def _log_call(*lines):
@@ -86,7 +86,7 @@ def _execute(command, **kwargs):
 			# the process might have been set to None in case of any exception
 			print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
 			return None, [], []
-	except:
+	except Exception:
 		print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
 		traceback.print_exc(file=sys.stderr)
 		return None, [], []
@@ -150,7 +150,7 @@ def _git(args, cwd, git_executable=None):
 			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 			traceback.print_exc(file=sys.stderr)
 			return None, [], []
-		except:
+		except Exception:
 			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 			traceback.print_exc(file=sys.stderr)
 			return None, [], []
@@ -165,7 +165,7 @@ def _python(args, cwd, python_executable, sudo=False):
 		command = ["sudo"] + command
 	try:
 		return _execute(command, cwd=cwd)
-	except:
+	except Exception:
 		import traceback
 		print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 		traceback.print_exc(file=sys.stderr)

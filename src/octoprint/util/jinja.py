@@ -207,7 +207,7 @@ class ExceptionHandlerExtension(Extension):
 
 		try:
 			return error.format(exception=exception, filename=filename, lineno=lineno)
-		except:
+		except Exception:
 			self._logger.exception("Error while compiling exception output for template {filename} at line {lineno}".format(**locals()))
 			return "Unknown error"
 

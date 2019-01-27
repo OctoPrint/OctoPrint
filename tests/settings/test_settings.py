@@ -95,7 +95,7 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_basedir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
 
 	def test_basedir_initialization_with_custom_config(self):
@@ -123,7 +123,7 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_configdir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
 
 	##~~ regexes
@@ -639,7 +639,7 @@ class TestSettings(unittest.TestCase):
 			if directory is not None:
 				try:
 					shutil.rmtree(directory)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary basedir")
 
 	@contextlib.contextmanager

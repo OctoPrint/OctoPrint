@@ -259,7 +259,7 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 	try:
 		return comparator(comparable_factory(sanitized_local),
 		                  comparable_factory(sanitized_remote))
-	except:
+	except Exception:
 		logger.exception("Could not check if version is current due to an error, assuming it is")
 		return True
 

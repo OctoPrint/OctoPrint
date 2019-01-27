@@ -57,7 +57,7 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 				if "name" in data:
 					# successful? No need for handling the UI
 					return False
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to decode passive login response")
 
 		return True
@@ -87,7 +87,7 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 				assets = hook()
 				if isinstance(assets, (tuple, list)):
 					additional_assets += assets
-			except:
+			except Exception:
 				self._logger.exception("Error fetching theming CSS to include from plugin {}".format(name))
 
 		render_kwargs.update(dict(forcelogin_theming=additional_assets))

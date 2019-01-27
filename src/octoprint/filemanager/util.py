@@ -142,7 +142,7 @@ class MultiStream(io.RawIOBase):
 		for stream in self.streams:
 			try:
 				stream.close()
-			except:
+			except Exception:
 				pass
 
 	def readable(self, *args, **kwargs):

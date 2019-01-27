@@ -658,7 +658,7 @@ class Settings(object):
 		if not os.path.isdir(self._basedir):
 			try:
 				os.makedirs(self._basedir)
-			except:
+			except Exception:
 				self._logger.fatal("Could not create basefolder at {}. This is a fatal error, OctoPrint "
 				                   "can't run without a writable base folder.".format(self._basedir), exc_info=1)
 				raise
@@ -792,7 +792,7 @@ class Settings(object):
 				return self._script_env.get_template(template_name)
 		except TemplateNotFound:
 			return None
-		except:
+		except Exception:
 			self._logger.exception("Exception while trying to resolve template {template_name}".format(**locals()))
 			return None
 
@@ -907,9 +907,6 @@ class Settings(object):
 					                      line=line,
 					                      column=column)
 
-				except:
-					raise
-
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config or not isinstance(self._config, dict):
 			self._config = dict()
@@ -923,7 +920,7 @@ class Settings(object):
 		if callable(overlay):
 			try:
 				overlay = overlay(self)
-			except:
+			except Exception:
 				self._logger.exception("Error loading overlay from callable")
 				return
 
@@ -1354,7 +1351,7 @@ class Settings(object):
 			with atomic_write(self._configfile, mode='wb', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
 				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
-		except:
+		except Exception:
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
@@ -1434,7 +1431,7 @@ class Settings(object):
 			if preprocessors is not None:
 				try:
 					preprocessor = self._get_by_path(path, preprocessors)
-				except:
+				except Exception:
 					pass
 
 				if callable(preprocessor):
@@ -1556,7 +1553,7 @@ class Settings(object):
 
 		try:
 			_validate_folder(folder, create=create, check_writable=check_writable, deep_check_writable=deep_check_writable, log_error=log_error)
-		except:
+		except Exception:
 			if folder != default_folder and allow_fallback:
 				if log_error:
 					self._logger.error("Invalid configured {} folder at {}, attempting to "
@@ -1597,7 +1594,7 @@ class Settings(object):
 		else:
 			try:
 				script = template.render(**context)
-			except:
+			except Exception:
 				self._logger.exception("Exception while trying to render script {script_type}:{name}".format(**locals()))
 				return None
 
@@ -1811,7 +1808,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 			# non existing, but we are allowed to create it
 			try:
 				os.makedirs(folder)
-			except:
+			except Exception:
 				if log_error:
 					logger.exception("Could not create {}".format(folder))
 				raise IOError("Folder for type {} at {} does not exist and creation failed".format(type, folder))
@@ -1838,7 +1835,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 				with io.open(testfile, 'wt', encoding='utf-8') as f:
 					f.write("test".decode('utf-8'))
 				os.remove(testfile)
-			except:
+			except Exception:
 				if log_error:
 					logger.exception("Could not write test file to {}".format(folder))
 				raise IOError(error)

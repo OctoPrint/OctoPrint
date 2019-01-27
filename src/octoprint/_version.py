@@ -338,7 +338,8 @@ def git_parse_lookup_file(path):
                     continue
 
                 lookup.append(entry)
-            except:
+            except Exception:
+                # TODO: really catch all exceptions?
                 break
     return lookup
 

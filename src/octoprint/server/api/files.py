@@ -45,7 +45,7 @@ def _create_lastmodified(path, recursive):
 		for storage in fileManager.registered_storages:
 			try:
 				lms.append(fileManager.last_modified(storage, recursive=recursive))
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(storage))
 				lms.append(None)
 
@@ -60,7 +60,7 @@ def _create_lastmodified(path, recursive):
 		# only local storage involved
 		try:
 			return fileManager.last_modified(FileDestinations.LOCAL, recursive=recursive)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(FileDestinations.LOCAL))
 			return None
 
@@ -289,7 +289,7 @@ def uploadGcodeFile(target):
 			import json
 			try:
 				userdata = json.loads(request.values["userdata"])
-			except:
+			except Exception:
 				return make_response("userdata contains invalid JSON", 400)
 
 		if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
@@ -312,7 +312,7 @@ def uploadGcodeFile(target):
 			canonPath, canonFilename = fileManager.canonicalize(FileDestinations.LOCAL, upload.filename)
 			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
 			futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, canonFilename)
-		except:
+		except Exception:
 			canonFilename = None
 			futurePath = None
 			futureFilename = None

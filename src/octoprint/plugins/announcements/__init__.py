@@ -395,7 +395,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 					internal_entry = self._to_internal_entry(entry, read_until=read_until)
 					if internal_entry:
 						result.append(internal_entry)
-				except:
+				except Exception:
 					self._logger.exception("Error while converting entry from feed, skipping it")
 		return result
 

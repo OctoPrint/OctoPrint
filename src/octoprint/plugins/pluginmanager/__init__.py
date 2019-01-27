@@ -415,7 +415,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				self._logger.info("Plugin to be installed from {} was already installed, forcing a reinstall".format(source))
 				self._log_message("Looks like the plugin was already installed. Forcing a reinstall.")
 				force = True
-		except:
+		except Exception:
 			self._logger.exception("Could not install plugin from %s" % url)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
 		else:
@@ -425,7 +425,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 				try:
 					returncode, stdout, stderr = self._call_pip(pip_args)
-				except:
+				except Exception:
 					self._logger.exception("Could not install plugin from {}".format(source))
 					return make_response("Could not install plugin from source {}, see the log for more details"
 					                     .format(source), 500)
@@ -550,7 +550,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			pip_args = ["--disable-pip-version-check", "uninstall", "--yes", origin]
 			try:
 				self._call_pip(pip_args)
-			except:
+			except Exception:
 				self._logger.exception(u"Could not uninstall plugin via pip")
 				return make_response("Could not uninstall plugin via pip, see the log for more details", 500)
 
@@ -798,7 +798,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					with io.open(self._repository_cache_path, 'rt', encoding='utf-8') as f:
 						repo_data = json.load(f)
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
-				except:
+				except Exception:
 					self._logger.exception("Error while loading repository data from {}".format(self._repository_cache_path))
 
 		return self._refresh_repository(repo_data=repo_data)
@@ -848,7 +848,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					with io.open(self._notices_cache_path, 'rt', encoding='utf-8') as f:
 						notice_data = json.load(f)
 					self._logger.info("Loaded notice data from disk, was still valid")
-				except:
+				except Exception:
 					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
 
 		return self._refresh_notices(notice_data=notice_data)
@@ -915,7 +915,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				result = hook()
 				if isinstance(result, (list, tuple)):
 					reconnect_hooks.extend(filter(lambda x: isinstance(x, basestring), result))
-			except:
+			except Exception:
 				self._logger.exception("Error while retrieving additional hooks for which a "
 				                       "reconnect is required from plugin {name}".format(**locals()))
 

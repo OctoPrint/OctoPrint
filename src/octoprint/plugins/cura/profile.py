@@ -378,7 +378,7 @@ class Profile(object):
 		config = configparser.ConfigParser()
 		try:
 			config.read(path)
-		except:
+		except Exception:
 			logger.exception("Error while reading profile INI file from {path}".format(**locals()))
 			return None
 
@@ -434,15 +434,15 @@ class Profile(object):
 				# try to fetch the value in the correct type
 				try:
 					value = config.getboolean(section, option)
-				except:
+				except ValueError:
 					# no boolean, try int
 					try:
 						value = config.getint(section, option)
-					except:
+					except ValueError:
 						# no int, try float
 						try:
 							value = config.getfloat(section, option)
-						except:
+						except ValueError:
 							# no float, use str
 							value = config.get(section, option)
 				index = None

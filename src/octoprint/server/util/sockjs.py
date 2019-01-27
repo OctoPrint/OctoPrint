@@ -175,7 +175,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		try:
 			import json
 			message = json.loads(message)
-		except:
+		except Exception:
 			self._logger.warning("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
 			return
 
@@ -317,7 +317,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		for name, hook in self._register_hooks.items():
 			try:
 				proceed = proceed and hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing register hook handler for plugin {}".format(name))
 
 		if not proceed:
@@ -377,7 +377,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		for name, hook in self._emit_hooks.items():
 			try:
 				proceed = proceed and hook(self, self._user, type, payload)
-			except:
+			except Exception:
 				self._logger.exception("Error processing emit hook handler from plugin {}".format(name))
 
 		if not proceed:
@@ -408,7 +408,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		for name, hook in self._authed_hooks.items():
 			try:
 				hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
 
 	def _on_logout(self):
@@ -417,6 +417,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		for name, hook in self._authed_hooks.items():
 			try:
 				hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
 

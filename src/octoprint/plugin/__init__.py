@@ -153,7 +153,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 
 	try:
 		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
-	except:
+	except Exception:
 		logging.getLogger(__name__).exception("Error while retrieving preprocessors for plugin {}".format(plugin_key))
 		return None
 

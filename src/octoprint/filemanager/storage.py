@@ -503,7 +503,7 @@ class LocalFileStorage(StorageInterface):
 				with io.open(old_metadata_path, 'rt', encoding='utf-8') as f:
 					import yaml
 					self._old_metadata = yaml.safe_load(f)
-			except:
+			except Exception:
 				self._logger.exception("Error while loading old metadata file")
 
 			# make sure the metadata is initialized as far as possible
@@ -514,7 +514,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				import shutil
 				shutil.move(old_metadata_path, backup_path)
-			except:
+			except Exception:
 				self._logger.exception("Could not rename old metadata.yaml file")
 
 		else:
@@ -1024,7 +1024,7 @@ class LocalFileStorage(StorageInterface):
 
 				self._logger.info(u"Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
 				return sanitized, sanitized_path
-			except:
+			except Exception:
 				self._logger.exception(u"Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
 				raise
 
@@ -1114,7 +1114,7 @@ class LocalFileStorage(StorageInterface):
 			print_time = history_entry["printTime"]
 			try:
 				print_time = float(print_time)
-			except:
+			except Exception:
 				self._logger.warning("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
 				continue
 
@@ -1299,7 +1299,7 @@ class LocalFileStorage(StorageInterface):
 				entry_is_file = entry.is_file()
 				entry_is_dir = entry.is_dir()
 				entry_stat = entry.stat()
-			except:
+			except Exception:
 				# error while trying to fetch file metadata, that might be thanks to file already having
 				# been moved or deleted - ignore it and continue
 				continue
@@ -1311,7 +1311,7 @@ class LocalFileStorage(StorageInterface):
 					entry_name = new_entry_name
 					entry_path = new_entry_path
 					entry_stat = os.stat(entry_path)
-			except:
+			except Exception:
 				# error while trying to rename the file, we'll continue here and ignore it
 				continue
 
@@ -1408,7 +1408,7 @@ class LocalFileStorage(StorageInterface):
 							extended_entry_data["size"] = get_size()
 
 						result[entry_name] = extended_entry_data
-			except:
+			except Exception:
 				# So something went wrong somewhere while processing this file entry - log that and continue
 				self._logger.exception("Error while processing entry {}".format(entry_path))
 				continue
@@ -1526,7 +1526,7 @@ class LocalFileStorage(StorageInterface):
 					try:
 						import json
 						metadata = json.load(f)
-					except:
+					except Exception:
 						self._logger.exception("Error while reading .metadata.json from {path}".format(**locals()))
 					else:
 						if isinstance(metadata, dict):
@@ -1541,7 +1541,7 @@ class LocalFileStorage(StorageInterface):
 				import json
 				with atomic_write(metadata_path) as f:
 					json.dump(metadata, f, indent=4, separators=(",", ": "))
-			except:
+			except Exception:
 				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
 			else:
 				self._metadata_cache[path] = deepcopy(metadata)
@@ -1554,7 +1554,7 @@ class LocalFileStorage(StorageInterface):
 				if os.path.exists(metadata_path):
 					try:
 						os.remove(metadata_path)
-					except:
+					except Exception:
 						self._logger.exception("Error while deleting {metadata_file} from {path}".format(**locals()))
 			if path in self._metadata_cache:
 				del self._metadata_cache[path]
@@ -1580,7 +1580,7 @@ class LocalFileStorage(StorageInterface):
 			with io.open(metadata_path_yaml, 'rt', encoding='utf-8') as f:
 				try:
 					metadata = yaml.safe_load(f)
-				except:
+				except Exception:
 					self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
 					return
 

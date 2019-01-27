@@ -105,7 +105,7 @@ class JSONPSendHandler(pollingbase.PollingTransportBase):
 
         try:
             messages = proto.json_decode(data)
-        except:
+        except Exception:
             # TODO: Proper error handling
             LOG.debug('jsonp_send: Invalid json encoding')
 

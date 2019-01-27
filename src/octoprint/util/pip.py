@@ -153,7 +153,7 @@ class PipCaller(CommandlineCaller):
 		self._reset()
 		try:
 			self._setup_pip()
-		except:
+		except Exception:
 			self._logger.exception("Error while discovering pip command")
 			self._command = None
 			self._version = None
@@ -313,7 +313,7 @@ class PipCaller(CommandlineCaller):
 
 			try:
 				pip_version = pkg_resources.parse_version(version_segment)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to parse version string from pip command")
 				return None, None
 
@@ -371,7 +371,7 @@ class PipCaller(CommandlineCaller):
 					          stderr=sarge.Capture(),
 					          cwd=testballoon,
 					          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
-				except:
+				except Exception:
 					self._logger.exception("Error while trying to install testballoon to figure out pip setup")
 					return False, False, False, None
 

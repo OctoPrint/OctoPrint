@@ -307,7 +307,7 @@ class Server(object):
 			try:
 				additional_factories = hook()
 				analysis_queue_factories.update(**additional_factories)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing analysis queues from {}".format(name))
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
 
@@ -384,7 +384,7 @@ class Server(object):
 				if groupManager is not None:
 					self._logger.debug("Created group manager instance from factory {}".format(name))
 					break
-			except:
+			except Exception:
 				self._logger.exception("Error while creating group manager instance from factory {}".format(name))
 		else:
 			group_manager_name = self._settings.get(["accessControl", "groupManager"])
@@ -406,14 +406,14 @@ class Server(object):
 				if userManager is not None:
 					self._logger.debug("Created user manager instance from factory {}".format(name))
 					break
-			except:
+			except Exception:
 				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
 		else:
 			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
 				clazz = octoprint.util.get_class(user_manager_name)
 				userManager = clazz(groupManager)
-			except:
+			except Exception:
 				self._logger.exception("Could not instantiate user manager {}, "
 				                       "falling back to FilebasedUserManager!".format(user_manager_name))
 				userManager = octoprint.access.users.FilebasedUserManager(groupManager)
@@ -429,7 +429,7 @@ class Server(object):
 				if printer is not None:
 					self._logger.debug("Created printer instance from factory {}".format(name))
 					break
-			except:
+			except Exception:
 				self._logger.exception("Error while creating printer instance from factory {}".format(name))
 		else:
 			printer = Printer(fileManager, analysisQueue, printerProfileManager)
@@ -518,7 +518,7 @@ class Server(object):
 					for event in result:
 						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
 						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
-			except:
+			except Exception:
 				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name))
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
@@ -529,7 +529,7 @@ class Server(object):
 		for implementation in settingsPlugins:
 			try:
 				settings_plugin_config_migration_and_cleanup(implementation._identifier, implementation)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to migrate settings for plugin {}, ignoring it".format(implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
@@ -600,7 +600,7 @@ class Server(object):
 		for plugin, hook in pluginManager.get_hooks("octoprint.server.http.access_validator").items():
 			try:
 				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
-			except:
+			except Exception:
 				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin))
 		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
 
@@ -669,7 +669,7 @@ class Server(object):
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
 				result = hook(list(server_routes))
-			except:
+			except Exception:
 				self._logger.exception("There was an error while retrieving additional server routes from plugin hook {name}".format(**locals()))
 			else:
 				if isinstance(result, (list, tuple)):
@@ -712,7 +712,7 @@ class Server(object):
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.bodysize").items():
 			try:
 				result = hook(list(max_body_sizes))
-			except:
+			except Exception:
 				self._logger.exception("There was an error while retrieving additional upload sizes from plugin hook {name}".format(**locals()))
 			else:
 				if isinstance(result, (list, tuple)):
@@ -766,7 +766,7 @@ class Server(object):
 				connectionOptions = printer.__class__.get_connection_options()
 				if port in connectionOptions["ports"] or port == "AUTO":
 						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
-			except:
+			except Exception:
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
@@ -874,7 +874,7 @@ class Server(object):
 			self._logger.debug("Tornado's IOLoop stopped")
 		except (KeyboardInterrupt, SystemExit):
 			pass
-		except:
+		except Exception:
 			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			self._logger.exception("Stacktrace follows:")
 
@@ -1140,7 +1140,7 @@ class Server(object):
 							if not implementation.get_ui_preemptive_caching_enabled():
 								logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
 								continue
-						except:
+						except Exception:
 							logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
 							continue
 
@@ -1164,7 +1164,7 @@ class Server(object):
 						app(builder.get_environ(), lambda *a, **kw: None)
 
 						logger.info("... done in {:.2f}s".format(time.time() - start))
-					except:
+					except Exception:
 						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
 		# asynchronous caching
@@ -1178,7 +1178,7 @@ class Server(object):
 		for plugin in template_plugins:
 			try:
 				self._register_additional_template_plugin(plugin)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to register templates of plugin {}, ignoring it".format(plugin._identifier))
 
 	def _register_additional_template_plugin(self, plugin):
@@ -1228,7 +1228,7 @@ class Server(object):
 			try:
 				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 				blueprints[prefix] = blueprint
-			except:
+			except Exception:
 				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
@@ -1244,7 +1244,7 @@ class Server(object):
 			try:
 				blueprint, prefix = self._prepare_asset_plugin(plugin)
 				blueprints[prefix] = blueprint
-			except:
+			except Exception:
 				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
@@ -1297,7 +1297,7 @@ class Server(object):
 					if isinstance(result, (list, tuple)):
 						for h in result:
 							blueprint.before_request(h)
-				except:
+				except Exception:
 					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin))
 
 		for plugin, hook in after_hooks.items():
@@ -1307,7 +1307,7 @@ class Server(object):
 					if isinstance(result, (list, tuple)):
 						for h in result:
 							blueprint.after_request(h)
-				except:
+				except Exception:
 					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin))
 
 	def _setup_assets(self):
@@ -1333,7 +1333,7 @@ class Server(object):
 					try:
 						self._logger.debug("Deleting {path}...".format(**locals()))
 						shutil.rmtree(path)
-					except:
+					except Exception:
 						self._logger.exception("Error while trying to delete {path}, "
 						                       "leaving it alone".format(**locals()))
 						continue
@@ -1357,7 +1357,7 @@ class Server(object):
 							try:
 								os.makedirs(path)
 								break
-							except:
+							except Exception:
 								if self._logger.isEnabledFor(logging.DEBUG):
 									self._logger.exception("Ignored error while creating "
 									                       "directory {path}".format(**locals()))
@@ -1372,7 +1372,7 @@ class Server(object):
 						# went wrong -> log an error and stop
 						self._logger.exception(error_text)
 						continue
-				except:
+				except Exception:
 					# not an OSError, so something we don't understand
 					# went wrong -> log an error and stop
 					self._logger.exception(error_text)
@@ -1758,21 +1758,21 @@ class Server(object):
 		from octoprint.util.platform import set_close_exec
 		try:
 			set_close_exec(self._intermediary_server.fileno())
-		except:
+		except Exception:
 			self._logger.exception("Error while attempting to set_close_exec on intermediary server socket")
 
 		# then bind the server and have it serve our handler until stopped
 		try:
 			self._intermediary_server.server_bind()
 			self._intermediary_server.server_activate()
-		except:
+		except Exception:
 			self._intermediary_server.server_close()
 			raise
 
 		def serve():
 			try:
 				self._intermediary_server.serve_forever()
-			except:
+			except Exception:
 				self._logger.exception("Error in intermediary server")
 
 		thread = threading.Thread(target=serve)
@@ -1868,7 +1868,7 @@ class Server(object):
 
 					if not process_regular_permission(plugin_info, p):
 						postponed.append((plugin_info, p))
-			except:
+			except Exception:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
 
 		# final resolution passes

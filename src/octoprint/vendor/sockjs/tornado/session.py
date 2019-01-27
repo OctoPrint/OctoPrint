@@ -136,7 +136,7 @@ class BaseSession(object):
         if self.state != CLOSED:
             try:
                 self.conn.on_close()
-            except:
+            except Exception:
                 LOG.debug("Failed to call on_close().", exc_info=True)
             finally:
                 self.state = CLOSED

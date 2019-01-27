@@ -9,7 +9,7 @@ import re
 
 try:
 	from urllib import parse as urlparse
-except:
+except ImportError:
 	import urlparse
 
 from webassets.bundle import Bundle

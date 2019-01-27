@@ -82,7 +82,7 @@ def full_extension_tree():
 			if hook_result is None or not isinstance(hook_result, dict):
 				continue
 			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
 
 	return result
@@ -416,15 +416,17 @@ class FileManager(object):
 		if self._last_slicing_progress != progress_int:
 			self._last_slicing_progress = progress_int
 			for callback in self._slicing_progress_callbacks:
-				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-				except: self._logger.exception("Exception while pushing slicing progress")
+				try:
+					callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
+				except Exception:
+					self._logger.exception("Exception while pushing slicing progress")
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
 					for plugin in self._progress_plugins:
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
-						except:
+						except Exception:
 							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
 
 				import threading
@@ -463,7 +465,7 @@ class FileManager(object):
 		for hook in self._preprocessor_hooks.values():
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
-			except:
+			except Exception:
 				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
 				continue
 
@@ -625,7 +627,7 @@ class FileManager(object):
 		try:
 			with atomic_write(self._recovery_file, max_permissions=0o666) as f:
 				yaml.safe_dump(data, stream=f, default_flow_style=False, indent=2, allow_unicode=True)
-		except:
+		except Exception:
 			self._logger.exception("Could not write recovery data to file {}".format(self._recovery_file))
 
 	def delete_recovery_data(self):
@@ -634,7 +636,7 @@ class FileManager(object):
 
 		try:
 			os.remove(self._recovery_file)
-		except:
+		except Exception:
 			self._logger.exception("Error deleting recovery data file {}".format(self._recovery_file))
 
 	def get_recovery_data(self):
@@ -646,7 +648,7 @@ class FileManager(object):
 			with io.open(self._recovery_file, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			return data
-		except:
+		except Exception:
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
 			self.delete_recovery_data()
 

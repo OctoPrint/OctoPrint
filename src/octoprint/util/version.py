@@ -110,7 +110,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 			s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
 			if octoprint_version in s:
 				break
-		except:
+		except Exception:
 			logger.exception("Something is wrong with this compatibility string for OctoPrint: {}".format(octo_compat))
 	else:
 		return False

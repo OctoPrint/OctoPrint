@@ -196,7 +196,7 @@ class VirtualPrinter(object):
 			if self._writingToSdHandle:
 				try:
 					self._writingToSdHandle.close()
-				except:
+				except Exception:
 					pass
 			self._writingToSd = False
 			self._writingToSdHandle = None
@@ -855,7 +855,7 @@ class VirtualPrinter(object):
 					self._startSdPrint()
 				elif select_sd_match is not None:
 					self._selectSdFile(select_sd_match.group(1))
-			except:
+			except Exception:
 				pass
 
 	def _listSd(self):
@@ -965,7 +965,7 @@ class VirtualPrinter(object):
 		if toolMatch:
 			try:
 				tool = int(toolMatch.group(1))
-			except:
+			except Exception:
 				pass
 
 		if tool >= self.temperatureCount:
@@ -973,12 +973,12 @@ class VirtualPrinter(object):
 
 		try:
 			self.targetTemp[tool] = float(re.search('S([0-9]+)', line).group(1))
-		except:
+		except Exception:
 			if support_r:
 				try:
 					self.targetTemp[tool] = float(re.search('R([0-9]+)', line).group(1))
 					only_wait_if_higher = False
-				except:
+				except Exception:
 					pass
 
 		if wait:
@@ -990,12 +990,12 @@ class VirtualPrinter(object):
 		only_wait_if_higher = True
 		try:
 			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
-		except:
+		except Exception:
 			if support_r:
 				try:
 					self.bedTargetTemp = float(re.search('R([0-9]+)', line).group(1))
 					only_wait_if_higher = False
-				except:
+				except Exception:
 					pass
 
 		if wait:
@@ -1014,7 +1014,7 @@ class VirtualPrinter(object):
 		if matchF is not None:
 			try:
 				self._lastF = float(matchF.group(1))
-			except:
+			except Exception:
 				pass
 
 		speedXYZ = self._lastF * (self._feedrate_multiplier / 100.0)
@@ -1032,7 +1032,7 @@ class VirtualPrinter(object):
 					self._lastX += x
 				else:
 					self._lastX = x
-			except:
+			except Exception:
 				pass
 		if matchY is not None:
 			try:
@@ -1046,7 +1046,7 @@ class VirtualPrinter(object):
 					self._lastY += y
 				else:
 					self._lastY = y
-			except:
+			except Exception:
 				pass
 		if matchZ is not None:
 			try:
@@ -1060,7 +1060,7 @@ class VirtualPrinter(object):
 					self._lastZ += z
 				else:
 					self._lastZ = z
-			except:
+			except Exception:
 				pass
 		if matchE is not None:
 			try:
@@ -1075,7 +1075,7 @@ class VirtualPrinter(object):
 					self._lastE[self.currentExtruder] += e
 				else:
 					self._lastE[self.currentExtruder] = e
-			except:
+			except Exception:
 				pass
 
 		if duration:
@@ -1100,22 +1100,22 @@ class VirtualPrinter(object):
 			if matchX is not None:
 				try:
 					self._lastX = float(matchX.group(1))
-				except:
+				except Exception:
 					pass
 			if matchY is not None:
 				try:
 					self._lastY = float(matchY.group(1))
-				except:
+				except Exception:
 					pass
 			if matchZ is not None:
 				try:
 					self._lastZ = float(matchZ.group(1))
-				except:
+				except Exception:
 					pass
 			if matchE is not None:
 				try:
 					self._lastE[self.currentExtruder] = float(matchE.group(1))
-				except:
+				except Exception:
 					pass
 
 	def _writeSdFile(self, filename):
@@ -1131,12 +1131,12 @@ class VirtualPrinter(object):
 		handle = None
 		try:
 			handle = io.open(file, 'wt', encoding='utf-8')
-		except:
+		except Exception:
 			self._output("error writing to file")
 			if handle is not None:
 				try:
 					handle.close()
-				except:
+				except Exception:
 					pass
 		self._writingToSdHandle = handle
 		self._writingToSd = True
@@ -1146,7 +1146,7 @@ class VirtualPrinter(object):
 	def _finishSdFile(self):
 		try:
 			self._writingToSdHandle.close()
-		except:
+		except Exception:
 			pass
 		finally:
 			self._writingToSdHandle = None
@@ -1282,7 +1282,7 @@ class VirtualPrinter(object):
 	def _output(self, line):
 		try:
 			self.outgoing.put(line)
-		except:
+		except Exception:
 			if self.outgoing is None:
 				pass
 

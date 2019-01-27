@@ -838,7 +838,7 @@ def git_parse_lookup_file(path):
                     continue
 
                 lookup.append(entry)
-            except:
+            except Exception:
                 break
     return lookup
 
@@ -1410,7 +1410,7 @@ def git_parse_lookup_file(path):
                     continue
 
                 lookup.append(entry)
-            except:
+            except Exception:
                 break
     return lookup
 

@@ -440,7 +440,7 @@ class PrinterProfileManager(object):
 		if self._migrate_profile(profile):
 			try:
 				self._save_to_path(path, profile, allow_overwrite=True)
-			except:
+			except Exception:
 				self._logger.exception("Tried to save profile to {path} after migrating it while loading, ran into exception".format(path=path))
 
 		profile = self._ensure_valid_profile(profile)
@@ -471,7 +471,7 @@ class PrinterProfileManager(object):
 		try:
 			os.remove(path)
 			return True
-		except:
+		except Exception:
 			return False
 
 	def _get_profile_path(self, identifier):
@@ -589,7 +589,7 @@ class PrinterProfileManager(object):
 						try:
 							value = limiter(float(value), default_box[prop])
 							profile["volume"]["custom_box"][prop] = value
-						except:
+						except Exception:
 							self._logger.warning("Profile has invalid value in volume.custom_box.{}: {!r}".format(prop, value))
 							return False
 
@@ -611,7 +611,7 @@ class PrinterProfileManager(object):
 			x_offset, y_offset = offset
 			try:
 				offsets.append((float(x_offset), float(y_offset)))
-			except:
+			except Exception:
 				self._logger.warning("Profile has an extruder.offsets entry with non-float values: {entry!r}".format(entry=offset))
 				return False
 		profile["extruder"]["offsets"] = offsets

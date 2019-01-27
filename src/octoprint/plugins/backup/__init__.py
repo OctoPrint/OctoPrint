@@ -116,7 +116,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
 		try:
 			os.remove(data_file)
-		except:
+		except Exception:
 			pass
 		return NO_CONTENT
 
@@ -191,7 +191,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			and not is_hidden_path(full_path):
 			try:
 				os.remove(full_path)
-			except:
+			except Exception:
 				self._logger.exception(u"Could not delete {}".format(filename))
 				raise
 		return NO_CONTENT
@@ -497,15 +497,15 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					# no plugins left uninstalled, delete data file
 					try:
 						os.remove(data_file)
-					except:
+					except Exception:
 						self._logger.exception(u"Error while deleting list of unknown plugins at {}".format(data_file))
 
 				return unknown_plugins
-			except:
+			except Exception:
 				self._logger.exception(u"Error while reading list of unknown plugins from {}".format(data_file))
 				try:
 					os.remove(data_file)
-				except:
+				except Exception:
 					self._logger.exception(u"Error while deleting list of unknown plugins at {}".format(data_file))
 
 		return []
@@ -556,7 +556,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
-		except:
+		except Exception:
 			logger.exception(u"Error while fetching the plugin repository data from {}".format(url))
 			return dict()
 
@@ -702,7 +702,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if callable(on_backup_done):
 				on_backup_done(name, final_path, exclude)
-		except:
+		except Exception:
 			if callable(on_backup_error):
 				exc_info = sys.exc_info()
 				try:
@@ -854,7 +854,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						if callable(on_log_progress):
 							on_log_progress(u"Moving {} to {}...".format(basedir_extracted, basedir))
 						shutil.move(basedir_extracted, basedir)
-					except:
+					except Exception:
 						if callable(on_log_error):
 							on_log_error(u"Error while restoring config data", exc_info=sys.exc_info())
 							on_log_error(u"Rolling back old config data")
@@ -876,7 +876,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						try:
 							with codecs.open(unknown_plugins_path, mode="w", encoding="utf-8") as f:
 								json.dump(unknown_plugins, f)
-						except:
+						except Exception:
 							if callable(on_log_error):
 								on_log_error(u"Could not persist list of unknown plugins to {}".format(unknown_plugins_path),
 								             exc_info = sys.exc_info())
@@ -886,7 +886,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						on_log_progress(u"Removing temporary unpacked folder")
 					shutil.rmtree(temp)
 
-		except:
+		except Exception:
 			exc_info = sys.exc_info()
 			try:
 				if callable(on_log_error):
@@ -914,7 +914,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			try:
 				sarge.run(restart_command, async_=True)
-			except:
+			except Exception:
 				if callable(on_log_error):
 					on_log_error(u"Error while restarting via command {}".format(restart_command),
 					             exc_info=sys.exc_info())

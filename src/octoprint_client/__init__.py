@@ -45,7 +45,7 @@ class SocketClient(object):
 		if self._ws is not None:
 			try:
 				self._ws.close()
-			except:
+			except Exception:
 				# we can't handle that in any meaningful way right now
 				pass
 

@@ -136,7 +136,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				for name, hook in update_check_hooks.items():
 					try:
 						hook_checks = hook()
-					except:
+					except Exception:
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
 						for key, default_config in hook_checks.items():
@@ -218,7 +218,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			with io.open(self._version_cache_path, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			timestamp = os.stat(self._version_cache_path).st_mtime
-		except:
+		except Exception:
 			self._logger.exception("Error while loading version cache from disk")
 		else:
 			try:
@@ -242,7 +242,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._version_cache_dirty = False
 				self._version_cache_timestamp = timestamp
 				self._logger.info("Loaded version cache from disk")
-			except:
+			except Exception:
 				self._logger.exception("Error parsing in version cache data")
 
 	def _save_version_cache(self):
@@ -694,7 +694,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							                                                                       check.get("type",
 							                                                                                 "<n/a>")))
 							continue
-						except:
+						except Exception:
 							self._logger.exception("Could not check {} for updates".format(target))
 							continue
 
@@ -816,7 +816,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._logger.warning("Could not check %s for updates due to a network error" % target)
 			update_possible = False
 			error = "network"
-		except:
+		except Exception:
 			self._logger.exception("Could not check %s for updates" % target)
 			update_possible = False
 			error = "unknown"
@@ -824,7 +824,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			try:
 				updater = self._get_updater(target, check)
 				update_possible = updater.can_perform_update(target, check, online=online)
-			except:
+			except Exception:
 				update_possible = False
 
 		self._version_cache[target] = dict(timestamp=time.time(),
@@ -857,7 +857,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				populated_checks[target] = self._populated_check(target, check)
 			except exceptions.UnknownCheckType:
 				self._logger.debug("Ignoring unknown check type for target {}".format(target))
-			except:
+			except Exception:
 				self._logger.exception("Error while populating check prior to update for target {}".format(target))
 
 		if targets is None:

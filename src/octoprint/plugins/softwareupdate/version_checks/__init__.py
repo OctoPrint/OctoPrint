@@ -14,7 +14,7 @@ def log_github_ratelimit(logger, r):
 	try:
 		import time
 		reset = time.strftime("%Y-%m-%d %H:%M", time.gmtime(int(reset)))
-	except:
+	except Exception:
 		reset = "?"
 
 	logger.debug("Github rate limit: %s/%s, reset at %s" % (remaining, ratelimit, reset))

@@ -120,7 +120,7 @@ def wizardState():
 			details = implementation.get_wizard_details()
 			version = implementation.get_wizard_version()
 			ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("There was an error fetching wizard details for {}, ignoring".format(name))
 		else:
 			result[name] = dict(required=required, details=details, version=version, ignored=ignored)
@@ -136,7 +136,7 @@ def wizardFinish():
 	data = dict()
 	try:
 		data = request.get_json()
-	except:
+	except Exception:
 		abort(400)
 
 	if data is None:
@@ -158,7 +158,7 @@ def wizardFinish():
 			implementation.on_wizard_finish(name in handled)
 			if name in handled:
 				seen_wizards[name] = implementation.get_wizard_version()
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("There was an error finishing the wizard for {}, ignoring".format(name))
 
 	s().set(["server", "seenWizards"], seen_wizards)
@@ -317,7 +317,7 @@ def _test_path(data):
 		elif check_type == "dir" and allow_create_dir:
 			try:
 				os.makedirs(path)
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Error while trying to create {}".format(path))
 				return jsonify(path=path, exists=False, typeok=False, broken_symlink=False, access=False, result=False)
 			else:
@@ -346,7 +346,7 @@ def _test_path(data):
 			with io.open(test_path, 'wb') as f:
 				f.write("Test")
 			os.remove(test_path)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
 			return jsonify(path=path, exists=exists, typeok=typeok, broken_symlink=False, access=False, result=False)
 
@@ -403,7 +403,7 @@ def _test_url(data):
 	if "timeout" in data:
 		try:
 			timeout = float(data["timeout"])
-		except:
+		except Exception:
 			return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]),
 			                     400)
 
@@ -469,7 +469,7 @@ def _test_url(data):
 					content = base64.standard_b64encode(response.content)
 
 				response_result["content"] = content
-	except:
+	except Exception:
 		logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
 		outcome = False
 
@@ -487,14 +487,14 @@ def _test_server(data):
 	host = data["host"]
 	try:
 		port = int(data["port"])
-	except:
+	except Exception:
 		return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
 
 	timeout = 3.05
 	if "timeout" in data:
 		try:
 			timeout = float(data["timeout"])
-		except:
+		except Exception:
 			return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]),
 			                     400)
 

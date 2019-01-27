@@ -17,7 +17,7 @@ from octoprint import init_settings, FatalStartupError
 
 try:
 	unicode
-except:
+except NameError:
 	unicode =str
 
 class JsonStringParamType(click.ParamType):
@@ -26,7 +26,7 @@ class JsonStringParamType(click.ParamType):
 	def convert(self, value, param, ctx):
 		try:
 			return json.loads(value)
-		except:
+		except Exception:
 			self.fail("%s is not a valid json string" % value, param, ctx)
 
 

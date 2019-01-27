@@ -87,7 +87,7 @@ def valid_timelapse(path):
 				if result is None or not isinstance(result, list):
 					continue
 				extensions += result
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
 
 		_extensions = list(set(extensions))
@@ -183,7 +183,7 @@ def delete_unrendered_timelapse(name):
 			try:
 				if fnmatch.fnmatch(entry.name, pattern):
 					os.remove(entry.path)
-			except:
+			except Exception:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
@@ -235,7 +235,7 @@ def delete_old_unrendered_timelapses():
 				# delete if both creation and modification time are older than the cutoff
 				if max(entry.stat().st_ctime, entry.stat().st_mtime) < cutoff:
 					prefixes_to_clean.append(prefix)
-			except:
+			except Exception:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
@@ -323,7 +323,7 @@ def notify_callback(callback, config=None, timelapse=None):
 
 	try:
 		callback.sendTimelapseConfig(config)
-	except:
+	except Exception:
 		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
 
 
@@ -628,7 +628,7 @@ class Timelapse(object):
 		for name, hook in self._pre_capture_hooks.items():
 			try:
 				hook(filename)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
@@ -659,7 +659,7 @@ class Timelapse(object):
 		for name, hook in self._post_capture_hooks.items():
 			try:
 				hook(filename, success)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
 		# handle events and onerror call
@@ -903,7 +903,7 @@ class TimelapseRenderJob(object):
 				else:
 					self._logger.warning("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
 					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
-			except:
+			except Exception:
 				self._logger.exception("Could not render movie due to unknown error")
 				self._notify_callback("fail", output, reason="unknown")
 			finally:

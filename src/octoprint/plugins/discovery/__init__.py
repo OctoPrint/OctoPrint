@@ -21,7 +21,7 @@ import octoprint.util
 
 try:
 	import pybonjour
-except:
+except ImportError:
 	pybonjour = False
 
 
@@ -232,7 +232,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		try:
 			sd_ref.close()
 			self._logger.debug("Unregistered {reg_type} on port {port}".format(reg_type=reg_type, port=port))
-		except:
+		except Exception:
 			self._logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
 
 	def zeroconf_browse(self, service_type, block=True, callback=None, browse_timeout=5, resolve_timeout=5):
@@ -441,7 +441,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 							response = Response(data)
 
 							result.append(response.getheader("Location"))
-					except:
+					except Exception:
 						pass
 
 			if callback:
@@ -600,7 +600,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				for _ in range(2):
 					# send twice, stuff might get lost, it's only UDP
 					sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
-			except:
+			except Exception:
 				pass
 
 		self._ssdp_last_notify = time.time()
@@ -677,7 +677,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		finally:
 			try:
 				sock.close()
-			except:
+			except Exception:
 				pass
 
 	##~~ helpers

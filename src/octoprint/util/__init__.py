@@ -34,7 +34,7 @@ except ImportError:
 from past.builtins import basestring
 try:
 	unicode
-except:
+except NameError:
 	unicode = str
 
 logger = logging.getLogger(__name__)
@@ -876,7 +876,7 @@ def interface_addresses(family=None):
 	for interface in netifaces.interfaces():
 		try:
 			ifaddresses = netifaces.ifaddresses(interface)
-		except:
+		except Exception:
 			continue
 		if family in ifaddresses:
 			for ifaddress in ifaddresses[family]:
@@ -892,7 +892,7 @@ def address_for_client(host, port, timeout=3.05):
 		try:
 			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
 				return address
-		except:
+		except Exception:
 			continue
 
 def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
@@ -922,7 +922,7 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 			sock.bind((source, 0))
 		sock.connect((host, port))
 		return True
-	except:
+	except Exception:
 		return False
 
 def parse_mime_type(mime):

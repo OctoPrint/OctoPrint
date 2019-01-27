@@ -181,7 +181,7 @@ class EventManager(object):
 					self._logger.debug("Sending action to {!r}".format(listener))
 					try:
 						listener(event, payload)
-					except:
+					except Exception:
 						self._logger.exception("Got an exception while sending event {} (Payload: {!r}) to {}".format(event, payload, listener))
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
@@ -189,7 +189,7 @@ class EventManager(object):
 				                             args=(event, payload),
 				                             initialized=True)
 			self._logger.info("Event loop shut down")
-		except:
+		except Exception:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
 	def fire(self, event, payload=None):
@@ -411,7 +411,7 @@ class CommandTrigger(GenericEventListener):
 					self._logger.warning("Command failed with return code {}: {}".format(e.returncode, str(e)))
 				else:
 					self._logger.warning("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
-			except:
+			except Exception:
 				self._logger.exception("Command failed")
 
 		t = threading.Thread(target=process)
@@ -449,7 +449,8 @@ class CommandTrigger(GenericEventListener):
 			import json
 			try:
 				json_string = json.dumps(payload)
-			except:
+			except Exception:
+				# TODO: log an error?
 				json_string = ""
 
 		params = {

@@ -500,10 +500,10 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 				try:
 					with bom_aware_open(cache, encoding="utf-8", mode="w") as f:
 						yaml.safe_dump(result, f)
-				except:
-					logger.info("Fetched plugin blacklist but couldn't write it to its cache file.")
-		except:
-			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it.".format(url))
+				except Exception as e:
+					logger.info("Fetched plugin blacklist but couldn't write it to its cache file: %s", e)
+		except Exception as e:
+			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(url, e))
 		return result
 
 	try:
@@ -530,7 +530,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 			logger.info("Blacklist processing done")
 
 		return blacklist
-	except:
+	except Exception:
 		logger.exception("Something went wrong while processing the plugin blacklist. Proceeding without it.")
 
 

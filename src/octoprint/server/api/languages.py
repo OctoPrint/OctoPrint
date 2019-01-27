@@ -52,7 +52,7 @@ def getInstalledLanguagePacks():
 				try:
 					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
-				except:
+				except Exception:
 					pass
 				else:
 					import datetime

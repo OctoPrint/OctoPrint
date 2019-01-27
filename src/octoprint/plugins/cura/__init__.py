@@ -363,7 +363,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 						if line.startswith(u"Layer count:") and layer_count is None:
 							try:
 								layer_count = float(line[len(u"Layer count:"):].strip())
-							except:
+							except Exception:
 								pass
 
 						elif line.startswith(u"Progress:"):
@@ -372,7 +372,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 								step, current_layer, _ = split_line
 								try:
 									current_layer = float(current_layer)
-								except:
+								except Exception:
 									pass
 								else:
 									if not step in step_factor:
@@ -386,7 +386,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 								if analysis is None:
 									analysis = dict()
 								analysis["estimatedPrintTime"] = print_time
-							except:
+							except Exception:
 								pass
 
 						# Get the filament usage
@@ -415,7 +415,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 									else:
 										analysis["filament"][tool_key] = _get_usage_from_length(filament, slicing_profile.get_float("filament_diameter"))
 
-							except:
+							except Exception:
 								pass
 			finally:
 				p.close()
@@ -434,7 +434,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 		except octoprint.slicing.SlicingCancelled as e:
 			raise e
-		except:
+		except Exception:
 			self._logger.exception(u"Could not slice via Cura, got an unknown error")
 			return False, "Unknown error, please consult the log file"
 
@@ -463,7 +463,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		with io.open(path, 'rt', encoding='utf-8') as f:
 			try:
 				profile_dict = yaml.safe_load(f)
-			except:
+			except Exception:
 				raise IOError(u"Couldn't read profile from {path}".format(path=path))
 
 		if "gcode_flavor" in profile_dict and not isinstance(profile_dict["gcode_flavor"], (list, tuple)):

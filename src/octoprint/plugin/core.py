@@ -537,7 +537,8 @@ class PluginInfo(object):
 							result[key] = a.value.args[0].s
 
 						break
-		except:
+		except Exception:
+			# TODO: really ignore all errors?
 			pass
 
 		return result
@@ -652,7 +653,7 @@ class PluginManager(object):
 				                                                 ignored_uninstalled=ignore_uninstalled)
 				result_added.update(added)
 				result_found += found
-			except:
+			except Exception:
 				self.logger.exception("Error fetching plugins from folders")
 
 		if self.plugin_entry_points:
@@ -663,7 +664,7 @@ class PluginManager(object):
 				                                                      ignore_uninstalled=ignore_uninstalled)
 				result_added.update(added)
 				result_found += found
-			except:
+			except Exception:
 				self.logger.exception("Error fetching plugins from entry points")
 
 		return result_added, result_found
@@ -721,9 +722,9 @@ class PluginManager(object):
 							plugin.managable = not flagged_readonly and not actual_readonly
 							plugin.enabled = False
 							added[key] = plugin
-					except:
+					except Exception:
 						self.logger.exception("Error processing folder entry {!r} from folder {}".format(entry, folder))
-			except:
+			except Exception:
 				self.logger.exception("Error processing folder {}".format(folder))
 
 		return added, found
@@ -753,7 +754,7 @@ class PluginManager(object):
 			for entry in gen:
 				try:
 					yield entry
-				except:
+				except Exception:
 					self.logger.exception("Something went wrong while processing the entry points of a package in the "
 					                      "Python environment - broken entry_points.txt in some package?")
 
@@ -773,7 +774,7 @@ class PluginManager(object):
 					package_name = entry_point.dist.project_name
 					try:
 						entry_point_metadata = EntryPointMetadata(entry_point)
-					except:
+					except Exception:
 						self.logger.exception("Something went wrong while retrieving metadata for module {}".format(module_name))
 					else:
 						kwargs.update(dict(
@@ -803,7 +804,7 @@ class PluginManager(object):
 						                                               plugin.location))
 
 						added[key] = plugin
-				except:
+				except Exception:
 					self.logger.exception("Error processing entry point {!r} for group {}".format(entry_point, group))
 
 		return added, found
@@ -818,7 +819,7 @@ class PluginManager(object):
 				module = imp.find_module(module_name)
 			else:
 				return None
-		except:
+		except Exception:
 			self.logger.warning("Could not locate plugin {key}".format(key=key))
 			return None
 
@@ -858,7 +859,7 @@ class PluginManager(object):
 			                    license=license,
 			                    parsed_metadata=parsed_metadata)
 			plugin.bundled = bundled
-		except:
+		except Exception:
 			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
@@ -989,7 +990,7 @@ class PluginManager(object):
 			self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
 		except PluginLifecycleException as e:
 			raise e
-		except:
+		except Exception:
 			self.logger.exception("There was an error loading plugin %s" % name)
 
 	def unload_plugin(self, name):
@@ -1017,7 +1018,7 @@ class PluginManager(object):
 			self.logger.debug("Unloaded plugin {name}: {plugin}".format(**locals()))
 		except PluginLifecycleException as e:
 			raise e
-		except:
+		except Exception:
 			self.logger.exception("There was an error unloading plugin {name}".format(**locals()))
 
 			# make sure the plugin is NOT in the list of enabled plugins but in the list of disabled plugins
@@ -1048,7 +1049,7 @@ class PluginManager(object):
 			self._activate_plugin(name, plugin)
 		except PluginLifecycleException as e:
 			raise e
-		except:
+		except Exception:
 			self.logger.exception("There was an error while enabling plugin {name}".format(**locals()))
 			return False
 		else:
@@ -1084,7 +1085,7 @@ class PluginManager(object):
 			self._deactivate_plugin(name, plugin)
 		except PluginLifecycleException as e:
 			raise e
-		except:
+		except Exception:
 			self.logger.exception("There was an error while disabling plugin {name}".format(**locals()))
 			return False
 		else:
@@ -1329,7 +1330,7 @@ class PluginManager(object):
 			for factory in inject_factories:
 				try:
 					return_value = factory(name, implementation)
-				except:
+				except Exception:
 					self.logger.exception("Exception while executing injection factory %r" % factory)
 				else:
 					if return_value is not None:
@@ -1477,7 +1478,7 @@ class PluginManager(object):
 			if sorting_context is not None and isinstance(impl[1], SortablePlugin):
 				try:
 					sorting_value = impl[1].get_sorting_key(sorting_context)
-				except:
+				except Exception:
 					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
 
 				if sorting_value is not None:
@@ -1568,8 +1569,10 @@ class PluginManager(object):
 		"""
 
 		for client in self.registered_clients:
-			try: client(plugin, data, permissions=permissions)
-			except: self.logger.exception("Exception while sending plugin data to client")
+			try:
+				client(plugin, data, permissions=permissions)
+			except Exception:
+				self.logger.exception("Exception while sending plugin data to client")
 
 	def _sort_hooks(self, hook):
 		self._plugin_hooks[hook] = sorted(self._plugin_hooks[hook],
@@ -1630,7 +1633,7 @@ def is_editable_install(install_dir, package, module, location):
 				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))
 				if target == expected_target:
 					return True
-		except:
+		except Exception:
 			pass
 	return False
 
@@ -1650,7 +1653,7 @@ class EntryPointMetadata(pkginfo.Distribution):
 			for metadata_file in metadata_files:
 				try:
 					return self.entry_point.dist.get_metadata(metadata_file)
-				except:
+				except Exception:
 					pass
 
 		warnings.warn('No package metadata found for package: {}'.format(self.entry_point.module_name))

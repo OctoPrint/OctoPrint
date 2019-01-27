@@ -120,7 +120,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
 						try:
 							plugin_translations = support.Translations.load(dirname, [locale])
-						except:
+						except Exception:
 							logger.exception("Error while trying to load translations for plugin {name}".format(**locals()))
 						else:
 							if isinstance(plugin_translations, support.Translations):
@@ -171,7 +171,7 @@ def fix_webassets_cache():
 				pickle.dump(data, f)
 				f.flush()
 			shutil.move(temp_filename, filename)
-		except:
+		except Exception:
 			os.remove(temp_filename)
 			raise
 
@@ -235,10 +235,10 @@ def fix_webassets_filtertool():
 				try:
 					log.debug('Storing result in cache with key %s', key,)
 					self.cache.set(key, content)
-				except:
+				except Exception:
 					error_logger.exception("Got an exception while trying to save file to cache, not caching")
 			return MemoryHunk(content)
-		except:
+		except Exception:
 			error_logger.exception("Got an exception while trying to apply filter, ignoring file")
 			return MemoryHunk(u"")
 
@@ -303,7 +303,7 @@ class ReverseProxiedEnvironment(object):
 		try:
 			netaddr.IPAddress(address)
 			return True
-		except:
+		except Exception:
 			return False
 
 	def __init__(self,
@@ -587,7 +587,7 @@ def passive_login():
 
 					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(), remoteAddr))
 					user = login(autologin_user)
-		except:
+		except Exception:
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
@@ -855,7 +855,7 @@ class PreemptiveCache(object):
 				import errno
 				if e.errno != errno.ENOENT:
 					raise
-			except:
+			except Exception:
 				self._logger.exception("Error while reading {}".format(self.cachefile))
 
 		if cache_data is None:
@@ -875,7 +875,7 @@ class PreemptiveCache(object):
 			try:
 				with atomic_write(self.cachefile, "wb", max_permissions=0o666) as handle:
 					yaml.safe_dump(data, handle,default_flow_style=False, indent=4, allow_unicode=True)
-			except:
+			except Exception:
 				self._logger.exception("Error while writing {}".format(self.cachefile))
 
 	def set_data(self, root, data):
@@ -1467,7 +1467,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		try:
 			all_assets = implementation.get_assets()
 			basefolder = implementation.get_asset_folder()
-		except:
+		except Exception:
 			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name))
 			continue
 

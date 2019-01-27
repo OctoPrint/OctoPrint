@@ -91,7 +91,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				if estimator is not None:
 					self._logger.info("Using print time estimator provided by {}".format(name))
 					self._estimator_factory = estimator
-			except:
+			except Exception:
 				self._logger.exception("Error while processing analysis queues from {}".format(name))
 
 		#hook card upload
@@ -174,28 +174,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_temperature(data)
-			except:
+			except Exception:
 				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback))
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_log(data)
-			except:
+			except Exception:
 				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback))
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_message(data)
-			except:
+			except Exception:
 				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback))
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_send_current_data(copy.deepcopy(data))
-			except:
+			except Exception:
 				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback))
 
 	#~~ callback from metadata analysis event
@@ -230,7 +230,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			for plugin in self._progressPlugins:
 				try:
 					plugin.on_print_progress(storage, filename, progress)
-				except:
+				except Exception:
 					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier)
 
 		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
@@ -710,7 +710,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				              *args, **kwargs)
 				if result is not None:
 					return result
-			except:
+			except Exception:
 				self._logger.exception("There was an error running the sd upload hook provided by plugin {}".format(name))
 
 		else:
@@ -936,7 +936,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 				try:
 					fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
-				except:
+				except Exception:
 					fileData = None
 				if fileData is not None:
 					if "display" in fileData:
@@ -995,7 +995,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"messages": list(self._messages)
 			})
 			callback.on_printer_send_initial_data(data)
-		except:
+		except Exception:
 			self._logger.exception("Error while trying to send initial state update")
 
 	def _getStateFlags(self):
@@ -1310,7 +1310,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._fileManager.save_recovery_data(origin, name, pos)
 		except NoSuchStorage:
 			pass
-		except:
+		except Exception:
 			self._logger.exception("Error while trying to persist print recovery data")
 
 	def _payload_for_print_job_event(self, location=None, print_job_file=None, print_job_size=None, print_job_user=None,
@@ -1459,7 +1459,7 @@ class StateMonitor(object):
 					self._update_callback(data)
 					self._last_update = time.time()
 					self._change_event.clear()
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. Please report this on the OctoPrint issue tracker (make sure to include logs!)")
 
 	def get_current_data(self):

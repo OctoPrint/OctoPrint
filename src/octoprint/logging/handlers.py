@@ -18,7 +18,7 @@ class AsyncLogHandlerMixin(logging.Handler):
 	def emit(self, record):
 		try:
 			self._executor.submit(self._emit, record)
-		except:
+		except Exception:
 			self.handleError(record)
 
 	def _emit(self, record):

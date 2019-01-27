@@ -277,7 +277,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 					args["throttled_now"] = throttle_state["current_issue"]
 					args["throttled_past"] = throttle_state["past_issue"]
 					args["throttled_mask"] = throttle_state["raw_value"]
-			except:
+			except Exception:
 				# ignored
 				pass
 
@@ -334,7 +334,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 					args["throttled_now"] = throttle_state["current_issue"]
 					args["throttled_past"] = throttle_state["past_issue"]
 					args["throttled_mask"] = throttle_state["raw_value"]
-			except:
+			except Exception:
 				# ignored
 				pass
 
@@ -391,7 +391,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			             timeout=3.1,
 			             headers=headers)
 			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
-		except:
+		except Exception:
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
 			else:

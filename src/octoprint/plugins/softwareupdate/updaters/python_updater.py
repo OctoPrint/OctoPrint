@@ -18,7 +18,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True):
 
 	try:
 		return check["python_updater"].perform_update(target, check, target_version, log_cb=log_cb, online=online)
-	except:
+	except Exception:
 		import inspect
 		args, _, _, _ = inspect.getargspec(check["python_updater"].perform_update)
 		if "online" not in args:

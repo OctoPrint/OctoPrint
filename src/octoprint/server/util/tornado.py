@@ -28,7 +28,7 @@ import octoprint.util
 
 try:
 	unicode
-except:
+except NameError:
 	unicode = str
 
 PY3 = sys.version_info[0] == 3
@@ -304,7 +304,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 		except UnicodeDecodeError:
 			try:
 				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
-			except:
+			except Exception:
 				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
 				self._logger.warning("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
 				self.send_error(400)
@@ -324,7 +324,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 		if filename is not None:
 			try:
 				filename = _extended_header_value(filename)
-			except:
+			except Exception:
 				# parse error, this is not RFC 5987 compliant after all
 				self._logger.warning("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
 				self.send_error(400)

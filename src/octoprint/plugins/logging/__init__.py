@@ -172,7 +172,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 				try:
 					del config["loggers"][component]["level"]
 					self._logger.manager.loggerDict[component].setLevel(logging.INFO)
-				except:
+				except Exception:
 					pass
 				if len(config["loggers"][component]) == 0:
 					purge.append(component)

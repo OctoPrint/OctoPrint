@@ -88,8 +88,10 @@ class UserManager(GroupChangeListener, object):
 		self._sessionids_by_userid[userid].add(user.session)
 
 		for listener in self._login_status_listeners:
-			try: listener.on_user_logged_in(user)
-			except: self._logger.exception("Error in on_user_logged_in on {!r}".format(listener))
+			try:
+				listener.on_user_logged_in(user)
+			except Exception:
+				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener))
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -118,8 +120,10 @@ class UserManager(GroupChangeListener, object):
 			del self._session_users_by_session[sessionid]
 
 		for listener in self._login_status_listeners:
-			try: listener.on_user_logged_out(user)
-			except: self._logger.exception("Error in on_user_logged_out on {!r}".format(listener))
+			try:
+				listener.on_user_logged_out(user)
+			except Exception:
+				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener))
 
 		self._logger.debug("Logged out user: %r" % user)
 
@@ -256,7 +260,7 @@ class UserManager(GroupChangeListener, object):
 			try:
 				for user in users:
 					listener.on_user_modified(user)
-			except:
+			except Exception:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
 
 	def _trigger_on_user_modified(self, user):
@@ -285,14 +289,14 @@ class UserManager(GroupChangeListener, object):
 			try:
 				for user in users:
 					listener.on_user_modified(user)
-			except:
+			except Exception:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
 
 	def _trigger_on_user_removed(self, username):
 		for listener in self._login_status_listeners:
 			try:
 				listener.on_user_removed(username)
-			except:
+			except Exception:
 				self._logger.exception("Error in on_user_removed on {!r}".format(listener))
 
 	#~~ Deprecated methods follow

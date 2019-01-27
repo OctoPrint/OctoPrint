@@ -35,7 +35,7 @@ or as ``postfix`` (after the existing lines).
    for hook in self._gcodescript_hooks:
        try:
            retval = self._gcodescript_hooks[hook](self, "gcode", scriptName)
-       except:
+       except Exception:
            self._logger.exception("Error while processing gcodescript hook %s" % hook)
        else:
            if retval is None:

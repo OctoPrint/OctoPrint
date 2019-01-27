@@ -7,7 +7,7 @@ PY3 = sys.version_info[0] == 3
 
 try:
     unicode
-except:
+except NameError:
     unicode = str
 
 if PY3:

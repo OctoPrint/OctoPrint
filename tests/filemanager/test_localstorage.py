@@ -75,7 +75,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		try:
 			self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
-		except:
+		except Exception:
 			pass
 
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
@@ -289,7 +289,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		try:
 			self.storage.remove_folder(content_folder, recursive=False)
-		except:
+		except Exception:
 			self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
 			self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
 			self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))

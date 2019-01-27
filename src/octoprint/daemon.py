@@ -135,7 +135,7 @@ class Daemon:
 		except OSError:
 			try:
 				self.remove_pidfile()
-			except:
+			except Exception:
 				self.error("Daemon found not running, but could not remove stale pidfile")
 			return False
 		else:
