@@ -42,6 +42,8 @@ logger = logging.getLogger(__name__)
 def warning_decorator_factory(warning_type):
 	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(func):
+			func.__qualname__ = 'warning_decorator_factory'
+			func.__annotations__ = dict()
 			@wraps(func)
 			def func_wrapper(*args, **kwargs):
 				# we need to increment the stacklevel by one because otherwise we'll get the location of our
@@ -116,7 +118,7 @@ variable_deprecated = warning_factory(DeprecationWarning)
 """
 A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
 supplied ``message``. The call stack level used (for adding the source location of the offending call to the
-warning) can be overridden using the optional ``stacklevel`` parameter. 
+warning) can be overridden using the optional ``stacklevel`` parameter.
 
 Arguments:
     message (string): The message to include in the deprecation warning.
