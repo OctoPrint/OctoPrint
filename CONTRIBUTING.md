@@ -27,7 +27,7 @@ to **address problems in a timely manner** but also keep it possible for them
 to **fix bugs, add new and improve on existing functionality** instead of doing
 nothing but ticket management.
 
-![Ticket flow chart](https://i.imgur.com/SmU7iCJ.png)
+![Ticket flow chart](https://i.imgur.com/cw19qHX.png)
 
 - **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
@@ -39,11 +39,11 @@ nothing but ticket management.
   [community forum at discourse.octoprint.org](https://discourse.octoprint.org) for
   such support issues.
 - If you are a **developer** that wants to brainstorm a pull request or possible
-  changes to the plugin system, add [Brainstorming] to your issue's title (e.g.
-  `[Brainstorming] New plugin hook for doing some cool stuff`).
+  changes to the plugin system, please get in touch on the 
+  [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/development).
 - If you need **support**, have a **question** or some **other reason** that
   doesn't fit any of the above categories, the issue tracker is not the right place.
-  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org) instead.
+  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/support) instead.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
@@ -53,7 +53,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 > A bot is in place that monitors new tickets, automatically
 > categorizes them and checks new bug reports for usage of the provided template.
 > That bot will only bother you if you open a ticket that appears to be a bug (no
-> `[Request]` or `[Brainstorming]` in the title) without the complete template, and it
+> `[Request]` in the title) without the complete template, and it
 > will do that only to ensure that all information needed to solve the issue is
 > available for the maintainers to directly start tackling that problem.
 
@@ -301,7 +301,8 @@ the documentation.
    the discussion going on how best to solve *this* in OctoPrint's plugin
    system - maybe that's the actual PR you have been waiting for to contribute :)
 2. If you plan to make **any large or otherwise disruptive changes to the
-   code or appearance, please open a "Brainstorming" ticket first** so
+   code or appearance, please get in touch on the 
+   [forums](https://discourse.octoprint.org/c/development)** first so
    that we can determine if it's a good time for your specific pull
    request. It might be that we're currently in the process of making
    heavy changes to the code locations you'd target as well, or your
@@ -311,7 +312,8 @@ the documentation.
 3. Create your pull request **from a custom branch** on your end (e.g.
    `dev/myNewFeature`)[1].
 4. Create your pull request **only against the `maintenance` or `devel` branch**:
-     * if it's a bug fix for a bug in the current stable version: `maintenance` branch
+     * if it's a bug fix for a bug in the current stable version, an improvement of existing functionality or a 
+       *small* new feature (e.g. a new hook, a new config flag, ...): `maintenance` branch
      * otherwise: `devel` branch
 5. Create **one pull request per feature/bug fix**.
 6. Make sure there are **only relevant changes** included in your PR. No
@@ -472,7 +474,9 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-11-22: Added note on how to run the unit tests
   * 2018-03-15: Link to new community forum and some clarifications re bug
     reporting
-  * 2018-03-29: "Where to find version numbers" is now located on the FAQ 
+  * 2018-03-29: "Where to find version numbers" is now located on the FAQ
+  * 2018-10-18: Allow PRs against `maintenance` branch for improvements and small
+    new features, suggest getting in touch on the forum for larger changes
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

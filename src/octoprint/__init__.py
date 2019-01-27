@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
+import io
 import sys
 import logging as log
 
@@ -103,8 +104,9 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	if callable(after_logging):
 		after_logging(**kwargs)
 
-	settings_safe_mode = settings.getBoolean(["server", "startOnceInSafeMode"])
-	safe_mode = safe_mode or settings_safe_mode
+	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" if settings.getBoolean(["server", "incompleteStartup"]) else None
+	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):
 		after_safe_mode(**kwargs)
@@ -293,7 +295,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config
@@ -594,6 +596,9 @@ def main():
 
 		# cut off stuff from the beginning
 		args = args[-1 * sys_args_length:] if sys_args_length else []
+
+	from octoprint.util.fixes import patch_sarge_async_on_py2
+	patch_sarge_async_on_py2()
 
 	from octoprint.cli import octo
 	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")

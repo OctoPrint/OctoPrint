@@ -26,7 +26,9 @@ import octoprint.util.net
 from octoprint.server import util
 from octoprint.util.json import JsonEncoding
 
+import io
 import os
+import sys
 import logging
 import logging.config
 import atexit
@@ -207,6 +209,10 @@ class Server(object):
 
 		if self._settings is None:
 			self._settings = settings()
+
+		self._settings.setBoolean(["server", "incompleteStartup"], True)
+		self._settings.save()
+
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()
 
@@ -263,6 +269,7 @@ class Server(object):
 
 		# monkey patch some stuff
 		util.tornado.fix_json_encode()
+		util.flask.fix_flask_jsonify()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -578,14 +585,27 @@ class Server(object):
 
 		##~~ Permission validators
 
-		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST))
-		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.FILES_DOWNLOAD))
-		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.PLUGIN_LOGGING_MANAGE))
-		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.WEBCAM))
+		access_validators_from_plugins = []
+		for plugin, hook in pluginManager.get_hooks("octoprint.server.http.access_validator").items():
+			try:
+				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
+			except:
+				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin))
+		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
+
+		timelapse_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST),] + access_validators_from_plugins
+		download_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.FILES_DOWNLOAD),] + access_validators_from_plugins
+		log_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.PLUGIN_LOGGING_MANAGE),] + access_validators_from_plugins
+		camera_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.WEBCAM),] + access_validators_from_plugins
+
+		timelapse_permission_validator = dict(access_validation=util.tornado.validation_chain(*timelapse_validators))
+		download_permission_validator = dict(access_validation=util.tornado.validation_chain(*download_validators))
+		log_permission_validator = dict(access_validation=util.tornado.validation_chain(*log_validators))
+		camera_permission_validator = dict(access_validation=util.tornado.validation_chain(*camera_validators))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
 		                                                                                      status_code=404))
-		timelapse_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
+		timelapse_path_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
 		                                                                                status_code=404))
 
 		def joined_dict(*dicts):
@@ -605,7 +625,7 @@ class Server(object):
 			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
 			                                                                              timelapse_permission_validator,
 			                                                                              download_handler_kwargs,
-			                                                                              timelapse_validator)),
+			                                                                              timelapse_path_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
 			                                                                                     as_attachment=True,
 			                                                                                     name_generator=download_name_generator),
@@ -619,7 +639,7 @@ class Server(object):
 			                                                                            log_permission_validator)),
 			# camera snapshot
 			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
-			                                                                  as_attachment=True),
+			                                                                              as_attachment=True),
 			                                                                         camera_permission_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
@@ -704,13 +724,18 @@ class Server(object):
 		# initialize and bind the server
 		trusted_downstream = self._settings.get(["server", "reverseProxy", "trustedDownstream"])
 		if not isinstance(trusted_downstream, list):
-			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
+			self._logger.warning("server.reverseProxy.trustedDownstream is not a list, skipping")
 			trusted_downstreams = []
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app,
-		                                             max_body_sizes=max_body_sizes,
-		                                             default_max_body_size=self._settings.getInt(["server", "maxSize"]),
-		                                             xheaders=True,
-		                                             trusted_downstream=trusted_downstream)
+
+		server_kwargs = dict(max_body_sizes=max_body_sizes,
+		                     default_max_body_size=self._settings.getInt(["server", "maxSize"]),
+		                     xheaders=True,
+		                     trusted_downstream=trusted_downstream)
+		if sys.platform == "win32":
+			# set 10min idle timeout under windows to hopefully make #2916 less likely
+			server_kwargs.update(dict(idle_connection_timeout=600))
+
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
 		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
 		                                                                                    # only listens on v4 & v6
 		                                                                                    # if we use None as address
@@ -783,6 +808,14 @@ class Server(object):
 					implementation.on_after_startup()
 				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
 
+				# if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
+				# flag again...
+				self._settings.setBoolean(["server", "incompleteStartup"], False)
+				self._settings.save()
+
+				# make a backup of the current config
+				self._settings.backup(ext="backup")
+
 				# when we are through with that we also run our preemptive cache
 				if settings().getBoolean(["devel", "cache", "preemptive"]):
 					self._execute_preemptive_flask_caching(preemptiveCache)
@@ -806,7 +839,7 @@ class Server(object):
 			# wait for shutdown event to be processed, but maximally for 15s
 			event_timeout = 15.0
 			if eventManager.join(timeout=event_timeout):
-				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
+				self._logger.warning("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
 
 			if self._octoprint_daemon is not None:
 				self._logger.info("Cleaning up daemon pidfile")
@@ -1150,16 +1183,25 @@ class Server(object):
 	def _setup_blueprints(self):
 		from octoprint.server.api import api
 		from octoprint.server.apps import apps, clear_registered_app
-		import octoprint.server.views
 
-		app.register_blueprint(api, url_prefix="/api")
-		app.register_blueprint(apps, url_prefix="/apps")
+		import octoprint.server.views # do not remove or the index view won't be found
+
+		blueprints = OrderedDict()
+		blueprints["/api"] = api
+		blueprints["/apps"] = apps
 
 		# also register any blueprints defined in BlueprintPlugins
-		self._register_blueprint_plugins()
+		blueprints.update(self._prepare_blueprint_plugins())
 
 		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-		self._register_asset_plugins()
+		blueprints.update(self._prepare_asset_plugins())
+
+		# make sure all before/after_request hook results are attached as well
+		self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+
+		# register everything with the system
+		for url_prefix, blueprint in blueprints.items():
+			app.register_blueprint(blueprint, url_prefix=url_prefix)
 
 		global pluginLifecycleManager
 		def clear_apps(name, plugin):
@@ -1167,27 +1209,37 @@ class Server(object):
 		pluginLifecycleManager.add_callback("enabled", clear_apps)
 		pluginLifecycleManager.add_callback("disabled", clear_apps)
 
-	def _register_blueprint_plugins(self):
+	def _prepare_blueprint_plugins(self):
+		blueprints = OrderedDict()
+
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
 		for plugin in blueprint_plugins:
 			try:
-				self._register_blueprint_plugin(plugin)
+				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+				blueprints[prefix] = blueprint
 			except:
 				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
-	def _register_asset_plugins(self):
+		return blueprints
+
+	def _prepare_asset_plugins(self):
+		blueprints = OrderedDict()
+
 		asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 		for plugin in asset_plugins:
 			if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
 				continue
 			try:
-				self._register_asset_plugin(plugin)
+				blueprint, prefix = self._prepare_asset_plugin(plugin)
+				blueprints[prefix] = blueprint
 			except:
 				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
 				continue
 
-	def _register_blueprint_plugin(self, plugin):
+		return blueprints
+
+	def _prepare_blueprint_plugin(self, plugin):
 		name = plugin._identifier
 		blueprint = plugin.get_blueprint()
 		if blueprint is None:
@@ -1209,7 +1261,9 @@ class Server(object):
 		if self._logger:
 			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
 
-	def _register_asset_plugin(self, plugin):
+		return blueprint, url_prefix
+
+	def _prepare_asset_plugin(self, plugin):
 		name = plugin._identifier
 
 		url_prefix = "/plugin/{name}".format(name=name)
@@ -1218,6 +1272,32 @@ class Server(object):
 
 		if self._logger:
 			self._logger.debug("Registered assets of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+		return blueprint, url_prefix
+
+	def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
+		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
+		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
+
+		for plugin, hook in before_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook()
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.before_request(h)
+				except:
+					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin))
+
+		for plugin, hook in after_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook()
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.after_request(h)
+				except:
+					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin))
 
 	def _setup_assets(self):
 		global app
@@ -1431,13 +1511,15 @@ class Server(object):
 		js_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["js"],
 		                                    filters="js_delimiter_bundler")
 
+		clientjs_core = dynamic_core_assets["clientjs"] + \
+			all_assets_for_plugins(dynamic_plugin_assets["bundled"]["clientjs"])
+		clientjs_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["clientjs"],
+		                                          filters="js_delimiter_bundler")
+
 		js_libs_bundle = Bundle(*js_libs,
 		                        output="webassets/packed_libs.js",
 		                        filters=",".join(js_filters))
 
-		js_client_bundle = Bundle(*js_client,
-		                          output="webassets/packed_client.js",
-		                          filters=",".join(js_filters))
 		js_core_bundle = Bundle(*js_core,
 		                        output="webassets/packed_core.js",
 		                        filters=",".join(js_filters))
@@ -1452,6 +1534,21 @@ class Server(object):
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle,
 		                       output="webassets/packed_app.js",
 		                       filters=",".join(js_filters))
+
+		js_client_core_bundle = Bundle(*clientjs_core,
+		                               output="webassets/packed_client_core.js",
+		                               filters=",".join(js_filters))
+
+		if len(clientjs_plugins) == 0:
+			js_client_plugins_bundle = Bundle(*[])
+		else:
+			js_client_plugins_bundle = Bundle(*clientjs_plugins.values(),
+			                                  output="webassets/packed_client_plugins.js",
+			                                  filters=",".join(js_plugin_filters))
+
+		js_client_bundle = Bundle(js_client_core_bundle, js_client_plugins_bundle,
+		                          output="webassets/packed_client.js",
+		                          filters=",".join(js_filters))
 
 		# -- CSS -------------------------------------------------------------------------------------------------------
 
@@ -1512,6 +1609,11 @@ class Server(object):
 		# -- asset registration ----------------------------------------------------------------------------------------
 
 		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_client_core", js_client_core_bundle)
+		for plugin, bundle in clientjs_plugins.items():
+			# register our collected clientjs plugin bundles so that they are bound to the environment
+			assets.register("js_client_plugin_{}".format(plugin), bundle)
+		assets.register("js_client_plugins", js_client_plugins_bundle)
 		assets.register("js_client", js_client_bundle)
 		assets.register("js_core", js_core_bundle)
 		for plugin, bundle in js_plugins.items():
@@ -1600,7 +1702,7 @@ class Server(object):
 			if not os.path.isfile(path):
 				return ""
 
-			with open(path, "rb") as f:
+			with io.open(path, 'rb') as f:
 				data = f.read()
 			return data
 
@@ -1775,7 +1877,7 @@ class Server(object):
 			if len(still_postponed) == start_length:
 				# no change, looks like some stuff is unresolvable - let's bail
 				for plugin_info, definition in still_postponed:
-					self._logger.warn("Unable to resolve permission from {}: {!r}".format(plugin_info.key, definition))
+					self._logger.warning("Unable to resolve permission from {}: {!r}".format(plugin_info.key, definition))
 				break
 
 			postponed = still_postponed

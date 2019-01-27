@@ -11,6 +11,11 @@ import sys
 import traceback
 import time
 
+try:
+	unicode
+except:
+	unicode = str
+
 def _log_call(*lines):
 	_log(lines, prefix=">", stream="call")
 

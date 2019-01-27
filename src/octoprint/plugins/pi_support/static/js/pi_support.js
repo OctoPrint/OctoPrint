@@ -1,22 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintPiSupportClient = function(base) {
-        this.base = base;
-    };
-
-    OctoPrintPiSupportClient.prototype.get = function(opts) {
-        return this.base.get(this.base.getSimpleApiUrl("pi_support"));
-    };
-
-    OctoPrintClient.registerPluginComponent("pi_support", OctoPrintPiSupportClient);
-    return OctoPrintPiSupportClient;
-});
-
 $(function() {
 
     function PiSupportViewModel(parameters) {
@@ -46,7 +27,7 @@ $(function() {
 
                     var octoPrintVersion = $(".footer span.version");
                     var octoPiVersion = $("<span id='octopi_support_footer'> " + gettext("running on") + " " + gettext("OctoPi")
-                        + " <span class='octopi_version'>" + response.octopi_version + "</span></span>")
+                        + " <span class='octopi_version'>" + response.octopi_version + "</span></span>");
                     $(octoPiVersion).insertAfter(octoPrintVersion);
                 })
         };
@@ -60,11 +41,34 @@ $(function() {
             self.pastIssue(state.past_issue);
         };
 
-        self.issuePopoverContent = function() {
-            return "<p><strong><i class=\"fa fa-bolt\"></i><i class=\"fa fa-exclamation\"></i></strong></strong> - " + gettext("Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi.") + "</p>"
-                + "<p><strong><i class=\"fa fa-thermometer-full\"></i><i class=\"fa fa-exclamation\"></i></strong> - " + gettext("Frequency capping due to overheating. Improve cooling of the CPU and GPU.") + "</p>"
-                + "<p>" + gettext("A blinking icon indicates an acute issue!") + "</p>"
-        };
+        self.popoverContent = ko.pureComputed(function() {
+            var undervoltageParagraphClasses = "muted";
+            var undervoltageSymbolClasses = "";
+
+            var overheatParagraphClasses = "muted";
+            var overheatSymbolClasses = "";
+
+            if (self.currentUndervoltage()) {
+                undervoltageSymbolClasses = "text-error pi_support_state_pulsate";
+                undervoltageParagraphClasses = "";
+            } else if (self.pastUndervoltage()) {
+                undervoltageSymbolClasses = "text-error";
+                undervoltageParagraphClasses = "";
+            }
+
+            if (self.currentOverheat()) {
+                overheatSymbolClasses = "text-error pi_support_state_pulsate";
+                overheatParagraphClasses = "";
+            } else if (self.pastOverheat()) {
+                overheatSymbolClasses = "text-error";
+                overheatParagraphClasses = "";
+            }
+
+            return "<p class='" + undervoltageParagraphClasses + "'><strong class='" + undervoltageSymbolClasses + "'><i class=\"fa fa-bolt\"></i><i class=\"fa fa-exclamation\"></i></strong></strong> - " + gettext("Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi.") + "</p>"
+                + "<p class='" + overheatParagraphClasses + "'><strong class='" + overheatSymbolClasses + "'><i class=\"fa fa-thermometer-full\"></i><i class=\"fa fa-exclamation\"></i></strong> - " + gettext("Frequency capping due to overheating. Improve cooling of the CPU and GPU.") + "</p>"
+                + "<p>" + gettext("A blinking symbol indicates a current issue, a non blinking symbol one that was observed some time since the Pi booted up.") + "</p>"
+                + "<p><small>" + gettext("Click the symbol in the navbar for more information.") + "</small></p>";
+        });
 
         self.onStartup = function() {
             self.requestData();

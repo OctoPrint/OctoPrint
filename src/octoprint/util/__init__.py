@@ -9,6 +9,7 @@ OctoPrint's source code.
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import io
 import os
 import traceback
 import past.builtins
@@ -31,6 +32,10 @@ except ImportError:
 	import Queue as queue
 
 from past.builtins import basestring
+try:
+	unicode
+except:
+	unicode = str
 
 logger = logging.getLogger(__name__)
 
@@ -675,7 +680,7 @@ def dict_minimal_mergediff(source, target):
 
 	from copy import deepcopy
 
-	all_keys = set(source.keys() + target.keys())
+	all_keys = set(list(source.keys()) + list(target.keys()))
 	result = dict()
 	for k in all_keys:
 		if k not in target:
@@ -1005,7 +1010,7 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		# these encodings might have a BOM, so let's see if there is one
 		bom = getattr(codecs, potential_bom_attribute)
 
-		with open(filename, "rb") as f:
+		with io.open(filename, 'rb') as f:
 			header = f.read(4)
 
 		if header.startswith(bom):
@@ -1337,8 +1342,9 @@ class ResettableTimer(threading.Thread):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, maximum=None, **kwargs):
+	def __init__(self, value=0, minimum=0, maximum=None, **kwargs):
 		self._counter = 0
+		self._min = minimum
 		self._max = kwargs.get("max", maximum)
 		self._mutex = threading.RLock()
 		self._event = threading.Event()
@@ -1365,11 +1371,14 @@ class CountedEvent(object):
 			else:
 				self._internal_set(self._counter - 1)
 
+	def reset(self):
+		self.clear(completely=True)
+
 	def wait(self, timeout=None):
 		self._event.wait(timeout)
 
 	def blocked(self):
-		return self.counter == 0
+		return self.counter <= 0
 
 	def acquire(self, blocking=1):
 		return self._mutex.acquire(blocking=blocking)
@@ -1380,7 +1389,8 @@ class CountedEvent(object):
 	def _internal_set(self, value):
 		self._counter = value
 		if self._counter <= 0:
-			self._counter = 0
+			if self._min is not None and self._counter < self._min:
+				self._counter = self._min
 			self._event.clear()
 		else:
 			if self._max is not None and self._counter > self._max:

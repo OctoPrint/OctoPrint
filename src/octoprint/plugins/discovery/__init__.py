@@ -194,8 +194,20 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			params["txtRecord"] = pybonjour.TXTRecord(txt_record)
 
 		key = (reg_type, port)
-		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-		self._logger.info(u"Registered {name} for {reg_type}".format(**locals()))
+
+		counter = 1
+		while True:
+			try:
+				self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
+				self._logger.info(u"Registered '{name}' for {regtype}".format(**params))
+				return True
+			except pybonjour.BonjourError as be:
+				if be.errorCode == pybonjour.kDNSServiceErr_NameConflict:
+					# Name already registered by different service, let's try a counter postfix. See #2852
+					counter += 1
+					params["name"] = u"{} ({})".format(name, counter)
+				else:
+					raise
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -653,7 +665,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
 						interface_address = octoprint.util.address_for_client(*address)
 						if not interface_address:
-							self._logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
+							self._logger.warning("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
 							continue
 						message = location_message.format(uuid=self.get_uuid(), location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
 						sock.sendto(message, address)

@@ -4,6 +4,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 
+import io
 import time
 import os
 import re
@@ -647,6 +648,19 @@ class VirtualPrinter(object):
 		else:
 			time.sleep(_timeout)
 
+	def _gcode_G33(self, data):
+		self._send("G33 Auto Calibrate")
+		self._send("Will take ~60s")
+		timeout = 60
+
+		if self._sendBusy and self._busyInterval > 0:
+			until = time.time() + timeout
+			while time.time() < until:
+				time.sleep(self._busyInterval)
+				self._send("busy:processing")
+		else:
+			time.sleep(timeout)
+
 	##~~ further helpers
 
 	def _calculate_checksum(self, line):
@@ -719,6 +733,10 @@ class VirtualPrinter(object):
 			| Triggers a resend error with a missing checksum
 			trigger_missing_lineno
 			| Triggers a "no line number with checksum" error w/o resend request
+			trigger_fatal_error_marlin
+			| Triggers a fatal error/simulated heater fail, Marlin style
+			trigger_fatal_error_repetier
+			| Triggers a fatal error/simulated heater fail, Repetier style
 			drop_connection
 			| Drops the serial connection
 			prepare_ok <broken ok>
@@ -769,6 +787,11 @@ class VirtualPrinter(object):
 			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=False))
 		elif data == "trigger_missing_lineno":
 			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
+		elif data == "trigger_fatal_error_marlin":
+			self._send("Error:Thermal Runaway, system stopped! Heater_ID: bed")
+			self._send("Error:Printer halted. kill() called!")
+		elif data == "trigger_fatal_error_repetier":
+			self._send("fatal: Heater/sensor error - Printer stopped and heaters disabled due to this error. Fix error and restart with M999.")
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
 		elif data == "reset":
@@ -1106,7 +1129,7 @@ class VirtualPrinter(object):
 
 		handle = None
 		try:
-			handle = open(file, "w")
+			handle = io.open(file, 'wt', encoding='utf-8')
 		except:
 			self._output("error writing to file")
 			if handle is not None:
@@ -1133,7 +1156,7 @@ class VirtualPrinter(object):
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		try:
-			with open(self._selectedSdFile, "r") as f:
+			with io.open(self._selectedSdFile, 'rt', encoding='utf-8') as f:
 				for line in iter(f.readline, ""):
 					if self._killed or not self._sdPrinting:
 						break

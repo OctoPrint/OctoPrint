@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import unittest
 import mock
 import os
@@ -335,12 +336,8 @@ class IsHiddenPathTest(unittest.TestCase):
 		import sys
 		for attr in ("path_always_visible", "path_hidden_on_windows", "path_always_hidden"):
 			path = getattr(self, attr)
-			if sys.version_info[0] >= 3:
-				with open(path, "w+", encoding='utf-8') as f:
-					f.write(attr)
-			else:
-				with open(path, "wb+") as f:
-					f.write(attr)
+			with io.open(path, 'wt+', encoding='utf-8') as f:
+				f.write(attr.decode('utf-8'))
 
 		if sys.platform == "win32":
 			# we use ctypes and the windows API to set the hidden attribute on the file

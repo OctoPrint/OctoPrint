@@ -69,7 +69,7 @@ date of first contribution):
   * [Philipp Baum](https://github.com/philphilphil)
   * [Kyle Evans](https://github.com/kevans91)
   * [Javier Martínez Arrieta](https://github.com/Javierma)
-  * ["MirceaDan"](https://github.com/ByReaL)
+  * [Mircea Dan Gheorghe](https://github.com/ByReaL)
   * [Ovidiu Hossu](https://github.com/MoonshineSG)
   * [Eyck Jentzsch](https://github.com/eyck)
   * [Mathias Rangel Wulff](https://github.com/mathiasrw)
@@ -93,7 +93,9 @@ date of first contribution):
   * [Sven Lohrmann](https://github.com/malnvenshorn)
   * [Andy Castille](https://github.com/klikini)
   * [Zachary Nofzinger](https://github.com/ZachNo)
+  * [Gaston Dombiak](https://github.com/gdombiak)
   * [Brad Fisher](https://github.com/bradcfisher)
+  * [Aldo Hoeben](https://github.com/fieldofview)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

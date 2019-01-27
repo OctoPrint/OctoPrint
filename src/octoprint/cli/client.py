@@ -5,6 +5,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import click
+import io
 import json
 
 import octoprint_client
@@ -12,6 +13,10 @@ import octoprint_client
 from octoprint.cli import get_ctx_obj_option, bulk_options
 from octoprint import init_settings, FatalStartupError
 
+try:
+	unicode
+except:
+	unicode =str
 
 class JsonStringParamType(click.ParamType):
 	name = "json"
@@ -143,16 +148,16 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
 	"""POSTs JSON data to the specified server path, taking the data from the specified file."""
 	if json_flag or yaml_flag:
 		if json_flag:
-			with open(file_path, "rb") as fp:
+			with io.open(file_path, 'rb') as fp:
 				data = json.load(fp)
 		else:
 			import yaml
-			with open(file_path, "rb") as fp:
+			with io.open(file_path, 'rb') as fp:
 				data = yaml.safe_load(fp)
 
 		r = ctx.obj.client.post_json(path, data, timeout=timeout)
 	else:
-		with open(file_path, "rb") as fp:
+		with io.open(file_path, 'rb') as fp:
 			data = fp.read()
 
 		r = ctx.obj.client.post(path, data, timeout=timeout)

@@ -8,7 +8,7 @@ import octoprint.plugin
 from octoprint.settings import settings
 
 from octoprint.server import NO_CONTENT
-from octoprint.server.util.flask import redirect_to_tornado, require_firstrun
+from octoprint.server.util.flask import redirect_to_tornado, no_firstrun_access
 from octoprint.access.permissions import Permissions
 
 from flask import request, jsonify, url_for, make_response
@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest
 import yaml
 
+import io
 import os
 
 try:
@@ -41,7 +42,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		]
 
 	@octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_all(self):
 		files = self._getLogFiles()
@@ -52,7 +53,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		               setup=dict(loggers=loggers, levels=levels))
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_log_files(self):
 		files = self._getLogFiles()
@@ -60,13 +61,13 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		return jsonify(files=files, free=free, total=total)
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs/<path:filename>", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def download_log(self, filename):
 		return redirect_to_tornado(request, url_for("index") + "downloads/logs/" + filename)
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs/<path:filename>", methods=["DELETE"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def delete_log(self, filename):
 		secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
@@ -78,7 +79,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		return NO_CONTENT
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_logging_setup(self):
 		loggers = self._get_available_loggers()
@@ -86,13 +87,13 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		return jsonify(loggers=loggers, levels=levels)
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup/levels", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_logging_levels_api(self):
 		return jsonify(self._get_logging_levels())
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup/levels", methods=["PUT"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def set_logging_levels_api(self):
 		if not "application/json" in request.headers["Content-Type"]:
@@ -145,7 +146,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 		return config_from_file
 
@@ -208,6 +209,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_assets(self):
 		return dict(js=["js/logging.js"],
+		            clientjs=["clientjs/logging.js"],
 		            less=["less/logging.less"],
 		            css=["css/logging.css"])
 

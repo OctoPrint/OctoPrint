@@ -64,7 +64,7 @@ class DiskFileWrapper(AbstractFileWrapper):
 			shutil.copy2(self.path, path)
 
 	def stream(self):
-		return io.open(self.path, "rb")
+		return io.open(self.path, 'rb')
 
 class StreamWrapper(AbstractFileWrapper):
 	"""
@@ -87,7 +87,7 @@ class StreamWrapper(AbstractFileWrapper):
 		"""
 		import shutil
 
-		with atomic_write(path, "wb") as dest:
+		with atomic_write(path, 'wb') as dest:
 			with self.stream() as source:
 				shutil.copyfileobj(source, dest)
 

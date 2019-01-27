@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+
+import io
 import os
 import sys
 
@@ -38,7 +40,7 @@ path = os.environ.get("TESTBALLOON_OUTPUT", None)
 if path is not None:
 	# environment variable set, write to a log
 	path = os.path.abspath(path)
-	with open(path, mode="w+b") as output:
+	with io.open(path, 'wb+') as output:
 		produce_output(output)
 else:
 	# write to stdout

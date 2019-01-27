@@ -1,0 +1,10 @@
+<!-- le CSS -->
+
+<link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
+<link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
+<link rel="stylesheet" href="{{ url_for("plugin.forcelogin.static", filename="css/forcelogin.css") }}">
+
+{% for url in forcelogin_theming %}
+    <link rel="stylesheet" href="{{ url }}">
+{% endfor %}

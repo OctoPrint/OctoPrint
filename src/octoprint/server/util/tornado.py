@@ -24,7 +24,10 @@ import tornado.util
 
 import octoprint.util
 
-
+try:
+	unicode
+except:
+	unicode = str
 
 def fix_json_encode():
 	"""
@@ -288,7 +291,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 
 		header_check = header.find(self._multipart_boundary)
 		if header_check != -1:
-			self._logger.warn("Header still contained multipart boundary, stripping it...")
+			self._logger.warning("Header still contained multipart boundary, stripping it...")
 			header = header[header_check:]
 
 		# convert to dict
@@ -299,7 +302,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
 			except:
 				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
-				self._logger.warn("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
+				self._logger.warning("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
 				self.send_error(400)
 				return
 
@@ -307,10 +310,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 		disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
 		if disposition != "form-data":
-			self._logger.warn("Got a multipart header without form-data content disposition, ignoring that one")
+			self._logger.warning("Got a multipart header without form-data content disposition, ignoring that one")
 			return
 		if not disp_params.get("name"):
-			self._logger.warn("Got a multipart header without name, ignoring that one")
+			self._logger.warning("Got a multipart header without name, ignoring that one")
 			return
 
 		filename = disp_params.get("filename*", None) # RFC 5987 header present?
@@ -319,7 +322,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 				filename = _extended_header_value(filename)
 			except:
 				# parse error, this is not RFC 5987 compliant after all
-				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
+				self._logger.warning("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
 				self.send_error(400)
 				return
 		else:
@@ -1127,7 +1130,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
-def access_validation_factory(app, login_manager, validator, permission):
+def access_validation_factory(app, validator, *args):
 	"""
 	Creates an access validation wrapper using the supplied validator.
 
@@ -1146,8 +1149,8 @@ def access_validation_factory(app, login_manager, validator, permission):
 		wsgi_environ = WsgiInputContainer.environ(request)
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
-			login_manager.reload_user()
-			validator(flask.request, permission)
+			app.login_manager.reload_user()
+			validator(flask.request, *args)
 	return f
 
 def path_validation_factory(path_filter, status_code=404):
@@ -1161,4 +1164,10 @@ def path_validation_factory(path_filter, status_code=404):
 	def f(path):
 		if not path_filter(path):
 			raise tornado.web.HTTPError(status_code)
+	return f
+
+def validation_chain(*validators):
+	def f(request):
+		for validator in validators:
+			validator(request)
 	return f

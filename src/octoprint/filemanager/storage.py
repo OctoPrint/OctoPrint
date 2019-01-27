@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
+import io
 import logging
 import os
 import pylru
@@ -500,7 +500,7 @@ class LocalFileStorage(StorageInterface):
 		if os.path.exists(old_metadata_path):
 			# load the old metadata file
 			try:
-				with open(old_metadata_path) as f:
+				with io.open(old_metadata_path, 'rt', encoding='utf-8') as f:
 					import yaml
 					self._old_metadata = yaml.safe_load(f)
 			except:
@@ -1033,7 +1033,7 @@ class LocalFileStorage(StorageInterface):
 	def path_in_storage(self, path):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
-		if isinstance(path, (str, unicode, basestring)):
+		if isinstance(path, basestring):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
@@ -1115,7 +1115,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				print_time = float(print_time)
 			except:
-				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
+				self._logger.warning("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
 				continue
 
 			if not printer_profile in former_print_times:
@@ -1462,7 +1462,7 @@ class LocalFileStorage(StorageInterface):
 
 		blocksize = 65536
 		hash = hashlib.sha1()
-		with open(path, "rb") as f:
+		with io.open(path, 'rb') as f:
 			buffer = f.read(blocksize)
 			while len(buffer) > 0:
 				hash.update(buffer)
@@ -1522,7 +1522,7 @@ class LocalFileStorage(StorageInterface):
 
 			metadata_path = os.path.join(path, ".metadata.json")
 			if os.path.exists(metadata_path):
-				with open(metadata_path) as f:
+				with io.open(metadata_path, 'rt', encoding='utf-8') as f:
 					try:
 						import json
 						metadata = json.load(f)
@@ -1577,7 +1577,7 @@ class LocalFileStorage(StorageInterface):
 				# TODO 1.3.10 Remove ".metadata.yaml" files
 				return
 
-			with open(metadata_path_yaml) as f:
+			with io.open(metadata_path_yaml, 'rt', encoding='utf-8') as f:
 				try:
 					metadata = yaml.safe_load(f)
 				except:

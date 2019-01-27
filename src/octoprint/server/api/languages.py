@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import os
 import tarfile
 import zipfile
@@ -21,7 +22,7 @@ from flask import request, jsonify, make_response
 from octoprint.settings import settings
 
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun
+from octoprint.server.util.flask import no_firstrun_access
 
 from octoprint.plugin import plugin_manager
 from octoprint.access.permissions import Permissions
@@ -29,7 +30,7 @@ from octoprint.access.permissions import Permissions
 from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def getInstalledLanguagePacks():
 	translation_folder = settings().getBaseFolder("translations", check_writable=False)
@@ -49,7 +50,7 @@ def getInstalledLanguagePacks():
 			if os.path.isfile(meta_path):
 				import yaml
 				try:
-					with open(meta_path) as f:
+					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
 				except:
 					pass
@@ -87,7 +88,7 @@ def getInstalledLanguagePacks():
 	return jsonify(language_packs=result)
 
 @api.route("/languages", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def uploadLanguagePack():
 	input_name = "file"
@@ -115,7 +116,7 @@ def uploadLanguagePack():
 	return getInstalledLanguagePacks()
 
 @api.route("/languages/<string:locale>/<string:pack>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
 

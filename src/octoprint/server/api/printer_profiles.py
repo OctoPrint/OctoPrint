@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 from past.builtins import basestring
 
 from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
@@ -40,14 +40,14 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerprofiles", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -102,7 +102,7 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
@@ -112,7 +112,7 @@ def printerProfilesGet(identifier):
 		return jsonify(_convert_profile(profile))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
 	current_profile = printerProfileManager.get_current()
@@ -127,7 +127,7 @@ def printerProfilesDelete(identifier):
 	return NO_CONTENT
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:

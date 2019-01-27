@@ -23,6 +23,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import sys
 import os
 import yaml
@@ -121,6 +122,7 @@ default_settings = {
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
 		"logPositionOnCancel": False,
+		"abortHeatupOnCancel": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"neverSendChecksum": False,
@@ -141,7 +143,8 @@ default_settings = {
 		"capabilities": {
 			"autoreport_temp": True,
 			"autoreport_sdstatus": True,
-			"busy_protocol": True
+			"busy_protocol": True,
+			"emergency_parser": True
 		},
 
 		# command specific flags
@@ -153,6 +156,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"heartbeat": 15 * 60, # 15 min
@@ -198,6 +202,10 @@ default_settings = {
 		"preemptiveCache": {
 			"exceptions": [],
 			"until": 7
+		},
+		"ipCheck": {
+			"enabled": True,
+			"trustedSubnets": []
 		}
 	},
 	"webcam": {
@@ -289,8 +297,9 @@ default_settings = {
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api",
-					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager", "plugin_softwareupdate", "plugin_announcements"
+					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
+					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
+					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
@@ -320,7 +329,7 @@ default_settings = {
 		"userfile": None,
 		"groupfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
@@ -342,7 +351,7 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?(B|T\d*):)" },
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
 		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
@@ -353,7 +362,7 @@ default_settings = {
 		"gcode": {
 			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
 			"snippets": {
-				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}",
+				"disable_hotends": "{% if printer_profile.extruder.sharedNozzle %}M104 T0 S0\n{% else %}{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}{% endif %}",
 				"disable_bed": "{% if printer_profile.heatedBed %}M140 S0\n{% endif %}"
 			}
 		}
@@ -411,10 +420,11 @@ default_settings = {
 			"preparedOks": [],
 			"okFormatString": "ok",
 			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
-			"m115ReportCapabilities": False,
+			"m115ReportCapabilities": True,
 			"capabilities": {
 				"AUTOREPORT_TEMP": True,
-				"AUTOREPORT_SD_STATUS": True
+				"AUTOREPORT_SD_STATUS": True,
+				"EMERGENCY_PARSER": True
 			},
 			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
 			"ambientTemperature": 21.3,
@@ -600,6 +610,8 @@ class Settings(object):
 		self._logger = logging.getLogger(__name__)
 
 		self._basedir = None
+
+		assert(isinstance(default_settings, dict))
 
 		self._map = HierarchicalChainMap(dict(), default_settings)
 
@@ -867,10 +879,11 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with open(self._configfile, "r") as f:
+			with io.open(self._configfile, 'rt', encoding='utf-8') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
+
 				except yaml.YAMLError as e:
 					details = e.message
 
@@ -885,10 +898,12 @@ class Settings(object):
 					                      details=details,
 					                      line=line,
 					                      column=column)
+
 				except:
 					raise
+
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
-		if not self._config:
+		if not self._config or not isinstance(self._config, dict):
 			self._config = dict()
 
 		if migrate:
@@ -906,7 +921,7 @@ class Settings(object):
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with open(overlay, "r") as f:
+				with io.open(overlay, 'rt', encoding='utf-8') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
@@ -1301,15 +1316,25 @@ class Settings(object):
 				return True
 		return False
 
-	def backup(self, suffix, path=None):
+	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
 		if path is None:
 			path = os.path.dirname(self._configfile)
-		basename = os.path.basename(self._configfile)
-		name, ext = os.path.splitext(basename)
 
-		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		basename = os.path.basename(self._configfile)
+		name, default_ext = os.path.splitext(basename)
+
+		if ext is None:
+			ext = default_ext
+
+		if suffix is None and ext == default_ext:
+			raise ValueError("Need a suffix or a different extension")
+
+		if suffix is None:
+			suffix = ""
+
+		backup = os.path.join(path, "{}{}.{}{}".format("." if hidden else "", name, suffix, ext))
 		shutil.copy(self._configfile, backup)
 		return backup
 
@@ -1319,14 +1344,21 @@ class Settings(object):
 
 		from octoprint.util import atomic_write
 		try:
-			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
+			with atomic_write(self._configfile, 'wb', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
 				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
 		except:
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			payload = dict(config_hash=self.config_hash,
+			               effective_hash=self.effective_hash)
+			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter
@@ -1465,7 +1497,7 @@ class Settings(object):
 			else:
 				return intValue
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getFloat(self, path, **kwargs):
@@ -1486,7 +1518,7 @@ class Settings(object):
 			else:
 				return floatValue
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getBoolean(self, path, **kwargs):
@@ -1497,7 +1529,7 @@ class Settings(object):
 			return value
 		if isinstance(value, (int, float)):
 			return value != 0
-		if isinstance(value, (str, unicode)):
+		if isinstance(value, basestring):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 
@@ -1587,7 +1619,7 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False, *args, **kwargs):
 		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
@@ -1667,7 +1699,7 @@ class Settings(object):
 			if maximum is not None and intValue > maximum:
 				intValue = maximum
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
 		self.set(path, intValue, **kwargs)
@@ -1688,7 +1720,7 @@ class Settings(object):
 			if maximum is not None and floatValue > maximum:
 				floatValue = maximum
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
 		self.set(path, floatValue, **kwargs)
@@ -1733,7 +1765,7 @@ class Settings(object):
 		path, _ = os.path.split(filename)
 		if not os.path.exists(path):
 			os.makedirs(path)
-		with atomic_write(filename, "wb", max_permissions=0o666) as f:
+		with atomic_write(filename, 'wb', max_permissions=0o666) as f:
 			f.write(script)
 
 	def generateApiKey(self):
@@ -1794,8 +1826,8 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 			# to determine whether things are *actually* writable
 			testfile = os.path.join(folder, ".testballoon.txt")
 			try:
-				with open(testfile, "wb") as f:
-					f.write("test")
+				with io.open(testfile, 'wt', encoding='utf-8') as f:
+					f.write("test".decode('utf-8'))
 				os.remove(testfile)
 			except:
 				if log_error:

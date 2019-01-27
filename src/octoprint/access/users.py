@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.local import LocalProxy
 import hashlib
+import io
 import os
 import yaml
 import uuid
@@ -432,7 +433,7 @@ class FilebasedUserManager(UserManager):
 	def _load(self):
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			self._customized = True
-			with open(self._userfile, "r") as f:
+			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]

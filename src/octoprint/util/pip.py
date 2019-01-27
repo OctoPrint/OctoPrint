@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import io
 import sarge
 import sys
 import logging
@@ -285,7 +286,7 @@ class PipCaller(CommandlineCaller):
 			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
-				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
+				self._logger.warning("Error while trying to run pip --version: {}".format(p.stderr.text))
 				return None, None
 
 			output = PipCaller._preprocess(p.stdout.text)
@@ -296,11 +297,11 @@ class PipCaller(CommandlineCaller):
 			# we'll just split on whitespace and then try to use the second entry
 
 			if not output.startswith("pip"):
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
 			split_output = list(map(lambda x: x.strip(), output.split()))
 			if len(split_output) < 2:
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
 			version_segment = split_output[1]
 
@@ -369,7 +370,7 @@ class PipCaller(CommandlineCaller):
 					return False, False, False, None
 
 				data = dict()
-				with open(testballoon_output_file) as f:
+				with io.open(testballoon_output_file, 'rt', encoding='utf-8') as f:
 					for line in f:
 						key, value = line.split("=", 2)
 						data[key] = value

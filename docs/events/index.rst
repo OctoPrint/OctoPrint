@@ -141,7 +141,8 @@ Disconnected
    The server has disconnected from the printer
 
 Error
-   An error has occurred in the printer communication.
+   An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
+   on the connection.
 
    Payload:
 
@@ -338,6 +339,8 @@ PrintFailed
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``time``: the elapsed time of the print when it failed, in seconds (float)
+     * ``reason``: the reason the print failed, either ``cancelled`` or ``error``
 
    .. deprecated:: 1.3.0
 

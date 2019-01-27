@@ -2,6 +2,11 @@ import sys
 
 PY3 = sys.version_info[0] == 3
 
+try:
+	unicode
+except:
+	unicode = str
+
 if PY3:
     MAXSIZE = sys.maxsize
 
