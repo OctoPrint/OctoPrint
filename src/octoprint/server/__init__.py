@@ -1928,7 +1928,7 @@ class LifecycleManager(object):
 			lifecycle_callback(name, plugin)
 
 	def add_callback(self, events, callback):
-		if isinstance(events, (str, unicode)):
+		if isinstance(events, basestring):
 			events = [events]
 
 		for event in events:
@@ -1940,7 +1940,7 @@ class LifecycleManager(object):
 				if callback in self._plugin_lifecycle_callbacks[event]:
 					self._plugin_lifecycle_callbacks[event].remove(callback)
 		else:
-			if isinstance(events, (str, unicode)):
+			if isinstance(events, basestring):
 				events = [events]
 
 			for event in events:

@@ -977,10 +977,8 @@ class MachineCom(object):
 					continue
 
 				def to_list(data):
-					if isinstance(data, str):
-						data = map(str.strip, data.split("\n"))
-					elif isinstance(data, unicode):
-						data = map(unicode.strip, data.split("\n"))
+					if isinstance(data, basestring):
+						data = list(s.strip() for s in data.split("\n"))
 
 					if isinstance(data, (list, tuple)):
 						return list(data)
@@ -2706,6 +2704,11 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
+		try:
+			ret = ret.decode('utf-8')
+		except UnicodeDecodeError:
+			ret = ret.decode('latin1')
+
 		if ret != "":
 			try:
 				self._log("Recv: " + sanitize_ascii(ret))
@@ -3317,7 +3320,7 @@ class MachineCom(object):
 			old_written = written
 
 			try:
-				result = self._serial.write(to_send)
+				result = self._serial.write(to_send.encode('utf-8'))
 				if result is None or not isinstance(result, int):
 					# probably some plugin not returning the written bytes, assuming all of them
 					written += len(cmd)
@@ -3326,7 +3329,7 @@ class MachineCom(object):
 			except serial.SerialTimeoutException:
 				self._log("Serial timeout while writing to serial port, trying again.")
 				try:
-					result = self._serial.write(to_send)
+					result = self._serial.write(to_send.encode('utf-8'))
 					if result is None or not isinstance(result, int):
 						# probably some plugin not returning the written bytes, assuming all of them
 						written += len(cmd)

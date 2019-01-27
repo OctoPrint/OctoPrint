@@ -16,10 +16,6 @@ import threading
 import time
 
 from past.builtins import basestring
-try:
-	unicode
-except:
-	unicode = str
 
 from frozendict import frozendict
 
@@ -362,7 +358,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def home(self, axes, *args, **kwargs):
 		if not isinstance(axes, (list, tuple)):
-			if isinstance(axes, (str, unicode)):
+			if isinstance(axes, basestring):
 				axes = [axes]
 			else:
 				raise ValueError("axes is neither a list nor a string: {axes}".format(axes=axes))

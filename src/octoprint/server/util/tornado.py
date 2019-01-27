@@ -10,6 +10,7 @@ import os
 import mimetypes
 import re
 import sys
+from past.builtins import basestring
 
 import tornado
 import tornado.web
@@ -627,7 +628,6 @@ class WsgiInputContainer(object):
 		:param body: an optional body  to use as ``wsgi.input`` instead of ``request.body``, can be a string or a stream
 		"""
 		from tornado.wsgi import to_wsgi_str
-		import sys
 		import io
 
 		# determine the request_body to supply as wsgi.input
