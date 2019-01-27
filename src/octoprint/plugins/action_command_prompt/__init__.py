@@ -46,7 +46,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		self._selection_command = None
 
 	def initialize(self):
-		self._selection_command = self._settings.get([b"selection_command"])
+		self._selection_command = self._settings.get(["selection_command"])
 
 	# Additional permissions hook
 
@@ -72,7 +72,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-		self._selection_command = self._settings.get([b"selection_command"])
+		self._selection_command = self._settings.get(["selection_command"])
 
 	#~ SimpleApiPlugin
 
@@ -109,7 +109,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ action command handler
 
 	def action_command_handler(self, comm, line, action, *args, **kwargs):
-		if not action.startswith(b"prompt_"):
+		if not action.startswith("prompt_"):
 			return
 
 		if self._selection_command is None:
@@ -119,17 +119,17 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		parts = action.split(None, 1)
 		if len(parts) == 1:
 			action = parts[0]
-			parameter = b""
+			parameter = ""
 		else:
 			action, parameter = parts
 
-		if action == b"prompt_begin":
+		if action == "prompt_begin":
 			if self._prompt is not None and self._prompt.active:
 				self._logger.warning("Prompt is already defined")
 				return
 			self._prompt = Prompt(parameter.strip())
 
-		elif action == b"prompt_choice" or action == b"prompt_button":
+		elif action == "prompt_choice" or action == "prompt_button":
 			if self._prompt is None:
 				return
 			if self._prompt.active:
@@ -137,7 +137,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 				return
 			self._prompt.add_choice(parameter.strip())
 
-		elif action == b"prompt_show":
+		elif action == "prompt_show":
 			if self._prompt is None:
 				return
 			if self._prompt.active:
@@ -145,7 +145,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 				return
 			self._show_prompt()
 
-		elif action == b"prompt_end":
+		elif action == "prompt_end":
 			if self._prompt is None:
 				return
 			self._close_prompt()
@@ -176,6 +176,6 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin your printer wil
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
-	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
-	b"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+	"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
