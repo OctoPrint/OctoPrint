@@ -149,4 +149,3 @@ def prefix_multilines(text, prefix=": "):
 
 	return lines[0] + "\n" + "\n".join(map(lambda line: prefix + line,
 	                                       lines[1:]))
-

@@ -371,10 +371,10 @@ except ImportError:
 	class GlobEscapeTest(unittest.TestCase):
 		"""
 		Ported from Python 3.4
-		
+
 		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
 		"""
-		
+
 		@ddt.data(
 			("abc", "abc"),
 			("[", "[[]"),
@@ -387,7 +387,7 @@ except ImportError:
 		def test_glob_escape(self, text, expected):
 			actual = octoprint.util.glob_escape(text)
 			self.assertEqual(actual, expected)
-	
+
 		@ddt.data(
 			("?:?", "?:[?]"),
 			("*:*", "*:[*]"),

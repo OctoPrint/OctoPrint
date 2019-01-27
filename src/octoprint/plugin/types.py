@@ -1495,7 +1495,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		from flask_login import current_user
 		import copy
-		
+
 		from octoprint.access.permissions import Permissions
 
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))

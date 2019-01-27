@@ -530,11 +530,11 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 	def test_cookie_suffix(self):
 		request = OctoPrintFlaskRequest(standard_environ)
 		self.assertEqual("_P5000", request.cookie_suffix)
-	
+
 	def test_cookie_suffix_with_root(self):
 		script_root_environ = dict(standard_environ)
 		script_root_environ["SCRIPT_NAME"] = "/path/to/octoprint"
-		
+
 		request = OctoPrintFlaskRequest(script_root_environ)
 		self.assertEqual("_P5000_R|path|to|octoprint", request.cookie_suffix)
 
