@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"

@@ -54,7 +54,7 @@ We'll start at the most basic form a plugin can take - just a few simple lines o
 .. code-block:: python
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    __plugin_name__ = "Hello World"
@@ -89,7 +89,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    :emphasize-lines: 4-8,13
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -289,7 +289,7 @@ and ``__plugin_description__`` from ``__init__.py``:
 .. code-block:: python
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -314,7 +314,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
    :emphasize-lines: 10
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -362,7 +362,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
    :emphasize-lines: 7
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -428,7 +428,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
    :emphasize-lines: 8, 10, 12-13
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -462,7 +462,7 @@ Adjust your plugin's ``__init__.py`` like this:
    :emphasize-lines: 15-16
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -569,7 +569,7 @@ again since we don't use that anymore:
    :emphasize-lines: 15-19
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -666,7 +666,7 @@ like so:
    :emphasize-lines: 9,22-25
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -846,7 +846,7 @@ a reference to our CSS file:
    :emphasize-lines: 26
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
@@ -931,7 +931,7 @@ Then adjust our returned assets to include our LESS file as well:
    :emphasize-lines: 27
    :linenos:
 
-   # coding=utf-8
+   # -*- coding: utf-8 -*-
    from __future__ import absolute_import
 
    import octoprint.plugin
