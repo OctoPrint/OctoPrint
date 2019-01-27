@@ -803,11 +803,11 @@ class Settings(object):
 				# if it's a template matcher, we need to add a key to associate with the matcher output
 				import hashlib
 				key_hash = hashlib.md5()
-				key_hash.update(result["regex"])
+				key_hash.update(result["regex"].encode('utf-8'))
 				result["key"] = key_hash.hexdigest()
 
 				template_key_hash = hashlib.md5()
-				template_key_hash.update(result["template"])
+				template_key_hash.update(result["template"].encode('utf-8'))
 				result["template_key"] = template_key_hash.hexdigest()
 
 			elif "children" in result:
@@ -831,7 +831,7 @@ class Settings(object):
 	def effective_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(self.effective_yaml)
+		hash.update(self.effective_yaml.encode('utf-8'))
 		return hash.hexdigest()
 
 	@property
@@ -843,7 +843,7 @@ class Settings(object):
 	def config_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(self.config_yaml)
+		hash.update(self.config_yaml.encode('utf-8'))
 		return hash.hexdigest()
 
 	@property

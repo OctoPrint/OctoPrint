@@ -76,15 +76,18 @@ def _create_etag(path, filter, recursive, lm=None):
 		return None
 
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(str(filter))
-	hash.update(str(recursive))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(str(filter))
+	hash_update(str(recursive))
 
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
 		# include sd data in etag
-		hash.update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
+		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
 
-	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
+	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 

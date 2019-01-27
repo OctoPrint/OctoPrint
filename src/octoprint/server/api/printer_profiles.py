@@ -30,9 +30,12 @@ def _etag(lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(repr(printerProfileManager.get_default()))
-	hash.update(repr(printerProfileManager.get_current()))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(repr(printerProfileManager.get_default()))
+	hash_update(repr(printerProfileManager.get_current()))
 	return hash.hexdigest()
 
 

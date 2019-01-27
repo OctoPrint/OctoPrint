@@ -293,13 +293,15 @@ def index():
 
 			import hashlib
 			hash = hashlib.sha1()
-			hash.update(octoprint.__version__)
-			hash.update(octoprint.server.UI_API_KEY)
-			hash.update(",".join(sorted(files)))
+			def hash_update(value):
+				hash.update(value.encode('utf-8'))
+			hash_update(octoprint.__version__)
+			hash_update(octoprint.server.UI_API_KEY)
+			hash_update(",".join(sorted(files)))
 			if lastmodified:
-				hash.update(lastmodified)
+				hash_update(lastmodified)
 			for add in additional:
-				hash.update(str(add))
+				hash_update(str(add))
 			return hash.hexdigest()
 
 		decorated_view = view
@@ -902,9 +904,11 @@ def _compute_etag_for_i18n(locale, domain, files=None, lastmodified=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(",".join(sorted(files)))
+	def hash_update(value):
+		hash.update(value.encode('utf-8'))
+	hash_update(",".join(sorted(files)))
 	if lastmodified:
-		hash.update(lastmodified)
+		hash_update(lastmodified)
 	return hash.hexdigest()
 
 

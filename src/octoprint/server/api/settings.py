@@ -47,25 +47,28 @@ def _etag(lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
 
 	# last modified timestamp
-	hash.update(str(lm))
+	hash_update(str(lm))
 
 	# effective config from config.yaml + overlays
-	hash.update(repr(settings().effective))
+	hash_update(repr(settings().effective))
 
 	# might duplicate settings().effective, but plugins might also inject additional keys into the settings
 	# output that are not stored in config.yaml
-	hash.update(repr(sorted_plugin_settings))
+	hash_update(repr(sorted_plugin_settings))
 
 	# connection options are also part of the settings
-	hash.update(repr(connection_options))
+	hash_update(repr(connection_options))
 
 	# if the list of plugins changes, the settings structure changes too
-	hash.update(repr(plugins))
+	hash_update(repr(plugins))
 
 	# and likewise if the role of the user changes
-	hash.update(repr(roles))
+	hash_update(repr(roles))
 
 	return hash.hexdigest()
 

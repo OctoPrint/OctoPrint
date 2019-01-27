@@ -306,14 +306,18 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def etag():
 			import hashlib
 			hash = hashlib.sha1()
-			hash.update(repr(self._get_plugins()))
-			hash.update(str(self._repository_available))
-			hash.update(repr(self._repository_plugins))
-			hash.update(str(self._notices_available))
-			hash.update(repr(self._notices))
-			hash.update(repr(safe_mode))
-			hash.update(repr(self._connectivity_checker.online))
-			hash.update(repr(_DATA_FORMAT_VERSION))
+            def hash_update(value):
+				value = value.encode('utf-8')
+				hash.update(value)
+
+			hash_update(repr(self._get_plugins()))
+			hash_update(str(self._repository_available))
+			hash_update(repr(self._repository_plugins))
+			hash_update(str(self._notices_available))
+			hash_update(repr(self._notices))
+			hash_update(repr(safe_mode))
+			hash_update(repr(self._connectivity_checker.online))
+			hash_update(repr(_DATA_FORMAT_VERSION))
 			return hash.hexdigest()
 
 		def condition():

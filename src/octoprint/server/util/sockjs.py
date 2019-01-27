@@ -139,7 +139,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 
 		import hashlib
 		plugin_hash = hashlib.md5()
-		plugin_hash.update(",".join(ui_plugins))
+		plugin_hash.update(",".join(ui_plugins).encode('utf-8'))
 
 		config_hash = settings().config_hash
 

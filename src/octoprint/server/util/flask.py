@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding=utf-8
 from __future__ import absolute_import, division, print_function
 
 from flask import make_response
@@ -13,7 +13,6 @@ import flask.json
 import flask_login
 import flask_principal
 import flask_assets
-import io
 import webassets.updater
 import webassets.utils
 import functools
@@ -155,7 +154,7 @@ def fix_webassets_cache():
 		import shutil
 
 		if not os.path.exists(self.directory):
-			error_logger.warning("Cache directory {} doesn't exist, not going "
+			error_logger.warn("Cache directory {} doesn't exist, not going "
 			                  "to attempt to write cache file".format(self.directory))
 
 		md5 = '%s' % cache.make_md5(self.V, key)
@@ -178,7 +177,7 @@ def fix_webassets_cache():
 		from webassets.cache import make_md5
 
 		if not os.path.exists(self.directory):
-			error_logger.warning("Cache directory {} doesn't exist, not going "
+			error_logger.warn("Cache directory {} doesn't exist, not going "
 			                  "to attempt to read cache file".format(self.directory))
 			return None
 
@@ -191,7 +190,7 @@ def fix_webassets_cache():
 
 		filename = os.path.join(self.directory, '%s' % hash)
 		try:
-			f = io.open(filename, 'rb')
+			f = open(filename, 'rb')
 		except IOError as e:
 			if e.errno != errno.ENOENT:
 				error_logger.exception("Got an exception while trying to open webasset file {}".format(filename))
@@ -538,78 +537,54 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 
 #~~ passive login helper
 
-_cached_local_networks = None
-def _local_networks():
-	global _cached_local_networks
-
-	if _cached_local_networks is None:
-		logger = logging.getLogger(__name__)
-		local_networks = netaddr.IPSet([])
-		for entry in settings().get(["accessControl", "localNetworks"]):
-			network = netaddr.IPNetwork(entry)
-			local_networks.add(network)
-			logger.debug("Added network {} to localNetworks".format(network))
-
-			if network.version == 4:
-				network_v6 = network.ipv6()
-				local_networks.add(network_v6)
-				logger.debug("Also added v6 representation of v4 network {} = {} to localNetworks".format(network, network_v6))
-
-		_cached_local_networks = local_networks
-
-	return _cached_local_networks
-
 def passive_login():
-	logger = logging.getLogger(__name__)
+	user = flask_login.current_user
 
-	if octoprint.server.userManager.enabled:
-		user = octoprint.server.userManager.login_user(flask_login.current_user)
-	else:
-		user = flask_login.current_user
-
-	remote_address = get_remote_address(flask.request)
-	ip_check_enabled = settings().getBoolean(["server", "ipCheck", "enabled"])
-	ip_check_trusted = settings().get(["server", "ipCheck", "trustedSubnets"])
+	remoteAddr = get_remote_address(flask.request)
+	ipCheckEnabled = settings().getBoolean(["server", "ipCheck", "enabled"])
+	ipCheckTrusted = settings().get(["server", "ipCheck", "trustedSubnets"])
 
 	if isinstance(user, LocalProxy):
 		# noinspection PyProtectedMember
 		user = user._get_current_object()
 
-		logger.info("Passively logging in user {} from {}".format(user.get_id(), remote_address))
+	def login(u):
+		# login known user
+		if not u.is_anonymous:
+			u = octoprint.server.userManager.login_user(u)
+		flask_login.login_user(u)
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+		                                      identity=flask_principal.Identity(u.get_id()))
+		if hasattr(u, "session"):
+			flask.session["usersession.id"] = u.session
+		flask.g.user = u
+		return u
 
-		response = user.asDict()
-		response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
-		                                                                          additional_private=ip_check_trusted)
-		return flask.jsonify(response)
+	if user is not None and user.is_active:
+		# login known user
+		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
+		user = login(user)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
 
-		autologin_as = settings().get(["accessControl", "autologinAs"])
-		local_networks = _local_networks()
-		logger.debug("Checking if remote address {} is in localNetworks ({!r})".format(remote_address, local_networks))
+		autologinAs = settings().get(["accessControl", "autologinAs"])
+		localNetworks = netaddr.IPSet([])
+		for ip in settings().get(["accessControl", "localNetworks"]):
+			localNetworks.add(ip)
 
 		try:
-			if netaddr.IPAddress(remote_address) in local_networks:
-				user = octoprint.server.userManager.findUser(autologin_as)
-				if user is not None and user.is_active():
-					user = octoprint.server.userManager.login_user(user)
-					flask.session["usersession.id"] = user.session
-					flask.g.user = user
-					flask_login.login_user(user)
-					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
-					                                      identity=flask_principal.Identity(user.get_id()))
+			if netaddr.IPAddress(remoteAddr) in localNetworks:
+				autologin_user = octoprint.server.userManager.find_user(autologinAs)
+				if autologin_user is not None and user.is_active:
+					autologin_user = octoprint.server.userManager.login_user(autologin_user)
 
-					logger.info("Passively logging in user {} from {} via autologin".format(user.get_id(),
-					                                                                        remote_address))
-
-					response = user.asDict()
-					response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
-					                                                                          additional_private=ip_check_trusted)
-					return flask.jsonify(response)
+					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(), remoteAddr))
+					user = login(autologin_user)
 		except:
-			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, localNetworks))
+			logger = logging.getLogger(__name__)
+			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
 	response = user.as_dict()
 	response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
@@ -869,7 +844,7 @@ class PreemptiveCache(object):
 		cache_data = None
 		with self._lock:
 			try:
-				with io.open(self.cachefile, 'rt', encoding='utf-8') as f:
+				with open(self.cachefile, "r") as f:
 					cache_data = yaml.safe_load(f)
 			except IOError as e:
 				import errno
@@ -893,7 +868,7 @@ class PreemptiveCache(object):
 
 		with self._lock:
 			try:
-				with atomic_write(self.cachefile, mode='wb', max_permissions=0o666) as handle:
+				with atomic_write(self.cachefile, "wb", max_permissions=0o666) as handle:
 					yaml.safe_dump(data, handle,default_flow_style=False, indent=4, allow_unicode=True)
 			except:
 				self._logger.exception("Error while writing {}".format(self.cachefile))
@@ -1494,7 +1469,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		def asset_exists(category, asset):
 			exists = os.path.exists(os.path.join(basefolder, asset))
 			if not exists:
-				logger.warning("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
+				logger.warn("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
 			return exists
 
 		if "js" in all_assets:

@@ -66,9 +66,12 @@ def _etag(unrendered, lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(repr(config))
-	hash.update(repr(_DATA_FORMAT_VERSION))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(repr(config))
+	hash_update(repr(_DATA_FORMAT_VERSION))
 
 	return hash.hexdigest()
 

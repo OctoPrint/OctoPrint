@@ -40,7 +40,10 @@ def _etag(configured, lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
 
 	if configured:
 		slicers = slicingManager.configured_slicers
@@ -51,11 +54,11 @@ def _etag(configured, lm=None):
 
 	for slicer in sorted(slicers):
 		slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
-		hash.update(slicer)
-		hash.update(str(slicer_impl.is_slicer_configured()))
-		hash.update(str(slicer == default_slicer))
+		hash_update(slicer)
+		hash_update(str(slicer_impl.is_slicer_configured()))
+		hash_update(str(slicer == default_slicer))
 
-	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
+	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 
