@@ -44,6 +44,11 @@ try:
 except ImportError:
 	from scandir import scandir, walk
 
+try:
+	long
+except NameError:
+	long = int
+
 #~~ monkey patching
 
 def enable_additional_translations(default_locale="en", additional_folders=None):
@@ -154,8 +159,8 @@ def fix_webassets_cache():
 		import shutil
 
 		if not os.path.exists(self.directory):
-			error_logger.warn("Cache directory {} doesn't exist, not going "
-			                  "to attempt to write cache file".format(self.directory))
+			error_logger.warning("Cache directory {} doesn't exist, not going "
+			                     "to attempt to write cache file".format(self.directory))
 
 		md5 = '%s' % cache.make_md5(self.V, key)
 		filename = os.path.join(self.directory, md5)
@@ -177,8 +182,8 @@ def fix_webassets_cache():
 		from webassets.cache import make_md5
 
 		if not os.path.exists(self.directory):
-			error_logger.warn("Cache directory {} doesn't exist, not going "
-			                  "to attempt to read cache file".format(self.directory))
+			error_logger.warning("Cache directory {} doesn't exist, not going "
+			                     "to attempt to read cache file".format(self.directory))
 			return None
 
 		try:
@@ -190,7 +195,7 @@ def fix_webassets_cache():
 
 		filename = os.path.join(self.directory, '%s' % hash)
 		try:
-			f = open(filename, 'rb')
+			f = io.open(filename, 'rb')
 		except IOError as e:
 			if e.errno != errno.ENOENT:
 				error_logger.exception("Got an exception while trying to open webasset file {}".format(filename))
@@ -202,7 +207,7 @@ def fix_webassets_cache():
 
 		unpickled = webassets.cache.safe_unpickle(result)
 		if unpickled is None:
-			warnings.warn('Ignoring corrupted cache file %s' % filename)
+			warnings.warning('Ignoring corrupted cache file %s' % filename)
 		return unpickled
 
 	cache.FilesystemCache.set = fixed_set
@@ -844,7 +849,7 @@ class PreemptiveCache(object):
 		cache_data = None
 		with self._lock:
 			try:
-				with open(self.cachefile, "r") as f:
+				with io.open(self.cachefile, "r") as f:
 					cache_data = yaml.safe_load(f)
 			except IOError as e:
 				import errno
@@ -1063,7 +1068,7 @@ def check_lastmodified(lastmodified):
 		return False
 
 	from datetime import datetime
-	if isinstance(lastmodified, (int, long, float, complex)):
+	if isinstance(lastmodified, (int, long, float)):
 		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
 
 	if not isinstance(lastmodified, datetime):
@@ -1469,7 +1474,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		def asset_exists(category, asset):
 			exists = os.path.exists(os.path.join(basefolder, asset))
 			if not exists:
-				logger.warn("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
+				logger.warning("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
 			return exists
 
 		if "js" in all_assets:

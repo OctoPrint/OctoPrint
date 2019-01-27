@@ -107,7 +107,7 @@ def get_all_template_paths(loader):
 	def collect_templates_for_loader(loader):
 		if isinstance(loader, SelectedFilesLoader):
 			import copy
-			return copy.copy(loader.files.values())
+			return copy.copy(list(loader.files.values()))
 
 		elif isinstance(loader, FilteredFileSystemLoader):
 			result = []

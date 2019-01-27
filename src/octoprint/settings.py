@@ -44,6 +44,11 @@ try:
 except ImportError:
 	from chainmap import ChainMap
 
+try:
+	from collections.abc import KeysView
+except ImportError:
+	from collections import KeysView
+
 from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet
 
 _APPNAME = "OctoPrint"
@@ -1436,6 +1441,8 @@ class Settings(object):
 					value = preprocessor(value)
 
 			if do_copy:
+				if isinstance(value, KeysView):
+					value = list(value)
 				value = copy.deepcopy(value)
 
 			if asdict:
@@ -1445,7 +1452,7 @@ class Settings(object):
 
 		if not isinstance(last, (list, tuple)):
 			if asdict:
-				return results.values().pop()
+				return list(results.values()).pop()
 			else:
 				return results.pop()
 		else:
