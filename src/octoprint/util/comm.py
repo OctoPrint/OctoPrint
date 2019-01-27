@@ -45,7 +45,7 @@ try:
 except ImportError:
 	try:
 		import _winreg as winreg
-	except:
+	except ImportError:
 		pass
 
 _logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ def serialList():
 			while(1):
 				baselist+=[winreg.EnumValue(key,i)[1]]
 				i+=1
-		except:
+		except Exception:
 			pass
 	baselist = baselist \
 			   + glob.glob("/dev/ttyUSB*") \
