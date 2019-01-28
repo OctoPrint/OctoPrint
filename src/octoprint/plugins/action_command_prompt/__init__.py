@@ -55,7 +55,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(selection_command=None)
+		return dict(selection_command="M876")
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
