@@ -74,7 +74,6 @@ INSTALL_REQUIRES = [
 	"websocket-client>=0.53,<0.54",
 	"python-dateutil>=2.7.5,<2.8",
 	"wrapt>=1.10.11,<1.11",
-	"futures>=3.2,<3.3",
 	"emoji>=0.5.1,<0.6",
 	"monotonic>=1.5,<1.6",
 	"frozendict>=1.2,<1.3"
@@ -82,6 +81,8 @@ INSTALL_REQUIRES = [
 
 if sys.platform == "darwin":
 	INSTALL_REQUIRES.append("appdirs>=1.4.0")
+if not PY3:
+	INSTALL_REQUIRES.append("futures>=3.2,<3.3")
 
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
