@@ -17,7 +17,6 @@ import octoprint.timelapse
 import octoprint.server
 import octoprint.events
 import octoprint.plugin
-import octoprint.users
 
 from octoprint.events import Events
 from octoprint.settings import settings
