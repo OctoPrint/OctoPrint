@@ -3363,7 +3363,7 @@ class MachineCom(object):
 				# may be busy, so give things a little time before we try again. Extend this
 				# period each time we fail until either we write the data or run out of retry attempts.
 				if passes > 1:
-					sleep((passes-1)/10.0)
+					time.sleep((passes-1)/10.0)
 
 	##~~ command handlers
 
