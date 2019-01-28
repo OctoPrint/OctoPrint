@@ -292,7 +292,7 @@ class FileManagerTest(unittest.TestCase):
 
 		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
-			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666)
+			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666, mode='wt')
 
 		expected = dict(origin=octoprint.filemanager.FileDestinations.LOCAL,
 		                path=path,
@@ -486,7 +486,7 @@ class FileManagerTest(unittest.TestCase):
 		                                                    display=None)
 
 		# assert that the generated gcode was manipulated as required
-		expected_atomic_write_calls = [mock.call("prefix/dest.file", "wb")]
+		expected_atomic_write_calls = [mock.call("prefix/dest.file", mode="wb")]
 		self.assertEqual(mocked_atomic_write.call_args_list, expected_atomic_write_calls)
 		#mocked_open.return_value.write.assert_called_once_with(";Generated from source.file aabbccddeeff\r")
 
