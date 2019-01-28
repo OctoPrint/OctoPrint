@@ -2,10 +2,17 @@
 
 <form class="form-horizontal">
     <div class="control-group">
-        <label class="control-label">{{ _('Selection Command') }}</label>
+        <label class="control-label">{{ _('Dialog command') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.action_command_prompt.selection_command">
-            <div class="help-block">{{ _('Use this to define the command to tell the printer about the selection. OctoPrint will replace <code>{choice}</code> with the index of the selected choice. E.g. <code>M876 S{choice}</code> will become <code>M123 S1</code>') }}</div>
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.action_command_prompt.command">
+            <div class="help-block">{{ _('Use this to define the dialog command. Default is <code>M876</code>. You normally should not have to change this.') }}</div>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.action_command_prompt.enable_emergency_sending"> {{ _('Enable force sending of the configured command to bypass blocking firmware routines. Requires the firmware to report support of the <code>EMERGENCY_PARSER</code> capability.') }}
+            </label>
         </div>
     </div>
 </form>

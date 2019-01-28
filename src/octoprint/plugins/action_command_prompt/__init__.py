@@ -38,13 +38,17 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
                                 octoprint.plugin.SimpleApiPlugin,
                                 octoprint.plugin.TemplatePlugin):
 
+	COMMAND = "M876"
+
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._prompt = None
-		self._selection_command = None
+		self._command = None
+		self._enable_emergency_sending = False
 
 	def initialize(self):
-		self._selection_command = self._settings.get([b"selection_command"])
+		self._command = self._settings.get([b"command"])
+		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
 
 	#~ AssetPlugin
 
@@ -55,11 +59,15 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(selection_command="M876")
+		return dict(command=self.COMMAND,
+
+		            # TODO make this default to True once we have a capability report to listen to
+		            enable_emergency_sending=False)
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-		self._selection_command = self._settings.get([b"selection_command"])
+		self._command = self._settings.get([b"command"])
+		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
 
 	#~ SimpleApiPlugin
 
@@ -99,10 +107,6 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		if not action.startswith(b"prompt_"):
 			return
 
-		if self._selection_command is None:
-			self._logger.info("Got a prompt command from the printer but no selection command is defined")
-			return
-
 		parts = action.split(None, 1)
 		if len(parts) == 1:
 			action = parts[0]
@@ -138,6 +142,22 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			self._close_prompt()
 			self._prompt = None
 
+	#~ queuing handling
+
+	def gcode_queuing_handler(self, comm_instance, phase, cmd, cmd_type, gcode, subcode=None, tags=None, *args, **kwargs):
+		if gcode != self._command:
+			return
+
+		if not self._enable_emergency_sending:
+			return
+
+		if not "S" in cmd:
+			# we only force-send M876 Sx
+			return
+
+		# noinspection PyProtectedMember
+		return comm_instance._emergency_force_send(cmd, u"Force-sending {} to the printer".format(self._command), gcode=gcode)
+
 	#~ prompt handling
 
 	def _show_prompt(self):
@@ -152,7 +172,8 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def _answer_prompt(self, choice):
 		self._close_prompt()
-		self._printer.commands([self._selection_command.format(choice=choice)])
+		self._printer.commands(["{command} S{choice}".format(command=self._command,
+		                                                     choice=choice)])
 
 
 __plugin_name__ = "Action Command Prompt Support"
@@ -163,5 +184,6 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin your printer wil
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
-	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler
+	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
+	b"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.gcode_queuing_handler
 }
