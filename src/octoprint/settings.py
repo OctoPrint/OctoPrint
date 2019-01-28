@@ -359,9 +359,9 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
-		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
-		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
+		{ "name": "Suppress temperature messages", "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
+		{ "name": "Suppress SD status messages", "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
+		{ "name": "Suppress wait responses", "regex": r"Recv: wait"}
 	],
 	"plugins": {
 		"_disabled": []
@@ -1103,7 +1103,7 @@ class Settings(object):
 			self._logger.info("Migrating config (event subscriptions)...")
 
 			# migrate event hooks to new format
-			placeholderRe = re.compile("%\((.*?)\)s")
+			placeholderRe = re.compile(r"%\((.*?)\)s")
 
 			eventNameReplacements = {
 				"ClientOpen": "ClientOpened",

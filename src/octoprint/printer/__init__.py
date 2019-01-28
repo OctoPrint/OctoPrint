@@ -44,10 +44,10 @@ class PrinterInterface(object):
 	valid_axes = ("x", "y", "z", "e")
 	"""Valid axes identifiers."""
 
-	valid_tool_regex = re.compile("^(tool\d+)$")
+	valid_tool_regex = re.compile(r"^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
 
-	valid_heater_regex = re.compile("^(tool\d+|bed)$")
+	valid_heater_regex = re.compile(r"^(tool\d+|bed)$")
 	"""Regex for valid heater identifiers."""
 
 	@classmethod

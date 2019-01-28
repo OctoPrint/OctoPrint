@@ -51,12 +51,12 @@ _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
 # ffmpeg progress regexes
-_ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
-_ffmpeg_current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_duration_regex = re.compile(r"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_current_regex = re.compile(r"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
 
 # old capture format, needed to delete old left-overs from
 # versions <1.2.9
-_old_capture_format_re = re.compile("^tmp_\d{5}.jpg$")
+_old_capture_format_re = re.compile(r"^tmp_\d{5}.jpg$")
 
 # valid timelapses
 _valid_timelapse_types = ["off", "timed", "zchange"]

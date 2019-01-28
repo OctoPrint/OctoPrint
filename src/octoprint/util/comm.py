@@ -52,38 +52,38 @@ _logger = logging.getLogger(__name__)
 
 # a bunch of regexes we'll need for the communication parsing...
 
-regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
-regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
-regex_int_pattern = "\d+"
+regex_float_pattern = r"[-+]?[0-9]*\.?[0-9]+"
+regex_positive_float_pattern = r"[+]?[0-9]*\.?[0-9]+"
+regex_int_pattern = r"\d+"
 
-regex_command = re.compile("^\s*((?P<codeGM>[GM]\d+)(\\.(?P<subcode>\d+))?|(?P<codeT>T)\d+|(?P<codeF>F)\d+)")
+regex_command = re.compile(r"^\s*((?P<codeGM>[GM]\d+)(\\.(?P<subcode>\d+))?|(?P<codeT>T)\d+|(?P<codeF>F)\d+)")
 """Regex for a GCODE command."""
 
 regex_float = re.compile(regex_float_pattern)
 """Regex for a float value."""
 
 regexes_parameters = dict(
-	floatE=re.compile("(^|[^A-Za-z])[Ee](?P<value>%s)" % regex_float_pattern),
-	floatF=re.compile("(^|[^A-Za-z])[Ff](?P<value>%s)" % regex_float_pattern),
-	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
-	floatR=re.compile("(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
-	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
-	floatX=re.compile("(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
-	floatY=re.compile("(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
-	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
-	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
-	intS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
-	intT=re.compile("(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
+	floatE=re.compile(r"(^|[^A-Za-z])[Ee](?P<value>%s)" % regex_float_pattern),
+	floatF=re.compile(r"(^|[^A-Za-z])[Ff](?P<value>%s)" % regex_float_pattern),
+	floatP=re.compile(r"(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatR=re.compile(r"(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
+	floatS=re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+	floatX=re.compile(r"(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
+	floatY=re.compile(r"(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
+	floatZ=re.compile(r"(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
+	intN=re.compile(r"(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+	intS=re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
+	intT=re.compile(r"(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
 )
 """Regexes for parsing various GCODE command parameters."""
 
-regex_minMaxError = re.compile("Error:[0-9]\n")
+regex_minMaxError = re.compile(r"Error:[0-9]\n")
 """Regex matching first line of min/max errors from the firmware."""
 
-regex_marlinKillError = re.compile("Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused")
+regex_marlinKillError = re.compile(r"Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused")
 """Regex matching first line of kill causing errors from Marlin."""
 
-regex_sdPrintingByte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
+regex_sdPrintingByte = re.compile(r"(?P<current>[0-9]*)/(?P<total>[0-9]*)")
 """Regex matching SD printing status reports.
 
 Groups will be as follows:
@@ -92,7 +92,7 @@ Groups will be as follows:
   * ``total``: total size of file being printed
 """
 
-regex_sdFileOpened = re.compile("File opened:\s*(?P<name>.*?)\s+Size:\s*(?P<size>%s)" % regex_int_pattern)
+regex_sdFileOpened = re.compile(r"File opened:\s*(?P<name>.*?)\s+Size:\s*(?P<size>%s)" % regex_int_pattern)
 """Regex matching "File opened" messages from the firmware.
 
 Groups will be as follows:
@@ -101,7 +101,7 @@ Groups will be as follows:
   * ``size``: size of the file in bytes (int)
 """
 
-regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_float_pattern, regex_float_pattern))
+regex_temp = re.compile(r"(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_float_pattern, regex_float_pattern))
 """Regex matching temperature entries in line.
 
 Groups will be as follows:
@@ -112,7 +112,7 @@ Groups will be as follows:
   * ``target``: target temperature, if provided (float)
 """
 
-regex_repetierTempExtr = re.compile("TargetExtr(?P<toolnum>\d+):(?P<target>%s)" % regex_float_pattern)
+regex_repetierTempExtr = re.compile(r"TargetExtr(?P<toolnum>\d+):(?P<target>%s)" % regex_float_pattern)
 """Regex for matching target temp reporting from Repetier.
 
 Groups will be as follows:
@@ -122,7 +122,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_repetierTempBed = re.compile("TargetBed:(?P<target>%s)" % regex_float_pattern)
+regex_repetierTempBed = re.compile(r"TargetBed:(?P<target>%s)" % regex_float_pattern)
 """Regex for matching target temp reporting from Repetier for beds.
 
 Groups will be as follows:
@@ -130,7 +130,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_position = re.compile("X:\s*(?P<x>{float})\s*Y:\s*(?P<y>{float})\s*Z:\s*(?P<z>{float})\s*((E:\s*(?P<e>{float}))|(?P<es>(E\d+:\s*{float}\s*)+))".format(float=regex_float_pattern))
+regex_position = re.compile(r"X:\s*(?P<x>{float})\s*Y:\s*(?P<y>{float})\s*Z:\s*(?P<z>{float})\s*((E:\s*(?P<e>{float}))|(?P<es>(E\d+:\s*{float}\s*)+))".format(float=regex_float_pattern))
 """Regex for matching position reporting.
 
 Groups will be as follows:
@@ -142,7 +142,7 @@ Groups will be as follows:
   * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
 """
 
-regex_e_positions = re.compile("E(?P<id>\d+):\s*(?P<value>{float})".format(float=regex_float_pattern))
+regex_e_positions = re.compile(r"E(?P<id>\d+):\s*(?P<value>{float})".format(float=regex_float_pattern))
 """Regex for matching multiple E coordinates in a position report.
 
 Groups will be as follows:
@@ -151,10 +151,10 @@ Groups will be as follows:
   * ``value``: reported position value
 """
 
-regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):\s*")
+regex_firmware_splitter = re.compile(r"\s*([A-Z0-9_]+):\s*")
 """Regex to use for splitting M115 responses."""
 
-regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
+regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
 def serialList():
@@ -4155,7 +4155,7 @@ class SendQueue(PrependableQueue):
 			return self._resend_queue.qsize() + self._send_queue.qsize()
 
 
-_temp_command_regex = re.compile("^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+")
+_temp_command_regex = re.compile(r"^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+")
 
 def apply_temperature_offsets(line, offsets, current_tool=None):
 	if offsets is None:

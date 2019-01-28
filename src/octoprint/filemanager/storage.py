@@ -450,7 +450,7 @@ class LocalFileStorage(StorageInterface):
 	This storage type implements :func:`path_on_disk`.
 	"""
 
-	_UNICODE_VARIATIONS = re.compile(u"[\uFE00-\uFE0F]")
+	_UNICODE_VARIATIONS = re.compile(u"[\uFE00-\uFE0F]", re.U)
 
 	@classmethod
 	def _no_unicode_variations(cls, text):

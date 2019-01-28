@@ -1014,7 +1014,7 @@ class Server(object):
 		def regex_replace(s, find, replace):
 			return re.sub(find, replace, s)
 
-		html_header_regex = re.compile("<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
+		html_header_regex = re.compile(r"<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
 		def offset_html_headers(s, offset):
 			def repl(match):
 				number = int(match.group("number"))
@@ -1026,7 +1026,7 @@ class Server(object):
 				return "<h{number}>{content}</h{number}>".format(number=number, content=match.group("content"))
 			return html_header_regex.sub(repl, s)
 
-		markdown_header_regex = re.compile("^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
+		markdown_header_regex = re.compile(r"^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
 		def offset_markdown_headers(s, offset):
 			def repl(match):
 				number = len(match.group("hashs"))
@@ -1038,7 +1038,7 @@ class Server(object):
 				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
 			return markdown_header_regex.sub(repl, s)
 
-		html_link_regex = re.compile("<(?P<tag>a.*?)>(?P<content>.*?)</a>")
+		html_link_regex = re.compile(r"<(?P<tag>a.*?)>(?P<content>.*?)</a>")
 		def externalize_links(text):
 			def repl(match):
 				tag = match.group("tag")

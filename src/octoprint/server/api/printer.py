@@ -77,7 +77,7 @@ def printerToolCommand():
 	if response is not None:
 		return response
 
-	validation_regex = re.compile("tool\d+")
+	validation_regex = re.compile(r"tool\d+")
 
 	tags = {"source:api", "api:printer.tool"}
 

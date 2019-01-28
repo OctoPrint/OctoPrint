@@ -354,12 +354,12 @@ G90                         ;absolute positioning
 
 class Profile(object):
 
-	regex_extruder_offset = re.compile("extruder_offset_([xy])(\d)")
-	regex_filament_diameter = re.compile("filament_diameter(\d?)")
-	regex_print_temperature = re.compile("print_temperature(\d?)")
-	regex_strip_comments = re.compile(";.*$", flags=re.MULTILINE)
+	regex_extruder_offset = re.compile(r"extruder_offset_([xy])(\d)")
+	regex_filament_diameter = re.compile(r"filament_diameter(\d?)")
+	regex_print_temperature = re.compile(r"print_temperature(\d?)")
+	regex_strip_comments = re.compile(r";.*$", flags=re.MULTILINE)
 
-	regex_broken_replacements = re.compile("\?([a-zA-Z0-9_]*)\?")
+	regex_broken_replacements = re.compile(r"\?([a-zA-Z0-9_]*)\?")
 
 	@classmethod
 	def from_cura_ini(cls, path):

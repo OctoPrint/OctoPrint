@@ -23,16 +23,16 @@ from octoprint.plugin import plugin_manager
 from octoprint.util import RepeatedTimer
 
 class VirtualPrinter(object):
-	command_regex = re.compile("^([GMTF])(\d+)")
-	sleep_regex = re.compile("sleep (\d+)")
-	sleep_after_regex = re.compile("sleep_after ([GMTF]\d+) (\d+)")
-	sleep_after_next_regex = re.compile("sleep_after_next ([GMTF]\d+) (\d+)")
-	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
-	prepare_ok_regex = re.compile("prepare_ok (.*)")
-	send_regex = re.compile("send (.*)")
-	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
-	start_sd_regex = re.compile("start_sd (.*)")
-	select_sd_regex = re.compile("select_sd (.*)")
+	command_regex = re.compile(r"^([GMTF])(\d+)")
+	sleep_regex = re.compile(r"sleep (\d+)")
+	sleep_after_regex = re.compile(r"sleep_after ([GMTF]\d+) (\d+)")
+	sleep_after_next_regex = re.compile(r"sleep_after_next ([GMTF]\d+) (\d+)")
+	custom_action_regex = re.compile(r"action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
+	prepare_ok_regex = re.compile(r"prepare_ok (.*)")
+	send_regex = re.compile(r"send (.*)")
+	set_ambient_regex = re.compile(r"set_ambient ([-+]?[0-9]*\.?[0-9]+)")
+	start_sd_regex = re.compile(r"start_sd (.*)")
+	select_sd_regex = re.compile(r"select_sd (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -317,7 +317,7 @@ class VirtualPrinter(object):
 
 			# track N = N + 1
 			if data.startswith("N") and "M110" in data:
-				linenumber = int(re.search("N([0-9]+)", data).group(1))
+				linenumber = int(re.search(r"N([0-9]+)", data).group(1))
 				self.lastN = linenumber
 				self.currentLine = linenumber
 
@@ -327,7 +327,7 @@ class VirtualPrinter(object):
 				self._sendOk()
 				continue
 			elif data.startswith("N"):
-				linenumber = int(re.search("N([0-9]+)", data).group(1))
+				linenumber = int(re.search(r"N([0-9]+)", data).group(1))
 				expected = self.lastN + 1
 				if linenumber != expected:
 					self._triggerResend(actual=linenumber)
@@ -491,7 +491,7 @@ class VirtualPrinter(object):
 
 	def _gcode_M26(self, data):
 		if self._sdCardReady:
-			pos = int(re.search("S([0-9]+)", data).group(1))
+			pos = int(re.search(r"S([0-9]+)", data).group(1))
 			self._setSdPos(pos)
 
 	def _gcode_M27(self, data):
@@ -499,7 +499,7 @@ class VirtualPrinter(object):
 			if self._sdCardReady:
 				self._reportSdStatus()
 
-		match = re.search("S([0-9]+)", data)
+		match = re.search(r"S([0-9]+)", data)
 		if match:
 			interval = int(match.group(1))
 			if self._sdstatus_reporter is not None:
@@ -528,7 +528,7 @@ class VirtualPrinter(object):
 			self._deleteSdFile(filename)
 
 	def _gcode_M113(self, data):
-		interval = int(re.search("S([0-9]+)", data).group(1))
+		interval = int(re.search(r"S([0-9]+)", data).group(1))
 		if 0 <= interval <= 60:
 			self._busyInterval = interval
 
@@ -564,10 +564,10 @@ class VirtualPrinter(object):
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
-			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+			self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
 
 	def _gcode_M155(self, data):
-		interval = int(re.search("S([0-9]+)", data).group(1))
+		interval = int(re.search(r"S([0-9]+)", data).group(1))
 		if self._temperature_reporter is not None:
 			self._temperature_reporter.cancel()
 
@@ -578,10 +578,10 @@ class VirtualPrinter(object):
 			self._temperature_reporter = None
 
 	def _gcode_M220(self, data):
-		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
+		self._feedrate_multiplier = float(re.search(r'S([0-9]+)', data).group(1))
 
 	def _gcode_M221(self, data):
-		self._flowrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
+		self._flowrate_multiplier = float(re.search(r'S([0-9]+)', data).group(1))
 
 	def _gcode_M400(self, data):
 		self.buffered.join()
@@ -632,8 +632,8 @@ class VirtualPrinter(object):
 	_gcode_G3 = _gcode_G0
 
 	def _gcode_G4(self, data):
-		matchS = re.search('S([0-9]+)', data)
-		matchP = re.search('P([0-9]+)', data)
+		matchS = re.search(r'S([0-9]+)', data)
+		matchP = re.search(r'P([0-9]+)', data)
 
 		_timeout = 0
 		if matchP:
@@ -961,7 +961,7 @@ class VirtualPrinter(object):
 	def _parseHotendCommand(self, line, wait=False, support_r=False):
 		only_wait_if_higher = True
 		tool = 0
-		toolMatch = re.search('T([0-9]+)', line)
+		toolMatch = re.search(r'T([0-9]+)', line)
 		if toolMatch:
 			try:
 				tool = int(toolMatch.group(1))
@@ -972,11 +972,11 @@ class VirtualPrinter(object):
 			return
 
 		try:
-			self.targetTemp[tool] = float(re.search('S([0-9]+)', line).group(1))
+			self.targetTemp[tool] = float(re.search(r'S([0-9]+)', line).group(1))
 		except Exception:
 			if support_r:
 				try:
-					self.targetTemp[tool] = float(re.search('R([0-9]+)', line).group(1))
+					self.targetTemp[tool] = float(re.search(r'R([0-9]+)', line).group(1))
 					only_wait_if_higher = False
 				except Exception:
 					pass
@@ -989,11 +989,11 @@ class VirtualPrinter(object):
 	def _parseBedCommand(self, line, wait=False, support_r=False):
 		only_wait_if_higher = True
 		try:
-			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
+			self.bedTargetTemp = float(re.search(r'S([0-9]+)', line).group(1))
 		except Exception:
 			if support_r:
 				try:
-					self.bedTargetTemp = float(re.search('R([0-9]+)', line).group(1))
+					self.bedTargetTemp = float(re.search(r'R([0-9]+)', line).group(1))
 					only_wait_if_higher = False
 				except Exception:
 					pass
@@ -1004,11 +1004,11 @@ class VirtualPrinter(object):
 			self._send("TargetBed:%d" % self.bedTargetTemp)
 
 	def _performMove(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
-		matchF = re.search("F([0-9.]+)", line)
+		matchX = re.search(r"X([0-9.]+)", line)
+		matchY = re.search(r"Y([0-9.]+)", line)
+		matchZ = re.search(r"Z([0-9.]+)", line)
+		matchE = re.search(r"E([0-9.]+)", line)
+		matchF = re.search(r"F([0-9.]+)", line)
 
 		duration = 0.0
 		if matchF is not None:
@@ -1089,10 +1089,10 @@ class VirtualPrinter(object):
 				time.sleep(duration)
 
 	def _setPosition(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
+		matchX = re.search(r"X([0-9.]+)", line)
+		matchY = re.search(r"Y([0-9.]+)", line)
+		matchZ = re.search(r"Z([0-9.]+)", line)
+		matchE = re.search(r"E([0-9.]+)", line)
 
 		if matchX is None and matchY is None and matchZ is None and matchE is None:
 			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0

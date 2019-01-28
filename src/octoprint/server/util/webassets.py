@@ -60,7 +60,7 @@ class LessImportRewrite(UrlRewriter):
 	name = "less_importrewrite"
 
 	patterns = {
-		"import_rewrite": re.compile("(@import(\s+\(.*\))?\s+)\"(.*)\";")
+		"import_rewrite": re.compile(r"(@import(\s+\(.*\))?\s+)\"(.*)\";")
 	}
 
 	def import_rewrite(self, m):
@@ -73,7 +73,7 @@ class SourceMapRewrite(UrlRewriter):
 	name = "sourcemap_urlrewrite"
 
 	patterns = {
-		"url_rewrite": re.compile("(//#\s+sourceMappingURL=)(.*)")
+		"url_rewrite": re.compile(r"(//#\s+sourceMappingURL=)(.*)")
 	}
 
 	def url_rewrite(self, m):
@@ -86,7 +86,7 @@ class SourceMapRemove(PatternRewriter):
 	name = "sourcemap_remove"
 
 	patterns = {
-		"sourcemap_remove": re.compile("(//#\s+sourceMappingURL=)(.*)")
+		"sourcemap_remove": re.compile(r"(//#\s+sourceMappingURL=)(.*)")
 	}
 
 	def sourcemap_remove(self, m):
