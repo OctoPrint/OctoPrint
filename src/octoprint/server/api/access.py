@@ -341,7 +341,7 @@ def generate_apikey_for_user(username):
 		return make_response(("Forbidden", 403, []))
 
 def _to_external_permissions(*permissions):
-	return map(lambda p: p.get_name(), permissions)
+	return list(map(lambda p: p.get_name(), permissions))
 
 def _to_external_groups(*groups):
-	return map(lambda g: g.get_name(), groups)
+	return list(map(lambda g: g.get_name(), groups))

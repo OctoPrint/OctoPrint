@@ -449,7 +449,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 	def format_blacklist(entries):
 		format_entry = lambda x: "{} ({})".format(x[0], x[1]) if isinstance(x, (list, tuple)) and len(x) == 2 \
 			else "{} (any)".format(x)
-		return ", ".join(list(map(format_entry, entries)))
+		return ", ".join(map(format_entry, entries))
 
 	def process_blacklist(entries):
 		result = []

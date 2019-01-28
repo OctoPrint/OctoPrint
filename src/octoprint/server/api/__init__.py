@@ -430,11 +430,11 @@ def _test_url(data):
 	if "content_type_whitelist" in data:
 		if not isinstance(data["content_type_whitelist"], (list, tuple)):
 			return make_response("content_type_whitelist must be a list of mime types")
-		content_type_whitelist = map(util.parse_mime_type, data["content_type_whitelist"])
+		content_type_whitelist = list(map(util.parse_mime_type, data["content_type_whitelist"]))
 	if "content_type_blacklist" in data:
 		if not isinstance(data["content_type_whitelist"], (list, tuple)):
 			return make_response("content_type_blacklist must be a list of mime types")
-		content_type_blacklist = map(util.parse_mime_type, data["content_type_blacklist"])
+		content_type_blacklist = list(map(util.parse_mime_type, data["content_type_blacklist"]))
 
 	response_result = None
 	outcome = True

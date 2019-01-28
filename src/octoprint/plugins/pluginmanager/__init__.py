@@ -834,7 +834,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		self._repository_plugins = map(map_repository_entry, repo_data)
+		self._repository_plugins = list(map(map_repository_entry, repo_data))
 		return True
 
 	def _fetch_notices_from_disk(self):

@@ -49,7 +49,7 @@ def _create_lastmodified(path, recursive):
 				logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(storage))
 				lms.append(None)
 
-		if filter(lambda x: x is None, lms):
+		if any(filter(lambda x: x is None, lms)):
 			# we return None if ANY of the involved storages returned None
 			return None
 
@@ -251,7 +251,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
-		return filename in map(lambda x: x[0], printer.get_sd_files())
+		return filename in (x[0] for x in printer.get_sd_files())
 	else:
 		return fileManager.file_exists(origin, filename)
 

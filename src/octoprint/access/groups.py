@@ -129,8 +129,8 @@ class GroupManager(object):
 		return None
 
 	def _to_permissions(self, *permissions):
-		return filter(lambda x: x is not None,
-		              [Permissions.find(permission) for permission in permissions])
+		return list(filter(lambda x: x is not None,
+		                   [Permissions.find(permission) for permission in permissions]))
 
 	def _from_permissions(self, *permissions):
 		return [permission.key for permission in permissions]
@@ -469,7 +469,7 @@ class Group(object):
 		if Permissions.ADMIN in self._permissions:
 			return Permissions.all()
 
-		return filter(lambda p: p is not None, self._permissions)
+		return list(filter(lambda p: p is not None, self._permissions))
 
 	@property
 	def needs(self):

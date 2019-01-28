@@ -521,7 +521,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
 		if "check" in flask.request.values:
-			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
+			check_targets = list(map(lambda x: x.strip(), flask.request.values["check"].split(",")))
 		else:
 			check_targets = None
 
@@ -602,7 +602,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return flask.make_response("Invalid JSON", 400)
 
 		if "targets" in json_data:
-			targets = map(lambda x: x.strip(), json_data["targets"])
+			targets = list(map(lambda x: x.strip(), json_data["targets"]))
 		else:
 			targets = None
 
@@ -1146,7 +1146,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:
-			lines = map(lambda x: x.strip(), lines)
+			lines = list(map(lambda x: x.strip(), lines))
 
 		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:

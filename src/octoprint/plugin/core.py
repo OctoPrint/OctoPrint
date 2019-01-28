@@ -516,8 +516,8 @@ class PluginInfo(object):
 			with io.open(path, 'rb') as f:
 				root = ast.parse(f.read())
 
-			assignments = filter(lambda x: isinstance(x, ast.Assign) and x.targets,
-			                     root.body)
+			assignments = list(filter(lambda x: isinstance(x, ast.Assign) and x.targets,
+			                          root.body))
 
 			def extract_target_ids(node):
 				return list(map(lambda x: x.id,
@@ -1188,7 +1188,7 @@ class PluginManager(object):
 		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
 			hooks = hooks[0]
 
-		hooks = filter(lambda hook: hook is not None, hooks)
+		hooks = list(filter(lambda hook: hook is not None, hooks))
 		if not hooks:
 			return False
 		if not plugin or not plugin.hooks:
@@ -1222,7 +1222,7 @@ class PluginManager(object):
 		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
 			hooks = hooks[0]
 
-		hooks = filter(lambda hook: hook is not None, hooks)
+		hooks = list(filter(lambda hook: hook is not None, hooks))
 		if not hooks:
 			return False
 		if not hook:
@@ -1260,7 +1260,7 @@ class PluginManager(object):
 		if mixins and len(mixins) == 1 and isinstance(mixins[0], (list, tuple)):
 			mixins = mixins[0]
 
-		mixins = filter(lambda mixin: mixin is not None, mixins)
+		mixins = list(filter(lambda mixin: mixin is not None, mixins))
 		if not mixins:
 			return False
 		if not plugin or not plugin.implementation:

@@ -817,7 +817,7 @@ def git_parse_lookup_file(path):
                 continue
 
             try:
-                split_line = map(lambda x: x.strip(), line.split())
+                split_line = list(map(lambda x: x.strip(), line.split()))
                 if not len(split_line):
                     continue
 
@@ -1389,7 +1389,7 @@ def git_parse_lookup_file(path):
                 continue
 
             try:
-                split_line = map(lambda x: x.strip(), line.split())
+                split_line = list(map(lambda x: x.strip(), line.split()))
                 if not len(split_line):
                     continue
 

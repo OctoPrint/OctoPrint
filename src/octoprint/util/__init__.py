@@ -439,7 +439,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
-		return re.sub(u"\s+", u"_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+		return re.sub(r"\\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
 
 	filename = make_valid(filename)
 	extension = make_valid(extension)
@@ -1671,4 +1671,12 @@ class CaseInsensitiveSet(collections.Set):
 
 # originally from https://stackoverflow.com/a/5967539
 def natural_key(text):
-	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
+	return [ int(c) if c.isdigit() else c for c in re.split(r"(\d+)", text) ]
+
+
+# len(generator) doesn#t work
+def count(gen):
+	n = 0
+	for _ in gen:
+		n += 1
+	return n

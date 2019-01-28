@@ -97,28 +97,28 @@ def _execute(command, **kwargs):
 		while p.commands[0].poll() is None:
 			lines = p.stderr.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 				_log_stderr(*lines)
-				all_stderr += list(lines)
+				all_stderr += lines
 
 			lines = p.stdout.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 				_log_stdout(*lines)
-				all_stdout += list(lines)
+				all_stdout += lines
 
 	finally:
 		p.close()
 
 	lines = p.stderr.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 		_log_stderr(*lines)
 		all_stderr += lines
 
 	lines = p.stdout.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 		_log_stdout(*lines)
 		all_stdout += lines
 

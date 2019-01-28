@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
-from octoprint.util import utmify
+from octoprint.util import utmify, count
 from flask_babel import gettext
 from octoprint import __version__ as OCTOPRINT_VERSION
 
@@ -170,7 +170,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			for key, data in channel_configs.items():
 				read_until = channel_configs[key].get("read_until", None)
 				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-				unread = len(list(filter(lambda e: not e["read"], entries)))
+				unread = count(filter(lambda e: not e["read"], entries))
 
 				if read_until is None and entries:
 					last = entries[0]["published"]

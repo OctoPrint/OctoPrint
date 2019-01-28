@@ -100,7 +100,7 @@ def uploadLanguagePack():
 	upload_name = request.values[input_upload_name]
 	upload_path = request.values[input_upload_path]
 
-	exts = list(filter(lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar")))
+	exts = filter(lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar"))
 	if not len(exts):
 		return make_response("File doesn't have a valid extension for a language pack archive", 400)
 

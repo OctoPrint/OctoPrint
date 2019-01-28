@@ -776,7 +776,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re
-		self._max_body_sizes = map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or list())
+		self._max_body_sizes = list(map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or list()))
 		self._default_max_body_size = self.params.default_max_body_size or self.stream.max_buffer_size
 
 	def _read_body(self, code, headers, delegate):
@@ -1058,7 +1058,7 @@ class UrlProxyHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandl
 		if not self._basename:
 			return None
 
-		typeValue = map(str.strip, content_type.split(";"))
+		typeValue = list(map(str.strip, content_type.split(";")))
 		if len(typeValue) == 0:
 			return None
 

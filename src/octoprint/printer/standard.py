@@ -719,7 +719,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def _get_free_remote_name(self, filename):
 		self.refresh_sd_files(blocking=True)
-		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
+		existingSdFiles = list(map(lambda x: x[0], self._comm.getSdFiles()))
 
 		if valid_file_type(filename, "gcode"):
 			# figure out remote filename

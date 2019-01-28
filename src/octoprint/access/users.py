@@ -516,7 +516,7 @@ class FilebasedUserManager(UserManager):
 			return [self._group_manager.user_group]
 
 	def _refresh_groups(self, user):
-		user._groups = self._to_groups(*list(map(lambda g: g.key, user.groups)))
+		user._groups = self._to_groups(*map(lambda g: g.key, user.groups))
 
 	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
@@ -1042,7 +1042,7 @@ class User(UserMixin):
 		if Permissions.ADMIN in self._permissions:
 			return Permissions.all()
 
-		return filter(lambda p: p is not None, self._permissions)
+		return list(filter(lambda p: p is not None, self._permissions))
 
 	@property
 	def groups(self):

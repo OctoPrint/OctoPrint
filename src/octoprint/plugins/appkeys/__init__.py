@@ -197,7 +197,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		else:
 			keys = self._api_keys_for_user(user_id)
 
-		return flask.jsonify(keys=map(lambda x: x.external(), keys),
+		return flask.jsonify(keys=list(map(lambda x: x.external(), keys)),
 		                     pending=dict((x.user_token, x.external()) for x in self._get_pending_by_user_id(user_id)))
 
 	def on_api_command(self, command, data):
@@ -266,7 +266,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _expire_pending(self, user_token):
 		with self._pending_lock:
 			len_before = len(self._pending_decisions)
-			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.user_token != user_token,
+				                                  self._pending_decisions))
 			len_after = len(self._pending_decisions)
 
 			if len_after < len_before:
@@ -279,8 +280,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		with self._pending_lock:
 			cutoff = monotonic_time() - CUTOFF_TIME
 			len_before = len(self._pending_decisions)
-			self._pending_decisions = filter(lambda x: x.created >= cutoff,
-			                                 self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.created >= cutoff,
+			                                      self._pending_decisions))
 			len_after = len(self._pending_decisions)
 			if len_after < len_before:
 				self._logger.info("Deleted {} stale pending authorization requests".format(len_before - len_after))
@@ -300,7 +301,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				self._ready_decisions.append(ReadyDecision.for_pending(pending, user_id))
 
 		with self._pending_lock:
-			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.user_token != user_token,
+				                                  self._pending_decisions))
 
 		return True
 
@@ -318,7 +320,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		api_key = self._add_api_key(decision.user_id, decision.app_id)
 
 		with self._ready_lock:
-			self._ready_decisions = filter(lambda x: x.app_token != app_token, self._ready_decisions)
+			self._ready_decisions = list(filter(lambda x: x.app_token != app_token,
+				                                self._ready_decisions))
 
 		return api_key
 
@@ -336,13 +339,13 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _delete_api_key(self, api_key):
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
-				self._keys[user_id] = filter(lambda x: x.api_key != api_key, data)
+				self._keys[user_id] = list(filter(lambda x: x.api_key != api_key, data))
 			self._save_keys()
 
 	def _user_for_api_key(self, api_key):
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
-				if filter(lambda x: x.api_key == api_key, data):
+				if any(filter(lambda x: x.api_key == api_key, data)):
 					return self._user_manager.findUser(userid=user_id)
 		return None
 

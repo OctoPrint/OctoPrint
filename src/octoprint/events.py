@@ -302,7 +302,7 @@ class DebugEventListener(GenericEventListener):
 	def __init__(self):
 		GenericEventListener.__init__(self)
 
-		events = filter(lambda x: not x.startswith("__"), dir(Events))
+		events = list(filter(lambda x: not x.startswith("__"), dir(Events)))
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):

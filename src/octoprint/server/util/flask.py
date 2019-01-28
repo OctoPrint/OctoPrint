@@ -76,7 +76,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 				locale_dir = os.path.join(entry.path, 'LC_MESSAGES')
 				if not os.path.isdir(locale_dir):
 					continue
-				if filter(lambda x: x.name.endswith('.mo'), scandir(locale_dir)):
+				if len(list(filter(lambda x: x.name.endswith('.mo'), scandir(locale_dir)))):
 					result.append(Locale.parse(entry.name))
 			return result
 

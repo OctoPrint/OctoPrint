@@ -102,7 +102,7 @@ class OctoPrintPermission(Permission):
 		return '{}({!r}, {!r}, {})'.format(self.__class__.__name__,
 		                                   self.get_name(),
 		                                   self.get_description(),
-		                                   ', '.join(list(map(repr, self.needs))))
+		                                   ', '.join(map(repr, self.needs)))
 
 	def __hash__(self):
 		return self.get_name().__hash__()
@@ -220,7 +220,7 @@ class PermissionsMetaClass(type):
 		return cls.permissions.values()
 
 	def filter(cls, cb):
-		return filter(cb, cls.all())
+		return list(filter(cb, cls.all()))
 
 	def find(cls, p, filter=None):
 		key = None

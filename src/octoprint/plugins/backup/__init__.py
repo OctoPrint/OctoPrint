@@ -492,7 +492,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				assert all(map(lambda x: isinstance(x, dict) and "key" in x and "name" in x and "url" in x, unknown_plugins))
 
 				installed_plugins = self._plugin_manager.plugins
-				unknown_plugins = filter(lambda x: x["key"] not in installed_plugins, unknown_plugins)
+				unknown_plugins = list(filter(lambda x: x["key"] not in installed_plugins, unknown_plugins))
 				if not unknown_plugins:
 					# no plugins left uninstalled, delete data file
 					try:
