@@ -3590,10 +3590,10 @@ class MachineCom(object):
 		return None,
 
 	def _gcode_M108_queuing(self, cmd, gcode=None, *args, **kwargs):
-		self._emergency_force_send(cmd, u"Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
+		return self._emergency_force_send(cmd, u"Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M410_queuing(self, cmd, gcode=None, *args, **kwargs):
-		self._emergency_force_send(cmd, u"Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
+		return self._emergency_force_send(cmd, u"Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M114_queued(self, *args, **kwargs):
 		self._reset_position_timers()
