@@ -104,7 +104,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                ttl=6*60,
 		                display_limit=3,
 		                summary_limit=300)
-		settings["enabled_channels"] = settings["channels"].keys()
+		settings["enabled_channels"] = list(settings["channels"].keys())
 		return settings
 
 	def get_settings_version(self):

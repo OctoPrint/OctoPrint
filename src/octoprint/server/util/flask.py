@@ -113,7 +113,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 				# plugin translations
 				plugins = octoprint.plugin.plugin_manager().enabled_plugins
 				for name, plugin in plugins.items():
-					dirs = map(lambda x: os.path.join(x, "_plugins", name), additional_folders) + [os.path.join(plugin.location, 'translations')]
+					dirs = list(map(lambda x: os.path.join(x, "_plugins", name), additional_folders)) + [os.path.join(plugin.location, 'translations')]
 					for dirname in dirs:
 						if not os.path.isdir(dirname):
 							continue

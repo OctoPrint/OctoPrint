@@ -1367,7 +1367,7 @@ class PluginManager(object):
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True,
 	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!", "#"),
 	                    only_to_handler=None):
-		all_plugins = self.enabled_plugins.values() + self.disabled_plugins.values()
+		all_plugins = list(self.enabled_plugins.values()) + list(self.disabled_plugins.values())
 
 		def _log(message, level=logging.INFO):
 			if only_to_handler is not None:
