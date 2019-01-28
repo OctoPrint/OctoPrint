@@ -454,11 +454,11 @@ valid_boolean_trues = CaseInsensitiveSet(True, "true", "yes", "y", "1", 1)
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
 
-class NoSuchSettingsPath(BaseException):
+class NoSuchSettingsPath(Exception):
 	pass
 
 
-class InvalidSettings(BaseException):
+class InvalidSettings(Exception):
 	def __init__(self, message, line=None, column=None, details=None):
 		self.message = message
 		self.line = line
