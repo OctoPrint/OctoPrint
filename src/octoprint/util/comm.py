@@ -1887,7 +1887,7 @@ class MachineCom(object):
 								self._logger.info("Firmware states that it supports sd status autoreporting")
 								self._set_autoreport_sdstatus_interval()
 							elif capability == self.CAPABILITY_EMERGENCY_PARSER and enabled:
-								self._logger.info("Firmware states that it supports emergency GCODEs M108 and M410 to be sent without waiting for an acknowledgement first")
+								self._logger.info("Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first")
 
 						# notify plugins
 						for name, hook in self._firmware_info_hooks["capabilities"].items():
