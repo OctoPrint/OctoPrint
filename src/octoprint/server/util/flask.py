@@ -22,6 +22,7 @@ import threading
 import logging
 import netaddr
 import os
+import io
 import collections
 
 from octoprint.settings import settings
