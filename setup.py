@@ -52,7 +52,6 @@ INSTALL_REQUIRES = [
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
-	"PyYAML>=3.13,<4",
 	"markdown>=3.0,<3.1",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
