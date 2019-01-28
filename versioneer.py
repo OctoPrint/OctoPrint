@@ -429,7 +429,7 @@ def get_config_from_root(root):
     # the top of versioneer.py for instructions on writing your setup.cfg .
     setup_cfg = os.path.join(root, "setup.cfg")
     parser = configparser.SafeConfigParser()
-    with io.open(setup_cfg, 'rb') as f:
+    with io.open(setup_cfg, 'r') as f:
         parser.readfp(f)
     VCS = parser.get("versioneer", "VCS")  # mandatory
 
@@ -631,7 +631,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = io.open(versionfile_abs, 'rb')
+        f = io.open(versionfile_abs, 'r')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -808,7 +808,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with io.open(path, 'rb') as f:
+    with io.open(path, 'r') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -1380,7 +1380,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with io.open(path, 'rb') as f:
+    with io.open(path, 'r') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -1556,7 +1556,7 @@ def get_versions():
 
 def versions_from_file(filename):
     try:
-        with io.open(filename, 'rb') as f:
+        with io.open(filename, 'r') as f:
             contents = f.read()
     except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
@@ -2101,7 +2101,7 @@ def do_setup():
                        "__init__.py")
     if os.path.exists(ipy):
         try:
-            with io.open(ipy, 'rb') as f:
+            with io.open(ipy, 'r') as f:
                 old = f.read()
         except EnvironmentError:
             old = ""
@@ -2122,7 +2122,7 @@ def do_setup():
     manifest_in = os.path.join(root, "MANIFEST.in")
     simple_includes = set()
     try:
-        with io.open(manifest_in, 'rb') as f:
+        with io.open(manifest_in, 'r') as f:
             for line in f:
                 if line.startswith("include "):
                     for include in line.split()[1:]:
@@ -2158,7 +2158,7 @@ def scan_setup_py():
     found = set()
     setters = False
     errors = 0
-    with io.open("setup.py", 'rb') as f:
+    with io.open("setup.py", 'r') as f:
         for line in f.readlines():
             if "import versioneer" in line:
                 found.add("import")
