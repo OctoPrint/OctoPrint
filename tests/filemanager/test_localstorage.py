@@ -85,7 +85,8 @@ class LocalStorageTest(unittest.TestCase):
 		stl_metadata = self.storage.get_metadata(stl_name)
 
 		self.assertIsNotNone(stl_metadata)
-		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), stl_metadata)
+		self.assertIn('display', stl_metadata)
+		self.assertEqual(u"bp_cäse.stl", stl_metadata['display'])
 
 	def test_add_file_with_web(self):
 		import time
@@ -210,7 +211,8 @@ class LocalStorageTest(unittest.TestCase):
 
 		self.assertIsNotNone(before_metadata)
 		self.assertIsNotNone(after_metadata)
-		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), after_metadata)
+		self.assertIn('display', after_metadata)
+		self.assertEqual(u"bp_cäse.stl", after_metadata['display'])
 
 	@data("copy_file", "move_file")
 	def test_copy_move_file_different_display(self, operation):
@@ -270,7 +272,8 @@ class LocalStorageTest(unittest.TestCase):
 		self._add_and_verify_folder("test", "test", display=u"täst")
 		metadata = self.storage.get_metadata("test")
 		self.assertIsNotNone(metadata)
-		self.assertDictContainsSubset(dict(display=u"täst"), metadata)
+		self.assertIn('display', metadata)
+		self.assertEqual(u"täst", metadata['display'])
 
 	def test_add_subfolder(self):
 		folder_name = self._add_and_verify_folder("folder with some spaces", "folder_with_some_spaces")
