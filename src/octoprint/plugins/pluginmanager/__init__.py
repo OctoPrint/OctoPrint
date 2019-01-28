@@ -1009,6 +1009,6 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
 		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
-		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
-		"octoprint.events.register_custom_events": _register_custom_events
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+		"octoprint.events.register_custom_events": _register_custom_events,
 	}
