@@ -241,7 +241,7 @@ octoprint.accesscontrol.keyvalidator
 
    ``apikey`` will be the API key as read from the request headers.
 
-   Hook handlers are expected to return a :class:`~octoprint.users.User` instance here that will then be considered that
+   Hook handlers are expected to return a :class:`~octoprint.access.users.User` instance here that will then be considered that
    user making the request. By returning ``None`` or nothing at all, hook handlers signal that they do not handle the
    provided key.
 
@@ -259,7 +259,7 @@ octoprint.accesscontrol.keyvalidator
 
    :param str apikey: The API key to validate
    :return: The user in whose name the request will be processed further
-   :rtype: :class:`~octoprint.users.User`
+   :rtype: :class:`~octoprint.access.users.User`
 
 .. _sec-plugins-hook-cli-commands:
 
@@ -1063,7 +1063,7 @@ octoprint.printer.factory
      * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
      * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
      * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
-     * ``user_manager``: The :class:`~octoprint.users.UserManager`
+     * ``user_manager``: The :class:`~octoprint.access.users.UserManager`
      * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
 
    If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
@@ -1549,12 +1549,12 @@ octoprint.ui.web.templatetypes
 
 .. _sec-plugins-hook-users-factory:
 
-octoprint.users.factory
-~~~~~~~~~~~~~~~~~~~~~~~
+octoprint.access.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
 
-   Return a :class:`~octoprint.users.UserManager` instance to use as global user manager object. This will
+   Return a :class:`~octoprint.access.users.UserManager` instance to use as global user manager object. This will
    be called only once during initial server startup.
 
    The provided ``components`` is a dictionary containing the already initialized system components:
@@ -1573,7 +1573,7 @@ octoprint.users.factory
 
    If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
    entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
-   :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   :class:`~octoprint.access.users.FilebasedUserManager` will be instantiated, linked to the default user storage
    file ``~/.octoprint/users.yaml``.
 
    :param dict components: System components to use for user manager instance initialization

@@ -29,7 +29,7 @@ Use the following settings to enable access control:
      # The user manager implementation to use for accessing user information. Currently only a filebased
      # user manager is implemented which stores configured accounts in a YAML file (Default: users.yaml
      # in the default configuration folder, see below)
-     userManager: octoprint.users.FilebasedUserManager
+     userManager: octoprint.access.users.FilebasedUserManager
 
      # The YAML user file to use. If left out defaults to users.yaml in the default configuration folder.
      userFile: /path/to/users.yaml

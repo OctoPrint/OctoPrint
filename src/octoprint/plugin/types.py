@@ -66,7 +66,7 @@ class OctoPrintPlugin(Plugin):
 
 	.. attribute:: _app_session_manager
 
-	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
+	   The :class:`~octoprint.access.users.SessionManager` instance. Injected by the plugin core system upon initialization of
 	   the implementation.
 
 	.. attribute:: _plugin_lifecycle_manager
@@ -76,7 +76,7 @@ class OctoPrintPlugin(Plugin):
 
 	.. attribute:: _user_manager
 
-	   The :class:`~octoprint.users.UserManager` instance. Injected by the plugin core system upon initialization
+	   The :class:`~octoprint.access.users.UserManager` instance. Injected by the plugin core system upon initialization
 	   of the implementation.
 
 	.. attribute:: _connectivity_checker

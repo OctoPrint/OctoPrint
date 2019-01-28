@@ -398,7 +398,7 @@ class Server(object):
 		components.update(dict(group_manager=groupManager))
 
 		# create user manager instance
-		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory") # legacy, set first so that new wins
+		user_manager_factories = pluginManager.get_hooks("octoprint.access.users.factory") # legacy, set first so that new wins
 		user_manager_factories.update(pluginManager.get_hooks("octoprint.access.users.factory"))
 		for name, factory in user_manager_factories.items():
 			try:

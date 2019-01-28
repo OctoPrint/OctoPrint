@@ -91,8 +91,8 @@ class AclSubwizard(object):
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
 
-			octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-			octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
+			octoprint.server.loginManager.anonymous_user = octoprint.access.users.DummyUser
+			octoprint.server.principals.identity_loaders.appendleft(octoprint.access.users.dummy_identity_loader)
 
 			self._user_manager.disable()
 		self._settings.save()
