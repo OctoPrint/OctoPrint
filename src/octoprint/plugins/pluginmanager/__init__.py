@@ -306,7 +306,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def etag():
 			import hashlib
 			hash = hashlib.sha1()
-            def hash_update(value):
+			def hash_update(value):
 				value = value.encode('utf-8')
 				hash.update(value)
 
