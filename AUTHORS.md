@@ -98,6 +98,7 @@ date of first contribution):
   * [Aldo Hoeben](https://github.com/fieldofview)
   * [Henning Groß](https://github.com/hgross)
   * [Jubaleth](https://github.com/jubaleth)
+  * [Matthias Urlichs](https://github.com/smurfix)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
