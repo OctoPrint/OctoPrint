@@ -41,15 +41,19 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
                                 octoprint.plugin.TemplatePlugin):
 
 	COMMAND = "M876"
+	CAP_PROMPT_SUPPORT = "PROMPT_SUPPORT"
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._prompt = None
+		self._enable = "detected"
 		self._command = None
 		self._enable_emergency_sending = False
 		self._enable_signal_support = False
+		self._cap_prompt_support = False
 
 	def initialize(self):
+		self._enable = self._settings.get([b"enable"])
 		self._command = self._settings.get([b"command"])
 		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
 		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
@@ -63,22 +67,20 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ EventHandlerPlugin
 
 	def on_event(self, event, payload):
-		if event == Events.CONNECTED and self._enable_signal_support:
+		if event == Events.CONNECTED and self._enable == "always" and self._enable_signal_support:
 			self._printer.commands(["{command} P1".format(command=self._command)])
 
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(command=self.COMMAND,
-
-		            # TODO make this default to True once we have a capability report to listen to
-		            enable_emergency_sending=False,
-
-		            # TODO make this default to True once we have a capability report to listen to
-		            enable_signal_support=False)
+		return dict(enable="detected",
+		            command=self.COMMAND,
+		            enable_emergency_sending=True,
+		            enable_signal_support=True)
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+		self._enable = self._settings.get([b"enable"])
 		self._command = self._settings.get([b"command"])
 		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
 		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
@@ -162,7 +164,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		if gcode != self._command:
 			return
 
-		if not self._enable_emergency_sending:
+		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support) or not self._enable_emergency_sending:
 			return
 
 		if not "S" in cmd:
@@ -172,19 +174,36 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		# noinspection PyProtectedMember
 		return comm_instance._emergency_force_send(cmd, u"Force-sending {} to the printer".format(self._command), gcode=gcode)
 
+	#~ capability reporting
+
+	def firmware_capability_handler(self, comm_instance, capability, enabled, already_defined, *args, **kwargs):
+		if capability == self.CAP_PROMPT_SUPPORT and enabled:
+			self._cap_prompt_support = True
+			if self._enable == "detected" and self._enable_signal_support:
+				self._printer.commands(["{command} P1".format(command=self._command)])
+
 	#~ prompt handling
 
 	def _show_prompt(self):
+		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support):
+			return
+
 		self._prompt.activate()
 		self._plugin_manager.send_plugin_message(self._identifier, dict(action="show",
 		                                                                text=self._prompt.text,
 		                                                                choices=self._prompt.choices))
 
 	def _close_prompt(self):
+		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support):
+			return
+
 		self._prompt = None
 		self._plugin_manager.send_plugin_message(self._identifier, dict(action="close"))
 
 	def _answer_prompt(self, choice):
+		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support):
+			return
+
 		self._close_prompt()
 		self._printer.commands(["{command} S{choice}".format(command=self._command,
 		                                                     choice=choice)])
@@ -199,5 +218,6 @@ __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
 	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
-	b"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.gcode_queuing_handler
+	b"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.gcode_queuing_handler,
+	b"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.firmware_capability_handler
 }
