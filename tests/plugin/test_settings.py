@@ -114,7 +114,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	@data(
 		("globalGet", "global_get", "get"),
@@ -136,7 +136,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	@data(
 		("set", (["some_raw_key",], "some_value"), dict(), "set"),
@@ -200,7 +200,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	@data(
 		("globalSet", "global_set", "set", "some_value"),
@@ -222,7 +222,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	def test_global_get_basefolder(self):
 		self.plugin_settings.global_get_basefolder("some_folder")
@@ -235,7 +235,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("globalGetBaseFolder has been renamed to global_get_basefolder" in (w[-1].message))
+			self.assertTrue("globalGetBaseFolder has been renamed to global_get_basefolder" in str(w[-1].message))
 
 	def test_logfile_path(self):
 		import os
@@ -269,7 +269,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("getPluginLogfilePath has been renamed to get_plugin_logfile_path" in (w[-1].message))
+			self.assertTrue("getPluginLogfilePath has been renamed to get_plugin_logfile_path" in str(w[-1].message))
 
 	def test_unhandled_method(self):
 		try:

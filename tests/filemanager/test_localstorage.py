@@ -572,7 +572,7 @@ class LocalStorageTest(unittest.TestCase):
 			self.storage.sanitize_name(input)
 			self.fail("expected a ValueError")
 		except ValueError as e:
-			self.assertEqual("name must not contain / or \\", e.message)
+			self.assertEqual("name must not contain / or \\", e.args[0])
 
 	@data(
 		("folder/with/subfolder", "/folder/with/subfolder"),
@@ -595,7 +595,7 @@ class LocalStorageTest(unittest.TestCase):
 			self.storage.sanitize_path(input)
 			self.fail("expected a ValueError")
 		except ValueError as e:
-			self.assertTrue(e.message.startswith("path not contained in base folder: "))
+			self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
 
 	@data(
 		("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco"),
