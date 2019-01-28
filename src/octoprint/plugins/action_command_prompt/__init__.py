@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.server import user_permission
+from octoprint.events import Events
 
 import flask
 from flask_babel import gettext
@@ -34,6 +35,7 @@ class Prompt(object):
 
 
 class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
+                                octoprint.plugin.EventHandlerPlugin,
                                 octoprint.plugin.SettingsPlugin,
                                 octoprint.plugin.SimpleApiPlugin,
                                 octoprint.plugin.TemplatePlugin):
@@ -45,10 +47,12 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		self._prompt = None
 		self._command = None
 		self._enable_emergency_sending = False
+		self._enable_signal_support = False
 
 	def initialize(self):
 		self._command = self._settings.get([b"command"])
 		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
+		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
 
 	#~ AssetPlugin
 
@@ -56,18 +60,28 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		return dict(js=["js/action_command_prompt.js"],
 		            clientjs=["clientjs/action_command_prompt.js"])
 
+	#~ EventHandlerPlugin
+
+	def on_event(self, event, payload):
+		if event == Events.CONNECTED and self._enable_signal_support:
+			self._printer.commands(["{command} P1".format(command=self._command)])
+
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
 		return dict(command=self.COMMAND,
 
 		            # TODO make this default to True once we have a capability report to listen to
-		            enable_emergency_sending=False)
+		            enable_emergency_sending=False,
+
+		            # TODO make this default to True once we have a capability report to listen to
+		            enable_signal_support=False)
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 		self._command = self._settings.get([b"command"])
 		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
+		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
 
 	#~ SimpleApiPlugin
 
