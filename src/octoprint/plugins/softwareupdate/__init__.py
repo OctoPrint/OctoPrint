@@ -663,7 +663,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		checks = self._get_configured_checks()
 		if check_targets is None:
-			check_targets = checks.keys()
+			check_targets = list(checks.keys())
 
 		update_available = False
 		update_possible = False
@@ -1209,7 +1209,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		               python_updater=updaters.python_updater,
 		               sleep_a_bit=updaters.sleep_a_bit)
 
-		method = self._get_update_method(target, check, valid_methods=mapping.keys())
+		method = self._get_update_method(target, check, valid_methods=list(mapping.keys()))
 		return mapping[method]
 
 	def _get_octoprint_checkout_folder(self, checks=None):

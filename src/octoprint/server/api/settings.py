@@ -361,7 +361,7 @@ def _saveSettings(data):
 	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
 	# is changed, added or removed here
 
-	if "folder" in data.keys():
+	if "folder" in data:
 		try:
 			if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
 			if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
@@ -371,12 +371,12 @@ def _saveSettings(data):
 		except IOError:
 			return make_response("One of the configured folders is invalid", 400)
 
-	if "api" in data.keys():
+	if "api" in data:
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 		if "keyEnforced" in data["api"]: s.setBoolean(["api", "keyEnforced"], data["api"]["keyEnforced"])
 		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
-	if "appearance" in data.keys():
+	if "appearance" in data:
 		if "name" in data["appearance"]: s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"]: s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"]: s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
@@ -384,10 +384,10 @@ def _saveSettings(data):
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 
-	if "printer" in data.keys():
+	if "printer" in data:
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
-	if "webcam" in data.keys():
+	if "webcam" in data:
 		if "webcamEnabled" in data["webcam"]: s.setBoolean(["webcam", "webcamEnabled"], data["webcam"]["webcamEnabled"])
 		if "timelapseEnabled" in data["webcam"]: s.setBoolean(["webcam", "timelapseEnabled"], data["webcam"]["timelapseEnabled"])
 		if "streamUrl" in data["webcam"]: s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
@@ -405,7 +405,7 @@ def _saveSettings(data):
 		if "flipV" in data["webcam"]: s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
 		if "rotate90" in data["webcam"]: s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
 
-	if "feature" in data.keys():
+	if "feature" in data:
 		if "gcodeViewer" in data["feature"]: s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
 		if "sizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
 		if "mobileSizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
@@ -418,7 +418,7 @@ def _saveSettings(data):
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
 		if "autoUppercaseBlacklist" in data["feature"] and isinstance(data["feature"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["feature", "autoUppercaseBlacklist"], data["feature"]["autoUppercaseBlacklist"])
 
-	if "serial" in data.keys():
+	if "serial" in data:
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 		if "port" in data["serial"]: s.set(["serial", "port"], data["serial"]["port"])
 		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
@@ -479,7 +479,7 @@ def _saveSettings(data):
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
-	if "temperature" in data.keys():
+	if "temperature" in data:
 		if "profiles" in data["temperature"]:
 			result = []
 			for profile in data["temperature"]["profiles"]:
@@ -500,10 +500,10 @@ def _saveSettings(data):
 		if "sendAutomatically" in data["temperature"]: s.setBoolean(["temperature", "sendAutomatically"], data["temperature"]["sendAutomatically"])
 		if "sendAutomaticallyAfter" in data["temperature"]: s.setInt(["temperature", "sendAutomaticallyAfter"], data["temperature"]["sendAutomaticallyAfter"], min=0, max=30)
 
-	if "terminalFilters" in data.keys():
+	if "terminalFilters" in data:
 		s.set(["terminalFilters"], data["terminalFilters"])
 
-	if "system" in data.keys():
+	if "system" in data:
 		if "actions" in data["system"]: s.set(["system", "actions"], data["system"]["actions"])
 		if "events" in data["system"]: s.set(["system", "events"], data["system"]["events"])
 

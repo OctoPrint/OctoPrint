@@ -1070,7 +1070,7 @@ class Settings(object):
 
 		Added in 1.2.0
 		"""
-		if "server" in config.keys() and ("baseUrl" in config["server"] or "scheme" in config["server"]):
+		if "server" in config and ("baseUrl" in config["server"] or "scheme" in config["server"]):
 			prefix = ""
 			if "baseUrl" in config["server"]:
 				prefix = config["server"]["baseUrl"]
@@ -1099,7 +1099,7 @@ class Settings(object):
 
 		Added in 1.2.0
 		"""
-		if "events" in config.keys() and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
+		if "events" in config and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
 			self._logger.info("Migrating config (event subscriptions)...")
 
 			# migrate event hooks to new format
@@ -1540,7 +1540,7 @@ class Settings(object):
 		return value is not None
 
 	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False, check_writable=True, deep_check_writable=False):
-		if type not in list(default_settings["folder"].keys()) + ["base"]:
+		if type != "base" and type not in default_settings["folder"]:
 			return None
 
 		if type == "base":
@@ -1740,12 +1740,12 @@ class Settings(object):
 			self.set(path, False, **kwargs)
 
 	def setBaseFolder(self, type, path, force=False, validate=True):
-		if type not in default_settings["folder"].keys():
+		if type not in default_settings["folder"]:
 			return None
 
 		currentPath = self.getBaseFolder(type)
 		defaultPath = self._get_default_folder(type)
-		if (path is None or path == defaultPath) and "folder" in self._config.keys() and type in self._config["folder"].keys():
+		if (path is None or path == defaultPath) and "folder" in self._config and type in self._config["folder"]:
 			del self._config["folder"][type]
 			if not self._config["folder"]:
 				del self._config["folder"]
@@ -1755,7 +1755,7 @@ class Settings(object):
 			if validate:
 				_validate_folder(path, check_writable=True, deep_check_writable=True)
 
-			if not "folder" in self._config.keys():
+			if "folder" not in self._config:
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
 			self._dirty = True

@@ -336,12 +336,12 @@ class CommandTrigger(GenericEventListener):
 				self._logger.info("Invalid subscription definition, not a dictionary: {!r}".format(subscription))
 				continue
 
-			if not "event" in subscription.keys() or not "command" in subscription.keys() \
-					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
+			if not "event" in subscription or not "command" in subscription \
+					or not "type" in subscription or not subscription["type"] in ["system", "gcode"]:
 				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(subscription))
 				continue
 
-			if "enabled" in subscription.keys() and not subscription["enabled"]:
+			if "enabled" in subscription and not subscription["enabled"]:
 				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
@@ -350,11 +350,11 @@ class CommandTrigger(GenericEventListener):
 			commandType = subscription["type"]
 			debug = subscription["debug"] if "debug" in subscription else False
 
-			if not event in self._subscriptions.keys():
+			if event not in self._subscriptions:
 				self._subscriptions[event] = []
 			self._subscriptions[event].append((command, commandType, debug))
 
-			if not event in eventsToSubscribe:
+			if event not in eventsToSubscribe:
 				eventsToSubscribe.append(event)
 
 		self.subscribe(eventsToSubscribe)

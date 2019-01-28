@@ -146,7 +146,7 @@ class TestSettings(unittest.TestCase):
 
 		# we know there's a 'name' by now, so just ensure we have the regex key
 		temperature_regex_filter = temperature_regex_filters[0]
-		self.assertIn('regex', temperature_regex_filter.keys())
+		self.assertIn('regex', temperature_regex_filter)
 
 	def test_temperature_regex_should_not_match(self):
 		'''random entries that aren't temperature regex entries'''

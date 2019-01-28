@@ -449,7 +449,7 @@ class FileManager(object):
 
 	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
 		if not destinations:
-			destinations = self._storage_managers.keys()
+			destinations = list(self._storage_managers.keys())
 		if isinstance(destinations, basestring):
 			destinations = [destinations]
 

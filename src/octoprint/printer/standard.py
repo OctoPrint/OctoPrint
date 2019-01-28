@@ -944,7 +944,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					if "analysis" in fileData:
 						if estimatedPrintTime is None and "estimatedPrintTime" in fileData["analysis"]:
 							estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
-						if "filament" in fileData["analysis"].keys():
+						if "filament" in fileData["analysis"]:
 							filament = fileData["analysis"]["filament"]
 					if "statistics" in fileData:
 						printer_profile = self._printerProfileManager.get_current_or_default()["id"]

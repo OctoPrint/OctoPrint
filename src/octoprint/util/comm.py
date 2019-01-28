@@ -1496,7 +1496,7 @@ class MachineCom(object):
 			except Exception:
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
-		if current_tool_key in parsedTemps.keys():
+		if current_tool_key in parsedTemps:
 			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
@@ -1510,7 +1510,7 @@ class MachineCom(object):
 				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
-		if "B" in parsedTemps.keys():
+		if "B" in parsedTemps:
 			actual, target = parsedTemps["B"]
 			self.last_temperature.set_bed(actual=actual, target=target)
 
@@ -2044,11 +2044,11 @@ class MachineCom(object):
 
 				##~~ Parsing for pause triggers
 				if pause_triggers and not self.isStreaming():
-					if "enable" in pause_triggers.keys() and pause_triggers["enable"].search(line) is not None:
+					if "enable" in pause_triggers and pause_triggers["enable"].search(line) is not None:
 						self.setPause(True)
-					elif "disable" in pause_triggers.keys() and pause_triggers["disable"].search(line) is not None:
+					elif "disable" in pause_triggers and pause_triggers["disable"].search(line) is not None:
 						self.setPause(False)
-					elif "toggle" in pause_triggers.keys() and pause_triggers["toggle"].search(line) is not None:
+					elif "toggle" in pause_triggers and pause_triggers["toggle"].search(line) is not None:
 						self.setPause(not self.isPaused())
 
 				### Baudrate detection
@@ -2562,7 +2562,7 @@ class MachineCom(object):
 
 			return BufferedReadlineWrapper(serial_obj)
 
-		serial_factories = self._serial_factory_hooks.items() + [("default", default)]
+		serial_factories = list(self._serial_factory_hooks.items()) + [("default", default)]
 		for name, factory in serial_factories:
 			try:
 				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))

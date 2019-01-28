@@ -439,8 +439,7 @@ class FilebasedUserManager(UserManager):
 			self._customized = True
 			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
-				for name in data.keys():
-					attributes = data[name]
+				for name, attributes in data.values():
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
@@ -485,9 +484,7 @@ class FilebasedUserManager(UserManager):
 			return
 
 		data = {}
-		for name in self._users.keys():
-			user = self._users[name]
-
+		for name, user in self._users.items():
 			if not user or not isinstance(user, User):
 				continue
 
@@ -527,7 +524,7 @@ class FilebasedUserManager(UserManager):
 			groups = self._group_manager.default_groups
 		groups = self._to_groups(*groups)
 
-		if username in self._users.keys() and not overwrite:
+		if username in self._users and not overwrite:
 			raise UserAlreadyExists(username)
 
 		self._users[username] = User(username, UserManager.create_password_hash(password), active, permissions, groups, apikey=apikey)
@@ -535,7 +532,7 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def change_user_activation(self, username, active):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].is_active != active:
@@ -546,7 +543,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def change_user_permissions(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -569,7 +566,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def add_permissions_to_user(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].add_permissions_to_user(self._to_permissions(*permissions)):
@@ -578,7 +575,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def remove_permissions_from_user(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].remove_permissions_from_user(self._to_permissions(*permissions)):
@@ -588,7 +585,7 @@ class FilebasedUserManager(UserManager):
 
 	def remove_permissions_from_users(self, permissions):
 		modified = []
-		for user in self._users.keys():
+		for user in self._users:
 			dirty = user.remove_permissions_from_user(self._to_permissions(*permissions))
 			if dirty:
 				self._dirty = True
@@ -600,7 +597,7 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def change_user_groups(self, username, groups):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -620,7 +617,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def add_groups_to_user(self, username, groups, save=True, notify=True):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].add_groups_to_user(self._to_groups(*groups)):
@@ -633,7 +630,7 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def remove_groups_from_user(self, username, groups, save=True, notify=True):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].remove_groups_from_user(self._to_groups(*groups)):
@@ -647,8 +644,8 @@ class FilebasedUserManager(UserManager):
 
 	def remove_groups_from_users(self, groups):
 		modified = []
-		for username in self._users.keys():
-			dirty = self._users[username].remove_groups_from_user(self._to_groups(*groups))
+		for username, user in self._users.items():
+			dirty = user.remove_groups_from_user(self._to_groups(*groups))
 			if dirty:
 				self._dirty = True
 				modified.append(username)
@@ -660,7 +657,7 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def change_user_password(self, username, password):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		passwordHash = UserManager.create_password_hash(password)
@@ -671,7 +668,7 @@ class FilebasedUserManager(UserManager):
 			self._save()
 
 	def change_user_setting(self, username, key, value):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -693,21 +690,21 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def get_all_user_settings(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_all_settings()
 
 	def get_user_setting(self, username, key):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_setting(key)
 
 	def generate_api_key(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -717,7 +714,7 @@ class FilebasedUserManager(UserManager):
 		return user._apikey
 
 	def delete_api_key(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -728,7 +725,7 @@ class FilebasedUserManager(UserManager):
 	def remove_user(self, username):
 		UserManager.remove_user(self, username)
 
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		del self._users[username]
@@ -742,7 +739,7 @@ class FilebasedUserManager(UserManager):
 			return user
 
 		if userid is not None:
-			if userid not in self._users.keys():
+			if userid not in self._users:
 				return None
 			return self._users[userid]
 

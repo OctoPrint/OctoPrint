@@ -760,19 +760,46 @@ class fallback_dict(dict):
 		self.custom[key] = value
 
 	def __delitem__(self, key):
+		# TODO: mark as deleted and leave fallbacks alone?
 		for dictionary in self._all():
 			if key in dictionary:
 				del dictionary[key]
 
+	def __contains__(self, key):
+		return any((key in dictionary)
+				   for dictionary in self._all())
+
 	def keys(self):
 		result = set()
 		for dictionary in self._all():
-			result += dictionary.keys()
-		return result
+			for k in dictionary.keys():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def values(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def items(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k, v
 
 	def _all(self):
-		return [self.custom] + list(self.fallbacks)
-
+		yield self.custom
+		for d in self.fallbacks:
+			yield d
 
 
 def dict_filter(dictionary, filter_function):
@@ -842,7 +869,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 			args = tuple()
 		else:
 			args = self.default_factory,
-		return type(self), args, None, None, self.items()
+		return type(self), args, None, None, list(self.items())
 
 	def copy(self):
 		return self.__copy__()
@@ -853,7 +880,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 	def __deepcopy__(self, memo):
 		import copy
 		return type(self)(self.default_factory,
-		                  copy.deepcopy(self.items()))
+		                  copy.deepcopy(list(self.items())))
 
 	# noinspection PyMethodOverriding
 	def __repr__(self):

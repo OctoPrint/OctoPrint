@@ -217,7 +217,7 @@ class PermissionsMetaClass(type):
 		return permission
 
 	def all(cls):
-		return cls.permissions.values()
+		return list(cls.permissions.values())
 
 	def filter(cls, cb):
 		return list(filter(cb, cls.all()))

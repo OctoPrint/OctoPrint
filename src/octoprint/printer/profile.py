@@ -374,7 +374,7 @@ class PrinterProfileManager(object):
 		return copy.deepcopy(self.__class__.default)
 
 	def set_default(self, identifier):
-		all_identifiers = self._load_all_identifiers().keys()
+		all_identifiers = self._load_all_identifiers()
 		if identifier is not None and not identifier in all_identifiers:
 			return
 
@@ -515,7 +515,7 @@ class PrinterProfileManager(object):
 	def _ensure_valid_profile(self, profile):
 		# ensure all keys are present
 		if not dict_contains_keys(self.default, profile):
-			self._logger.warning("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=self.default.keys(), actual=profile.keys()))
+			self._logger.warning("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=list(self.default.keys()), actual=list(profile.keys())))
 			return False
 
 		# conversion helper

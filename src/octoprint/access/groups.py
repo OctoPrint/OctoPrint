@@ -263,7 +263,7 @@ class FilebasedGroupManager(GroupManager):
 
 	def add_group(self, key, name, description, permissions, default=False, removable=True,
 	              changeable=True, toggleable=True, overwrite=False, notify=True, save=True):
-		if key in self._groups.keys() and not overwrite:
+		if key in self._groups and not overwrite:
 			raise GroupAlreadyExists(key)
 
 		if not permissions:

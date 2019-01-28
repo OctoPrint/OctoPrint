@@ -263,7 +263,7 @@ def get_api_key(request):
 		return request.arguments["apikey"]
 
 	# Check Tornado and Flask headers
-	if "X-Api-Key" in request.headers.keys():
+	if "X-Api-Key" in request.headers:
 		return request.headers.get("X-Api-Key")
 
 	return None

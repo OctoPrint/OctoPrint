@@ -532,7 +532,7 @@ def fetch_template_data(refresh=False):
 
 				template_rules["plugin_" + name + "_" + key] = rule
 				template_sorting["plugin_" + name + "_" + key] = order
-	template_types = template_rules.keys()
+	template_types = list(template_rules.keys())
 
 	# navbar
 
