@@ -467,7 +467,8 @@ class MachineCom(object):
 
 		self._resendActive = False
 
-		self._terminal_log = deque([], 20)
+		terminal_log_size = settings().getInt(["serial", "terminalLogSize"])
+		self._terminal_log = deque([], min(20, terminal_log_size))
 
 		self._disconnect_on_errors = settings().getBoolean(["serial", "disconnectOnErrors"])
 		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])

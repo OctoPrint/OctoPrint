@@ -117,6 +117,7 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"terminalLogSize": 20,
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
