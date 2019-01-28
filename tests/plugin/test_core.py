@@ -70,8 +70,15 @@ class PluginTestCase(unittest.TestCase):
 		                                                          plugin_entry_points,
 		                                                          plugin_disabled_list=[],
 		                                                          logging_prefix="logging_prefix.")
-		self.plugin_manager.reload_plugins(startup=True, initialize_implementations=False)
-		self.plugin_manager.initialize_implementations()
+		# This may warn about __plugin_implementations__
+		import warnings
+		with warnings.catch_warnings(record=True) as w:
+			self.plugin_manager.reload_plugins(startup=True, initialize_implementations=False)
+			self.plugin_manager.initialize_implementations()
+		if len(w):
+			assert len(w) == 1
+			assert issubclass(w[-1].category, DeprecationWarning)
+			assert "__plugin_implementation__" in str(w[-1].message)
 
 	def test_plugin_loading(self):
 		self.assertEqual(7, len(self.plugin_manager.enabled_plugins))
