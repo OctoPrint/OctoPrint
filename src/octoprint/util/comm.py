@@ -56,7 +56,7 @@ regex_float_pattern = r"[-+]?[0-9]*\.?[0-9]+"
 regex_positive_float_pattern = r"[+]?[0-9]*\.?[0-9]+"
 regex_int_pattern = r"\d+"
 
-regex_command = re.compile(r"^\s*((?P<codeGM>[GM]\d+)(\\.(?P<subcode>\d+))?|(?P<codeT>T)\d+|(?P<codeF>F)\d+)")
+regex_command = re.compile(r"^\s*((?P<codeGM>[GM]\d+)(\.(?P<subcode>\d+))?|(?P<codeT>T)\d+|(?P<codeF>F)\d+)")
 """Regex for a GCODE command."""
 
 regex_float = re.compile(regex_float_pattern)

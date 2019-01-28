@@ -964,7 +964,7 @@ class LocalFileStorage(StorageInterface):
 
 	def sanitize_name(self, name):
 		"""
-		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise
+		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\\``. Otherwise
 		slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
 		``(``, and ``)`` as is.
 		"""
