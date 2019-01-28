@@ -1348,7 +1348,7 @@ class Settings(object):
 			return False
 
 		try:
-			with atomic_write(self._configfile, mode='wb', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
+			with atomic_write(self._configfile, mode='wt', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
 				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
 		except Exception:

@@ -366,7 +366,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				return
 
 			try:
-				with codecs.open(self._key_path, "rb", encoding="utf-8", errors="strict") as f:
+				with codecs.open(self._key_path, 'rt', encoding="utf-8", errors="strict") as f:
 					persisted = yaml.safe_load(f)
 			except Exception:
 				self._logger.exception("Could not load application keys from {}".format(self._key_path))
@@ -387,7 +387,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				to_persist[user_id] = [x.internal() for x in keys]
 
 			try:
-				with atomic_write(self._key_path) as f:
+				with atomic_write(self._key_path, mode='wt',) as f:
 					yaml.safe_dump(to_persist, f)
 			except Exception:
 				self._logger.exception("Could not write application keys to {}".format(self._key_path))

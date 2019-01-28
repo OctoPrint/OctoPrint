@@ -253,7 +253,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		octoprint_version = get_versions()["version"]
 		self._version_cache["__version"] = octoprint_version
 
-		with atomic_write(self._version_cache_path, max_permissions=0o666) as file_obj:
+		with atomic_write(self._version_cache_path, mode='wt', max_permissions=0o666) as file_obj:
 			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent=2, allow_unicode=True)
 
 		self._version_cache_dirty = False

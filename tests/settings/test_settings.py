@@ -30,11 +30,11 @@ import octoprint.settings
 class TestSettings(unittest.TestCase):
 
 	def _load_yaml(self, fname):
-		with io.open(fname, 'rt+', encoding='utf-8') as f:
+		with io.open(fname, 'rt', encoding='utf-8') as f:
 			return yaml.safe_load(f)
 
 	def _dump_yaml(self, fname, config):
-		with io.open(fname, 'wt+', encoding='utf-8') as f:
+		with io.open(fname, 'wt', encoding='utf-8') as f:
 			yaml.safe_dump(config, f)
 
 	def setUp(self):

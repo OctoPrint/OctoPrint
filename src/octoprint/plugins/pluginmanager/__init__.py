@@ -821,7 +821,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._repository_cache_path, mode='wb') as f:
+			with octoprint.util.atomic_write(self._repository_cache_path, mode='wt') as f:
 				json.dump(repo_data, f)
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
@@ -871,7 +871,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._notices_cache_path, mode="wb") as f:
+			with octoprint.util.atomic_write(self._notices_cache_path, mode="wt") as f:
 				json.dump(notice_data, f)
 		except Exception as e:
 			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))

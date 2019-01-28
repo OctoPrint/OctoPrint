@@ -150,11 +150,11 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
 	"""POSTs JSON data to the specified server path, taking the data from the specified file."""
 	if json_flag or yaml_flag:
 		if json_flag:
-			with io.open(file_path, 'rb') as fp:
+			with io.open(file_path, 'rt') as fp:
 				data = json.load(fp)
 		else:
 			import yaml
-			with io.open(file_path, 'rb') as fp:
+			with io.open(file_path, 'rt') as fp:
 				data = yaml.safe_load(fp)
 
 		r = ctx.obj.client.post_json(path, data, timeout=timeout)

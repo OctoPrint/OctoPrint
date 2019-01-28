@@ -849,7 +849,7 @@ class PreemptiveCache(object):
 		cache_data = None
 		with self._lock:
 			try:
-				with io.open(self.cachefile, "r") as f:
+				with io.open(self.cachefile, 'rt') as f:
 					cache_data = yaml.safe_load(f)
 			except IOError as e:
 				import errno
@@ -873,7 +873,7 @@ class PreemptiveCache(object):
 
 		with self._lock:
 			try:
-				with atomic_write(self.cachefile, "wb", max_permissions=0o666) as handle:
+				with atomic_write(self.cachefile, 'wt', max_permissions=0o666) as handle:
 					yaml.safe_dump(data, handle,default_flow_style=False, indent=4, allow_unicode=True)
 			except Exception:
 				self._logger.exception("Error while writing {}".format(self.cachefile))

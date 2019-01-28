@@ -625,7 +625,7 @@ class FileManager(object):
 		            pos=pos,
 		            date=time.time())
 		try:
-			with atomic_write(self._recovery_file, max_permissions=0o666) as f:
+			with atomic_write(self._recovery_file, mode='wt', max_permissions=0o666) as f:
 				yaml.safe_dump(data, stream=f, default_flow_style=False, indent=2, allow_unicode=True)
 		except Exception:
 			self._logger.exception("Could not write recovery data to file {}".format(self._recovery_file))

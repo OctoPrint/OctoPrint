@@ -485,7 +485,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
 		if os.path.exists(data_file):
 			try:
-				with codecs.open(data_file, mode="r", encoding="utf-8") as f:
+				with codecs.open(data_file, mode='rt', encoding="utf-8") as f:
 					unknown_plugins = json.load(f)
 
 				assert isinstance(unknown_plugins, list)
@@ -807,7 +807,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						on_log_progress(u"Unpacked")
 
 					# install available plugins
-					with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
+					with codecs.open(os.path.join(temp, "plugin_list.json"), 'rt') as f:
 						plugins = json.load(f)
 
 					known_plugins = []
@@ -874,7 +874,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 						unknown_plugins_path = os.path.join(datafolder, UNKNOWN_PLUGINS_FILE)
 						try:
-							with codecs.open(unknown_plugins_path, mode="w", encoding="utf-8") as f:
+							with codecs.open(unknown_plugins_path, mode='wt', encoding="utf-8") as f:
 								json.dump(unknown_plugins, f)
 						except Exception:
 							if callable(on_log_error):
