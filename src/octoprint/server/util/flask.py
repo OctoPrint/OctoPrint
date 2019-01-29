@@ -1413,6 +1413,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets["clientjs"] = [
 		"js/app/client/base.js",
 		"js/app/client/socket.js",
+		"js/app/client/access.js",
 		"js/app/client/browser.js",
 		"js/app/client/connection.js",
 		"js/app/client/control.js",
