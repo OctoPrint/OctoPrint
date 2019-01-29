@@ -1,6 +1,7 @@
 <h3>{{ _('Webcam') }}</h3>
 
 <form class="form-horizontal">
+    {% include "snippets/settings/webcam/webcamEnabled.jinja2" %}
     {% include "snippets/settings/webcam/webcamStreamUrl.jinja2" %}
     {% include "snippets/settings/webcam/webcamStreamRatio.jinja2" %}
     {% include "snippets/settings/webcam/webcamOrientation.jinja2" %}
@@ -16,6 +17,7 @@
 <h3>{{ _('Timelapse Recordings') }}</h3>
 
 <form class="form-horizontal">
+    {% include "snippets/settings/webcam/timelapseEnabled.jinja2" %}
     {% include "snippets/settings/webcam/webcamSnapshotUrl.jinja2" %}
     {% include "snippets/settings/webcam/ffmpegPath.jinja2" %}
     {% include "snippets/settings/webcam/watermark.jinja2" %}

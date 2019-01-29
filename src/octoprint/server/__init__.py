@@ -509,6 +509,17 @@ class Server(object):
 
 			implementation.on_settings_initialized()
 
+		custom_events_hooks = pluginManager.get_hooks("octoprint.events.register_custom_events")
+		for name, hook in custom_events_hooks.items():
+			try:
+				result = hook()
+				if isinstance(result, (list, tuple)):
+					for event in result:
+						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
+						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
+			except:
+				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name))
+
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
 		                                               settings_plugin_inject_factory]
 		pluginManager.initialize_implementations()
@@ -1429,6 +1440,7 @@ class Server(object):
 			"js/lib/pnotify/pnotify.nonblock.min.js",
 			"js/lib/pnotify/pnotify.reference.min.js",
 			"js/lib/pnotify/pnotify.tooltip.min.js",
+			"js/lib/pnotify/pnotify.maxheight.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",

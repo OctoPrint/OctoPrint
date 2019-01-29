@@ -142,6 +142,8 @@
             {% include 'overlays/reloadui.jinja2' %}
             <!-- End of overlays -->
 
+            {% include 'javascripts.jinja2' %}
+
             <!-- Generic plugin template files -->
             {% for key in templates.generic.order %}
                 {% set data = templates.generic.entries[key] %}
@@ -178,7 +180,5 @@
                 <button class="btn btn-block btn-large btn-primary" type="submit" data-bind="click: login">{{ _('Log in') }}</button>
             </form>
         </div>
-
-        {% include 'javascripts.jinja2' %}
     </body>
 </html>

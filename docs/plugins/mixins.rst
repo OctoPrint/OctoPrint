@@ -68,11 +68,14 @@ calls are done is as follows:
 
   * Plugins with a return value that is not ``None`` for :meth:`~octoprint.plugin.core.SortablePlugin.get_sorting_key`
     for the provided sorting context will be ordered among each other first. If the returned order number is equal for
-    two or more implementations, the plugin's identifier will be the next sorting criteria.
-  * After that follow plugins which returned ``None`` (the default). They are sorted by their identifier.
+    two or more implementations, they will be sorted first by whether they come bundled with OctoPrint or not, then by
+    their identifier.
+  * After that follow plugins which returned ``None`` (the default). They are first sorted by whether they come bundled
+    with OctoPrint or not, then by their identifier.
 
-Example: Consider three plugin implementations implementing the :class:`~octoprint.plugin.StartupPlugin` mixin, called
-``plugin_a``, ``plugin_b`` and ``plugin_c``. ``plugin_a`` doesn't override :meth:`~octoprint.plugin.core.SortablePlugin.get_sorting_key`.
+Example: Consider four plugin implementations implementing the :class:`~octoprint.plugin.StartupPlugin` mixin, called
+``plugin_a``, ``plugin_b``, ``plugin_c`` and ``plugin_d``, the latter coming bundled with OctoPrint. ``plugin_a``
+and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get_sorting_key`.
 ``plugin_b`` and ``plugin_c`` both return ``1`` for the sorting context ``StartupPlugin.on_startup``, ``None`` otherwise:
 
 .. code-block:: python
@@ -99,7 +102,7 @@ Example: Consider three plugin implementations implementing the :class:`~octopri
 
    class PluginB(octoprint.plugin.StartupPlugin):
 
-       def get_sorting_key(context):
+       def get_sorting_key(self, context):
            if context == "StartupPlugin.on_startup":
                return 1
            return None
@@ -120,7 +123,7 @@ Example: Consider three plugin implementations implementing the :class:`~octopri
 
    class PluginC(octoprint.plugin.StartupPlugin):
 
-       def get_sorting_key(context):
+       def get_sorting_key(self, context):
            if context == "StartupPlugin.on_startup":
                return 1
            return None
@@ -134,13 +137,45 @@ Example: Consider three plugin implementations implementing the :class:`~octopri
 
    __plugin_implementation__ = PluginC()
 
+.. code-block:: python
+   :linenos:
+   :caption: plugin_d.py
+
+   # in this example this is bundled with OctoPrint
+   import octoprint.plugin
+
+   class PluginD(octoprint.plugin.StartupPlugin):
+
+       def on_startup(self, *args, **kwargs):
+           self._logger.info("PluginD starting up")
+
+       def on_after_startup(self, *args, **kwargs):
+           self._logger.info("PluginD started up")
+
+   __plugin_implementation__ = PluginD()
+
 OctoPrint will detect that ``plugin_b`` and ``plugin_c`` define a order number, and since it's identical for both (``1``)
-will order both plugins based on their plugin identifier. ``plugin_a`` doesn't define a sort key and hence will be
-put after the other two. The execution order of the ``on_startup`` method will hence be ``plugin_b``, ``plugin_c``, ``plugin_a``.
+will order both plugins based first on their bundling status and then on their plugin identifier.
+``plugin_a`` and ``plugin_d`` don't define a sort key and hence will be
+put after the other two, with ``plugin_d`` coming *before* ``plugin_a`` since it comes bundled with OctoPrint.
+The execution order of the ``on_startup`` method will hence be ``plugin_b``, ``plugin_c``, ``plugin_d``, ``plugin_a``.
 
 Now, the execution order of the ``on_after_startup`` method will be determined based on another sorting context,
 ``StartupPlugin.on_after_startup`` for which all of the plugins return ``None``. Hence, the execution order of the
-``on_after_startup`` method will be purely ordered by plugin identifier, ``plugin_a``, ``plugin_b``, ``plugin_c``.
+``on_after_startup`` method will be ordered first by bundle status, then by plugin identifier: ``plugin_d``, ``plugin_a``, ``plugin_b``, ``plugin_c``.
+
+This will result in the following messages to be generated:
+
+.. code-block:: plain
+
+   Plugin B starting up
+   Plugin C starting up
+   Plugin D starting up
+   Plugin A starting up
+   Plugin D started up
+   Plugin A started up
+   Plugin B started up
+   Plugin C started up
 
 .. _sec-plugins-mixins-injectedproperties:
 

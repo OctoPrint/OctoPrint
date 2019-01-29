@@ -17,6 +17,9 @@ from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
 from octoprint.util import atomic_write, monotonic_time, ResettableTimer
 
+from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
+
 
 CUTOFF_TIME = 10 * 60 # 10min
 POLL_TIMEOUT = 5 # 5 seconds
@@ -94,6 +97,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def initialize(self):
 		self._key_path = os.path.join(self.get_plugin_data_folder(), "keys.yaml")
 		self._load_keys()
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="ADMIN",
+			     name="Admin access",
+			     description=gettext("Allows administrating all application keys"),
+			     roles=["admin"],
+			     dangerous=True,
+			     default_groups=[ADMIN_GROUP])
+		]
 
 	##~~ TemplatePlugin
 
@@ -192,7 +207,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		if not user_id:
 			return flask.abort(403)
 
-		if request.values.get("all") in valid_boolean_trues and admin_permission.can():
+		if request.values.get("all") in valid_boolean_trues and Permissions.PLUGIN_APPKEYS_ADMIN.can():
 			keys = self._all_api_keys()
 		else:
 			keys = self._api_keys_for_user(user_id)
@@ -399,5 +414,6 @@ __plugin_disabling_discouraged__ = gettext(u"Without this plugin third party cli
                                            u"obtain an API key without you manually copy-pasting it.")
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
-	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key
+	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }

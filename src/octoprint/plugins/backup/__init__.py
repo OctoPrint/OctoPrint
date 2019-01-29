@@ -74,7 +74,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			     default_groups=[ADMIN_GROUP])
 		]
 
-	##~~ StarupPlugin
+	##~~ StartupPlugin
 
 	def on_after_startup(self):
 		self._clean_dir_backup(self._settings._basedir,
@@ -87,6 +87,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		            clientjs=["clientjs/backup.js"],
 		            css=["css/backup.css"],
 		            less=["less/backup.less"])
+
+	##~~ TemplatePlugin
+
+	def get_template_configs(self):
+		return [dict(type="settings", name=gettext(u"Backup & Restore"))]
 
 	##~~ BlueprintPlugin
 
@@ -698,7 +703,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				if len(plugins):
 					zip.writestr("plugin_list.json", json.dumps(plugins))
 
-			os.rename(temporary_path, final_path)
+			shutil.move(temporary_path, final_path)
 
 			if callable(on_backup_done):
 				on_backup_done(name, final_path, exclude)
@@ -848,18 +853,18 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 					if callable(on_log_progress):
 						on_log_progress(u"Renaming {} to {}...".format(basedir, basedir_backup))
-					os.rename(basedir, basedir_backup)
+					shutil.move(basedir, basedir_backup)
 
 					try:
 						if callable(on_log_progress):
 							on_log_progress(u"Moving {} to {}...".format(basedir_extracted, basedir))
-						os.rename(basedir_extracted, basedir)
+						shutil.move(basedir_extracted, basedir)
 					except:
 						if callable(on_log_error):
 							on_log_error(u"Error while restoring config data", exc_info=sys.exc_info())
 							on_log_error(u"Rolling back old config data")
 
-						os.rename(basedir_backup, basedir)
+						shutil.move(basedir_backup, basedir)
 
 						if callable(on_restore_failed):
 							on_restore_failed(path)
@@ -939,7 +944,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 class InsufficientSpace(Exception):
 	pass
 
-__plugin_name__ = gettext(u"Backup & Restore")
+__plugin_name__ = u"Backup & Restore"
 __plugin_author__ = u"Gina Häußge"
 __plugin_description__ = u"Backup & restore your OctoPrint settings and data"
 __plugin_disabling_discouraged__ = gettext(u"Without this plugin you will no longer be able to backup "

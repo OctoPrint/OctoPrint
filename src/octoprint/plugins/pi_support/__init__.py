@@ -12,6 +12,7 @@ from flask_babel import gettext
 from octoprint.util import RepeatedTimer
 
 import octoprint.plugin
+import octoprint.events
 
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
@@ -290,7 +291,13 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
 		                                                                state=self._throttle_state.as_dict()))
-		self._event_bus.fire("plugin_pi_support_throttle_state", self._throttle_state.as_dict())
+
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(octoprint.events.Events.PLUGIN_PI_SUPPORT_THROTTLE_STATE, self._throttle_state.as_dict())
+
+
+def register_custom_events(*args, **kwargs):
+	return ["throttle_state",]
 
 
 __plugin_name__ = "Pi Support Plugin"
@@ -315,6 +322,11 @@ def __plugin_load__():
 	plugin = PiSupportPlugin()
 	global __plugin_implementation__
 	__plugin_implementation__ = plugin
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.events.register_custom_events": register_custom_events
+	}
 
 	global __plugin_helpers__
 	__plugin_helpers__ = dict(get_throttled=plugin.get_throttle_state)

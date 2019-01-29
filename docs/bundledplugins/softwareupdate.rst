@@ -325,6 +325,29 @@ The same, but tracking all commits pushed to branch ``devel`` (thus allowing
            branch: devel
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
 
+.. _sec-bundledplugins-softwareupdate-events:
+
+Events
+------
+
+plugin_softwareupdate_update_succeeded
+  An update succeeded.
+
+  Payload:
+
+    * ``target``: update target
+    * ``from_version``: version from which was updated
+    * ``to_version``: version to which was updated
+
+plugin_softwareupdate_update_failed
+  An update failed.
+
+  Payload:
+
+    * ``target``: update target
+    * ``from_version``: version from which was updated
+    * ``to_version``: version to which was updated
+
 .. _sec-bundledplugins-softwareupdate-hooks:
 
 Hooks

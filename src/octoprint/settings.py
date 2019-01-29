@@ -117,6 +117,7 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"terminalLogSize": 20,
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
@@ -129,6 +130,7 @@ default_settings = {
 		"unknownCommandsNeedAck": False,
 		"sdRelativePath": False,
 		"sdAlwaysAvailable": False,
+		"maxNotSdPrinting": 2,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
@@ -208,6 +210,8 @@ default_settings = {
 		}
 	},
 	"webcam": {
+		"webcamEnabled": True,
+		"timelapseEnabled": True,
 		"stream": None,
 		"streamRatio": "16:9",
 		"streamTimeout": 5,
@@ -350,7 +354,7 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)" },
 		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
