@@ -992,11 +992,14 @@ def etagged(etag):
 		def decorated_function(*args, **kwargs):
 			rv = f(*args, **kwargs)
 			if isinstance(rv, flask.Response):
-				result = etag
-				if callable(result):
-					result = result(rv)
-				if result:
-					rv.set_etag(result)
+				try:
+					result = etag
+					if callable(result):
+						result = result(rv)
+					if result:
+						rv.set_etag(result)
+				except:
+					logging.getLogger(__name__).exception(u"Error while calculating the etag value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -1008,16 +1011,19 @@ def lastmodified(date):
 		def decorated_function(*args, **kwargs):
 			rv = f(*args, **kwargs)
 			if not "Last-Modified" in rv.headers:
-				result = date
-				if callable(result):
-					result = result(rv)
+				try:
+					result = date
+					if callable(result):
+						result = result(rv)
 
-				if not isinstance(result, basestring):
-					from werkzeug.http import http_date
-					result = http_date(result)
+					if not isinstance(result, basestring):
+						from werkzeug.http import http_date
+						result = http_date(result)
 
-				if result:
-					rv.headers["Last-Modified"] = result
+					if result:
+						rv.headers["Last-Modified"] = result
+				except:
+					logging.getLogger(__name__).exception(u"Error while calculating the lastmodified value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -1027,12 +1033,15 @@ def conditional(condition, met):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
-			if callable(condition) and condition():
-				# condition has been met, return met-response
-				rv = met
-				if callable(met):
-					rv = met()
-				return rv
+			try:
+				if callable(condition) and condition():
+					# condition has been met, return met-response
+					rv = met
+					if callable(met):
+						rv = met()
+					return rv
+			except:
+				logging.getLogger(__name__).exception(u"Error while evaluating conditional {!r} or met {!r}".format(condition, met))
 
 			# condition hasn't been met, call decorated function
 			return f(*args, **kwargs)
