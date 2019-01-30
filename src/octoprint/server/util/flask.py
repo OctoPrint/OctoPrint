@@ -878,11 +878,15 @@ class PreemptiveCache(object):
 		if cache_data is None:
 			cache_data = dict()
 
+		if not self._validate_data(cache_data):
+			self._logger.warn("Preemptive cache data was invalid, ignoring it")
+			cache_data = dict()
+
 		return cache_data
 
 	def get_data(self, root):
 		cache_data = self.get_all_data()
-		return cache_data.get(root, dict())
+		return cache_data.get(root, list())
 
 	def set_all_data(self, data):
 		from octoprint.util import atomic_write
@@ -925,7 +929,7 @@ class PreemptiveCache(object):
 			def get_newest(entries):
 				result = None
 				for entry in entries:
-					if "_timestamp" in entry and (result is None or ("_timestamp" in entry and result["_timestamp"] < entry["_timestamp"])):
+					if "_timestamp" in entry and (result is None or ("_timestamp" in result and result["_timestamp"] < entry["_timestamp"])):
 						result = entry
 				return result
 
@@ -951,12 +955,32 @@ class PreemptiveCache(object):
 
 		return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
 
+	def _validate_data(self, data):
+		if not isinstance(data, dict):
+			return False
+
+		for root, entries in data.items():
+			if not isinstance(entries, list):
+				return False
+
+			for entry in entries:
+				if not self._validate_entry(entry):
+					return False
+
+		return True
+
+	def _validate_entry(self, entry):
+		return isinstance(entry, dict) and "_timestamp" in entry and "_count" in entry
+
 
 def preemptively_cached(cache, data, unless=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
-			cache.record(data, unless=unless)
+			try:
+				cache.record(data, unless=unless)
+			except:
+				logging.getLogger(__name__).exception(u"Error while recording preemptive cache entry: {!r}".format(data))
 			return f(*args, **kwargs)
 		return decorated_function
 	return decorator
