@@ -417,10 +417,19 @@ def index():
 
 
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
+	global _logger
+
 	#~~ a bunch of settings
 
 	first_run = settings().getBoolean(["server", "firstRun"])
-	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+
+	locales = dict()
+	for l in LOCALES:
+		try:
+			locales[l.language] = dict(language=l.language, display=l.display_name, english=l.english_name)
+		except:
+			_logger.exception("Error while collecting available locales")
+
 	extensions = map(lambda ext: ".{}".format(ext), get_all_extensions())
 
 	#~~ prepare full set of template vars for rendering
