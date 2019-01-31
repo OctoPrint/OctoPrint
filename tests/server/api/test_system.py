@@ -31,5 +31,5 @@ class GetFolderUsageTest(unittest.TestCase):
                 settings_mock.return_value = settings
 
                 data = _usageForFolders()
-                self.assertEquals(data['uploads']['free'], 50)
-                self.assertEquals(data['uploads']['total'], 512)
+                self.assertEqual(data['uploads']['free'], 50)
+                self.assertEqual(data['uploads']['total'], 512)
