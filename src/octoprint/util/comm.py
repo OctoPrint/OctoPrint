@@ -472,7 +472,8 @@ class MachineCom(object):
 
 		self._resendActive = False
 
-		self._terminal_log = deque([], 20)
+		terminal_log_size = settings().getInt(["serial", "terminalLogSize"])
+		self._terminal_log = deque([], min(20, terminal_log_size))
 
 		self._disconnect_on_errors = settings().getBoolean(["serial", "disconnectOnErrors"])
 		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])
@@ -1889,7 +1890,7 @@ class MachineCom(object):
 								self._logger.info("Firmware states that it supports sd status autoreporting")
 								self._set_autoreport_sdstatus_interval()
 							elif capability == self.CAPABILITY_EMERGENCY_PARSER and enabled:
-								self._logger.info("Firmware states that it supports emergency GCODEs M108 and M410 to be sent without waiting for an acknowledgement first")
+								self._logger.info("Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first")
 
 						# notify plugins
 						for name, hook in self._firmware_info_hooks["capabilities"].items():
@@ -3370,7 +3371,7 @@ class MachineCom(object):
 				# may be busy, so give things a little time before we try again. Extend this
 				# period each time we fail until either we write the data or run out of retry attempts.
 				if passes > 1:
-					sleep((passes-1)/10.0)
+					time.sleep((passes-1)/10.0)
 
 	##~~ command handlers
 
@@ -3563,7 +3564,7 @@ class MachineCom(object):
 		self._resendDelta = None
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self._logger.info("Force-sending M112 to the printer")
+		self._logger.info(u"Force-sending M112 to the printer")
 
 		# emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
 		# available or not
@@ -3597,30 +3598,10 @@ class MachineCom(object):
 		return None,
 
 	def _gcode_M108_queuing(self, cmd, gcode=None, *args, **kwargs):
-		# only jump the queue with M108 if the EMERGENCY_PARSER capability is available
-		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
-			return
-
-		self._logger.info("Force-sending M108 to the printer")
-		self._do_send(cmd, gcode=gcode)
-
-		# use up an ok since we will get one back for this command and don't want to get out of sync
-		self._clear_to_send.clear()
-
-		return None,
+		return self._emergency_force_send(cmd, u"Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M410_queuing(self, cmd, gcode=None, *args, **kwargs):
-		# only jump the queue with M410 if the EMERGENCY_PARSER capability is available
-		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
-			return
-
-		self._logger.info("Force-sending M410 to the printer")
-		self._do_send(cmd, gcode=gcode)
-
-		# use up an ok since we will get one back for this command and don't want to get out of sync
-		self._clear_to_send.clear()
-
-		return None,
+		return self._emergency_force_send(cmd, u"Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M114_queued(self, *args, **kwargs):
 		self._reset_position_timers()
@@ -3639,6 +3620,20 @@ class MachineCom(object):
 
 		self._timeout = self._get_new_communication_timeout() + _timeout
 		self._dwelling_until = time.time() + _timeout
+
+	def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
+		# only jump the queue with our command if the EMERGENCY_PARSER capability is available
+		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) \
+			or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
+			return
+
+		self._logger.info(message)
+		self._do_send(cmd, gcode=gcode)
+
+		# use up an ok since we will get one back for this command and don't want to get out of sync
+		self._clear_to_send.clear()
+
+		return None,
 
 	def _validate_tool(self, tool):
 		return tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"] and not tool in self._knownInvalidTools

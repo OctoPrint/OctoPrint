@@ -258,8 +258,6 @@ class EventManager(object):
 		except ValueError:
 			# not registered
 			pass
-		else:
-			self._logger.debug("Unsubscribed listener %r for event %s", callback, event)
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)

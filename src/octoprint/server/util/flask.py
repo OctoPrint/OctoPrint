@@ -544,11 +544,13 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 #~~ passive login helper
 
 def passive_login():
+	logger = logging.getLogger(__name__)
+
 	user = flask_login.current_user
 
-	remoteAddr = get_remote_address(flask.request)
-	ipCheckEnabled = settings().getBoolean(["server", "ipCheck", "enabled"])
-	ipCheckTrusted = settings().get(["server", "ipCheck", "trustedSubnets"])
+	remote_address = get_remote_address(flask.request)
+	ip_check_enabled = settings().getBoolean(["server", "ipCheck", "enabled"])
+	ip_check_trusted = settings().get(["server", "ipCheck", "trustedSubnets"])
 
 	if isinstance(user, LocalProxy):
 		# noinspection PyProtectedMember
@@ -568,7 +570,7 @@ def passive_login():
 
 	if user is not None and user.is_active:
 		# login known user
-		logging.getLogger(__name__).info("Passively logging in user {} from {}".format(user.get_id(), remoteAddr))
+		logger.info("Passively logging in user {} from {}".format(user.get_id(), remote_address))
 		user = login(user)
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
@@ -581,20 +583,36 @@ def passive_login():
 			localNetworks.add(ip)
 
 		try:
-			if netaddr.IPAddress(remoteAddr) in localNetworks:
-				autologin_user = octoprint.server.userManager.find_user(autologinAs)
-				if autologin_user is not None and user.is_active:
+			if netaddr.IPAddress(remote_address) in local_networks:
+				autologin_user = octoprint.server.userManager.findUser(autologin_as)
+				if autologin_user is not None and autologin_user.is_active:
 					autologin_user = octoprint.server.userManager.login_user(autologin_user)
 
-					logging.getLogger(__name__).info("Passively logging in user {} from {} via autologin".format(user.get_id(), remoteAddr))
+					logger.info("Passively logging in user {} from {} via autologin".format(user.get_id(), local_networks))
 					user = login(autologin_user)
+			if netaddr.IPAddress(remote_address) in local_networks:
+				user = octoprint.server.userManager.findUser(autologin_as)
+				if user is not None and user.is_active():
+					user = octoprint.server.userManager.login_user(user)
+					flask.session["usersession.id"] = user.session
+					flask.g.user = user
+					flask_login.login_user(user)
+					flask_principal.identity_changed.send(flask.current_app._get_current_object(),
+					                                      identity=flask_principal.Identity(user.get_id()))
+
+					logger.info("Passively logging in user {} from {} via autologin".format(user.get_id(),
+					                                                                        remote_address))
+
+					response = user.asDict()
+					response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
+					                                                                          additional_private=ip_check_trusted)
+					return flask.jsonify(response)
 		except Exception:
-			logger = logging.getLogger(__name__)
-			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
+			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, local_networks))
 
 	response = user.as_dict()
-	response["_is_external_client"] = ipCheckEnabled and not is_lan_address(remoteAddr,
-	                                                                        additional_private=ipCheckTrusted)
+	response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
+	                                                                          additional_private=ip_check_trusted)
 	return flask.jsonify(response)
 
 
@@ -862,11 +880,15 @@ class PreemptiveCache(object):
 		if cache_data is None:
 			cache_data = dict()
 
+		if not self._validate_data(cache_data):
+			self._logger.warn("Preemptive cache data was invalid, ignoring it")
+			cache_data = dict()
+
 		return cache_data
 
 	def get_data(self, root):
 		cache_data = self.get_all_data()
-		return cache_data.get(root, dict())
+		return cache_data.get(root, list())
 
 	def set_all_data(self, data):
 		from octoprint.util import atomic_write
@@ -909,7 +931,7 @@ class PreemptiveCache(object):
 			def get_newest(entries):
 				result = None
 				for entry in entries:
-					if "_timestamp" in entry and (result is None or ("_timestamp" in entry and result["_timestamp"] < entry["_timestamp"])):
+					if "_timestamp" in entry and (result is None or ("_timestamp" in result and result["_timestamp"] < entry["_timestamp"])):
 						result = entry
 				return result
 
@@ -935,12 +957,32 @@ class PreemptiveCache(object):
 
 		return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
 
+	def _validate_data(self, data):
+		if not isinstance(data, dict):
+			return False
+
+		for root, entries in data.items():
+			if not isinstance(entries, list):
+				return False
+
+			for entry in entries:
+				if not self._validate_entry(entry):
+					return False
+
+		return True
+
+	def _validate_entry(self, entry):
+		return isinstance(entry, dict) and "_timestamp" in entry and "_count" in entry
+
 
 def preemptively_cached(cache, data, unless=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
-			cache.record(data, unless=unless)
+			try:
+				cache.record(data, unless=unless)
+			except:
+				logging.getLogger(__name__).exception(u"Error while recording preemptive cache entry: {!r}".format(data))
 			return f(*args, **kwargs)
 		return decorated_function
 	return decorator
@@ -952,11 +994,14 @@ def etagged(etag):
 		def decorated_function(*args, **kwargs):
 			rv = f(*args, **kwargs)
 			if isinstance(rv, flask.Response):
-				result = etag
-				if callable(result):
-					result = result(rv)
-				if result:
-					rv.set_etag(result)
+				try:
+					result = etag
+					if callable(result):
+						result = result(rv)
+					if result:
+						rv.set_etag(result)
+				except:
+					logging.getLogger(__name__).exception(u"Error while calculating the etag value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -968,16 +1013,19 @@ def lastmodified(date):
 		def decorated_function(*args, **kwargs):
 			rv = f(*args, **kwargs)
 			if not "Last-Modified" in rv.headers:
-				result = date
-				if callable(result):
-					result = result(rv)
+				try:
+					result = date
+					if callable(result):
+						result = result(rv)
 
-				if not isinstance(result, basestring):
-					from werkzeug.http import http_date
-					result = http_date(result)
+					if not isinstance(result, basestring):
+						from werkzeug.http import http_date
+						result = http_date(result)
 
-				if result:
-					rv.headers["Last-Modified"] = result
+					if result:
+						rv.headers["Last-Modified"] = result
+				except:
+					logging.getLogger(__name__).exception(u"Error while calculating the lastmodified value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -987,12 +1035,15 @@ def conditional(condition, met):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
-			if callable(condition) and condition():
-				# condition has been met, return met-response
-				rv = met
-				if callable(met):
-					rv = met()
-				return rv
+			try:
+				if callable(condition) and condition():
+					# condition has been met, return met-response
+					rv = met
+					if callable(met):
+						rv = met()
+					return rv
+			except:
+				logging.getLogger(__name__).exception(u"Error while evaluating conditional {!r} or met {!r}".format(condition, met))
 
 			# condition hasn't been met, call decorated function
 			return f(*args, **kwargs)
@@ -1419,6 +1470,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets["clientjs"] = [
 		"js/app/client/base.js",
 		"js/app/client/socket.js",
+		"js/app/client/access.js",
 		"js/app/client/browser.js",
 		"js/app/client/connection.js",
 		"js/app/client/control.js",

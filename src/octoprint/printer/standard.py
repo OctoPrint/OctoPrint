@@ -96,7 +96,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		#hook card upload
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
-		
+
 		# comm
 		self._comm = None
 

@@ -123,6 +123,7 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"terminalLogSize": 20,
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
@@ -359,9 +360,9 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
+		{ "name": "Suppress temperature messages", "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)" },
 		{ "name": "Suppress SD status messages", "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
-		{ "name": "Suppress wait responses", "regex": r"Recv: wait"}
+		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
 		"_disabled": []

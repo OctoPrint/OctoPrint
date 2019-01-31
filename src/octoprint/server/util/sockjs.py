@@ -17,6 +17,7 @@ import octoprint.timelapse
 import octoprint.server
 import octoprint.events
 import octoprint.plugin
+import octoprint.access.users
 
 from octoprint.events import Events
 from octoprint.settings import settings
@@ -353,6 +354,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			# TODO remove when central job management becomes available and takes care of this for us
 			self._emit("event", payload=dict(type=Events.MOVIE_RENDERING,
 			                                 payload=octoprint.timelapse.current_render_job))
+		self._registered = True
 
 	def _unregister(self):
 		"""Unregister this socket from the system"""

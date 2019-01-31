@@ -209,7 +209,7 @@ __plugin_hooks__ = {
 	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
 	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
 	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
-	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
-	"octoprint.events.register_custom_events": register_custom_events
+	"octoprint.events.register_custom_events": register_custom_events,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
 

@@ -150,6 +150,7 @@
                 {% try "<!-- There was an error with the template {filename} at line number {lineno}: {exception} -->" %}{% include data.template ignore missing %}{% endtry %}
             {% endfor %}
             <!-- End of generic plugin template files -->
+            <!-- /ko -->
         </div>
 
         <div id="page-container-loading" data-bind="visible: loading">
@@ -178,7 +179,5 @@
                 <button class="btn btn-block btn-large btn-primary" type="submit" data-bind="click: login">{{ _('Log in') }}</button>
             </form>
         </div>
-
-        {% include 'javascripts.jinja2' %}
     </body>
 </html>

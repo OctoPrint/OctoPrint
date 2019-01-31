@@ -4,7 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
-        self.settings = parameters[1];
+        self.settings = parameters[2];
 
         self.renderProgressBar = undefined;
         self.timelapsePopup = undefined;
