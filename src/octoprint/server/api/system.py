@@ -23,7 +23,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
 
 @api.route("/system/usage", methods=["GET"])
-@restricted_access
+@no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def readUsageForFolders():
 	return jsonify(usage=_usageForFolders())
