@@ -559,6 +559,7 @@ class Server(object):
 			return joined
 
 		util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
+		util.tornado.CorsSupportMixin.ENABLE_CORS = settings().getBoolean(["api", "allowCrossOrigin"])
 
 		server_routes = self._router.urls + [
 			# various downloads
