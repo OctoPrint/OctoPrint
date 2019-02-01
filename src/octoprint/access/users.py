@@ -772,17 +772,17 @@ class FilebasedUserManager(UserManager):
 
 	def _to_groups(self, *groups):
 		return list(set(filter(lambda x: x is not None,
-		                       [self._group_manager._to_group(group) for group in groups])))
+		                       (self._group_manager._to_group(group) for group in groups))))
 
 	def _to_permissions(self, *permissions):
 		return list(set(filter(lambda x: x is not None,
-		                       [Permissions.find(permission) for permission in permissions])))
+		                       (Permissions.find(permission) for permission in permissions))))
 
 	def _from_groups(self, *groups):
-		return list(set([group.key for group in groups]))
+		return list(set(group.key for group in groups))
 
 	def _from_permissions(self, *permissions):
-		return list(set([permission.key for permission in permissions]))
+		return list(set(permission.key for permission in permissions))
 
 	# ~~ Deprecated methods follow
 

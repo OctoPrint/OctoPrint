@@ -1681,7 +1681,7 @@ class CaseInsensitiveSet(collections.Set):
 	"""
 
 	def __init__(self, *args):
-		self.data = set([x.lower() if isinstance(x, past.builtins.basestring) else x for x in args])
+		self.data = set(x.lower() if isinstance(x, past.builtins.basestring) else x for x in args)
 
 	def __contains__(self, item):
 		if isinstance(item, past.builtins.basestring):
