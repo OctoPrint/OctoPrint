@@ -36,6 +36,11 @@ import signal
 import base64
 
 try:
+	unicode
+except NameError:
+	unicode = str
+
+try:
 	import fcntl
 except ImportError:
 	fcntl = None
@@ -1700,11 +1705,13 @@ class Server(object):
 						if content_type:
 							self.send_header("Content-Type", content_type)
 						self.end_headers()
+						if isinstance(data, unicode):
+							data = data.encode("utf-8")
 						self.wfile.write(data)
 						break
 				else:
 					self.send_response(404)
-					self.wfile.write("Not found")
+					self.wfile.write("Not found".encode("utf-8"))
 
 		base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "static"))
 		rules = [
