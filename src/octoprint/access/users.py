@@ -439,7 +439,7 @@ class FilebasedUserManager(UserManager):
 			self._customized = True
 			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
-				for name, attributes in data.values():
+				for name, attributes in data.items():
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
