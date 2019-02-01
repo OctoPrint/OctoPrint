@@ -16,6 +16,8 @@ try:
 except ImportError:
 	import Queue as queue
 
+from past.builtins import basestring
+
 from serial import SerialTimeoutException
 
 from octoprint.settings import settings

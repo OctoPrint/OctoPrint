@@ -12,7 +12,6 @@ import glob
 from setuptools import Command
 from distutils.command.clean import clean as _clean
 
-
 def package_data_dirs(source, sub_folders):
 	dirs = []
 
@@ -53,6 +52,8 @@ def recursively_handle_files(directory, file_matcher, folder_matcher=None, folde
 def has_requirement(requirement, requirements):
 	if requirement is None or requirements is None:
 		return False
+
+	#from past.builtins import basestring
 
 	#assert isinstance(requirement, basestring)
 	#assert isinstance(requirements, (list, tuple))

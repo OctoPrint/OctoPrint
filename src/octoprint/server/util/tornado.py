@@ -10,7 +10,6 @@ import os
 import mimetypes
 import re
 import sys
-from past.builtins import basestring
 
 import tornado
 import tornado.web

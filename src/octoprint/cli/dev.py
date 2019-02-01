@@ -117,7 +117,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
 					if key in options:
 						val = options[key]
 					else:
-						raw = raw if isinstance(raw, basestring) else str(raw)
+						if not isinstance(raw, basestring):
+							raw = str(raw)
 						val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 
 						if not no_input:

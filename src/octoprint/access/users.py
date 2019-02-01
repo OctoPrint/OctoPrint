@@ -24,6 +24,7 @@ from octoprint.util import atomic_write, to_str, deprecated
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.access.groups import GroupChangeListener, Group
 
+from past.builtins import basestring
 
 class UserManager(GroupChangeListener, object):
 	def __init__(self, group_manager):
