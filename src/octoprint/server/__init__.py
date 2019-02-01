@@ -573,8 +573,11 @@ class Server(object):
 		ioloop = IOLoop()
 		ioloop.install()
 
+		enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
+
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
-		                            session_kls=util.sockjs.ThreadSafeSession)
+		                            session_kls=util.sockjs.ThreadSafeSession,
+		                            user_settings=dict(websocket_allow_origin="*" if enable_cors else ""))
 
 		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
@@ -629,6 +632,7 @@ class Server(object):
 			return joined
 
 		util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
+		util.tornado.CorsSupportMixin.ENABLE_CORS = enable_cors
 
 		server_routes = self._router.urls + [
 			# various downloads

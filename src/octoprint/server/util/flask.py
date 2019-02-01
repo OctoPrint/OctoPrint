@@ -1238,7 +1238,7 @@ def no_firstrun_access(func):
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 		return func(*args, **kwargs)
 

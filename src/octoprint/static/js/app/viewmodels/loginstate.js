@@ -71,9 +71,6 @@ $(function() {
                         callViewModels(self.allViewModels, "onUserPermissionsChanged");
                         log.info("User needs for " + response.name + " changed");
                     }
-                    if (response.session) {
-                        OctoPrint.socket.sendAuth(response.name, response.session);
-                    }
 
                     if (response.session) {
                         OctoPrint.socket.sendAuth(response.name, response.session);

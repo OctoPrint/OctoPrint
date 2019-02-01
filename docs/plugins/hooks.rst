@@ -1329,6 +1329,14 @@ octoprint.server.http.routes
 
    .. important::
 
+      If you want your route to support CORS if it's enabled in OctoPrint, your `RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_
+      needs to implement the :class:`~octoprint.server.util.tornado.CorsSupportMixin` for this to work. Note that all of
+      :class:`~octoprint.server.util.tornado.LargeResponseHandler`, :class:`~octoprint.server.util.tornado.UrlProxyHandler`,
+      :class:`~octoprint.server.util.tornado.StaticDataHandler` and :class:`~octoprint.server.util.tornado.DeprecatedEndpointHandler`
+      already implement this mixin.
+
+   .. important::
+
       Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**

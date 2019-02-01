@@ -357,7 +357,7 @@ def index():
 		                                   _plugin_vars,
 		                                   now)
 		render_kwargs.update(dict(
-			enableWebcam=settings().getBoolean(["webcam", "enableWebcam"]) and bool(settings().get(["webcam", "stream"])),
+			enableWebcam=settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"])),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
@@ -419,10 +419,19 @@ def index():
 
 
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
+	global _logger
+
 	#~~ a bunch of settings
 
 	first_run = settings().getBoolean(["server", "firstRun"])
-	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+
+	locales = dict()
+	for l in LOCALES:
+		try:
+			locales[l.language] = dict(language=l.language, display=l.display_name, english=l.english_name)
+		except:
+			_logger.exception("Error while collecting available locales")
+
 	permissions = [permission.as_dict() for permission in Permissions.all()]
 	extensions = list(map(lambda ext: ".{}".format(ext), get_all_extensions()))
 

@@ -56,7 +56,7 @@ class AclSubwizard(object):
 		return True
 
 	def _is_acl_wizard_required(self):
-		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
+		return self._user_manager.enabled and not self._user_manager.has_been_customized()
 
 	def _get_acl_wizard_details(self):
 		return dict(required=self._is_acl_wizard_required())
@@ -72,7 +72,7 @@ class AclSubwizard(object):
 		from flask import request, abort
 		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.hasBeenCustomized():
+		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.has_been_customized():
 			abort(404)
 
 		data = request.get_json()

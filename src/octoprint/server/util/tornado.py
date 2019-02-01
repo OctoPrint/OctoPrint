@@ -72,11 +72,50 @@ class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
 				                          exc_info=(typ, value, tb))
 
 
+#~~ CORS support
+
+
+class CorsSupportMixin(tornado.web.RequestHandler):
+	"""
+	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ mixin that
+	makes sure to set CORS headers similarily to the Flask backed API endpoints.
+	"""
+
+	ENABLE_CORS = False
+
+	def set_default_headers(self):
+		origin = self.request.headers.get("Origin")
+		if self.request.method != "OPTIONS" and origin and self.ENABLE_CORS:
+			self.set_header("Access-Control-Allow-Origin", origin)
+
+	@tornado.web.asynchronous
+	def options(self, *args, **kwargs):
+		if self.ENABLE_CORS:
+			origin = self.request.headers.get("Origin")
+			method = self.request.headers.get("Access-Control-Request-Method")
+
+			# Allow the origin which made the XHR
+			self.set_header("Access-Control-Allow-Origin", origin)
+			# Allow the actual method
+			self.set_header("Access-Control-Allow-Methods", method)
+			# Allow for 10 seconds
+			self.set_header("Access-Control-Max-Age", "10")
+
+			# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
+			custom_headers = self.request.headers.get("Access-Control-Request-Headers")
+			if custom_headers is not None:
+				self.set_header("Access-Control-Allow-Headers", custom_headers)
+
+		self.set_status(204)
+		self.finish()
+
+
 #~~ WSGI middleware
 
 
 @tornado.web.stream_request_body
-class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
+class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
+                                   CorsSupportMixin):
 	"""
 	A ``RequestHandler`` similar to ``tornado.web.FallbackHandler`` which fetches any files contained in the request bodies
 	of content type ``multipart``, stores them in temporary files and supplies the ``fallback`` with the file's ``name``,
@@ -882,7 +921,9 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 #~~ customized large response handler
 
 
-class LargeResponseHandler(RequestlessExceptionLoggingMixin, tornado.web.StaticFileHandler):
+class LargeResponseHandler(RequestlessExceptionLoggingMixin,
+                           CorsSupportMixin,
+                           tornado.web.StaticFileHandler):
 	"""
 	Customized `tornado.web.StaticFileHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#tornado.web.StaticFileHandler>`_
 	that allows delivery of the requested resource as attachment and access and request path validation through
@@ -976,7 +1017,9 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin, tornado.web.StaticF
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 
-class UrlProxyHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
+class UrlProxyHandler(RequestlessExceptionLoggingMixin,
+                      CorsSupportMixin,
+                      tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
 	requests to a preconfigured url and returns the response. Allows delivery of the requested content as attachment
@@ -1069,7 +1112,18 @@ class UrlProxyHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandl
 		return "%s%s" % (self._basename, extension)
 
 
-class StaticDataHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
+class StaticDataHandler(RequestlessExceptionLoggingMixin,
+                        CorsSupportMixin,
+                        tornado.web.RequestHandler):
+	"""
+	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that returns
+	static ``data`` of a configured ``content_type``.
+
+	Arguments:
+	   data (str): The data with which to respond
+	   content_type (str): The content type with which to respond. Defaults to ``text/plain``
+	"""
+
 	def initialize(self, data="", content_type="text/plain"):
 		self.data = data
 		self.content_type = content_type
@@ -1082,7 +1136,16 @@ class StaticDataHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHan
 		self.finish()
 
 
-class DeprecatedEndpointHandler(tornado.web.RequestHandler):
+class DeprecatedEndpointHandler(CorsSupportMixin,
+                                tornado.web.RequestHandler):
+	"""
+	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that redirects
+	to another ``url`` and logs a deprecation warning.
+
+	Arguments:
+	   url (str): URL to which to redirect
+	"""
+
 	def initialize(self, url):
 		self._url = url
 		self._logger = logging.getLogger(__name__)
