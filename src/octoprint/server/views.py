@@ -355,7 +355,7 @@ def index():
 		                                   _plugin_vars,
 		                                   now)
 		render_kwargs.update(dict(
-			enableWebcam=settings().getBoolean(["webcam", "enableWebcam"]) and bool(settings().get(["webcam", "stream"])),
+			enableWebcam=settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"])),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
