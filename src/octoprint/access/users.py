@@ -791,6 +791,39 @@ class FilebasedUserManager(UserManager):
 	deleteApiKey   = deprecated("deleteApiKey has been renamed to delete_api_key",
 	                            includedoc="Replaced by :func:`delete_api_key`",
 	                            since="1.4.0")(delete_api_key)
+	addUser              = deprecated("addUser has been renamed to add_user",
+	                                  includedoc="Replaced by :func:`add_user`",
+	                                  since="1.4.0")(add_user)
+	changeUserActivation = deprecated("changeUserActivation has been renamed to change_user_activation",
+	                                  includedoc="Replaced by :func:`change_user_activation`",
+	                                  since="1.4.0")(change_user_activation)
+	changeUserPassword   = deprecated("changeUserPassword has been renamed to change_user_password",
+	                                  includedoc="Replaced by :func:`change_user_password`",
+	                                  since="1.4.0")(change_user_password)
+	getUserSetting       = deprecated("getUserSetting has been renamed to get_user_setting",
+	                                  includedoc="Replaced by :func:`get_user_setting`",
+	                                  since="1.4.0")(get_user_setting)
+	getAllUserSettings   = deprecated("getAllUserSettings has been renamed to get_all_user_settings",
+	                                  includedoc="Replaced by :func:`get_all_user_settings`",
+	                                  since="1.4.0")(get_all_user_settings)
+	changeUserSetting    = deprecated("changeUserSetting has been renamed to change_user_setting",
+	                                  includedoc="Replaced by :func:`change_user_setting`",
+	                                  since="1.4.0")(change_user_setting)
+	changeUserSettings   = deprecated("changeUserSettings has been renamed to change_user_settings",
+	                                  includedoc="Replaced by :func:`change_user_settings`",
+	                                  since="1.4.0")(change_user_settings)
+	removeUser           = deprecated("removeUser has been renamed to remove_user",
+	                                  includedoc="Replaced by :func:`remove_user`",
+	                                  since="1.4.0")(remove_user)
+	findUser             = deprecated("findUser has been renamed to find_user",
+	                                  includedoc="Replaced by :func:`find_user`",
+	                                  since="1.4.0")(find_user)
+	getAllUsers          = deprecated("getAllUsers has been renamed to get_all_users",
+	                                  includedoc="Replaced by :func:`get_all_users`",
+	                                  since="1.4.0")(get_all_users)
+	hasBeenCustomized    = deprecated("hasBeenCustomized has been renamed to has_been_customized",
+	                                  includedoc="Replaced by :func:`has_been_customized`",
+	                                  since="1.4.0")(has_been_customized)
 
 ##~~ Exceptions
 
