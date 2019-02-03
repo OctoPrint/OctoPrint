@@ -1056,6 +1056,8 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		if header.startswith(bom):
 			encoding += "-sig"
 
+	# Py3 doesn't like 't'
+	mode = mode.replace('t','')
 	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
