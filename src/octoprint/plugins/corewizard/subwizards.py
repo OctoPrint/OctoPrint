@@ -10,7 +10,7 @@ import sys
 import inspect
 from flask_babel import gettext
 from octoprint.access import ADMIN_GROUP, USER_GROUP
-
+from octoprint.util import to_native_str
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class ServerCommandsSubwizard(object):
@@ -150,7 +150,7 @@ class PrinterProfileSubwizard(object):
 		return gettext("Default Printer Profile")
 
 
-Subwizards = type("Subwizwards",
+Subwizards = type(to_native_str("Subwizwards"),
                   tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
                         if clsname.endswith("Subwizard")),
                   dict())
