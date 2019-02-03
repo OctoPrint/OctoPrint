@@ -429,7 +429,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	for l in LOCALES:
 		try:
 			locales[l.language] = dict(language=l.language, display=l.display_name, english=l.english_name)
-		except:
+		except Exception:
 			_logger.exception("Error while collecting available locales")
 
 	permissions = [permission.as_dict() for permission in Permissions.all()]

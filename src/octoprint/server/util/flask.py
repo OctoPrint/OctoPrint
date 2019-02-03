@@ -981,7 +981,7 @@ def preemptively_cached(cache, data, unless=None):
 		def decorated_function(*args, **kwargs):
 			try:
 				cache.record(data, unless=unless)
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception(u"Error while recording preemptive cache entry: {!r}".format(data))
 			return f(*args, **kwargs)
 		return decorated_function
@@ -1000,7 +1000,7 @@ def etagged(etag):
 						result = result(rv)
 					if result:
 						rv.set_etag(result)
-				except:
+				except Exception:
 					logging.getLogger(__name__).exception(u"Error while calculating the etag value for response {!r}".format(rv))
 			return rv
 		return decorated_function
@@ -1024,7 +1024,7 @@ def lastmodified(date):
 
 					if result:
 						rv.headers["Last-Modified"] = result
-				except:
+				except Exception:
 					logging.getLogger(__name__).exception(u"Error while calculating the lastmodified value for response {!r}".format(rv))
 			return rv
 		return decorated_function
@@ -1042,7 +1042,7 @@ def conditional(condition, met):
 					if callable(met):
 						rv = met()
 					return rv
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception(u"Error while evaluating conditional {!r} or met {!r}".format(condition, met))
 
 			# condition hasn't been met, call decorated function
