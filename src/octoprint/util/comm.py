@@ -4774,10 +4774,10 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 				break
 
 			# add to data and loop
-			data += c
+			data += bytearray(c)
 
 		self._buffered = data
-		return bytes("")
+		return b""
 
 
 # --- Test code for speed testing the comm layer via command line follows
