@@ -31,12 +31,7 @@ try:
 except ImportError:
 	import Queue as queue
 
-from past.builtins import basestring
-
-try:
-	unicode
-except NameError:
-	unicode = str
+from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
 

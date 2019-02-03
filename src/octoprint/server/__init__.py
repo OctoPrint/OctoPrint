@@ -18,7 +18,7 @@ from watchdog.observers.polling import PollingObserver
 from collections import defaultdict, OrderedDict
 
 from builtins import bytes, range
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
 import octoprint.util
 import octoprint.util.net
@@ -34,11 +34,6 @@ import logging.config
 import atexit
 import signal
 import base64
-
-try:
-	unicode
-except NameError:
-	unicode = str
 
 try:
 	import fcntl

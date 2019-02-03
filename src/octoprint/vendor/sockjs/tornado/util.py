@@ -5,10 +5,7 @@ import sys
 
 PY3 = sys.version_info[0] == 3
 
-try:
-    unicode
-except NameError:
-    unicode = str
+from past.builtins import unicode
 
 if PY3:
     MAXSIZE = sys.maxsize

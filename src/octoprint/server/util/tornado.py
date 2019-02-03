@@ -25,10 +25,7 @@ import tornado.util
 
 import octoprint.util
 
-try:
-	unicode
-except NameError:
-	unicode = str
+from past.builtins import unicode
 
 PY3 = sys.version_info[0] == 3
 

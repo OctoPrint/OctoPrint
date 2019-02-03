@@ -12,10 +12,7 @@ import sys
 import traceback
 import time
 
-try:
-	unicode
-except NameError:
-	unicode = str
+from past.builtins import unicode
 
 def _log_call(*lines):
 	_log(lines, prefix=">", stream="call")
