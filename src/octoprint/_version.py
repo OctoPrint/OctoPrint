@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 import sys
+import logging
 
 
 def get_keywords():
@@ -340,6 +341,7 @@ def git_parse_lookup_file(path):
                 lookup.append(entry)
             except Exception:
                 # TODO: really catch all exceptions?
+                logging.getLogger(__name__).exception("Versioneer problem")
                 break
     return lookup
 

@@ -1638,6 +1638,7 @@ def is_editable_install(install_dir, package, module, location):
 				if target == expected_target:
 					return True
 		except Exception:
+			raise # TODO really ignore this?
 			pass
 	return False
 
@@ -1658,6 +1659,7 @@ class EntryPointMetadata(pkginfo.Distribution):
 				try:
 					return self.entry_point.dist.get_metadata(metadata_file)
 				except Exception:
+					raise # TODO really ignore this?
 					pass
 
 		warnings.warn('No package metadata found for package: {}'.format(self.entry_point.module_name))

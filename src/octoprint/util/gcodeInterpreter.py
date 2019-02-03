@@ -249,8 +249,8 @@ class gcode(object):
 			try:
 				if self._progress_callback is not None and (lineNo % 1000 == 0) and percentage is not None:
 					self._progress_callback(percentage)
-			except Exception:
-				pass
+			except Exception as exc:
+				self._logger.debug("Progress callback %r error: %s", self._progress_callback, exc)
 
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
@@ -275,7 +275,7 @@ class gcode(object):
 					if "filament_diameter" in curaOptions:
 						try:
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
-						except Exception:
+						except ValueError:
 							self._filamentDiameter = 0.0
 				elif comment.startswith("filamentDiameter,"):
 					# Simplify3D
@@ -483,7 +483,7 @@ def getCodeInt(line, code):
 		if m < 0:
 			return int(line[n:])
 		return int(line[n:m])
-	except Exception:
+	except ValueError:
 		return None
 
 
@@ -496,5 +496,5 @@ def getCodeFloat(line, code):
 		if m < 0:
 			return float(line[n:])
 		return float(line[n:m])
-	except Exception:
+	except ValueError:
 		return None

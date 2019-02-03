@@ -463,8 +463,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		with io.open(path, 'rt', encoding='utf-8') as f:
 			try:
 				profile_dict = yaml.safe_load(f)
-			except Exception:
-				raise IOError("Couldn't read profile from {path}".format(path=path))
+			except Exception as exc:
+				raise IOError("Couldn't read profile from {path}: {exc}".format(path=path), exc=exc)
 
 		if "gcode_flavor" in profile_dict and not isinstance(profile_dict["gcode_flavor"], (list, tuple)):
 			profile_dict["gcode_flavor"] = parse_gcode_flavor(profile_dict["gcode_flavor"])

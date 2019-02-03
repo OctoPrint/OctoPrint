@@ -73,10 +73,8 @@ class LocalStorageTest(unittest.TestCase):
 	def test_add_file_overwrite(self):
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 
-		try:
-			self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
-		except Exception:
-			pass
+		from octoprint.filemanager.storage import StorageError
+		self.assertRaises(StorageError, self._add_and_verify_file, "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
 
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
 

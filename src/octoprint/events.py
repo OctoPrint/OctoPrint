@@ -448,7 +448,7 @@ class CommandTrigger(GenericEventListener):
 			try:
 				json_string = json.dumps(payload)
 			except Exception:
-				# TODO: log an error?
+				self._logger.exception("JSON: Cannot dump %r", payload)
 				json_string = ""
 
 		params = {

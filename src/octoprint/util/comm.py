@@ -250,7 +250,7 @@ class PositionRecord(object):
 
 		try:
 			int(attr[1:])
-		except Exception:
+		except ValueError:
 			return False
 
 		return True
@@ -415,7 +415,7 @@ class MachineCom(object):
 		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
 			try:
 				self._timeout_intervals[key] = float(value)
-			except Exception:
+			except ValueError:
 				pass
 
 		self._consecutive_timeouts = 0
@@ -423,7 +423,7 @@ class MachineCom(object):
 		for key, value in settings().get(["serial", "maxCommunicationTimeouts"], merged=True, asdict=True).items():
 			try:
 				self._consecutive_timeout_maximums[key] = int(value)
-			except Exception:
+			except ValueError:
 				pass
 
 		self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
@@ -2299,6 +2299,7 @@ class MachineCom(object):
 					except KeyError:
 						output = template.format(**match.groupdict())
 					except Exception:
+						self._logger.debug("Could not proces template %s: %s", template_key, template, exc_info=1)
 						output = None
 
 					if output is not None:
@@ -3527,31 +3528,22 @@ class MachineCom(object):
 	def _gcode_M155_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		match = regexes_parameters["intS"].search(cmd)
 		if match:
-			try:
-				interval = int(match.group("value"))
-				self._temperature_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_TEMP, False) \
-				                                  and (interval > 0)
-			except Exception:
-				pass
+			interval = int(match.group("value"))
+			self._temperature_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_TEMP, False) \
+											  and (interval > 0)
 
 	def _gcode_M27_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		match = regexes_parameters["intS"].search(cmd)
 		if match:
-			try:
-				interval = int(match.group("value"))
-				self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
-				                               and (interval > 0)
-			except Exception:
-				pass
+			interval = int(match.group("value"))
+			self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
+										   and (interval > 0)
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		newLineNumber = 0
 		match = regexes_parameters["intN"].search(cmd)
 		if match:
-			try:
-				newLineNumber = int(match.group("value"))
-			except Exception:
-				pass
+			newLineNumber = int(match.group("value"))
 
 		with self._line_mutex:
 			self._logger.info("M110 detected, setting current line number to {}".format(newLineNumber))
@@ -4232,9 +4224,9 @@ def convert_pause_triggers(configured_triggers):
 				re.compile(regex)
 				# add to type list
 				triggers[t].append(regex)
-		except Exception:
-			# invalid regex or something like this, we'll just skip this entry
-			pass
+		except Exception as exc:
+			# invalid regex or something like this
+			logging.getLogger(__name__).debug("Problem with trigger %r: %s", trigger, str(exc))
 
 	result = dict()
 	for t in triggers.keys():

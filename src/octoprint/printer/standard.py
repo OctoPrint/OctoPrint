@@ -936,7 +936,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 				try:
 					fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
-				except Exception:
+				except Exception as exc:
+					self._logger.exception("Error generating fileData")
 					fileData = None
 				if fileData is not None:
 					if "display" in fileData:

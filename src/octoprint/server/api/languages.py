@@ -9,6 +9,7 @@ import io
 import os
 import tarfile
 import zipfile
+import logging
 
 try:
 	from os import scandir
@@ -53,6 +54,7 @@ def getInstalledLanguagePacks():
 					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
 				except Exception:
+					logging.getLogger(__name__).exception("Could not load %s", meta_path)
 					pass
 				else:
 					import datetime
