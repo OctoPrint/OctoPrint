@@ -338,7 +338,7 @@ class FileManager(object):
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.BytesIO(";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
 					                         io.FileIO(tmp_path, 'rb'))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)

@@ -194,14 +194,14 @@ class FileManagerTest(unittest.TestCase):
 		self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
 		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.gcode", wrapper,
-		                                       display=u"täst.gcode")
+		                                       display="täst.gcode")
 
 		self.assertEqual(("", "test.gcode"), file_path)
 		self.local_storage.add_file.assert_called_once_with("test.gcode", wrapper,
 		                                                    printer_profile=test_profile,
 		                                                    allow_overwrite=False,
 		                                                    links=None,
-		                                                    display=u"täst.gcode")
+		                                                    display="täst.gcode")
 
 	def test_remove_file(self):
 		self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
@@ -248,11 +248,11 @@ class FileManagerTest(unittest.TestCase):
 
 		with self.assertRaises(RuntimeError, msg="already there"):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder",
-			                             display=u"täst_folder")
+			                             display="täst_folder")
 			self.fail("Expected an exception to occur!")
 		self.local_storage.add_folder.assert_called_once_with("test_folder",
 		                                                      ignore_existing=True,
-		                                                      display=u"täst_folder")
+		                                                      display="täst_folder")
 
 	def test_remove_folder(self):
 		self.local_storage.split_path.return_value = ("", "test_folder")

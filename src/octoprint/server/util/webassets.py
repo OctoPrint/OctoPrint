@@ -113,7 +113,7 @@ class ChainedHunk(BaseHunk):
 		pass
 
 	def data(self):
-		result = u""
+		result = ""
 		for hunk in self._hunks:
 			if isinstance(hunk, tuple) and len(hunk) == 2:
 				hunk, f = hunk
@@ -124,12 +124,12 @@ class ChainedHunk(BaseHunk):
 
 
 _PLUGIN_BUNDLE_WRAPPER_PREFIX = \
-u"""// JS assets for plugin {plugin}
+"""// JS assets for plugin {plugin}
 (function () {{
     try {{
         """
 _PLUGIN_BUNDLE_WRAPPER_SUFFIX = \
-u"""
+"""
     }} catch (error) {{
         log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
     }}

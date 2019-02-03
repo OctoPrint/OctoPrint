@@ -319,20 +319,20 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 	Examples:
 
 	    >>> get_dos_filename("test1234.gco")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("test1234.gcode")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("test12345.gco")
-	    u'test12~1.gco'
+	    'test12~1.gco'
 	    >>> get_dos_filename("test1234.fnord", extension="gco")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("auto0.g", extension="gco")
-	    u'auto0.gco'
+	    'auto0.gco'
 	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
-	    u'auto0.g'
+	    'auto0.g'
 	    >>> get_dos_filename(None)
 	    >>> get_dos_filename("foo")
-	    u'foo'
+	    'foo'
 	"""
 
 	if input is None:
@@ -404,37 +404,37 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	Examples:
 
 	    >>> find_collision_free_name("test1234", "gco", [])
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> find_collision_free_name("test1234", "gcode", [])
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> find_collision_free_name("test12345", "gco", [])
-	    u'test12~1.gco'
+	    'test12~1.gco'
 	    >>> find_collision_free_name("test 123", "gco", [])
-	    u'test_123.gco'
+	    'test_123.gco'
 	    >>> find_collision_free_name("test1234", "g o", [])
-	    u'test1234.g_o'
+	    'test1234.g_o'
 	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"])
-	    u'test12~2.gco'
+	    'test12~2.gco'
 	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
 	    >>> find_collision_free_name("test12345", "gco", many_files)
-	    u'test1~10.gco'
+	    'test1~10.gco'
 	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files)
-	    u'test1~99.gco'
+	    'test1~99.gco'
 	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
 	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
-	    u'test~100.gco'
+	    'test~100.gco'
 
 	"""
 
 	filename = to_unicode(filename)
 	extension = to_unicode(extension)
 
-	if filename.startswith(u"/"):
+	if filename.startswith("/"):
 		filename = filename[1:]
 	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
@@ -445,7 +445,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+	full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
 	result = full_name_format.format(filename=filename,
 	                                 extension=extension)
@@ -455,7 +455,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	counter = 1
 	power = 1
-	prefix_format = u"{segment}~{counter}"
+	prefix_format = "{segment}~{counter}"
 	while counter < (10 ** max_power):
 		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
 		result = full_name_format.format(filename=prefix,
@@ -1056,7 +1056,7 @@ def is_hidden_path(path):
 	path = to_unicode(path)
 
 	filename = os.path.basename(path)
-	if filename.startswith(u"."):
+	if filename.startswith("."):
 		# filenames starting with a . are hidden
 		return True
 

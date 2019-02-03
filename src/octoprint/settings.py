@@ -1834,7 +1834,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 			testfile = os.path.join(folder, ".testballoon.txt")
 			try:
 				with io.open(testfile, 'wt', encoding='utf-8') as f:
-					f.write(u"test")
+					f.write("test")
 				os.remove(testfile)
 			except Exception:
 				if log_error:

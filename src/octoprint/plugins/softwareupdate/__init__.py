@@ -1077,7 +1077,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayVersion"] = to_unicode(check.get("displayVersion"), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion missing or set to None
-				result["displayVersion"] = u"{octoprint_version}"
+				result["displayVersion"] = "{octoprint_version}"
 
 			stable_branch = "master"
 			release_branches = []
@@ -1131,7 +1131,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayVersion"] = to_unicode(check.get("displayVersion", check.get("current")), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion AND current missing or None
-				result["displayVersion"] = u"unknown"
+				result["displayVersion"] = "unknown"
 
 			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = check.get("current", None)
@@ -1150,7 +1150,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
-			self._console_logger.debug(u"{} {}".format(prefix, line))
+			self._console_logger.debug("{} {}".format(prefix, line))
 
 	def _send_client_message(self, message_type, data=None):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))

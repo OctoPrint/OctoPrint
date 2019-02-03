@@ -35,7 +35,7 @@ def _log(lines, prefix=None, stream=None):
 		output_stream = sys.stderr
 
 	for line in lines:
-		to_print = _to_str(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
+		to_print = _to_str("{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
 		                   errors="replace")
 		print(to_print, file=output_stream)
 
@@ -178,7 +178,7 @@ def _to_error(*lines):
 			lines = lines[0]
 		elif not isinstance(lines[0], (str, unicode)):
 			lines = [repr(lines[0]),]
-	return u"\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+	return "\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
 
 
 def _rescue_changes(git_executable, folder):
@@ -186,7 +186,7 @@ def _rescue_changes(git_executable, folder):
 	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode is None or returncode != 0:
 		raise RuntimeError("Could not update, \"git diff\" failed with returncode {}".format(returncode))
-	if stdout and u"".join(stdout).strip():
+	if stdout and "".join(stdout).strip():
 		# we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
 		import time
 		import os

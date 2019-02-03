@@ -485,13 +485,13 @@ def fetch_template_data(refresh=False):
 			# Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
 			# that require to access APIs to function will run into errors since those APIs won't work before ACL
 			# has been configured. See also #2140
-			return u"0:{}".format(to_unicode(d[0]))
+			return "0:{}".format(to_unicode(d[0]))
 		elif d[1].get("mandatory", False):
 			# Other mandatory steps come before the optional ones
-			return u"1:{}".format(to_unicode(d[0]))
+			return "1:{}".format(to_unicode(d[0]))
 		else:
 			# Finally everything else
-			return u"2:{}".format(to_unicode(d[0]))
+			return "2:{}".format(to_unicode(d[0]))
 
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),

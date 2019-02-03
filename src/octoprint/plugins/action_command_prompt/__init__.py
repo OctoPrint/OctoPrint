@@ -185,7 +185,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			return
 
 		# noinspection PyProtectedMember
-		return comm_instance._emergency_force_send(cmd, u"Force-sending {} to the printer".format(self._command), gcode=gcode)
+		return comm_instance._emergency_force_send(cmd, "Force-sending {} to the printer".format(self._command), gcode=gcode)
 
 	#~ capability reporting
 

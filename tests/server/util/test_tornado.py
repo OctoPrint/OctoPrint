@@ -76,16 +76,16 @@ class StripValueQuotesTest(unittest.TestCase):
 class ExtendedHeaderValueTest(unittest.TestCase):
 
 	@data(
-		(u"", u""),
+		("", ""),
 		(None, None),
-		(u'"quoted-string"', u"quoted-string"),
-		(u'"qüöted-string"', u"qüöted-string"),
-		(u"iso-8859-1'en'%A3%20rates", u"£ rates"),
-		(u"UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", u"£ and € rates"),
-		('"quoted-string"', u"quoted-string"),
-		('"qüöted-string"', u"qüöted-string"),
-		("iso-8859-1'en'%A3%20rates", u"£ rates"),
-		("UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", u"£ and € rates")
+		('"quoted-string"', "quoted-string"),
+		('"qüöted-string"', "qüöted-string"),
+		("iso-8859-1'en'%A3%20rates", "£ rates"),
+		("UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", "£ and € rates"),
+		('"quoted-string"', "quoted-string"),
+		('"qüöted-string"', "qüöted-string"),
+		("iso-8859-1'en'%A3%20rates", "£ rates"),
+		("UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", "£ and € rates")
 	)
 	@unpack
 	def test_extended_header_value(self, value, expected):

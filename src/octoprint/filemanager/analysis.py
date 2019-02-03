@@ -382,7 +382,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
 			if not p.commands[0].process:
 				# the process might have been set to None in case of any exception
-				raise RuntimeError(u"Error while trying to run command {}".format(" ".join(command)))
+				raise RuntimeError("Error while trying to run command {}".format(" ".join(command)))
 
 			try:
 				# let's wait for stuff to finish

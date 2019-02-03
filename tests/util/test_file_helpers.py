@@ -53,8 +53,8 @@ class BomAwareOpenTest(unittest.TestCase):
 
 		# assert
 		self.assertEqual(len(contents), 3)
-		self.assertTrue(contents[0].startswith(u"\ufffd" * 3 + "#"))
-		self.assertTrue(contents[2].endswith(u"\ufffd\ufffd" * 6))
+		self.assertTrue(contents[0].startswith("\ufffd" * 3 + "#"))
+		self.assertTrue(contents[2].endswith("\ufffd\ufffd" * 6))
 
 	def test_bom_aware_open_encoding_error(self):
 		"""Tests that an encoding error is thrown if not suppressed when opening a UTF8 file as ASCII."""
@@ -334,7 +334,7 @@ class IsHiddenPathTest(unittest.TestCase):
 		self.path_always_hidden = os.path.join(self.basepath, ".always_hidden.txt")
 
 		import sys
-		for attr in (u"path_always_visible", u"path_hidden_on_windows", u"path_always_hidden"):
+		for attr in ("path_always_visible", "path_hidden_on_windows", "path_always_hidden"):
 			path = getattr(self, attr)
 			with io.open(path, 'wt+', encoding='utf-8') as f:
 				f.write(attr)

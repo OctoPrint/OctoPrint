@@ -360,7 +360,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			now = time.time()
 			if os.stat(channel_path).st_mtime + ttl > now:
 				d = feedparser.parse(channel_path)
-				self._logger.debug(u"Loaded channel {} from cache at {}".format(key, channel_path))
+				self._logger.debug("Loaded channel {} from cache at {}".format(key, channel_path))
 				return d
 
 		return None
@@ -375,10 +375,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			start = time.time()
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
-			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
+			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
 		except Exception as e:
 			self._logger.exception(
-				u"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
+				"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
 			return None
 
 		response = r.text
@@ -434,22 +434,22 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 _image_tag_re = re.compile(r'<img.*?/?>')
 def _strip_images(text):
 	"""
-	>>> _strip_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
-	u"<a href='test.html'>I'm a link</a> and this is an image: "
-	>>> _strip_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
-	u'One  and two  and three  and four '
-	>>> _strip_images(u"No images here")
-	u'No images here'
+	>>> _strip_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	"<a href='test.html'>I'm a link</a> and this is an image: "
+	>>> _strip_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
+	'One  and two  and three  and four '
+	>>> _strip_images("No images here")
+	'No images here'
 	"""
 	return _image_tag_re.sub('', text)
 
 def _replace_images(text, callback):
 	"""
 	>>> callback = lambda img: "foobar"
-	>>> _replace_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
-	u"<a href='test.html'>I'm a link</a> and this is an image: foobar"
-	>>> _replace_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
-	u'One foobar and two foobar and three foobar and four foobar'
+	>>> _replace_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
+	"<a href='test.html'>I'm a link</a> and this is an image: foobar"
+	>>> _replace_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
+	'One foobar and two foobar and three foobar and four foobar'
 	"""
 	result = text
 	for match in _image_tag_re.finditer(text):
@@ -461,14 +461,14 @@ def _replace_images(text, callback):
 _image_src_re = re.compile(r'src=(?P<quote>[\'"]*)(?P<src>.*?)(?P=quote)(?=\s+|>)')
 def _lazy_images(text, placeholder=None):
 	"""
-	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
-	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
-	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-	>>> _lazy_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
-	u'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
-	>>> _lazy_images(u"No images here")
-	u'No images here'
+	>>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
+	'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
+	'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
+	>>> _lazy_images("No images here")
+	'No images here'
 	"""
 	if placeholder is None:
 		# 1px transparent gif
@@ -487,10 +487,10 @@ def _lazy_images(text, placeholder=None):
 
 def _strip_tags(text):
 	"""
-	>>> _strip_tags(u"<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
-	u"Hello world&lt;img src='foo.jpg'&gt;"
-	>>> _strip_tags(u"&#62; &#x3E; Foo")
-	u'&#62; &#x3E; Foo'
+	>>> _strip_tags("<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
+	"Hello world&lt;img src='foo.jpg'&gt;"
+	>>> _strip_tags("&#62; &#x3E; Foo")
+	'&#62; &#x3E; Foo'
 	"""
 	try:
 		# noinspection PyCompatibility

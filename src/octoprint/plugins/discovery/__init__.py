@@ -199,13 +199,13 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		while True:
 			try:
 				self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-				self._logger.info(u"Registered '{name}' for {regtype}".format(**params))
+				self._logger.info("Registered '{name}' for {regtype}".format(**params))
 				return True
 			except pybonjour.BonjourError as be:
 				if be.errorCode == pybonjour.kDNSServiceErr_NameConflict:
 					# Name already registered by different service, let's try a counter postfix. See #2852
 					counter += 1
-					params["name"] = u"{} ({})".format(name, counter)
+					params["name"] = "{} ({})".format(name, counter)
 				else:
 					raise
 
@@ -653,7 +653,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.__class__.ssdp_multicast_addr) + socket.inet_aton('0.0.0.0'))
 
-		self._logger.info(u"Registered {} for SSDP".format(self.get_instance_name()))
+		self._logger.info("Registered {} for SSDP".format(self.get_instance_name()))
 
 		self._ssdp_notify(alive=True)
 
@@ -694,10 +694,10 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 	def get_instance_name(self):
 		name = self._settings.global_get(["appearance", "name"])
 		if name:
-			return u"OctoPrint instance \"{}\"".format(name)
+			return "OctoPrint instance \"{}\"".format(name)
 		else:
 			import socket
-			return u"OctoPrint instance on {}".format(socket.gethostname())
+			return "OctoPrint instance on {}".format(socket.gethostname())
 
 
 __plugin_name__ = "Discovery"

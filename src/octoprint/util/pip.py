@@ -428,7 +428,7 @@ class PipCaller(CommandlineCaller):
 
 		    >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
 		    >>> PipCaller._preprocess(text)
-		    u'some text with some ANSI codes for red words and also some cursor control codes'
+		    'some text with some ANSI codes for red words and also some cursor control codes'
 		"""
 		return to_unicode(clean_ansi(text))
 

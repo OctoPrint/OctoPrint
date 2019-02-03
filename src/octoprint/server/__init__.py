@@ -1051,14 +1051,14 @@ class Server(object):
 		def externalize_links(text):
 			def repl(match):
 				tag = match.group("tag")
-				if not u"href" in tag:
+				if not "href" in tag:
 					return match.group(0)
 
-				if not u"target=" in tag and not u"rel=" in tag:
-					tag += u" target=\"_blank\" rel=\"noreferrer noopener\""
+				if not "target=" in tag and not "rel=" in tag:
+					tag += " target=\"_blank\" rel=\"noreferrer noopener\""
 
 				content = match.group("content")
-				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
+				return "<{tag}>{content}</a>".format(tag=tag, content=content)
 			return html_link_regex.sub(repl, text)
 
 		app.jinja_env.filters["regex_replace"] = regex_replace

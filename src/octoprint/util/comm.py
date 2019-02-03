@@ -623,9 +623,9 @@ class MachineCom(object):
 		self._serialLogger.debug(message)
 
 	def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
-		log = u"Last lines in terminal:\n" + u"\n".join(map(lambda x: u"| {}".format(x), list(self._terminal_log)))
+		log = "Last lines in terminal:\n" + "\n".join(map(lambda x: "| {}".format(x), list(self._terminal_log)))
 		if message is not None:
-			log = message + u"\n| " + log
+			log = message + "\n| " + log
 		self._logger.log(level, log)
 
 	def _addToLastLines(self, cmd):
@@ -2663,7 +2663,7 @@ class MachineCom(object):
 						if ret:
 							return line
 
-				self._to_logfile_with_terminal(u"Received an error from the printer's firmware: {}".format(stripped_error),
+				self._to_logfile_with_terminal("Received an error from the printer's firmware: {}".format(stripped_error),
 				                               level=logging.WARN)
 
 				if not self._ignore_errors:
@@ -2865,8 +2865,8 @@ class MachineCom(object):
 						self._log_resends_rate_start = now
 						self._log_resends_rate_count = 0
 
-					self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
-					                               u"current line = {}".format(lineToResend, self._currentLine))
+					self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, "
+					                               "current line = {}".format(lineToResend, self._currentLine))
 					self._log_resends_rate_count += 1
 
 			self._send_queue.resend_active = True
@@ -3149,17 +3149,17 @@ class MachineCom(object):
 
 	def _log_command_phase(self, phase, command, *args, **kwargs):
 		if self._phaseLogger.isEnabledFor(logging.DEBUG):
-			output_parts = [u"phase: {}".format(phase),
-			                u"command: {}".format(command)]
+			output_parts = ["phase: {}".format(phase),
+			                "command: {}".format(command)]
 
 			if kwargs.get("command_type"):
-				output_parts.append(u"command_type: {}".format(kwargs["command_type"]))
+				output_parts.append("command_type: {}".format(kwargs["command_type"]))
 			if kwargs.get("gcode"):
-				output_parts.append(u"gcode: {}".format(kwargs["gcode"]))
+				output_parts.append("gcode: {}".format(kwargs["gcode"]))
 			if kwargs.get("subcode"):
-				output_parts.append(u"subcode: {}".format(kwargs["subcode"]))
+				output_parts.append("subcode: {}".format(kwargs["subcode"]))
 			if kwargs.get("tags"):
-				output_parts.append(u"tags: [ {} ]".format(", ".join(sorted(kwargs["tags"]))))
+				output_parts.append("tags: [ {} ]".format(", ".join(sorted(kwargs["tags"]))))
 
 			self._phaseLogger.debug(" | ".join(output_parts))
 
@@ -3564,7 +3564,7 @@ class MachineCom(object):
 		self._resendDelta = None
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self._logger.info(u"Force-sending M112 to the printer")
+		self._logger.info("Force-sending M112 to the printer")
 
 		# emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
 		# available or not
@@ -3598,10 +3598,10 @@ class MachineCom(object):
 		return None,
 
 	def _gcode_M108_queuing(self, cmd, gcode=None, *args, **kwargs):
-		return self._emergency_force_send(cmd, u"Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
+		return self._emergency_force_send(cmd, "Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M410_queuing(self, cmd, gcode=None, *args, **kwargs):
-		return self._emergency_force_send(cmd, u"Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
+		return self._emergency_force_send(cmd, "Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
 
 	def _gcode_M114_queued(self, *args, **kwargs):
 		self._reset_position_timers()
@@ -3911,7 +3911,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		with self._handle_mutex:
 			if self._handle is None:
-				self._logger.warning(u"File {} is not open for reading".format(self._filename))
+				self._logger.warning("File {} is not open for reading".format(self._filename))
 				return None, None, None
 
 			try:

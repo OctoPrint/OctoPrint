@@ -410,11 +410,11 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			except Exception:
 				self._logger.exception("Could not write application keys to {}".format(self._key_path))
 
-__plugin_name__ = u"Application Keys Plugin"
-__plugin_description__ = u"Implements a workflow for third party clients to obtain API keys"
-__plugin_author__ = u"Gina Häußge, Aldo Hoeben"
-__plugin_disabling_discouraged__ = gettext(u"Without this plugin third party clients will no longer be able to "
-                                           u"obtain an API key without you manually copy-pasting it.")
+__plugin_name__ = "Application Keys Plugin"
+__plugin_description__ = "Implements a workflow for third party clients to obtain API keys"
+__plugin_author__ = "Gina Häußge, Aldo Hoeben"
+__plugin_disabling_discouraged__ = gettext("Without this plugin third party clients will no longer be able to "
+                                           "obtain an API key without you manually copy-pasting it.")
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
 	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,

@@ -450,11 +450,11 @@ class LocalFileStorage(StorageInterface):
 	This storage type implements :func:`path_on_disk`.
 	"""
 
-	_UNICODE_VARIATIONS = re.compile(u"[\uFE00-\uFE0F]", re.U)
+	_UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
 
 	@classmethod
 	def _no_unicode_variations(cls, text):
-		return cls._UNICODE_VARIATIONS.sub(u"", text)
+		return cls._UNICODE_VARIATIONS.sub("", text)
 
 	_SLUGIFY = Slugify()
 	_SLUGIFY.safe_chars = "-_.()[] "
@@ -463,7 +463,7 @@ class LocalFileStorage(StorageInterface):
 	def _slugify(cls, text):
 		text = to_unicode(text)
 		text = cls._no_unicode_variations(text)
-		text = demojize(text, delimiters=(u"", u""))
+		text = demojize(text, delimiters=("", ""))
 		return cls._SLUGIFY(text)
 
 	def __init__(self, basefolder, create=False):
@@ -597,10 +597,10 @@ class LocalFileStorage(StorageInterface):
 			path = self.sanitize_path(to_unicode(path))
 			base = self.path_in_storage(path)
 			if base:
-				base += u"/"
+				base += "/"
 		else:
 			path = self.basefolder
-			base = u""
+			base = ""
 		return self._list_folder(path, base=base, entry_filter=filter, recursive=recursive)
 
 	def add_folder(self, path, ignore_existing=True, display=None):
@@ -912,14 +912,14 @@ class LocalFileStorage(StorageInterface):
 
 	def split_path(self, path):
 		path = to_unicode(path)
-		split = path.split(u"/")
+		split = path.split("/")
 		if len(split) == 1:
-			return u"", split[0]
+			return "", split[0]
 		else:
 			return self.join_path(*split[:-1]), split[-1]
 
 	def join_path(self, *path):
-		return u"/".join(map(to_unicode, path))
+		return "/".join(map(to_unicode, path))
 
 	def sanitize(self, path):
 		"""
@@ -948,17 +948,17 @@ class LocalFileStorage(StorageInterface):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, u"/")
-			path = path.split(u"/")
+			path = path.replace(os.path.sep, "/")
+			path = path.split("/")
 		if isinstance(path, (list, tuple)):
 			if len(path) == 1:
 				name = to_unicode(path[0])
-				path = u""
+				path = ""
 			else:
 				name = to_unicode(path[-1])
 				path = self.join_path(*map(to_unicode, path[:-1]))
 		if not path:
-			path = u""
+			path = ""
 
 		return path, name
 
@@ -973,11 +973,11 @@ class LocalFileStorage(StorageInterface):
 		if name is None:
 			return None
 
-		if u"/" in name or u"\\" in name:
+		if "/" in name or "\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		result = self._slugify(name).replace(u" ", u"_")
-		if result and result != u"." and result != u".." and result[0] == u".":
+		result = self._slugify(name).replace(" ", "_")
+		if result and result != "." and result != ".." and result[0] == ".":
 			# hidden files under *nix
 			result = result[1:]
 		return result
@@ -991,12 +991,12 @@ class LocalFileStorage(StorageInterface):
 		path = to_unicode(path)
 
 		if len(path):
-			if path[0] == u"/":
+			if path[0] == "/":
 				path = path[1:]
-			elif path[0] == u"." and path[1] == u"/":
+			elif path[0] == "." and path[1] == "/":
 				path = path[2:]
 
-		path_elements = path.split(u"/")
+		path_elements = path.split("/")
 		joined_path = self.basefolder
 		for path_element in path_elements:
 			joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
@@ -1016,16 +1016,16 @@ class LocalFileStorage(StorageInterface):
 			counter = 1
 			while os.path.exists(sanitized_path):
 				counter += 1
-				sanitized = self.sanitize_name(u"{}_({}){}".format(sanitized_name, counter, sanitized_ext))
+				sanitized = self.sanitize_name("{}_({}){}".format(sanitized_name, counter, sanitized_ext))
 				sanitized_path = os.path.join(path, sanitized)
 
 			try:
 				shutil.move(entry_path, sanitized_path)
 
-				self._logger.info(u"Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
+				self._logger.info("Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
 				return sanitized, sanitized_path
 			except Exception:
-				self._logger.exception(u"Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
+				self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
 				raise
 
 		return entry, entry_path
@@ -1037,8 +1037,8 @@ class LocalFileStorage(StorageInterface):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, u"/")
-		if path.startswith(u"/"):
+			path = path.replace(os.path.sep, "/")
+		if path.startswith("/"):
 			path = path[1:]
 
 		return path

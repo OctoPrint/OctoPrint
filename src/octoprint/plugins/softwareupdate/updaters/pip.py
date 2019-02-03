@@ -85,7 +85,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 
 	install_arg = check["pip"].format(target_version=target_version, target=target_version)
 
-	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
+	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
 	pip_kwargs = dict()
 	if pip_working_directory is not None:
@@ -106,9 +106,9 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 			return (_POTENTIAL_EGG_PROBLEM_POSIX in line or _POTENTIAL_EGG_PROBLEM_WINDOWS in line) and ".egg" in line
 
 		if any(map(lambda x: is_egg_problem(x), stderr)) or any(map(lambda x: is_egg_problem(x), stdout)):
-			_log_message(u"This looks like an error caused by a specific issue in upgrading Python \"eggs\"",
-			             u"via current versions of pip.",
-			             u"Performing a second install attempt as a work around.")
+			_log_message("This looks like an error caused by a specific issue in upgrading Python \"eggs\"",
+			             "via current versions of pip.",
+			             "Performing a second install attempt as a work around.")
 			returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
 			if returncode != 0:
 				raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
@@ -116,11 +116,11 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 			raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
 
 	if not force and any(map(lambda x: x.strip().startswith(_ALREADY_INSTALLED) and (install_arg in x or install_arg in x.lower()), stdout)):
-		_log_message(u"Looks like we were already installed in this version. Forcing a reinstall.")
+		_log_message("Looks like we were already installed in this version. Forcing a reinstall.")
 		force = True
 
 	if force:
-		logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+		logger.debug("Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 		pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
 		returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)

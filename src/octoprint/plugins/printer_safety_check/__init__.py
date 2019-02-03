@@ -61,8 +61,8 @@ SAFETY_CHECKS = {
 	                              REPETIER_BEFORE_092_M115_TEST),
 	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
 	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
-	                        message=gettext(u"Your printer's firmware is known to lack mandatory safety features (e.g. "
-	                                        u"thermal runaway protection). This is a fire risk."))
+	                        message=gettext("Your printer's firmware is known to lack mandatory safety features (e.g. "
+	                                        "thermal runaway protection). This is a fire risk."))
 }
 
 def extract_repetier_version(name):

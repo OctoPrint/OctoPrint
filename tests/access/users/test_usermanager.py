@@ -19,7 +19,7 @@ class UserManagerTest(unittest.TestCase):
 	def test_createPasswordHash_nonascii(self):
 		"""Test for issue #1891"""
 
-		password = u"password with ümläutß"
+		password = "password with ümläutß"
 		salt = "abc"
 
 		# should not throw an exception

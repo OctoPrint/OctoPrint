@@ -175,28 +175,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			try:
 				callback.on_printer_add_temperature(data)
 			except Exception:
-				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback))
+				self._logger.exception("Exception while adding temperature data point to callback {}".format(callback))
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_log(data)
 			except Exception:
-				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback))
+				self._logger.exception("Exception while adding communication log entry to callback {}".format(callback))
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_message(data)
 			except Exception:
-				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback))
+				self._logger.exception("Exception while adding printer message to callback {}".format(callback))
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_send_current_data(copy.deepcopy(data))
 			except Exception:
-				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback))
+				self._logger.exception("Exception while pushing current data to callback {}".format(callback))
 
 	#~~ callback from metadata analysis event
 

@@ -241,7 +241,7 @@ def fix_webassets_filtertool():
 			return MemoryHunk(content)
 		except Exception:
 			error_logger.exception("Got an exception while trying to apply filter, ignoring file")
-			return MemoryHunk(u"")
+			return MemoryHunk("")
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
@@ -982,7 +982,7 @@ def preemptively_cached(cache, data, unless=None):
 			try:
 				cache.record(data, unless=unless)
 			except Exception:
-				logging.getLogger(__name__).exception(u"Error while recording preemptive cache entry: {!r}".format(data))
+				logging.getLogger(__name__).exception("Error while recording preemptive cache entry: {!r}".format(data))
 			return f(*args, **kwargs)
 		return decorated_function
 	return decorator
@@ -1001,7 +1001,7 @@ def etagged(etag):
 					if result:
 						rv.set_etag(result)
 				except Exception:
-					logging.getLogger(__name__).exception(u"Error while calculating the etag value for response {!r}".format(rv))
+					logging.getLogger(__name__).exception("Error while calculating the etag value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -1025,7 +1025,7 @@ def lastmodified(date):
 					if result:
 						rv.headers["Last-Modified"] = result
 				except Exception:
-					logging.getLogger(__name__).exception(u"Error while calculating the lastmodified value for response {!r}".format(rv))
+					logging.getLogger(__name__).exception("Error while calculating the lastmodified value for response {!r}".format(rv))
 			return rv
 		return decorated_function
 	return decorator
@@ -1043,7 +1043,7 @@ def conditional(condition, met):
 						rv = met()
 					return rv
 			except Exception:
-				logging.getLogger(__name__).exception(u"Error while evaluating conditional {!r} or met {!r}".format(condition, met))
+				logging.getLogger(__name__).exception("Error while evaluating conditional {!r} or met {!r}".format(condition, met))
 
 			# condition hasn't been met, call decorated function
 			return f(*args, **kwargs)

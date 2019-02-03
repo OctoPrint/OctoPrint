@@ -549,10 +549,10 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 		request = OctoPrintFlaskRequest(environ)
 
 		cookies = request.cookies
-		self.assertDictEqual({"postfixed": u"postfixed_value",
-		                      "postfixed_wrong_P5001": u"postfixed_wrong_value",
-		                      "unpostfixed": u"unpostfixed_value",
-		                      "both": u"both_postfixed_value"},
+		self.assertDictEqual({"postfixed": "postfixed_value",
+		                      "postfixed_wrong_P5001": "postfixed_wrong_value",
+		                      "unpostfixed": "unpostfixed_value",
+		                      "both": "both_postfixed_value"},
 		                     cookies)
 
 ##~~

@@ -83,16 +83,16 @@ class CommandlineCaller(object):
 
 	   def log(prefix, *lines):
 	       for line in lines:
-	           print(u"{} {}".format(prefix, line))
+	           print("{} {}".format(prefix, line))
 
 	   def log_stdout(*lines):
-	       log(u">>>", *lines)
+	       log(">>>", *lines)
 
 	   def log_stderr(*lines):
-	       log(u"!!!", *lines)
+	       log("!!!", *lines)
 
 	   def log_call(*lines)
-	       log(u"---", *lines)
+	       log("---", *lines)
 
 	   caller = CommandLineCaller()
 	   caller.on_log_call = log_call
@@ -102,9 +102,9 @@ class CommandlineCaller(object):
 	   try:
 	       caller.checked_call(["some", "command", "with", "parameters"])
 	   except CommandLineError as err:
-	       print(u"Command returned {}".format(err.returncode))
+	       print("Command returned {}".format(err.returncode))
 	   else:
-	       print(u"Command finished successfully")
+	       print("Command finished successfully")
 	"""
 
 	def __init__(self):
@@ -158,7 +158,7 @@ class CommandlineCaller(object):
 			joined_command = " ".join(command)
 		else:
 			joined_command = command
-		self._logger.debug(u"Calling: {}".format(joined_command))
+		self._logger.debug("Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
 
 		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
@@ -177,7 +177,7 @@ class CommandlineCaller(object):
 
 		if not p.commands[0].process:
 			# the process might have been set to None in case of any exception
-			self._logger.error(u"Error while trying to run command {}".format(joined_command))
+			self._logger.error("Error while trying to run command {}".format(joined_command))
 			return None, [], []
 
 		all_stdout = []
