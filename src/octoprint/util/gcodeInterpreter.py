@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under 
 
 import math
 import os
+import io
 import base64
 import zlib
 import logging
@@ -239,7 +240,7 @@ class gcode(object):
 			lineNo += 1
 			readBytes += len(line.encode("utf-8"))
 
-			if isinstance(gcodeFile, (file, codecs.StreamReaderWriter)):
+			if isinstance(gcodeFile, (io.IOBase, codecs.StreamReaderWriter)):
 				percentage = float(readBytes) / float(self._fileSize)
 			elif isinstance(gcodeFile, (list)):
 				percentage = float(lineNo) / float(len(gcodeFile))
