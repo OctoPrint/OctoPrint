@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
-# unicode_literals here because Py2.7s setup doesn't like them
+#!/usr/bin/env python2
+# coding=utf-8
 
 from setuptools import setup, find_packages
 from distutils.command.build_py import build_py as _build_py
@@ -9,26 +7,21 @@ import os
 import versioneer
 
 import sys
-PY3 = sys.version_info[0] == 3
-
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
 import octoprint_setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-if PY3:
-	PYTHON_REQUIRES = ">=3.5"
-else:
-	PYTHON_REQUIRES = ">=2.7.9"
+PYTHON_REQUIRES = ">=2.7.9"      # py 3 marked as supported so that we can migrate... NOT officially supported though!
 
+# Requirements for our application
 INSTALL_REQUIRES = [
-	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
-	                               # vendored one
-	"PyYAML>=3.13,<3.14",
-	"flask>=1.0.2,<1.1",        # newer versions require newer Jinja versions
-	"werkzeug>=0.14,<0.15",
-	"Jinja2>=2.10,<2.11",        # Jinja 2.9 has breaking changes WRT template scope - we can't
+	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
+	# changes that might affect plugins, or due to other observed problems
+
+	"flask>=0.12,<0.13",         # newer versions require newer Jinja versions
+	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
@@ -40,6 +33,8 @@ INSTALL_REQUIRES = [
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
+	"werkzeug>=0.14.1,<0.15",
+	"PyYAML>=3.13,<4",
 	"markdown>=3.0,<3.1",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
@@ -65,11 +60,11 @@ INSTALL_REQUIRES = [
 	"monotonic>=1.5,<1.6",
 	"frozendict>=1.2,<1.3"
 ]
+if sys.version_info[0] < 3:
+	INSTALL_REQUIRES.append("futures>=3.2,<3.3")
 
 if sys.platform == "darwin":
 	INSTALL_REQUIRES.append("appdirs>=1.4.0")
-if not PY3:
-	INSTALL_REQUIRES.append("futures>=3.2,<3.3")
 
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
