@@ -404,9 +404,9 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def _to_internal_entry(self, entry, read_until=None):
 		"""Convert feed entries to internal data structure."""
 
-		timestamp = entry.get("published_parsed",
-		                      entry.get("updated_parsed",
-		                                None))
+		timestamp = entry.get("published_parsed", None)
+		if timestamp is None:
+			timestamp = entry.get("updated_parsed", None)
 		if timestamp is None:
 			return  None
 
