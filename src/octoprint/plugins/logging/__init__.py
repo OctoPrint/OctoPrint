@@ -167,15 +167,17 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		# clear all configured logging levels
 		if config.has_key("loggers"):
 			purge = []
-			for component in config["loggers"]:
+			for component, data in config["loggers"].items():
 				if not self._is_managed_logger(component): continue
 				try:
-					del config["loggers"][component]["level"]
+					del data["level"]
 					self._logger.manager.loggerDict[component].setLevel(logging.INFO)
-				except Exception:
+				except KeyError:
 					pass
-				if len(config["loggers"][component]) == 0:
+				if len(data) == 0:
 					purge.append(component)
+			for component in purge:
+				del config["loggers"][component]
 		else:
 			config["loggers"] = dict()
 
