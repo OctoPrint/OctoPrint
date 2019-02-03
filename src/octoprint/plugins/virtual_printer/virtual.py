@@ -22,7 +22,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer, to_str
+from octoprint.util import RepeatedTimer, to_bytes
 
 class VirtualPrinter(object):
 	command_regex = re.compile(r"^([GMTF])(\d+)")
@@ -1345,7 +1345,7 @@ class VirtualPrinter(object):
 			line = self.outgoing.get(timeout=timeout)
 			self._seriallog.info(">>> {}".format(line.strip()))
 			self.outgoing.task_done()
-			return to_str(line)
+			return to_bytes(line)
 		except queue.Empty:
 			# queue empty? return empty line
 			return b""

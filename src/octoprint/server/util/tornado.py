@@ -561,7 +561,7 @@ def _extended_header_value(value):
 		if PY3:
 			return unquote(value, encoding=encoding)
 		else:
-			return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
+			return unquote(octoprint.util.to_bytes(value, encoding="iso-8859-1")).decode(encoding)
 	else:
 		# no encoding provided, strip potentially present quotes and call it a day
 		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")

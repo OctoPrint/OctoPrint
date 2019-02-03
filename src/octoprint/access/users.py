@@ -20,7 +20,7 @@ import logging
 from builtins import range, bytes
 
 from octoprint.settings import settings
-from octoprint.util import atomic_write, to_str, deprecated
+from octoprint.util import atomic_write, to_bytes, deprecated
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.access.groups import GroupChangeListener, Group
 
@@ -148,7 +148,7 @@ class UserManager(GroupChangeListener, object):
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
-		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
+		return hashlib.sha512(to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)).hexdigest()
 
 	def check_password(self, username, password):
 		user = self.find_user(username)

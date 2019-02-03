@@ -32,6 +32,7 @@ except ImportError:
 	import Queue as queue
 
 from past.builtins import basestring
+
 try:
 	unicode
 except NameError:
@@ -501,19 +502,22 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
+		to_bytes(to_unicode(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
 
 
-def to_str(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a str."""
+def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a bytestring."""
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
 		return s_or_u
 
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.4.0")(to_bytes)
+
+	return to_bytes(s_or_u, encoding=encoding, errors=errors)
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
