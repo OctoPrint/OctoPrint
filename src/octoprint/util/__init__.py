@@ -518,6 +518,19 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 to_str = deprecated("to_str has been renamed to to_bytes", since="1.4.0")(to_bytes)
 
 
+
+def to_native_str(s_or_u):
+	"""Make sure ``s_or_u`` is a 'str'."""
+	if sys.version_info[0] == 2:
+		if isinstance(s_or_u, unicode):
+			return s_or_u.encode("utf-8")
+	else:
+		if not isinstance(s_or_u, str):
+			raise RuntimeError("Please use a string here.")
+	return s_or_u
+
+
+
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
 	if isinstance(s_or_u, bytes):
