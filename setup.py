@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function
+# unicode_literals here because Py2.7s setup doesn't like them
 
 from setuptools import setup, find_packages
 from distutils.command.build_py import build_py as _build_py
@@ -16,31 +17,18 @@ import octoprint_setuptools
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=2.7.9"      # py 3 marked as supported so that we can migrate... NOT officially supported though!
-
-# Requirements for our application
-FLASK_VERSION_STRING = "flask>=0.12,<0.13"
-JINJA_VERSION_STRING = "Jinja2>=2.8.1,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
-	                    # guarantee backwards compatibility for plugins and such with that
-	                    # version, hence we need to pin to a lower version for now. See #1697
-PYYAML_VERSION_STRING = "PyYAML>=3.12,<3.13"
-WERKZEUG_VERSION_STRING = "werkzeug>=0.11.1,<0.12"
-NOSE_VERSION_STRING = "nose>=1.3.7,<1.4",
-
 if PY3:
 	PYTHON_REQUIRES = ">=3.5"
-	FLASK_VERSION_STRING = "flask>=1.0.2"
-	PYYAML_VERSION_STRING = "PyYAML>=3.13"
-	JINJA_VERSION_STRING = "Jinja2>=2.10"
-	WERKZEUG_VERSION_STRING = "werkzeug>=0.14"
-	NOSE_VERSION_STRING = "nose>=1.3.7"
+else:
+	PYTHON_REQUIRES = ">=2.7.9"
+
 INSTALL_REQUIRES = [
 	#"sockjs-tornado>=1.0.3,<1.1", # current version is incompatible to tornado 5, we use a
 	                               # vendored one
-	PYYAML_VERSION_STRING,
-	FLASK_VERSION_STRING,        # newer versions require newer Jinja versions
-	WERKZEUG_VERSION_STRING,
-	JINJA_VERSION_STRING,        # Jinja 2.9 has breaking changes WRT template scope - we can't
+	"PyYAML>=3.13,<3.14",
+	"flask>=1.0.2,<1.1",        # newer versions require newer Jinja versions
+	"werkzeug>=0.14,<0.15",
+	"Jinja2>=2.10,<2.11",        # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
@@ -89,7 +77,7 @@ EXTRA_REQUIRES = dict(
 	develop=[
 		# Testing dependencies
 		"mock>=2.0.0,<3",
-		NOSE_VERSION_STRING,
+		"nose>=1.3.7,<1.4",
 		"ddt",
 
 		# Documentation dependencies
