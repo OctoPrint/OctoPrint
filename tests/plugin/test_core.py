@@ -7,6 +7,7 @@ import ddt
 
 import octoprint.plugin
 import octoprint.plugin.core
+from octoprint.util import to_native_str
 
 ##~~ Helpers for testing mixin type extraction
 
@@ -337,7 +338,7 @@ class PluginTestCase(unittest.TestCase):
 	)
 	@ddt.unpack
 	def test_mixins_matching_bases(self, bases_to_set, bases_to_check, expected):
-		Foo = type("Foo", bases_to_set, dict())
+		Foo = type(to_native_str("Foo"), bases_to_set, dict())
 		actual = octoprint.plugin.core.PluginManager.mixins_matching_bases(Foo, *bases_to_check)
 		self.assertSetEqual(actual, set(expected))
 

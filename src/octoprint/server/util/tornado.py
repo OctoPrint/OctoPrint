@@ -1179,9 +1179,10 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 		if removed_headers is None:
 			removed_headers = []
 
-		return type(name, (GlobalHeaderTransform,), dict(HEADERS=headers,
-		                                                 FORCED_HEADERS=forced_headers,
-		                                                 REMOVED_HEADERS=removed_headers))
+		return type(octoprint.util.to_native_str(name), (GlobalHeaderTransform,),
+				    dict(HEADERS=headers,
+						 FORCED_HEADERS=forced_headers,
+						 REMOVED_HEADERS=removed_headers))
 
 	def __init__(self, request):
 		tornado.web.OutputTransform.__init__(self, request)

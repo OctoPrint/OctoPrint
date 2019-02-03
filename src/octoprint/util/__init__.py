@@ -517,7 +517,6 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 
 to_str = deprecated("to_str has been renamed to to_bytes", since="1.4.0")(to_bytes)
 
-	return to_bytes(s_or_u, encoding=encoding, errors=errors)
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
