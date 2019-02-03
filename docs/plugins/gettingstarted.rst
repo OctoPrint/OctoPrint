@@ -55,7 +55,7 @@ We'll start at the most basic form a plugin can take - just a few simple lines o
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0.0"
@@ -90,7 +90,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -290,7 +290,7 @@ and ``__plugin_description__`` from ``__init__.py``:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -315,7 +315,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -363,7 +363,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -429,7 +429,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -463,7 +463,7 @@ Adjust your plugin's ``__init__.py`` like this:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -570,7 +570,7 @@ again since we don't use that anymore:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -667,7 +667,7 @@ like so:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -847,7 +847,7 @@ a reference to our CSS file:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -932,7 +932,7 @@ Then adjust our returned assets to include our LESS file as well:
    :linenos:
 
    # -*- coding: utf-8 -*-
-   from __future__ import absolute_import
+   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
