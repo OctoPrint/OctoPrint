@@ -160,10 +160,10 @@ class PygmentsBridgeExt(object):
 			# for py3, recognize interactive sessions, but do not try parsing...
 			lexer = sphinx.highlighting.lexers['pycon3']
 		elif lang == 'guess':
-			try:
+#			try:
 				lexer = sphinx.highlighting.guess_lexer(source)
-			except Exception:
-				lexer = sphinx.highlighting.lexers['none']
+#			except Exception:
+#				lexer = sphinx.highlighting.lexers['none']
 		else:
 			if lang in sphinx.highlighting.lexers:
 				lexer = sphinx.highlighting.lexers[lang]
