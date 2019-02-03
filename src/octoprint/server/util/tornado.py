@@ -239,7 +239,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 				for field in fields:
 					k, sep, v = field.strip().partition("=")
 					if k == "boundary" and v:
-						if v.startswith(b'"') and v.endswith(b'"'):
+						if v.startswith('"') and v.endswith('"'):
 							self._multipart_boundary = tornado.escape.utf8(v[1:-1])
 						else:
 							self._multipart_boundary = tornado.escape.utf8(v)
@@ -287,12 +287,12 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 		delimiter = b"--%s" % self._multipart_boundary
 		delimiter_loc = data.find(delimiter)
 		delimiter_len = len(delimiter)
-		end_of_header = None
+		end_of_header = -1
 		if delimiter_loc != -1:
 			# found the delimiter in the currently available data
 			delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
 			data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
-			end_of_header = self._buffer.find("\r\n\r\n")
+			end_of_header = self._buffer.find(b"\r\n\r\n")
 		else:
 			# make sure any boundary (with single or double ==) contained at the end of chunk does not get
 			# truncated by this processing round => save it to the buffer for next round
@@ -307,7 +307,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 			self._on_part_header(self._buffer[delimiter_len+2:end_of_header])
 			self._buffer = self._buffer[end_of_header + 4:]
 
-		if delimiter_loc != -1 and self._buffer.strip() == delimiter + "--":
+		if delimiter_loc != -1 and self._buffer.strip() == delimiter + b"--":
 			# we saw the last boundary and are at the end of our request
 			if self._current_part:
 				self._on_part_finish(self._current_part)
@@ -460,12 +460,12 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 
 				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
 				for n, p in fields.items():
-					key = name + "." + n
+					key = name + b"." + octoprint.util.to_bytes(n)
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
 					self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
 					self._new_body += b"\r\n"
-					self._new_body += b"%s\r\n" % p
+					self._new_body += octoprint.util.to_bytes(p) + b'\r\n'
 			elif "data" in part:
 				self._new_body += b"--%s\r\n" % self._multipart_boundary
 				value = part["data"]
