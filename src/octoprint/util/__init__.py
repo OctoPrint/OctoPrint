@@ -203,7 +203,7 @@ def is_allowed_file(filename, extensions):
 	    boolean: True if the file name's extension matches one of the allowed extensions, False otherwise.
 	"""
 
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in map(str.lower, extensions)
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in (x.lower() for x in extensions)
 
 
 def get_formatted_timedelta(d):

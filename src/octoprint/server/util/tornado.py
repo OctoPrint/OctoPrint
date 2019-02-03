@@ -1097,7 +1097,7 @@ class UrlProxyHandler(RequestlessExceptionLoggingMixin,
 		if not self._basename:
 			return None
 
-		typeValue = list(map(str.strip, content_type.split(";")))
+		typeValue = list(x.strip() for x in content_type.split(";"))
 		if len(typeValue) == 0:
 			return None
 
