@@ -380,10 +380,10 @@ octoprint.cli.commands
             OctoPrint's CLI.
    :rtype: list
 
-.. _sec-plugins-hook-comm-firmware-info:
+.. _sec-plugins-hook-comm-protocol-firmware-info:
 
-octoprint.comm.firmware.info
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+octoprint.comm.protocol.firmware.info
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: firmware_info_hook(comm_instance, firmware_name, firmware_data, *args, **kwargs)
 
@@ -413,10 +413,10 @@ octoprint.comm.firmware.info
    :param str firmware_name: The name of the parsed capability
    :param dict firmware_data: All data contained in the ``M115`` report
 
-.. _sec-plugins-hook-comm-firmware-capabilities:
+.. _sec-plugins-hook-comm-protocol-firmware-capabilities:
 
-octoprint.comm.firmware.capabilities
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+octoprint.comm.firmware.protocol.capabilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: firmware_capability_hook(comm_instance, capability, enabled, already_defined, *args, **kwargs)
 
