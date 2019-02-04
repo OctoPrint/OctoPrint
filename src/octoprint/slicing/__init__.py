@@ -33,7 +33,8 @@ from octoprint.settings import settings
 
 import logging
 
-from .exceptions import *
+from .exceptions import UnknownSlicer, SlicerNotConfigured, SlicingCancelled, \
+		ProfileAlreadyExists, ProfileException, CouldNotDeleteProfile, UnknownProfile
 
 
 class SlicingProfile(object):
