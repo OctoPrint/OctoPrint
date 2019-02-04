@@ -4584,6 +4584,9 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, tag
 	be empty in which case the command is to be suppressed.
 
 	Examples:
+	    >>> from octoprint.util import to_native_str
+	    >>> uu = lambda x: tuple(to_native_str(y) if y is not None else None for y in x)
+	    >>> u = lambda x: list(uu(y) for y in x)
 	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, None)
 	    [('M105', None, 'M105', None, None)]
 	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, "M110")

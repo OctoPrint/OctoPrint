@@ -329,20 +329,20 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 	Examples:
 
-	    >>> get_dos_filename("test1234.gco")
+	    >>> to_native_str(get_dos_filename("test1234.gco"))
 	    'test1234.gco'
-	    >>> get_dos_filename("test1234.gcode")
+	    >>> to_native_str(get_dos_filename("test1234.gcode"))
 	    'test1234.gco'
-	    >>> get_dos_filename("test12345.gco")
+	    >>> to_native_str(get_dos_filename("test12345.gco"))
 	    'test12~1.gco'
-	    >>> get_dos_filename("test1234.fnord", extension="gco")
+	    >>> to_native_str(get_dos_filename("test1234.fnord", extension="gco"))
 	    'test1234.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco")
+	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco"))
 	    'auto0.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
+	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"]))
 	    'auto0.g'
 	    >>> get_dos_filename(None)
-	    >>> get_dos_filename("foo")
+	    >>> to_native_str(get_dos_filename("foo"))
 	    'foo'
 	"""
 
@@ -414,30 +414,30 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Examples:
 
-	    >>> find_collision_free_name("test1234", "gco", [])
+	    >>> to_native_str(find_collision_free_name("test1234", "gco", []))
 	    'test1234.gco'
-	    >>> find_collision_free_name("test1234", "gcode", [])
+	    >>> to_native_str(find_collision_free_name("test1234", "gcode", []))
 	    'test1234.gco'
-	    >>> find_collision_free_name("test12345", "gco", [])
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", []))
 	    'test12~1.gco'
-	    >>> find_collision_free_name("test 123", "gco", [])
+	    >>> to_native_str(find_collision_free_name("test 123", "gco", []))
 	    'test_123.gco'
-	    >>> find_collision_free_name("test1234", "g o", [])
+	    >>> to_native_str(find_collision_free_name("test1234", "g o", []))
 	    'test1234.g_o'
-	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"])
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", ["/test12~1.gco"]))
 	    'test12~2.gco'
 	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
-	    >>> find_collision_free_name("test12345", "gco", many_files)
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_files))
 	    'test1~10.gco'
 	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files)
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files))
 	    'test1~99.gco'
 	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one))
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3))
 	    'test~100.gco'
 
 	"""
