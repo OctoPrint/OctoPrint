@@ -23,6 +23,7 @@ from octoprint.events import Events
 from octoprint.settings import settings
 from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener
+from octoprint.access.groups import GroupChangeListener
 from octoprint.util.json import JsonEncoding
 
 import octoprint.printer
@@ -69,7 +70,8 @@ class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
 
 class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
                              octoprint.printer.PrinterCallback,
-                             LoginStatusListener):
+                             LoginStatusListener,
+                             GroupChangeListener):
 
 	_emit_permissions = {"connected": [],
 	                     "reauthRequired": [],
@@ -305,6 +307,10 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			self._sendReauthRequired("removed")
 
 	def on_group_permissions_changed(self, group, added=None, removed=None):
+		if self._user.is_anonymous and group == self._groupManager.guest_group:
+			self._sendReauthRequired("modified")
+
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
 		if self._user.is_anonymous and group == self._groupManager.guest_group:
 			self._sendReauthRequired("modified")
 

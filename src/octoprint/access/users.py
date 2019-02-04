@@ -258,6 +258,16 @@ class UserManager(GroupChangeListener, object):
 			except:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
 
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
+		users = self.find_sessions_for(lambda u: group in u.groups)
+		for listener in self._login_status_listeners:
+			# noinspection PyBroadException
+			try:
+				for user in users:
+					listener.on_user_modified(user)
+			except Exception:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+
 	def _trigger_on_user_modified(self, user):
 		if isinstance(user, basestring):
 			# user id
@@ -764,6 +774,15 @@ class FilebasedUserManager(UserManager):
 
 		# call parent
 		UserManager.on_group_permissions_changed(self, group, added=added, removed=removed)
+
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
+		# refresh our group references
+		for user in self.get_all_users():
+			if group in user.groups:
+				self._refresh_groups(user)
+
+		# call parent
+		UserManager.on_group_subgroups_changed(self, group, added=added, removed=removed)
 
 	#~~ Helpers
 

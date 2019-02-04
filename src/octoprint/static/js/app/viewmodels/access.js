@@ -112,7 +112,7 @@ $(function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
                 if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) return;
 
-                OctoPrint.access.users.list()
+                return OctoPrint.access.users.list()
                     .done(self.fromResponse);
             };
 
@@ -348,6 +348,7 @@ $(function() {
                 name: ko.observable(undefined),
                 description: ko.observable(undefined),
                 permissions: ko.observableArray([]),
+                subgroups: ko.observableArray([]),
                 default: ko.observable(false),
                 permissionSelected: function(permission) {
                     var index = self.editor.permissions().indexOf(permission);
@@ -362,6 +363,23 @@ $(function() {
                         permissions.splice(index, 1);
                     }
                     self.editor.permissions(permissions);
+                },
+                subgroupSelected: function(subgroup) {
+                    var index = self.editor.subgroups().indexOf(subgroup);
+                    return index >= 0;
+                },
+                toggleSubgroup: function(subgroup) {
+                    var subgroups = self.editor.subgroups();
+                    var index = subgroups.indexOf(subgroup);
+                    if (index < 0) {
+                        subgroups.push(subgroup);
+                    } else {
+                        subgroups.splice(index, 1);
+                    }
+                    self.editor.subgroups(subgroups);
+                },
+                joinedGroupPermissions: function(group) {
+                    return access.permissionList(group);
                 },
                 header: ko.observable(undefined),
                 new: ko.observable(true),
@@ -420,6 +438,7 @@ $(function() {
                     self.editor.name(undefined);
                     self.editor.description(undefined);
                     self.editor.permissions([]);
+                    self.editor.subgroups([]);
                     self.editor.default(false);
                     self.editor.header(gettext("Add group"));
                     self.editor.new(true);
@@ -430,6 +449,7 @@ $(function() {
                     self.editor.name(newValue.name);
                     self.editor.description(newValue.description);
                     self.editor.permissions(newValue.permissions.slice(0));
+                    self.editor.subgroups(newValue.subgroups.slice(0));
                     self.editor.default(newValue.default);
                     self.editor.header(_.sprintf(gettext("Edit group \"%(name)s\""), {name: newValue.name}));
                     self.editor.new(false);
@@ -438,13 +458,11 @@ $(function() {
             });
 
             self.requestData = function() {
-                OctoPrint.access.groups.list()
+                return OctoPrint.access.groups.list()
                     .done(self.fromResponse);
             };
 
             self.fromResponse = function(response) {
-                self.listHelper.updateItems(response.groups);
-
                 var lookup = {};
                 var defaults = [];
                 _.each(response.groups, function(group) {
@@ -455,11 +473,18 @@ $(function() {
                 });
                 self.lookup = lookup;
                 self.defaults = defaults;
+                self.listHelper.updateItems(response.groups);
             };
 
             self.showAddGroupDialog = function() {
                 self.currentGroup(undefined);
-                self.groupEditorDialog.modal("show");
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.groupEditorDialog).tab("show");
+                self.groupEditorDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             };
 
             self.confirmAddGroup = function() {
@@ -468,6 +493,7 @@ $(function() {
                     name: self.editor.name(),
                     description: self.editor.description(),
                     permissions: self.editor.permissions(),
+                    subgroups: self.editor.subgroups(),
                     default: self.editor.default()
                 };
 
@@ -483,7 +509,13 @@ $(function() {
                 if (!group.changeable) return;
 
                 self.currentGroup(group);
-                self.groupEditorDialog.modal("show");
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.groupEditorDialog).tab("show");
+                self.groupEditorDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             };
 
             self.confirmEditGroup = function() {
@@ -498,6 +530,11 @@ $(function() {
                 var editorPermissions = self.editor.permissions();
                 if (!_.isEqual(group.permissions.sort(), editorPermissions.sort())) {
                     data.permissions = editorPermissions;
+                }
+
+                var editorSubgroups = self.editor.subgroups();
+                if (!_.isEqual(group.subgroups.sort(), editorSubgroups.sort())) {
+                    data.subgroups = editorSubgroups;
                 }
 
                 if (group.default !== self.editor.default()) {
@@ -663,6 +700,18 @@ $(function() {
             }).join(", ");
         };
 
+        // Maps the sub group names into a comma separated list
+        access.subgroupList = function(data) {
+            if (data.subgroups === undefined)
+                return "";
+
+            var mappedGroups = _.filter(_.map(data.subgroups, function(g) { return access.groups.lookup[g] }), function(g) { return g !== undefined });
+            mappedGroups.sort(access.groupComparator);
+            return _.map(mappedGroups, function(g) {
+                return g.name;
+            }).join(", ");
+        };
+
         // Maps the permission names into a comma separated list
         access.permissionList = function(data) {
             if (!data || data.permissions === undefined)
@@ -691,8 +740,10 @@ $(function() {
 
         access.onUserPermissionsChanged = access.onUserLoggedIn = access.onUserLoggedOut = function(user) {
             if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
-                access.groups.requestData();
-                access.users.requestData();
+                access.groups.requestData()
+                    .done(function() {
+                        access.users.requestData();
+                    });
             }
         };
     }

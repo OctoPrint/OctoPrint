@@ -55,10 +55,11 @@ def add_group():
 	name = data["name"]
 	description = data.get("description", "")
 	permissions = data["permissions"]
+	subgroups = data["subgroups"]
 	default = data.get("default", False)
 
 	try:
-		groupManager.add_group(key, name, description=description, permissions=permissions, default=default)
+		groupManager.add_group(key, name, description=description, permissions=permissions, subgroups=subgroups, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return get_groups()
@@ -92,6 +93,9 @@ def update_group(key):
 
 		if "permissions" in data:
 			kwargs["permissions"] = data["permissions"]
+
+		if "subgroups" in data:
+			kwargs["subgroups"] = data["subgroups"]
 
 		if "default" in data:
 			kwargs["default"] = data["default"] in valid_boolean_trues
