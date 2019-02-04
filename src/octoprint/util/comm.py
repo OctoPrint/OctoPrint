@@ -18,7 +18,7 @@ try:
 	import queue
 except ImportError:
 	import Queue as queue
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
 import logging
 
@@ -2433,7 +2433,7 @@ class MachineCom(object):
 				return get("temperatureTargetSet", target_default)
 
 		bed = self.last_temperature.bed
-		if bed and len(bed) > 0 and bed[1] > self._temperatureTargetSetThreshold:
+		if bed and len(bed) > 1 and bed[1] is not None and bed[1] > self._temperatureTargetSetThreshold:
 			return get("temperatureTargetSet", target_default)
 
 		return get("temperature", busy_default)
@@ -3300,11 +3300,11 @@ class MachineCom(object):
 			self._do_send_with_checksum(cmd, linenumber)
 
 	def _do_send_with_checksum(self, command, linenumber):
-		command_to_send = "N" + str(linenumber) + " " + command
+		command_to_send = b"N" + unicode(linenumber).encode("ascii") + b" " + command
 		checksum = 0
 		for c in bytearray(command_to_send):
 			checksum ^= c
-		command_to_send = command_to_send + "*" + str(checksum)
+		command_to_send = command_to_send + b"*" + unicode(checksum).encode("ascii")
 		self._do_send_without_checksum(command_to_send)
 
 	def _do_send_without_checksum(self, cmd, log=True):
@@ -3312,9 +3312,9 @@ class MachineCom(object):
 			return
 
 		if log:
-			self._log("Send: " + str(cmd))
+			self._log("Send: " + cmd.decode("ascii"))
 
-		cmd += "\n"
+		cmd += b"\n"
 		written = 0
 		passes = 0
 		while written < len(cmd):
@@ -3322,7 +3322,7 @@ class MachineCom(object):
 			old_written = written
 
 			try:
-				result = self._serial.write(to_send.encode('utf-8'))
+				result = self._serial.write(to_send)
 				if result is None or not isinstance(result, int):
 					# probably some plugin not returning the written bytes, assuming all of them
 					written += len(cmd)
@@ -3331,7 +3331,7 @@ class MachineCom(object):
 			except serial.SerialTimeoutException:
 				self._log("Serial timeout while writing to serial port, trying again.")
 				try:
-					result = self._serial.write(to_send.encode('utf-8'))
+					result = self._serial.write(to_send)
 					if result is None or not isinstance(result, int):
 						# probably some plugin not returning the written bytes, assuming all of them
 						written += len(cmd)
