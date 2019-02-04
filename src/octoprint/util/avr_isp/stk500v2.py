@@ -72,7 +72,7 @@ class Stk500v2(ispBase.IspBase):
 		
 		loadCount = (len(flashData) + pageSize - 1) // pageSize
 		for i in range(0, loadCount):
-			recv = self.sendMessage([0x13, pageSize >> 8, pageSize & 0xFF, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * pageSize):(i * pageSize + pageSize)])
+			self.sendMessage([0x13, pageSize >> 8, pageSize & 0xFF, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * pageSize):(i * pageSize + pageSize)])
 			if self.progressCallback is not None:
 				self.progressCallback(i + 1, loadCount*2)
 	
