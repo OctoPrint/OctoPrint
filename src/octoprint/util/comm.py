@@ -4226,7 +4226,7 @@ def convert_pause_triggers(configured_triggers):
 				triggers[t].append(regex)
 		except Exception as exc:
 			# invalid regex or something like this
-			logging.getLogger(__name__).debug("Problem with trigger %r: %s", trigger, str(exc))
+			_logger.debug("Problem with trigger %r: %s", trigger, str(exc))
 
 	result = dict()
 	for t in triggers.keys():
@@ -4250,7 +4250,7 @@ def convert_feedback_controls(configured_controls):
 					result[key]["matcher"] = re.compile(control["regex"])
 					result[key]["pattern"] = control["regex"]
 				except Exception as exc:
-					logging.getLogger(__name__).warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+					_logger.warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
 
 			result[key]["templates"][control["template_key"]] = control["template"]
 
@@ -4729,7 +4729,7 @@ class QueueMarker(object):
 			try:
 				self.callback()
 			except Exception:
-				logging.getLogger(__name__).exception("Error while running callback of QueueMarker")
+				_logger.exception("Error while running callback of QueueMarker")
 
 class SendQueueMarker(QueueMarker):
 	pass
@@ -4789,7 +4789,6 @@ def upload_cli():
 	from octoprint.util import Object
 
 	logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-	logger = logging.getLogger(__name__)
 
 	# fetch port, baudrate, filename and target from commandline
 	if len(sys.argv) < 5:
@@ -4823,12 +4822,12 @@ def upload_cli():
 
 		def on_comm_file_transfer_started(self, filename, filesize, user=None):
 			# transfer started, report
-			logger.info("Started file transfer of {}, size {}B".format(filename, filesize))
+			_logger.info("Started file transfer of {}, size {}B".format(filename, filesize))
 			self.started = True
 
 		def on_comm_file_transfer_done(self, filename):
 			# transfer done, report, print stats and finish
-			logger.info("Finished file transfer of {}".format(filename))
+			_logger.info("Finished file transfer of {}".format(filename))
 			self.finished.set()
 
 		def on_comm_state_change(self, state):
@@ -4836,13 +4835,13 @@ def upload_cli():
 
 			if state in (MachineCom.STATE_ERROR, MachineCom.STATE_CLOSED_WITH_ERROR):
 				# report and exit on errors
-				logger.error("Error/closed with error, exiting.")
+				_logger.error("Error/closed with error, exiting.")
 				self.error = True
 				self.finished.set()
 
 			elif state in (MachineCom.STATE_OPERATIONAL,) and not self.started:
 				def run():
-					logger.info("Looks like we are operational, waiting a bit for everything to settle")
+					_logger.info("Looks like we are operational, waiting a bit for everything to settle")
 					time.sleep(15)
 					if self._state in (MachineCom.STATE_OPERATIONAL,) and not self.started:
 						# start transfer once we are operational
@@ -4870,7 +4869,7 @@ def upload_cli():
 	# close connection
 	comm.close()
 
-	logger.info("Done, exiting...")
+	_logger.info("Done, exiting...")
 
 if __name__ == "__main__":
 	upload_cli()
