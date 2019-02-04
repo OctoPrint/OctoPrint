@@ -675,7 +675,7 @@ class Profile(object):
 		elif isinstance(value, (int, float)):
 			return value > 0
 		else:
-			return value == True
+			return bool(value)
 
 	def get_microns(self, key, default=None):
 		value = self.get_float(key, default=None)

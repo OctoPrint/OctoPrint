@@ -11,7 +11,7 @@ class IspBase():
 	def programChip(self, flashData):
 		self.curExtAddr = -1
 		self.chip = chipDB.getChipFromDB(self.getSignature())
-		if self.chip == False:
+		if not self.chip:
 			raise IspError("Chip with signature: " + str(self.getSignature()) + "not found")
 		self.chipErase()
 		

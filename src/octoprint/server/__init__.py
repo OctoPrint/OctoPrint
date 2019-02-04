@@ -1823,7 +1823,7 @@ class Server(object):
 
 			roles = definition.get("roles", [])
 			description = definition.get("description", "")
-			dangerous = definition.get("dangerous", False) == True
+			dangerous = definition.get("dangerous", False)
 			default_groups = definition.get("default_groups", [])
 
 			roles_and_permissions = [permission_role(plugin_info.key, role) for role in roles] + permissions

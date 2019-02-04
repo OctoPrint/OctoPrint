@@ -44,7 +44,7 @@ class OctoPrintPermission(Permission):
 	def __init__(self, name, description, *needs, **kwargs):
 		self._name = name
 		self._description = description
-		self._dangerous = kwargs.pop("dangerous", False) == True
+		self._dangerous = kwargs.pop("dangerous", False)
 		self._default_groups = kwargs.pop("default_groups", [])
 
 		self._key = None
