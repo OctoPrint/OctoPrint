@@ -41,10 +41,18 @@ def to_native_str(s_or_u):
 	if sys.version_info[0] == 2:
 		if isinstance(s_or_u, unicode):
 			return s_or_u.encode("utf-8")
+		elif isinstance(s_or_u, set):  # only used for doctests
+			if not s_or_u:
+				return b"set()"
+			return b'{'+b', '.join(repr(to_native_str(x)) for x in s_or_u)+b'}'
 	else:
 		if isinstance(s_or_u, bytes):
 			return s_or_u.decode("utf-8")  # only used for doctests
-		elif not isinstance(s_or_u, str):
+		elif isinstance(s_or_u, str):
+			pass
+		elif isinstance(s_or_u, set):  # only used for doctests
+			return '{'+repr(tuple(sorted(s_or_u)))[1:-1]+'}'
+		else:
 			raise RuntimeError("Please use a string here.")
 	return s_or_u
 
