@@ -448,7 +448,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
-		return re.sub(r"\\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in r".\"/\[]:;=,"})).lower()
 
 	filename = make_valid(filename)
 	extension = make_valid(extension)
