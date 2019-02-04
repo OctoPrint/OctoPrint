@@ -262,8 +262,8 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		self._logger.debug("Retrieving throttle state via \"{}\"".format(command))
 		try:
 			state = get_vcgencmd_throttled_state(command)
-		except Exception:
-			self._logger.exception("Got an error while trying to fetch the current throttle state via \"{}\"".format(command))
+		except ValueError:
+			self._logger.warning("Fetching the current throttle state via \"{}\" doesn't work".format(command))
 			self._throttle_functional = False
 			return
 
