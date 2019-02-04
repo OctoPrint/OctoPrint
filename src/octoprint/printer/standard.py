@@ -15,7 +15,7 @@ import os
 import threading
 import time
 
-from past.builtins import basestring
+from past.builtins import basestring, long
 
 from frozendict import frozendict
 

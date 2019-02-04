@@ -38,17 +38,12 @@ from octoprint.util.net import is_lan_address
 from werkzeug.local import LocalProxy
 from werkzeug.contrib.cache import BaseCache
 
-from past.builtins import basestring
+from past.builtins import basestring, long
 
 try:
 	from os import scandir, walk
 except ImportError:
 	from scandir import scandir, walk
-
-try:
-	long
-except NameError:
-	long = int
 
 #~~ monkey patching
 
