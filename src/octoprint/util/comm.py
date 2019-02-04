@@ -3300,11 +3300,11 @@ class MachineCom(object):
 			self._do_send_with_checksum(cmd, linenumber)
 
 	def _do_send_with_checksum(self, command, linenumber):
-		command_to_send = b"N" + unicode(linenumber).encode("ascii") + b" " + command
+		command_to_send = b"N" + str(linenumber).encode("ascii") + b" " + command
 		checksum = 0
 		for c in bytearray(command_to_send):
 			checksum ^= c
-		command_to_send = command_to_send + b"*" + unicode(checksum).encode("ascii")
+		command_to_send = command_to_send + b"*" + str(checksum).encode("ascii")
 		self._do_send_without_checksum(command_to_send)
 
 	def _do_send_without_checksum(self, cmd, log=True):
