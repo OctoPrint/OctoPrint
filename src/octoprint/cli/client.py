@@ -15,10 +15,7 @@ import octoprint_client
 from octoprint.cli import get_ctx_obj_option, bulk_options
 from octoprint import init_settings, FatalStartupError
 
-try:
-	unicode
-except NameError:
-	unicode =str
+from past.builtins import unicode
 
 class JsonStringParamType(click.ParamType):
 	name = "json"
