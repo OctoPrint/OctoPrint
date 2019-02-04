@@ -90,10 +90,6 @@ class AclSubwizard(object):
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
-
-			octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-			octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
-
 			self._user_manager.disable()
 		self._settings.save()
 		return NO_CONTENT
