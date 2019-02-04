@@ -506,7 +506,7 @@ def _strip_tags(text):
 	class TagStripper(HTMLParser):
 
 		def __init__(self, **kw):
-			super().__init__(**kw)
+			HTMLParser.__init__(self, **kw)
 			self._fed = []
 
 		def handle_data(self, data):
