@@ -14,6 +14,8 @@ import os
 import re
 import time
 import threading
+import sys
+PY2 = sys.version_info[0] < 3
 
 import feedparser
 import flask
@@ -521,7 +523,7 @@ def _strip_tags(text):
 		def get_data(self):
 			return "".join(self._fed)
 
-	tag_stripper = TagStripper(convert_charrefs=False)
+	tag_stripper = TagStripper() if PY2 else TagStripper(convert_charrefs=False)
 	tag_stripper.feed(text)
 	return tag_stripper.get_data()
 
