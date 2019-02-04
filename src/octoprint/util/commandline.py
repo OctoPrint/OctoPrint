@@ -18,10 +18,10 @@ from . import to_unicode
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
-_ANSI_CSI_PATTERN = "\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
-_ANSI_OSC_PATTERN = "\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
-_ANSI_REGEX = re.compile("|".join([_ANSI_CSI_PATTERN,
-                                   _ANSI_OSC_PATTERN]))
+_ANSI_CSI_PATTERN = b"\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+_ANSI_OSC_PATTERN = b"\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
+_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN,
+                                    _ANSI_OSC_PATTERN]))
 
 
 def clean_ansi(line):
@@ -29,21 +29,21 @@ def clean_ansi(line):
 	Removes ANSI control codes from ``line``.
 
 	Parameters:
-	    line (str or unicode): the line to process
+	    line (bytes): the line to process
 
 	Returns:
 	    (str or unicode) The line without any ANSI control codes
 
 	Example::
 
-	    >>> text = "Some text with some \x1b[31mred words\x1b[39m in it"
-	    >>> clean_ansi(text)
+	    >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
+	    >>> to_native_str(clean_ansi(text))
 	    'Some text with some red words in it'
-	    >>> text = "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-	    >>> clean_ansi(text)
+	    >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
+	    >>> to_native_str(clean_ansi(text))
 	    'We hide the cursor here and then show it again here'
 	"""
-	return _ANSI_REGEX.sub("", line)
+	return _ANSI_REGEX.sub(b"", line)
 
 
 class CommandlineError(Exception):
