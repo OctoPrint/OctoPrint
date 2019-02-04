@@ -4871,7 +4871,7 @@ msgid "\n"
 "    <strong>To protect against known severe issues with certain versions of third party plugins</strong>, OctoPrint supports\n"
 "    the use of a centralized plugin version blacklist to automatically disable such plugins before they can interfere\n"
 "    with normal operation.\n"
-msgstr "<strong>Um vor bekannte Probleme mit bestimmten Versionen von Thirdpartyplugins zu schützen</strong> unterstützt OctoPrint die Verwendung einer zentralen Pluginblackliste, über die automatisch solche Plugins deaktiviert werden können, bevor sie mit dem normalen Betrieb interferieren können.\n"
+msgstr "<strong>Um vor bekannten Probleme mit bestimmten Versionen von Thirdpartyplugins zu schützen</strong> unterstützt OctoPrint die Verwendung einer zentralen Pluginblackliste, über die automatisch solche Plugins deaktiviert werden können, bevor sie mit dem normalen Betrieb interferieren können.\n"
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistEnabled.jinja2:4
 msgid "Enable plugin blacklist processing on startup"
