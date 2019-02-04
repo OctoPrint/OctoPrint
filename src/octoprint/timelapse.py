@@ -651,27 +651,27 @@ class Timelapse(object):
 		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
 			self._capture_errors += 1
-			success = False
+			err = e
 		else:
 			self._capture_success += 1
-			success = True
+			err = None
 
 		# post-capture hook
 		for name, hook in self._post_capture_hooks.items():
 			try:
-				hook(filename, success)
+				hook(filename, err is None)
 			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
 		# handle events and onerror call
-		if success:
+		if err is None:
 			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
 			return True
 		else:
 			if callable(onerror):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
-			                                                error=str(e),
+			                                                error=str(err),
 			                                                url=self._snapshot_url))
 			return False
 
