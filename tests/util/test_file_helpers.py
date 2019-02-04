@@ -13,6 +13,8 @@ import sys
 
 import octoprint.util
 
+from past.builtins import unicode
+
 class BomAwareOpenTest(unittest.TestCase):
 	"""
 	Tests for :func:`octoprint.util.bom_aware_open`.
