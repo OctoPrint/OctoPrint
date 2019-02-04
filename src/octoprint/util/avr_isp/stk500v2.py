@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, struct, sys, time
 
 from serial import Serial
-from serial import SerialException
+from serial import SerialException, SerialTimeoutException
 from builtins import range
 
 from . import ispBase, intelHex

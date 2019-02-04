@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, Response
 from werkzeug.exceptions import BadRequest
 import re
 
-from past.builtins import long
+from past.builtins import long, unicode
 
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
