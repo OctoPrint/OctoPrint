@@ -2635,17 +2635,17 @@ class MachineCom(object):
 
 			stripped_error = (line[6:] if lower_line.startswith("error:") else line[2:]).strip()
 
-			if any(map(lambda x: x in lower_line, self._recoverable_communication_errors)):
+			if any(x in lower_line for x in self._recoverable_communication_errors):
 				# manually trigger an ack for comm errors the printer doesn't send a resend request for but
 				# from which we can recover from by just pushing on (because that then WILL trigger a fitting
 				# resend request)
 				self._handle_ok()
 
-			elif any(map(lambda x: x in lower_line, self._resend_request_communication_errors)):
+			elif any(x in lower_line for x in self._resend_request_communication_errors):
 				# skip comm errors that the printer sends a resend request for anyhow
 				self._lastCommError = stripped_error
 
-			elif any(map(lambda x: x in lower_line, self._sd_card_errors)):
+			elif any(x in lower_line for x in self._sd_card_errors):
 				# skip errors with the SD card
 				pass
 
