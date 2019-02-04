@@ -371,15 +371,15 @@ class MachineCom(object):
 		self._serialLogger = logging.getLogger("SERIAL")
 		self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
 
-		if port == None:
+		if port is None:
 			port = settings().get(["serial", "port"])
-		if baudrate == None:
+		if baudrate is None:
 			settingsBaudrate = settings().getInt(["serial", "baudrate"])
 			if settingsBaudrate is None:
 				baudrate = 0
 			else:
 				baudrate = settingsBaudrate
-		if callbackObject == None:
+		if callbackObject is None:
 			callbackObject = MachineComPrintCallback()
 
 		self._port = port
