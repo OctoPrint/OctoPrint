@@ -538,6 +538,28 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 
 #~~ passive login helper
 
+_cached_local_networks = None
+def _local_networks():
+	global _cached_local_networks
+
+	if _cached_local_networks is None:
+		logger = logging.getLogger(__name__)
+		local_networks = netaddr.IPSet([])
+		for entry in settings().get(["accessControl", "localNetworks"]):
+			network = netaddr.IPNetwork(entry)
+			local_networks.add(network)
+			logger.debug("Added network {} to localNetworks".format(network))
+
+			if network.version == 4:
+				network_v6 = network.ipv6()
+				local_networks.add(network_v6)
+				logger.debug("Also added v6 representation of v4 network {} = {} to localNetworks".format(network, network_v6))
+
+		_cached_local_networks = local_networks
+
+	return _cached_local_networks
+
+
 def passive_login():
 	logger = logging.getLogger(__name__)
 
@@ -572,11 +594,12 @@ def passive_login():
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
 
-		autologinAs = settings().get(["accessControl", "autologinAs"])
+		autologin_as = settings().get(["accessControl", "autologinAs"])
 		localNetworks = netaddr.IPSet([])
 		for ip in settings().get(["accessControl", "localNetworks"]):
 			localNetworks.add(ip)
 
+		local_networks = _local_networks()
 		try:
 			if netaddr.IPAddress(remote_address) in local_networks:
 				autologin_user = octoprint.server.userManager.findUser(autologin_as)
