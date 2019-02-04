@@ -2910,7 +2910,7 @@ class MachineCom(object):
 				# resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
 				return False
 
-			cmd = self._lastLines[-self._resendDelta]
+			cmd = self._lastLines[-self._resendDelta].decode("ascii")
 			lineNumber = self._currentLine - self._resendDelta
 
 			result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
