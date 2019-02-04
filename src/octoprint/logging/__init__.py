@@ -79,17 +79,18 @@ def get_divider_line(c, message=None, length=78, indent=3):
 
 	Examples:
 
-	    >>> get_divider_line("-")
+	    >>> from octoprint.util import to_native_str
+	    >>> to_native_str(get_divider_line("-"))
 	    '------------------------------------------------------------------------------'
-	    >>> get_divider_line("=", length=10)
+	    >>> to_native_str(get_divider_line("=", length=10))
 	    '=========='
-	    >>> get_divider_line("-", message="Hi", length=10)
+	    >>> to_native_str(get_divider_line("-", message="Hi", length=10))
 	    '--- Hi ---'
-	    >>> get_divider_line("-", message="A slightly longer text")
+	    >>> to_native_str(get_divider_line("-", message="A slightly longer text"))
 	    '--- A slightly longer text ---------------------------------------------------'
-	    >>> get_divider_line("-", message="A slightly longer text", indent=5)
+	    >>> to_native_str(get_divider_line("-", message="A slightly longer text", indent=5))
 	    '----- A slightly longer text -------------------------------------------------'
-	    >>> get_divider_line("-", message="Hello World!", length=10)
+	    >>> to_native_str(get_divider_line("-", message="Hello World!", length=10))
 	    '--- Hello World!'
 	    >>> get_divider_line(None)
 	    Traceback (most recent call last):
