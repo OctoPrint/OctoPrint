@@ -36,6 +36,7 @@ def clean_ansi(line):
 
 	Example::
 
+	    >>> from octoprint.util import to_native_str
 	    >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
 	    >>> to_native_str(clean_ansi(text))
 	    'Some text with some red words in it'
