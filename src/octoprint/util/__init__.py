@@ -42,7 +42,9 @@ def to_native_str(s_or_u):
 		if isinstance(s_or_u, unicode):
 			return s_or_u.encode("utf-8")
 	else:
-		if not isinstance(s_or_u, str):
+		if isinstance(s_or_u, bytes):
+			return s_or_u.decode("utf-8")  # only used for doctests
+		elif not isinstance(s_or_u, str):
 			raise RuntimeError("Please use a string here.")
 	return s_or_u
 
