@@ -14,6 +14,7 @@ from ddt import ddt, unpack, data
 
 import octoprint.plugin
 import octoprint.settings
+from octoprint.util import to_native_str
 
 @ddt
 class SettingsTestCase(unittest.TestCase):
@@ -104,7 +105,7 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_getter(self, deprecated, current, forwarded):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+			called_method.__name__ = to_native_str(forwarded)
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -126,7 +127,7 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_global_getter(self, deprecated, current, forwarded):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+			called_method.__name__ = to_native_str(forwarded)
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -190,7 +191,7 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_setter(self, deprecated, current, forwarded, value):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+			called_method.__name__ = to_native_str(forwarded)
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -212,7 +213,7 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_global_setter(self, deprecated, current, forwarded, value):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+			called_method.__name__ = to_native_str(forwarded)
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))

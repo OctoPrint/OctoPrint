@@ -35,10 +35,23 @@ from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
 
+
+def to_native_str(s_or_u):
+	"""Make sure ``s_or_u`` is a 'str'."""
+	if sys.version_info[0] == 2:
+		if isinstance(s_or_u, unicode):
+			return s_or_u.encode("utf-8")
+	else:
+		if not isinstance(s_or_u, str):
+			raise RuntimeError("Please use a string here.")
+	return s_or_u
+
+
+
 def warning_decorator_factory(warning_type):
 	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(func):
-			func.__qualname__ = 'warning_decorator_factory'
+			func.__qualname__ = to_native_str('warning_decorator_factory')
 			func.__annotations__ = dict()
 			@wraps(func)
 			def func_wrapper(*args, **kwargs):
@@ -511,18 +524,6 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 		return s_or_u
 
 to_str = deprecated("to_str has been renamed to to_bytes", since="1.4.0")(to_bytes)
-
-
-
-def to_native_str(s_or_u):
-	"""Make sure ``s_or_u`` is a 'str'."""
-	if sys.version_info[0] == 2:
-		if isinstance(s_or_u, unicode):
-			return s_or_u.encode("utf-8")
-	else:
-		if not isinstance(s_or_u, str):
-			raise RuntimeError("Please use a string here.")
-	return s_or_u
 
 
 

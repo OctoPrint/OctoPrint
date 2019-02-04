@@ -27,7 +27,7 @@ from octoprint.settings import settings as s
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import *
 
-from octoprint.util import deprecated
+from octoprint.util import deprecated, to_native_str
 
 # singleton
 _instance = None
@@ -508,7 +508,7 @@ class PluginSettings(object):
 
 				def _func(*args, **kwargs):
 					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
-				_func.__name__ = item
+				_func.__name__ = to_native_str(item)
 				_func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
 
 				return _func
