@@ -289,7 +289,7 @@ class FileManagerTest(unittest.TestCase):
 		mock_time.return_value = now
 		self.local_storage.path_in_storage.return_value = path
 
-		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
 			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666, mode='wt')
 
@@ -308,13 +308,12 @@ class FileManagerTest(unittest.TestCase):
 
 		path = "some_file.gco"
 		pos = 1234
-		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
 		self.local_storage.path_in_storage.return_value = path
 
 		mock_yaml_safe_dump.side_effect = RuntimeError
 
-		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
 			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 
 	@mock.patch("os.path.isfile")
