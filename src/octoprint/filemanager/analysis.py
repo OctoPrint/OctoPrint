@@ -95,16 +95,16 @@ class AnalysisQueue(object):
 		self._queues[entry.type].dequeue(entry.location, entry.path)
 
 	def dequeue_folder(self, destination, path):
-		for queue in self._queues.values():
-			queue.dequeue_folder(destination, path)
+		for q in self._queues.values():
+			q.dequeue_folder(destination, path)
 
 	def pause(self):
-		for queue in self._queues.values():
-			queue.pause()
+		for q in self._queues.values():
+			q.pause()
 
 	def resume(self):
-		for queue in self._queues.values():
-			queue.resume()
+		for q in self._queues.values():
+			q.resume()
 
 	def _analysis_finished(self, entry, result):
 		for callback in self._callbacks:
