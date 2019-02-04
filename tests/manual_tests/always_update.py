@@ -53,7 +53,7 @@ class Foo(object):
 		        "'build/bdist.win32' does not exist -- can't clean it",
 		        "'build/scripts-2.7' does not exist -- can't clean it"],
 		       stream="stderr")
-		log_cb(["removing 'Development\OctoPrint\OctoPrint\src\octoprint_setuptools\__init__.pyc'"],
+		log_cb(["removing 'Development\\OctoPrint\\OctoPrint\\src\\octoprint_setuptools\\__init__.pyc'"],
 		       stream="stdout")
 		time.sleep(1)
 		log_cb(["This should be red"],
