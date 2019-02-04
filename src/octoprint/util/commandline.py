@@ -13,6 +13,7 @@ import time
 
 from . import to_unicode
 
+from past.builtins import unicode
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
@@ -29,10 +30,10 @@ def clean_ansi(line):
 	Removes ANSI control codes from ``line``.
 
 	Parameters:
-	    line (bytes): the line to process
+	    line (bytes or unicode): the line to process
 
 	Returns:
-	    (str or unicode) The line without any ANSI control codes
+	    (bytes or unicode) The line without any ANSI control codes
 
 	Example::
 
@@ -44,6 +45,8 @@ def clean_ansi(line):
 	    >>> to_native_str(clean_ansi(text))
 	    'We hide the cursor here and then show it again here'
 	"""
+	if isinstance(line, unicode):
+		return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
 	return _ANSI_REGEX.sub(b"", line)
 
 
