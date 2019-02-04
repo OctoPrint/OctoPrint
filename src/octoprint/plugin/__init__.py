@@ -26,6 +26,7 @@ import threading
 from octoprint.settings import settings as s
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
+from octoprint.plugin.types import *  # noqa: F403 ## used by multiple other modules
 
 from octoprint.util import deprecated, to_native_str
 
