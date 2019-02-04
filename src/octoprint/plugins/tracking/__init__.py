@@ -292,8 +292,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		sha = hashlib.sha1()
-		sha.update(payload.get("path"))
-		sha.update(unique_id)
+		sha.update(payload.get("path").encode("utf-8"))
+		sha.update(unique_id.encode("utf-8"))
 
 		track_event = None
 		args = dict(origin=payload.get("origin"), file=sha.hexdigest())
