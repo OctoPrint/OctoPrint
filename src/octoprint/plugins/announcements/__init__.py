@@ -20,6 +20,7 @@ import flask
 
 from collections import OrderedDict
 
+from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.util import utmify
@@ -50,11 +51,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			dict(key="READ",
 			     name="Read announcements",
 			     description=gettext("Allows to read announcements"),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["read"]),
 			dict(key="MANAGE",
 			     name="Manage announcement subscriptions",
 			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
 			                         "permission"),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["manage"],
 			     permissions=["PLUGIN_ANNOUNCEMENTS_READ"])
 		]

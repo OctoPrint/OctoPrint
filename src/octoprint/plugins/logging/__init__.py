@@ -9,6 +9,7 @@ from octoprint.settings import settings
 
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import redirect_to_tornado, no_firstrun_access
+from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 
 from flask import request, jsonify, url_for, make_response
@@ -37,6 +38,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 			dict(key="MANAGE",
 			     name="Logging management",
 			     description=gettext("Allows to download and delete log files and list and set log levels."),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["manage"])
 		]
 
