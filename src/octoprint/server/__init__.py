@@ -391,7 +391,7 @@ class Server(object):
 			try:
 				clazz = octoprint.util.get_class(group_manager_name)
 				groupManager = clazz()
-			except AttributeError as e:
+			except AttributeError:
 				self._logger.exception("Could not instantiate group manager {}, "
 				                       "falling back to FilebasedGroupManager!".format(group_manager_name))
 				groupManager = octoprint.access.groups.FilebasedGroupManager()

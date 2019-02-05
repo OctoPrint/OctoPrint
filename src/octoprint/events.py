@@ -377,7 +377,7 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError as e:
+			except KeyError:
 				self._logger.warning("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):

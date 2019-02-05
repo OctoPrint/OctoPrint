@@ -1565,7 +1565,7 @@ class MachineCom(object):
 
 				now = time.time()
 
-				if line.strip() is not "":
+				if line.strip() != "":
 					self._consecutive_timeouts = 0
 					self._timeout = self._get_new_communication_timeout()
 

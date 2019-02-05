@@ -670,7 +670,7 @@ class LessSimpleCache(BaseCache):
 	def calculate_timeout(self, timeout=None):
 		if timeout is None:
 			timeout = self.default_timeout
-		if timeout is -1:
+		if timeout == -1:
 			return None
 		return time.time() + timeout
 

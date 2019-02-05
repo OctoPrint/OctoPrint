@@ -340,7 +340,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not axis in PrinterInterface.valid_axes:
 				raise ValueError("Invalid axis {}, valid axes are {}".format(axis, ", ".join(PrinterInterface.valid_axes)))
 
-		command = "G1 {}".format(" ".join(["{}{}".format(axis.upper(), amount) for axis, amount in axes.items()]))
+		command = "G1 {}".format(" ".join(["{}{}".format(axis.upper(), amt) for axis, amt in axes.items()]))
 
 		if speed is None:
 			printer_profile = self._printerProfileManager.get_current_or_default()
@@ -936,7 +936,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 				try:
 					fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
-				except Exception as exc:
+				except Exception:
 					self._logger.exception("Error generating fileData")
 					fileData = None
 				if fileData is not None:

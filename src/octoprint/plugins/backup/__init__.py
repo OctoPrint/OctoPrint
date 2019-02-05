@@ -707,7 +707,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if callable(on_backup_done):
 				on_backup_done(name, final_path, exclude)
-		except Exception as exc:
+		except Exception as exc:  ## noqa: F841
 			# TODO py3: use the exception, not sys.exc_info()
 			if callable(on_backup_error):
 				exc_info = sys.exc_info()

@@ -381,7 +381,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
 			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
-		except Exception as e:
+		except Exception:
 			self._logger.exception(
 				"Could not fetch channel {} from {}".format(key, config["url"]))
 			return None

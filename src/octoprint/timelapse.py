@@ -914,7 +914,7 @@ class TimelapseRenderJob(object):
 		for line in lines:
 			# We should be getting the time more often, so try it first
 			current_time = _ffmpeg_current_regex.search(line)
-			if current_time is not None and self._parsed_duration is not 0:
+			if current_time is not None and self._parsed_duration != 0:
 				current_s = self._convert_time(*current_time.groups())
 				progress = current_s / float(self._parsed_duration) * 100
 
@@ -922,7 +922,7 @@ class TimelapseRenderJob(object):
 				for callback in _update_callbacks:
 					try:
 						callback.sendRenderProgress(progress)
-					except Exception as ex:
+					except Exception:
 						self._logger.exception("Exception while pushing render progress")
 
 			else:
