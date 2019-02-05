@@ -38,7 +38,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			try:
 				futurePath, futureFilename = self._file_manager.sanitize(octoprint.filemanager.FileDestinations.LOCAL, file_wrapper.filename)
 			except Exception:
-				# TODO really ignore?
+				self._logger.exception("Could not wrap %s", path)
 				futurePath = None
 				futureFilename = None
 
