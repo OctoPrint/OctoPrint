@@ -595,9 +595,6 @@ def passive_login():
 			and settings().get(["accessControl", "localNetworks"]) is not None:
 
 		autologin_as = settings().get(["accessControl", "autologinAs"])
-		localNetworks = netaddr.IPSet([])
-		for ip in settings().get(["accessControl", "localNetworks"]):
-			localNetworks.add(ip)
 
 		local_networks = _local_networks()
 		try:
