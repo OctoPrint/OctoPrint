@@ -3,15 +3,20 @@
 language: python
 dist: xenial
 
+matrix:
+  include:
+  - python: '3.7'
+    env: RUN_FLAKE8=true
+
 python:
-- "2.7"
-- "3.6"
 - "3.7"
+- "3.6"
+- "2.7"
 install:
 - pip install -e .[develop]
 script:
-- nosetests --with-doctest
-- flake8 --ignore=D,E,W,F401 src/ tests setup.py
+- test -n "$RUN_FLAKE8" || nosetests --with-doctest
+- test -z "$RUN_FLAKE8" || flake8 --ignore=D,E,W,F401 src/ tests setup.py
 sudo: false
 git:
   depth: 250
