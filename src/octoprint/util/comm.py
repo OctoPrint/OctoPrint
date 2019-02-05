@@ -2217,7 +2217,7 @@ class MachineCom(object):
 
 			self._log("Baudrate test retry #{}".format(5 - self._baudrateDetectRetry))
 			self._baudrateDetectRetry -= 1
-			self._do_send_without_checksum("", log=False) # new line to reset things
+			self._do_send_without_checksum(b"", log=False) # new line to reset things
 			self.sayHello(tags={"trigger:baudrate_detection", })
 
 		elif len(self._baudrateDetectList) > 0:
@@ -2230,7 +2230,7 @@ class MachineCom(object):
 
 				self._log("Trying baudrate: {}".format(baudrate))
 				self._baudrateDetectRetry = 4
-				self._do_send_without_checksum("", log=False) # new line to reset things
+				self._do_send_without_checksum(b"", log=False) # new line to reset things
 				self.sayHello(tags={"trigger:baudrate_detection", })
 			except Exception:
 				self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
@@ -3064,7 +3064,7 @@ class MachineCom(object):
 					if linenumber is not None:
 						# line number predetermined - this only happens for resends, so we'll use the number and
 						# send directly without any processing (since that already took place on the first sending!)
-						self._do_send_with_checksum(command, linenumber)
+						self._do_send_with_checksum(command.encode("ascii"), linenumber)
 
 					else:
 						if not processed:
@@ -3562,8 +3562,8 @@ class MachineCom(object):
 		# available or not
 		#
 		# send the M112 once without and with checksum
-		self._do_send_without_checksum("M112")
-		self._do_increment_and_send_with_checksum("M112")
+		self._do_send_without_checksum(b"M112")
+		self._do_increment_and_send_with_checksum(b"M112")
 
 		# No idea if the printer is still listening or if M112 won. Just in case
 		# we'll now try to also manually make sure all heaters are shut off - better
@@ -3571,9 +3571,9 @@ class MachineCom(object):
 		# is irrelevant whether the printer has sent enough ack's or not, we
 		# are going to shutdown the connection in a second anyhow.
 		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
-			self._do_increment_and_send_with_checksum("M104 T{tool} S0".format(tool=tool))
+			self._do_increment_and_send_with_checksum("M104 T{tool} S0".format(tool=tool).encode("ascii"))
 		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
-			self._do_increment_and_send_with_checksum("M140 S0")
+			self._do_increment_and_send_with_checksum(b"M140 S0")
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
