@@ -145,7 +145,7 @@ class VirtualPrinter(object):
 		self._incoming_lock = threading.RLock()
 
 		self._debug_awol = False
-		self._debug_sleep = None
+		self._debug_sleep = 0
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
 
@@ -210,7 +210,7 @@ class VirtualPrinter(object):
 			self.lastN = 0
 
 			self._debug_awol = False
-			self._debug_sleep = None
+			self._debug_sleep = 0
 			self._sleepAfterNext.clear()
 			self._sleepAfter.clear()
 
