@@ -75,6 +75,9 @@ EXTRA_REQUIRES = dict(
 		"nose>=1.3.7,<1.4",
 		"ddt",
 
+		# linter
+		"flake8",
+
 		# Documentation dependencies
 		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",

@@ -11,6 +11,7 @@ install:
 - pip install -e .[develop]
 script:
 - nosetests --with-doctest
+- flake8 --ignore=D,E,W,F401 src/ tests setup.py
 sudo: false
 git:
   depth: 250
