@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 # Wrapper to the new access.users location
 
 from octoprint.access.users import User, deprecated
+from octoprint.access.users import *  # noqa: F403 ## possibly used by other modules
 
 AccessUser = User
 
