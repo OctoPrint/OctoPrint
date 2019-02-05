@@ -25,11 +25,11 @@ INSTALL_REQUIRES = [
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
-	"Flask-Login>=0.2.11,<0.3",  # some functions changed to properties in 0.3
 	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
+	"Flask-Login>=0.4.1,<0.5",
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
@@ -74,6 +74,9 @@ EXTRA_REQUIRES = dict(
 		"mock>=2.0.0,<3",
 		"nose>=1.3.7,<1.4",
 		"ddt",
+
+		# linter
+		"flake8",
 
 		# Documentation dependencies
 		"sphinx>=1.6,<1.7",

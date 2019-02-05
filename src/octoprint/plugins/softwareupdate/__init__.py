@@ -27,7 +27,7 @@ from flask_babel import gettext
 
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.server import VERSION, REVISION, BRANCH
-from octoprint.access import USER_GROUP
+from octoprint.access import USER_GROUP, ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 from octoprint.util.version import get_comparable_version
@@ -103,6 +103,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			dict(key="UPDATE",
 			     name="Update",
 			     description=gettext("Allows to perform software updates"),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["update"],
 			     dangerous=True)
 		]
