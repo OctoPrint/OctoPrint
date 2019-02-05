@@ -82,6 +82,7 @@
         var data = {
             description: group.description,
             permissions: group.permissions,
+            subgroups: group.subgroups,
             default: group.default
         };
         return this.base.putJson(this.url(group.key), data, opts);

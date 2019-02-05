@@ -12,6 +12,7 @@ import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
+from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
@@ -136,10 +137,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			dict(key="MANAGE",
 			     name="Manage plugins",
 			     description=gettext("Allows to enable, disable and uninstall installed plugins."),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["manage"]),
 			dict(key="INSTALL",
 			     name="Install new plugins",
 			     description=gettext("Allows to install new plugins. Includes the \"Manage plugins\" permission."),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["install"],
 			     permissions=["PLUGIN_PLUGINMANAGER_MANAGE"],
 			     dangerous=True)
