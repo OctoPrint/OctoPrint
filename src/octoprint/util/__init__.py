@@ -1725,8 +1725,8 @@ def natural_key(text):
 	return [ int(c) if c.isdigit() else c for c in re.split(r"(\d+)", text) ]
 
 
-# len(generator) doesn#t work
 def count(gen):
+	"""Used instead of len(generator), which doesn't work"""
 	n = 0
 	for _ in gen:
 		n += 1
