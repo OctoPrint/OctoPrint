@@ -27,7 +27,7 @@ import octoprint.util
 
 from past.builtins import unicode
 
-PY3 = sys.version_info[0] == 3
+from . import PY3
 
 def fix_json_encode():
 	"""
