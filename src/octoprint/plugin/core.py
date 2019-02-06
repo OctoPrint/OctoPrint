@@ -1658,11 +1658,13 @@ class EntryPointMetadata(pkginfo.Distribution):
 			for metadata_file in metadata_files:
 				try:
 					return self.entry_point.dist.get_metadata(metadata_file)
-				except Exception:
-					raise # TODO really ignore this?
+				except (IOError, OSError):
+					# file not found, metadata file might be missing, ignore
+					# IOError: file not found in Py2
+					# OSError (specifically FileNotFoundError): file not found in Py3
 					pass
 
-		warnings.warn('No package metadata found for package: {}'.format(self.entry_point.module_name))
+		warnings.warn('No package metadata found for package {}'.format(self.entry_point.module_name))
 
 
 class Plugin(object):
