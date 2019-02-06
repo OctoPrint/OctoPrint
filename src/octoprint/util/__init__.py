@@ -1057,7 +1057,6 @@ def temppath(prefix=None, suffix=""):
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
-	import io
 
 	assert "b" not in mode, "binary mode not support by bom_aware_open"
 
