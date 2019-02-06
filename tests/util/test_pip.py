@@ -78,3 +78,9 @@ class PipCallerTest(unittest.TestCase):
 			parsed = pkg_resources.parse_version(version)
 			actual = octoprint.util.pip.PipCaller.clean_install_command(args, parsed, virtual_env, use_user, force_user)
 		self.assertEqual(expected, actual)
+
+	def test_check_setup(self):
+		"""Initialization against local pip should work, including testballoon"""
+		caller = octoprint.util.pip.PipCaller()
+		self.assertIsNotNone(caller._command)
+		self.assertIsNotNone(caller._version)
