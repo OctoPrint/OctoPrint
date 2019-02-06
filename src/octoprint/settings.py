@@ -888,7 +888,7 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with io.open(self._configfile, 'rt', encoding='utf-8') as f:
+			with io.open(self._configfile, 'rt', encoding='utf-8', errors='replace') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
@@ -927,7 +927,7 @@ class Settings(object):
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with io.open(overlay, 'rt', encoding='utf-8') as f:
+				with io.open(overlay, 'rt', encoding='utf-8', errors='replace') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
