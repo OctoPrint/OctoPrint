@@ -44,7 +44,7 @@ def to_native_str(s_or_u):
 		elif isinstance(s_or_u, set):  # only used for doctests
 			if not s_or_u:
 				return b"set()"
-			return b'{'+b', '.join(repr(to_native_str(x)) for x in s_or_u)+b'}'
+			return b'{'+b', '.join(repr(to_native_str(x)) for x in sorted(s_or_u))+b'}'
 	else:
 		if isinstance(s_or_u, bytes):
 			return s_or_u.decode("utf-8")  # only used for doctests
