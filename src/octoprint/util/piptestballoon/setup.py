@@ -31,9 +31,13 @@ def produce_output(stream):
 	virtual_env = hasattr(sys, "real_prefix")
 	writable = os.access(install_dir, os.W_OK)
 
-	print("PIP_INSTALL_DIR={}".format(install_dir), file=stream)
-	print("PIP_VIRTUAL_ENV={}".format(virtual_env), file=stream)
-	print("PIP_WRITABLE={}".format(writable), file=stream)
+	lines = ["PIP_INSTALL_DIR={}".format(install_dir),
+	         "PIP_VIRTUAL_ENV={}".format(virtual_env),
+	         "PIP_WRITABLE={}".format(writable)]
+
+	for line in lines:
+		print(line, file=stream)
+
 	stream.flush()
 
 
@@ -41,7 +45,7 @@ path = os.environ.get("TESTBALLOON_OUTPUT", None)
 if path is not None:
 	# environment variable set, write to a log
 	path = os.path.abspath(path)
-	with io.open(path, 'wb+') as output:
+	with io.open(path, 'wt+', encoding='utf-8') as output:
 		produce_output(output)
 else:
 	# write to stdout

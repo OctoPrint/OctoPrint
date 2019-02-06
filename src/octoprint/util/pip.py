@@ -17,7 +17,7 @@ import os
 import pkg_resources
 
 from .commandline import CommandlineCaller, clean_ansi
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode, to_native_str
 
 _cache = dict(version=dict(), setup=dict())
 _cache_mutex = threading.RLock()
@@ -370,7 +370,7 @@ class PipCaller(CommandlineCaller):
 					          stdout=sarge.Capture(),
 					          stderr=sarge.Capture(),
 					          cwd=testballoon,
-					          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
+					          env=dict(TESTBALLOON_OUTPUT=to_native_str(testballoon_output_file)))
 				except Exception:
 					self._logger.exception("Error while trying to install testballoon to figure out pip setup")
 					return False, False, False, None
