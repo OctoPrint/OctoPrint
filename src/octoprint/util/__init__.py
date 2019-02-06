@@ -1007,12 +1007,20 @@ def mime_type_matches(mime, other):
 	return type_matches and subtype_matches
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
+def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
 
-	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
+	# NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
+	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+	os.close(fd)
+
+	if "b" in mode:
+		temp_config = io.open(path, mode=mode)
+	else:
+		temp_config = io.open(path, mode=mode, encoding=encoding)
+
 	try:
 		yield temp_config
 	finally:

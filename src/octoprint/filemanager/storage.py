@@ -1539,7 +1539,7 @@ class LocalFileStorage(StorageInterface):
 			metadata_path = os.path.join(path, ".metadata.json")
 			try:
 				import json
-				with atomic_write(metadata_path, mode='wt') as f:
+				with atomic_write(metadata_path, mode='wb') as f:
 					json.dump(metadata, f, indent=4, separators=(",", ": "))
 			except Exception:
 				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
@@ -1588,7 +1588,7 @@ class LocalFileStorage(StorageInterface):
 				# looks invalid, ignore it
 				return
 
-			with atomic_write(metadata_path_json, mode='wt') as f:
+			with atomic_write(metadata_path_json, mode='wb') as f:
 				json.dump(metadata, f, indent=4, separators=(",", ": "))
 
 			# TODO 1.3.10 Remove ".metadata.yaml" files
