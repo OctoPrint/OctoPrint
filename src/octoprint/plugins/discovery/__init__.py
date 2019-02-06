@@ -20,6 +20,7 @@ import octoprint.plugin
 import octoprint.util
 
 try:
+	# TODO: looks like pybonjour is py2 only - find alternatives or port?
 	import pybonjour
 except ImportError:
 	pybonjour = False
@@ -378,7 +379,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		    def browse_callback(results):
 		      for result in results:
-		        print "Location: {}".format(result)
+		        print("Location: {}".format(result))
 
 		:param query: the SSDP query to send, e.g. "upnp:rootdevice" to search for all devices
 		:param block: whether to block, defaults to True
@@ -390,10 +391,16 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		"""
 
 		import threading
-
-		import httplib
 		import io
-		class Response(httplib.HTTPResponse):
+
+		try:
+			# noinspection PyCompatibility
+			from http.client import HTTPResponse # py3
+		except ImportError:
+			# noinspection PyCompatibility
+			from httplib import HTTPResponse # py2
+
+		class Response(HTTPResponse):
 			def __init__(self, response_text):
 				self.fp = io.BytesIO(response_text)
 				self.debuglevel = 0
@@ -431,7 +438,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 						                                mcast_addr=self.__class__.ssdp_multicast_addr,
 						                                mcast_port=self.__class__.ssdp_multicast_port)
 						for _ in range(2):
-							sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
+							sock.sendto(message.encode("utf-8"), (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 
 						try:
 							data = sock.recv(1024)
@@ -599,7 +606,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				                                mcast_port=self.__class__.ssdp_multicast_port)
 				for _ in range(2):
 					# send twice, stuff might get lost, it's only UDP
-					sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
+					sock.sendto(message.encode("utf-8"), (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 			except Exception:
 				pass
 
@@ -658,7 +665,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self._ssdp_notify(alive=True)
 
 		try:
-			while (self._ssdp_monitor_active):
+			while self._ssdp_monitor_active:
 				try:
 					data, address = sock.recvfrom(4096)
 					request = Request(data)
@@ -667,8 +674,9 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 						if not interface_address:
 							self._logger.warning("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
 							continue
-						message = location_message.format(uuid=self.get_uuid(), location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
-						sock.sendto(message, address)
+						message = location_message.format(uuid=self.get_uuid(),
+						                                  location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
+						sock.sendto(message.encode("utf-8"), address)
 						self._logger.debug("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
 				except socket.timeout:
 					pass
