@@ -28,7 +28,7 @@ from slugify import Slugify
 
 import octoprint.filemanager
 
-from octoprint.util import is_hidden_path, to_unicode
+from octoprint.util import is_hidden_path, to_unicode, to_bytes
 
 class StorageInterface(object):
 	"""
@@ -1540,7 +1540,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				import json
 				with atomic_write(metadata_path, mode='wb') as f:
-					json.dump(metadata, f, indent=4, separators=(",", ": "))
+					f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
 			except Exception:
 				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
 			else:
@@ -1589,7 +1589,7 @@ class LocalFileStorage(StorageInterface):
 				return
 
 			with atomic_write(metadata_path_json, mode='wb') as f:
-				json.dump(metadata, f, indent=4, separators=(",", ": "))
+				f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
 
 			# TODO 1.3.10 Remove ".metadata.yaml" files
 

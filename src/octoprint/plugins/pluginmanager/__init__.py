@@ -14,6 +14,7 @@ from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.util import to_bytes
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os, is_os_compatible
@@ -824,8 +825,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._repository_cache_path, mode='wt') as f:
-				json.dump(repo_data, f)
+			with octoprint.util.atomic_write(self._repository_cache_path, mode='wb') as f:
+				f.write(to_bytes(json.dumps(repo_data)))
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
 
@@ -874,8 +875,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._notices_cache_path, mode="wt") as f:
-				json.dump(notice_data, f)
+			with octoprint.util.atomic_write(self._notices_cache_path, mode="wb") as f:
+				f.write(to_bytes(json.dumps(notice_data)))
 		except Exception as e:
 			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))
 		return notice_data

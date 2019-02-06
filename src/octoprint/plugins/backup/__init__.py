@@ -10,7 +10,7 @@ from octoprint.settings import default_settings
 from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
-from octoprint.util import is_hidden_path
+from octoprint.util import is_hidden_path, to_bytes
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
 from octoprint.util.platform import is_os_compatible
 from octoprint.util.pip import LocalPipCaller
@@ -881,7 +881,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						unknown_plugins_path = os.path.join(datafolder, UNKNOWN_PLUGINS_FILE)
 						try:
 							with io.open(unknown_plugins_path, mode='wb') as f:
-								json.dump(unknown_plugins, f)
+								f.write(to_bytes(json.dumps(unknown_plugins)))
 						except Exception:
 							if callable(on_log_error):
 								on_log_error("Could not persist list of unknown plugins to {}".format(unknown_plugins_path),
