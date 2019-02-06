@@ -1057,6 +1057,9 @@ def temppath(prefix=None, suffix=""):
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
+	import io
+
+	assert "b" not in mode, "binary mode not support by bom_aware_open"
 
 	codec = codecs.lookup(encoding)
 	encoding = codec.name
@@ -1069,15 +1072,13 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		# these encodings might have a BOM, so let's see if there is one
 		bom = getattr(codecs, potential_bom_attribute)
 
-		with io.open(filename, 'rb') as f:
+		with io.open(filename, mode='rb') as f:
 			header = f.read(4)
 
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	# Py3 doesn't like 't'
-	mode = mode.replace('t','')
-	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
+	return io.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 def is_hidden_path(path):

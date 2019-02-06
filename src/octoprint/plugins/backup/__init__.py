@@ -30,7 +30,7 @@ except ImportError:
 
 from flask_babel import gettext
 
-import codecs
+import io
 import flask
 import logging
 import os
@@ -490,7 +490,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
 		if os.path.exists(data_file):
 			try:
-				with codecs.open(data_file, mode='rt', encoding="utf-8") as f:
+				with io.open(data_file, mode='rb', encoding="utf-8") as f:
 					unknown_plugins = json.load(f)
 
 				assert isinstance(unknown_plugins, list)
@@ -797,7 +797,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 					import yaml
 
-					with codecs.open(configfile) as f:
+					with io.open(configfile, "rt", encoding="utf-8") as f:
 						configdata = yaml.safe_load(f)
 
 					if configdata.get("accessControl", dict()).get("enabled", True):
@@ -813,7 +813,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						on_log_progress("Unpacked")
 
 					# install available plugins
-					with codecs.open(os.path.join(temp, "plugin_list.json"), 'rt') as f:
+					with io.open(os.path.join(temp, "plugin_list.json"), 'rb') as f:
 						plugins = json.load(f)
 
 					known_plugins = []
@@ -880,7 +880,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 						unknown_plugins_path = os.path.join(datafolder, UNKNOWN_PLUGINS_FILE)
 						try:
-							with codecs.open(unknown_plugins_path, mode='wt', encoding="utf-8") as f:
+							with io.open(unknown_plugins_path, mode='wb') as f:
 								json.dump(unknown_plugins, f)
 						except Exception:
 							if callable(on_log_error):

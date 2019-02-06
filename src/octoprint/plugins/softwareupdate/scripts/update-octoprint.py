@@ -195,8 +195,8 @@ def _rescue_changes(git_executable, folder):
 		if returncode is None or returncode != 0:
 			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to {}".format(patch))
 
-		import codecs
-		with codecs.open(patch, "w", encoding="utf-8", errors="replace") as f:
+		import io
+		with io.open(patch, "wt", encoding="utf-8", errors="replace") as f:
 			for line in stdout:
 				f.write(line)
 

@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import os
 import datetime
-import codecs
+import io
 
 from past.builtins import basestring
 
@@ -1012,7 +1012,7 @@ def _get_translations(locale, domain):
 
 	def messages_from_po(path, locale, domain):
 		messages = dict()
-		with codecs.open(path, encoding="utf-8") as f:
+		with io.open(path, mode="rt", encoding="utf-8") as f:
 			catalog = read_po(f, locale=locale, domain=domain)
 
 			for message in catalog:

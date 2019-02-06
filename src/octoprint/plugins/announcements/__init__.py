@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 import calendar
-import codecs
+import io
 import os
 import re
 import time
@@ -388,7 +388,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		response = r.text
 		channel_path = self._get_channel_cache_path(key)
-		with codecs.open(channel_path, mode="w", encoding="utf-8") as f:
+		with io.open(channel_path, mode="wt", encoding="utf-8") as f:
 			f.write(response)
 		return feedparser.parse(response)
 

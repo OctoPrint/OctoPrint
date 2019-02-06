@@ -67,14 +67,26 @@ class BomAwareOpenTest(unittest.TestCase):
 		except UnicodeDecodeError:
 			pass
 
-	def test_bom_aware_open_parameters(self):
-		"""Tests that the parameters are propagated properly."""
+	def test_bom_aware_open_parameters_text_mode(self):
+		"""Tests that the parameters are propagated properly in text mode."""
 
-		with mock.patch("codecs.open") as mock_open:
-			with octoprint.util.bom_aware_open(self.filename_utf8_without_bom, mode="rb", encoding="utf-8", errors="ignore") as f:
+		with mock.patch("io.open", wraps=io.open) as mock_open:
+			with octoprint.util.bom_aware_open(self.filename_utf8_without_bom, mode="rt", encoding="utf-8", errors="ignore") as f:
 				f.readlines()
 
-		mock_open.assert_called_once_with(self.filename_utf8_without_bom, encoding="utf-8", mode="rb", errors="ignore")
+		calls = [mock.call(self.filename_utf8_without_bom, mode="rb"),
+		         mock.call(self.filename_utf8_without_bom, encoding="utf-8", mode="rt", errors="ignore")]
+		mock_open.assert_has_calls(calls)
+
+	def test_bom_aware_open_parameters_binary_mode(self):
+		"""Tests that binary mode raises an AssertionError."""
+		self.assertRaises(AssertionError,
+		                  octoprint.util.bom_aware_open,
+		                  self.filename_utf8_without_bom,
+		                  mode="rb",
+		                  encoding="utf-8",
+		                  errors="ignore")
+
 
 class TestAtomicWrite(unittest.TestCase):
 	"""
