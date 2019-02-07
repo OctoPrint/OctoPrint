@@ -2541,19 +2541,18 @@ class MachineCom(object):
 
 			# connect to regular serial port
 			self._log("Connecting to: %s" % port)
-			if baudrate == 0:
-				baudrates = baudrateList()
-				serial_obj = serial.Serial(str(port),
-				                           baudrates[0],
-				                           timeout=read_timeout,
-				                           write_timeout=0,
-				                           parity=serial.PARITY_ODD)
-			else:
-				serial_obj = serial.Serial(str(port),
-				                           baudrate,
-				                           timeout=read_timeout,
-				                           write_timeout=0,
-				                           parity=serial.PARITY_ODD)
+
+			serial_port_args = {
+				"port": str(port),
+				"baudrate": baudrateList()[0] if baudrate == 0 else baudrate,
+				"timeout": read_timeout,
+				"write_timeout": 0,
+				"parity": serial.PARITY_ODD,
+				"exclusive": True
+			}
+
+			serial_obj = serial.Serial(**serial_port_args)
+
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
 			serial_obj.open()
