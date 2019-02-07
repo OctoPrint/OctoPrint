@@ -52,9 +52,7 @@ INSTALL_REQUIRES = [
 	"Click>=7,<8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
-	"chainmap>=1.0.2,<1.1",
 	"future>=0.17,<0.18",
-	"scandir>=1.9,<1.10",
 	"websocket-client>=0.53,<0.54",
 	"python-dateutil>=2.7.5,<2.8",
 	"wrapt>=1.10.11,<1.11",
@@ -62,8 +60,18 @@ INSTALL_REQUIRES = [
 	"frozendict>=1.2,<1.3"
 ]
 
-INSTALL_REQUIRES_PYTHON2 = ["futures>=3.2,<3.3", "monotonic>=1.5,<1.6"]
-INSTALL_REQUIRES_OSX = ["appdirs>=1.4.0",]
+# Python 2 specific requirements
+INSTALL_REQUIRES_PYTHON2 = [
+	"futures>=3.2,<3.3",
+	"monotonic>=1.5,<1.6",
+	"scandir>=1.9,<1.10",
+	"chainmap>=1.0.2,<1.1",
+]
+
+# OSX specific requirements
+INSTALL_REQUIRES_OSX = [
+	"appdirs>=1.4.0",
+]
 
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
