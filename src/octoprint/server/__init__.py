@@ -938,6 +938,7 @@ class Server(object):
 
 		app.debug = self._debug
 		app.config["TEMPLATES_AUTO_RELOAD"] = True
+		app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
