@@ -2713,10 +2713,10 @@ class MachineCom(object):
 
 		if ret != "":
 			try:
-				self._log("Recv: " + sanitize_ascii(ret))
+				self._log("Recv: {}".format(sanitize_ascii(ret)))
 			except ValueError as e:
-				self._log("WARN: While reading last line: %s" % e)
-				self._log("Recv: " + repr(ret))
+				self._log("WARN: While reading last line: {}".format(e))
+				self._log("Recv: {!r}".format(ret))
 
 		for name, hook in self._received_message_hooks.items():
 			try:

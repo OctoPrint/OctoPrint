@@ -1315,7 +1315,7 @@ var getQueryParameterByName = function(name, url) {
  * E.g. turns a null byte in the string into "\x00".
  *
  * Characters 0 to 31 excluding 9, 10 and 13 will be escaped, as will
- * 127 and 255. That should leave printable characters and unicode
+ * 127, 128 to 159 and 255. That should leave printable characters and unicode
  * alone.
  *
  * Originally based on
@@ -1330,7 +1330,7 @@ var escapeUnprintableCharacters = function(str) {
     var charCode;
 
     while (!isNaN(charCode = str.charCodeAt(index))) {
-        if ((charCode < 32 && charCode != 9 && charCode != 10 && charCode != 13) || charCode == 127 || charCode == 255) {
+        if ((charCode < 32 && charCode !== 9 && charCode !== 10 && charCode !== 13) || charCode === 127 || (charCode >= 128 && charCode <= 159) || charCode === 255) {
             // special hex chars
             result += "\\x" + (charCode > 15 ? "" : "0") + charCode.toString(16)
         } else {
