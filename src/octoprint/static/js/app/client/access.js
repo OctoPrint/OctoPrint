@@ -60,6 +60,7 @@
             name: group.name,
             description: group.description,
             permissions: group.permissions,
+            subgroups: group.subgroups,
             default: group.default
         };
 
