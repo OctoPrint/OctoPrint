@@ -806,8 +806,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						on_log_progress(u"Unpacked")
 
 					# install available plugins
-					with codecs.open(os.path.join(temp, "plugin_list.json"), "r") as f:
-						plugins = json.load(f)
+					plugins = []
+					plugin_list_file = os.path.join(temp, "plugin_list.json")
+					if os.path.exists(plugin_list_file):
+						with codecs.open(plugin_list_file, "r") as f:
+							plugins = json.load(f)
 
 					known_plugins = []
 					unknown_plugins = []
