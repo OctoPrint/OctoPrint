@@ -25,7 +25,7 @@ below.
     with system wide installed instances):
       * PY2: ``virtualenv --python=python2 venv2``
       * PY3: ``virtualenv --python=python3 venv3``
-  * Activate one of the virtual environment:
+  * Activate one of the virtual environments:
       * PY2: ``source venv2/bin/activate`` (Linux, MacOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
       * PY3: ``source venv3/bin/activate`` (Linux, MacOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
   * Update ``pip`` in the virtual environment:
