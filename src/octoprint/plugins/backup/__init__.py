@@ -46,6 +46,14 @@ import traceback
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
+BACKUP_FILE_PREFIX = "octoprint-backup"
+
+BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
+
+def build_backup_filename():
+	return "{}-{}.zip".format(BACKUP_FILE_PREFIX,
+							  time.strftime(BACKUP_DATE_TIME_FMT))
+
 
 class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -122,7 +130,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@admin_permission.require(403)
 	@restricted_access
 	def create_backup(self):
-		backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
+		backup_file = build_backup_filename()
 
 		data = flask.request.json
 		exclude = data.get("exclude", [])
@@ -335,7 +343,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			Creates a new backup.
 			"""
 
-			backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
+			backup_file = build_backup_filename()
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 
 			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
