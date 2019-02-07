@@ -1129,14 +1129,17 @@ except ImportError:
 			pathname = _glob_escape_check.sub(r"[\1]", pathname)
 		return drive + pathname
 
-
 try:
-	import monotonic
-	monotonic_time = monotonic.monotonic
-except RuntimeError:
-	# no source of monotonic time available, nothing left but using time.time *cringe*
-	import time
-	monotonic_time = time.time
+	# py3
+	from time import monotonic as monotonic_time
+except ImportError:
+	try:
+		# py2 w/ suitable source for monotonic time
+		from monotonic import monotonic as monotonic_time
+	except RuntimeError:
+		# no source of monotonic time available, nothing left but using time.time *cringe*
+		import time
+		monotonic_time = time.time
 
 
 def thaw_frozendict(obj):
