@@ -9,11 +9,13 @@ import versioneer
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
 import octoprint_setuptools
+import setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=2.7.9"      # py 3 marked as supported so that we can migrate... NOT officially supported though!
+# we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
+PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
 
 # Requirements for our application
 INSTALL_REQUIRES = [
@@ -57,14 +59,11 @@ INSTALL_REQUIRES = [
 	"python-dateutil>=2.7.5,<2.8",
 	"wrapt>=1.10.11,<1.11",
 	"emoji>=0.5.1,<0.6",
-	"monotonic>=1.5,<1.6",
 	"frozendict>=1.2,<1.3"
 ]
-if sys.version_info[0] < 3:
-	INSTALL_REQUIRES.append("futures>=3.2,<3.3")
 
-if sys.platform == "darwin":
-	INSTALL_REQUIRES.append("appdirs>=1.4.0")
+INSTALL_REQUIRES_PYTHON2 = ["futures>=3.2,<3.3", "monotonic>=1.5,<1.6"]
+INSTALL_REQUIRES_OSX = ["appdirs>=1.4.0",]
 
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
@@ -93,6 +92,23 @@ EXTRA_REQUIRES = dict(
 
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
+
+# adapted from https://hynek.me/articles/conditional-python-dependencies/
+if int(setuptools.__version__.split(".", 1)[0]) < 18:
+	# no bdist_wheel support for setuptools < 18 since we build universal wheels and our optional dependencies
+	# would get lost there
+	assert "bdist_wheel" not in sys.argv
+
+	# add optional dependencies for setuptools versions < 18 that don't yet support environment markers
+	if sys.version_info[0] < 3:
+		INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
+
+	if sys.platform == "darwin":
+		INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
+else:
+	# environment markers supported
+	EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
+	EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
@@ -185,6 +201,9 @@ def params():
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 2",
 		"Programming Language :: Python :: 2.7",
+		"Programming Language :: Python :: 3",
+		"Programming Language :: Python :: 3.6",
+		"Programming Language :: Python :: 3.7",
 		"Programming Language :: Python :: Implementation :: CPython",
 		"Programming Language :: JavaScript",
 		"Topic :: Printing",
