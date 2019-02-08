@@ -92,7 +92,8 @@ def getSettings():
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
 			"colorIcon": s.getBoolean(["appearance", "colorIcon"]),
 			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
-			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"])
+			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"]),
+			"fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -379,6 +380,7 @@ def _saveSettings(data):
 		if "colorIcon" in data["appearance"]: s.setBoolean(["appearance", "colorIcon"], data["appearance"]["colorIcon"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
+		if "fuzzyTimes" in data["appearance"]: s.setBoolean(["appearance", "fuzzyTimes"], data["appearance"]["fuzzyTimes"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])

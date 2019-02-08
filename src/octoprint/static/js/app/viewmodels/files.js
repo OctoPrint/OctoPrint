@@ -625,7 +625,7 @@ $(function() {
                         });
                     }
                 }
-                output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                output += gettext("Estimated print time") + ": " + (self.settingsViewModel.appearance_fuzzyTimes() ? formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
