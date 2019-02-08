@@ -427,23 +427,26 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
+		to_bytes(to_unicode(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
 
 
-def to_str(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a str."""
+def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a bytestring."""
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
 		return s_or_u
 
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
+
+
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, str):
+	if isinstance(s_or_u, bytes):
 		return s_or_u.decode(encoding, errors=errors)
 	else:
 		return s_or_u
