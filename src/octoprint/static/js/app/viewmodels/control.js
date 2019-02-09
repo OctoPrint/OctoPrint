@@ -26,6 +26,7 @@ $(function() {
         self.distances = ko.observableArray([0.1, 1, 10, 100]);
         self.distance = ko.observable(10);
 
+        self.showTools = ko.observable(true);
         self.tools = ko.observableArray([]);
 
         self.feedRate = ko.observable(100);
@@ -79,6 +80,7 @@ $(function() {
                 tools[0]["key"]("tool0");
             }
 
+            self.showTools(numExtruders > 0);
             self.tools(tools);
         };
 
