@@ -1295,7 +1295,7 @@ class MachineCom(object):
 			tags = set()
 
 		with self._jobLock:
-			if not pause and self.isPaused():
+			if not pause and self._state in (self.STATE_PAUSED, self.STATE_PAUSING):
 				if self._pauseWaitStartTime:
 					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
