@@ -18,7 +18,7 @@ plugins and not unofficial OctoPrint versions).
 
 Do not seek support here ("I need help with ...", "I have a
 question ..."), that belongs on the community forum at 
-discourse.octoprint.org, NOT here.
+community.octoprint.org, NOT here.
 
 Mark requests with a "[Request]" prefix in the title please. For bug
 reports fully fill out the bug reporting template (if you don't know

@@ -36,14 +36,14 @@ nothing but ticket management.
 - If you want to post a **feature request** or a **documentation request**, add `[Request]`
   to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
   something is **not** what qualifies as a request here, use the
-  [community forum at discourse.octoprint.org](https://discourse.octoprint.org) for
+  [community forum at community.octoprint.org](https://community.octoprint.org) for
   such support issues.
 - If you are a **developer** that wants to brainstorm a pull request or possible
   changes to the plugin system, please get in touch on the 
-  [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/development).
+  [community forum at community.octoprint.org](https://community.octoprint.org/c/development).
 - If you need **support**, have a **question** or some **other reason** that
   doesn't fit any of the above categories, the issue tracker is not the right place.
-  Consult the [community forum at discourse.octoprint.org](https://discourse.octoprint.org/c/support) instead.
+  Consult the [community forum at community.octoprint.org](https://community.octoprint.org/c/support) instead.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
@@ -75,7 +75,7 @@ following section *completely* and also follow the instructions in the
    **OctoPrint doesn't manage your network connection or your webcam nor
    can it fix your printer not getting detected as a serial interface** - 
    if you have any kinds of problems with that, get in touch on the 
-   [community forum](https://discourse.octoprint.org).
+   [community forum](https://community.octoprint.org).
    
    **This is not the bug tracker of OctoPi**, which is the preconfigured
    Raspberry Pi image including OctoPrint among other things - that one can be found
@@ -126,7 +126,7 @@ following section *completely* and also follow the instructions in the
    there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
    very diligent here!
    
-If in doubt about any of the above - get in touch on the [community forum](https://discourse.octoprint.org)
+If in doubt about any of the above - get in touch on the [community forum](https://community.octoprint.org)
 instead of opening a ticket here. If you are actually running into a bug, we'll figure it out together 
 there.
    
@@ -153,7 +153,7 @@ plugins and not unofficial OctoPrint versions).
 
 Do not seek support here ("I need help with ...", "I have a
 question ..."), that belongs on the community forum at 
-discourse.octoprint.org, NOT here.
+community.octoprint.org, NOT here.
 
 Mark requests with a "[Request]" prefix in the title please. For bug
 reports fully fill out the bug reporting template (if you don't know
@@ -275,11 +275,11 @@ all requested information or your ticket will be closed.
 
 ### Where can I find which version and branch I'm on?
 
-Please refer to [this FAQ entry](https://discourse.octoprint.org/t/how-can-i-find-out-the-version-of-octoprint-or-octopi-i-am-running/204/1).
+Please refer to [this FAQ entry](https://community.octoprint.org/t/how-can-i-find-out-the-version-of-octoprint-or-octopi-i-am-running/204/1).
 
 ### Where can I find those log files you keep talking about?
 
-Please refer to [this FAQ entry](https://discourse.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299/1).
+Please refer to [this FAQ entry](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299/1).
 
 ### Where can I find my browser's error console?
 
@@ -302,7 +302,7 @@ the documentation.
    system - maybe that's the actual PR you have been waiting for to contribute :)
 2. If you plan to make **any large or otherwise disruptive changes to the
    code or appearance, please get in touch on the 
-   [forums](https://discourse.octoprint.org/c/development)** first so
+   [forums](https://community.octoprint.org/c/development)** first so
    that we can determine if it's a good time for your specific pull
    request. It might be that we're currently in the process of making
    heavy changes to the code locations you'd target as well, or your
