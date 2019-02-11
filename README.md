@@ -3,7 +3,7 @@
 
 ![GitHub release](https://img.shields.io/github/release/foosel/OctoPrint.svg?colorB=brightgreen)
 [![Travis build status](https://img.shields.io/travis/foosel/OctoPrint.svg)](https://travis-ci.org/foosel/OctoPrint)
-[![Discourse topics](https://img.shields.io/discourse/https/discourse.octoprint.org/users.svg)](https://discourse.octoprint.org)
+[![Discourse topics](https://img.shields.io/discourse/https/community.octoprint.org/users.svg)](https://community.octoprint.org)
 [![IRC](https://img.shields.io/badge/chat-on%20irc-brightgreen.svg)](https://chat.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
 
@@ -13,7 +13,7 @@ and released under the [GNU Affero General Public License V3](http://www.gnu.org
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
-The community forum is available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
+The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme).
 
 The official IRC channel is [#octoprint on freenode](https://chat.octoprint.org). Its logs can be found [here](https://freenode.logbot.info/octoprint).
 
@@ -32,7 +32,7 @@ You are currently looking at the source code repository of OctoPrint. If you alr
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
 want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
 might be of more interest for you. You might also want to subscribe to join 
-[the community forum at discourse.octoprint.org](https://discourse.octoprint.org) where there are other active users who might be
+[the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
 ## Contributing
@@ -40,7 +40,7 @@ able to help you with any questions you might have.
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
 [official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), debugging help
 in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on 
-[the community forum at discourse.octoprint.org](https://discourse.octoprint.org)
+[the community forum at community.octoprint.org](https://community.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
 If you think something is bad about OctoPrint or its documentation the way it is, please help
