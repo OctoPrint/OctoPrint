@@ -379,7 +379,8 @@ PrintCancelled
      * ``owner``: the user who started the print job (if available)
      * ``time``: the elapsed time of the print when it was cancelled, in seconds (float)
      * ``user``: the user who cancelled the print job (if available)
-     * ``position``: the print head position at the time of cancelling (if available)
+     * ``position``: the print head position at the time of cancelling (if available, not available if recording of the
+       position on cancel is disabled)
      * ``position.x``: x coordinate, as reported back from the firmware through `M114`
      * ``position.y``: y coordinate, as reported back from the firmware through `M114`
      * ``position.z``: z coordinate, as reported back from the firmware through `M114`
@@ -407,7 +408,8 @@ PrintPaused
      * ``size``: the file's size in bytes (if available)
      * ``owner``: the user who started the print job (if available)
      * ``user``: the user who paused the print job (if available)
-     * ``position``: the print head position at the time of pausing (if available)
+     * ``position``: the print head position at the time of pausing (if available, not available if the recording of
+       the position on pause is disabled or the pause is completely handled by the printer's firmware)
      * ``position.x``: x coordinate, as reported back from the firmware through `M114`
      * ``position.y``: y coordinate, as reported back from the firmware through `M114`
      * ``position.z``: z coordinate, as reported back from the firmware through `M114`

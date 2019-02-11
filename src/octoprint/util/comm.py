@@ -1261,15 +1261,7 @@ class MachineCom(object):
 		self._log("Did not receive parseable position data from printer within {}s, continuing without it".format(timeout))
 		self._pause_preparation_done()
 
-	def _pause_preparation_done(self, check_timer=True, suppress_script=None, user=None):
-		if suppress_script is None:
-			with self._suppress_scripts_mutex:
-				suppress_script = "pause" in self._suppress_scripts
-				try:
-					self._suppress_scripts.remove("pause")
-				except KeyError:
-					pass
-
+	def _pause_preparation_done(self, check_timer=True, suppress_script=False, user=None):
 		if user is None:
 			with self._action_users_mutex:
 				try:
@@ -1336,10 +1328,6 @@ class MachineCom(object):
 					                 part_of_job=True,
 					                 tags=tags | {"trigger:comm.set_pause", "trigger:pause"}) # pause print
 
-				if not local_handling:
-					with self._suppress_scripts_mutex:
-						self._suppress_scripts.add("pause")
-
 				def _on_M400_sent():
 					# we don't call on_print_job_paused on our callback here
 					# because we do this only after our M114 has been answered
@@ -1360,7 +1348,7 @@ class MachineCom(object):
 					                              "trigger:pause",
 					                              "trigger:record_position"})
 
-				if self._log_position_on_pause:
+				if self._log_position_on_pause and local_handling:
 					with self._action_users_mutex:
 						self._action_users["pause"] = user
 

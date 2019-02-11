@@ -96,7 +96,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		#hook card upload
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
-		
+
 		# comm
 		self._comm = None
 
@@ -669,7 +669,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
-	
+
 	def add_sd_file(self, filename, path, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
@@ -1234,7 +1234,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			thread.start()
 
 	def on_comm_print_job_paused(self, suppress_script=False, user=None):
-		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None,
+		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position and not suppress_script else None,
 		                                            action_user=user)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
