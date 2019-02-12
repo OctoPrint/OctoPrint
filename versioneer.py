@@ -2114,7 +2114,7 @@ def do_setup():
                 old = f.read()
         except EnvironmentError:
             old = ""
-        if INIT_PY_SNIPPET not in old:
+        if "from ._version import get_versions" not in old:
             print(" appending to %s" % ipy)
             with io.open(ipy, 'at', encoding="utf-8") as f:
                 f.write(INIT_PY_SNIPPET)
