@@ -503,8 +503,8 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
             print("unable to run %s (error)" % dispcmd)
         return None
     return stdout
-LONG_VERSION_PY['git'] = '''
-# -*- coding: utf-8 -*-
+
+LONG_VERSION_PY['git'] = '''# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 # This file helps to compute a version number in source trees obtained from
