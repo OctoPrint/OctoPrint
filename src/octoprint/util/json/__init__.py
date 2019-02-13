@@ -31,3 +31,4 @@ class JsonEncoding(object):
 		raise TypeError
 
 JsonEncoding.add_encoder(frozendict.frozendict, lambda obj: dict(obj))
+JsonEncoding.add_encoder(bytes, lambda obj: obj.decode(encoding="utf-8"))
