@@ -59,15 +59,11 @@ class FilemanagerMethodTest(unittest.TestCase):
 		self.assertItemsEqual(["f", "foo"], full["machinecode"]["foo"])
 
 		self.assertTrue("model" in full)
-		self.assertTrue("stl" in full["model"])
-		self.assertTrue(isinstance(full["model"]["stl"], octoprint.filemanager.ContentTypeMapping))
-		self.assertItemsEqual(["stl"], full["model"]["stl"].extensions)
 		self.assertTrue("amf" in full["model"])
 		self.assertTrue(isinstance(full["model"]["amf"], list))
 		self.assertItemsEqual(["amf"], full["model"]["amf"])
 
 	def test_get_mimetype(self):
-		self.assertEqual(octoprint.filemanager.get_mime_type("foo.stl"), "application/sla")
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.gcode"), "text/plain")
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.unknown"), "application/octet-stream")
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_map_yes"), "application/mime_map_yes")
@@ -76,8 +72,8 @@ class FilemanagerMethodTest(unittest.TestCase):
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_detect_no"), "application/octet-stream")
 
 	def test_valid_file_type(self):
-		self.assertTrue(octoprint.filemanager.valid_file_type("foo.stl", type="model"))
-		self.assertTrue(octoprint.filemanager.valid_file_type("foo.stl", type="stl"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.amf", type="model"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.amf", type="amf"))
 		self.assertFalse(octoprint.filemanager.valid_file_type("foo.stl", type="machinecode"))
 		self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo", type="machinecode"))
 		self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo", type="foo"))
@@ -90,7 +86,6 @@ class FilemanagerMethodTest(unittest.TestCase):
 		self.assertEqual(["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gcode"))
 		self.assertEqual(["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gco"))
 		self.assertEqual(["machinecode", "foo"], octoprint.filemanager.get_file_type("foo.f"))
-		self.assertEqual(["model", "stl"], octoprint.filemanager.get_file_type("foo.stl"))
 		self.assertEqual(["model", "amf"], octoprint.filemanager.get_file_type("foo.amf"))
 		self.assertIsNone(octoprint.filemanager.get_file_type("foo.unknown"))
 
