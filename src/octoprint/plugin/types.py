@@ -1855,8 +1855,9 @@ class SlicerPlugin(OctoPrintPlugin):
 		    The human readable name of the slicer. This will be displayed to the user during slicer selection.
 		same_device
 		    True if the slicer runs on the same device as OctoPrint, False otherwise. Slicers running on the same
-		    device will not be allowed to slice while a print is running due to performance reasons. Slice requests
-		    against slicers running on the same device will result in an error.
+		    device will not be allowed to slice on systems with less than two CPU cores (or an unknown number) while a
+		    print is running due to performance reasons. Slice requests against slicers running on the same device and
+		    less than two cores will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
 		source_file_types
@@ -1878,6 +1879,21 @@ class SlicerPlugin(OctoPrintPlugin):
 			source_file_types=["model"],
 			destination_extensions=["gco", "gcode", "g"]
 		)
+
+	# noinspection PyMethodMayBeStatic
+	def get_slicer_extension_tree(self):
+		"""
+		Fetch additional entries to put into the extension tree for accepted files
+
+		By default, a subtree for ``model`` files with ``stl`` extension is returned. Slicers who want to support
+		additional/other file types will want to override this.
+
+		For the extension tree format, take a look at the docs of the :ref:`octoprint.filemanager.extension_tree hook <sec-plugins-hook-filemanager-extensiontree>`.
+
+		Returns: (dict) a dictionary containing a valid extension subtree.
+		"""
+		from octoprint.filemanager import ContentTypeMapping
+		return dict(model=dict(stl=ContentTypeMapping(["stl"], "application/sla")))
 
 	def get_slicer_profiles(self, profile_path):
 		"""

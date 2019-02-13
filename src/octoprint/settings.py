@@ -299,6 +299,7 @@ default_settings = {
 		"colorIcon": True,
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
+		"fuzzyTimes": True,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
@@ -345,7 +346,7 @@ default_settings = {
 	},
 	"slicing": {
 		"enabled": True,
-		"defaultSlicer": "cura",
+		"defaultSlicer": None,
 		"defaultProfiles": None
 	},
 	"events": {

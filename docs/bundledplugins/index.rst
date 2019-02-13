@@ -11,7 +11,6 @@ Bundled Plugins
    announcements.rst
    appkeys.rst
    backup.rst
-   cura.rst
    discovery.rst
    forcelogin.rst
    logging.rst

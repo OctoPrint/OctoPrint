@@ -99,6 +99,7 @@ date of first contribution):
   * [Henning Groß](https://github.com/hgross)
   * [Jubaleth](https://github.com/jubaleth)
   * [Matthias Urlichs](https://github.com/smurfix)
+  * [Daniel Joyce](https://github.com/DanielJoyce)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

@@ -533,7 +533,7 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	else:
 		return s_or_u
 
-to_str = deprecated("to_str has been renamed to to_bytes", since="1.4.0")(to_bytes)
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
 
 
 

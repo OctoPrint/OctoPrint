@@ -42,22 +42,22 @@ List All Slicers and Slicing Profiles
       Content-Type: application/json
 
       {
-        "cura": {
-          "key": "cura",
-          "displayName": "CuraEngine",
+        "curalegacy": {
+          "key": "curalegacy",
+          "displayName": "Cura Legacy",
           "default": true,
           "profiles": {
             "high_quality": {
               "key": "high_quality",
               "displayName": "High Quality",
               "default": false,
-              "resource": "http://example.com/api/slicing/cura/profiles/high_quality"
+              "resource": "http://example.com/api/slicing/curalegacy/profiles/high_quality"
             },
             "medium_quality": {
               "key": "medium_quality",
               "displayName": "Medium Quality",
               "default": true,
-              "resource": "http://example.com/api/slicing/cura/profiles/medium_quality"
+              "resource": "http://example.com/api/slicing/curalegacy/profiles/medium_quality"
             }
           }
         }
@@ -81,7 +81,7 @@ List Slicing Profiles of a Specific Slicer
 
    .. sourcecode:: http
 
-      GET /api/slicing/cura/profiles HTTP/1.1
+      GET /api/slicing/curalegacy/profiles HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
 
@@ -95,13 +95,13 @@ List Slicing Profiles of a Specific Slicer
           "key": "high_quality",
           "displayName": "High Quality",
           "default": false,
-          "resource": "http://example.com/api/slicing/cura/profiles/high_quality"
+          "resource": "http://example.com/api/slicing/curalegacy/profiles/high_quality"
         },
         "medium_quality": {
           "key": "medium_quality",
           "displayName": "Medium Quality",
           "default": true,
-          "resource": "http://example.com/api/slicing/cura/profiles/medium_quality"
+          "resource": "http://example.com/api/slicing/curalegacy/profiles/medium_quality"
         }
       }
 
@@ -125,7 +125,7 @@ Retrieve Specific Profile
 
    .. sourcecode:: http
 
-      GET /api/slicing/cura/profiles/quick_test HTTP/1.1
+      GET /api/slicing/curalegacy/profiles/quick_test HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
 
@@ -137,7 +137,7 @@ Retrieve Specific Profile
       {
         "displayName": "Just a test",
         "description": "This is just a test",
-        "resource": "http://example.com/api/slicing/cura/profiles/quick_test",
+        "resource": "http://example.com/api/slicing/curalegacy/profiles/quick_test",
         "data": {
           "bottom_layer_speed": 20.0,
           "bottom_thickness": 0.3,
@@ -174,14 +174,14 @@ Add Slicing Profile
 
    .. sourcecode:: http
 
-      PUT /api/slicing/cura/profiles/quick_test HTTP/1.1
+      PUT /api/slicing/curalegacy/profiles/quick_test HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: application/json
 
       {
         "displayName": "Just a test",
-        "description": "This is just a test to show how to create a cura profile with a different layer height and skirt count",
+        "description": "This is just a test to show how to create a curalegacy profile with a different layer height and skirt count",
         "data": {
           "layer_height": 0.2,
           "skirt_line_count": 3
@@ -197,8 +197,8 @@ Add Slicing Profile
 
       {
         "displayName": "Just a test",
-        "description": "This is just a test to show how to create a cura profile with a different layer height and skirt count",
-        "resource": "http://example.com/api/slicing/cura/profiles/quick_test"
+        "description": "This is just a test to show how to create a curalegacy profile with a different layer height and skirt count",
+        "resource": "http://example.com/api/slicing/curalegacy/profiles/quick_test"
       }
 
    :param slicer:   The identifying key of the slicer for which to add the profile

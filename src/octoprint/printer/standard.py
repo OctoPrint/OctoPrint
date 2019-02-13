@@ -1240,7 +1240,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			thread.start()
 
 	def on_comm_print_job_paused(self, suppress_script=False, user=None):
-		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None,
+		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position and not suppress_script else None,
 		                                            action_user=user)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)

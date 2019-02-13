@@ -44,7 +44,7 @@ def get_config():
     # _version.py
     cfg = VersioneerConfig()
     cfg.VCS = "git"
-    cfg.style = "pep440-post"
+    cfg.style = "pep440-tag"
     cfg.tag_prefix = ""
     cfg.parentdir_prefix = ""
     cfg.versionfile_source = "src/octoprint/_version.py"
@@ -133,7 +133,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = io.open(versionfile_abs, 'rt', encoding='utf-8')
+        f = io.open(versionfile_abs, "rt", encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -257,7 +257,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     abbrev_ref_out = run_command(GITS,
                                  ["rev-parse", "--abbrev-ref", "HEAD"],
                                  cwd=root)
-    if abbrev_ref_out is not None:
+    if abbrev_ref_out is not None and abbrev_ref_out != "HEAD":
         pieces["branch"] = abbrev_ref_out.strip()
 
     # now we have TAG-NUM-gHEX or HEX
@@ -308,11 +308,12 @@ def git_parse_lookup_file(path):
     if not os.path.exists(path):
         return []
 
+    import re
     lookup = []
-    with io.open(path, 'rt', encoding='utf-8') as f:
+    with io.open(path, "rt", encoding="utf-8") as f:
         for line in f:
             if '#' in line:
-                line = line[:line.rindex("#")]
+                line = line[:line.index("#")]
             line = line.strip()
             if not line:
                 continue
@@ -340,7 +341,6 @@ def git_parse_lookup_file(path):
 
                 lookup.append(entry)
             except Exception:
-                # TODO: really catch all exceptions?
                 logging.getLogger(__name__).exception("Versioneer problem")
                 break
     return lookup
@@ -359,6 +359,9 @@ def git_pieces_from_lookup(lookup, root, verbose, run_command=run_command):
         raise NotThisMethod("git rev-parse --abbrev-ref HEAD failed")
 
     current_branch = stdout.strip()
+    if current_branch == "HEAD":
+        raise NotThisMethod("not on a branch")
+
     for matcher, render, tag, ref_commit in lookup:
         if matcher.match(current_branch):
             if tag is None or ref_commit is None:
@@ -443,6 +446,31 @@ def render_pep440(pieces):
                                           pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+    return rendered
+
+
+def render_pep440_tag(pieces):
+    """TAG[[.postDISTANCE].dev0+gHEX] -- Just the tag if not dirty, else more info
+
+    Useful for projects that want commit based tracking on some branches
+    but have the master branch only report tags, to allow for commits that
+    do not modify actual code (e.g. to .github/* or docs).
+
+    Exceptions:
+    1: no tags. 0.postDISTANCE[.dev0]+gHEX
+    """
+    if pieces["closest-tag"]:
+        rendered = pieces["closest-tag"]
+        if pieces["dirty"]:
+            rendered += ".post%d" % pieces["distance"]
+            rendered += ".dev0"
+            rendered += "+g%s" % pieces["short"]
+    else:
+        # exception #1
+        rendered = "0.post%d" % pieces["distance"]
+        if pieces["dirty"]:
+            rendered += ".dev0"
+        rendered += "+g%s" % pieces["short"]
     return rendered
 
 
@@ -596,6 +624,8 @@ def render(pieces, style):
         rendered = render_pep440_old(pieces)
     elif style == "pep440-dev":
         rendered = render_pep440_dev(pieces)
+    elif style == "pep440-tag":
+        rendered = render_pep440_tag(pieces)
     elif style == "git-describe":
         rendered = render_git_describe(pieces)
     elif style == "git-describe-long":

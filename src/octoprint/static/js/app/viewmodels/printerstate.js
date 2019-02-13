@@ -73,9 +73,9 @@ $(function() {
 
         self.estimatedPrintTimeString = ko.pureComputed(function() {
             if (self.lastPrintTime())
-                return formatFuzzyPrintTime(self.lastPrintTime());
+                return self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime(self.lastPrintTime()) : formatDuration(self.lastPrintTime());
             if (self.estimatedPrintTime())
-                return formatFuzzyPrintTime(self.estimatedPrintTime());
+                return self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime(self.estimatedPrintTime()) : formatDuration(self.estimatedPrintTime());
             return "-";
         });
         self.byteString = ko.pureComputed(function() {
@@ -102,7 +102,7 @@ $(function() {
                     return gettext("Still stabilizing...");
                 }
             } else {
-                return formatFuzzyPrintTime(self.printTimeLeft());
+                return self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime(self.printTimeLeft()) : formatDuration(self.printTimeLeft());
             }
         });
         self.printTimeLeftOriginString = ko.pureComputed(function() {

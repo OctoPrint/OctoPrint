@@ -48,6 +48,14 @@ import traceback
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
+BACKUP_FILE_PREFIX = "octoprint-backup"
+
+BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
+
+def build_backup_filename():
+	return "{}-{}.zip".format(BACKUP_FILE_PREFIX,
+							  time.strftime(BACKUP_DATE_TIME_FMT))
+
 
 class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -136,7 +144,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	@no_firstrun_access
 	@Permissions.PLUGIN_BACKUP_ACCESS.require(403)
 	def create_backup(self):
-		backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
+		backup_file = build_backup_filename()
 
 		data = flask.request.json
 		exclude = data.get("exclude", [])
@@ -349,7 +357,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			Creates a new backup.
 			"""
 
-			backup_file = "backup-{}.zip".format(time.strftime("%Y%m%d-%H%M%S"))
+			backup_file = build_backup_filename()
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 
 			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
@@ -813,8 +821,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						on_log_progress("Unpacked")
 
 					# install available plugins
-					with io.open(os.path.join(temp, "plugin_list.json"), 'rb') as f:
-						plugins = json.load(f)
+					plugins = []
+					plugin_list_file = os.path.join(temp, "plugin_list.json")
+					if os.path.exists(plugin_list_file):
+						with io.open(os.path.join(temp, "plugin_list.json"), 'rb') as f:
+							plugins = json.load(f)
 
 					known_plugins = []
 					unknown_plugins = []

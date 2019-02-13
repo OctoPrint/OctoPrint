@@ -59,7 +59,7 @@ Issue a connection command
    Issue a connection command. Currently available command are:
 
    connect
-     Instructs OctoPrint to connect to the printer. Additional parameters are:
+     Instructs OctoPrint to connect or, if already connected, reconnect to the printer. Additional parameters are:
 
      * ``port``: Optional, specific port to connect to. If not set the current ``portPreference`` will be used, or if
        no preference is available auto detection will be attempted.

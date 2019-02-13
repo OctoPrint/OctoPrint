@@ -503,7 +503,10 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
             print("unable to run %s (error)" % dispcmd)
         return None
     return stdout
-LONG_VERSION_PY['git'] = '''
+
+LONG_VERSION_PY['git'] = '''# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 # This file helps to compute a version number in source trees obtained from
 # git-archive tarball (such as those provided by githubs download-from-tag
 # feature). Distribution tarballs (built by setup.py sdist) and build
@@ -516,10 +519,12 @@ LONG_VERSION_PY['git'] = '''
 """Git implementation of _version.py."""
 
 import errno
+import io
 import os
 import re
 import subprocess
 import sys
+import logging
 
 
 def get_keywords():
@@ -634,7 +639,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = io.open(versionfile_abs, 'r')
+        f = io.open(versionfile_abs, "rt", encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -811,7 +816,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with io.open(path, 'r') as f:
+    with io.open(path, "rt", encoding="utf-8") as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -842,6 +847,7 @@ def git_parse_lookup_file(path):
 
                 lookup.append(entry)
             except Exception:
+                logging.getLogger(__name__).exception("Versioneer problem")
                 break
     return lookup
 
@@ -2108,7 +2114,7 @@ def do_setup():
                 old = f.read()
         except EnvironmentError:
             old = ""
-        if INIT_PY_SNIPPET not in old:
+        if "from ._version import get_versions" not in old:
             print(" appending to %s" % ipy)
             with io.open(ipy, 'at', encoding="utf-8") as f:
                 f.write(INIT_PY_SNIPPET)

@@ -21,7 +21,7 @@ from octoprint.server import app, userManager, groupManager, pluginManager, gett
 	NOT_MODIFIED
 from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
-from octoprint.filemanager import get_all_extensions
+from octoprint.filemanager import full_extension_tree, get_all_extensions
 from octoprint.util import to_unicode
 
 import re
@@ -433,6 +433,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 			_logger.exception("Error while collecting available locales")
 
 	permissions = [permission.as_dict() for permission in Permissions.all()]
+	filetypes = list(sorted(full_extension_tree().keys()))
 	extensions = list(map(lambda ext: ".{}".format(ext), get_all_extensions()))
 
 	#~~ prepare full set of template vars for rendering
@@ -446,6 +447,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		pluginNames=plugin_names,
 		locales=locales,
 		permissions=permissions,
+		supportedFiletypes=filetypes,
 		supportedExtensions=extensions
 	)
 	render_kwargs.update(plugin_vars)

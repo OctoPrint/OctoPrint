@@ -39,8 +39,8 @@ A list of important components for which an increase in logging might be interes
   * ``octoprint.filemanager``: the file management layer
   * ``octoprint.plugin``: the plugin sub system
   * ``octoprint.plugins.<plugin>``: the plugin ``<plugin>``, e.g. ``octoprint.plugins.discovery`` to change the log level of
-    the `Discovery plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery>`_ or ``octoprint.plugins.cura``
-    to change the log level of the `Cura plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura>`_.
+    the :ref:`Discovery plugin <sec-bundledplugins-discovery>` or ``octoprint.plugins.backup``
+    to change the log level of the :ref:`Backup plugin <sec-bundledplugins-backup>`.
   * ``octoprint.slicing``: the slicing sub system
 
 This list will be expanded when deemed necessary.

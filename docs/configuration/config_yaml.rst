@@ -1100,14 +1100,14 @@ Settings for the built-in slicing support:
    slicing:
 
      # Whether to enable slicing support or not
-     enabled:
+     enabled: true
 
      # Default slicer to use
-     defaultSlicer: cura
+     defaultSlicer: null
 
      # Default slicing profiles per slicer
      defaultProfiles:
-       cura: ...
+       curalegacy: ...
 
 .. _sec-configuration-config_yaml-system:
 

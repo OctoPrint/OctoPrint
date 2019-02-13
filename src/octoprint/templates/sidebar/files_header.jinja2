@@ -14,9 +14,12 @@
                 <li><a href="#" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="fa fa-check" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
             </ul>
         </li>
+        <!-- ko if: availableFiletypes().length > 1 -->
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
+        <!-- ko foreach: availableFiletypes -->
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter($data.key); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains($root.listHelper.currentFilters(), $data.key) ? 'visible' : 'hidden'}"></i> <span data-bind="text: $data.text"></span></a></li>
+        <!-- /ko -->
+        <!-- /ko -->
         {% if enableSdSupport %}
             <li class="divider"></li>
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
