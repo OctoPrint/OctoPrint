@@ -30,10 +30,6 @@ extensions = dict(
 
 def full_extension_tree():
 	result = dict(
-		# extensions for 3d model files
-		model=dict(
-			stl=ContentTypeMapping(["stl"], "application/sla")
-		),
 		# extensions for printable machine code
 		machinecode=dict(
 			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
@@ -74,6 +70,16 @@ def full_extension_tree():
 		else:
 			return merged
 
+	slicer_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
+	for plugin in slicer_plugins:
+		try:
+			plugin_result = plugin.get_slicer_extension_tree()
+			if plugin_result is None or not isinstance(plugin_result, dict):
+				continue
+			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
+		except:
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from SlicerPlugin {name}".format(name=plugin.key))
+
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
 		try:
@@ -87,7 +93,7 @@ def full_extension_tree():
 	return result
 
 def get_extensions(type, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -101,7 +107,7 @@ def get_extensions(type, subtree=None):
 	return None
 
 def get_all_extensions(subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	result = []
@@ -120,7 +126,7 @@ def get_all_extensions(subtree=None):
 	return result
 
 def get_path_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -136,11 +142,11 @@ def get_path_for_extension(extension, subtree=None):
 	return None
 
 def get_content_type_mapping_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
-		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value. extensions
+		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value.extensions
 		list_extension_matches = isinstance(value, (list, tuple)) and extension in value
 
 		if content_extension_matches or list_extension_matches:

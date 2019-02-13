@@ -1878,6 +1878,21 @@ class SlicerPlugin(OctoPrintPlugin):
 			destination_extensions=["gco", "gcode", "g"]
 		)
 
+	# noinspection PyMethodMayBeStatic
+	def get_slicer_extension_tree(self):
+		"""
+		Fetch additional entries to put into the extension tree for accepted files
+
+		By default, a subtree for ``model`` files with ``stl`` extension is returned. Slicers who want to support
+		additional/other file types will want to override this.
+
+		For the extension tree format, take a look at the docs of the :ref:`octoprint.filemanager.extension_tree hook <sec-plugins-hook-filemanager-extensiontree>`.
+
+		Returns: (dict) a dictionary containing a valid extension subtree.
+		"""
+		from octoprint.filemanager import ContentTypeMapping
+		return dict(model=dict(stl=ContentTypeMapping(["stl"], "application/sla")))
+
 	def get_slicer_profiles(self, profile_path):
 		"""
 		Fetch all :class:`~octoprint.slicing.SlicingProfile` stored for this slicer.

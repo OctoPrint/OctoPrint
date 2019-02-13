@@ -336,7 +336,7 @@ default_settings = {
 	},
 	"slicing": {
 		"enabled": True,
-		"defaultSlicer": "cura",
+		"defaultSlicer": None,
 		"defaultProfiles": None
 	},
 	"events": {
