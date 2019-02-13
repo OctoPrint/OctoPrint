@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import collections
 import frozendict
 
+from octoprint.util import to_unicode
+
 class JsonEncoding(object):
 
 	encoders = collections.OrderedDict()
@@ -31,4 +33,4 @@ class JsonEncoding(object):
 		raise TypeError
 
 JsonEncoding.add_encoder(frozendict.frozendict, lambda obj: dict(obj))
-JsonEncoding.add_encoder(bytes, lambda obj: obj.decode(encoding="utf-8"))
+JsonEncoding.add_encoder(bytes, lambda obj: to_unicode(obj))
