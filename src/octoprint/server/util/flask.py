@@ -1120,7 +1120,12 @@ def check_lastmodified(lastmodified):
 
 	from datetime import datetime
 	if isinstance(lastmodified, (int, long, float)):
-		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
+		# max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
+		# present in CPython 3.6.x up to 3.7.1.
+		#
+		# I think it's fair to say that we'll never encounter lastmodified values older than
+		# 1970-01-02 so this is a safe workaround.
+		lastmodified = datetime.fromtimestamp(max(86400, lastmodified)).replace(microsecond=0)
 
 	if not isinstance(lastmodified, datetime):
 		raise ValueError("lastmodified must be a datetime or float or int instance but, got {} instead".format(lastmodified.__class__))
