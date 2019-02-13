@@ -194,7 +194,7 @@ $(function() {
         });
 
         self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.SLICING)) {
+            if (!self.loginState.hasPermission(self.access.permissions.SLICE)) {
                 return;
             }
 
