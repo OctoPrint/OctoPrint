@@ -1853,8 +1853,9 @@ class SlicerPlugin(OctoPrintPlugin):
 		    The human readable name of the slicer. This will be displayed to the user during slicer selection.
 		same_device
 		    True if the slicer runs on the same device as OctoPrint, False otherwise. Slicers running on the same
-		    device will not be allowed to slice while a print is running due to performance reasons. Slice requests
-		    against slicers running on the same device will result in an error.
+		    device will not be allowed to slice on systems with less than two CPU cores (or an unknown number) while a
+		    print is running due to performance reasons. Slice requests against slicers running on the same device and
+		    less than two cores will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
 		source_file_types
