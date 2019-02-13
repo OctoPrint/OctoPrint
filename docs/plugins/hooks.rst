@@ -200,35 +200,6 @@ Available plugin hooks
 .. contents::
    :local:
 
-.. _sec-plugins-hook-accesscontrol-appkey:
-
-octoprint.accesscontrol.appkey
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. py:function:: acl_appkey_hook(*args, **kwargs)
-
-   .. deprecated:: 1.3.11
-
-      This functionality will be removed in 1.4.0. Use the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` instead.
-
-   By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
-   within the system.
-
-   Overrides this to return your additional app information to be used for validating app session keys. You'll
-   need to return a list of 3-tuples of the format (id, version, public key).
-
-   The ``id`` should be the (unique) identifier of the app. Using a domain prefix might make sense here, e.g.
-   ``org.octoprint.example.MyApp``.
-
-   ``version`` should be a string specifying the version of the app for which the public key is valid. You can
-   provide the string ``any`` here, in which case the provided public key will be valid for all versions of the
-   app for which no specific public key is defined.
-
-   Finally, the public key is expected to be provided as a PKCS1 string without newlines.
-
-   :return: A list of 3-tuples as described above
-   :rtype: list
-
 .. _sec-plugins-hook-accesscontrol-keyvalidator:
 
 octoprint.accesscontrol.keyvalidator
@@ -1060,7 +1031,6 @@ octoprint.printer.factory
      * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
      * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
      * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
-     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
      * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
      * ``user_manager``: The :class:`~octoprint.access.users.UserManager`
      * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
@@ -1572,7 +1542,6 @@ octoprint.access.users.factory
      * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
      * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
      * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
-     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
      * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
      * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
 

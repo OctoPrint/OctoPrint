@@ -87,9 +87,6 @@ def loginUserFromApiKey():
 	if apikey == octoprint.server.UI_API_KEY:
 		return False
 
-	if octoprint.server.appSessionManager.validate(apikey):
-		return False
-
 	user = get_user_for_apikey(apikey)
 	if not loginUser(user):
 		raise InvalidApiKeyException()
@@ -202,7 +199,7 @@ def get_user_for_apikey(apikey):
 				return octoprint.server.userManager.find_user(session=flask_login.current_user.session)
 			else:
 				return flask_login.current_user
-		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
+		elif apikey == settings().get(["api", "key"]):
 			# master key or an app session key was used
 			return ApiUser([octoprint.server.groupManager.admin_group])
 		if octoprint.server.userManager.enabled:

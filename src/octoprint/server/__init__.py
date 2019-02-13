@@ -62,7 +62,6 @@ groupManager = None
 eventManager = None
 loginManager = None
 pluginManager = None
-appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
 jsonEncoder = None
@@ -230,7 +229,6 @@ class Server(object):
 		global eventManager
 		global loginManager
 		global pluginManager
-		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
 		global jsonEncoder
@@ -317,7 +315,6 @@ class Server(object):
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
-		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
@@ -362,7 +359,6 @@ class Server(object):
 			analysis_queue=analysisQueue,
 			slicing_manager=slicingManager,
 			file_manager=fileManager,
-			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			preemptive_cache=preemptiveCache,
 			json_encoder=jsonEncoder,
@@ -1198,13 +1194,10 @@ class Server(object):
 
 	def _setup_blueprints(self):
 		from octoprint.server.api import api
-		from octoprint.server.apps import apps, clear_registered_app
-
 		import octoprint.server.views # do not remove or the index view won't be found
 
 		blueprints = OrderedDict()
 		blueprints["/api"] = api
-		blueprints["/apps"] = apps
 
 		# also register any blueprints defined in BlueprintPlugins
 		blueprints.update(self._prepare_blueprint_plugins())
@@ -1218,12 +1211,6 @@ class Server(object):
 		# register everything with the system
 		for url_prefix, blueprint in blueprints.items():
 			app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-		global pluginLifecycleManager
-		def clear_apps(name, plugin):
-			clear_registered_app()
-		pluginLifecycleManager.add_callback("enabled", clear_apps)
-		pluginLifecycleManager.add_callback("disabled", clear_apps)
 
 	def _prepare_blueprint_plugins(self):
 		blueprints = OrderedDict()
