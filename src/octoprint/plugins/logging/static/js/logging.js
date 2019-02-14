@@ -1,72 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-
-    var OctoPrintLoggingClient = function(base) {
-        this.base = base;
-
-        this.baseUrl = this.base.getBlueprintUrl("logging");
-        this.logsUrl = this.baseUrl + "logs";
-        this.setupUrl = this.baseUrl + "setup";
-    };
-
-    OctoPrintLoggingClient.prototype.get = function(opts) {
-        return this.base.get(this.baseUrl, opts);
-    };
-
-    OctoPrintLoggingClient.prototype.listLogs = function(opts) {
-        return this.base.get(this.logsUrl, opts);
-    };
-
-    OctoPrintLoggingClient.prototype.deleteLog = function(file, opts) {
-        var fileUrl = this.logsUrl + "/" + file;
-        return this.base.delete(fileUrl, opts);
-    };
-
-    OctoPrintLoggingClient.prototype.downloadLog = function(file, opts) {
-        var fileUrl = this.logsUrl + "/" + file;
-        return this.base.download(fileUrl, opts);
-    };
-
-    OctoPrintLoggingClient.prototype.updateLevels = function(config, opts) {
-        return this.base.putJson(this.setupUrl + "/levels", config, opts);
-    };
-
-    //~~ wrapper for backwards compatibility
-
-    var DeprecatedOctoPrintLogsClient = function(base) {
-        this.base = base;
-        this.wrapped = this.base.plugins.logging;
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.list = function(opts) {
-        log.warn("OctoPrintClient.logs.list has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.listLogs instead");
-        return this.wrapped.listLogs(opts);
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.delete = function(file, opts) {
-        log.warn("OctoPrintClient.logs.delete has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.deleteLog instead");
-        return this.wrapped.deleteLog(file, opts);
-    };
-
-    DeprecatedOctoPrintLogsClient.prototype.download = function(file, opts) {
-        log.warn("OctoPrintClient.logs.download has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.downloadLog instead");
-        return this.wrapped.downloadLog(file, opts);
-    };
-
-    // register plugin component
-    OctoPrintClient.registerPluginComponent("logging", OctoPrintLoggingClient);
-
-    // also register deprecated client under old endpoint
-    OctoPrintClient.registerComponent("logs", DeprecatedOctoPrintLogsClient);
-
-    return OctoPrintLoggingClient;
-});
-
 $(function() {
     function LoggingViewModel(parameters) {
         var self = this;
@@ -77,6 +8,8 @@ $(function() {
         self.availableLoggersLevel = ko.observable();
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
+
+        self.markedForDeletion = ko.observableArray([]);
 
         self.availableLoggersSorted = ko.computed(function() {
             return _.sortBy(self.availableLoggers());
@@ -183,8 +116,37 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            OctoPrint.plugins.logging.deleteLog(filename)
-                .done(self.requestData);
+            var perform = function() {
+                OctoPrint.plugins.logging.deleteLog(filename)
+                    .done(self.requestData);
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete log file \"%(name)s\"."), {name: filename}),
+                                   perform);
+        };
+
+        self.markFilesOnPage = function() {
+            self.markedForDeletion(_.uniq(self.markedForDeletion().concat(_.map(self.listHelper.paginatedItems(), "name"))));
+        };
+
+        self.markAllFiles = function() {
+            self.markedForDeletion(_.map(self.listHelper.allItems, "name"));
+        };
+
+        self.clearMarkedFiles = function() {
+            self.markedForDeletion.removeAll();
+        };
+
+        self.removeMarkedFiles = function() {
+            var perform = function() {
+                self._bulkRemove(self.markedForDeletion(), "files")
+                    .done(function() {
+                        self.markedForDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete %(count)d log files."), {count: self.markedForDeletion().length}),
+                                   perform);
         };
 
         self.onSettingsShown = function() {
@@ -202,6 +164,47 @@ $(function() {
             } else {
                 console.log("ConfiguredLoggers has not changed. Not saving.");
             }
+        };
+
+        self._bulkRemove = function(files) {
+            var title = gettext("Deleting log files");
+            var message = _.sprintf(gettext("Deleting %(count)d log files..."), {count: files.length});
+            var handler = function(filename) {
+                return OctoPrint.plugins.logging.deleteLog(filename)
+                    .done(function() {
+                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                    })
+                    .fail(function(jqXHR) {
+                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                        deferred.notify(short, long, false);
+                    });
+            };
+
+            var deferred = $.Deferred();
+
+            var promise = deferred.promise();
+
+            var options = {
+                title: title,
+                message: message,
+                max: files.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var requests = [];
+            _.each(files, function(filename) {
+                var request = handler(filename);
+                requests.push(request)
+            });
+            $.when.apply($, _.map(requests, wrapPromiseWithAlways))
+                .done(function() {
+                    deferred.resolve();
+                    self.requestData();
+                });
+
+            return promise;
         };
     }
 

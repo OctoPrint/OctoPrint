@@ -1,5 +1,8 @@
-from __future__ import absolute_import, unicode_literals
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import os
@@ -128,7 +131,7 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	def event_payload(self):
 		payload = copy.deepcopy(self._event_data)
-		payload["user"] = self._user
+		payload["owner"] = self._user
 		return payload
 
 	def process_job_started(self):
@@ -313,7 +316,7 @@ class LocalFilePrintjob(StoragePrintjob):
 		if self._handle is not None:
 			try:
 				self._handle.close()
-			except:
+			except Exception:
 				pass
 		self._handle = None
 

@@ -1,9 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.util.parameters import get_param_dict
 
@@ -30,16 +29,16 @@ def register_transports():
 	register_transport(SerialOverTcpTransport)
 
 	# more transports provided by plugins
-	hooks = plugin_manager().get_hooks(b"octoprint.comm.transport.register")
+	hooks = plugin_manager().get_hooks("octoprint.comm.transport.register")
 	for name, hook in hooks.items():
 		try:
 			transports = hook()
 			for transport in transports:
 				try:
 					register_transport(transport)
-				except:
+				except Exception:
 					logger.exception("Error while registering transport class {} for plugin {}".format(transport, name))
-		except:
+		except Exception:
 			logger.exception("Error executing octoprint.comm.transport.register hook for plugin {}".format(name))
 
 
@@ -273,7 +272,7 @@ class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 
 class PushingTransportWrapper(TransportWrapper):
 
-	def __init__(self, transport, name="pushingTransportReceiveLoop", timeout=None):
+	def __init__(self, transport, name=b"PushingTransportWrapper.receiver_loop", timeout=None):
 		super(PushingTransportWrapper, self).__init__(transport)
 		self.name = name
 		self.timeout = timeout
@@ -309,7 +308,7 @@ class PushingTransportWrapper(TransportWrapper):
 				self.notify_listeners("on_transport_data_pushed", self, data)
 			except TimeoutTransportException as ex:
 				self.notify_listeners("on_transport_data_exception", self, ex)
-			except:
+			except Exception:
 				if self._receiver_active:
 					raise
 

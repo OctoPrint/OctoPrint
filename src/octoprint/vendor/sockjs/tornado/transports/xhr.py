@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
     sockjs.tornado.transports.xhr
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,7 +78,7 @@ class XhrSendHandler(pollingbase.PollingTransportBase):
 
         try:
             messages = proto.json_decode(bytes_to_str(data))
-        except:
+        except Exception:
             # TODO: Proper error handling
             self.write("Broken JSON encoding.")
             self.set_status(500)

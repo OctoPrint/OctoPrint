@@ -40,9 +40,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UiStateViewModel,
-        ["loginStateViewModel", "accessViewModel"],
-        ["#page-container-main", "#page-container-loading", "#page-container-needlogin"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UiStateViewModel,
+        dependencies: ["loginStateViewModel", "accessViewModel"],
+        elements: ["#page-container-main", "#page-container-loading", "#page-container-needlogin"]
+    });
 });

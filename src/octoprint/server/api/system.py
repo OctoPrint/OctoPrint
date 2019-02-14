@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -12,16 +12,33 @@ import threading
 from flask import request, make_response, jsonify, url_for
 from flask_babel import gettext
 
+import psutil
+
 from octoprint.settings import settings as s
 
 from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun, get_remote_address
+from octoprint.server.util.flask import no_firstrun_access, get_remote_address
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
 
+@api.route("/system/usage", methods=["GET"])
+@no_firstrun_access
+@Permissions.SYSTEM.require(403)
+def readUsageForFolders():
+	return jsonify(usage=_usageForFolders())
+
+def _usageForFolders():
+	data = {}
+	for folder_name in s().get(['folder']).keys():
+		path = s().getBaseFolder(folder_name, check_writable=False)
+		if path is not None:
+			usage = psutil.disk_usage(path)
+			data[folder_name] = { 'free': usage.free, 'total': usage.total }
+	return data
+
 @api.route("/system", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def performSystemAction():
 	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
@@ -37,7 +54,7 @@ def performSystemAction():
 
 
 @api.route("/system/commands", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def retrieveSystemCommands():
 	return jsonify(core=_to_client_specs(_get_core_command_specs()),
@@ -45,7 +62,7 @@ def retrieveSystemCommands():
 
 
 @api.route("/system/commands/<string:source>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def retrieveSystemCommandsForSource(source):
 	if source == "core":
@@ -59,7 +76,7 @@ def retrieveSystemCommandsForSource(source):
 
 
 @api.route("/system/commands/<string:source>/<string:command>", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def executeSystemCommand(source, command):
 	logger = logging.getLogger(__name__)
@@ -89,7 +106,7 @@ def executeSystemCommand(source, command):
 	except Exception as e:
 		if not do_ignore:
 			error = "Command \"before\" for {}:{} failed: {}".format(source, command, str(e))
-			logger.warn(error)
+			logger.warning(error)
 			return make_response(error, 500)
 
 	try:
@@ -111,7 +128,7 @@ def executeSystemCommand(source, command):
 				                                                                                       returncode,
 				                                                                                       stdout_text,
 				                                                                                       stderr_text)
-				logger.warn(prefix_multilines(error, prefix="! "))
+				logger.warning(prefix_multilines(error, prefix="! "))
 				if not do_async:
 					raise CommandFailed(error)
 
@@ -129,11 +146,10 @@ def executeSystemCommand(source, command):
 	except Exception as e:
 		if not do_ignore:
 			error = "Command for {}:{} failed: {}".format(source, command, str(e))
-			logger.warn(error)
+			logger.warning(error)
 			return make_response(error, 500)
 
 	return NO_CONTENT
-
 
 def _to_client_specs(specs):
 	result = list()
@@ -187,10 +203,7 @@ def _get_core_command_specs():
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue
-		spec.update(dict(action=action,
-		                 source="core",
-		                 async=True,
-		                 debug=True))
+		spec.update({'action': action, 'source': 'core', 'async': True, 'debug': True})
 		available_commands[action] = spec
 	return available_commands
 

@@ -1,9 +1,10 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from past.builtins import unicode
 
 def get_param_dict(data, options):
 	options_by_name = dict((option.name, option) for option in options)
@@ -82,7 +83,7 @@ class ChoiceType(ParamType):
 
 	def as_dict(self):
 		result = ParamType.as_dict(self)
-		result.update(dict(choices=map(lambda x: x.as_dict(), self.choices)))
+		result.update(dict(choices=list(map(lambda x: x.as_dict(), self.choices))))
 		return result
 
 class SuggestionType(ParamType):
@@ -95,7 +96,7 @@ class SuggestionType(ParamType):
 
 	def as_dict(self):
 		result = ParamType.as_dict(self)
-		result.update(dict(suggestions=map(lambda x: x.as_dict(), self.suggestions)))
+		result.update(dict(suggestions=list(map(lambda x: x.as_dict(), self.suggestions))))
 		return result
 
 class ListType(ParamType):
@@ -113,7 +114,7 @@ class ListType(ParamType):
 		else:
 			raise ValueError("value {!r} must be either a comma-separated string or a list".format(value))
 
-		return map(self.factory, items)
+		return list(map(self.factory, items))
 
 class Value(object):
 	def __init__(self, value, title=None):

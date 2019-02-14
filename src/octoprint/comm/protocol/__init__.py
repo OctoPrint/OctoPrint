@@ -1,9 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, print_function, unicode_literals
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import TransportListener, TransportState
 from octoprint.plugin import plugin_manager
@@ -26,16 +25,16 @@ def register_protocols():
 	register_protocol(ReprapGcodeProtocol)
 
 	# more protocols provided by plugins
-	hooks = plugin_manager().get_hooks(b"octoprint.comm.protocol.register")
+	hooks = plugin_manager().get_hooks("octoprint.comm.protocol.register")
 	for name, hook in hooks.items():
 		try:
 			protocols = hook()
 			for protocol in protocols:
 				try:
 					register_protocol(protocol)
-				except:
+				except Exception:
 					logger.exception("Error while registering protocol class {} for plugin {}".format(protocol, name))
-		except:
+		except Exception:
 			logger.exception("Error executing octoprint.comm.protocol.register hook for plugin {}".format(name))
 
 
@@ -193,7 +192,7 @@ class Protocol(ListenerAware, TransportListener):
 		if self._transport.state == TransportState.CONNECTED:
 			try:
 				self._transport.disconnect()
-			except:
+			except Exception:
 				self._logger.exception("Error while disconnecting from transport {}".format(self._transport))
 				error = True
 
@@ -202,26 +201,26 @@ class Protocol(ListenerAware, TransportListener):
 		else:
 			self.state = ProtocolState.DISCONNECTED
 
-	def process(self, job, position=0, tags=None):
+	def process(self, job, position=0, user=None, tags=None):
 		if not job.can_process(self):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
 		self._job = job
 		self._job.register_listener(self)
 		self._job.process(self, position=position, tags=tags)
 
-	def pause_processing(self, tags=None):
+	def pause_processing(self, user=None, tags=None):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 		self.state = ProtocolState.PAUSING
 		self._job.pause()
 
-	def resume_processing(self, tags=None):
+	def resume_processing(self, user=None, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
 		self.state = ProtocolState.RESUMING
 		self._job.resume()
 
-	def cancel_processing(self, error=False, tags=None):
+	def cancel_processing(self, error=False, user=None, tags=None):
 		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			self.state = ProtocolState.CANCELLING
 			self.notify_listeners("on_protocol_job_cancelling", self, self._job)
@@ -230,16 +229,18 @@ class Protocol(ListenerAware, TransportListener):
 	def can_send(self):
 		return True
 
-	def send_commands(self, command_type=None, *commands):
+	def send_commands(self, command_type=None, tags=None, *commands):
 		pass
 
-	def send_script(self, script, context=None):
+	def send_script(self, script, context=None, user=None, tags=None):
 		"""
 		Sends the specified script/the GCODE script with the specified name.
 
 		Args:
 			script (GcodeScript or unicode): Script or name of the script to send
 			context (dict): Additional render context
+			user (str): The user on whose behalf the script is being sent. May be None
+			tags (set): And tags to send with the script commands. May be None
 		"""
 		pass
 

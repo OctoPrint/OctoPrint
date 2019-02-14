@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,10 +9,12 @@ from flask import request, jsonify, make_response, Response
 from werkzeug.exceptions import BadRequest
 import re
 
+from past.builtins import long, unicode
+
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 
 from octoprint.printer import UnknownScript
 
@@ -32,7 +34,7 @@ def printerState():
 	if "exclude" in request.values:
 		excludeStr = request.values["exclude"]
 		if len(excludeStr.strip()) > 0:
-			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+			excludes = list(filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(","))))
 
 	result = {}
 
@@ -60,7 +62,7 @@ def printerState():
 
 
 @api.route("/printer/tool", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerToolCommand():
 	if not printer.is_operational():
@@ -77,7 +79,7 @@ def printerToolCommand():
 	if response is not None:
 		return response
 
-	validation_regex = re.compile("tool\d+")
+	validation_regex = re.compile(r"tool\d+")
 
 	tags = {"source:api", "api:printer.tool"}
 
@@ -133,9 +135,10 @@ def printerToolCommand():
 			return make_response("Printer is currently printing", 409)
 
 		amount = data["amount"]
+		speed = data.get("speed", None)
 		if not isinstance(amount, (int, long, float)):
 			return make_response("Not a number for extrusion amount: %r" % amount, 400)
-		printer.extrude(amount, tags=tags)
+		printer.extrude(amount, speed=speed, tags=tags)
 
 	elif command == "flowrate":
 		factor = data["factor"]
@@ -150,7 +153,7 @@ def printerToolCommand():
 
 
 @api.route("/printer/tool", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerToolState():
 	if not printer.is_operational():
@@ -163,7 +166,7 @@ def printerToolState():
 
 
 @api.route("/printer/bed", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerBedCommand():
 	if not printer.is_operational():
@@ -210,7 +213,7 @@ def printerBedCommand():
 
 
 @api.route("/printer/bed", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerBedState():
 	if not printer.is_operational():
@@ -230,7 +233,7 @@ def printerBedState():
 
 
 @api.route("/printer/printhead", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerPrintheadCommand():
 	valid_commands = {
@@ -294,7 +297,7 @@ def printerPrintheadCommand():
 
 
 @api.route("/printer/sd", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerSdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -325,7 +328,7 @@ def printerSdCommand():
 
 
 @api.route("/printer/sd", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -338,7 +341,7 @@ def printerSdState():
 
 
 @api.route("/printer/command", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerCommand():
 	if not printer.is_operational():
@@ -399,7 +402,7 @@ def printerCommand():
 	return NO_CONTENT
 
 @api.route("/printer/command/custom", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def getCustomControls():
 	# TODO: document me
@@ -413,18 +416,18 @@ def _get_temperature_data(preprocessor):
 
 	tempData = printer.get_current_temperatures()
 
-	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
+	if "history" in request.values and request.values["history"] in valid_boolean_trues:
 		tempHistory = printer.get_temperature_history()
 
 		limit = 300
-		if "limit" in request.values.keys() and unicode(request.values["limit"]).isnumeric():
+		if "limit" in request.values and unicode(request.values["limit"]).isnumeric():
 			limit = int(request.values["limit"])
 
 		history = list(tempHistory)
 		limit = min(limit, len(history))
 
 		tempData.update({
-			"history": map(lambda x: preprocessor(x), history[-limit:])
+			"history": list(map(lambda x: preprocessor(x), history[-limit:]))
 		})
 
 	return preprocessor(tempData)

@@ -1,8 +1,9 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Unit tests for octoprint.access.permissions
 """
-from __future__ import absolute_import, division, print_function
 
 import unittest
 import ddt

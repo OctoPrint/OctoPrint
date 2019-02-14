@@ -115,7 +115,7 @@
         if (this.options.apikey) {
             headers["X-Api-Key"] = this.options.apikey;
         }
-        if (this.options.locale) {
+        if (this.options.locale !== undefined) {
             headers["X-Locale"] = this.options.locale;
         }
 

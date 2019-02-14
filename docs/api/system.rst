@@ -38,30 +38,21 @@ List all registered system commands
           {
             "action": "shutdown",
             "name": "Shutdown",
-            "command": "sudo shutdown -h now",
             "confirm": "<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-            "async": true,
-            "ignore": true,
             "source": "core",
             "resource": "http://example.com/api/system/commands/core/shutdown"
           },
           {
             "action": "reboot",
             "name": "Reboot",
-            "command": "sudo reboot",
             "confirm": "<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-            "async": true,
-            "ignore": true,
             "source": "core",
             "resource": "http://example.com/api/system/commands/core/reboot"
           },
           {
             "action": "restart",
             "name": "Restart OctoPrint",
-            "command": "sudo service octoprint restart",
             "confirm": "<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-            "async": true,
-            "ignore": true,
             "source": "core",
             "resource": "http://example.com/api/system/commands/core/restart"
           }
@@ -99,30 +90,21 @@ List all registered system commands for a source
         {
           "action": "shutdown",
           "name": "Shutdown",
-          "command": "sudo shutdown -h now",
-          "confirm": "<b>You are about to shutdown the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-          "async": true,
-          "ignore": true,
+          "confirm": "<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "source": "core",
           "resource": "http://example.com/api/system/commands/core/shutdown"
         },
         {
           "action": "reboot",
           "name": "Reboot",
-          "command": "sudo reboot",
-          "confirm": "<b>You are about to reboot the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-          "async": true,
-          "ignore": true,
+          "confirm": "<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "source": "core",
           "resource": "http://example.com/api/system/commands/core/reboot"
         },
         {
           "action": "restart",
           "name": "Restart OctoPrint",
-          "command": "sudo service octoprint restart",
-          "confirm": "<b>You are about to restart the OctoPrint server.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
-          "async": true,
-          "ignore": true,
+          "confirm": "<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "source": "core",
           "resource": "http://example.com/api/system/commands/core/restart"
         }
@@ -184,17 +166,59 @@ List all response
      - Description
    * - ``core``
      - 0..n
-     - List of :ref:`command definitions <sec-api-system-commands-definiton>`
+     - List of :ref:`client command definitions <sec-api-client-system-commands-definiton>`
      - List of all core commands defined.
    * - ``custom``
      - 0..n
-     - List of :ref:`command definitions <sec-api-system-commands-definiton>`
+     - List of :ref:`client command definitions <sec-api-client-system-commands-definiton>`
      - List of all custom commands defined in ``config.yaml``.
+
+.. _sec-api-client-system-commands-definiton:
+
+Client command definitions
+--------------------------
+
+A restricted form of the full :ref:`command definition <sec-api-system-commands-definiton>`.
+For exposing via the API.
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``name``
+     - 1
+     - string
+     - The name of the command to display in the System menu.
+   * - ``action``
+     - 1
+     - string
+     - An identifier to refer to the command programmatically. The special ``action`` string
+       ``divider`` signifies a divider in the menu.
+   * - ``confirm``
+     - 0..1
+     - string
+     - If present and set, this text will be displayed to the user in a confirmation dialog
+       they have to acknowledge in order to really execute the command.
+   * - ``source``
+     - 1
+     - string
+     - Source of the command definition, currently either ``core`` (for system actions defined by
+       OctoPrint itself) or ``custom`` (for custom system commands defined by the user through ``config.yaml``).
+   * - ``resource``
+     - 1
+     - string
+     - The URL of the command to use for executing it.
 
 .. _sec-api-system-commands-definiton:
 
 Command definition
 ------------------
+
+The full command definition is not available via the API.
 
 .. list-table::
    :widths: 15 5 10 30

@@ -82,6 +82,45 @@ under Settings > Plugin Manager, or by directly editing ``config.yaml``:
        - hidden
        - plugins
 
+.. _sec-bundledplugins-pluginmanager-events:
+
+Events
+------
+
+plugin_pluginmanager_install_plugin
+  A plugin was installed.
+
+  Payload:
+
+    * ``id``: the identifier of the installed plugin
+    * ``version``: the version of the installed plugin
+    * ``source``: source from which the plugin was installed, can be an URL or a path in the local file system
+    * ``source_type``: type of source from which the plugin was installed, can be ``url`` or ``path``
+
+plugin_pluginmanager_uninstall_plugin
+  A plugin was uninstalled.
+
+  Payload:
+
+    * ``id``: the identifier of the uninstalled plugin
+    * ``version``: the version of the uninstalled plugin
+
+plugin_pluginmanager_enable_plugin
+  A plugin was enabled.
+
+  Payload:
+
+    * ``id``: the identifier of the enabled plugin
+    * ``version``: the version of the enabled plugin
+
+plugin_pluginmanager_disabled_plugin
+  A plugin was disabled.
+
+  Payload:
+
+    * ``id``: the identifier of the disabled plugin
+    * ``version``: the version of the disabled plugin
+
 .. _sec-bundledplugins-pluginmanager-hooks:
 
 Hooks

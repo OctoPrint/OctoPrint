@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module represents OctoPrint's settings management. Within this module the default settings for the core
 application are defined and the instance of the :class:`Settings` is held, which offers getter and setter
@@ -17,12 +19,11 @@ of various types and the configuration file itself.
    :undoc-members:
 """
 
-from __future__ import absolute_import, division, print_function
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import sys
 import os
 import yaml
@@ -42,6 +43,11 @@ try:
 	from collections import ChainMap
 except ImportError:
 	from chainmap import ChainMap
+
+try:
+	from collections.abc import KeysView
+except ImportError:
+	from collections import KeysView
 
 from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet, deprecated
 
@@ -117,10 +123,12 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"terminalLogSize": 20,
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
 		"logPositionOnCancel": False,
+		"abortHeatupOnCancel": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"neverSendChecksum": False,
@@ -128,6 +136,7 @@ default_settings = {
 		"unknownCommandsNeedAck": False,
 		"sdRelativePath": False,
 		"sdAlwaysAvailable": False,
+		"maxNotSdPrinting": 2,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
@@ -141,7 +150,8 @@ default_settings = {
 		"capabilities": {
 			"autoreport_temp": True,
 			"autoreport_sdstatus": True,
-			"busy_protocol": True
+			"busy_protocol": True,
+			"emergency_parser": True
 		},
 
 		# command specific flags
@@ -153,6 +163,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"heartbeat": 15 * 60, # 15 min
@@ -198,9 +209,15 @@ default_settings = {
 		"preemptiveCache": {
 			"exceptions": [],
 			"until": 7
+		},
+		"ipCheck": {
+			"enabled": True,
+			"trustedSubnets": []
 		}
 	},
 	"webcam": {
+		"webcamEnabled": True,
+		"timelapseEnabled": True,
 		"stream": None,
 		"streamRatio": "16:9",
 		"streamTimeout": 5,
@@ -279,21 +296,24 @@ default_settings = {
 		"name": "",
 		"color": "default",
 		"colorTransparent": False,
+		"colorIcon": True,
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
+		"fuzzyTimes": True,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
 				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api",
-					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager", "plugin_softwareupdate", "plugin_announcements"
+					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
+					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
+					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
-				"about": ["about", "plugin_octopi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
+				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
@@ -319,14 +339,14 @@ default_settings = {
 		"userfile": None,
 		"groupfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
 	},
 	"slicing": {
 		"enabled": True,
-		"defaultSlicer": "cura",
+		"defaultSlicer": None,
 		"defaultProfiles": None
 	},
 	"events": {
@@ -341,8 +361,8 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?(B|T\d*):)" },
-		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
+		{ "name": "Suppress temperature messages", "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)" },
+		{ "name": "Suppress SD status messages", "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
@@ -352,7 +372,7 @@ default_settings = {
 		"gcode": {
 			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
 			"snippets": {
-				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}",
+				"disable_hotends": "{% if printer_profile.extruder.sharedNozzle %}M104 T0 S0\n{% else %}{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}{% endif %}",
 				"disable_bed": "{% if printer_profile.heatedBed %}M140 S0\n{% endif %}"
 			}
 		}
@@ -387,7 +407,6 @@ default_settings = {
 			"includeFilenameInOpened": True,
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
-			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"reprapfwM114": False,
@@ -411,10 +430,11 @@ default_settings = {
 			"preparedOks": [],
 			"okFormatString": "ok",
 			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
-			"m115ReportCapabilities": False,
+			"m115ReportCapabilities": True,
 			"capabilities": {
 				"AUTOREPORT_TEMP": True,
-				"AUTOREPORT_SD_STATUS": True
+				"AUTOREPORT_SD_STATUS": True,
+				"EMERGENCY_PARSER": True
 			},
 			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
 			"ambientTemperature": 21.3,
@@ -436,11 +456,11 @@ valid_boolean_trues = CaseInsensitiveSet(True, "true", "yes", "y", "1", 1)
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
 
-class NoSuchSettingsPath(BaseException):
+class NoSuchSettingsPath(Exception):
 	pass
 
 
-class InvalidSettings(BaseException):
+class InvalidSettings(Exception):
 	def __init__(self, message, line=None, column=None, details=None):
 		self.message = message
 		self.line = line
@@ -601,6 +621,8 @@ class Settings(object):
 
 		self._basedir = None
 
+		assert(isinstance(default_settings, dict))
+
 		self._map = HierarchicalChainMap(dict(), default_settings)
 
 		self._config = None
@@ -627,7 +649,7 @@ class Settings(object):
 
 		self._script_env = self._init_script_templating()
 
-		self._sanity_check_folders()
+		self.sanity_check_folders(folders=["logs", ])
 
 	def _init_basedir(self, basedir):
 		if basedir is not None:
@@ -638,14 +660,16 @@ class Settings(object):
 		if not os.path.isdir(self._basedir):
 			try:
 				os.makedirs(self._basedir)
-			except:
+			except Exception:
 				self._logger.fatal("Could not create basefolder at {}. This is a fatal error, OctoPrint "
 				                   "can't run without a writable base folder.".format(self._basedir), exc_info=1)
 				raise
 
-	def _sanity_check_folders(self):
-		for folder in default_settings["folder"].keys():
-			self.getBaseFolder(folder, log_error=True)
+	def sanity_check_folders(self, folders=None):
+		if folders is None:
+			folders = default_settings["folder"].keys()
+		for folder in folders:
+			self.getBaseFolder(folder, check_writable=True, deep_check_writable=True, log_error=True)
 
 	def _get_default_folder(self, type):
 		folder = default_settings["folder"][type]
@@ -699,7 +723,7 @@ class Settings(object):
 				templates = []
 				for key in scripts:
 					if isinstance(scripts[key], dict):
-						templates += map(lambda x: key + "/" + x, self._get_templates(scripts[key]))
+						templates += list(map(lambda x: key + "/" + x, self._get_templates(scripts[key])))
 					elif isinstance(scripts[key], basestring):
 						templates.append(key)
 				return templates
@@ -770,7 +794,7 @@ class Settings(object):
 				return self._script_env.get_template(template_name)
 		except TemplateNotFound:
 			return None
-		except:
+		except Exception:
 			self._logger.exception("Exception while trying to resolve template {template_name}".format(**locals()))
 			return None
 
@@ -786,20 +810,20 @@ class Settings(object):
 				# if it's a template matcher, we need to add a key to associate with the matcher output
 				import hashlib
 				key_hash = hashlib.md5()
-				key_hash.update(result["regex"])
+				key_hash.update(result["regex"].encode('utf-8'))
 				result["key"] = key_hash.hexdigest()
 
 				template_key_hash = hashlib.md5()
-				template_key_hash.update(result["template"])
+				template_key_hash.update(result["template"].encode('utf-8'))
 				result["template_key"] = template_key_hash.hexdigest()
 
 			elif "children" in result:
 				# if it has children we need to process them recursively
-				result["children"] = map(process_control, [child for child in result["children"] if child is not None])
+				result["children"] = list(map(process_control, [child for child in result["children"] if child is not None]))
 
 			return result
 
-		return map(process_control, controls)
+		return list(map(process_control, controls))
 
 	@property
 	def effective(self):
@@ -814,7 +838,7 @@ class Settings(object):
 	def effective_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(self.effective_yaml)
+		hash.update(self.effective_yaml.encode('utf-8'))
 		return hash.hexdigest()
 
 	@property
@@ -826,7 +850,7 @@ class Settings(object):
 	def config_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(self.config_yaml)
+		hash.update(self.config_yaml.encode('utf-8'))
 		return hash.hexdigest()
 
 	@property
@@ -865,10 +889,11 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with open(self._configfile, "r") as f:
+			with io.open(self._configfile, 'rt', encoding='utf-8', errors='replace') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
+
 				except yaml.YAMLError as e:
 					details = e.message
 
@@ -883,10 +908,9 @@ class Settings(object):
 					                      details=details,
 					                      line=line,
 					                      column=column)
-				except:
-					raise
+
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
-		if not self._config:
+		if not self._config or not isinstance(self._config, dict):
 			self._config = dict()
 
 		if migrate:
@@ -898,13 +922,13 @@ class Settings(object):
 		if callable(overlay):
 			try:
 				overlay = overlay(self)
-			except:
+			except Exception:
 				self._logger.exception("Error loading overlay from callable")
 				return
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with open(overlay, "r") as f:
+				with io.open(overlay, 'rt', encoding='utf-8', errors='replace') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
@@ -1048,7 +1072,7 @@ class Settings(object):
 
 		Added in 1.2.0
 		"""
-		if "server" in config.keys() and ("baseUrl" in config["server"] or "scheme" in config["server"]):
+		if "server" in config and ("baseUrl" in config["server"] or "scheme" in config["server"]):
 			prefix = ""
 			if "baseUrl" in config["server"]:
 				prefix = config["server"]["baseUrl"]
@@ -1077,11 +1101,11 @@ class Settings(object):
 
 		Added in 1.2.0
 		"""
-		if "events" in config.keys() and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
+		if "events" in config and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
 			self._logger.info("Migrating config (event subscriptions)...")
 
 			# migrate event hooks to new format
-			placeholderRe = re.compile("%\((.*?)\)s")
+			placeholderRe = re.compile(r"%\((.*?)\)s")
 
 			eventNameReplacements = {
 				"ClientOpen": "ClientOpened",
@@ -1299,15 +1323,25 @@ class Settings(object):
 				return True
 		return False
 
-	def backup(self, suffix, path=None):
+	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
 		if path is None:
 			path = os.path.dirname(self._configfile)
-		basename = os.path.basename(self._configfile)
-		name, ext = os.path.splitext(basename)
 
-		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		basename = os.path.basename(self._configfile)
+		name, default_ext = os.path.splitext(basename)
+
+		if ext is None:
+			ext = default_ext
+
+		if suffix is None and ext == default_ext:
+			raise ValueError("Need a suffix or a different extension")
+
+		if suffix is None:
+			suffix = ""
+
+		backup = os.path.join(path, "{}{}.{}{}".format("." if hidden else "", name, suffix, ext))
 		shutil.copy(self._configfile, backup)
 		return backup
 
@@ -1315,16 +1349,22 @@ class Settings(object):
 		if not self._dirty and not force:
 			return False
 
-		from octoprint.util import atomic_write
 		try:
-			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
-				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+			with atomic_write(self._configfile, mode='wt', prefix="octoprint-config-", suffix=".yaml", permissions=0o600, max_permissions=0o666) as configFile:
+				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent=4, allow_unicode=True)
 				self._dirty = False
-		except:
+		except Exception:
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			payload = dict(config_hash=self.config_hash,
+			               effective_hash=self.effective_hash)
+			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter
@@ -1393,13 +1433,15 @@ class Settings(object):
 			if preprocessors is not None:
 				try:
 					preprocessor = self._get_by_path(path, preprocessors)
-				except:
+				except Exception:
 					pass
 
 				if callable(preprocessor):
 					value = preprocessor(value)
 
 			if do_copy:
+				if isinstance(value, KeysView):
+					value = list(value)
 				value = copy.deepcopy(value)
 
 			if asdict:
@@ -1409,7 +1451,7 @@ class Settings(object):
 
 		if not isinstance(last, (list, tuple)):
 			if asdict:
-				return results.values().pop()
+				return list(results.values()).pop()
 			else:
 				return results.pop()
 		else:
@@ -1428,17 +1470,22 @@ class Settings(object):
 	#~~ getter
 
 	def get(self, path, **kwargs):
-		error_on_path = kwargs.get("error_on_path", False)
-		new_kwargs = dict(kwargs)
-		if "error_on_path" in new_kwargs:
-			del new_kwargs["error_on_path"]
+		error_on_path = kwargs.pop("error_on_path", False)
+		validator = kwargs.pop("validator", None)
+		fallback = kwargs.pop("fallback", None)
 
-		try:
-			return self._get_value(path, **new_kwargs)
-		except NoSuchSettingsPath:
-			if error_on_path:
-				raise
-			return None
+		def process():
+			try:
+				return self._get_value(path, **kwargs)
+			except NoSuchSettingsPath:
+				if error_on_path:
+					raise
+				return None
+
+		result = process()
+		if callable(validator) and not validator(result):
+			result = fallback
+		return result
 
 	def getInt(self, path, **kwargs):
 		minimum = kwargs.pop("min", None)
@@ -1458,7 +1505,7 @@ class Settings(object):
 			else:
 				return intValue
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getFloat(self, path, **kwargs):
@@ -1479,7 +1526,7 @@ class Settings(object):
 			else:
 				return floatValue
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getBoolean(self, path, **kwargs):
@@ -1490,12 +1537,12 @@ class Settings(object):
 			return value
 		if isinstance(value, (int, float)):
 			return value != 0
-		if isinstance(value, (str, unicode)):
+		if isinstance(value, basestring):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 
-	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False):
-		if type not in default_settings["folder"].keys() + ["base"]:
+	def getBaseFolder(self, type, create=True, allow_fallback=True, log_error=False, check_writable=True, deep_check_writable=False):
+		if type != "base" and type not in default_settings["folder"]:
 			return None
 
 		if type == "base":
@@ -1507,15 +1554,15 @@ class Settings(object):
 			folder = default_folder
 
 		try:
-			_validate_folder(folder, create=create, writable=True, log_error=log_error)
-		except:
+			_validate_folder(folder, create=create, check_writable=check_writable, deep_check_writable=deep_check_writable, log_error=log_error)
+		except Exception:
 			if folder != default_folder and allow_fallback:
 				if log_error:
 					self._logger.error("Invalid configured {} folder at {}, attempting to "
 					                   "fall back on default folder at {}".format(type,
 					                                                              folder,
 					                                                              default_folder))
-				_validate_folder(default_folder, create=create, writable=True, log_error=log_error)
+				_validate_folder(default_folder, create=create, check_writable=check_writable, deep_check_writable=deep_check_writable, log_error=log_error)
 				folder = default_folder
 
 				try:
@@ -1533,7 +1580,7 @@ class Settings(object):
 		return folder
 
 	def listScripts(self, script_type):
-		return map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type)))
+		return list(map(lambda x: x[len(script_type + "/"):], filter(lambda x: x.startswith(script_type + "/"), self._get_scripts(script_type))))
 
 	def loadScript(self, script_type, name, context=None, source=False):
 		if context is None:
@@ -1549,7 +1596,7 @@ class Settings(object):
 		else:
 			try:
 				script = template.render(**context)
-			except:
+			except Exception:
 				self._logger.exception("Exception while trying to render script {script_type}:{name}".format(**locals()))
 				return None
 
@@ -1580,7 +1627,7 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False, *args, **kwargs):
 		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
@@ -1660,7 +1707,7 @@ class Settings(object):
 			if maximum is not None and intValue > maximum:
 				intValue = maximum
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
 		self.set(path, intValue, **kwargs)
@@ -1681,7 +1728,7 @@ class Settings(object):
 			if maximum is not None and floatValue > maximum:
 				floatValue = maximum
 		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			self._logger.warning("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
 		self.set(path, floatValue, **kwargs)
@@ -1695,12 +1742,12 @@ class Settings(object):
 			self.set(path, False, **kwargs)
 
 	def setBaseFolder(self, type, path, force=False, validate=True):
-		if type not in default_settings["folder"].keys():
+		if type not in default_settings["folder"]:
 			return None
 
 		currentPath = self.getBaseFolder(type)
 		defaultPath = self._get_default_folder(type)
-		if (path is None or path == defaultPath) and "folder" in self._config.keys() and type in self._config["folder"].keys():
+		if (path is None or path == defaultPath) and "folder" in self._config and type in self._config["folder"]:
 			del self._config["folder"][type]
 			if not self._config["folder"]:
 				del self._config["folder"]
@@ -1708,9 +1755,9 @@ class Settings(object):
 			self._dirty_time = time.time()
 		elif (path != currentPath and path != defaultPath) or force:
 			if validate:
-				_validate_folder(path)
+				_validate_folder(path, check_writable=True, deep_check_writable=True)
 
-			if not "folder" in self._config.keys():
+			if "folder" not in self._config:
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
 			self._dirty = True
@@ -1726,7 +1773,7 @@ class Settings(object):
 		path, _ = os.path.split(filename)
 		if not os.path.exists(path):
 			os.makedirs(path)
-		with atomic_write(filename, "wb", max_permissions=0o666) as f:
+		with atomic_write(filename, mode='wt', max_permissions=0o666) as f:
 			f.write(script)
 
 	def generateApiKey(self):
@@ -1831,7 +1878,7 @@ class SubSettings(object):
 		self.settings.remove(self._prefix_path())
 
 	def __getattr__(self, item):
-		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
+		all_access_methods = list(self.access_methods.keys()) + list(self.deprecated_access_methods.keys())
 		if item in all_access_methods:
 			decorator = None
 			if item in self.deprecated_access_methods:
@@ -1882,37 +1929,46 @@ def _default_basedir(applicationName):
 		return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))
 
 
-def _validate_folder(folder, create=True, writable=True, log_error=False):
+def _validate_folder(folder, create=True, check_writable=True, deep_check_writable=False, log_error=False):
 	logger = logging.getLogger(__name__)
 
 	if not os.path.exists(folder):
-		if create:
+		if os.path.islink(folder):
+			# broken symlink, see #2644
+			raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+
+		elif create:
+			# non existing, but we are allowed to create it
 			try:
 				os.makedirs(folder)
-			except:
+			except Exception:
 				if log_error:
 					logger.exception("Could not create {}".format(folder))
 				raise IOError("Folder for type {} at {} does not exist and creation failed".format(type, folder))
+
 		else:
+			# not extisting, not allowed to create it
 			raise IOError("No such folder: {}".format(folder))
+
 	elif os.path.isfile(folder):
 		# hardening against misconfiguration, see #1953
 		raise IOError("Expected a folder at {} but found a file instead".format(folder))
 
-	elif writable:
+	elif check_writable:
 		# make sure we can also write into the folder
 		error = "Folder at {} doesn't appear to be writable, please fix its permissions".format(folder)
 		if not os.access(folder, os.W_OK):
 			raise IOError(error)
-		else:
+
+		elif deep_check_writable:
 			# try to write a file to the folder - on network shares that might be the only reliable way
 			# to determine whether things are *actually* writable
 			testfile = os.path.join(folder, ".testballoon.txt")
 			try:
-				with open(testfile, "wb") as f:
+				with io.open(testfile, 'wt', encoding='utf-8') as f:
 					f.write("test")
 				os.remove(testfile)
-			except:
+			except Exception:
 				if log_error:
 					logger.exception("Could not write test file to {}".format(folder))
 				raise IOError(error)

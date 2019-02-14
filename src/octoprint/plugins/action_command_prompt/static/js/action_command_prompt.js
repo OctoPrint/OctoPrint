@@ -1,39 +1,14 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintActionCommandPromptClient = function(base) {
-        this.base = base;
-    };
-
-    OctoPrintActionCommandPromptClient.prototype.get = function(refresh, opts) {
-        return this.base.get(this.base.getSimpleApiUrl("action_command_prompt"), opts);
-    };
-
-    OctoPrintActionCommandPromptClient.prototype.select = function(choice, opts) {
-        var data = {
-            choice: choice
-        };
-        return this.base.simpleApiCommand("action_command_prompt", "select", data, opts);
-    };
-
-    OctoPrintClient.registerPluginComponent("action_command_prompt", OctoPrintActionCommandPromptClient);
-    return OctoPrintActionCommandPromptClient;
-});
-
 $(function() {
     function ActionCommandPromptViewModel(parameters) {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self._modal = undefined;
 
         self.requestData = function() {
-            if (!self.loginState.isUser()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
 
             OctoPrint.plugins.action_command_prompt.get()
                 .done(self.fromResponse);
@@ -78,7 +53,7 @@ $(function() {
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (!self.loginState.isUser()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
             if (plugin !== "action_command_prompt") {
                 return;
             }
@@ -99,6 +74,6 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ActionCommandPromptViewModel,
-        dependencies: ["loginStateViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });

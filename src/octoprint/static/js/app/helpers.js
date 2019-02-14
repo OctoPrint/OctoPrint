@@ -574,15 +574,15 @@ function formatFilament(filament) {
     return _.sprintf(result, {length: filament["length"] / 1000, volume: filament["volume"]});
 }
 
-function cleanTemperature(temp) {
+function cleanTemperature(temp, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     return temp;
 }
 
-function formatTemperature(temp, showF) {
+function formatTemperature(temp, showF, offThreshold) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
-    if (temp < 10) return gettext("off");
+    if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
     if (showF) {
         return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
     } else {
@@ -674,7 +674,6 @@ function showMessageDialog(msg, options) {
         if (onclose && _.isFunction(onclose)) {
             onclose();
         }
-        modal.remove();
     });
 
     if (onshow) {
@@ -709,11 +708,19 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var oncancel = options.oncancel || undefined;
     var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
     var nofade = options.nofade || false;
+    var noclose = options.noclose || false;
 
-    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalHeader;
+    if (noclose) {
+        modalHeader = $('<h3>' + title + '</h3>');
+    } else {
+        modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    }
+
     var modalBody;
     if (html) {
         modalBody = $(html);
@@ -741,7 +748,13 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onclose(event);
         }
     });
-    modal.modal("show");
+
+    var modalOptions = {};
+    if (noclose) {
+        modalOptions.backdrop = "static";
+        modalOptions.keyboard = false;
+    }
+    modal.modal(modalOptions);
 
     proceedButton.click(function(e) {
         e.preventDefault();
@@ -749,7 +762,11 @@ function showConfirmationDialog(msg, onacknowledge, options) {
             onproceed(e);
         }
         modal.modal("hide");
-        modal.remove();
+    });
+    cancelButton.click(function(e) {
+        if (oncancel && _.isFunction(oncancel)) {
+            oncancel(e);
+        }
     });
 
     return modal;
@@ -834,7 +851,6 @@ function showSelectionDialog(options) {
         if (onclose && _.isFunction(onclose)) {
             onclose(event);
         }
-        modal.remove();
     });
     modal.modal("show");
 
@@ -1299,7 +1315,7 @@ var getQueryParameterByName = function(name, url) {
  * E.g. turns a null byte in the string into "\x00".
  *
  * Characters 0 to 31 excluding 9, 10 and 13 will be escaped, as will
- * 127 and 255. That should leave printable characters and unicode
+ * 127, 128 to 159 and 255. That should leave printable characters and unicode
  * alone.
  *
  * Originally based on
@@ -1314,7 +1330,7 @@ var escapeUnprintableCharacters = function(str) {
     var charCode;
 
     while (!isNaN(charCode = str.charCodeAt(index))) {
-        if ((charCode < 32 && charCode != 9 && charCode != 10 && charCode != 13) || charCode == 127 || charCode == 255) {
+        if ((charCode < 32 && charCode !== 9 && charCode !== 10 && charCode !== 13) || charCode === 127 || (charCode >= 128 && charCode <= 159) || charCode === 255) {
             // special hex chars
             result += "\\x" + (charCode > 15 ? "" : "0") + charCode.toString(16)
         } else {

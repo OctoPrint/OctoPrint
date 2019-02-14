@@ -1,10 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, \
-	division
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 
 from octoprint.util import PrependableQueue, TypedQueue, TypeAlreadyInQueue
 
@@ -181,7 +179,7 @@ class QueueMarker(object):
 		if callable(self.callback):
 			try:
 				self.callback()
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Error while running callback of QueueMarker")
 
 

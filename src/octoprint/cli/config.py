@@ -1,11 +1,12 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import click
+click.disable_unicode_literals_warning = True
 import logging
 
 from octoprint import init_settings, FatalStartupError
@@ -17,7 +18,7 @@ import pprint
 
 def _to_settings_path(path):
 	if not isinstance(path, (list, tuple)):
-		path = filter(lambda x: x, map(lambda x: x.strip(), path.split(".")))
+		path = list(filter(lambda x: x, map(lambda x: x.strip(), path.split("."))))
 	return path
 
 def _set_helper(settings, path, value, data_type=None):
@@ -207,7 +208,7 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 	if as_json:
 		output = json.dumps(value)
 	elif as_yaml:
-		output = yaml.safe_dump(value, default_flow_style=False, indent="    ", allow_unicode=True)
+		output = yaml.safe_dump(value, default_flow_style=False, indent=4, allow_unicode=True)
 	elif as_raw:
 		output = value
 	else:
@@ -232,7 +233,7 @@ def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
 		if as_json:
 				output = json.dumps(value)
 		elif as_yaml:
-				output = yaml.safe_dump(value, default_flow_style=False, indent="	", allow_unicode=True)
+				output = yaml.safe_dump(value, default_flow_style=False, indent=4, allow_unicode=True)
 		elif as_raw:
 				output = value
 		else:

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,6 +14,7 @@ from ddt import ddt, unpack, data
 
 import octoprint.plugin
 import octoprint.settings
+from octoprint.util import to_native_str
 
 @ddt
 class SettingsTestCase(unittest.TestCase):

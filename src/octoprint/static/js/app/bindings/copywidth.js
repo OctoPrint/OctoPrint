@@ -42,7 +42,6 @@ ko.bindingHandlers.copyWidth = {
             delete element.copyWidthSensor;
         }
         element.copyWidthSensor = new ResizeSensor(node, function() {
-            log.info("size of", node, "changed, width is now", node.width(), "this is", this);
             ko.bindingHandlers.copyWidth._setWidth(node, element);
         });
     }

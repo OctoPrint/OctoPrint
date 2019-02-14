@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -17,7 +17,7 @@ def get_latest(target, check, full_data=False, online=True):
 
 	try:
 		return check["python_checker"].get_latest(target, check, full_data=full_data, online=online)
-	except:
+	except Exception:
 		import inspect
 		args, _, _, _ = inspect.getargspec(check["python_checker"].get_latest)
 		if "online" not in args:

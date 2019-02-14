@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -77,4 +77,10 @@ class PipCallerTest(unittest.TestCase):
 		with mock.patch.object(site, "ENABLE_USER_SITE", user_site):
 			parsed = pkg_resources.parse_version(version)
 			actual = octoprint.util.pip.PipCaller.clean_install_command(args, parsed, virtual_env, use_user, force_user)
-		self.assertEquals(expected, actual)
+		self.assertEqual(expected, actual)
+
+	def test_check_setup(self):
+		"""Initialization against local pip should work, including testballoon"""
+		caller = octoprint.util.pip.PipCaller()
+		self.assertIsNotNone(caller._command)
+		self.assertIsNotNone(caller._version)

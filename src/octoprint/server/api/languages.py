@@ -1,13 +1,15 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import os
 import tarfile
 import zipfile
+import logging
 
 try:
 	from os import scandir
@@ -21,7 +23,7 @@ from flask import request, jsonify, make_response
 from octoprint.settings import settings
 
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun
+from octoprint.server.util.flask import no_firstrun_access
 
 from octoprint.plugin import plugin_manager
 from octoprint.access.permissions import Permissions
@@ -29,10 +31,10 @@ from octoprint.access.permissions import Permissions
 from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def getInstalledLanguagePacks():
-	translation_folder = settings().getBaseFolder("translations")
+	translation_folder = settings().getBaseFolder("translations", check_writable=False)
 	if not os.path.exists(translation_folder):
 		return jsonify(language_packs=dict(_core=[]))
 
@@ -49,9 +51,10 @@ def getInstalledLanguagePacks():
 			if os.path.isfile(meta_path):
 				import yaml
 				try:
-					with open(meta_path) as f:
+					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
-				except:
+				except Exception:
+					logging.getLogger(__name__).exception("Could not load %s", meta_path)
 					pass
 				else:
 					import datetime
@@ -87,7 +90,7 @@ def getInstalledLanguagePacks():
 	return jsonify(language_packs=result)
 
 @api.route("/languages", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def uploadLanguagePack():
 	input_name = "file"
@@ -115,7 +118,7 @@ def uploadLanguagePack():
 	return getInstalledLanguagePacks()
 
 @api.route("/languages/<string:locale>/<string:pack>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
 

@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 In this module the slicing support of OctoPrint is encapsulated.
 
@@ -11,8 +13,6 @@ In this module the slicing support of OctoPrint is encapsulated.
 .. autoclass:: SlicingManager
    :members:
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -33,7 +33,8 @@ from octoprint.settings import settings
 
 import logging
 
-from .exceptions import *
+from .exceptions import UnknownSlicer, SlicerNotConfigured, SlicingCancelled, \
+		ProfileAlreadyExists, ProfileException, CouldNotDeleteProfile, UnknownProfile
 
 
 class SlicingProfile(object):
@@ -98,7 +99,7 @@ class TemporaryProfile(object):
 		import os
 		try:
 			os.remove(self.temp_path)
-		except:
+		except Exception:
 			pass
 
 
@@ -138,7 +139,7 @@ class SlicingManager(object):
 		for plugin in plugins:
 			try:
 				slicers[plugin.get_slicer_properties()["type"]] = plugin
-			except:
+			except Exception:
 				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier))
 				continue
 		self._slicers = slicers
@@ -157,7 +158,7 @@ class SlicingManager(object):
 		Returns:
 		    (list of str) Identifiers of all available slicers.
 		"""
-		return self._slicers.keys()
+		return list(self._slicers.keys())
 
 	@property
 	def configured_slicers(self):
@@ -165,7 +166,7 @@ class SlicingManager(object):
 		Returns:
 		    (list of str) Identifiers of all available configured slicers.
 		"""
-		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
+		return list(map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values())))
 
 	@property
 	def default_slicer(self):
@@ -667,5 +668,3 @@ class SlicingManager(object):
 				pass
 
 		return self.get_slicer(slicer).get_slicer_default_profile()
-
-

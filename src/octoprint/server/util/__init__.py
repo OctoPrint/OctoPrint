@@ -1,11 +1,13 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import sys
+PY3 = sys.version_info[0] == 3
 
 from octoprint.settings import settings
 import octoprint.timelapse
@@ -43,7 +45,7 @@ def enforceApiKeyRequestHandler():
 
 	apikey = get_api_key(_flask.request)
 
-	if apikey is None and settings().getBoolean(["api", "keyEnforced"]):
+	if not apikey and settings().getBoolean(["api", "keyEnforced"]):
 		return _flask.make_response("No API key provided", 403)
 
 	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
@@ -59,33 +61,43 @@ def loginFromApiKeyRequestHandler():
 
 	UI_API_KEY and app session keys are handled as anonymous keys here and ignored.
 	"""
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey:
-		return
-
-	if apikey == octoprint.server.UI_API_KEY:
-		return
-
-	if octoprint.server.appSessionManager.validate(apikey):
-		return
-
-	user = get_user_for_apikey(apikey)
-	if not loginUser(user):
+	try:
+		if loginUserFromApiKey():
+			_flask.g.login_via_apikey = True
+	except InvalidApiKeyException:
 		return _flask.make_response("Invalid API key", 403)
-
-	_flask.g.login_via_apikey = True
 
 
 def loginFromAuthorizationHeaderRequestHandler():
 	"""
 	``before_request`` handler for creating login sessions based on the Authorization header.
 	"""
+	loginUserFromApiKey()
 
+
+class InvalidApiKeyException(Exception): pass
+
+
+def loginUserFromApiKey():
+	apikey = get_api_key(_flask.request)
+
+	if not apikey:
+		return False
+
+	if apikey == octoprint.server.UI_API_KEY:
+		return False
+
+	user = get_user_for_apikey(apikey)
+	if not loginUser(user):
+		raise InvalidApiKeyException()
+	else:
+		return True
+
+
+def loginUserFromAuthorizationHeader():
 	authorization_header = get_authorization_header(_flask.request)
 	user = get_user_for_authorization_header(authorization_header)
-	loginUser(user)
+	return loginUser(user)
 
 
 def loginUser(user, remember=False):
@@ -187,7 +199,7 @@ def get_user_for_apikey(apikey):
 				return octoprint.server.userManager.find_user(session=flask_login.current_user.session)
 			else:
 				return flask_login.current_user
-		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
+		elif apikey == settings().get(["api", "key"]):
 			# master key or an app session key was used
 			return ApiUser([octoprint.server.groupManager.admin_group])
 		if octoprint.server.userManager.enabled:
@@ -202,7 +214,7 @@ def get_user_for_apikey(apikey):
 				user = hook(apikey)
 				if user is not None:
 					return user
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Error running api key validator for plugin {} and key {}".format(name, apikey))
 	return None
 
@@ -248,7 +260,7 @@ def get_api_key(request):
 		return request.arguments["apikey"]
 
 	# Check Tornado and Flask headers
-	if "X-Api-Key" in request.headers.keys():
+	if "X-Api-Key" in request.headers:
 		return request.headers.get("X-Api-Key")
 
 	return None
@@ -263,11 +275,11 @@ def get_plugin_hash():
 	from octoprint.plugin import plugin_manager
 
 	plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
-	template_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin))
-	asset_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin))
+	template_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin)))
+	asset_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)))
 	ui_plugins = sorted(set(template_plugins + asset_plugins))
 
 	import hashlib
 	plugin_hash = hashlib.sha1()
-	plugin_hash.update(",".join(ui_plugins))
+	plugin_hash.update(",".join(ui_plugins).encode('utf-8'))
 	return plugin_hash.hexdigest()

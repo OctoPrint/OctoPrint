@@ -406,7 +406,7 @@ $(function() {
                 }
 
                 var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
-                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
+                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit, 1) : "-";
 
                 data.push({
                     label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
@@ -708,7 +708,14 @@ $(function() {
         self._replaceLegendLabel = function(index, series, value, emph) {
             var showFahrenheit = self._shallShowFahrenheit();
 
-            var temp = formatTemperature(value, showFahrenheit);
+            var temp;
+            if (index % 2 === 0) {
+                // actual series
+                temp = formatTemperature(value, showFahrenheit);
+            } else {
+                // target series
+                temp = formatTemperature(value, showFahrenheit, 1);
+            }
             if (emph) {
                 temp = "<em>" + temp + "</em>";
             }

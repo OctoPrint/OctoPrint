@@ -15,7 +15,14 @@
     <div class="control-group" title="{{ _('For acrylic printers ;)') }}">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: appearance_colorTransparent"> {{ _('Transparent Color') }}
+                <input type="checkbox" data-bind="checked: appearance_colorTransparent"> {{ _('Transparent color') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Also personalize the icon of the browser tab') }}">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: appearance_colorIcon"> {{ _('Colorize favicon (in supported browsers)') }}
             </label>
         </div>
     </div>
@@ -40,6 +47,13 @@
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: appearance_showFahrenheitAlso" id="settings-appearanceShowFahrenheitAlso"> {{ _('Show temperatures in Fahrenheit as well as Celsius') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: appearance_fuzzyTimes" id="settings-appearanceFuzzyTimes"> {{ _('Show fuzzy print time estimates') }}
             </label>
         </div>
     </div>

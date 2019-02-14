@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response
 from octoprint.settings import settings
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 from octoprint.access.permissions import Permissions
 
 from octoprint.comm.transport import all_transports
@@ -44,7 +44,7 @@ def connectionState():
 
 
 @api.route("/connection", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def connectionCommand():
 	valid_commands = {
@@ -72,20 +72,20 @@ def connectionCommand():
 		if "transportOptions" in data:
 			kwargs["transport_options"] = data["transportOptions"]
 
-		if "printerProfile" in data.keys():
+		if "printerProfile" in data:
 			printerProfile = data["printerProfile"]
 			if not printerProfileManager.exists(printerProfile):
 				return make_response("Invalid printer profile: %s" % printerProfile, 400)
 			kwargs["profile"] = printerProfile
 
-		if "save" in data.keys() and data["save"]:
+		if "save" in data and data["save"]:
 			"""
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
 			printerProfileManager.set_default(kwargs.get("profile"))
 			"""
 
-		if "autoconnect" in data.keys():
+		if "autoconnect" in data:
 			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
 
 		##~~ legacy

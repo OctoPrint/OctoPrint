@@ -1,11 +1,12 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import io
 import os
 
 import octoprint.plugin
@@ -30,10 +31,6 @@ extensions = dict(
 
 def full_extension_tree():
 	result = dict(
-		# extensions for 3d model files
-		model=dict(
-			stl=ContentTypeMapping(["stl"], "application/sla")
-		),
 		# extensions for printable machine code
 		machinecode=dict(
 			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
@@ -74,6 +71,16 @@ def full_extension_tree():
 		else:
 			return merged
 
+	slicer_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
+	for plugin in slicer_plugins:
+		try:
+			plugin_result = plugin.get_slicer_extension_tree()
+			if plugin_result is None or not isinstance(plugin_result, dict):
+				continue
+			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
+		except Exception:
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from SlicerPlugin {name}".format(name=plugin.key))
+
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
 		try:
@@ -81,13 +88,13 @@ def full_extension_tree():
 			if hook_result is None or not isinstance(hook_result, dict):
 				continue
 			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
 
 	return result
 
 def get_extensions(type, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -101,7 +108,7 @@ def get_extensions(type, subtree=None):
 	return None
 
 def get_all_extensions(subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	result = []
@@ -120,7 +127,7 @@ def get_all_extensions(subtree=None):
 	return result
 
 def get_path_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -136,11 +143,11 @@ def get_path_for_extension(extension, subtree=None):
 	return None
 
 def get_content_type_mapping_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
-		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value. extensions
+		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value.extensions
 		list_extension_matches = isinstance(value, (list, tuple)) and extension in value
 
 		if content_extension_matches or list_extension_matches:
@@ -256,7 +263,7 @@ class FileManager(object):
 			file_name = storage_manager.split_path(path)
 
 			# we'll use the default printer profile for the backlog since we don't know better
-			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
+			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default(), None)
 			if self._analysis_queue.enqueue(queue_entry, high_priority=high_priority):
 				counter += 1
 
@@ -337,8 +344,8 @@ class FileManager(object):
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
-					                         io.FileIO(tmp_path, "rb"))
+					                         io.BytesIO(";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.FileIO(tmp_path, 'rb'))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
 					self.add_file(dest_location, dest_path, file_obj,
@@ -415,15 +422,17 @@ class FileManager(object):
 		if self._last_slicing_progress != progress_int:
 			self._last_slicing_progress = progress_int
 			for callback in self._slicing_progress_callbacks:
-				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-				except: self._logger.exception("Exception while pushing slicing progress")
+				try:
+					callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
+				except Exception:
+					self._logger.exception("Exception while pushing slicing progress")
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
 					for plugin in self._progress_plugins:
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
-						except:
+						except Exception:
 							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
 
 				import threading
@@ -446,8 +455,8 @@ class FileManager(object):
 
 	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
 		if not destinations:
-			destinations = self._storage_managers.keys()
-		if isinstance(destinations, (str, unicode, basestring)):
+			destinations = list(self._storage_managers.keys())
+		if isinstance(destinations, basestring):
 			destinations = [destinations]
 
 		result = dict()
@@ -462,7 +471,7 @@ class FileManager(object):
 		for hook in self._preprocessor_hooks.values():
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
-			except:
+			except Exception:
 				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
 				continue
 
@@ -476,12 +485,9 @@ class FileManager(object):
 
 		path_in_storage = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite, display=display)
 
-		if analysis is None:
-			queue_entry = self._analysis_queue_entry(destination, path_in_storage, printer_profile=printer_profile)
-			if queue_entry:
-				self._analysis_queue.enqueue(queue_entry, high_priority=True)
-		else:
-			self._add_analysis_result(destination, path, analysis)
+		queue_entry = self._analysis_queue_entry(destination, path_in_storage, printer_profile=printer_profile, analysis=analysis)
+		if queue_entry:
+			self._analysis_queue.enqueue(queue_entry, high_priority=True)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
 		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
@@ -631,9 +637,9 @@ class FileManager(object):
 		            pos=pos,
 		            date=time.time())
 		try:
-			with atomic_write(self._recovery_file, max_permissions=0o666) as f:
-				yaml.safe_dump(data, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
-		except:
+			with atomic_write(self._recovery_file, mode='wt', max_permissions=0o666) as f:
+				yaml.safe_dump(data, stream=f, default_flow_style=False, indent=2, allow_unicode=True)
+		except Exception:
 			self._logger.exception("Could not write recovery data to file {}".format(self._recovery_file))
 
 	def delete_recovery_data(self):
@@ -642,7 +648,7 @@ class FileManager(object):
 
 		try:
 			os.remove(self._recovery_file)
-		except:
+		except Exception:
 			self._logger.exception("Error deleting recovery data file {}".format(self._recovery_file))
 
 	def get_recovery_data(self):
@@ -651,10 +657,10 @@ class FileManager(object):
 
 		import yaml
 		try:
-			with open(self._recovery_file) as f:
+			with io.open(self._recovery_file, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			return data
-		except:
+		except Exception:
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
 			self.delete_recovery_data()
 
@@ -706,7 +712,7 @@ class FileManager(object):
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)
 
-	def _analysis_queue_entry(self, destination, path, printer_profile=None):
+	def _analysis_queue_entry(self, destination, path, printer_profile=None, analysis=None):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -715,6 +721,6 @@ class FileManager(object):
 		file_type = get_file_type(absolute_path)
 
 		if file_type:
-			return QueueEntry(file_name, path, file_type[-1], destination, absolute_path, printer_profile)
+			return QueueEntry(file_name, path, file_type[-1], destination, absolute_path, printer_profile, analysis)
 		else:
 			return None

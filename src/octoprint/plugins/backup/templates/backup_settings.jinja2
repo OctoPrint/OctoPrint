@@ -1,0 +1,135 @@
+<div class="alert" data-bind="visible: unknownPlugins().length > 0">
+    {% trans %}
+    Some plugins during the last restore could not be identified and hence not automatically installed.
+    Please install them manually, they are listed below including their stated homepages:
+    {% endtrans %}
+    <ul data-bind="foreach: unknownPlugins">
+        <li><span data-bind="text: name"></span>: <a data-bind="text: url, attr: {href: url}" target="_blank" rel="noreferrer noopener"></a></li>
+    </ul>
+    <small><a href="javascript:void(0)" data-bind="click: deleteUnknownPluginRecord">{{ _('Delete record of unknown plugins') }}</a></small>
+</div>
+
+
+<h3>{{ _('Existing backups') }}</h3>
+
+<div data-bind="visible: backups.allSize() <= 0">
+    <p>{{ _('There are no backups. Maybe create one below?') }}</p>
+</div>
+<div data-bind="visible: backups.allSize() > 0">
+    <p>{{ _('These are the backups of your settings and files that already exist on this OctoPrint instance. You may delete, download or restore them.') }}</p>
+
+    <div class="pull-left">
+        <div class="btn-group">
+            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
+                <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
+                <li class="divider"></li>
+                <li><a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _('Clear selection') }}</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">{{ _('Delete selected') }}</button>
+    </div>
+    <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
+        <thead>
+        <tr>
+            <th class="settings_plugin_backup_checkbox"></th>
+            <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
+            <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
+            <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
+            <th class="settings_plugin_backup_actions">{{ _('Action') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: backups.paginatedItems">
+        <tr>
+            <td class="settings_plugin_backup_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
+            <td class="settings_plugin_backup_name" data-bind="text: name"></td>
+            <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
+            <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download') }}" class="fa fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore') }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></span></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-mini pagination-centered">
+        <ul>
+            <li data-bind="css: {disabled: backups.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a></li>
+        </ul>
+        <ul data-bind="foreach: backups.pages">
+            <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a></li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
+        </ul>
+    </div>
+</div>
+
+<h3>{{ _('Create backup') }}</h3>
+
+<p>{{ _('Create a new backup of the current state.') }}</p>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
+            </label>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
+            </label>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+        </div>
+    </div>
+</form>
+
+<div data-bind="visible: restoreSupported()">
+    <h3>{{ _('Restore from uploaded backup') }}</h3>
+
+    <p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
+
+    <form class="form-horizontal">
+        <div class="control-group">
+            <label class="control-label">{{ _('Backup file') }}</label>
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="btn fileinput-button">
+                        <span>{{ _('Browse...') }}</span>
+                        <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
+                    </span>
+                    <span class="add-on" data-bind="text: backupUploadName"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="controls">
+                <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div data-bind="visible: !restoreSupported()">
+    {{ _('Please note that the operating system that this OctoPrint server is running on does not support automatically restoring backups. You will have to <a href="%(url)s" target="_blank" rel="noopener noreferrer">restore your backups manually for now</a>.', url='https://faq.octoprint.org/manual-restore') }}
+</div>
+
+<div id="settings_plugin_backup_restoredialog" class="modal hide fade">
+    <div class="modal-header">
+        <h3>{{ _('Restoring from backup...') }}</h3>
+    </div>
+    <div class="modal-body">
+        <pre id="settings_plugin_backup_restoredialog_output" class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.restoreInProgress()" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+</div>

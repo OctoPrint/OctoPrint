@@ -1,5 +1,6 @@
-#!/bin/env python2
-from __future__ import absolute_import, division, print_function
+#!/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,6 +11,8 @@ import errno
 import sys
 import traceback
 import time
+
+from past.builtins import unicode
 
 def _log_call(*lines):
 	_log(lines, prefix=">", stream="call")
@@ -29,20 +32,20 @@ def _log(lines, prefix=None, stream=None):
 		output_stream = sys.stderr
 
 	for line in lines:
-		to_print = _to_str(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
-		                   errors="replace")
+		to_print = _to_bytes("{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
+		                     errors="replace")
 		print(to_print, file=output_stream)
 
 
 def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, str):
+	if isinstance(s_or_u, bytes):
 		return s_or_u.decode(encoding, errors=errors)
 	else:
 		return s_or_u
 
 
-def _to_str(s_or_u, encoding="utf-8", errors="strict"):
+def _to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
@@ -59,7 +62,9 @@ def _execute(command, **kwargs):
 		joined_command = command
 	_log_call(joined_command)
 
-	kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+	kwargs.update(dict(async_=True,
+	                   stdout=sarge.Capture(),
+	                   stderr=sarge.Capture()))
 
 	try:
 		p = sarge.run(command, **kwargs)
@@ -78,7 +83,7 @@ def _execute(command, **kwargs):
 			# the process might have been set to None in case of any exception
 			print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
 			return None, [], []
-	except:
+	except Exception:
 		print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
 		traceback.print_exc(file=sys.stderr)
 		return None, [], []
@@ -89,28 +94,28 @@ def _execute(command, **kwargs):
 		while p.commands[0].poll() is None:
 			lines = p.stderr.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 				_log_stderr(*lines)
-				all_stderr += list(lines)
+				all_stderr += lines
 
 			lines = p.stdout.readlines(timeout=0.5)
 			if lines:
-				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 				_log_stdout(*lines)
-				all_stdout += list(lines)
+				all_stdout += lines
 
 	finally:
 		p.close()
 
 	lines = p.stderr.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 		_log_stderr(*lines)
 		all_stderr += lines
 
 	lines = p.stdout.readlines()
 	if lines:
-		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
 		_log_stdout(*lines)
 		all_stdout += lines
 
@@ -142,7 +147,7 @@ def _git(args, cwd, git_executable=None):
 			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 			traceback.print_exc(file=sys.stderr)
 			return None, [], []
-		except:
+		except Exception:
 			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 			traceback.print_exc(file=sys.stderr)
 			return None, [], []
@@ -157,7 +162,7 @@ def _python(args, cwd, python_executable, sudo=False):
 		command = ["sudo"] + command
 	try:
 		return _execute(command, cwd=cwd)
-	except:
+	except Exception:
 		import traceback
 		print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
 		traceback.print_exc(file=sys.stderr)
@@ -170,7 +175,7 @@ def _to_error(*lines):
 			lines = lines[0]
 		elif not isinstance(lines[0], (str, unicode)):
 			lines = [repr(lines[0]),]
-	return u"\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+	return "\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
 
 
 def _rescue_changes(git_executable, folder):
@@ -178,7 +183,7 @@ def _rescue_changes(git_executable, folder):
 	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode is None or returncode != 0:
 		raise RuntimeError("Could not update, \"git diff\" failed with returncode {}".format(returncode))
-	if stdout and u"".join(stdout).strip():
+	if stdout and "".join(stdout).strip():
 		# we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
 		import time
 		import os
@@ -190,8 +195,8 @@ def _rescue_changes(git_executable, folder):
 		if returncode is None or returncode != 0:
 			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to {}".format(patch))
 
-		import codecs
-		with codecs.open(patch, "w", encoding="utf-8", errors="replace") as f:
+		import io
+		with io.open(patch, "wt", encoding="utf-8", errors="replace") as f:
 			for line in stdout:
 				f.write(line)
 

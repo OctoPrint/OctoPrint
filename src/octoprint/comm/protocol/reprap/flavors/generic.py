@@ -1,9 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, \
-	division
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
 import logging
@@ -18,7 +17,7 @@ _flavor_registry = dict()
 
 
 def _register_flavor(cls):
-	key = getattr(cls, b"key", None)
+	key = getattr(cls, "key", None)
 	if key and not key in _flavor_registry:
 		_flavor_registry[key] = cls
 
@@ -63,10 +62,10 @@ class GenericFlavor(object):
 	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M190", "M109", "M400", "M226"]
 	asynchronous_commands = ["G0", "G1", "G2", "G3"]
 
-	regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
+	regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 	"""Regex to use for request line numbers in resend requests"""
 
-	regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (
+	regex_temp = re.compile(r"(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*/?\s*(?P<target>%s))?" % (
 	regex_positive_float_pattern, regex_positive_float_pattern))
 	"""Regex matching temperature entries in line.
 
@@ -78,7 +77,7 @@ class GenericFlavor(object):
 	  * ``target``: target temperature, if provided (float)
 	"""
 
-	regex_position = re.compile("(?P<axis>X|Y|Z|E):(?P<pos>{float})\s*".format(float=regex_float_pattern))
+	regex_position = re.compile(r"(?P<axis>[XYZE]):(?P<pos>{float})\s*".format(float=regex_float_pattern))
 	"""Regex for matching position entries in line.
 
 	Groups will be as follows:
@@ -87,12 +86,12 @@ class GenericFlavor(object):
 	  * ``pos``: axis position (float)
 	"""
 
-	regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
+	regex_firmware_splitter = re.compile(r"\s*([A-Z0-9_]+):")
 	"""Regex to use for splitting M115 responses."""
 
-	regex_sd_file_opened = re.compile("file opened:\s*(?P<name>.*?)(\s+size:\s*(?P<size>[0-9]+)|$)")
+	regex_sd_file_opened = re.compile(r"file opened:\s*(?P<name>.*?)(\s+size:\s*(?P<size>[0-9]+)|$)")
 
-	regex_sd_printing_byte = re.compile("sd printing byte (?P<current>[0-9]*)/(?P<total>[0-9]*)")
+	regex_sd_printing_byte = re.compile(r"sd printing byte (?P<current>[0-9]*)/(?P<total>[0-9]*)")
 	"""Regex matching SD printing status reports.
 
 	Groups will be as follows:
@@ -262,7 +261,7 @@ class GenericFlavor(object):
 		line_to_resend = None
 		match = cls.regex_resend_linenumber.search(line)
 		if match is not None:
-			line_to_resend = int(match.group(b"n"))
+			line_to_resend = int(match.group("n"))
 		return dict(linenumber=line_to_resend)
 
 	@classmethod
@@ -309,7 +308,7 @@ class GenericFlavor(object):
 	def parse_message_position(cls, line, lower_line, state, flags):
 		position = dict(x=None, y=None, z=None, e=None)
 		for match in re.finditer(cls.regex_position, line):
-			position[match.group(b"axis").lower()] = float(match.group(b"pos"))
+			position[match.group("axis").lower()] = float(match.group("pos"))
 		return dict(position=position)
 
 	@classmethod
@@ -351,8 +350,8 @@ class GenericFlavor(object):
 		if not match:
 			return
 
-		name = match.group(b"name")
-		size = int(match.group(b"size"))
+		name = match.group("name")
+		size = int(match.group("size"))
 		return dict(name=name, long_name=name, size=size)
 
 	@classmethod
@@ -388,7 +387,7 @@ class GenericFlavor(object):
 		match = cls.regex_sd_printing_byte.match(lower_line)
 		if not match:
 			return None
-		return dict(current=int(match.group(b"current")), total=int(match.group(b"total")))
+		return dict(current=int(match.group("current")), total=int(match.group("total")))
 
 	##~~ Commands
 
@@ -560,7 +559,7 @@ class GenericFlavor(object):
 		    dict: the canonicalized version of ``parsed``
 		"""
 
-		reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
+		reported_extruders = list(filter(lambda x: x.startswith("T"), parsed.keys()))
 		if not "T" in reported_extruders:
 			# Our reported_extruders are either empty or consist purely
 			# of Tn keys, no need for any action

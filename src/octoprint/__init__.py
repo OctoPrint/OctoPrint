@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import io
 import sys
 import logging as log
 
@@ -50,15 +51,24 @@ del version_info
 
 #~~ custom exceptions
 
-class FatalStartupError(BaseException):
-	pass
+class FatalStartupError(Exception):
+	def __init__(self, message, cause=None):
+		self.cause = cause
+		Exception.__init__(self, message)
+
+	def __str__(self):
+		result = Exception.__str__(self)
+		if self.cause:
+			return "{}: {}".format(result, str(self.cause))
+		else:
+			return result
 
 #~~ init methods to bring up platform
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
                   uncaught_handler=None, safe_mode=False, ignore_blacklist=False, after_preinit_logging=None,
-                  after_settings=None, after_logging=None, after_safe_mode=None,
+                  after_settings_init=None, after_logging=None, after_safe_mode=None, after_settings_valid=None,
                   after_event_manager=None, after_connectivity_checker=None,
                   after_plugin_manager=None, after_environment_detector=None):
 	kwargs = dict()
@@ -70,55 +80,81 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	if callable(after_preinit_logging):
 		after_preinit_logging(**kwargs)
 
-	settings = init_settings(basedir, configfile)
+	try:
+		settings = init_settings(basedir, configfile)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize settings manager", cause=ex)
 	kwargs["settings"] = settings
-	if callable(after_settings):
-		after_settings(**kwargs)
+	if callable(after_settings_init):
+		after_settings_init(**kwargs)
 
-	logger = init_logging(settings,
-	                      use_logging_file=use_logging_file,
-	                      logging_file=logging_file,
-	                      default_config=logging_config,
-	                      debug=debug,
-	                      verbosity=verbosity,
-	                      uncaught_logger=uncaught_logger,
-	                      uncaught_handler=uncaught_handler)
+	try:
+		logger = init_logging(settings,
+		                      use_logging_file=use_logging_file,
+		                      logging_file=logging_file,
+		                      default_config=logging_config,
+		                      debug=debug,
+		                      verbosity=verbosity,
+		                      uncaught_logger=uncaught_logger,
+		                      uncaught_handler=uncaught_handler)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize logging", cause=ex)
+
 	kwargs["logger"] = logger
-
 	if callable(after_logging):
 		after_logging(**kwargs)
 
-	settings_safe_mode = settings.getBoolean(["server", "startOnceInSafeMode"])
-	safe_mode = safe_mode or settings_safe_mode
+	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" if settings.getBoolean(["server", "incompleteStartup"]) else None
+	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
-
 	if callable(after_safe_mode):
 		after_safe_mode(**kwargs)
 
-	event_manager = init_event_manager(settings)
+	# now before we continue, let's make sure *all* our folders are sane
+	try:
+		settings.sanity_check_folders()
+	except Exception as ex:
+		raise FatalStartupError("Configured folders didn't pass sanity check", cause=ex)
+	if callable(after_settings_valid):
+		after_settings_valid(**kwargs)
+
+	try:
+		event_manager = init_event_manager(settings)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize event manager", cause=ex)
 
 	kwargs["event_manager"] = event_manager
 	if callable(after_event_manager):
 		after_event_manager(**kwargs)
 
-	connectivity_checker = init_connectivity_checker(settings, event_manager)
+	try:
+		connectivity_checker = init_connectivity_checker(settings, event_manager)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize connectivity checker", cause=ex)
 
 	kwargs["connectivity_checker"] = connectivity_checker
 	if callable(after_connectivity_checker):
 		after_connectivity_checker(**kwargs)
 
-	plugin_manager = init_pluginsystem(settings,
-	                                   safe_mode=safe_mode,
-	                                   ignore_blacklist=ignore_blacklist,
-	                                   connectivity_checker=connectivity_checker)
-	kwargs["plugin_manager"] = plugin_manager
+	try:
+		plugin_manager = init_pluginsystem(settings,
+		                                   safe_mode=safe_mode,
+		                                   ignore_blacklist=ignore_blacklist,
+		                                   connectivity_checker=connectivity_checker)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize plugin manager", cause=ex)
 
+	kwargs["plugin_manager"] = plugin_manager
 	if callable(after_plugin_manager):
 		after_plugin_manager(**kwargs)
 
-	environment_detector = init_environment_detector(plugin_manager)
-	kwargs["environment_detector"] = environment_detector
+	try:
+		environment_detector = init_environment_detector(plugin_manager)
+	except Exception as ex:
+		raise FatalStartupError("Could not initialize environment detector", cause=ex)
 
+	kwargs["environment_detector"] = environment_detector
 	if callable(after_environment_detector):
 		after_environment_detector(**kwargs)
 
@@ -291,7 +327,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config
@@ -480,7 +516,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 		if os.stat(path).st_mtime + ttl < time.time():
 			return None
 
-		with bom_aware_open(path, encoding="utf-8", mode="r") as f:
+		with bom_aware_open(path, encoding="utf-8", mode='rt') as f:
 			result = yaml.safe_load(f)
 
 		if isinstance(result, list):
@@ -494,12 +530,12 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
 			if cache is not None:
 				try:
-					with bom_aware_open(cache, encoding="utf-8", mode="w") as f:
+					with bom_aware_open(cache, encoding="utf-8", mode='wt') as f:
 						yaml.safe_dump(result, f)
-				except:
-					logger.info("Fetched plugin blacklist but couldn't write it to its cache file.")
-		except:
-			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it.".format(url))
+				except Exception as e:
+					logger.info("Fetched plugin blacklist but couldn't write it to its cache file: %s", e)
+		except Exception as e:
+			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(url, e))
 		return result
 
 	try:
@@ -526,7 +562,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 			logger.info("Blacklist processing done")
 
 		return blacklist
-	except:
+	except Exception:
 		logger.exception("Something went wrong while processing the plugin blacklist. Proceeding without it.")
 
 
@@ -592,6 +628,9 @@ def main():
 
 		# cut off stuff from the beginning
 		args = args[-1 * sys_args_length:] if sys_args_length else []
+
+	from octoprint.util.fixes import patch_sarge_async_on_py2
+	patch_sarge_async_on_py2()
 
 	from octoprint.cli import octo
 	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")

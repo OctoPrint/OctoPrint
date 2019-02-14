@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module defines the interface for communicating with a connected printer.
 
@@ -14,8 +16,6 @@ abstracted version of the actual printer communication.
 .. autoclass:: PrinterCallback
    :members:
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -47,10 +47,10 @@ class PrinterInterface(object):
 	valid_axes = ("x", "y", "z", "e")
 	"""Valid axes identifiers."""
 
-	valid_tool_regex = re.compile("^(tool\d+)$")
+	valid_tool_regex = re.compile(r"^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
 
-	valid_heater_regex = re.compile("^(tool\d+|bed)$")
+	valid_heater_regex = re.compile(r"^(tool\d+|bed)$")
 	"""Regex for valid heater identifiers."""
 
 	@classmethod
@@ -234,12 +234,14 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def extrude(self, amount, tags=None, *args, **kwargs):
+	def extrude(self, amount, speed=None, tags=None, *args, **kwargs):
 		"""
 		Extrude ``amount`` millimeters of material from the tool.
 
 		Arguments:
 		    amount (int, float): The amount of material to extrude in mm
+		    speed (int, None): Speed at which to extrude (F parameter). If set to ``None`` (or left out)
+		    the maximum speed of E axis from the printer profile will be used.
 		    tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
 		"""
 		raise NotImplementedError()
@@ -467,9 +469,9 @@ class PrinterInterface(object):
 		    tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
 		"""
 		if self.is_printing():
-			self.pause_print(tags=tags)
+			self.pause_print(tags=tags, *args, **kwargs)
 		elif self.is_paused():
-			self.resume_print(tags=tags)
+			self.resume_print(tags=tags, *args, **kwargs)
 
 	def cancel_print(self, tags=None, *args, **kwargs):
 		"""

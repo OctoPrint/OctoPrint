@@ -1,9 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
 from octoprint.comm.util.parameters import TextType, IntegerType, SuggestionType, Value
@@ -108,18 +107,18 @@ class SerialTransport(Transport):
 			try:
 				if callable(getattr(self._serial, "cancel_read", None)):
 					self._serial.cancel_read()
-			except:
+			except Exception:
 				self._logger.exception("Error while cancelling pending reads from the serial port")
 
 			try:
 				if callable(getattr(self._serial, "cancel_write", None)):
 					self._serial.cancel_write()
-			except:
+			except Exception:
 				self._logger.exception("Error while cancelling pending writes to the serial port")
 
 			try:
 				self._serial.close()
-			except:
+			except Exception:
 				self._logger.exception("Error while closing the serial port")
 				error = True
 
@@ -153,13 +152,13 @@ class SerialTransport(Transport):
 				try:
 					# second try
 					written += try_to_write(to_send)
-				except:
+				except Exception:
 					if not self._closing:
 						message = "Unexpected error while writing to serial port"
 						self._logger.exception(message)
 						self.disconnect(error=message)
 					break
-			except:
+			except Exception:
 				if not self._closing:
 					message = "Unexpected error while writing to serial port"
 					self._logger.exception(message)
@@ -186,4 +185,4 @@ if __name__ == "__main__":
 	# list ports
 	ports = SerialTransport.get_available_serial_ports()
 	for port in ports:
-		print(port.title + ": " + port.name)
+		print(port.title + ": " + port.value)

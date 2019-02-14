@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places within
@@ -9,8 +9,10 @@ OctoPrint's source code.
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import io
 import os
 import traceback
+import past.builtins
 import sys
 import re
 import tempfile
@@ -29,13 +31,38 @@ try:
 except ImportError:
 	import Queue as queue
 
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
+
+
+def to_native_str(s_or_u):
+	"""Make sure ``s_or_u`` is a 'str'."""
+	if sys.version_info[0] == 2:
+		if isinstance(s_or_u, unicode):
+			return s_or_u.encode("utf-8")
+		elif isinstance(s_or_u, set):  # only used for doctests
+			if not s_or_u:
+				return b"set()"
+			return b'{'+b', '.join(repr(to_native_str(x)) for x in sorted(s_or_u))+b'}'
+	else:
+		if isinstance(s_or_u, bytes):
+			return s_or_u.decode("utf-8")  # only used for doctests
+		elif isinstance(s_or_u, str):
+			pass
+		elif isinstance(s_or_u, set):  # only used for doctests
+			return '{'+repr(tuple(sorted(s_or_u)))[1:-1]+'}'
+		else:
+			raise RuntimeError("Please use a string here.")
+	return s_or_u
+
+
 
 def warning_decorator_factory(warning_type):
 	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(func):
+			func.__qualname__ = to_native_str('warning_decorator_factory')
+			func.__annotations__ = dict()
 			@wraps(func)
 			def func_wrapper(*args, **kwargs):
 				# we need to increment the stacklevel by one because otherwise we'll get the location of our
@@ -110,7 +137,7 @@ variable_deprecated = warning_factory(DeprecationWarning)
 """
 A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
 supplied ``message``. The call stack level used (for adding the source location of the offending call to the
-warning) can be overridden using the optional ``stacklevel`` parameter. 
+warning) can be overridden using the optional ``stacklevel`` parameter.
 
 Arguments:
     message (string): The message to include in the deprecation warning.
@@ -199,7 +226,7 @@ def is_allowed_file(filename, extensions):
 	    boolean: True if the file name's extension matches one of the allowed extensions, False otherwise.
 	"""
 
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in map(str.lower, extensions)
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in (x.lower() for x in extensions)
 
 
 def get_formatted_timedelta(d):
@@ -310,21 +337,21 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 	Examples:
 
-	    >>> get_dos_filename("test1234.gco")
-	    u'test1234.gco'
-	    >>> get_dos_filename("test1234.gcode")
-	    u'test1234.gco'
-	    >>> get_dos_filename("test12345.gco")
-	    u'test12~1.gco'
-	    >>> get_dos_filename("test1234.fnord", extension="gco")
-	    u'test1234.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco")
-	    u'auto0.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
-	    u'auto0.g'
+	    >>> to_native_str(get_dos_filename("test1234.gco"))
+	    'test1234.gco'
+	    >>> to_native_str(get_dos_filename("test1234.gcode"))
+	    'test1234.gco'
+	    >>> to_native_str(get_dos_filename("test12345.gco"))
+	    'test12~1.gco'
+	    >>> to_native_str(get_dos_filename("test1234.fnord", extension="gco"))
+	    'test1234.gco'
+	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco"))
+	    'auto0.gco'
+	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"]))
+	    'auto0.g'
 	    >>> get_dos_filename(None)
-	    >>> get_dos_filename("foo")
-	    u'foo'
+	    >>> to_native_str(get_dos_filename("foo"))
+	    'foo'
 	"""
 
 	if input is None:
@@ -395,47 +422,49 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Examples:
 
-	    >>> find_collision_free_name("test1234", "gco", [])
-	    u'test1234.gco'
-	    >>> find_collision_free_name("test1234", "gcode", [])
-	    u'test1234.gco'
-	    >>> find_collision_free_name("test12345", "gco", [])
-	    u'test12~1.gco'
-	    >>> find_collision_free_name("test 123", "gco", [])
-	    u'test_123.gco'
-	    >>> find_collision_free_name("test1234", "g o", [])
-	    u'test1234.g_o'
-	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
-	    u'test12~2.gco'
-	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
-	    >>> find_collision_free_name("test12345", "gco", many_files)
-	    u'test1~10.gco'
-	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files)
-	    u'test1~99.gco'
-	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    >>> to_native_str(find_collision_free_name("test1234", "gco", []))
+	    'test1234.gco'
+	    >>> to_native_str(find_collision_free_name("test1234", "gcode", []))
+	    'test1234.gco'
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", []))
+	    'test12~1.gco'
+	    >>> to_native_str(find_collision_free_name("test 123", "gco", []))
+	    'test_123.gco'
+	    >>> to_native_str(find_collision_free_name("test1234", "g o", []))
+	    'test1234.g_o'
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", ["/test12~1.gco"]))
+	    'test12~2.gco'
+	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_files))
+	    'test1~10.gco'
+	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files))
+	    'test1~99.gco'
+	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one))
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
-	    u'test~100.gco'
+	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3))
+	    'test~100.gco'
 
 	"""
 
-	if not isinstance(filename, unicode):
-		filename = unicode(filename)
-	if not isinstance(extension, unicode):
-		extension = unicode(extension)
+	filename = to_unicode(filename)
+	extension = to_unicode(extension)
+
+	if filename.startswith("/"):
+		filename = filename[1:]
+	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
-		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in r".\"/\[]:;=,"})).lower()
 
 	filename = make_valid(filename)
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+	full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
 	result = full_name_format.format(filename=filename,
 	                                 extension=extension)
@@ -445,7 +474,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	counter = 1
 	power = 1
-	prefix_format = u"{segment}~{counter}"
+	prefix_format = "{segment}~{counter}"
 	while counter < (10 ** max_power):
 		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
 		result = full_name_format.format(filename=prefix,
@@ -491,23 +520,26 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
+		to_bytes(to_unicode(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
 
 
-def to_str(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a str."""
+def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a bytestring."""
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
 		return s_or_u
 
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
+
+
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, str):
+	if isinstance(s_or_u, bytes):
 		return s_or_u.decode(encoding, errors=errors)
 	else:
 		return s_or_u
@@ -672,7 +704,7 @@ def dict_minimal_mergediff(source, target):
 
 	from copy import deepcopy
 
-	all_keys = set(source.keys() + target.keys())
+	all_keys = set(list(source.keys()) + list(target.keys()))
 	result = dict()
 	for k in all_keys:
 		if k not in target:
@@ -750,19 +782,46 @@ class fallback_dict(dict):
 		self.custom[key] = value
 
 	def __delitem__(self, key):
+		# TODO: mark as deleted and leave fallbacks alone?
 		for dictionary in self._all():
 			if key in dictionary:
 				del dictionary[key]
 
+	def __contains__(self, key):
+		return any((key in dictionary)
+				   for dictionary in self._all())
+
 	def keys(self):
 		result = set()
 		for dictionary in self._all():
-			result += dictionary.keys()
-		return result
+			for k in dictionary.keys():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def values(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def items(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k, v
 
 	def _all(self):
-		return [self.custom] + list(self.fallbacks)
-
+		yield self.custom
+		for d in self.fallbacks:
+			yield d
 
 
 def dict_filter(dictionary, filter_function):
@@ -832,7 +891,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 			args = tuple()
 		else:
 			args = self.default_factory,
-		return type(self), args, None, None, self.items()
+		return type(self), args, None, None, list(self.items())
 
 	def copy(self):
 		return self.__copy__()
@@ -843,7 +902,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 	def __deepcopy__(self, memo):
 		import copy
 		return type(self)(self.default_factory,
-		                  copy.deepcopy(self.items()))
+		                  copy.deepcopy(list(self.items())))
 
 	# noinspection PyMethodOverriding
 	def __repr__(self):
@@ -866,7 +925,7 @@ def interface_addresses(family=None):
 	for interface in netifaces.interfaces():
 		try:
 			ifaddresses = netifaces.ifaddresses(interface)
-		except:
+		except Exception:
 			continue
 		if family in ifaddresses:
 			for ifaddress in ifaddresses[family]:
@@ -882,7 +941,7 @@ def address_for_client(host, port, timeout=3.05):
 		try:
 			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
 				return address
-		except:
+		except Exception:
 			continue
 
 def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
@@ -912,7 +971,7 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 			sock.bind((source, 0))
 		sock.connect((host, port))
 		return True
-	except:
+	except Exception:
 		return False
 
 def parse_mime_type(mime):
@@ -948,12 +1007,20 @@ def mime_type_matches(mime, other):
 	return type_matches and subtype_matches
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
+def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
 
-	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
+	# NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
+	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+	os.close(fd)
+
+	if "b" in mode:
+		temp_config = io.open(path, mode=mode)
+	else:
+		temp_config = io.open(path, mode=mode, encoding=encoding)
+
 	try:
 		yield temp_config
 	finally:
@@ -991,6 +1058,8 @@ def temppath(prefix=None, suffix=""):
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
 
+	assert "b" not in mode, "binary mode not support by bom_aware_open"
+
 	codec = codecs.lookup(encoding)
 	encoding = codec.name
 
@@ -1002,13 +1071,13 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		# these encodings might have a BOM, so let's see if there is one
 		bom = getattr(codecs, potential_bom_attribute)
 
-		with open(filename, "rb") as f:
+		with io.open(filename, mode='rb') as f:
 			header = f.read(4)
 
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
+	return io.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 def is_hidden_path(path):
@@ -1019,7 +1088,7 @@ def is_hidden_path(path):
 	path = to_unicode(path)
 
 	filename = os.path.basename(path)
-	if filename.startswith(u"."):
+	if filename.startswith("."):
 		# filenames starting with a . are hidden
 		return True
 
@@ -1060,14 +1129,17 @@ except ImportError:
 			pathname = _glob_escape_check.sub(r"[\1]", pathname)
 		return drive + pathname
 
-
 try:
-	import monotonic
-	monotonic_time = monotonic.monotonic
-except RuntimeError:
-	# no source of monotonic time available, nothing left but using time.time *cringe*
-	import time
-	monotonic_time = time.time
+	# py3
+	from time import monotonic as monotonic_time
+except ImportError:
+	try:
+		# py2 w/ suitable source for monotonic time
+		from monotonic import monotonic as monotonic_time
+	except RuntimeError:
+		# no source of monotonic time available, nothing left but using time.time *cringe*
+		import time
+		monotonic_time = time.time
 
 
 def thaw_frozendict(obj):
@@ -1336,9 +1408,10 @@ class ResettableTimer(threading.Thread):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, max=None, **kwargs):
+	def __init__(self, value=0, minimum=0, maximum=None, **kwargs):
 		self._counter = 0
-		self._max = max
+		self._min = minimum
+		self._max = kwargs.get("max", maximum)
 		self._mutex = threading.RLock()
 		self._event = threading.Event()
 
@@ -1364,11 +1437,14 @@ class CountedEvent(object):
 			else:
 				self._internal_set(self._counter - 1)
 
+	def reset(self):
+		self.clear(completely=True)
+
 	def wait(self, timeout=None):
 		self._event.wait(timeout)
 
 	def blocked(self):
-		return self.counter == 0
+		return self.counter <= 0
 
 	def acquire(self, blocking=1):
 		return self._mutex.acquire(blocking=blocking)
@@ -1379,7 +1455,8 @@ class CountedEvent(object):
 	def _internal_set(self, value):
 		self._counter = value
 		if self._counter <= 0:
-			self._counter = 0
+			if self._min is not None and self._counter < self._min:
+				self._counter = self._min
 			self._event.clear()
 		else:
 			if self._max is not None and self._counter > self._max:
@@ -1756,10 +1833,10 @@ class CaseInsensitiveSet(collections.Set):
 	"""
 
 	def __init__(self, *args):
-		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+		self.data = set(x.lower() if isinstance(x, past.builtins.basestring) else x for x in args)
 
 	def __contains__(self, item):
-		if isinstance(item, (str, unicode)):
+		if isinstance(item, past.builtins.basestring):
 			return item.lower() in self.data
 		else:
 			return item in self.data
@@ -1773,4 +1850,12 @@ class CaseInsensitiveSet(collections.Set):
 
 # originally from https://stackoverflow.com/a/5967539
 def natural_key(text):
-	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
+	return [ int(c) if c.isdigit() else c for c in re.split(r"(\d+)", text) ]
+
+
+def count(gen):
+	"""Used instead of len(generator), which doesn't work"""
+	n = 0
+	for _ in gen:
+		n += 1
+	return n

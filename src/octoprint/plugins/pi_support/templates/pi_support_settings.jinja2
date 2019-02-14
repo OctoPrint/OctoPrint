@@ -1,0 +1,31 @@
+<h3>{{ _('Pi Support') }}</h3>
+
+<p>{{ _('Please restart OctoPrint after changing any of this plugin\'s settings.') }}</p>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.pi_support.vcgencmd_throttle_check_enabled"> {{ _('Enable under voltage and overheat detection via <code>vcgencmd get_throttled</code>') }}
+            </label>
+            <span class="help-block">{{ _('This will regularly check with the Pi if something is amiss either with power regulation or CPU/GPU temperature.') }}</span>
+        </div>
+    </div>
+
+    <div>
+        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div class="hide">
+            <form class="form-horizontal">
+                <div class="control-group">
+                    <label class="control-label">{{ _('Command for under voltage/overheat detection') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: settings.plugins.pi_support.vcgencmd_throttle_check_command">
+                        <span class="help-block">{{ _('Defaults to <code>/usr/bin/vcgencmd get_throttled</code>. You usually shouldn\'t have to change this.') }}</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</form>
+
+

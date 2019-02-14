@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -18,7 +18,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True):
 
 	try:
 		return check["python_updater"].perform_update(target, check, target_version, log_cb=log_cb, online=online)
-	except:
+	except Exception:
 		import inspect
 		args, _, _, _ = inspect.getargspec(check["python_updater"].perform_update)
 		if "online" not in args:

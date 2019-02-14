@@ -1,10 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import logging
 import os
 from functools import partial
@@ -15,7 +16,7 @@ from past.builtins import basestring
 
 from octoprint.settings import settings
 from octoprint.util import atomic_write
-from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP
+from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP, READONLY_GROUP
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from flask_principal import Need, Permission
 
@@ -90,6 +91,7 @@ class GroupManager(object):
 		               "Admins",
 		               "Administrators",
 		               self.default_permissions_for_group(ADMIN_GROUP),
+		               [],
 		               changeable=False,
 		               removable=False,
 		               save=False)
@@ -97,6 +99,7 @@ class GroupManager(object):
 		               "Users",
 		               "All logged in users",
 		               self.default_permissions_for_group(USER_GROUP),
+		               [],
 		               default=True,
 		               removable=False,
 		               toggleable=False,
@@ -105,8 +108,17 @@ class GroupManager(object):
 		               "Guests",
 		               "Anyone who is not currently logged in",
 		               self.default_permissions_for_group(GUEST_GROUP),
+		               [],
 		               removable=False,
 		               toggleable=False,
+		               save=False),
+		self.add_group(READONLY_GROUP,
+		               "Read-only Access",
+		               "Group to gain read-only access",
+		               self.default_permissions_for_group(READONLY_GROUP),
+		               [],
+		               changeable=False,
+		               removable=False,
 		               save=False)
 
 	def register_listener(self, listener):
@@ -115,10 +127,11 @@ class GroupManager(object):
 	def unregister_listener(self, listener):
 		self._group_change_listeners.remove(listener)
 
-	def add_group(self, key, name, description, permissions, default=False, removable=True, changeable=True, toggleable=True, save=True, notify=True):
+	def add_group(self, key, name, description, permissions, subgroups,
+	              default=False, removable=True, changeable=True, toggleable=True, save=True, notify=True):
 		pass
 
-	def update_group(self, key, description=None, permissions=None, default=None, save=True, notify=True):
+	def update_group(self, key, description=None, permissions=None, subgroups=None, default=None, save=True, notify=True):
 		pass
 
 	def remove_group(self, key, save=True, notify=True):
@@ -128,11 +141,18 @@ class GroupManager(object):
 		return None
 
 	def _to_permissions(self, *permissions):
-		return filter(lambda x: x is not None,
-		              [Permissions.find(permission) for permission in permissions])
+		return list(filter(lambda x: x is not None,
+		                   [Permissions.find(permission) for permission in permissions]))
 
 	def _from_permissions(self, *permissions):
 		return [permission.key for permission in permissions]
+
+	def _from_groups(self, *groups):
+		return [group.key for group in groups]
+
+	def _to_groups(self, *groups):
+		return filter(lambda x: x is not None,
+		              [self._to_group(g) for g in groups])
 
 	def _to_group(self, group):
 		# noinspection PyCompatibility
@@ -150,7 +170,7 @@ class GroupManager(object):
 		for listener in self._group_change_listeners:
 			try:
 				getattr(listener, method)(group, *args, **kwargs)
-			except:
+			except Exception:
 				self._logger.exception("Error notifying listener {!r} via {}".format(listener, method))
 
 class GroupChangeListener(object):
@@ -162,6 +182,9 @@ class GroupChangeListener(object):
 		pass
 
 	def on_group_permissions_changed(self, group, added=None, removed=None):
+		pass
+
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
 		pass
 
 
@@ -183,45 +206,53 @@ class FilebasedGroupManager(GroupManager):
 	def _load(self):
 		if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
 			try:
-				with open(self._groupfile, "r") as f:
+				with io.open(self._groupfile, 'rt', encoding='utf-8') as f:
 					data = yaml.safe_load(f)
 
-					if not "groups" in data:
-						groups = data
-						data = dict(groups=groups)
+				if not "groups" in data:
+					groups = data
+					data = dict(groups=groups)
 
-					groups = data.get("groups", dict())
-					tracked_permissions = data.get("tracked", list())
+				groups = data.get("groups", dict())
+				tracked_permissions = data.get("tracked", list())
 
-					for key, attributes in groups.items():
-						if key in self._groups:
-							# group is already there (from the defaults most likely)
-							if not self._groups[key].is_changeable():
-								# group may not be changed -> bail
-								continue
+				for key, attributes in groups.items():
+					if key in self._groups:
+						# group is already there (from the defaults most likely)
+						if not self._groups[key].is_changeable():
+							# group may not be changed -> bail
+							continue
 
-							removable = self._groups[key].is_removable()
-							changeable = self._groups[key].is_changeable()
-							toggleable = self._groups[key].is_toggleable()
-						else:
-							removable = True
-							changeable = True
-							toggleable = True
+						removable = self._groups[key].is_removable()
+						changeable = self._groups[key].is_changeable()
+						toggleable = self._groups[key].is_toggleable()
+					else:
+						removable = True
+						changeable = True
+						toggleable = True
 
-						permissions = self._to_permissions(*attributes.get("permissions", []))
-						default_permissions = self.default_permissions_for_group(key)
-						for permission in default_permissions:
-							if not permission.key in tracked_permissions and not permission in permissions:
-								permissions.append(permission)
+					permissions = self._to_permissions(*attributes.get("permissions", []))
+					default_permissions = self.default_permissions_for_group(key)
+					for permission in default_permissions:
+						if not permission.key in tracked_permissions and not permission in permissions:
+							permissions.append(permission)
 
-						self._groups[key] = Group(key, attributes.get("name", ""),
-						                          description=attributes.get("description", ""),
-						                          permissions=permissions,
-						                          default=attributes.get("default", False),
-						                          removable=removable,
-						                          changeable=changeable,
-						                          toggleable=toggleable)
-			except:
+					subgroups = attributes.get("subgroups", [])
+
+					group = Group(key, attributes.get("name", ""),
+					              description=attributes.get("description", ""),
+					              permissions=permissions,
+					              subgroups=subgroups,
+					              default=attributes.get("default", False),
+					              removable=removable,
+					              changeable=changeable,
+					              toggleable=toggleable)
+					self._groups[key] = group
+
+				for group in self._groups.values():
+					group._subgroups = self._to_groups(*group._subgroups)
+
+			except Exception:
 				self._logger.exception("Error while loading groups from file {}".format(self._groupfile))
 
 	def _save(self, force=False):
@@ -235,15 +266,16 @@ class FilebasedGroupManager(GroupManager):
 				name=group._name,
 				description=group._description,
 				permissions=self._from_permissions(*group._permissions),
+				subgroups=self._from_groups(*group._subgroups),
 				default=group._default
 			)
 
 		data = dict(groups=groups,
 		            tracked=[x.key for x in Permissions.all()])
 
-		with atomic_write(self._groupfile, "wb", permissions=0o600, max_permissions=0o666) as f:
+		with atomic_write(self._groupfile, mode='wt', permissions=0o600, max_permissions=0o666) as f:
 			import yaml
-			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
+			yaml.safe_dump(data, f, default_flow_style=False, indent=4, allow_unicode=True)
 			self._dirty = False
 		self._load()
 
@@ -260,9 +292,9 @@ class FilebasedGroupManager(GroupManager):
 			return None
 		return self._groups.get(key)
 
-	def add_group(self, key, name, description, permissions, default=False, removable=True,
+	def add_group(self, key, name, description, permissions, subgroups, default=False, removable=True,
 	              changeable=True, toggleable=True, overwrite=False, notify=True, save=True):
-		if key in self._groups.keys() and not overwrite:
+		if key in self._groups and not overwrite:
 			raise GroupAlreadyExists(key)
 
 		if not permissions:
@@ -271,9 +303,13 @@ class FilebasedGroupManager(GroupManager):
 		permissions = self._to_permissions(*permissions)
 		assert(all(map(lambda p: isinstance(p, OctoPrintPermission), permissions)))
 
+		subgroups = self._to_groups(*subgroups)
+		assert(all(map(lambda g: isinstance(g, Group), subgroups)))
+
 		group = Group(key, name,
 		              description=description,
 		              permissions=permissions,
+		              subgroups=subgroups,
 		              default=default,
 		              changeable=changeable,
 		              removable=removable,
@@ -305,7 +341,7 @@ class FilebasedGroupManager(GroupManager):
 		if notify:
 			self._notify_listeners("removed", group)
 
-	def update_group(self, key, description=None, permissions=None, default=None, save=True, notify=True):
+	def update_group(self, key, description=None, permissions=None, subgroups=None, default=None, save=True, notify=True):
 		group = self._to_group(key)
 		if group is None:
 			raise UnknownGroup(key)
@@ -333,6 +369,21 @@ class FilebasedGroupManager(GroupManager):
 
 			notifications.append((("permissions_changed", group),
 			                      dict(added=added_permissions, removed=removed_permissions)))
+
+		if subgroups is not None:
+			subgroups = self._to_groups(*subgroups)
+			assert(all(map(lambda g: isinstance(g, Group), subgroups)))
+
+			removed_subgroups = list(set(group._subgroups) - set(subgroups))
+			added_subgroups = list(set(subgroups) - set(group._subgroups))
+
+			if removed_subgroups:
+				self._dirty = group.remove_subgroups_from_group(removed_subgroups)
+			if added_subgroups:
+				self._dirty = group.add_subgroups_to_group(added_subgroups)
+
+			notifications.append((("subgroups_changed", group),
+			                      dict(added=added_subgroups, removed=removed_subgroups)))
 
 		if default is not None:
 			group.change_default(default)
@@ -368,11 +419,12 @@ class GroupCantBeChanged(Exception):
 
 
 class Group(object):
-	def __init__(self, key, name, description="", permissions=None, default=False, removable=True, changeable=True, toggleable=True):
+	def __init__(self, key, name, description="", permissions=None, subgroups=None, default=False, removable=True, changeable=True, toggleable=True):
 		self._key = key
 		self._name = name
 		self._description = description
 		self._permissions = permissions
+		self._subgroups = subgroups
 		self._default = default
 		self._removable = removable
 		self._changeable = changeable
@@ -384,7 +436,8 @@ class Group(object):
 			key=self.key,
 			name=self.get_name(),
 			description=self._description,
-			permissions=map(lambda p: p.key, self._permissions),
+			permissions=list(map(lambda p: p.key, self._permissions)),
+			subgroups=list(map(lambda g: g.key, self._subgroups)),
 			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
 			default=self._default,
 			removable=self._removable,
@@ -452,6 +505,45 @@ class Group(object):
 
 		return dirty
 
+	def add_subgroups_to_group(self, subgroups):
+		"""Adds a list of subgroups to a group"""
+		if not self.is_changeable():
+			raise GroupCantBeChanged(self.key)
+
+		# Make sure the subgroups variable is of type list
+		if not isinstance(subgroups, list):
+			subgroups = [subgroups]
+
+		assert(all(map(lambda g: isinstance(g, Group), subgroups)))
+
+		dirty = False
+		for group in subgroups:
+			if group.is_toggleable() and group not in self._subgroups:
+				self._subgroups.append(group)
+				dirty = True
+
+		return dirty
+
+	def remove_subgroups_from_group(self, subgroups):
+		"""Removes a list of subgroups from a group"""
+		"""Adds a list of subgroups to a group"""
+		if not self.is_changeable():
+			raise GroupCantBeChanged(self.key)
+
+		# Make sure the subgroups variable is of type list
+		if not isinstance(subgroups, list):
+			subgroups = [subgroups]
+
+		assert (all(map(lambda g: isinstance(g, Group), subgroups)))
+
+		dirty = False
+		for group in subgroups:
+			if group.is_toggleable() and group in self._subgroups:
+				self._subgroups.remove(group)
+				dirty = True
+
+		return dirty
+
 	def change_default(self, default):
 		"""Changes the default flag of a Group"""
 		if not self.is_changeable():
@@ -468,7 +560,11 @@ class Group(object):
 		if Permissions.ADMIN in self._permissions:
 			return Permissions.all()
 
-		return filter(lambda p: p is not None, self._permissions)
+		return list(filter(lambda p: p is not None, self._permissions))
+
+	@property
+	def subgroups(self):
+		return filter(lambda g: g is not None, self._subgroups)
 
 	@property
 	def needs(self):
@@ -476,6 +572,8 @@ class Group(object):
 		needs.add(GroupNeed(self.key))
 		for p in self.permissions:
 			needs = needs.union(p.needs)
+		for g in self.subgroups:
+			needs = needs.union(g.needs)
 
 		return needs
 
@@ -501,6 +599,3 @@ class Group(object):
 
 	def __eq__(self, other):
 		return isinstance(other, Group) and other.key == self.key
-
-
-

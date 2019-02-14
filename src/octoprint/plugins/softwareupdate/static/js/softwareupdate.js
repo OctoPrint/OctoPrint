@@ -1,88 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintSoftwareUpdateClient = function(base) {
-        this.base = base;
-
-        var url = this.base.getBlueprintUrl("softwareupdate");
-        this.checkUrl = url + "check";
-        this.updateUrl = url + "update";
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            entries = params.entries;
-            force = params.force;
-            opts = params.opts;
-        }
-
-        entries = entries || [];
-        if (typeof entries == "string") {
-            entries = [entries];
-        }
-
-        var data = {};
-        if (!!force) {
-            data.force = true;
-        }
-        if (entries && entries.length) {
-            data.check = entries.join(",");
-        }
-        return this.base.getWithQuery(this.checkUrl, data, opts);
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            force = params.force;
-            opts = params.opts;
-        }
-
-        return this.checkEntries({entries: [], force: force, opts: opts});
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.update = function(targets, force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            targets = params.targets;
-            force = params.force;
-            opts = params.opts;
-        }
-
-        targets = targets || [];
-        if (typeof targets === "string") {
-            targets = [targets];
-        }
-
-        var data = {
-            targets: targets,
-            force: !!force
-        };
-        return this.base.postJson(this.updateUrl, data, opts);
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            force = params.force;
-            opts = params.opts;
-        }
-
-        var data = {
-            force: !!force
-        };
-        return this.base.postJson(this.updateUrl, data, opts);
-    };
-
-    OctoPrintClient.registerPluginComponent("softwareupdate", OctoPrintSoftwareUpdateClient);
-    return OctoPrintSoftwareUpdateClient;
-});
-
 $(function() {
     function SoftwareUpdateViewModel(parameters) {
         var self = this;
@@ -117,6 +32,9 @@ $(function() {
                 && !self.octoprintReleasedVersion();
         });
 
+        self.environmentSupported = ko.observable(true);
+        self.environmentVersions = ko.observableArray([]);
+
         self.cacheTimestamp = ko.observable();
         self.cacheTimestampText = ko.pureComputed(function() {
             return formatDate(self.cacheTimestamp());
@@ -131,6 +49,10 @@ $(function() {
         self.error_checkoutFolder = ko.pureComputed(function() {
             return self.config_checkType() === "git_commit"
                 && (!self.config_checkoutFolder() || self.config_checkoutFolder().trim() === '');
+        });
+
+        self.enableUpdate = ko.pureComputed(function() {
+            return !self.updateInProgress && self.environmentSupported();
         });
 
         self.enable_configSave = ko.pureComputed(function() {
@@ -301,6 +223,9 @@ $(function() {
             var octoprint = data.information["octoprint"];
             self.octoprintReleasedVersion(!octoprint || octoprint.released_version);
 
+            self.environmentSupported(data.environment.supported);
+            self.environmentVersions(data.environment.versions);
+
             if (data.status === "inProgress") {
                 self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
                 return;
@@ -315,7 +240,7 @@ $(function() {
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='fa fa-li " + (update_info.updatePossible ? "fa-check" : "fa-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -323,7 +248,11 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                if (!self.environmentSupported()) {
+                    text += "<p><small>" + gettext("This version of the Python environment is not supported for direct updates.") + "</small></p>";
+                } else {
+                    text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                }
 
                 if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
@@ -400,8 +329,6 @@ $(function() {
         };
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
-
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
@@ -582,7 +509,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK)) {
                 return;
             }
 

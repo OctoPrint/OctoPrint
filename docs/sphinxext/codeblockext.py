@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'The MIT License <http://opensource.org/licenses/MIT>'
@@ -84,7 +84,7 @@ class CodeBlockExt(CodeBlock):
 				return node
 
 		# replace all created literal_blocks with literal_block_ext instances
-		return map(find_and_wrap_literal_block, code_block)
+		return list(map(find_and_wrap_literal_block, code_block))
 
 	def _wrap_literal_block(self, node):
 		literal = literal_block_ext.from_literal_block(node)
@@ -160,10 +160,10 @@ class PygmentsBridgeExt(object):
 			# for py3, recognize interactive sessions, but do not try parsing...
 			lexer = sphinx.highlighting.lexers['pycon3']
 		elif lang == 'guess':
-			try:
+#			try:
 				lexer = sphinx.highlighting.guess_lexer(source)
-			except Exception:
-				lexer = sphinx.highlighting.lexers['none']
+#			except Exception:
+#				lexer = sphinx.highlighting.lexers['none']
 		else:
 			if lang in sphinx.highlighting.lexers:
 				lexer = sphinx.highlighting.lexers[lang]

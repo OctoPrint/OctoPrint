@@ -1,0 +1,4 @@
+<a href="https://faq.octoprint.org/pi-issues" target="_blank" rel="noopener noreferrer" data-bind="visible: currentIssue() || pastIssue(), popover: { placement: 'bottom', title: '{{ _('What do the symbols mean?') }}', html: true, content: popoverContent, trigger: 'hover' }" style="display: none">
+    <span data-bind="visible: currentUndervoltage() || pastUndervoltage(), css: {'pi_support_state_pulsate': currentUndervoltage}" title="{{ _('Undervoltage') }}"><i class="fa fa-bolt"></i><i class="fa fa-exclamation"></i></span>
+    <span data-bind="visible: currentOverheat() || pastOverheat(), css: {'pi_support_state_pulsate': currentOverheat}" title="{{ _('Overheat') }}"><i class="fa fa-thermometer-full"></i><i class="fa fa-exclamation"></i></span>
+</a>

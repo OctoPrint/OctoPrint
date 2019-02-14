@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -20,7 +20,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 
 
-class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
+class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile, analysis")):
 	"""
 	A :class:`QueueEntry` for processing through the :class:`AnalysisQueue`. Wraps the entry's properties necessary
 	for processing.
@@ -33,6 +33,7 @@ class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, locatio
 	    location (str): Location the file is located on.
 	    absolute_path (str): Absolute path on disk through which to access the file.
 	    printer_profile (PrinterProfile): :class:`PrinterProfile` which to use for analysis.
+	    analysis (dict): :class:`GcodeAnalysisQueue` results from prior analysis, or ``None`` if there is none.
 	"""
 
 	def __str__(self):
@@ -94,16 +95,16 @@ class AnalysisQueue(object):
 		self._queues[entry.type].dequeue(entry.location, entry.path)
 
 	def dequeue_folder(self, destination, path):
-		for queue in self._queues.values():
-			queue.dequeue_folder(destination, path)
+		for q in self._queues.values():
+			q.dequeue_folder(destination, path)
 
 	def pause(self):
-		for queue in self._queues.values():
-			queue.pause()
+		for q in self._queues.values():
+			q.pause()
 
 	def resume(self):
-		for queue in self._queues.values():
-			queue.resume()
+		for q in self._queues.values():
+			q.resume()
 
 	def _analysis_finished(self, entry, result):
 		for callback in self._callbacks:
@@ -298,7 +299,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	   - * **Key**
 	     * **Description**
 	   - * ``estimatedPrintTime``
-	     * Estimated time the file take to print, in minutes
+	     * Estimated time the file take to print, in seconds
 	   - * ``filament``
 	     * Substructure describing estimated filament usage. Keys are ``tool0`` for the first extruder, ``tool1`` for
 	       the second and so on. For each tool extruded length and volume (based on diameter) are provided.
@@ -341,6 +342,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 		import sys
 		import yaml
 
+		if self._current.analysis:
+			return self._current.analysis
 		try:
 			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority \
 				else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
@@ -364,7 +367,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
 
 			self._aborted = False
-			p = sarge.run(command, async=True, stdout=sarge.Capture())
+			p = sarge.run(command, async_=True, stdout=sarge.Capture())
 
 			while len(p.commands) == 0:
 				# somewhat ugly... we can't use wait_events because
@@ -379,7 +382,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
 			if not p.commands[0].process:
 				# the process might have been set to None in case of any exception
-				raise RuntimeError(u"Error while trying to run command {}".format(" ".join(command)))
+				raise RuntimeError("Error while trying to run command {}".format(" ".join(command)))
 
 			try:
 				# let's wait for stuff to finish

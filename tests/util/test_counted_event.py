@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -86,6 +86,24 @@ class CountedEventTest(unittest.TestCase):
 		event.clear()
 
 		self.assertEqual(0, event._counter)
+		self.assertFalse(event._event.is_set())
+
+	def test_clear_more_than_available_without_minimum(self):
+		"""The counter may sink below zero if initialized without a minimum."""
+
+		event = CountedEvent(1, minimum=None)
+
+		self.assertEqual(1, event._counter)
+		self.assertTrue(event._event.is_set())
+
+		event.clear()
+
+		self.assertEqual(0, event._counter)
+		self.assertFalse(event._event.is_set())
+
+		event.clear()
+
+		self.assertEqual(-1, event._counter)
 		self.assertFalse(event._event.is_set())
 
 	def test_blocked(self):

@@ -1,11 +1,8 @@
-# coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, \
-	division
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
+__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.protocol.reprap.flavors import GenericFlavor
 
@@ -54,8 +51,8 @@ class RepetierFlavor(GenericFlavor):
 		if "targetextr" in lower_line:
 			match = cls.regex_tempextr.match(lower_line)
 			if match is not None:
-				tool_num = int(match.group(b"toolnum"))
-				target = float(match.group(b"target"))
+				tool_num = int(match.group("toolnum"))
+				target = float(match.group("target"))
 				tool = "T{}".format(tool_num)
 				temperatures = dict()
 				temperatures[tool] = (None, target)
@@ -65,7 +62,7 @@ class RepetierFlavor(GenericFlavor):
 		elif "targetbed" in lower_line:
 			match = cls.regex_tempbed.match(lower_line)
 			if match is not None:
-				target = float(match.group(b"target"))
+				target = float(match.group("target"))
 				temperatures = dict(bed=(None, target))
 				return dict(max_tool_num=flags.get("current_tool", 0),
 				            temperatures=temperatures,

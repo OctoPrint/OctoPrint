@@ -229,7 +229,11 @@ $(function() {
 
         self.onEventSettingsUpdated = function() {
             self.requestData();
-        }
+        };
+
+        self.onEventConnected = function() {
+            self.requestData();
+        };
 
         self.onStartup = function() {
             var connectionTab = $("#connection");

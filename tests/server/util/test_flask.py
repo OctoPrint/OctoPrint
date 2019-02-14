@@ -1,9 +1,9 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Unit tests for ``octoprint.server.util.flask``.
 """
-
-from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -487,15 +487,15 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 
 	def test_header_config_ok(self):
 		result = ReverseProxiedEnvironment.to_header_candidates(["prefix-header1", "prefix-header2"])
-		self.assertEquals(result, ["HTTP_PREFIX_HEADER1", "HTTP_PREFIX_HEADER2"])
+		self.assertSetEqual(set(result), set(["HTTP_PREFIX_HEADER1", "HTTP_PREFIX_HEADER2"]))
 
 	def test_header_config_string(self):
 		result = ReverseProxiedEnvironment.to_header_candidates("prefix-header")
-		self.assertEquals(result, ["HTTP_PREFIX_HEADER"])
+		self.assertSetEqual(set(result), set(["HTTP_PREFIX_HEADER"]))
 
 	def test_header_config_none(self):
 		result = ReverseProxiedEnvironment.to_header_candidates(None)
-		self.assertEquals(result, [])
+		self.assertEqual(result, [])
 
 ##~~
 
@@ -521,22 +521,22 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 
 	def test_server_name(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals("localhost", request.server_name)
+		self.assertEqual("localhost", request.server_name)
 
 	def test_server_port(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals("5000", request.server_port)
+		self.assertEqual("5000", request.server_port)
 
 	def test_cookie_suffix(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals("_P5000", request.cookie_suffix)
-	
+		self.assertEqual("_P5000", request.cookie_suffix)
+
 	def test_cookie_suffix_with_root(self):
 		script_root_environ = dict(standard_environ)
 		script_root_environ["SCRIPT_NAME"] = "/path/to/octoprint"
-		
+
 		request = OctoPrintFlaskRequest(script_root_environ)
-		self.assertEquals("_P5000_R|path|to|octoprint", request.cookie_suffix)
+		self.assertEqual("_P5000_R|path|to|octoprint", request.cookie_suffix)
 
 	def test_cookies(self):
 		environ = dict(standard_environ)
@@ -549,10 +549,10 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 		request = OctoPrintFlaskRequest(environ)
 
 		cookies = request.cookies
-		self.assertDictEqual({"postfixed": u"postfixed_value",
-		                      "postfixed_wrong_P5001": u"postfixed_wrong_value",
-		                      "unpostfixed": u"unpostfixed_value",
-		                      "both": u"both_postfixed_value"},
+		self.assertDictEqual({"postfixed": "postfixed_value",
+		                      "postfixed_wrong_P5001": "postfixed_wrong_value",
+		                      "unpostfixed": "unpostfixed_value",
+		                      "both": "both_postfixed_value"},
 		                     cookies)
 
 ##~~

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
     sockjs.tornado.periodic
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +71,7 @@ class Callback(object):
             next_call = self.callback()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             LOG.error("Error in periodic callback", exc_info=True)
 
         if self._running:
