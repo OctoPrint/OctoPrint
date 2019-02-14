@@ -86,7 +86,7 @@ $(function() {
             return formatDuration(self.printTime());
         });
         var printTimeLeftStringHlpr = function (fmt) {
-            if (self.printTimeLeft() == undefined) {
+            if (self.printTimeLeft() === undefined) {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
                 } else {
