@@ -56,20 +56,20 @@ $(function() {
         self.titlePrintButton = ko.observable(self.TITLE_PRINT_BUTTON_UNPAUSED);
         self.titlePauseButton = ko.observable(self.TITLE_PAUSE_BUTTON_UNPAUSED);
 
-		var estimatedPrintTimeStringHlpr = function (fmt) {
+        var estimatedPrintTimeStringHlpr = function (fmt) {
             if (self.lastPrintTime())
                 return fmt(self.lastPrintTime());
             if (self.estimatedPrintTime())
                 return fmt(self.estimatedPrintTime());
             return "-";
-		}
+        }
         self.estimatedPrintTimeString = ko.pureComputed(function() {
-			return estimatedPrintTimeStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
+            return estimatedPrintTimeStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
         self.estimatedPrintTimeExactString = ko.pureComputed(function() {
-			return estimatedPrintTimeStringHlpr(formatDuration);
+            return estimatedPrintTimeStringHlpr(formatDuration);
         });
-		self.byteString = ko.pureComputed(function() {
+        self.byteString = ko.pureComputed(function() {
             if (!self.filesize())
                 return "-";
             var filepos = self.filepos() ? formatSize(self.filepos()) : "-";
@@ -85,7 +85,7 @@ $(function() {
                 return "-";
             return formatDuration(self.printTime());
         });
-		var printTimeLeftStringHlpr = function (fmt) {
+        var printTimeLeftStringHlpr = function (fmt) {
             if (self.printTimeLeft() == undefined) {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
@@ -95,12 +95,12 @@ $(function() {
             } else {
                 return fmt(self.printTimeLeft());
             }
-		}
+        }
         self.printTimeLeftString = ko.pureComputed(function() {
-			return printTimeLeftStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
+            return printTimeLeftStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
         self.printTimeLeftExactString = ko.pureComputed(function() {
-			return printTimeLeftStringHlpr(formatDuration);
+            return printTimeLeftStringHlpr(formatDuration);
         });
         self.printTimeLeftOriginString = ko.pureComputed(function() {
             var value = self.printTimeLeftOrigin();
