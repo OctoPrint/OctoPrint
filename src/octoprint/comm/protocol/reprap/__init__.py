@@ -81,6 +81,7 @@ GCODE_TO_EVENT = {
 CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
+CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
 
 
 class FallbackValue(object):
@@ -229,6 +230,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			firmware_name=None,
 			firmware_info=dict(),
 			firmware_capabilities=dict(),
+			firmware_capability_support=dict(),
 
 			# busy protocol
 			busy_detected=False
@@ -1268,6 +1270,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			elif cap == CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
 				self._logger.info("Firmware states that it supports sd status autoreporting")
 				self._set_autoreport_sdstatus_interval()
+			elif cap == CAPABILITY_EMERGENCY_PARSER and enabled:
+				self._logger.info("Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first")
 
 	def _on_message_sd_init_ok(self):
 		self._internal_flags["sd_available"] = True
@@ -1650,25 +1654,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
-						if not self._transport.message_integrity:
-							# transport does not have message integrity, let's see if we'll send a checksum
-							command_requiring_checksum = isinstance(command, GcodeCommand) and command.code in self.flavor.checksum_requiring_commands
-							command_allowing_checksum = isinstance(command, GcodeCommand) or self.flavor.unknown_with_checksum
-							checksum_enabled = not self.flavor.never_send_checksum and (self.state == ProtocolState.PROCESSING # TODO does job need checksum?
-							                                                            or self.flavor.always_send_checksum
-							                                                            or not self._internal_flags["firmware_identified"])
-
-							send_with_checksum = command_requiring_checksum or (command_allowing_checksum and checksum_enabled)
-
-						else:
-							# transport has message integrity, no checksum
-							send_with_checksum = False
-
-						command_to_send = command.line.encode("ascii", errors="replace")
-						if send_with_checksum:
-							self._do_increment_and_send_with_checksum(to_str(command_to_send))
-						else:
-							self._do_send_without_checksum(to_str(command_to_send))
+						self._do_send(command)
 
 					# trigger "sent" phase and use up one "ok"
 					if on_sent is not None and callable(on_sent):
@@ -1805,6 +1791,56 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._logger.exception("Error in handler for phase {} and command {}".format(phase, command.atcommand))
 
 	##~~ actual sending via serial
+
+	def _needs_checksum(self, command):
+		if not self._transport.message_integrity:
+			# transport does not have message integrity, let's see if we'll send a checksum
+			command_requiring_checksum = isinstance(command, GcodeCommand) and command.code in self.flavor.checksum_requiring_commands
+			command_allowing_checksum = isinstance(command, GcodeCommand) or self.flavor.unknown_with_checksum
+			return command_requiring_checksum or (command_allowing_checksum and self._checksum_enabled)
+
+		else:
+			# transport has message integrity, no checksum
+			return False
+
+	@property
+	def _checksum_enabled(self):
+		if not self._transport.message_integrity:
+			return not self.flavor.never_send_checksum and (self.state == ProtocolState.PROCESSING  # TODO does job need checksum?
+			                                                or self.flavor.always_send_checksum
+			                                                or not self._internal_flags["firmware_identified"])
+		else:
+			# transport has message integrity, no checksum
+			return False
+
+	def _emergency_force_send(self, command, message, *args, **kwargs):
+		"""
+		Args:
+			command (Command): the command to send
+			message (str): the message to log
+		"""
+		# only jump the queue with our command if the EMERGENCY_PARSER capability is available
+		if not self._internal_flags["firmware_capability_support"].get(CAPABILITY_EMERGENCY_PARSER, False) \
+			or not self._internal_flags["firmware_capabilities"].get(CAPABILITY_EMERGENCY_PARSER, False):
+			return
+
+		self._logger.info(message)
+		self._do_send(command)
+
+		# use up an ok since we will get one back for this command and don't want to get out of sync
+		self._clear_to_send.clear()
+
+		return None,
+
+	def _do_send(self, command):
+		"""
+		Args:
+			command (Command): the command to send
+		"""
+		if self._needs_checksum(command):
+			self._do_increment_and_send_with_checksum(command.bytes)
+		else:
+			self._do_send_without_checksum(command.bytes)
 
 	def _do_increment_and_send_with_checksum(self, line):
 		"""
@@ -1999,6 +2035,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
+
+	def _gcode_M108_queuing(self, command):
+		return self._emergency_force_send(command, "Force-sending M108 to the printer")
+
+	def _gcode_M410_queuing(self, command):
+		return self._emergency_force_send(command, "Force-sending M410 to the printer")
+
+	# TODO
+	#def _gcode_M114_queued(self, *args, **kwargs):
+	#	self._reset_position_timers()
+	#_gcode_M114_sent = _gcode_M114_queued
 
 	def _gcode_G4_sent(self, command):
 		timeout = 0
