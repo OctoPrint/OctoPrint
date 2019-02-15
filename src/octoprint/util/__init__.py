@@ -1598,7 +1598,7 @@ class dictview(collections.Mapping):
 	"""
 	>>> my_dict = dict(a="a", b="b", flag=True, value=23)
 	>>> view = dictview(my_dict)
-	>>> view["a"]
+	>>> to_native_str(view["a"])
 	'a'
 	>>> view["flag"]
 	True
@@ -1607,7 +1607,7 @@ class dictview(collections.Mapping):
 	    ...
 	KeyError: 'foo'
 	>>> my_dict["foo"] = "bar"
-	>>> view["foo"]
+	>>> to_native_str(view["foo"])
 	'bar'
 	>>> view["foo"] = "fnord"
 	Traceback (most recent call last):
@@ -1645,7 +1645,7 @@ class protectedkeydict(collections.MutableMapping):
 	"""
 	>>> my_dict = dict(a="a")
 	>>> protected = protectedkeydict(my_dict)
-	>>> protected["a"]
+	>>> to_native_str(protected["a"])
 	'a'
 	>>> protected["a"] = "b"
 	Traceback (most recent call last):
@@ -1664,7 +1664,7 @@ class protectedkeydict(collections.MutableMapping):
 		self.data = data
 		self.copy = copy
 		self.deepcopy = deepcopy
-		self.protected_keys = data.keys()
+		self.protected_keys = list(data.keys())
 
 	def __len__(self):
 		return len(self.data)

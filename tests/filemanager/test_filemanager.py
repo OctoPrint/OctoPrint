@@ -12,6 +12,7 @@ import mock
 
 import octoprint.filemanager
 import octoprint.filemanager.util
+import octoprint.filemanager.storage.local
 
 import octoprint.settings
 
@@ -138,7 +139,7 @@ class FileManagerTest(unittest.TestCase):
 
 		self.printer_profile_manager = mock.MagicMock(spec=octoprint.printer.profile.PrinterProfileManager)
 
-		self.local_storage = mock.MagicMock(spec=octoprint.filemanager.storage.LocalFileStorage)
+		self.local_storage = mock.MagicMock(spec=octoprint.filemanager.storage.local.LocalFileStorage)
 		self.local_storage.analysis_backlog = iter([])
 
 		self.storage_managers = dict()

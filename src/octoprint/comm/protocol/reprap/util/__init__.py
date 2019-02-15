@@ -108,16 +108,8 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 	    [(u'M110', None, u'M110', None, set([u'tag1', u'tag2', u'tag3'])), (u'M105', u'temperature_poll', u'M105', None, set([u'tag1', u'tag2', u'tag3'])), (u'M117 Foobar', None, u'M117', None, set([u'tag1', u'tag2', u'tag3']))]
 
 	Arguments:
-	    command (unicode or Command or None): The command for which the handler result was
+	    command (Command): The command for which the handler result was
 	        generated
-	    command_type (unicode or None): The command type for which the handler
-	        result was generated
-	    gcode (unicode or None): The GCODE for which the handler result was
-	        generated
-	    subcode (unicode or None): The GCODE subcode for which the handler result
-	        was generated
-	    tags (set of unicode or None): The tags associated with the GCODE for which
-	        the handler result was generated
 	    handler_results: The handler result(s) to normalized. Can be either
 	        a single result entry or a list of result entries.
 	    tags_to_add (set of unicode or None): List of tags to add to expanded result
@@ -125,8 +117,7 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 
 	Returns:
 	    (list) - A list of normalized handler result entries, which are
-	        5-tuples consisting of ``command``, ``command_type``, ``gcode``
-	        ``subcode`` and ``tags``, the latter three of which may be ``None``.
+	        ``Command`` instances
 	"""
 
 	original = command

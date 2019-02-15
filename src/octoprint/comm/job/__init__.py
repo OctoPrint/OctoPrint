@@ -15,7 +15,7 @@ from octoprint.util.listener import ListenerAware
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from monotonic import monotonic
+from octoprint.util import monotonic_time
 
 
 class LastResult(object):
@@ -68,7 +68,7 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	@property
 	def elapsed(self):
-		return monotonic() - self._start if self._start is not None else None
+		return monotonic_time() - self._start if self._start is not None else None
 
 	@property
 	def clean_elapsed(self):
@@ -102,7 +102,7 @@ class Printjob(ProtocolListener, ListenerAware):
 
 	def process(self, protocol, position=0, tags=None):
 		self._last_result = LastResult()
-		self._start = monotonic()
+		self._start = monotonic_time()
 		self._protocol = protocol
 		self._protocol.register_listener(self)
 
