@@ -15,7 +15,7 @@ python:
 install:
 - pip install -e .[develop]
 script:
-- test -n "$RUN_FLAKE8" || nosetests --with-doctest
+- test -n "$RUN_FLAKE8" || pytest src tests --doctest-modules
 - test -z "$RUN_FLAKE8" || flake8 --ignore=D,E,W,F401 src/ tests setup.py
 sudo: false
 git:
