@@ -37,13 +37,14 @@ class GcodeCommand(Command):
 		match = GcodeCommand.command_regex.match(line)
 
 		if match is None:
-			raise ValueError("{!r} is not a Gcode line".format(line))
+			# not a gcode command
+			return Command.from_line(line, **kwargs)
 
-		if match.group("GM"):
-			code = match.group("GM")
+		if match.group(b"GM"):
+			code = match.group(b"GM")
 
-			if match.group("subcode"):
-				args["subcode"] = int(match.group("subcode"))
+			if match.group(b"subcode"):
+				args["subcode"] = int(match.group(b"subcode"))
 
 			if match.group(0) != line:
 				rest = line[len(match.group(0)):]
@@ -53,9 +54,9 @@ class GcodeCommand(Command):
 					if not matched_param:
 						break
 
-					key = matched_param.group("key").lower()
-					if matched_param.group("value"):
-						value = matched_param.group("value")
+					key = matched_param.group(b"key").lower()
+					if matched_param.group(b"value"):
+						value = matched_param.group(b"value")
 						if "." in value:
 							value = float(value)
 						else:
@@ -69,13 +70,13 @@ class GcodeCommand(Command):
 				if rest:
 					args["param"] = rest
 
-		elif match.group("T"):
+		elif match.group(b"T"):
 			code = "T"
-			args["tool"] = int(match.group("tool"))
+			args["tool"] = int(match.group(b"tool"))
 
-		elif match.group("F"):
+		elif match.group(b"F"):
 			code = "F"
-			args["feedrate"] = int(match.group("feedrate"))
+			args["feedrate"] = int(match.group(b"feedrate"))
 
 		return GcodeCommand(code, **args)
 
@@ -125,7 +126,7 @@ class GcodeCommand(Command):
 
 	def _to_repr(self):
 		args = [k + "=" + repr(getattr(self, k)) for k in self.possible_params if getattr(self, k, None) is not None]
-		return "GcodeCommand({!r},{},type={!r},tags={!r})".format(self.code,
-		                                                          ",".join(args),
+		return "GcodeCommand({!r}{},type={!r},tags={!r})".format(self.code,
+		                                                          "," + ",".join(args) if args else "",
 		                                                          self.type,
 		                                                          self.tags)

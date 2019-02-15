@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.comm.protocol.reprap.commands import Command
+from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.util import PrependableQueue, TypeAlreadyInQueue, CountedEvent
 
 # noinspection PyCompatibility
@@ -80,32 +80,31 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 	be empty in which case the command is to be suppressed.
 
 	Examples:
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, None)
-	    [(u'M105', None, u'M105', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, "M110")
-	    [(u'M110', None, u'M110', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, ["M110"])
-	    [(u'M110', None, u'M110', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, ["M110", "M117 Foobar"])
-	    [(u'M110', None, u'M110', None, None), (u'M117 Foobar', None, u'M117', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), "M117 Foobar"])
-	    [(u'M110', None, u'M110', None, None), (u'M117 Foobar', None, u'M117', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, [("M110", "lineno_reset"), "M117 Foobar"])
-	    [(u'M110', u'lineno_reset', u'M110', None, None), (u'M117 Foobar', None, u'M117', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, [])
+	    >>> from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), None) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M105',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), GcodeCommand("M110")) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110"]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110", "lineno_reset"), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type='lineno_reset',tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), []) # doctest: +ALLOW_UNICODE
 	    []
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, ["M110", None])
-	    [(u'M110', None, u'M110', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), (None, "ignored")])
-	    [(u'M110', None, u'M110', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")])
-	    [(u'M110', None, u'M110', None, None), (u'M117 Foobar', u'display_message', u'M117', None, None), (u'M110', u'lineno_reset', u'M110', None, None)]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M117 Foobar"])
-	    [(u'M110', None, u'M110', None, set([u'tag1', u'tag2'])), (u'M117 Foobar', None, u'M117', None, set([u'tag1', u'tag2']))]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M105", "M117 Foobar"], tags_to_add={"tag3"})
-	    [(u'M110', None, u'M110', None, set([u'tag1', u'tag2', u'tag3'])), (u'M105', None, u'M105', None, set([u'tag1', u'tag2'])), (u'M117 Foobar', None, u'M117', None, set([u'tag1', u'tag2', u'tag3']))]
-	    >>> normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", ("M105", "temperature_poll"), "M117 Foobar"], tags_to_add={"tag3"})
-	    [(u'M110', None, u'M110', None, set([u'tag1', u'tag2', u'tag3'])), (u'M105', u'temperature_poll', u'M105', None, set([u'tag1', u'tag2', u'tag3'])), (u'M117 Foobar', None, u'M117', None, set([u'tag1', u'tag2', u'tag3']))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110", None]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), (None, "ignored")]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type='display_message',tags=set([])), GcodeCommand('M110',original='M110',type='lineno_reset',tags=set([]))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105",tags={"tag1", "tag2"}), ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set(['tag1', 'tag2'])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set(['tag1', 'tag2']))]
+	    >>> normalize_command_handler_result(GcodeCommand("M105",tags={"tag1", "tag2"}), ["M110", "M117 Foobar"], tags_to_add={"tag3"}) # doctest: +ALLOW_UNICODE
+	    [GcodeCommand('M110',original='M110',type=None,tags=set(['tag1', 'tag2', 'tag3'])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set(['tag1', 'tag2', 'tag3']))]
 
 	Arguments:
 	    command (Command): The command for which the handler result was
@@ -152,8 +151,9 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 			# entry is just a string, replace command with it
 			if handler_result != original.line:
 				# command changed, swap it
-				command = Command.from_line(handler_result, type=original.type,
-				                            tags=expand_tags(original.tags, tags_to_add))
+				command = to_command(handler_result,
+				                     type=original.type,
+				                     tags=expand_tags(original.tags, tags_to_add))
 			result.append(command)
 
 		elif isinstance(handler_result, Command):
@@ -191,10 +191,10 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 				# command or command_type changed, tags need to be rewritten
 				command_tags = expand_tags(command_tags, tags_to_add)
 
-			result.append(Command.from_line(command_line, type=command_type, tags=command_tags))
+			result.append(to_command(command_line, type=command_type, tags=command_tags))
 
 		# reset to original
-		command, command_type, gcode, subcode, tags = original
+		command = original
 
 	return result
 

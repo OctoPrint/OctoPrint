@@ -1598,11 +1598,11 @@ class dictview(collections.Mapping):
 	"""
 	>>> my_dict = dict(a="a", b="b", flag=True, value=23)
 	>>> view = dictview(my_dict)
-	>>> to_native_str(view["a"])
+	>>> view["a"] # doctest: +ALLOW_UNICODE
 	'a'
 	>>> view["flag"]
 	True
-	>>> view["foo"]
+	>>> view["foo"] # doctest: +ALLOW_UNICODE
 	Traceback (most recent call last):
 	    ...
 	KeyError: 'foo'
@@ -1647,13 +1647,13 @@ class protectedkeydict(collections.MutableMapping):
 	>>> protected = protectedkeydict(my_dict)
 	>>> to_native_str(protected["a"])
 	'a'
-	>>> protected["a"] = "b"
+	>>> protected["a"] = "b" # doctest: +ALLOW_UNICODE
 	Traceback (most recent call last):
 	    ...
 	KeyError: "Cannot set protected key 'a'"
 	>>> protected["b"] = "b"
 	>>> protected["b"] = "b2"
-	>>> del protected["a"]
+	>>> del protected["a"] # doctest: +ALLOW_UNICODE
 	Traceback (most recent call last):
 	    ...
 	KeyError: "Cannot delete protected key 'a'"
