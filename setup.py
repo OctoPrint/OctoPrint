@@ -79,7 +79,7 @@ EXTRA_REQUIRES = dict(
 	develop=[
 		# Testing dependencies
 		"mock>=2.0.0,<3",
-		"nose>=1.3.7,<1.4",
+		"pytest>=4.2.1,<5.0",
 		"ddt",
 
 		# linter
