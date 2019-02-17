@@ -568,7 +568,9 @@ $(function() {
                         output.push(gettext("Filament") + ": " + layer.filament[0].toFixed(2) + "mm");
                     } else {
                         for (var i = 0; i < layer.filament.length; i++) {
-                            output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                            if (layer.filament[i] !== undefined) {
+                                output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                            }
                         }
                     }
                 }
