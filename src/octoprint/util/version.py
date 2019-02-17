@@ -121,6 +121,10 @@ def get_comparable_version(version_string, base=False):
 	if "-" in version_string:
 		version_string = version_string[:version_string.find("-")]
 
+	# Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
+	if version_string.endswith("+"):
+		version_string = version_string[:-1]
+
 	version = pkg_resources.parse_version(version_string)
 
 	# A leading v is common in github release tags and old setuptools doesn't remove it.
