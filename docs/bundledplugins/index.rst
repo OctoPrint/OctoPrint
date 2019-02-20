@@ -9,9 +9,11 @@ Bundled Plugins
 
    action_command_prompt.rst
    announcements.rst
+   tracking.rst
    appkeys.rst
    backup.rst
    discovery.rst
+   errortracking.rst
    forcelogin.rst
    logging.rst
    pluginmanager.rst
