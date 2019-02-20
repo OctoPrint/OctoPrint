@@ -14,3 +14,4 @@ class TestSecondaryDeprecatedAssetPlugin(octoprint.plugin.AssetPlugin):
 __plugin_name__ = "Deprecated Plugin"
 __plugin_description__ = "Test deprecated plugin"
 __plugin_implementations__ = [TestDeprecatedAssetPlugin(), TestSecondaryDeprecatedAssetPlugin()]
+__plugin_pythoncompat__ = ">=2.7,<4"

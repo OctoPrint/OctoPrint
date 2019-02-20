@@ -15,3 +15,5 @@ class TestStartupPlugin(octoprint.plugin.StartupPlugin):
 __plugin_name__ = "Startup Plugin"
 __plugin_description__ = "Test startup plugin"
 __plugin_implementation__ = TestStartupPlugin()
+__plugin_pythoncompat__ = ">=2.7,<4"
+
