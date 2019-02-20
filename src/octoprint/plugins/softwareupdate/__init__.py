@@ -27,7 +27,7 @@ from flask_babel import gettext
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
 from octoprint.util import dict_merge, to_unicode
-from octoprint.util.version import get_comparable_version
+from octoprint.util.version import get_comparable_version, get_python_version_string
 from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
 
@@ -174,13 +174,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return self._configured_checks
 
 	def _check_environment(self):
-		from platform import python_version
 		import pkg_resources
 
 		local_pip = LocalPipCaller()
 
 		# check python and setuptools version
-		versions = dict(python=python_version(),
+		versions = dict(python=get_python_version_string(),
 		                setuptools=pkg_resources.get_distribution("setuptools").version,
 		                pip=local_pip.version_string)
 		supported = get_comparable_version(versions["python"]) >= get_comparable_version(MINIMUM_PYTHON) \

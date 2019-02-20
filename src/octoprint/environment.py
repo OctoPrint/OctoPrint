@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
-import platform
 import sys
 import threading
 import yaml
@@ -16,6 +15,7 @@ import psutil
 
 from octoprint.plugin import EnvironmentDetectionPlugin
 from octoprint.util.platform import get_os
+from octoprint.util.version import get_python_version_string
 
 class EnvironmentDetector(object):
 
@@ -70,7 +70,7 @@ class EnvironmentDetector(object):
 
 		# determine python version
 		try:
-			result["version"] = platform.python_version()
+			result["version"] = get_python_version_string()
 		except:
 			self._logger.exception("Error detecting python version")
 
