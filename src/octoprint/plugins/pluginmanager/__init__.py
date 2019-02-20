@@ -16,7 +16,7 @@ from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import to_bytes
 from octoprint.util.pip import LocalPipCaller
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.events import Events
 
@@ -46,7 +46,8 @@ def map_repository_entry(entry):
 
 	result["is_compatible"] = dict(
 		octoprint=True,
-		os=True
+		os=True,
+		python=True
 	)
 
 	if "compatibility" in entry:
@@ -57,6 +58,12 @@ def map_repository_entry(entry):
 		if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(
 			entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
 			result["is_compatible"]["os"] = is_os_compatible(entry["compatibility"]["os"])
+
+		if "python" in entry["compatibility"] and entry["compatibility"]["python"] is not None and isinstance(entry["compatibility"]["python"], basestring):
+			result["is_compatible"]["python"] = is_python_compatible(entry["compatibility"]["python"])
+		else:
+			# we default to only assume py2 compatiblity for now
+			result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
 
 	return result
 

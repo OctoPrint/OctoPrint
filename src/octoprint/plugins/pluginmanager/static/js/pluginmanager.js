@@ -56,7 +56,7 @@ $(function() {
                     return !self.installed(plugin);
                 },
                 "filter_incompatible": function(plugin) {
-                    return plugin.is_compatible.octoprint && plugin.is_compatible.os;
+                    return plugin.is_compatible.octoprint && plugin.is_compatible.os && plugin.is_compatible.python;
                 }
             },
             "title",
@@ -622,7 +622,7 @@ $(function() {
         };
 
         self.isCompatible = function(data) {
-            return data.is_compatible.octoprint && data.is_compatible.os;
+            return data.is_compatible.octoprint && data.is_compatible.os && data.is_compatible.python;
         };
 
         self.installButtonText = function(data) {
