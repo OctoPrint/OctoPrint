@@ -1849,7 +1849,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		"""
 		with self._line_mutex:
 			line_number = self._current_linenumber
-			self._add_to_last_lines(line, line_number=line_number)
+			self._add_to_last_lines(to_unicode(line), line_number=line_number)
 			self._current_linenumber += 1
 			self._do_send_with_checksum(line, line_number)
 
@@ -1874,6 +1874,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._transport.write(data + b"\n")
 
 	def _add_to_last_lines(self, command, line_number=None):
+		# type: (str, int) -> None
 		self._last_lines.append(command, line_number=line_number)
 
 	##~~ gcode command handlers
