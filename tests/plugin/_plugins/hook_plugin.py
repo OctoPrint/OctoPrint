@@ -12,3 +12,4 @@ __plugin_hooks__ = {
 	'octoprint.core.startup': hook_startup,
 	'some.ordered.callback': hook_startup
 }
+__plugin_pythoncompat__ = ">=2.7,<4"

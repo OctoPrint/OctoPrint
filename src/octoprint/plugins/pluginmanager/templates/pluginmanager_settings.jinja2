@@ -154,7 +154,7 @@
             <input type="text" class="input-block search-query" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
         </form>
 
-        <div data-bind="visible: repositoryAvailable()">
+        <div data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length > 0">
             <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                 <div class="entry">
                     <div class="row-fluid">
@@ -184,6 +184,13 @@
                 </p>
                 <p>
                     <small>{{ _('Is your OctoPrint installation connected to the internet?') }}</small>
+                </p>
+            </div>
+        </div>
+        <div id="settings_plugin_pluginmanager_repositorydialog_empty" data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length === 0">
+            <div>
+                <p>
+                    <strong>{{ _('It looks like there are no compatible plugins available') }}</strong>
                 </p>
             </div>
         </div>

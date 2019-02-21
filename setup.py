@@ -57,7 +57,8 @@ INSTALL_REQUIRES = [
 	"python-dateutil>=2.7.5,<2.8",
 	"wrapt>=1.10.11,<1.11",
 	"emoji>=0.5.1,<0.6",
-	"frozendict>=1.2,<1.3"
+	"frozendict>=1.2,<1.3",
+	"sentry-sdk==0.6.6"
 ]
 
 # Python 2 specific requirements

@@ -41,6 +41,7 @@ import pkginfo
 from past.builtins import unicode
 
 from octoprint.util import to_unicode
+from octoprint.util.version import is_python_compatible, get_python_version_string
 
 try:
 	from os import scandir
@@ -92,6 +93,18 @@ class PluginInfo(object):
 
 	attr_license = '__plugin_license__'
 	""" Module attribute from which to retrieve the plugin's license. """
+
+	attr_pythoncompat = '__plugin_pythoncompat__'
+	""" 
+	Module attribute from which to retrieve the plugin's python compatibility string. 
+	
+	If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
+	Python 2 but not Python 3.
+	
+	To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
+	
+	Bundled plugins will automatically be assumed to be compatible.
+	"""
 
 	attr_hooks = '__plugin_hooks__'
 	""" Module attribute from which to retrieve the plugin's provided hooks. """
@@ -148,6 +161,7 @@ class PluginInfo(object):
 		self.enabled = True
 		self.blacklisted = False
 		self.forced_disabled = False
+		self.incompatible = False
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
@@ -168,7 +182,7 @@ class PluginInfo(object):
 		result = True
 
 		if phase == "before_import":
-			result = not self.forced_disabled and not self.blacklisted and result
+			result = not self.forced_disabled and not self.blacklisted and not self.incompatible and result
 
 		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
@@ -216,7 +230,7 @@ class PluginInfo(object):
 
 	def long_str(self, show_bundled=False, bundled_strs=(" [B]", ""),
 	             show_location=False, location_str=" - {location}",
-	             show_enabled=False, enabled_strs=("* ", "  ", "X ")):
+	             show_enabled=False, enabled_strs=("* ", "  ", "X ", "C ")):
 		"""
 		Long string representation of the plugin's information. Will return a string of the format ``<enabled><str(self)><bundled><location>``.
 
@@ -224,8 +238,9 @@ class PluginInfo(object):
 		The will be filled from ``enabled_str``, ``bundled_str`` and ``location_str`` as follows:
 
 		``enabled_str``
-		    a 3-tuple, the first entry being the string to insert when the plugin is enabled, the second
-		    entry the string to insert when it is not, the third entry the string when it is blacklisted.
+		    a 4-tuple, the first entry being the string to insert when the plugin is enabled, the second
+		    entry the string to insert when it is not, the third entry the string when it is blacklisted
+		    and the fourth when it is incompatible.
 		``bundled_str``
 		    a 2-tuple, the first entry being the string to insert when the plugin is bundled, the second
 		    entry the string to insert when it is not.
@@ -245,9 +260,14 @@ class PluginInfo(object):
 		    str: The long string representation of the plugin as described above
 		"""
 		if show_enabled:
-			ret = to_unicode(enabled_strs[2]) if self.blacklisted \
-				else (to_unicode(enabled_strs[0]) if self.enabled
-				      else to_unicode(enabled_strs[1]))
+			if self.incompatible:
+				ret = to_unicode(enabled_strs[3])
+			elif self.blacklisted:
+				ret = to_unicode(enabled_strs[2])
+			elif not self.enabled:
+				ret = to_unicode(enabled_strs[1])
+			else:
+				ret = to_unicode(enabled_strs[0])
 		else:
 			ret = ""
 
@@ -382,6 +402,19 @@ class PluginInfo(object):
 		"""
 		return self._get_instance_attribute(self.__class__.attr_license,
 		                                    default=self._license,
+		                                    incl_metadata=True)
+
+	@property
+	def pythoncompat(self):
+		"""
+		Python compatibility string of the plugin module as defined in :attr:`attr_pythoncompat` if available, otherwise
+		defaults to ``>=2.7,<3``.
+
+		Returns:
+		    str: Python compatibility string of the plugin
+		"""
+		return self._get_instance_attribute(self.__class__.attr_pythoncompat,
+		                                    default=">=2.7,<3",
 		                                    incl_metadata=True)
 
 	@property
@@ -528,7 +561,8 @@ class PluginInfo(object):
 				                filter(lambda x: isinstance(x, ast.Name), node.targets)))
 
 			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
-			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
+			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license,
+			            self.__class__.attr_pythoncompat):
 				for a in reversed(assignments):
 					targets = extract_target_ids(a)
 					if key in targets:
@@ -839,6 +873,11 @@ class PluginManager(object):
 		if self._is_plugin_blacklisted(key) or (plugin.version is not None and self._is_plugin_version_blacklisted(key, plugin.version)):
 			self.logger.warning("Plugin {} is blacklisted.".format(plugin))
 			plugin.blacklisted = True
+
+		python_version = get_python_version_string()
+		if not is_python_compatible(plugin.pythoncompat) and not plugin.bundled:
+			self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
+			plugin.incompatible = True
 
 		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
 			return plugin
@@ -1369,7 +1408,7 @@ class PluginManager(object):
 
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True,
-	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!", "#"),
+	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!", "#", "*"),
 	                    only_to_handler=None):
 		all_plugins = list(self.enabled_plugins.values()) + list(self.disabled_plugins.values())
 
@@ -1390,8 +1429,10 @@ class PluginManager(object):
 				                                                          show_enabled=show_enabled,
 				                                                          enabled_strs=enabled_str),
 				                              sorted(self.plugins.values(), key=lambda x: unicode(x).lower())))
-			_log("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins),
-			                                                                        plugins=formatted_plugins))
+			legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(*enabled_str)
+			_log("{count} plugin(s) registered with the system:\n{plugins}\n{legend}".format(count=len(all_plugins),
+			                                                                                 plugins=formatted_plugins,
+			                                                                                 legend=legend))
 
 	def get_plugin(self, identifier, require_enabled=True):
 		"""

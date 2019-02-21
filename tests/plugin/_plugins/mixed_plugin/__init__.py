@@ -19,3 +19,4 @@ class TestMixedPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsP
 __plugin_name__ = "Mixed Plugin"
 __plugin_description__ = "Test mixed plugin"
 __plugin_implementation__ = TestMixedPlugin()
+__plugin_pythoncompat__ = ">=2.7,<4"
