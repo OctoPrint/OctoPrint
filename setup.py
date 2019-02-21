@@ -67,6 +67,7 @@ INSTALL_REQUIRES_PYTHON2 = [
 	"monotonic>=1.5,<1.6",
 	"scandir>=1.9,<1.10",
 	"chainmap>=1.0.2,<1.1",
+	"typing>=3.6.4,<4"
 ]
 
 # OSX specific requirements
