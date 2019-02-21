@@ -17,6 +17,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from octoprint.util import monotonic_time
 
+from future.utils import with_metaclass
+
 
 class LastResult(object):
 	def __init__(self):
@@ -29,8 +31,7 @@ class LastResult(object):
 		self.available = False
 
 
-class Printjob(ProtocolListener, ListenerAware):
-	__metaclass__ = ABCMeta
+class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 
 	parallel = False
 

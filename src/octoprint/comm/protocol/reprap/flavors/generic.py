@@ -13,6 +13,8 @@ from octoprint.comm.protocol.reprap.util import regex_float_pattern, regex_posit
 
 from octoprint.util import chunks, monotonic_time
 
+from future.utils import with_metaclass
+
 _flavor_registry = dict()
 
 
@@ -37,8 +39,7 @@ class FlavorMeta(type):
 		return cls
 
 
-class GenericFlavor(object):
-	__metaclass__ = FlavorMeta
+class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
 	key = "generic"
 	name = "Generic Flavor"

@@ -7,10 +7,21 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import copy
 import re
 
+from future.utils import with_metaclass
+
+from octoprint.util import pp
+
+
+_compiled_regex_type = type(re.compile(r"a"))
+def _is_compiled_regex(obj):
+	return isinstance(obj, _compiled_regex_type)
+
+
 __registry = dict()
 
 def _register_command_class(cls):
 	__registry[cls.__name__] = cls
+
 
 def to_command(line, type=None, tags=None, **kwargs):
 	if isinstance(line, Command):
@@ -19,12 +30,13 @@ def to_command(line, type=None, tags=None, **kwargs):
 	for cls in __registry.values():
 		if cls.pattern:
 			# noinspection PyUnresolvedReferences,PyProtectedMember
-			if isinstance(cls.pattern, re._pattern_type) and cls.pattern.match(line):
+			if _is_compiled_regex(cls.pattern) and cls.pattern.match(line):
 				return cls.from_line(line, type=type, tags=tags, **kwargs)
 			elif callable(cls.pattern) and cls.pattern(line):
 				return cls.from_line(line, type=type, tags=tags, **kwargs)
 
 	return Command.from_line(line, type=type, tags=tags, **kwargs)
+
 
 class CommandMetaClass(type):
 	def __new__(mcs, *args, **kwargs):
@@ -32,8 +44,7 @@ class CommandMetaClass(type):
 		_register_command_class(c)
 		return c
 
-class Command(object):
-	__metaclass__ = CommandMetaClass
+class Command(with_metaclass(CommandMetaClass, object)):
 
 	pattern = None
 
@@ -51,7 +62,7 @@ class Command(object):
 		self.tags = tags
 
 	def __repr__(self):
-		return "{}({!r},type={!r},tags={!r})".format(self.__class__.__name__, self.line, self.type, self.tags)
+		return "{}({!r},type={!r},tags={})".format(self.__class__.__name__, self.line, self.type, pp(self.tags))
 
 	def __str__(self):
 		return self.line

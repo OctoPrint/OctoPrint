@@ -6,6 +6,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 from octoprint.comm.protocol.reprap.commands import Command
 
+from octoprint.util import pp
+
 class AtCommand(Command):
 
 	pattern = staticmethod(lambda x: x.startswith("@"))
@@ -30,9 +32,9 @@ class AtCommand(Command):
 		super(AtCommand, self).__init__(line, **kwargs)
 
 	def __repr__(self):
-		return "AtCommand({!r},{!r},{!r},type={!r},tags={!r}".format(self.line,
-		                                                             self.atcommand,
-		                                                             self.parameters,
-		                                                             self.type,
-		                                                             self.tags)
+		return "AtCommand({!r},{!r},{!r},type={!r},tags={}".format(self.line,
+		                                                           self.atcommand,
+		                                                           self.parameters,
+		                                                           self.type,
+		                                                           pp(self.tags))
 

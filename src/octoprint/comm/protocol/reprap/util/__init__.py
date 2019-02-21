@@ -82,29 +82,29 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 	Examples:
 	    >>> from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), None) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M105',type=None,tags=set([]))]
+	    [GcodeCommand('M105',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), GcodeCommand("M110")) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',type=None,tags=set([]))]
+	    [GcodeCommand('M110',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110"]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set()), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set()), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110", "lineno_reset"), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type='lineno_reset',tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type='lineno_reset',tags=set()), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), []) # doctest: +ALLOW_UNICODE
 	    []
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), ["M110", None]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), (None, "ignored")]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105"), [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set([])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type='display_message',tags=set([])), GcodeCommand('M110',original='M110',type='lineno_reset',tags=set([]))]
+	    [GcodeCommand('M110',original='M110',type=None,tags=set()), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type='display_message',tags=set()), GcodeCommand('M110',original='M110',type='lineno_reset',tags=set())]
 	    >>> normalize_command_handler_result(GcodeCommand("M105",tags={"tag1", "tag2"}), ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set(['tag1', 'tag2'])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set(['tag1', 'tag2']))]
+	    [GcodeCommand('M110',original='M110',type=None,tags={'tag1', 'tag2'}), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags={'tag1', 'tag2'})]
 	    >>> normalize_command_handler_result(GcodeCommand("M105",tags={"tag1", "tag2"}), ["M110", "M117 Foobar"], tags_to_add={"tag3"}) # doctest: +ALLOW_UNICODE
-	    [GcodeCommand('M110',original='M110',type=None,tags=set(['tag1', 'tag2', 'tag3'])), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags=set(['tag1', 'tag2', 'tag3']))]
+	    [GcodeCommand('M110',original='M110',type=None,tags={'tag1', 'tag2', 'tag3'}), GcodeCommand('M117',param='Foobar',original='M117 Foobar',type=None,tags={'tag1', 'tag2', 'tag3'})]
 
 	Arguments:
 	    command (Command): The command for which the handler result was
