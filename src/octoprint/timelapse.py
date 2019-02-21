@@ -97,10 +97,9 @@ def valid_timelapse(path):
 
 def _extract_prefix(filename):
 	"""
-	>>> from octoprint.util import to_native_str
 	>>> _extract_prefix("some_long_filename_without_hyphen.jpg")
 	>>> _extract_prefix("-first_char_is_hyphen.jpg")
-	>>> to_native_str(_extract_prefix("some_long_filename_with-stuff.jpg"))
+	>>> _extract_prefix("some_long_filename_with-stuff.jpg") # doctest: +ALLOW_UNICODE
 	'some_long_filename_with'
 	"""
 	pos = filename.rfind("-")

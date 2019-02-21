@@ -146,7 +146,7 @@ class PrinterProfileSubwizard(object):
 		return gettext("Default Printer Profile")
 
 
-Subwizards = type(to_native_str("Subwizwards"),
+Subwizards = type(to_native_str("Subwizards"),
                   tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
                         if clsname.endswith("Subwizard")),
                   dict())

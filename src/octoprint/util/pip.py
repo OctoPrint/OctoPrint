@@ -426,9 +426,8 @@ class PipCaller(CommandlineCaller):
 
 		Example::
 
-		    >>> from octoprint.util import to_native_str
 		    >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
-		    >>> to_native_str(PipCaller._preprocess(text))
+		    >>> PipCaller._preprocess(text) # doctest: +ALLOW_UNICODE
 		    'some text with some ANSI codes for red words and also some cursor control codes'
 		"""
 		return to_unicode(clean_ansi(text))

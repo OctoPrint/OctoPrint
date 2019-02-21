@@ -36,26 +36,72 @@ from past.builtins import basestring, unicode
 logger = logging.getLogger(__name__)
 
 
+def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a bytestring."""
+	if isinstance(s_or_u, unicode):
+		return s_or_u.encode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if isinstance(s_or_u, bytes):
+		return s_or_u.decode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
 def to_native_str(s_or_u):
 	"""Make sure ``s_or_u`` is a 'str'."""
 	if sys.version_info[0] == 2:
-		if isinstance(s_or_u, unicode):
-			return s_or_u.encode("utf-8")
-		elif isinstance(s_or_u, set):  # only used for doctests
-			if not s_or_u:
-				return b"set()"
-			return b'{'+b', '.join(repr(to_native_str(x)) for x in sorted(s_or_u))+b'}'
+		return to_bytes(s_or_u)
 	else:
-		if isinstance(s_or_u, bytes):
-			return s_or_u.decode("utf-8")  # only used for doctests
-		elif isinstance(s_or_u, str):
-			pass
-		elif isinstance(s_or_u, set):  # only used for doctests
-			return '{'+repr(tuple(sorted(s_or_u)))[1:-1]+'}'
-		else:
-			raise RuntimeError("Please use a string here.")
-	return s_or_u
+		return to_unicode(s_or_u)
 
+
+def pp(value):
+	"""
+	>>> pp(dict()) # doctest: +ALLOW_UNICODE
+	'dict()'
+	>>> pp(dict(a=1, b=2, c=3)) # doctest: +ALLOW_UNICODE
+	'dict(a=1, b=2, c=3)'
+	>>> pp(set()) # doctest: +ALLOW_UNICODE
+	'set()'
+	>>> pp({"a", "b"}) # doctest: +ALLOW_UNICODE
+	"{'a', 'b'}"
+	>>> pp(["a", "b", "d", "c"]) # doctest: +ALLOW_UNICODE
+	"['a', 'b', 'd', 'c']"
+	>>> pp(("a", "b", "d", "c")) # doctest: +ALLOW_UNICODE
+	"('a', 'b', 'd', 'c')"
+	>>> pp("foo") # doctest: +ALLOW_UNICODE
+	"'foo'"
+	>>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"]) # doctest: +ALLOW_UNICODE
+	"[dict(a=1, b=2), {'a', 'b', 'c'}, (1, 2), None, 1, True, 'foo']"
+	"""
+
+	if isinstance(value, dict):
+		# sort by keys
+		r = "dict("
+		r += ", ".join(map(lambda i: i[0] + "=" + pp(i[1]), sorted(value.items())))
+		r += ")"
+		return r
+	elif isinstance(value, set):
+		if len(value):
+			# filled set: sort
+			r = "{"
+			r += ", ".join(map(pp, sorted(value)))
+			r += "}"
+			return r
+		else:
+			# empty set
+			return "set()"
+	elif isinstance(value, list):
+		return "[" + ", ".join(map(pp, value)) + "]"
+	elif isinstance(value, tuple):
+		return "(" + ", ".join(map(pp, value)) + ")"
+	else:
+		return repr(value)
 
 
 def warning_decorator_factory(warning_type):
@@ -191,6 +237,9 @@ Arguments:
 Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
+
+
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
 
 
 def get_formatted_size(num):
@@ -337,20 +386,20 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 	Examples:
 
-	    >>> to_native_str(get_dos_filename("test1234.gco"))
+	    >>> get_dos_filename("test1234.gco") # doctest: +ALLOW_UNICODE
 	    'test1234.gco'
-	    >>> to_native_str(get_dos_filename("test1234.gcode"))
+	    >>> get_dos_filename("test1234.gcode") # doctest: +ALLOW_UNICODE
 	    'test1234.gco'
-	    >>> to_native_str(get_dos_filename("test12345.gco"))
+	    >>> get_dos_filename("test12345.gco") # doctest: +ALLOW_UNICODE
 	    'test12~1.gco'
-	    >>> to_native_str(get_dos_filename("test1234.fnord", extension="gco"))
+	    >>> get_dos_filename("test1234.fnord", extension="gco") # doctest: +ALLOW_UNICODE
 	    'test1234.gco'
-	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco"))
+	    >>> get_dos_filename("auto0.g", extension="gco") # doctest: +ALLOW_UNICODE
 	    'auto0.gco'
-	    >>> to_native_str(get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"]))
+	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"]) # doctest: +ALLOW_UNICODE
 	    'auto0.g'
 	    >>> get_dos_filename(None)
-	    >>> to_native_str(get_dos_filename("foo"))
+	    >>> get_dos_filename("foo") # doctest: +ALLOW_UNICODE
 	    'foo'
 	"""
 
@@ -422,30 +471,30 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Examples:
 
-	    >>> to_native_str(find_collision_free_name("test1234", "gco", []))
+	    >>> find_collision_free_name("test1234", "gco", []) # doctest: +ALLOW_UNICODE
 	    'test1234.gco'
-	    >>> to_native_str(find_collision_free_name("test1234", "gcode", []))
+	    >>> find_collision_free_name("test1234", "gcode", []) # doctest: +ALLOW_UNICODE
 	    'test1234.gco'
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", []))
+	    >>> find_collision_free_name("test12345", "gco", []) # doctest: +ALLOW_UNICODE
 	    'test12~1.gco'
-	    >>> to_native_str(find_collision_free_name("test 123", "gco", []))
+	    >>> find_collision_free_name("test 123", "gco", []) # doctest: +ALLOW_UNICODE
 	    'test_123.gco'
-	    >>> to_native_str(find_collision_free_name("test1234", "g o", []))
+	    >>> find_collision_free_name("test1234", "g o", []) # doctest: +ALLOW_UNICODE
 	    'test1234.g_o'
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", ["/test12~1.gco"]))
+	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"]) # doctest: +ALLOW_UNICODE
 	    'test12~2.gco'
 	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_files))
+	    >>> find_collision_free_name("test12345", "gco", many_files) # doctest: +ALLOW_UNICODE
 	    'test1~10.gco'
 	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files))
+	    >>> find_collision_free_name("test12345", "gco", many_more_files) # doctest: +ALLOW_UNICODE
 	    'test1~99.gco'
 	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one))
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one) # doctest: +ALLOW_UNICODE
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
-	    >>> to_native_str(find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3))
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3) # doctest: +ALLOW_UNICODE
 	    'test~100.gco'
 
 	"""
@@ -524,25 +573,6 @@ def filter_non_ascii(line):
 		return False
 	except ValueError:
 		return True
-
-
-def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a bytestring."""
-	if isinstance(s_or_u, unicode):
-		return s_or_u.encode(encoding, errors=errors)
-	else:
-		return s_or_u
-
-to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
-
-
-
-def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, bytes):
-		return s_or_u.decode(encoding, errors=errors)
-	else:
-		return s_or_u
 
 
 def chunks(l, n):
