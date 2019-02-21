@@ -137,10 +137,6 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 			# entry is None, we'll ignore that entry and continue
 			continue
 
-		if command.tags:
-			# copy the tags
-			tags = set(command.tags)
-
 		def expand_tags(tags, tags_to_add):
 			tags = tags.copy()
 			if tags_to_add and isinstance(tags_to_add, set):
