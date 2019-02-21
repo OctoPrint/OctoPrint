@@ -37,12 +37,11 @@ def clean_ansi(line):
 
 	Example::
 
-	    >>> from octoprint.util import to_native_str
 	    >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
-	    >>> to_native_str(clean_ansi(text))
+	    >>> clean_ansi(text) # doctest: +ALLOW_BYTES
 	    'Some text with some red words in it'
 	    >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-	    >>> to_native_str(clean_ansi(text))
+	    >>> clean_ansi(text) # doctest: +ALLOW_BYTES
 	    'We hide the cursor here and then show it again here'
 	"""
 	if isinstance(line, unicode):

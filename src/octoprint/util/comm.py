@@ -4576,35 +4576,32 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, tag
 	be empty in which case the command is to be suppressed.
 
 	Examples:
-	    >>> from octoprint.util import to_native_str
-	    >>> uu = lambda x: tuple(to_native_str(y) if y is not None else None for y in x)
-	    >>> u = lambda x: list(uu(y) for y in x)
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, None))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, None) # doctest: +ALLOW_UNICODE
 	    [('M105', None, 'M105', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, "M110"))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, "M110") # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, ["M110"]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110"]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, ["M110", "M117 Foobar"]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), "M117 Foobar"]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, [("M110", "lineno_reset"), "M117 Foobar"]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110", "lineno_reset"), "M117 Foobar"]) # doctest: +ALLOW_UNICODE
 	    [('M110', 'lineno_reset', 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, []))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, []) # doctest: +ALLOW_UNICODE
 	    []
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, ["M110", None]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110", None]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), (None, "ignored")]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), (None, "ignored")]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")]))
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")]) # doctest: +ALLOW_UNICODE
 	    [('M110', None, 'M110', None, None), ('M117 Foobar', 'display_message', 'M117', None, None), ('M110', 'lineno_reset', 'M110', None, None)]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M117 Foobar"]))
-	    [('M110', None, 'M110', None, "{'tag1', 'tag2'}"), ('M117 Foobar', None, 'M117', None, "{'tag1', 'tag2'}")]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M105", "M117 Foobar"], tags_to_add={"tag3"}))
-	    [('M110', None, 'M110', None, "{'tag1', 'tag2', 'tag3'}"), ('M105', None, 'M105', None, "{'tag1', 'tag2'}"), ('M117 Foobar', None, 'M117', None, "{'tag1', 'tag2', 'tag3'}")]
-	    >>> u(_normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", ("M105", "temperature_poll"), "M117 Foobar"], tags_to_add={"tag3"}))
-	    [('M110', None, 'M110', None, "{'tag1', 'tag2', 'tag3'}"), ('M105', 'temperature_poll', 'M105', None, "{'tag1', 'tag2', 'tag3'}"), ('M117 Foobar', None, 'M117', None, "{'tag1', 'tag2', 'tag3'}")]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M117 Foobar"]) # doctest: +ALLOW_UNICODE
+	    [('M110', None, 'M110', None, {'tag1', 'tag2'}), ('M117 Foobar', None, 'M117', None, {'tag1', 'tag2'})]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M105", "M117 Foobar"], tags_to_add={"tag3"}) # doctest: +ALLOW_UNICODE
+	    [('M110', None, 'M110', None, {'tag1', 'tag2', 'tag3'}), ('M105', None, 'M105', None, {'tag1', 'tag2'}), ('M117 Foobar', None, 'M117', None, {'tag1', 'tag2', 'tag3'})]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", ("M105", "temperature_poll"), "M117 Foobar"], tags_to_add={"tag3"}) # doctest: +ALLOW_UNICODE
+	    [('M110', None, 'M110', None, {'tag1', 'tag2', 'tag3'}), ('M105', 'temperature_poll', 'M105', None, {'tag1', 'tag2', 'tag3'}), ('M117 Foobar', None, 'M117', None, {'tag1', 'tag2', 'tag3'})]
 
 	Arguments:
 	    command (str or None): The command for which the handler result was

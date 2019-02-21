@@ -81,6 +81,7 @@ EXTRA_REQUIRES = dict(
 		# Testing dependencies
 		"mock>=2.0.0,<3",
 		"pytest>=4.2.1,<5.0",
+		"pytest-doctest-custom>=1.0.0,<1.1",
 		"ddt",
 
 		# linter
