@@ -483,7 +483,10 @@ class PrinterInterface(object):
 		  * CONNECTING
 		  * OPERATIONAL
 		  * PRINTING
+		  * PAUSING
 		  * PAUSED
+		  * RESUMING
+		  * FINISHING
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR

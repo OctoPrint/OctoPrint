@@ -212,12 +212,14 @@ class Protocol(ListenerAware, TransportListener):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 		self.state = ProtocolState.PAUSING
+		self.notify_listeners("on_protocol_job_pausing", self, self._job)
 		self._job.pause()
 
 	def resume_processing(self, user=None, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
 		self.state = ProtocolState.RESUMING
+		self.notify_listeners("on_protocol_job_resuming", self, self._job)
 		self._job.resume()
 
 	def cancel_processing(self, error=False, user=None, tags=None):

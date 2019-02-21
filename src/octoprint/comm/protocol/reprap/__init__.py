@@ -455,10 +455,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._job.pause()
 		self.notify_listeners("on_protocol_job_pausing", self, self._job)
 
-		if suppress_scripts_and_commands:
-			with self._suppress_scripts_mutex:
-				self._suppress_scripts.add("pause")
-
 		def on_move_finish_requested():
 			self._record_pause_data = True
 
@@ -476,7 +472,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                "trigger:record_position"})
 			self._continue_sending()
 
-		if log_position:
+		if log_position and not suppress_scripts_and_commands:
 			self.send_commands(self.flavor.command_finish_moving(),
 			                   on_sent=on_move_finish_requested,
 			                   tags=tags | {"trigger:comm.set_pause",
@@ -738,8 +734,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			return
 		self._job_processed(job)
 
-	def on_job_paused(self, job, *args, **kwargs):
-		pass
+	def on_job_resumed(self, job, *args, **kwargs):
+		if job != self._job:
+			return
+
+		def finalize():
+			self.state = ProtocolState.PROCESSING
+			self.notify_listeners("on_protocol_job_resumed")
+		self.send_commands(SendQueueMarker(finalize))
+		self._continue_sending()
 
 	def on_job_done(self, job):
 		if job != self._job:
