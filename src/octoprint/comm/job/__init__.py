@@ -496,6 +496,12 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._protocol.stop_file_print_status_monitor()
 		self.process_job_done()
 
+	def on_protocol_file_print_paused(self, protocol, *args, **kwargs):
+		self._protocol.pause_file_print()
+
+	def on_protocol_file_print_resumed(self, protocol, *args, **kwargs):
+		self._protocol.resume_file_print()
+
 	def reset_job(self, success=True):
 		super(SDFilePrintjob, self).reset_job(success=success)
 		self._active = False

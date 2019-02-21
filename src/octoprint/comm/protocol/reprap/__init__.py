@@ -415,15 +415,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._pause_preparation_done()
 
 	def _pause_preparation_done(self, check_timer=True, suppress_script=None):
-		# do we need to suppress the script?
-		if suppress_script is not None:
-			with self._suppress_scripts_mutex:
-				suppress_script = "pause" in self._suppress_scripts
-				try:
-					self._suppress_scripts.remove("pause")
-				except KeyError:
-					pass
-
 		# do we need to stop a timer?
 		with self._pause_mutex:
 			if self._pause_position_timer is not None:
@@ -432,13 +423,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			elif check_timer:
 				return
 
-		# wait for current commands to be sent, then switch to paused state
-		def finalize():
-			self.state = ProtocolState.PAUSED
 			self.notify_listeners("on_protocol_job_paused", self, self._job, suppress_script=suppress_script)
 
-		self.send_commands(SendQueueMarker(finalize))
-		self._continue_sending()
+			# wait for current commands to be sent, then switch to paused state
+			def finalize():
+				self.state = ProtocolState.PAUSED
+			self.send_commands(SendQueueMarker(finalize))
+			self._continue_sending()
 
 	def pause_processing(self, user=None, tags=None, log_position=True, suppress_scripts_and_commands=False):
 		# TODO sync with comm.py
@@ -733,6 +724,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if job != self._job:
 			return
 		self._job_processed(job)
+
+	def on_job_paused(self, job, *args, **kwargs):
+		pass
 
 	def on_job_resumed(self, job, *args, **kwargs):
 		if job != self._job:

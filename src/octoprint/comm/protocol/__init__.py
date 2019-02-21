@@ -509,6 +509,12 @@ class FileAwareProtocolListener(object):
 	def on_protocol_file_print_done(self, protocol, *args, **kwargs):
 		pass
 
+	def on_protocol_file_print_paused(self, protocol, *args, **kwargs):
+		pass
+
+	def on_protocol_file_print_resumed(self, protocol, *args, **kwargs):
+		pass
+
 
 class PositionAwareProtocolListener(object):
 
