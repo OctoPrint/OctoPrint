@@ -100,6 +100,14 @@ class FallbackValue(object):
 		return self.fallback
 
 
+class BooleanCallbackValue(object):
+	def __init__(self, callback):
+		self.callback = callback
+
+	def __bool__(self):
+		return bool(self.callback())
+
+
 class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
                           PushingTransportWrapperListener, TransportListener):
@@ -215,7 +223,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			trigger_events=True,
 			expect_continous_comms=False,
 			ignore_ok=0,
-			job_on_hold=property(lambda: self.job_on_hold),
+			job_on_hold=BooleanCallbackValue(lambda: self.job_on_hold),
 
 			# timeout
 			timeout = None,
