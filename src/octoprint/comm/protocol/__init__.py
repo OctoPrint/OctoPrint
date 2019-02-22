@@ -206,27 +206,27 @@ class Protocol(ListenerAware, TransportListener):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
 		self._job = job
 		self._job.register_listener(self)
-		self._job.process(self, position=position, tags=tags)
+		self._job.process(self, position=position, user=user, tags=tags)
 
 	def pause_processing(self, user=None, tags=None):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 		self.state = ProtocolState.PAUSING
 		self.notify_listeners("on_protocol_job_pausing", self, self._job)
-		self._job.pause()
+		self._job.pause(user=user, tags=tags)
 
 	def resume_processing(self, user=None, tags=None):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
 		self.state = ProtocolState.RESUMING
 		self.notify_listeners("on_protocol_job_resuming", self, self._job)
-		self._job.resume()
+		self._job.resume(user=user, tags=tags)
 
 	def cancel_processing(self, error=False, user=None, tags=None):
 		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			self.state = ProtocolState.CANCELLING
 			self.notify_listeners("on_protocol_job_cancelling", self, self._job)
-			self._job.cancel(error=error)
+			self._job.cancel(error=error, user=user, tags=tags)
 
 	def can_send(self):
 		return True
@@ -249,31 +249,31 @@ class Protocol(ListenerAware, TransportListener):
 	def repair(self):
 		pass
 
-	def on_job_started(self, job):
-		self.notify_listeners("on_protocol_job_started", self, job)
+	def on_job_started(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_started", self, job, *args, **kwargs)
 		self.state = ProtocolState.PROCESSING
 
 	def on_job_paused(self, job, *args, **kwargs):
-		self.notify_listeners("on_protocol_job_paused", self, job)
+		self.notify_listeners("on_protocol_job_paused", self, job, *args, **kwargs)
 		self.state = ProtocolState.PAUSED
 
-	def on_job_resumed(self, job):
-		self.notify_listeners("on_protocol_job_resumed", self, job)
+	def on_job_resumed(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_resumed", self, job, *args, **kwargs)
 		self.state = ProtocolState.PROCESSING
 
-	def on_job_done(self, job):
-		self.notify_listeners("on_protocol_job_done", self, job)
+	def on_job_done(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_done", self, job, *args, **kwargs)
 		self._job_processed(job)
 
-	def on_job_cancelled(self, job):
-		self.notify_listeners("on_protocol_job_cancelled", self, job)
+	def on_job_cancelled(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_cancelled", self, job, *args, **kwargs)
 		self._job_processed(job)
 
-	def on_job_failed(self, job):
-		self.notify_listeners("on_protocol_job_failed", self, job)
+	def on_job_failed(self, job, *args, **kwargs):
+		self.notify_listeners("on_protocol_job_failed", self, job, *args, **kwargs)
 		self._job_processed(job)
 
-	def _job_processed(self, job):
+	def _job_processed(self, job, *args, **kwargs):
 		self._job.unregister_listener(self)
 		self.state = ProtocolState.CONNECTED
 

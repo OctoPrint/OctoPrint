@@ -101,23 +101,24 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 	def can_process(self, protocol):
 		return False
 
-	def process(self, protocol, position=0, tags=None):
+	def process(self, protocol, position=0, user=None, tags=None):
 		self._last_result = LastResult()
 		self._start = monotonic_time()
+		self._user = user
 		self._protocol = protocol
 		self._protocol.register_listener(self)
 
-	def pause(self):
-		self.process_job_paused()
+	def pause(self, user=None, tags=None):
+		self.process_job_paused(user=user, tags=tags)
 
-	def resume(self):
-		self.process_job_resumed()
+	def resume(self, user=None, tags=None):
+		self.process_job_resumed(user=user, tags=tags)
 
-	def cancel(self, error=False):
+	def cancel(self, error=False, user=None, tags=None):
 		if error:
 			self.process_job_failed()
 		else:
-			self.process_job_cancelled()
+			self.process_job_cancelled(user=user, tags=tags)
 		self._protocol.unregister_listener(self)
 		self._protocol = None
 
@@ -135,11 +136,11 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 		payload["owner"] = self._user
 		return payload
 
-	def process_job_started(self):
-		self.notify_listeners("on_job_started", self)
+	def process_job_started(self, user=None, tags=None):
+		self.notify_listeners("on_job_started", self, user=user, tags=tags)
 
-	def process_job_done(self):
-		self.notify_listeners("on_job_done", self)
+	def process_job_done(self, user=None, tags=None):
+		self.notify_listeners("on_job_done", self, user=user, tags=tags)
 		self.report_stats()
 		self.reset_job()
 
@@ -148,16 +149,16 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 		self.report_stats()
 		self.reset_job(success=False)
 
-	def process_job_cancelled(self):
-		self.notify_listeners("on_job_cancelled", self)
+	def process_job_cancelled(self, user=None, tags=None):
+		self.notify_listeners("on_job_cancelled", self, user=user, tags=tags)
 		self.report_stats()
 		self.reset_job(success=False)
 
-	def process_job_paused(self):
-		self.notify_listeners("on_job_paused", self)
+	def process_job_paused(self, user=None, tags=None):
+		self.notify_listeners("on_job_paused", self, user=user, tags=tags)
 
-	def process_job_resumed(self):
-		self.notify_listeners("on_job_resumed", self)
+	def process_job_resumed(self, user=None, tags=None):
+		self.notify_listeners("on_job_resumed", self, user=user, tags=tags)
 
 	def process_job_progress(self):
 		self.notify_listeners("on_job_progress", self)
@@ -260,8 +261,8 @@ class LocalFilePrintjob(StoragePrintjob):
 		event_data["size"] = self.size
 		return event_data
 
-	def process(self, protocol, position=0, tags=None):
-		Printjob.process(self, protocol, position=position)
+	def process(self, protocol, position=0, user=None, tags=None):
+		Printjob.process(self, protocol, position=position, user=user, tags=tags)
 
 		from octoprint.util import bom_aware_open
 		self._handle = bom_aware_open(self._path, encoding=self._encoding, errors="replace")
@@ -271,9 +272,9 @@ class LocalFilePrintjob(StoragePrintjob):
 			self._pos = position
 		self.process_job_started()
 
-	def cancel(self, error=False):
+	def cancel(self, error=False, user=None, tags=None):
 		self._cancel_pos = self.pos
-		super(LocalFilePrintjob, self).cancel(error=error)
+		super(LocalFilePrintjob, self).cancel(error=error, user=user, tags=tags)
 
 	def get_next(self):
 		from octoprint.util import to_unicode
@@ -400,18 +401,18 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
 		super(LocalGcodeStreamjob, self).process(protocol, position=position, tags=tags)
 		self._protocol.record_file(self._remote)
 
-	def process_job_done(self):
+	def process_job_done(self, user=None, tags=None):
 		self._protocol.stop_recording_file()
-		super(LocalGcodeStreamjob, self).process_job_done()
+		super(LocalGcodeStreamjob, self).process_job_done(user=user, tags=tags)
 
 	def process_job_failed(self):
 		self._protocol.stop_recording_file()
 		super(LocalGcodeStreamjob, self).process_job_failed()
 
-	def process_job_cancelled(self):
+	def process_job_cancelled(self, user=None, tags=None):
 		self._protocol.stop_recording_file()
 		self._protocol.delete_file(self.remote)
-		super(LocalGcodeStreamjob, self).process_job_cancelled()
+		super(LocalGcodeStreamjob, self).process_job_cancelled(user=user, tags=tags)
 
 	def can_process(self, protocol):
 		from octoprint.comm.protocol import FileStreamingProtocolMixin
@@ -473,14 +474,14 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		from octoprint.comm.protocol import FileAwareProtocolMixin
 		return SDFilePrintjob in protocol.supported_jobs and isinstance(protocol, FileAwareProtocolMixin)
 
-	def process(self, protocol, position=0, tags=None):
-		Printjob.process(self, protocol, position=position)
+	def process(self, protocol, position=0, user=None, tags=None):
+		Printjob.process(self, protocol, position=position, user=user, tags=tags)
 
 		self._protocol.register_listener(self)
 		self._active = True
 		self._last_pos = position
 
-		self._protocol.start_file_print(self._filename, position=position, tags=tags)
+		self._protocol.start_file_print(self._filename, position=position, user=user, tags=tags)
 		self._protocol.start_file_print_status_monitor()
 
 	def on_protocol_sd_status(self, protocol, pos, total, *args, **kwargs):
@@ -516,26 +517,26 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 
 class PrintjobListener(object):
 
-	def on_job_started(self, job, suppress_script=False):
+	def on_job_started(self, job, suppress_script=False, *args, **kwargs):
 		pass
 
-	def on_job_done(self, job, suppress_script=False):
+	def on_job_done(self, job, suppress_script=False, *args, **kwargs):
 		pass
 
-	def on_job_failed(self, job):
+	def on_job_failed(self, job, *args, **kwargs):
 		pass
 
-	def on_job_cancelling(self, job, firmware_error=None):
+	def on_job_cancelling(self, job, firmware_error=None, *args, **kwargs):
 		pass
 
-	def on_job_cancelled(self, job, cancel_position=None, suppress_script=False):
+	def on_job_cancelled(self, job, cancel_position=None, suppress_script=False, *args, **kwargs):
 		pass
 
-	def on_job_paused(self, job, pause_position=None, suppress_script=False):
+	def on_job_paused(self, job, pause_position=None, suppress_script=False, *args, **kwargs):
 		pass
 
-	def on_job_resumed(self, job, suppress_script=False):
+	def on_job_resumed(self, job, suppress_script=False, *args, **kwargs):
 		pass
 
-	def on_job_progress(self, job):
+	def on_job_progress(self, job, *args, **kwargs):
 		pass

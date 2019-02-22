@@ -302,14 +302,14 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			track_event = "print_started"
 		elif event == Events.PRINT_DONE:
 			try:
-				elapsed = int(payload.get("time"))
+				elapsed = int(payload.get("elapsed"))
 				args["elapsed"] = elapsed
 			except ValueError:
 				pass
 			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
 			try:
-				elapsed = int(payload.get("time"))
+				elapsed = int(payload.get("elapsed"))
 				args["elapsed"] = elapsed
 			except ValueError:
 				pass

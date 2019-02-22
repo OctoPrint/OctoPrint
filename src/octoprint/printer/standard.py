@@ -1301,6 +1301,7 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			eventManager().fire(Events.PRINT_STARTED, payload)
 			self._logger_job.info("Print job started - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
 			                                                                                             payload.get("path"),
@@ -1325,6 +1326,7 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			# TODO: shouldn't this be in on_protocol_job_done?
 			payload["time"] = job.elapsed
 			self._update_progress_data(completion=100,
 			                           filepos=payload["size"],
@@ -1400,12 +1402,14 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			if firmware_error:
 				payload["firmwareError"] = firmware_error
 			if cancel_position:
 				payload["position"] = cancel_position
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
 
+			# TODO: Should this be in on_protocol_cancelled?
 			if not suppress_scripts:
 				self.script("afterPrintCancelled",
 				            context=dict(event=payload),
@@ -1428,11 +1432,16 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			payload["time"] = job.elapsed
 			if cancel_position:
 				payload["position"] = cancel_position
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
+			self._logger_job.info("Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                               payload.get("path"),
+			                                                                                               payload.get("owner"),
+			                                                                                               payload.get("user")))
 
 			payload["reason"] = "cancelled"
 
@@ -1466,7 +1475,7 @@ class Printer(PrinterInterface,
 		if payload:
 			if pause_position:
 				payload["position"] = pause_position
-			#eventManager().fire(Events.PRINT_PAUSED, payload)
+			# TODO: Should this be in on_protocol_paused?
 			if not suppress_scripts:
 				self.script("afterPrintPaused",
 				            context=dict(event=payload),
@@ -1487,9 +1496,14 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			if pause_position:
 				payload["position"] = pause_position
 			eventManager().fire(Events.PRINT_PAUSED, payload)
+			self._logger_job.info("Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                            payload.get("path"),
+			                                                                                            payload.get("owner"),
+			                                                                                            payload.get("user")))
 
 	def on_protocol_job_resuming(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1505,6 +1519,7 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload and not suppress_scripts:
+			# TODO: Should this be in on_protocol_resumed?
 			self.script("beforePrintResumed",
 			            context=dict(event=payload),
 			            must_be_set=False)
@@ -1521,7 +1536,12 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			eventManager().fire(Events.PRINT_RESUMED, payload)
+			self._logger_job.info("Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
+			                                                                                             payload.get("path"),
+			                                                                                             payload.get("owner"),
+			                                                                                             payload.get("user")))
 
 	def _job_event_handled(self, protocol, job, event_type):
 		if not isinstance(job, LocalGcodeStreamjob):
