@@ -742,7 +742,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		def finalize():
 			self.state = ProtocolState.PROCESSING
-			self.notify_listeners("on_protocol_job_resumed")
+			self.notify_listeners("on_protocol_job_resumed", self, job)
 		self.send_commands(SendQueueMarker(finalize))
 		self._continue_sending()
 
