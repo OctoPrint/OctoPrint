@@ -30,14 +30,14 @@ from typing import Any
 
 # noinspection PyBroadException
 class VirtualPrinter(object):
-	command_regex = re.compile(r"^([GMTF])(\\d+)")
-	sleep_regex = re.compile(r"sleep (\\d+)")
-	sleep_after_regex = re.compile(r"sleep_after ([GMTF]\\d+) (\\d+)")
-	sleep_after_next_regex = re.compile(r"sleep_after_next ([GMTF]\\d+) (\\d+)")
-	custom_action_regex = re.compile(r"action_custom ([a-zA-Z0-9_]+)(\\s+.*)?")
+	command_regex = re.compile(r"^([GMTF])(\d+)")
+	sleep_regex = re.compile(r"sleep (\d+)")
+	sleep_after_regex = re.compile(r"sleep_after ([GMTF]\d+) (\d+)")
+	sleep_after_next_regex = re.compile(r"sleep_after_next ([GMTF]\d+) (\d+)")
+	custom_action_regex = re.compile(r"action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 	prepare_ok_regex = re.compile(r"prepare_ok (.*)")
 	send_regex = re.compile(r"send (.*)")
-	set_ambient_regex = re.compile(r"set_ambient ([-+]?[0-9]*\\.?[0-9]+)")
+	set_ambient_regex = re.compile(r"set_ambient ([-+]?[0-9]*\.?[0-9]+)")
 	start_sd_regex = re.compile(r"start_sd (.*)")
 	select_sd_regex = re.compile(r"select_sd (.*)")
 
@@ -377,7 +377,7 @@ class VirtualPrinter(object):
 
 			data += b"\n"
 
-			data = data.decode("ascii")
+			data = data.decode("ascii").strip()
 
 			if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
 				debug_command = ""
@@ -610,7 +610,7 @@ class VirtualPrinter(object):
 		# type: (str) -> None
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
-			self._send("echo:%s" % re.search(r"M117\\s+(.*)", data).group(1))
+			self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
 
 	def _gcode_M155(self, data):
 		# type: (str) -> None
