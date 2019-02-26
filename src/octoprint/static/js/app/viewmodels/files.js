@@ -902,7 +902,7 @@ $(function() {
                 return;
             }
 
-            if (payload.type !== "gcode") {
+            if (payload.type !== "printables") {
                 return;
             }
 

@@ -230,7 +230,7 @@ class EventManager(object):
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
-			# TODO v1.3.0 Remove again
+			# TODO v1.4.0 Remove again
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
