@@ -592,7 +592,7 @@ class PluginManager(object):
 
 	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
 	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
-	             plugin_obsolete_hooks=None, plugin_validators=None):
+	             plugin_obsolete_hooks=None, plugin_validators=None, compatibility_ignored_list=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -607,6 +607,8 @@ class PluginManager(object):
 			plugin_disabled_list = []
 		if plugin_blacklist is None:
 			plugin_blacklist = []
+		if compatibility_ignored_list is None:
+			compatibility_ignored_list = []
 
 		self.plugin_folders = plugin_folders
 		self.plugin_bases = plugin_bases
@@ -617,6 +619,7 @@ class PluginManager(object):
 		self.plugin_obsolete_hooks = plugin_obsolete_hooks
 		self.plugin_validators = plugin_validators
 		self.logging_prefix = logging_prefix
+		self.compatibility_ignored_list = compatibility_ignored_list
 
 		self.enabled_plugins = dict()
 		self.disabled_plugins = dict()
@@ -875,7 +878,7 @@ class PluginManager(object):
 			plugin.blacklisted = True
 
 		python_version = get_python_version_string()
-		if not is_python_compatible(plugin.pythoncompat) and not plugin.bundled:
+		if self._is_plugin_incompatible(key, plugin):
 			self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
 			plugin.incompatible = True
 
@@ -917,6 +920,11 @@ class PluginManager(object):
 
 	def _is_plugin_blacklisted(self, key):
 		return key in self.plugin_blacklist
+
+	def _is_plugin_incompatible(self, key, plugin):
+		return not plugin.bundled \
+		       and not is_python_compatible(plugin.pythoncompat) \
+		       and key not in self.compatibility_ignored_list
 
 	def _is_plugin_version_blacklisted(self, key, version):
 		def matches_plugin(entry):

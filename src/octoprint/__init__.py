@@ -365,13 +365,16 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 			return True
 		plugin_validators.append(validator)
 
+	compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
+
 	from octoprint.plugin import plugin_manager
 	pm = plugin_manager(init=True,
 	                    plugin_folders=plugin_folders,
 	                    plugin_entry_points=plugin_entry_points,
 	                    plugin_disabled_list=plugin_disabled_list,
 	                    plugin_blacklist=plugin_blacklist,
-	                    plugin_validators=plugin_validators)
+	                    plugin_validators=plugin_validators,
+	                    compatibility_ignored_list=compatibility_ignored_list)
 
 	settings_overlays = dict()
 	disabled_from_overlays = dict()

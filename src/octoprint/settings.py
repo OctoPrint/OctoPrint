@@ -367,7 +367,8 @@ default_settings = {
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
-		"_disabled": []
+		"_disabled": [],
+		"_forcedCompatible": []
 	},
 	"scripts": {
 		"gcode": {
