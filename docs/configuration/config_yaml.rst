@@ -672,7 +672,7 @@ plugins are tracked:
 
      # Identifiers of plugins for which python compatibility information will be ignored and
      # the plugin considered compatible in any case. Only for development, do NOT use in production.
-     _forceCompatible:
+     _forcedCompatible:
      - ...
 
      # The rest are individual plugin settings, each tracked by their identifier, e.g.:
