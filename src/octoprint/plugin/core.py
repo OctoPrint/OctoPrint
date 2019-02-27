@@ -576,7 +576,7 @@ class PluginInfo(object):
 
 						break
 		except Exception:
-			# TODO: really ignore all errors?
+			self._logger.exception("Error while parsing AST for {}".format(self.key))
 			pass
 
 		return result
