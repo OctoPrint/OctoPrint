@@ -166,6 +166,7 @@ class PluginInfo(object):
 		self.loaded = False
 		self.managable = True
 		self.needs_restart = False
+		self.invalid_syntax = False
 
 		self._name = name
 		self._version = version
@@ -177,12 +178,14 @@ class PluginInfo(object):
 		self._logger = logging.getLogger(__name__)
 
 		self._cached_parsed_metadata = parsed_metadata
+		if self._cached_parsed_metadata is None:
+			self._cached_parsed_metadata = self._parse_metadata()
 
 	def validate(self, phase, additional_validators=None):
 		result = True
 
 		if phase == "before_import":
-			result = not self.forced_disabled and not self.blacklisted and not self.incompatible and result
+			result = not self.forced_disabled and not self.blacklisted and not self.incompatible and not self.invalid_syntax and result
 
 		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
@@ -524,8 +527,6 @@ class PluginInfo(object):
 
 	@property
 	def parsed_metadata(self):
-		if self._cached_parsed_metadata is None:
-			self._cached_parsed_metadata = self._parse_metadata()
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
@@ -551,7 +552,7 @@ class PluginInfo(object):
 			import ast
 
 			with io.open(path, 'rb') as f:
-				root = ast.parse(f.read())
+				root = ast.parse(f.read(), filename=path)
 
 			assignments = list(filter(lambda x: isinstance(x, ast.Assign) and x.targets,
 			                          root.body))
@@ -575,9 +576,11 @@ class PluginInfo(object):
 							result[key] = a.value.args[0].s
 
 						break
+		except SyntaxError:
+			self._logger.exception("Invalid syntax in {} for plugin {}".format(path, self.key))
+			self.invalid_syntax = True
 		except Exception:
-			self._logger.exception("Error while parsing AST for {}".format(self.key))
-			pass
+			self._logger.exception("Error while parsing AST from {} for plugin {}".format(path, self.key))
 
 		return result
 
@@ -879,7 +882,10 @@ class PluginManager(object):
 
 		python_version = get_python_version_string()
 		if self._is_plugin_incompatible(key, plugin):
-			self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
+			if plugin.invalid_syntax:
+				self.logger.warning("Plugin {} can't be compiled under Python {} due to invalid syntax".format(plugin, python_version))
+			else:
+				self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
 			plugin.incompatible = True
 
 		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
