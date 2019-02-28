@@ -22,18 +22,17 @@ way and could be extracted into a separate Python module in the future.
 
 """
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import os
 import io
-import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
 import fnmatch
 import inspect
+import sys
 
 import pkg_resources
 import pkginfo
@@ -47,6 +46,30 @@ try:
 	from os import scandir
 except ImportError:
 	from scandir import scandir
+
+
+if sys.version_info[0] == 2:
+	# noinspection PyDeprecation
+	import imp
+else:
+	# deprecated in Python 3.4+ and hence vendored for now
+	import octoprint.vendor.imp as imp
+
+
+# noinspection PyDeprecation
+def _find_module(name, path=None):
+	if path is not None:
+		spec = imp.find_module(name, [path])
+	else:
+		spec = imp.find_module(name)
+	return spec[1], spec
+
+
+# noinspection PyDeprecation
+def _load_module(name, spec):
+	f, filename, details = spec
+	return imp.load_module(name, f, filename, details)
+
 
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
@@ -858,17 +881,17 @@ class PluginManager(object):
 		# TODO error handling
 		try:
 			if folder:
-				module = imp.find_module(key, [folder])
+				location, spec = _find_module(key, path=folder)
 			elif module_name:
-				module = imp.find_module(module_name)
+				location, spec = _find_module(module_name)
 			else:
 				return None
 		except Exception:
-			self.logger.warn("Could not locate plugin {key}".format(key=key))
+			self.logger.exception("Could not locate plugin {key}".format(key=key))
 			return None
 
 		# Create a simple dummy entry first ...
-		plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author,
+		plugin = PluginInfo(key, location, None, name=name, version=version, description=summary, author=author,
 		                    url=url, license=license)
 		plugin.bundled = bundled
 
@@ -892,17 +915,19 @@ class PluginManager(object):
 			return plugin
 
 		# ... then create and return the real one
-		return self._import_plugin(key, *module,
-		                           module_name=module_name, name=name, version=version, summary=summary, author=author, url=url,
-		                           license=license, bundled=bundled, parsed_metadata=plugin.parsed_metadata)
+		return self._import_plugin(key, spec,
+		                           module_name=module_name, name=name, location=plugin.location, version=version,
+		                           summary=summary, author=author, url=url, license=license, bundled=bundled,
+		                           parsed_metadata=plugin.parsed_metadata)
 
-	def _import_plugin(self, key, f, filename, description, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
+	def _import_plugin(self, key, spec, module_name=None, name=None, location=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
 		try:
 			if module_name:
-				instance = imp.load_module(module_name, f, filename, description)
+				module = _load_module(module_name, spec)
 			else:
-				instance = imp.load_module(key, f, filename, description)
-			plugin = PluginInfo(key, filename, instance,
+				module = _load_module(key, spec)
+
+			plugin = PluginInfo(key, location, module,
 			                    name=name,
 			                    version=version,
 			                    description=summary,
@@ -910,6 +935,7 @@ class PluginManager(object):
 			                    url=url,
 			                    license=license,
 			                    parsed_metadata=parsed_metadata)
+
 			plugin.bundled = bundled
 		except Exception:
 			self.logger.exception("Error loading plugin {key}".format(key=key))
