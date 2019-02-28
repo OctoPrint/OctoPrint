@@ -246,5 +246,6 @@ Job information response
      - Information regarding the progress of the current print job
    * - ``state``
      - 1
-     - :ref:`sec-api-datamodel-jobs`
-     - Information regarding the state of the current print job
+     - String
+     - A textual representation of the current state of the job, i.e. "Operational", "Printing", "Pausing", "Paused",
+       "Cancelling", "Error" or "Offline".
