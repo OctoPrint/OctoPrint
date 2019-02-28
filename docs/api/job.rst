@@ -212,7 +212,8 @@ Retrieve information about the current job
           "filepos": 337942,
           "printTime": 276,
           "printTimeLeft": 912
-        }
+        },
+        "state": "Printing"
       }
 
    :statuscode 200: No error
@@ -243,4 +244,7 @@ Job information response
      - 1
      - :ref:`sec-api-datamodel-jobs-progress`
      - Information regarding the progress of the current print job
-
+   * - ``state``
+     - 1
+     - :ref:`sec-api-datamodel-jobs-state`
+     - Information regarding the state of the current print job

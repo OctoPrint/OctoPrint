@@ -219,6 +219,25 @@ Progress information
      - Integer
      - Estimate of time left to print, in seconds
 
+.. _sec-api-datamodel-jobs-state:
+
+State information
+-----------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - body
+     - 1
+     - String
+     - A textual representation of the current state of the job, i.e. "Operational", "Printing", "Pausing", "Paused",
+       "Cancelling", "Error" or "Offline".
+
 .. _sec-api-datamodel-files:
 
 File related
