@@ -246,5 +246,5 @@ Job information response
      - Information regarding the progress of the current print job
    * - ``state``
      - 1
-     - :ref:`sec-api-datamodel-jobs-state`
+     - :ref:`sec-api-datamodel-jobs`
      - Information regarding the state of the current print job
