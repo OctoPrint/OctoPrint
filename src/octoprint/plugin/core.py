@@ -73,6 +73,7 @@ def _load_module(name, spec):
 
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
+ModuleOrigin = namedtuple("PackageOrigin", "type, module_name, folder")
 
 class PluginInfo(object):
 	"""
@@ -743,9 +744,12 @@ class PluginManager(object):
 		for folder in folders:
 			try:
 				flagged_readonly = False
+				package = None
 				if isinstance(folder, (list, tuple)):
 					if len(folder) == 2:
 						folder, flagged_readonly = folder
+					elif len(folder) == 3:
+						folder, package, flagged_readonly = folder
 					else:
 						continue
 				actual_readonly = not os.access(folder, os.W_OK)
@@ -783,9 +787,16 @@ class PluginManager(object):
 
 						bundled = flagged_readonly
 
-						plugin = self._import_plugin_from_module(key, folder=folder, bundled=bundled)
+						module_name = None
+						if package:
+							module_name = "{}.{}".format(package, key)
+
+						plugin = self._import_plugin_from_module(key, module_name=module_name, folder=folder, bundled=bundled)
 						if plugin:
-							plugin.origin = FolderOrigin("folder", folder)
+							if module_name:
+								plugin.origin = ModuleOrigin("module", module_name, folder)
+							else:
+								plugin.origin = FolderOrigin("folder", folder)
 							plugin.managable = not flagged_readonly and not actual_readonly
 							plugin.enabled = False
 							added[key] = plugin

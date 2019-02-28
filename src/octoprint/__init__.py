@@ -344,9 +344,12 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 
 	import os
 
+	# we need this so that octoprint.plugins is in sys.modules and no warnings are caused when loading bundled plugins
+	import octoprint.plugins
+
 	logger = log.getLogger(__name__ + ".startup")
 
-	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), True),
+	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), "octoprint.plugins", True),
 	                  settings.getBaseFolder("plugins")]
 	plugin_entry_points = ["octoprint.plugin"]
 	plugin_disabled_list = settings.get(["plugins", "_disabled"])
