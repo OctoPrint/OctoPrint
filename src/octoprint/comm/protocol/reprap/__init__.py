@@ -358,7 +358,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["trigger_events"] = True
 		self._internal_flags["expect_continous_comms"] = not job.parallel
 
-		super(ReprapGcodeProtocol, self).process(job, position=position, tags=tags)
+		super(ReprapGcodeProtocol, self).process(job, position=position, user=user, tags=tags)
 
 	# cancel handling
 
@@ -456,7 +456,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			elif check_timer:
 				return
 
-			self.notify_listeners("on_protocol_job_paused", self, self._job, suppress_script=suppress_script)
+			self.notify_listeners("on_protocol_job_paused", self, self._job, user=user, suppress_script=suppress_script)
 
 			# wait for current commands to be sent, then switch to paused state
 			def finalize():
@@ -513,7 +513,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if only_adjust_state:
 			self.state = ProtocolState.PROCESSING
 		else:
-			super(ReprapGcodeProtocol, self).resume_processing(tags=tags)
+			super(ReprapGcodeProtocol, self).resume_processing(user=user, tags=tags)
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
 		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
