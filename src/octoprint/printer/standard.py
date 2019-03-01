@@ -568,9 +568,9 @@ class Printer(PrinterInterface,
 		self._update_job(job)
 		self._reset_progress_data()
 
-		event_payload = job.event_payload()
-		if event_payload:
-			eventManager().fire(Events.FILE_SELECTED, event_payload)
+		payload = job.event_payload()
+		if payload:
+			eventManager().fire(Events.FILE_SELECTED, payload)
 
 		if start_printing and self.is_ready():
 			self.start_print(pos=pos,
@@ -1206,9 +1206,8 @@ class Printer(PrinterInterface,
 		if old_state == ProtocolState.PROCESSING:
 			if self._job is not None:
 				if new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
-					payload = self._job.event_payload()
+					payload = self._job.job.event_payload()
 					if payload:
-						payload["time"] = self._job.job.elapsed
 						payload["reason"] = "error"
 						payload["error"] = protocol.get_error_string() # TODO
 
@@ -1327,7 +1326,6 @@ class Printer(PrinterInterface,
 		payload = job.event_payload()
 		if payload:
 			# TODO: shouldn't this be in on_protocol_job_done?
-			payload["time"] = job.elapsed
 			self._update_progress_data(completion=100,
 			                           filepos=payload["size"],
 			                           print_time=payload["time"],
@@ -1358,8 +1356,6 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
-			payload["time"] = job.elapsed
-
 			def log_print():
 				self._file_manager.log_print(payload["origin"],
 				                             payload["path"],
@@ -1433,7 +1429,6 @@ class Printer(PrinterInterface,
 		payload = job.event_payload()
 		if payload:
 			payload["user"] = kwargs.get("user")
-			payload["time"] = job.elapsed
 			if cancel_position:
 				payload["position"] = cancel_position
 
@@ -1473,6 +1468,7 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
+			payload["user"] = kwargs.get("user")
 			if pause_position:
 				payload["position"] = pause_position
 			# TODO: Should this be in on_protocol_paused?

@@ -133,7 +133,12 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 
 	def event_payload(self):
 		payload = copy.deepcopy(self._event_data)
+
 		payload["owner"] = self._user
+		elapsed = self.elapsed
+		if elapsed is not None:
+			payload["time"] = self.elapsed
+
 		return payload
 
 	def process_job_started(self, user=None, tags=None):
