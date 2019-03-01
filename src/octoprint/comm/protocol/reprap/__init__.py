@@ -102,7 +102,11 @@ class FallbackValue(object):
 
 class BooleanCallbackValue(object):
 	def __init__(self, callback):
+		assert callable(callback)
 		self.callback = callback
+
+	def __nonzero__(self):
+		return self.__bool__()
 
 	def __bool__(self):
 		return bool(self.callback())
