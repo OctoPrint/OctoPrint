@@ -38,7 +38,7 @@ def _validate_plugin(phase, plugin_info):
 
 def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_entry_points=None, plugin_disabled_list=None,
                    plugin_blacklist=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None,
-                   plugin_validators=None):
+                   plugin_validators=None, compatibility_ignored_list=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -64,6 +64,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_en
 	    plugin_obsolete_hooks (list): A list of hooks that have been declared obsolete. Plugins implementing them will
 	        not be enabled since they might depend on functionality that is no longer available.
 	    plugin_validators (list): A list of additional plugin validators through which to process each plugin.
+	    compatibility_ignored_list (list): A list of plugin keys for which it will be ignored if they are flagged as
+	        incompatible. This is for development purposes only and should not be used in production.
 
 	Returns:
 	    PluginManager: A fully initialized :class:`~octoprint.plugin.core.PluginManager` instance to be used for plugin
@@ -106,7 +108,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_en
 			                          plugin_blacklist=plugin_blacklist,
 			                          plugin_restart_needing_hooks=plugin_restart_needing_hooks,
 			                          plugin_obsolete_hooks=plugin_obsolete_hooks,
-			                          plugin_validators=plugin_validators)
+			                          plugin_validators=plugin_validators,
+			                          compatibility_ignored_list=compatibility_ignored_list)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance

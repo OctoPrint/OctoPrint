@@ -22,18 +22,17 @@ way and could be extracted into a separate Python module in the future.
 
 """
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import os
 import io
-import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
 import fnmatch
 import inspect
+import sys
 
 import pkg_resources
 import pkginfo
@@ -48,8 +47,33 @@ try:
 except ImportError:
 	from scandir import scandir
 
+
+if sys.version_info[0] == 2:
+	# noinspection PyDeprecation
+	import imp
+else:
+	# deprecated in Python 3.4+ and hence vendored for now
+	import octoprint.vendor.imp as imp
+
+
+# noinspection PyDeprecation
+def _find_module(name, path=None):
+	if path is not None:
+		spec = imp.find_module(name, [path])
+	else:
+		spec = imp.find_module(name)
+	return spec[1], spec
+
+
+# noinspection PyDeprecation
+def _load_module(name, spec):
+	f, filename, details = spec
+	return imp.load_module(name, f, filename, details)
+
+
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
+ModuleOrigin = namedtuple("PackageOrigin", "type, module_name, folder")
 
 class PluginInfo(object):
 	"""
@@ -166,6 +190,7 @@ class PluginInfo(object):
 		self.loaded = False
 		self.managable = True
 		self.needs_restart = False
+		self.invalid_syntax = False
 
 		self._name = name
 		self._version = version
@@ -177,12 +202,14 @@ class PluginInfo(object):
 		self._logger = logging.getLogger(__name__)
 
 		self._cached_parsed_metadata = parsed_metadata
+		if self._cached_parsed_metadata is None:
+			self._cached_parsed_metadata = self._parse_metadata()
 
 	def validate(self, phase, additional_validators=None):
 		result = True
 
 		if phase == "before_import":
-			result = not self.forced_disabled and not self.blacklisted and not self.incompatible and result
+			result = not self.forced_disabled and not self.blacklisted and not self.incompatible and not self.invalid_syntax and result
 
 		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
@@ -524,8 +551,6 @@ class PluginInfo(object):
 
 	@property
 	def parsed_metadata(self):
-		if self._cached_parsed_metadata is None:
-			self._cached_parsed_metadata = self._parse_metadata()
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
@@ -551,7 +576,7 @@ class PluginInfo(object):
 			import ast
 
 			with io.open(path, 'rb') as f:
-				root = ast.parse(f.read())
+				root = ast.parse(f.read(), filename=path)
 
 			assignments = list(filter(lambda x: isinstance(x, ast.Assign) and x.targets,
 			                          root.body))
@@ -575,9 +600,11 @@ class PluginInfo(object):
 							result[key] = a.value.args[0].s
 
 						break
+		except SyntaxError:
+			self._logger.exception("Invalid syntax in {} for plugin {}".format(path, self.key))
+			self.invalid_syntax = True
 		except Exception:
-			# TODO: really ignore all errors?
-			pass
+			self._logger.exception("Error while parsing AST from {} for plugin {}".format(path, self.key))
 
 		return result
 
@@ -592,7 +619,7 @@ class PluginManager(object):
 
 	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
 	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
-	             plugin_obsolete_hooks=None, plugin_validators=None):
+	             plugin_obsolete_hooks=None, plugin_validators=None, compatibility_ignored_list=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -607,6 +634,8 @@ class PluginManager(object):
 			plugin_disabled_list = []
 		if plugin_blacklist is None:
 			plugin_blacklist = []
+		if compatibility_ignored_list is None:
+			compatibility_ignored_list = []
 
 		self.plugin_folders = plugin_folders
 		self.plugin_bases = plugin_bases
@@ -617,6 +646,7 @@ class PluginManager(object):
 		self.plugin_obsolete_hooks = plugin_obsolete_hooks
 		self.plugin_validators = plugin_validators
 		self.logging_prefix = logging_prefix
+		self.compatibility_ignored_list = compatibility_ignored_list
 
 		self.enabled_plugins = dict()
 		self.disabled_plugins = dict()
@@ -714,9 +744,12 @@ class PluginManager(object):
 		for folder in folders:
 			try:
 				flagged_readonly = False
+				package = None
 				if isinstance(folder, (list, tuple)):
 					if len(folder) == 2:
 						folder, flagged_readonly = folder
+					elif len(folder) == 3:
+						folder, package, flagged_readonly = folder
 					else:
 						continue
 				actual_readonly = not os.access(folder, os.W_OK)
@@ -754,9 +787,16 @@ class PluginManager(object):
 
 						bundled = flagged_readonly
 
-						plugin = self._import_plugin_from_module(key, folder=folder, bundled=bundled)
+						module_name = None
+						if package:
+							module_name = "{}.{}".format(package, key)
+
+						plugin = self._import_plugin_from_module(key, module_name=module_name, folder=folder, bundled=bundled)
 						if plugin:
-							plugin.origin = FolderOrigin("folder", folder)
+							if module_name:
+								plugin.origin = ModuleOrigin("module", module_name, folder)
+							else:
+								plugin.origin = FolderOrigin("folder", folder)
 							plugin.managable = not flagged_readonly and not actual_readonly
 							plugin.enabled = False
 							added[key] = plugin
@@ -852,17 +892,17 @@ class PluginManager(object):
 		# TODO error handling
 		try:
 			if folder:
-				module = imp.find_module(key, [folder])
+				location, spec = _find_module(key, path=folder)
 			elif module_name:
-				module = imp.find_module(module_name)
+				location, spec = _find_module(module_name)
 			else:
 				return None
 		except Exception:
-			self.logger.warn("Could not locate plugin {key}".format(key=key))
+			self.logger.exception("Could not locate plugin {key}".format(key=key))
 			return None
 
 		# Create a simple dummy entry first ...
-		plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author,
+		plugin = PluginInfo(key, location, None, name=name, version=version, description=summary, author=author,
 		                    url=url, license=license)
 		plugin.bundled = bundled
 
@@ -875,25 +915,30 @@ class PluginManager(object):
 			plugin.blacklisted = True
 
 		python_version = get_python_version_string()
-		if not is_python_compatible(plugin.pythoncompat) and not plugin.bundled:
-			self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
+		if self._is_plugin_incompatible(key, plugin):
+			if plugin.invalid_syntax:
+				self.logger.warning("Plugin {} can't be compiled under Python {} due to invalid syntax".format(plugin, python_version))
+			else:
+				self.logger.warning("Plugin {} is not compatible to Python {} (compatibility string: {}).".format(plugin, python_version, plugin.pythoncompat))
 			plugin.incompatible = True
 
 		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
 			return plugin
 
 		# ... then create and return the real one
-		return self._import_plugin(key, *module,
-		                           module_name=module_name, name=name, version=version, summary=summary, author=author, url=url,
-		                           license=license, bundled=bundled, parsed_metadata=plugin.parsed_metadata)
+		return self._import_plugin(key, spec,
+		                           module_name=module_name, name=name, location=plugin.location, version=version,
+		                           summary=summary, author=author, url=url, license=license, bundled=bundled,
+		                           parsed_metadata=plugin.parsed_metadata)
 
-	def _import_plugin(self, key, f, filename, description, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
+	def _import_plugin(self, key, spec, module_name=None, name=None, location=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
 		try:
 			if module_name:
-				instance = imp.load_module(module_name, f, filename, description)
+				module = _load_module(module_name, spec)
 			else:
-				instance = imp.load_module(key, f, filename, description)
-			plugin = PluginInfo(key, filename, instance,
+				module = _load_module(key, spec)
+
+			plugin = PluginInfo(key, location, module,
 			                    name=name,
 			                    version=version,
 			                    description=summary,
@@ -901,6 +946,7 @@ class PluginManager(object):
 			                    url=url,
 			                    license=license,
 			                    parsed_metadata=parsed_metadata)
+
 			plugin.bundled = bundled
 		except Exception:
 			self.logger.exception("Error loading plugin {key}".format(key=key))
@@ -917,6 +963,11 @@ class PluginManager(object):
 
 	def _is_plugin_blacklisted(self, key):
 		return key in self.plugin_blacklist
+
+	def _is_plugin_incompatible(self, key, plugin):
+		return not plugin.bundled \
+		       and not is_python_compatible(plugin.pythoncompat) \
+		       and key not in self.compatibility_ignored_list
 
 	def _is_plugin_version_blacklisted(self, key, version):
 		def matches_plugin(entry):

@@ -376,9 +376,12 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 
 	import os
 
+	# we need this so that octoprint.plugins is in sys.modules and no warnings are caused when loading bundled plugins
+	import octoprint.plugins
+
 	logger = log.getLogger(__name__ + ".startup")
 
-	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), True),
+	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), "octoprint.plugins", True),
 	                  settings.getBaseFolder("plugins")]
 	plugin_entry_points = ["octoprint.plugin"]
 	plugin_disabled_list = settings.get(["plugins", "_disabled"])
@@ -397,13 +400,16 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 			return True
 		plugin_validators.append(validator)
 
+	compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
+
 	from octoprint.plugin import plugin_manager
 	pm = plugin_manager(init=True,
 	                    plugin_folders=plugin_folders,
 	                    plugin_entry_points=plugin_entry_points,
 	                    plugin_disabled_list=plugin_disabled_list,
 	                    plugin_blacklist=plugin_blacklist,
-	                    plugin_validators=plugin_validators)
+	                    plugin_validators=plugin_validators,
+	                    compatibility_ignored_list=compatibility_ignored_list)
 
 	settings_overlays = dict()
 	disabled_from_overlays = dict()
