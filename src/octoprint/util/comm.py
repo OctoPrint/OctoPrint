@@ -79,7 +79,7 @@ regex_minMaxError = re.compile("Error:[0-9]\n")
 regex_marlinKillError = re.compile("Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused")
 """Regex matching first line of kill causing errors from Marlin."""
 
-regex_sdPrintingByte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
+regex_sdPrintingByte = re.compile("(?P<current>[0-9]+)/(?P<total>[0-9]+)")
 """Regex matching SD printing status reports.
 
 Groups will be as follows:
@@ -1935,31 +1935,34 @@ class MachineCom(object):
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
 					if match:
-						current = int(match.group("current"))
-						total = int(match.group("total"))
-
-						if current == total == 0 \
-							and self.isSdPrinting() \
-							and not self.isStarting() \
-							and not self.isStarting() \
-							and not self.isFinishing():
-							# apparently not SD printing - some Marlin versions report it like that for some reason
-							self._consecutive_not_sd_printing += 1
-							if self._consecutive_not_sd_printing > self._consecutive_not_sd_printing_maximum:
-								self.cancelPrint(external_sd=True)
-
+						try:
+							current = int(match.group("current"))
+							total = int(match.group("total"))
+						except:
+							self._logger.exception("Error while parsing SD status report")
 						else:
-							self._consecutive_not_sd_printing = 0
-							if self.isSdFileSelected():
-								if not self.isSdPrinting() and current != total and current > 0:
-									self.startPrint(external_sd=True)
+							if current == total == 0 \
+								and self.isSdPrinting() \
+								and not self.isStarting() \
+								and not self.isStarting() \
+								and not self.isFinishing():
+								# apparently not SD printing - some Marlin versions report it like that for some reason
+								self._consecutive_not_sd_printing += 1
+								if self._consecutive_not_sd_printing > self._consecutive_not_sd_printing_maximum:
+									self.cancelPrint(external_sd=True)
 
-								self._currentFile.pos = current
-								if self._currentFile.size == 0:
-									self._currentFile.size = total
+							else:
+								self._consecutive_not_sd_printing = 0
+								if self.isSdFileSelected():
+									if not self.isSdPrinting() and current != total and current > 0:
+										self.startPrint(external_sd=True)
 
-								if not self._currentFile.done:
-									self._callback.on_comm_progress()
+									self._currentFile.pos = current
+									if self._currentFile.size == 0:
+										self._currentFile.size = total
+
+									if not self._currentFile.done:
+										self._callback.on_comm_progress()
 				elif 'Not SD printing' in line \
 					and self.isSdPrinting() \
 					and not self.isStarting() \
