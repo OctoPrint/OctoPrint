@@ -945,6 +945,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.process_protocol_log(message)
 
 			# TODO error handling
+			self.error = "Too many consecutive timeouts"
 
 			self.disconnect(error=True)
 
@@ -1156,6 +1157,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					break
 		else:
 			# unknown error message
+			self.error = line
 			pass
 
 	def _on_error_communication(self, error_type):

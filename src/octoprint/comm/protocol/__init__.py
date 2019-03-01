@@ -73,6 +73,7 @@ class Protocol(ListenerAware, TransportListener):
 		self._logger = logging.getLogger(__name__)
 		self._protocol_logger = logging.getLogger("PROTOCOL")
 		self._state = ProtocolState.DISCONNECTED
+		self._error = None
 
 		self._printer_profile = kwargs.get("printer_profile")
 		self._plugin_manager = kwargs.get("plugin_manager")
@@ -156,6 +157,14 @@ class Protocol(ListenerAware, TransportListener):
 		method = getattr(self, name, None)
 		if method is not None:
 			method(old_state)
+
+	@property
+	def error(self):
+		return self._error
+
+	@error.setter
+	def error(self, new_error):
+		self._error = new_error
 
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
 		if self.state not in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
