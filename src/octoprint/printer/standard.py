@@ -1354,19 +1354,21 @@ class Printer(PrinterInterface,
 		if self._job_event_handled(protocol, job, "done"):
 			return
 
-		payload = job.event_payload()
-		if payload:
-			def log_print():
-				self._file_manager.log_print(payload["origin"],
-				                             payload["path"],
-				                             time.time(),
-				                             payload["time"],
-				                             True,
-				                             self._printer_profile_manager.get_current_or_default()["id"])
+		if job.last_result.available:
+			payload = job.event_payload()
+			elapsed = job.last_result.elapsed
+			if elapsed is not None:
+				def log_print():
+					self._file_manager.log_print(payload["origin"],
+					                             payload["path"],
+					                             time.time(),
+					                             elapsed,
+					                             True,
+					                             self._printer_profile_manager.get_current_or_default()["id"])
 
-			thread = threading.Thread(target=log_print)
-			thread.daemon = True
-			thread.start()
+				thread = threading.Thread(target=log_print)
+				thread.daemon = True
+				thread.start()
 
 	def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:

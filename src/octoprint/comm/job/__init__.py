@@ -137,7 +137,7 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 		payload["owner"] = self._user
 		elapsed = self.elapsed
 		if elapsed is not None:
-			payload["time"] = self.elapsed
+			payload["time"] = elapsed
 
 		return payload
 
