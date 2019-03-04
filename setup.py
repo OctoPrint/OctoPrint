@@ -20,13 +20,13 @@ INSTALL_REQUIRES = [
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
 	# changes that might affect plugins, or due to other observed problems
 
-	"flask>=0.10.1,<0.11",       # newer versions require newer Jinja versions
-	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
-	                             # guarantee backwards compatibility for plugins and such with that
-	                             # version, hence we need to pin to a lower version for now. See #1697
-	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
-	"Flask-Login>=0.2.11,<0.3",  # some functions changed to properties in 0.3
-	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
+	"flask>=0.10.1,<0.11",         # newer versions require newer Jinja versions
+	"Jinja2>=2.8.1,<2.9",          # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                               # guarantee backwards compatibility for plugins and such with that
+	                               # version, hence we need to pin to a lower version for now. See #1697
+	"tornado==4.5.3",              # a memory leak was observed in tornado >= 5, see #2585
+	"Flask-Login>=0.2.11,<0.3",    # some functions changed to properties in 0.3
+	"regex!=2018.11.6",            # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
@@ -55,7 +55,6 @@ INSTALL_REQUIRES = [
 	"future>=0.17.1,<0.18",
 	"scandir>=1.10,<1.11",
 	"websocket-client>=0.56,<0.57",
-	"python-dateutil>=2.8,<2.9",
 	"wrapt>=1.11.1,<1.12",
 	"futures>=3.2,<3.3",
 	"emoji>=0.5.1,<0.6",

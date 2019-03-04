@@ -28,9 +28,10 @@ import requests
 import re
 import os
 import copy
-import dateutil.parser
 import time
 import threading
+
+from datetime import datetime
 
 _DATA_FORMAT_VERSION = "v2"
 
@@ -868,7 +869,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			key = notice["plugin"]
 
 			try:
-				parsed_date = dateutil.parser.parse(notice["date"])
+				# Jekyll turns "%Y-%m-%d %H:%M:%SZ" into "%Y-%m-%d %H:%M:%S +0000", so be sure to ignore "+0000"
+				#
+				# Being able to use dateutil here would make things way easier but sadly that can no longer get
+				# installed (from source) under OctoPi 0.14 due to its setuptools-scm dependency, so we have to do
+				# without it for now until we can drop support for OctoPi 0.14.
+				parsed_date = datetime.strptime(notice["date"], "%Y-%m-%d %H:%M:%S +0000")
 				notice["timestamp"] = parsed_date.timetuple()
 			except Exception as e:
 				self._logger.warn("Error while parsing date {!r} for plugin notice "
