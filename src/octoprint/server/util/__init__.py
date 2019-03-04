@@ -66,12 +66,9 @@ def loginUserFromApiKey():
 	if not apikey:
 		return False
 
-	if octoprint.server.appSessionManager.validate(apikey):
-		return False
-
 	user = get_user_for_apikey(apikey)
 	if user is None:
-		return False
+		raise InvalidApiKeyException()
 
 	if not loginUser(user):
 		return False
