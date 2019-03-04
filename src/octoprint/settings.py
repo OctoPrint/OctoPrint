@@ -397,6 +397,7 @@ default_settings = {
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
 			"hasBed": True,
+			"hasChamber": False,
 			"repetierStyleTargetTemperature": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,

@@ -394,10 +394,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def set_temperature(self, heater, value, *args, **kwargs):
 		if not PrinterInterface.valid_heater_regex.match(heater):
-			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
+			raise ValueError("heater must match \"tool[0-9]+\", \"bed\" or \"chamber\": {heater}".format(heater=heater))
 
 		if not isinstance(value, (int, long, float)) or value < 0:
 			raise ValueError("value must be a valid number >= 0: {value}".format(value=value))
+
+		tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
 
 		if heater.startswith("tool"):
 			printer_profile = self._printerProfileManager.get_current_or_default()
@@ -406,14 +408,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
 				self.commands("M104 T{} S{}".format(toolNum, value),
-				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+				              tags=tags)
 			else:
 				self.commands("M104 S{}".format(value),
-				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+				              tags=tags)
 
 		elif heater == "bed":
 			self.commands("M140 S{}".format(value),
-			              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+			              tags=tags)
+
+		elif heater == "chamber":
+			self.commands("M141 S{}".format(value),
+			              tags=tags)
 
 	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
@@ -613,6 +619,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"actual": self._bedTemp[0],
 				"target": self._bedTemp[1],
 				"offset": offsets["bed"] if "bed" in offsets and offsets["bed"] is not None else 0
+			}
+		if self._chamberTemp is not None:
+			result["chamber"] = {
+				"actual": self._chamberTemp[0],
+				"target": self._chamberTemp[1],
+				"offset": offsets["chamber"] if "chamber" in offsets and offsets["chamber"] is not None else 0
 			}
 
 		return result
@@ -853,7 +865,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None,
 		                  printTimeLeftOrigin=printTimeLeftOrigin)
 
-	def _addTemperatureData(self, tools=None, bed=None):
+	def _addTemperatureData(self, tools=None, bed=None, chamber=None):
 		if tools is None:
 			tools = dict()
 
@@ -862,11 +874,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			data["tool%d" % tool] = self._dict(actual=tools[tool][0], target=tools[tool][1])
 		if bed is not None and isinstance(bed, tuple):
 			data["bed"] = self._dict(actual=bed[0], target=bed[1])
+		if chamber is not None and isinstance(chamber, tuple):
+			data["chamber"] = self._dict(actual=chamber[0], target=chamber[1])
 
 		self._temps.append(data)
 
 		self._temp = tools
 		self._bedTemp = bed
+		self._chamberTemp = chamber
 
 		self._stateMonitor.add_temperature(self._dict(**data))
 
@@ -1015,8 +1030,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
-	def on_comm_temperature_update(self, temp, bedTemp):
-		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp))
+	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
+		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp), chamber=copy.deepcopy(chamberTemp))
 
 	def on_comm_position_update(self, position, reason=None):
 		payload = dict(reason=reason)

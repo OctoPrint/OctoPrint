@@ -297,7 +297,7 @@ $(function() {
         });
 
         self.addTemperatureProfile = function() {
-            self.temperature_profiles.push({name: "New", extruder:0, bed:0});
+            self.temperature_profiles.push({name: "New", extruder:0, bed:0, chamber:0});
         };
 
         self.removeTemperatureProfile = function(profile) {
@@ -818,7 +818,8 @@ $(function() {
                                 result.push({
                                     name: profile.name,
                                     extruder: Math.floor(_.isNumber(profile.extruder) ? profile.extruder : parseInt(profile.extruder)),
-                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed))
+                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed)),
+                                    chamber: Math.floor(_.isNumber(profile.chamber) ? profile.chamber : (_.isNumber(parseInt(profile.chamber)) ? parseInt(profile.chamber) : 0))
                                 });
                             } catch (ex) {
                                 // ignore

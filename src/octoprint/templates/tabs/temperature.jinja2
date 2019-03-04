@@ -16,6 +16,7 @@
         <tr data-bind="template: { name: 'temprow-template' }"></tr>
         <!-- /ko -->
         <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
+        <tr data-bind="template: { name: 'temprow-template', data: chamberTemp }, visible: hasChamber"></tr>
     </table>
 
     <script type="text/html" id="temprow-template">
@@ -41,7 +42,7 @@
                         <li class="divider"></li>
                         <!-- ko foreach: $root.temperature_profiles -->
                         <li>
-                            <a href="javascript:void(0)" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                            <a href="javascript:void(0)" data-bind="click: function() { $root.setTargetFromProfile($parent, $data);}, text: $root.profileText($parent, $data)"></a>
                         </li>
                         <!-- /ko -->
                     </ul>

@@ -323,6 +323,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Whether the simulated printer should also simulate a heated bed or not
        hasBed: true
 
+       # Whether the simulated printer should also simulate a heated chamber or not
+       hasChamber: false
+
        # If enabled, reports the set target temperatures as separate messages from the firmware
        #
        # True:  > M109 S220.0

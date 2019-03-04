@@ -84,6 +84,8 @@ class VirtualPrinter(object):
 		self.targetTemp = [0.0] * self.temperatureCount
 		self.bedTemp = self._ambient_temperature
 		self.bedTargetTemp = 0.0
+		self.chamberTemp = self._ambient_temperature
+		self.chamberTargetTemp = 0.0
 		self.lastTempAt = monotonic_time()
 
 		self._relative = True
@@ -458,6 +460,12 @@ class VirtualPrinter(object):
 
 	def _gcode_M190(self, data):
 		self._parseBedCommand(data, wait=True, support_r=True)
+
+	def _gcode_M141(self, data):
+		self._parseChamberCommand(data)
+
+	def _gcode_M191(self, data):
+		self._parseChamberCommand(data, wait=True, support_r=True)
 
 	def _gcode_M105(self, data):
 		self._processTemperatureQuery()
@@ -930,6 +938,12 @@ class VirtualPrinter(object):
 				else:
 					allTempsString = "B:%.2f %s" % (self.bedTemp, allTempsString)
 
+			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+				if includeTarget:
+					allTempsString = "C:%.2f /%.2f %s" % (self.chamberTemp, self.chamberTargetTemp, allTempsString)
+				else:
+					allTempsString = "C:%.2f %s" % (self.chamberTemp, allTempsString)
+
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
 					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
@@ -939,9 +953,28 @@ class VirtualPrinter(object):
 				output = allTempsString
 		else:
 			if includeTarget:
-				output = "T:%.2f /%.2f B:%.2f /%.2f" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
+				t = "T:%.2f /%.2f" % (self.temp[0], self.targetTemp[0])
 			else:
-				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
+				t = "T:%.2f" % self.temp[0]
+
+			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+				if includeTarget:
+					b = "B:%.2f /%.2f" % (self.bedTemp, self.bedTargetTemp)
+				else:
+					b = "B:%.2f" % self.bedTemp
+			else:
+				b = ""
+
+			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+				if includeTarget:
+					c = "C:%.2f /%.2f" % (self.chamberTemp, self.chamberTargetTemp)
+				else:
+					c = "C:%.2f" % self.chamberTemp
+			else:
+				c = ""
+
+			output = t + " " + b + " " + c
+			output = output.strip()
 
 		output += " @:64\n"
 		return output
@@ -985,6 +1018,9 @@ class VirtualPrinter(object):
 			self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
 	def _parseBedCommand(self, line, wait=False, support_r=False):
+		if not settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+			return
+
 		only_wait_if_higher = True
 		try:
 			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
@@ -1000,6 +1036,24 @@ class VirtualPrinter(object):
 			self._waitForHeatup("bed", only_wait_if_higher)
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self._send("TargetBed:%d" % self.bedTargetTemp)
+
+	def _parseChamberCommand(self, line, wait=False, support_r=False):
+		if not settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+			return
+
+		only_wait_if_higher = True
+		try:
+			self.chamberTargetTemp = float(re.search('S([0-9]+)', line).group(1))
+		except:
+			if support_r:
+				try:
+					self.chamberTargetTemp = float(re.search('R([0-9]+)', line).group(1))
+					only_wait_if_higher = False
+				except:
+					pass
+
+		if wait:
+			self._waitForHeatup("chamber", only_wait_if_higher)
 
 	def _performMove(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -1210,6 +1264,9 @@ class VirtualPrinter(object):
 			elif heater == "bed":
 				test = lambda: self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)
 				output = lambda: "B:%0.2f" % self.bedTemp
+			elif heater == "chamber":
+				test = lambda: self.chamberTemp < self.chamberTargetTemp - delta or (not only_wait_if_higher and self.chamberTemp > self.chamberTargetTemp + delta)
+				output = lambda: "C:%0.2f" % self.chamberTemp
 			else:
 				return
 
@@ -1261,6 +1318,7 @@ class VirtualPrinter(object):
 				continue
 			self.temp[i] = simulate(self.temp[i], self.targetTemp[i], self._ambient_temperature)
 		self.bedTemp = simulate(self.bedTemp, self.bedTargetTemp, self._ambient_temperature)
+		self.chamberTemp = simulate(self.chamberTemp, self.chamberTargetTemp, self._ambient_temperature)
 
 	def _processBuffer(self):
 		while self.buffered is not None:

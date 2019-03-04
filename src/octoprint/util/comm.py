@@ -98,7 +98,7 @@ Groups will be as follows:
   * ``size``: size of the file in bytes (int)
 """
 
-regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_float_pattern, regex_float_pattern))
+regex_temp = re.compile("(?P<tool>B|C|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_float_pattern, regex_float_pattern))
 """Regex matching temperature entries in line.
 
 Groups will be as follows:
@@ -275,6 +275,7 @@ class TemperatureRecord(object):
 	def __init__(self):
 		self._tools = dict()
 		self._bed = (None, None)
+		self._chamber = (None, None)
 
 	def copy_from(self, other):
 		self._tools = other.tools
@@ -288,6 +289,10 @@ class TemperatureRecord(object):
 		current = self._bed
 		self._bed = self._to_new_tuple(current, actual, target)
 
+	def set_chamber(self, actual=None, target=None):
+		current = self._chamber
+		self._chamber = self._to_new_tuple(current, actual, target)
+
 	@property
 	def tools(self):
 		return dict(self._tools)
@@ -295,6 +300,10 @@ class TemperatureRecord(object):
 	@property
 	def bed(self):
 		return self._bed
+
+	@property
+	def chamber(self):
+		return self._chamber
 
 	def as_script_dict(self):
 		result = dict()
@@ -307,6 +316,10 @@ class TemperatureRecord(object):
 		bed = self.bed
 		result["b"] = dict(actual=bed[0],
 		                   target=bed[1])
+
+		chamber = self.chamber
+		result["c"] = dict(actual=chamber[0],
+		                   target=chamber[1])
 
 		return result
 
@@ -357,6 +370,7 @@ class MachineCom(object):
 	CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 	CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
+	CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
 
 	CAPABILITY_SUPPORT_ENABLED = "enabled"
 	CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -444,7 +458,8 @@ class MachineCom(object):
 			self.CAPABILITY_AUTOREPORT_TEMP: settings().getBoolean(["serial", "capabilities", "autoreport_temp"]),
 			self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
 			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"]),
-			self.CAPABILITY_EMERGENCY_PARSER: settings().getBoolean(["serial", "capabilities", "emergency_parser"])
+			self.CAPABILITY_EMERGENCY_PARSER: settings().getBoolean(["serial", "capabilities", "emergency_parser"]),
+			self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(["serial", "capabilities", "chamber_temp"])
 		}
 
 		self._lastLines = deque([], 50)
@@ -584,6 +599,9 @@ class MachineCom(object):
 	@property
 	def _active(self):
 		return self._monitoring_active and self._send_queue_active
+
+	def _capability_supported(self, cap):
+		return self._capability_support.get(cap, False) and self._firmware_capabilities.get(cap, False)
 
 	##~~ internal state management
 
@@ -1508,6 +1526,11 @@ class MachineCom(object):
 			actual, target = parsedTemps["B"]
 			self.last_temperature.set_bed(actual=actual, target=target)
 
+		# chamber temperature
+		if "C" in parsedTemps and (self._capability_supported(self.CAPABILITY_CHAMBER_TEMP) or self._printerProfileManager.get_current_or_default()["heatedChamber"]):
+			actual, target = parsedTemps["C"]
+			self.last_temperature.set_chamber(actual=actual, target=target)
+
 	##~~ Serial monitor processing received messages
 
 	def _monitor(self):
@@ -1772,7 +1795,7 @@ class MachineCom(object):
 						self._heatupWaitStartTime = monotonic_time()
 
 					self._processTemperatures(line)
-					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = regex_repetierTempExtr.match(line)
@@ -1783,14 +1806,14 @@ class MachineCom(object):
 						try:
 							target = float(matchExtr.group(2))
 							self.last_temperature.set_tool(toolNum, target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
 						except ValueError:
 							pass
 					elif matchBed is not None:
 						try:
 							target = float(matchBed.group(1))
 							self.last_temperature.set_bed(target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
 						except ValueError:
 							pass
 
@@ -3450,6 +3473,12 @@ class MachineCom(object):
 			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
+	def _gcode_M141_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		if not self._printerProfileManager.get_current_or_default()["heatedChamber"]:
+			self._log("Warn: Not sending \"{}\", printer profile has no heated chamber".format(cmd))
+			return None, # Don't send chamber commands if we don't have a heated chamber
+	_gcode_M191_queuing = _gcode_M141_queuing
+
 	def _gcode_M104_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, wait=False, support_r=False, *args, **kwargs):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
@@ -3469,7 +3498,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_tool(toolNum, target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
 			except ValueError:
 				pass
 
@@ -3482,7 +3511,20 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_bed(target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+			except ValueError:
+				pass
+
+	def _gcode_M141_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, wait=False, support_r=False, *args, **kwargs):
+		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
+		if match:
+			try:
+				target = float(match.group("value"))
+				self.last_temperature.set_chamber(target=target)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
 			except ValueError:
 				pass
 
@@ -3497,6 +3539,12 @@ class MachineCom(object):
 		self._long_running_command = True
 		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
+
+	def _gcode_M191_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		self._heatupWaitStartTime = monotonic_time()
+		self._log_running_command = True
+		self._heating = True
+		self._gcode_M141_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M116_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = monotonic_time()
@@ -3602,8 +3650,7 @@ class MachineCom(object):
 
 	def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
 		# only jump the queue with our command if the EMERGENCY_PARSER capability is available
-		if not self._capability_support.get(self.CAPABILITY_EMERGENCY_PARSER, False) \
-			or not self._firmware_capabilities.get(self.CAPABILITY_EMERGENCY_PARSER, False):
+		if not self._capability_supported(self.CAPABILITY_EMERGENCY_PARSER):
 			return
 
 		self._logger.info(message)
@@ -3667,7 +3714,7 @@ class MachineComPrintCallback(object):
 	def on_comm_log(self, message):
 		pass
 
-	def on_comm_temperature_update(self, temp, bedTemp):
+	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
 		pass
 
 	def on_comm_position_update(self, position, reason=None):
