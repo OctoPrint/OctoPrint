@@ -34,6 +34,10 @@ class LastResult(object):
 class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 
 	parallel = False
+	"""Job runs parallel to regular communication."""
+
+	exclusive = False
+	"""Job has exclusive claim to communication channel."""
 
 	def __init__(self, name=None, user=None, event_data=None):
 		if event_data is None:
@@ -377,6 +381,8 @@ class CopyJobMixin(object):
 
 
 class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
+
+	exclusive = True
 
 	@classmethod
 	def from_job(cls, job, remote):

@@ -223,9 +223,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			long_running_command=False,
 
 			# misc
-			only_from_job=False,
-			trigger_events=True,
-			expect_continous_comms=False,
+			only_from_job=BooleanCallbackValue(lambda: self.state in ProtocolState.PROCESSING_STATES
+			                                           and self._job
+			                                           and self._job.exclusive),
+			trigger_events=BooleanCallbackValue(lambda: not (self.state in ProtocolState.PROCESSING_STATES
+			                                                 and self._job
+			                                                 and self._job.exclusive)),
+			expect_continous_comms=BooleanCallbackValue(lambda: self.state in ProtocolState.PROCESSING_STATES
+			                                                    and self._job
+			                                                    and not self._job.parallel),
 			ignore_ok=0,
 			job_on_hold=BooleanCallbackValue(lambda: self.job_on_hold),
 
@@ -348,17 +354,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		super(ReprapGcodeProtocol, self).connect(transport,
 		                                         transport_args=transport_args,
 		                                         transport_kwargs=transport_kwargs)
-
-	def process(self, job, position=0, user=None, tags=None):
-		if isinstance(job, LocalGcodeStreamjob):
-			self._internal_flags["only_from_job"] = True
-			self._internal_flags["trigger_events"] = False
-		else:
-			self._internal_flags["only_from_job"] = False
-			self._internal_flags["trigger_events"] = True
-		self._internal_flags["expect_continous_comms"] = not job.parallel
-
-		super(ReprapGcodeProtocol, self).process(job, position=position, user=user, tags=tags)
 
 	# cancel handling
 
@@ -789,9 +784,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._continue_sending()
 
 	def _job_processed(self, job, *args, **kwargs):
-		self._internal_flags["expect_continous_comms"] = False
-		self._internal_flags["only_from_job"] = False
-		self._internal_flags["trigger_events"] = True
 		self._job.unregister_listener(self)
 
 	def _job_on_hold_cleared(self):
