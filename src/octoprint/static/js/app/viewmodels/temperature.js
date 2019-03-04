@@ -158,13 +158,12 @@ $(function() {
             self.heaterOptions(heaterOptions);
             self.tools(tools);
 
-            OctoPrint.coreui.updateTab();
-
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
             self.updatePlot();
         };
+
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
@@ -872,6 +871,9 @@ $(function() {
             self._printerProfileUpdated();
         };
 
+        self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            self.initOrUpdate();
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
