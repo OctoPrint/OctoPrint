@@ -609,7 +609,7 @@ def passive_login():
 					                                                                          additional_private=ip_check_trusted)
 					return flask.jsonify(response)
 		except:
-			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, localNetworks))
+			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, local_networks))
 
 	return "", 204
 
