@@ -195,7 +195,7 @@ def params():
 	keywords = "3dprinting 3dprinter 3d-printing 3d-printer octoprint"
 
 	project_urls={
-		"Community Forum": "https://discourse.octoprint.org",
+		"Community Forum": "https://community.octoprint.org",
 		"Bug Reports": "https://github.com/foosel/OctoPrint/issues",
 		"Source": "https://github.com/foosel/OctoPrint",
 		"Funding": "https://donate.octoprint.org"
