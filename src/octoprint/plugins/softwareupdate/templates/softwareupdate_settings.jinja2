@@ -39,41 +39,26 @@
 
 <h3>{{ _('Current versions') }}</h3>
 
-<table class="table table-striped table-hover table-condensed table-hover">
-    <tbody data-bind="foreach: versions.paginatedItems">
-    <tr data-bind="attr: {title: displayName}">
-        <td class="settings_plugin_softwareupdate_column_update">
-            <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
-        </td>
-        <td class="settings_plugin_softwareupdate_column_information">
-            <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
-            <small class="muted">
-                <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
-                <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
-                <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
-                <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
-            </small>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<div class="pagination pagination-mini pagination-centered">
-    <ul>
-        <li data-bind="css: {disabled: versions.currentPage() === 0}">
-            <a href="#" data-bind="click: versions.prevPage">«</a>
-        </li>
-    </ul>
-    <ul data-bind="foreach: versions.pages">
-        <li data-bind="css: { active: $data.number === $root.versions.currentPage(), disabled: $data.number === -1 }">
-            <a href="#" data-bind="text: $data.text, click: function() { $root.versions.changePage($data.number); }"></a>
-        </li>
-    </ul>
-    <ul>
-        <li data-bind="css: {disabled: versions.currentPage() === versions.lastPage()}">
-            <a href="#" data-bind="click: versions.nextPage">»</a>
-        </li>
-    </ul>
+<div id="settings_plugin_softwareupdate_updatelist">
+    <table class="table table-striped table-hover table-condensed table-hover">
+        <tbody data-bind="foreach: versions.paginatedItems">
+        <tr data-bind="attr: {title: displayName}">
+            <td class="settings_plugin_softwareupdate_column_update">
+                <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
+            </td>
+            <td class="settings_plugin_softwareupdate_column_information">
+                <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
+                <small class="muted">
+                    <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
+                    <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
+                    <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
+                    <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
+                </small>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
 <button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: enableUpdate, css: {disabled: !enableUpdate}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>

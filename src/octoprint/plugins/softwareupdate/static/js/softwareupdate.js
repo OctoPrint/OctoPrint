@@ -84,7 +84,7 @@ $(function() {
             "name",
             [],
             [],
-            5
+            0
         );
 
         self.availableAndPossible = ko.pureComputed(function() {
