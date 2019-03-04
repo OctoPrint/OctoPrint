@@ -425,7 +425,6 @@ class MachineCom(object):
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
-		self._block_M0_M1 = settings().getBoolean(["serial", "blockM0M1"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 
@@ -483,6 +482,8 @@ class MachineCom(object):
 
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
+		self._blocked_commands = settings().get(["serial", "blockedCommands"])
+		self._pausing_commands = settings().get(["serial", "pausingCommands"])
 
 		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None)
 		self._send_queue = SendQueue()
@@ -3432,22 +3433,6 @@ class MachineCom(object):
 				except ValueError:
 					pass
 
-	def _gcode_M0_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self.setPause(True)
-		if self._block_M0_M1:
-			if self.isPrinting():
-				self._log("Not sending {} to printer since it's known to block communication, only pausing".format(cmd))
-			else:
-				self._log("Not sending {} to printer since it's known to block communication".format(cmd))
-			return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-	_gcode_M1_queuing = _gcode_M0_queuing
-
-	def _gcode_M25_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		# M25 while not printing from SD will be handled as pause. This way it can be used as another marker
-		# for GCODE induced pausing. Send it to the printer anyway though.
-		if self.isPrinting() and not self.isSdPrinting():
-			self.setPause(True)
-
 	def _gcode_M28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if not self.isStreaming():
 			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
@@ -3659,6 +3644,17 @@ class MachineCom(object):
 			self.setPause(False, tags={"trigger:atcommand_resume"})
 
 	##~~ command phase handlers
+
+	def _command_phase_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		if gcode is not None:
+
+			if self.isPrinting() and gcode in self._pausing_commands:
+				self._logger.info("Pausing print job due to command {}".format(gcode))
+				self.setPause(True)
+
+			if gcode in self._blocked_commands:
+				self._logger.info("Not sending {} to printer, it's configured as a blocked command".format(gcode))
+				return None,
 
 	def _command_phase_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if gcode is not None and gcode in self._long_running_commands:

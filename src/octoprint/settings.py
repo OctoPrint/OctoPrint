@@ -113,6 +113,8 @@ default_settings = {
 		"additionalPorts": [],
 		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
+		"blockedCommands": ["M0", "M1"],
+		"pausingCommands": ["M0", "M1", "M25"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
@@ -149,8 +151,7 @@ default_settings = {
 		},
 
 		# command specific flags
-		"triggerOkForM29": True,
-		"blockM0M1": True
+		"triggerOkForM29": True
 	},
 	"server": {
 		"host": None,
@@ -957,7 +958,8 @@ class Settings(object):
 			self._migrate_core_system_commands,
 			self._migrate_serial_features,
 			self._migrate_resend_without_ok,
-			self._migrate_string_temperature_profile_values
+			self._migrate_string_temperature_profile_values,
+			self._migrate_blocked_commands
 		)
 
 		for migrate in migrators:
@@ -1314,6 +1316,21 @@ class Settings(object):
 					result.append(profile)
 				config["temperature"]["profiles"] = result
 				return True
+		return False
+
+	def _migrate_blocked_commands(self, config):
+		if "serial" in config and "blockM0M1" in config["serial"]:
+			blockM0M1 = config["serial"]["blockM0M1"]
+			blockedCommands = config["serial"].get("blockedCommands", [])
+			if blockM0M1:
+				blockedCommands = set(blockedCommands)
+				blockedCommands.add("M0")
+				blockedCommands.add("M1")
+				config["serial"]["blockedCommands"] = sorted(blockedCommands)
+			else:
+				config["serial"]["blockedCommands"] = sorted([v for v in blockedCommands if v not in ("M0", "M1")])
+			del config["serial"]["blockM0M1"]
+			return True
 		return False
 
 	def backup(self, suffix=None, path=None, ext=None, hidden=False):

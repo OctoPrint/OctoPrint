@@ -810,6 +810,19 @@ Use the following settings to configure the serial connection to the printer:
      additionalBaudrates:
      - 123456
 
+     # Commands which should not be sent to the printer, e.g. because they are known to block serial
+     # communication until physical interaction with the printer as is the case on most firmwares with
+     # the default M0 and M1.
+     blockedCommands:
+     - M0
+     - M1
+
+     # Commands which should cause OctoPrint to pause any ongoing prints.
+     pausingCommands:
+     - M0
+     - M1
+     - M25
+
      # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
      # homing, dwelling, auto leveling etc. Defaults to the below commands.
      longRunningCommands:

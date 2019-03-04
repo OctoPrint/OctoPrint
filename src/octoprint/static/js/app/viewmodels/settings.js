@@ -169,10 +169,11 @@ $(function() {
         self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
+        self.serial_blockedCommands = ko.observable(undefined);
+        self.serial_pausingCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
-        self.serial_blockM0M1 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
         self.serial_sdRelativePath =  ko.observable(undefined);
@@ -778,6 +779,8 @@ $(function() {
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
+                    blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
+                    pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
                     alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
                     neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
@@ -914,6 +917,8 @@ $(function() {
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
+                    blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
+                    pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
                     neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},
