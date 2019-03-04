@@ -210,32 +210,32 @@ class Protocol(ListenerAware, TransportListener):
 		else:
 			self.state = ProtocolState.DISCONNECTED
 
-	def process(self, job, position=0, user=None, tags=None):
+	def process(self, job, position=0, user=None, tags=None, **kwargs):
 		if not job.can_process(self):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
 		self._job = job
 		self._job.register_listener(self)
-		self._job.process(self, position=position, user=user, tags=tags)
+		self._job.process(self, position=position, user=user, tags=tags, **kwargs)
 
-	def pause_processing(self, user=None, tags=None):
+	def pause_processing(self, user=None, tags=None, **kwargs):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 		self.state = ProtocolState.PAUSING
-		self.notify_listeners("on_protocol_job_pausing", self, self._job)
+		self.notify_listeners("on_protocol_job_pausing", self, self._job, user=user, tags=tags, **kwargs)
 		self._job.pause(user=user, tags=tags)
 
-	def resume_processing(self, user=None, tags=None):
+	def resume_processing(self, user=None, tags=None, **kwargs):
 		if self._job is None or self.state != ProtocolState.PAUSED:
 			return
 		self.state = ProtocolState.RESUMING
-		self.notify_listeners("on_protocol_job_resuming", self, self._job)
-		self._job.resume(user=user, tags=tags)
+		self.notify_listeners("on_protocol_job_resuming", self, self._job, user=user, tags=tags, **kwargs)
+		self._job.resume(user=user, tags=tags, **kwargs)
 
-	def cancel_processing(self, error=False, user=None, tags=None):
+	def cancel_processing(self, error=False, user=None, tags=None, **kwargs):
 		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			self.state = ProtocolState.CANCELLING
-			self.notify_listeners("on_protocol_job_cancelling", self, self._job)
-			self._job.cancel(error=error, user=user, tags=tags)
+			self.notify_listeners("on_protocol_job_cancelling", self, self._job, user=user, tags=tags, **kwargs)
+			self._job.cancel(error=error, user=user, tags=tags, **kwargs)
 
 	def can_send(self):
 		return True
@@ -342,122 +342,114 @@ class ProtocolNotConnectedError(Exception):
 	pass
 
 class ThreeAxisProtocolMixin(object):
-	def move(self, x=None, y=None, z=None, feedrate=None, relative=False):
+	def move(self, x=None, y=None, z=None, feedrate=None, relative=False, *args, **kwargs):
 		pass
 
-	def home(self, x=False, y=False, z=False):
+	def home(self, x=False, y=False, z=False, *args, **kwargs):
 		pass
 
 
 class MultiToolProtocolMixin(object):
-
-	def change_tool(self, tool):
+	def change_tool(self, tool, *args, **kwargs):
 		pass
 
 
 class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin, MultiToolProtocolMixin):
-	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
+	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
 		pass
 
-	def set_feedrate_multiplier(self, multiplier):
+	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
 		pass
 
-	def set_extrusion_multiplier(self, multiplier):
+	def set_extrusion_multiplier(self, multiplier, *args, **kwargs):
 		pass
 
-	def set_extruder_temperature(self, temperature, tool=None, wait=False):
+	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
 		pass
 
-	def set_bed_temperature(self, temperature, wait=False):
+	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
 		pass
 
 
 class FanControlProtocolMixin(object):
-
-	def set_fan_speed(self, speed):
+	def set_fan_speed(self, speed, *args, **kwargs):
 		pass
 
-	def get_fan_speed(self, speed):
+	def get_fan_speed(self, speed, *args, **kwargs):
 		pass
 
 
 class MotorControlProtocolMixin(object):
-
-	def enable_motors(self):
+	def enable_motors(self, *args, **kwargs):
 		self.set_motor_state(True)
 
-	def disable_motors(self):
+	def disable_motors(self, *args, **kwargs):
 		self.set_motor_state(False)
 
-	def set_motor_state(self, enabled):
+	def set_motor_state(self, enabled, *args, **kwargs):
 		pass
 
-	def get_motor_state(self):
+	def get_motor_state(self, *args, **kwargs):
 		pass
 
 
 class PowerControlProtocolMixin(object):
-
-	def enable_power(self):
+	def enable_power(self, *args, **kwargs):
 		self.set_power_state(True)
 
-	def disable_power(self):
+	def disable_power(self, *args, **kwargs):
 		self.set_power_state(False)
 
-	def set_power_state(self, enabled):
+	def set_power_state(self, enabled, *args, **kwargs):
 		pass
 
-	def get_power_state(self):
+	def get_power_state(self, *args, **kwargs):
 		return None
 
 
 class FileAwareProtocolMixin(object):
-
-	def init_file_storage(self):
+	def init_file_storage(self, *args, **kwargs):
 		pass
 
-	def eject_file_storage(self):
+	def eject_file_storage(self, *args, **kwargs):
 		pass
 
-	def list_files(self):
+	def list_files(self, *args, **kwargs):
 		pass
 
-	def start_file_print(self, name, position=0, tags=None):
+	def start_file_print(self, name, position=0, tags=None, *args, **kwargs):
 		pass
 
-	def pause_file_print(self):
+	def pause_file_print(self, *args, **kwargs):
 		pass
 
-	def resume_file_print(self):
+	def resume_file_print(self, *args, **kwargs):
 		pass
 
-	def get_file_print_status(self):
+	def get_file_print_status(self, *args, **kwargs):
 		pass
 
-	def start_file_print_status_monitor(self):
+	def start_file_print_status_monitor(self, *args, **kwargs):
 		pass
 
-	def stop_file_print_status_monitor(self):
+	def stop_file_print_status_monitor(self, *args, **kwargs):
 		pass
 
 
 class FileManagementProtocolMixin(FileAwareProtocolMixin):
-
-	def delete_file(self, name):
+	def delete_file(self, name, *args, **kwargs):
 		pass
 
 
 class FileStreamingProtocolMixin(FileManagementProtocolMixin):
-
-	def record_file(self, name):
+	def record_file(self, name, *args, **kwargs):
 		pass
 
-	def stop_recording_file(self):
+	def stop_recording_file(self, *args, **kwargs):
 		pass
 
 
 class ProtocolListener(object):
-
 	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		pass
 
@@ -502,7 +494,6 @@ class ProtocolListener(object):
 
 
 class FileAwareProtocolListener(object):
-
 	def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
 		pass
 

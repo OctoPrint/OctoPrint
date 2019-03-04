@@ -206,6 +206,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# current stuff
 			current_tool=0,
 			former_tool=0,
+			current_f=None,
 			current_z=None,
 
 			# sd status
@@ -416,7 +417,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		# cancel the job
 		self.state = ProtocolState.CANCELLING
 		self._job.cancel(error=error, user=user, tags=tags)
-		self.notify_listeners("on_protocol_job_cancelling", self, self._job, user=user, tags=tags)
+		self.notify_listeners("on_protocol_job_cancelling", self, self._job,
+		                      user=user,
+		                      tags=tags)
 
 		if log_position and not isinstance(self._job, CopyJobMixin):
 			with self._action_users_mutex:
@@ -465,8 +468,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.send_commands(SendQueueMarker(finalize))
 			self._continue_sending()
 
-	def pause_processing(self, user=None, tags=None, log_position=True, suppress_scripts_and_commands=False):
-		# TODO sync with comm.py
+	def pause_processing(self, user=None, tags=None, log_position=True, local_handling=True):
 		if self._job is None or self.state != ProtocolState.PROCESSING:
 			return
 
@@ -477,8 +479,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			tags = set()
 
 		self.state = ProtocolState.PAUSING
-		self._job.pause(user=user, tags=tags)
-		self.notify_listeners("on_protocol_job_pausing", self, self._job, user=user)
+		self._job.pause(local_handling=local_handling,
+		                user=user,
+		                tags=tags)
+		self.notify_listeners("on_protocol_job_pausing", self, self._job,
+		                      local_handling=local_handling,
+		                      user=user,
+		                      tags=tags)
 
 		def on_move_finish_requested():
 			self._record_pause_data = True
@@ -497,7 +504,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                "trigger:record_position"})
 			self._continue_sending()
 
-		if log_position and not suppress_scripts_and_commands:
+		if log_position and local_handling:
 			with self._action_users_mutex:
 				self._action_users["pause"] = user
 
@@ -509,63 +516,80 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._continue_sending()
 		else:
 			self._pause_preparation_done(check_timer=False,
-			                             suppress_script=suppress_scripts_and_commands,
+			                             suppress_script=not local_handling,
 			                             user=user)
 
-	def resume_processing(self, user=None, tags=None, only_adjust_state=False):
-		if only_adjust_state:
-			self.state = ProtocolState.PROCESSING
-		else:
-			super(ReprapGcodeProtocol, self).resume_processing(user=user, tags=tags)
-
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
-		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.move"}
+
+		cmds = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
 
 		if relative:
-			commands = [self.flavor.command_set_relative_positioning()]\
-			           + commands\
+			cmds = [self.flavor.command_set_relative_positioning()]\
+			           + cmds\
 			           + [self.flavor.command_set_absolute_positioning()]
 
-		self._send_commands(*commands)
+		self._send_commands(*cmds,
+		                    tags=tags)
 
 	def home(self, x=False, y=False, z=False, *args, **kwargs):
-		self._send_commands(self.flavor.command_home(x=x, y=y, z=z))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.home"}
+		self._send_commands(self.flavor.command_home(x=x, y=y, z=z),
+		                    tags=tags)
 
 	def change_tool(self, tool, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_tool(tool))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.change_tool"}
+		self._send_commands(self.flavor.command_set_tool(tool),
+		                    tags=tags)
 
 	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_feedrate_multiplier(multiplier))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_feedrate_multiplier"}
+		self._send_commands(self.flavor.command_set_feedrate_multiplier(multiplier),
+		                    tags=tags)
 
 	def set_extrusion_multiplier(self, multiplier, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_extrusion_multiplier(multiplier))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_extrusion_multiplier"}
+		self._send_commands(self.flavor.command_set_extrusion_multiplier(multiplier),
+		                    tags=tags)
 
 	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool=tool, wait=wait))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_extruder_temperature"}
+		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool=tool, wait=wait),
+		                    tags=tags)
 
 	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_bed_temperature"}
+		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait),
+		                    tags=tags)
 
 	##~~ MotorControlProtocolMixin
 
 	def set_motor_state(self, enabled, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_motors(enabled))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_motor_state"}
+		self._send_commands(self.flavor.command_set_motors(enabled),
+		                    tags=tags)
 
 	##~~ FanControlProtocolMixin
 
 	def set_fan_speed(self, speed, *args, **kwargs):
-		self._send_commands(self.flavor.command_set_fan_speed(speed))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_fan_speed"}
+		self._send_commands(self.flavor.command_set_fan_speed(speed),
+		                    tags=tags)
 
 	##~~ FileStreamingProtocolMixin
 
 	def init_file_storage(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_init())
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.init_file_storage"}
+		self._send_commands(self.flavor.command_sd_init(),
+		                    tags=tags)
 
 	def list_files(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_refresh())
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.list_files"}
+		self._send_commands(self.flavor.command_sd_refresh(),
+		                    tags=tags)
 
 	def start_file_print(self, name, position=0, *args, **kwargs):
-		tags = kwargs.get(b"tags", set()) | {"trigger:protocol.start_file_print"}
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.start_file_print"}
 
 		self._send_commands(self.flavor.command_sd_select_file(name),
 		                    self.flavor.command_sd_set_pos(position),
@@ -573,22 +597,36 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                    tags=tags)
 
 	def pause_file_print(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_pause())
+		if kwargs.get("local_handling", True):
+			tags = kwargs.get("tags", set()) | {"trigger:protocol.pause_file_print"}
+			self._send_commands(self.flavor.command_sd_pause(),
+			                    tags=tags)
 
 	def resume_file_print(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_resume())
+		if kwargs.get("local_handling", True):
+			tags = kwargs.get("tags", set()) | {"trigger:protocol.resume_file_print"}
+			self._send_commands(self.flavor.command_sd_resume(),
+			                    tags=tags)
 
 	def delete_file(self, name, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_delete(name))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.delete_file"}
+		self._send_commands(self.flavor.command_sd_delete(name),
+		                    tags=tags)
 
 	def record_file(self, name, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_begin_write(name))
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.record_file"}
+		self._send_commands(self.flavor.command_sd_begin_write(name),
+		                    tags=tags)
 
 	def stop_recording_file(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_end_write())
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.stop_recording_file"}
+		self._send_commands(self.flavor.command_sd_end_write(),
+		                    tags=tags)
 
 	def get_file_print_status(self, *args, **kwargs):
-		self._send_commands(self.flavor.command_sd_status())
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.get_file_print_status"}
+		self._send_commands(self.flavor.command_sd_status(),
+		                    tags=tags)
 
 	def start_file_print_status_monitor(self):
 		if self._internal_flags["sd_status_autoreporting"]:
@@ -773,7 +811,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if job != self._job:
 			return
 
-		self.notify_listeners("on_protocol_job_resumed", self, job, *args, **kwargs)
+		user = kwargs.get("user")
+		tags = kwargs.get("tags")
+		suppress_script = not kwargs.get("local_handling", True)
+
+		self.notify_listeners("on_protocol_job_resumed", self, job,
+		                      suppress_script=suppress_script,
+		                      user=user,
+		                      tags=tags)
 
 		def finalize():
 			self.state = ProtocolState.PROCESSING
@@ -1194,15 +1239,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.pause_processing()
 		elif action == "paused":
 			self.process_protocol_log("Printer signalled that it paused, switching state...")
-			# TODO disable local handling
-			self.pause_processing()
+			self.pause_processing(local_handling=False)
 		elif action == "resume":
 			self.process_protocol_log("Resuming on request of the printer...")
 			self.resume_processing()
 		elif action == "resumed":
 			self.process_protocol_log("Printer signalled that it resumed, switching state...")
-			# TODO disable local handling
-			self.resume_processing()
+			self.resume_processing(local_handling=False)
 		elif action == "disconnect":
 			self.process_protocol_log("Disconnecting on request of the printer...")
 			# TODO inform printer about forced disconnect
@@ -1250,20 +1293,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self.last_position.y = position.get("y")
 		self.last_position.z = position.get("z")
 
-		# TODO determine e, f and t
-		"""
+		t_and_f_trustworthy = self._job is None or not self._job.parallel
+
 		if "e" in position:
 			self.last_position.e = position.get("e")
 		else:
 			# multiple extruder coordinates provided, find current one
-			self.last_position.e = position.get("e{}".format(self._currentTool)) if not self.isSdFileSelected() else None
+			self.last_position.e = position.get("e{}".format(self._internal_flags["current_tool"])) if t_and_f_trustworthy else None
 
 		for key in [key for key in position if key.startswith("e") and len(key) > 1]:
 			setattr(self.last_position, key, position.get(key))
 
-		self.last_position.t = self._currentTool if not self.isSdFileSelected() else None
-		self.last_position.f = self._currentF if not self.isSdFileSelected() else None
-		"""
+		self.last_position.t = self._internal_flags["current_tool"] if t_and_f_trustworthy else None
+		self.last_position.f = self._internal_flags["current_f"] if t_and_f_trustworthy else None
 
 		reason = None
 
@@ -1923,9 +1965,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _gcode_G0_sent(self, command):
 		if command.z is not None and self._internal_flags["current_z"] != command.z:
-				self._internal_flags["current_z"] = command.z
-				self.notify_listeners("on_protocol_position_z_update", self, self._internal_flags["current_z"])
+			self._internal_flags["current_z"] = command.z
+			self.notify_listeners("on_protocol_position_z_update", self, self._internal_flags["current_z"])
+		if command.f is not None:
+			self._internal_flags["current_f"] = command.f
 	_gcode_G1_sent = _gcode_G0_sent
+
+	def _gcode_G2_sent(self, command):
+		if command.f is not None:
+			self._internal_flags["current_f"] = command.f
+	_gcode_G3_sent = _gcode_G2_sent
+	_gcode_G28_sent = _gcode_G2_sent
 
 	def _gcode_M0_queuing(self, command):
 		self.pause_file_print()
