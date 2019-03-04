@@ -127,7 +127,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 				# execute method
 				try:
 					method(*args, **kwargs)
-				except:
+				except Exception:
 					self._logger.exception("There was an error running method {} on check {!r}".format(check_type, check))
 					continue
 

@@ -1614,7 +1614,7 @@ class LocalFileStorage(StorageInterface):
 				# already migrated
 				try:
 					os.remove(metadata_path_yaml)
-				except:
+				except Exception:
 					self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 				return
 
@@ -1634,7 +1634,7 @@ class LocalFileStorage(StorageInterface):
 
 			try:
 				os.remove(metadata_path_yaml)
-			except:
+			except Exception:
 				self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 
 	@contextmanager
