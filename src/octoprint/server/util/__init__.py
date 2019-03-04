@@ -26,29 +26,9 @@ from . import tornado
 from . import watchdog
 
 
+@deprecated("API keys are no longer needed for anonymous access and thus this is now obsolete")
 def enforceApiKeyRequestHandler():
-	"""
-	``before_request`` handler for blueprints which makes sure an API key is provided
-	"""
-
-	import octoprint.server
-
-	if _flask.request.method == 'OPTIONS':
-		# we ignore OPTIONS requests here
-		return
-
-	if _flask.request.endpoint and (_flask.request.endpoint == "static" or _flask.request.endpoint.endswith(".static")):
-		# no further handling for static resources
-		return
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey:
-		return _flask.make_response("No API key provided", 403)
-
-	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
-		# api disabled => 403
-		return _flask.make_response("API disabled", 403)
+	pass
 
 apiKeyRequestHandler = deprecated("apiKeyRequestHandler has been renamed to enforceApiKeyRequestHandler")(enforceApiKeyRequestHandler)
 
@@ -57,7 +37,7 @@ def loginFromApiKeyRequestHandler():
 	"""
 	``before_request`` handler for blueprints which creates a login session for the provided api key (if available)
 
-	UI_API_KEY and app session keys are handled as anonymous keys here and ignored.
+	App session keys are handled as anonymous keys here and ignored.
 	"""
 	try:
 		if loginUserFromApiKey():
@@ -80,9 +60,6 @@ def loginUserFromApiKey():
 	apikey = get_api_key(_flask.request)
 
 	if not apikey:
-		return False
-
-	if apikey == octoprint.server.UI_API_KEY:
 		return False
 
 	if octoprint.server.appSessionManager.validate(apikey):
@@ -193,7 +170,7 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
+	if apikey is not None:
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()

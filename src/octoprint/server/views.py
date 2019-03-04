@@ -17,7 +17,7 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
+	debug, LOCALES, VERSION, DISPLAY_VERSION, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
 from octoprint.settings import settings
 from octoprint.filemanager import full_extension_tree, get_all_extensions
@@ -293,7 +293,6 @@ def index():
 			import hashlib
 			hash = hashlib.sha1()
 			hash.update(octoprint.__version__)
-			hash.update(octoprint.server.UI_API_KEY)
 			hash.update(",".join(sorted(files)))
 			if lastmodified:
 				hash.update(lastmodified)
@@ -440,7 +439,6 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		debug=debug,
 		firstRun=first_run,
 		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
-		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,

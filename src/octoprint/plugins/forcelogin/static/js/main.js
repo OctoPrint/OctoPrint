@@ -41,19 +41,6 @@ $(function() {
 
     OctoPrint.options.baseurl = BASE_URL;
 
-    OctoPrint.socket.onMessage("connected", function(data) {
-        var payload = data.data;
-        OctoPrint.options.apikey = payload.apikey;
-
-        // update the API key directly in jquery's ajax options too,
-        // to ensure the fileupload plugin and any plugins still using
-        // $.ajax directly still work fine too
-        UI_API_KEY = payload["apikey"];
-        $.ajaxSetup({
-            headers: {"X-Api-Key": UI_API_KEY}
-        });
-    });
-
     OctoPrint.socket.onConnected = function() {
         buttonElement.prop("disabled", false);
         offlineElement.removeClass("in");

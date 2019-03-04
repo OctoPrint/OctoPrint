@@ -1201,12 +1201,11 @@ def get_flask_user_from_request(request):
 	"""
 	import octoprint.server.util
 	import flask_login
-	from octoprint.settings import settings
 
 	user = None
 
 	apikey = octoprint.server.util.get_api_key(request)
-	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
+	if apikey is not None:
 		user = octoprint.server.util.get_user_for_apikey(apikey)
 
 	if user is None:

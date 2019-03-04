@@ -346,7 +346,6 @@ default_settings = {
 		"subscriptions": []
 	},
 	"api": {
-		"enabled": True,
 		"key": None,
 		"allowCrossOrigin": False,
 		"apps": {}

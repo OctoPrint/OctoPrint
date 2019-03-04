@@ -82,7 +82,6 @@ def getSettings():
 
 	data = {
 		"api": {
-			"enabled": s.getBoolean(["api", "enabled"]),
 			"key": s.get(["api", "key"]) if admin_permission.can() else None,
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
@@ -371,7 +370,6 @@ def _saveSettings(data):
 			return make_response("One of the configured folders is invalid", 400)
 
 	if "api" in data.keys():
-		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 	if "appearance" in data.keys():

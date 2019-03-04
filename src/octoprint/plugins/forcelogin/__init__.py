@@ -116,13 +116,16 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 			# so we make it possible. If this should get abused long term we can always turn this into -inf.
 			return 0
 
-	def get_before_request_handlers(self):
+	def get_before_request_handlers(self, plugin=None, *args, **kwargs):
 		def check_login_required():
 			if not self.active:
 				# not active, no handling
 				return
 
 			if flask.request.endpoint in ("api.login",):
+				return
+
+			if plugin is not None and not plugin.is_blueprint_protected():
 				return
 
 			user = flask_login.current_user

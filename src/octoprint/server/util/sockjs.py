@@ -133,7 +133,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
 		self._emit("connected", dict(
-			apikey=octoprint.server.UI_API_KEY,
 			version=octoprint.server.VERSION,
 			display_version=octoprint.server.DISPLAY_VERSION,
 			branch=octoprint.server.BRANCH,

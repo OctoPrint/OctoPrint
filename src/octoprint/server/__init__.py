@@ -76,13 +76,11 @@ import octoprint.util.net
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
-from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
+from octoprint.server.util import loginFromApiKeyRequestHandler, corsRequestHandler, \
 	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
 
 from . import util
-
-UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
 VERSION = __version__
 BRANCH = __branch__
@@ -1149,6 +1147,9 @@ class Server(object):
 
 		import octoprint.server.views # do not remove or the index view won't be found
 
+		self._add_plugin_request_handlers_to_blueprint(api)
+		self._add_plugin_request_handlers_to_blueprint(apps)
+
 		blueprints = OrderedDict()
 		blueprints["/api"] = api
 		blueprints["/apps"] = apps
@@ -1158,9 +1159,6 @@ class Server(object):
 
 		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
 		blueprints.update(self._prepare_asset_plugins())
-
-		# make sure all before/after_request hook results are attached as well
-		self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
 
 		# register everything with the system
 		for url_prefix, blueprint in blueprints.items():
@@ -1208,15 +1206,11 @@ class Server(object):
 		if blueprint is None:
 			return
 
-		if plugin.is_blueprint_protected():
-			blueprint.before_request(corsRequestHandler)
-			blueprint.before_request(enforceApiKeyRequestHandler)
-			blueprint.before_request(loginFromApiKeyRequestHandler)
-			blueprint.after_request(corsResponseHandler)
-		else:
-			blueprint.before_request(corsRequestHandler)
-			blueprint.before_request(loginFromApiKeyRequestHandler)
-			blueprint.after_request(corsResponseHandler)
+		blueprint.before_request(corsRequestHandler)
+		blueprint.before_request(loginFromApiKeyRequestHandler)
+		blueprint.after_request(corsResponseHandler)
+
+		self._add_plugin_request_handlers_to_blueprint(blueprint, plugin=plugin)
 
 		url_prefix = "/plugin/{name}".format(name=name)
 		app.register_blueprint(blueprint, url_prefix=url_prefix)
@@ -1238,29 +1232,27 @@ class Server(object):
 
 		return blueprint, url_prefix
 
-	def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
+	def _add_plugin_request_handlers_to_blueprint(self, blueprint, plugin=None):
 		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
 		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
 
-		for plugin, hook in before_hooks.items():
-			for blueprint in blueprints:
-				try:
-					result = hook()
-					if isinstance(result, (list, tuple)):
-						for h in result:
-							blueprint.before_request(h)
-				except:
-					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin))
+		for name, hook in before_hooks.items():
+			try:
+				result = hook(plugin=plugin)
+				if isinstance(result, (list, tuple)):
+					for h in result:
+						blueprint.before_request(h)
+			except:
+				self._logger.exception("Error processing before_request hooks from plugin {}".format(name))
 
-		for plugin, hook in after_hooks.items():
-			for blueprint in blueprints:
-				try:
-					result = hook()
-					if isinstance(result, (list, tuple)):
-						for h in result:
-							blueprint.after_request(h)
-				except:
-					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin))
+		for name, hook in after_hooks.items():
+			try:
+				result = hook(plugin=plugin)
+				if isinstance(result, (list, tuple)):
+					for h in result:
+						blueprint.after_request(h)
+			except:
+				self._logger.exception("Error processing after_request hooks from plugin {}".format(name))
 
 	def _setup_assets(self):
 		global app
