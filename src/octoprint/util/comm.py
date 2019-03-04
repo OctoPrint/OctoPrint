@@ -1316,7 +1316,10 @@ class MachineCom(object):
 					                 part_of_job=True,
 					                 tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 
-				self.sendCommand(SendQueueMarker(lambda: self._changeState(self.STATE_PRINTING)), part_of_job=True)
+				def finalize():
+					if self._state == self.STATE_RESUMING:
+						self._changeState(self.STATE_PRINTING)
+				self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._continue_sending()
