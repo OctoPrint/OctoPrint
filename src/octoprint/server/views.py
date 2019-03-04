@@ -308,6 +308,7 @@ def index():
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
 		                                   unless_response=lambda response: util.flask.cache_check_response_headers(response) or util.flask.cache_check_status_code(response, _valid_status_for_cache))(decorated_view)
+		decorated_view = util.flask.with_client_revalidation(decorated_view)
 		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
 		return decorated_view
 

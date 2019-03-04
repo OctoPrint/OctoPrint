@@ -780,7 +780,7 @@ def cache_check_response_headers(response):
 
 	headers = response.headers
 
-	if "Cache-Control" in headers and "no-cache" in headers["Cache-Control"]:
+	if "Cache-Control" in headers and ("no-cache" in headers["Cache-Control"] or "no-store" in headers["Cache-Control"]):
 		return True
 
 	if "Pragma" in headers and "no-cache" in headers["Pragma"]:
@@ -1049,6 +1049,18 @@ def conditional(condition, met):
 	return decorator
 
 
+def with_client_revalidation(f):
+	@functools.wraps(f)
+	def decorated_function(*args, **kwargs):
+		r = f(*args, **kwargs)
+
+		if isinstance(r, flask.Response):
+			r = add_revalidation_response_headers(r)
+
+		return r
+	return decorated_function
+
+
 def with_revalidation_checking(etag_factory=None,
                                lastmodified_factory=None,
                                condition=None,
@@ -1127,6 +1139,11 @@ def check_lastmodified(lastmodified):
 	return flask.request.method in ("GET", "HEAD") and \
 	       flask.request.if_modified_since is not None and \
 	       lastmodified >= flask.request.if_modified_since
+
+
+def add_revalidation_response_headers(response):
+	response.headers["Cache-Control"] = "no-cache, must-revalidate"
+	return response
 
 
 def add_non_caching_response_headers(response):
