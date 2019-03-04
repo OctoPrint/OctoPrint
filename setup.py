@@ -34,6 +34,7 @@ INSTALL_REQUIRES = [
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
 	"werkzeug>=0.15.1,<0.16",
+	"cachelib>=0.1,<0.2",
 	"PyYAML>=5.1,<6",
 	"markdown>=3.0,<3.1",
 	"pyserial>=3.4,<3.5",

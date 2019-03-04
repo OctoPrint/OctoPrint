@@ -33,7 +33,7 @@ from octoprint.util import DefaultOrderedDict
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
 
-from werkzeug.contrib.cache import BaseCache
+from cachelib import BaseCache
 
 from past.builtins import basestring
 
