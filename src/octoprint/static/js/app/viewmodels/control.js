@@ -26,7 +26,6 @@ $(function() {
         self.distances = ko.observableArray([0.1, 1, 10, 100]);
         self.distance = ko.observable(10);
 
-        self.showTools = ko.observable(true);
         self.tools = ko.observableArray([]);
 
         self.feedRate = ko.observable(100);
@@ -73,14 +72,13 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else {
+            } else if (numExtruders === 1) {
                 // only one extruder, no need to add numbers
                 tools[0] = self._createToolEntry();
                 tools[0]["name"](gettext("Hotend"));
                 tools[0]["key"]("tool0");
             }
 
-            self.showTools(numExtruders > 0);
             self.tools(tools);
         };
 
