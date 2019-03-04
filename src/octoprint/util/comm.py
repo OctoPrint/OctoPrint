@@ -1324,7 +1324,7 @@ class MachineCom(object):
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._continue_sending()
 
-			elif pause and self.isPrinting():
+			elif pause and self._state in (self.STATE_PRINTING, self.STATE_STARTING, self.STATE_RESUMING):
 				if not self._pauseWaitStartTime:
 					self._pauseWaitStartTime = time.time()
 
