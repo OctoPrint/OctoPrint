@@ -1478,13 +1478,13 @@ class Printer(PrinterInterface,
 		if self._job_event_handled(protocol, job, "resumed"):
 			return
 
-		suppress_scripts = kwargs.get("suppress_scripts", False)
+		suppress_script = kwargs.get("suppress_script", False)
 
 		payload = job.event_payload()
 		if payload:
 			payload["user"] = kwargs.get("user")
 
-			if not suppress_scripts:
+			if not suppress_script:
 				self.script("beforePrintResumed",
 				            context=dict(event=payload),
 				            must_be_set=False)
