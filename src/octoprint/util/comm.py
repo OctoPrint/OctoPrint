@@ -799,7 +799,16 @@ class MachineCom(object):
 		return self._currentTool
 
 	def getConnection(self):
-		return self._port, self._baudrate
+		port = self._port
+		baudrate = self._baudrate
+
+		if self._serial is not None:
+			if hasattr(self._serial, "port"):
+				port = self._serial.port
+			if hasattr(self._serial, "baudrate"):
+				baudrate = self._serial.baudrate
+
+		return port, baudrate
 
 	def getTransport(self):
 		return self._serial
