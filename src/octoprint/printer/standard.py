@@ -646,25 +646,6 @@ class Printer(PrinterInterface,
 		if self._protocol is None or not self._protocol.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
 			return
 
-		# reset progress, height, print time
-		self._set_current_z(None)
-		self._reset_progress_data()
-
-		# mark print as failure
-		if self._job is not None:
-			origin = self._get_origin_for_job(self._job.job)
-			self._file_manager.log_print(origin,
-			                             self._job.job.name,
-			                             time.time(),
-			                             self._job.job.elapsed,
-			                             False,
-			                             self._printer_profile_manager.get_current_or_default()["id"])
-			payload = {
-				"file": self._job.job.name,
-				"origin": origin
-			}
-			eventManager().fire(Events.PRINT_FAILED, payload)
-
 		self._protocol.cancel_processing(error=error,
 		                                 user=user,
 		                                 tags=kwargs.get("tags", set()) | {"trigger:printer.cancel_print"})
@@ -1398,24 +1379,13 @@ class Printer(PrinterInterface,
 			return
 
 		firmware_error = kwargs.get("error", None)
-		cancel_position = kwargs.get("position", None)
-		suppress_scripts = kwargs.get("suppress_scripts", None)
 
 		payload = job.event_payload()
 		if payload:
 			payload["user"] = kwargs.get("user")
 			if firmware_error:
 				payload["firmwareError"] = firmware_error
-			if cancel_position:
-				payload["position"] = cancel_position
 			eventManager().fire(Events.PRINT_CANCELLING, payload)
-
-			# TODO: Should this be in on_protocol_cancelled?
-			if not suppress_scripts:
-				self.script("afterPrintCancelled",
-				            context=dict(event=payload),
-				            part_of_job=True,
-				            must_be_set=False)
 
 	def on_protocol_job_cancelled(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1430,12 +1400,19 @@ class Printer(PrinterInterface,
 		self._update_progress_data()
 
 		cancel_position = kwargs.get("position", None)
+		suppress_script = kwargs.get("suppress_script", None)
 
 		payload = job.event_payload(incl_last=True)
 		if payload:
 			payload["user"] = kwargs.get("user")
 			if cancel_position:
 				payload["position"] = cancel_position
+
+			if not suppress_script:
+				self.script("afterPrintCancelled",
+				            context=dict(event=payload),
+				            part_of_job=True,
+				            must_be_set=False)
 
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self._logger_job.info("Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
@@ -1453,36 +1430,11 @@ class Printer(PrinterInterface,
 					                             payload["time"],
 					                             False,
 					                             self._printer_profile_manager.get_current_or_default()["id"])
-				eventManager().fire(Events.PRINT_FAILED, payload)
+					eventManager().fire(Events.PRINT_FAILED, payload)
 
 			thread = threading.Thread(target=finalize)
 			thread.daemon = True
 			thread.start()
-
-	def on_protocol_job_pausing(self, protocol, job, *args, **kwargs):
-		if protocol != self._protocol:
-			return
-
-		if self._job is None or job != self._job.job:
-			return
-
-		if self._job_event_handled(protocol, job, "pausing"):
-			return
-
-		pause_position = kwargs.get("position", None)
-		suppress_scripts = kwargs.get("suppress_scripts", None)
-
-		payload = job.event_payload()
-		if payload:
-			payload["user"] = kwargs.get("user")
-			if pause_position:
-				payload["position"] = pause_position
-			# TODO: Should this be in on_protocol_paused?
-			if not suppress_scripts:
-				self.script("afterPrintPaused",
-				            context=dict(event=payload),
-				            part_of_job=True,
-				            must_be_set=False)
 
 	def on_protocol_job_paused(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1495,36 +1447,26 @@ class Printer(PrinterInterface,
 			return
 
 		pause_position = kwargs.get("position", None)
+		suppress_script = kwargs.get("suppress_script", None)
 
 		payload = job.event_payload()
 		if payload:
 			payload["user"] = kwargs.get("user")
 			if pause_position:
 				payload["position"] = pause_position
+
+			if not suppress_script:
+				self.script("afterPrintPaused",
+				            context=dict(event=payload),
+				            part_of_job=True,
+				            must_be_set=False)
+
 			eventManager().fire(Events.PRINT_PAUSED, payload)
+
 			self._logger_job.info("Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
 			                                                                                            payload.get("path"),
 			                                                                                            payload.get("owner"),
 			                                                                                            payload.get("user")))
-
-	def on_protocol_job_resuming(self, protocol, job, *args, **kwargs):
-		if protocol != self._protocol:
-			return
-
-		if self._job is None or job != self._job.job:
-			return
-
-		if self._job_event_handled(protocol, job, "resuming"):
-			return
-
-		suppress_scripts = kwargs.get("suppress_scripts", False)
-
-		payload = job.event_payload()
-		if payload and not suppress_scripts:
-			# TODO: Should this be in on_protocol_resumed?
-			self.script("beforePrintResumed",
-			            context=dict(event=payload),
-			            must_be_set=False)
 
 	def on_protocol_job_resumed(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1536,9 +1478,17 @@ class Printer(PrinterInterface,
 		if self._job_event_handled(protocol, job, "resumed"):
 			return
 
+		suppress_scripts = kwargs.get("suppress_scripts", False)
+
 		payload = job.event_payload()
 		if payload:
 			payload["user"] = kwargs.get("user")
+
+			if not suppress_scripts:
+				self.script("beforePrintResumed",
+				            context=dict(event=payload),
+				            must_be_set=False)
+
 			eventManager().fire(Events.PRINT_RESUMED, payload)
 			self._logger_job.info("Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(payload.get("origin"),
 			                                                                                             payload.get("path"),

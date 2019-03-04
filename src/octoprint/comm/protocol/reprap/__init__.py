@@ -362,7 +362,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                          "continuing without it".format(self.timeouts.get("position_log_wait", 10.0)))
 		self._cancel_preparation_done()
 
-	def _cancel_preparation_done(self, check_timer=True, user=None):
+	def _cancel_preparation_done(self, check_timer=True, suppress_script=False, user=None):
 		if user is None:
 			with self._action_users_mutex:
 				try:
@@ -378,11 +378,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				return
 
 			# TODO: recovery data
+			self.notify_listeners("on_protocol_job_cancelled", self, self._job,
+			                      position=self.cancel_position.as_dict(),
+			                      suppress_script=suppress_script,
+			                      user=user)
 
 			def finalize():
 				self.state = ProtocolState.CONNECTED
-				self.notify_listeners("on_protocol_job_cancelled", self, self._job, user=user)
-
 			self.send_commands(SendQueueMarker(finalize))
 			self._continue_sending()
 
@@ -426,7 +428,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                "trigger:record_position"})
 			self._continue_sending()
 		else:
-			self._cancel_preparation_done(check_timer=False, user=user)
+			self._cancel_preparation_done(check_timer=False,
+			                              user=user)
 
 	# pause handling
 
@@ -451,7 +454,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			elif check_timer:
 				return
 
-			self.notify_listeners("on_protocol_job_paused", self, self._job, user=user, suppress_script=suppress_script)
+			self.notify_listeners("on_protocol_job_paused", self, self._job,
+			                      position=self.pause_position.as_dict(),
+			                      suppress_script=suppress_script,
+			                      user=user)
 
 			# wait for current commands to be sent, then switch to paused state
 			def finalize():
@@ -502,7 +508,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                "trigger:record_position"})
 			self._continue_sending()
 		else:
-			self._pause_preparation_done(check_timer=False, suppress_script=suppress_scripts_and_commands)
+			self._pause_preparation_done(check_timer=False,
+			                             suppress_script=suppress_scripts_and_commands,
+			                             user=user)
 
 	def resume_processing(self, user=None, tags=None, only_adjust_state=False):
 		if only_adjust_state:
@@ -622,15 +630,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not self.job_on_hold and not force:
 			if len(commands) > 1:
 				command_type = None
+
+			result = False
 			for command in commands:
 				try:
 					self._command_queue.put((sanitize_command(command, command_type, tags), on_sent), item_type=command_type)
-					return True
+					result = True
 				except TypeAlreadyInQueue as e:
 					self._logger.debug("Type already in queue: " + e.type)
-					return False
+			return result
 		elif self._is_operational() or force:
-			self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
+			return self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
 
 	def send_script(self, script, context=None, *args, **kwargs):
 		if context is None:
