@@ -1614,3 +1614,16 @@ class CaseInsensitiveSet(collections.Set):
 # originally from https://stackoverflow.com/a/5967539
 def natural_key(text):
 	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
+
+
+def timing(f):
+	@wraps(f)
+	def decorator(*args, **kwargs):
+		start = monotonic_time()
+		try:
+			return f(*args, **kwargs)
+		finally:
+			end = monotonic_time()
+			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
+			                                                                                end - start))
+	return decorator
