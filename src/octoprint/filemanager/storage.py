@@ -1582,7 +1582,10 @@ class LocalFileStorage(StorageInterface):
 
 			if os.path.exists(metadata_path_json):
 				# already migrated
-				# TODO 1.3.10 Remove ".metadata.yaml" files
+				try:
+					os.remove(metadata_path_yaml)
+				except:
+					self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 				return
 
 			with open(metadata_path_yaml) as f:
@@ -1599,7 +1602,10 @@ class LocalFileStorage(StorageInterface):
 			with atomic_write(metadata_path_json) as f:
 				json.dump(metadata, f, indent=4, separators=(",", ": "))
 
-			# TODO 1.3.10 Remove ".metadata.yaml" files
+			try:
+				os.remove(metadata_path_yaml)
+			except:
+				self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 
 	@contextmanager
 	def _get_metadata_lock(self, path):
