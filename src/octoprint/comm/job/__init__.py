@@ -135,11 +135,13 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 	def get_content_generator(self):
 		return None
 
-	def event_payload(self):
+	def event_payload(self, incl_last=False):
 		payload = copy.deepcopy(self._event_data)
 
 		payload["owner"] = self._user
 		elapsed = self.elapsed
+		if elapsed is None and incl_last and self.last_result.available:
+			elapsed = self.last_result.elapsed
 		if elapsed is not None:
 			payload["time"] = elapsed
 
@@ -207,8 +209,8 @@ class StoragePrintjob(Printjob):
 	def path_in_storage(self):
 		return self._path_in_storage
 
-	def event_payload(self):
-		payload = Printjob.event_payload(self)
+	def event_payload(self, incl_last=False):
+		payload = Printjob.event_payload(self, incl_last=incl_last)
 		payload["name"] = self.name
 		payload["path"] = self.path_in_storage
 		payload["origin"] = self.storage
@@ -265,8 +267,8 @@ class LocalFilePrintjob(StoragePrintjob):
 	def path(self):
 		return self._path
 
-	def event_payload(self):
-		event_data = StoragePrintjob.event_payload(self)
+	def event_payload(self, incl_last=False):
+		event_data = StoragePrintjob.event_payload(self, incl_last=incl_last)
 		event_data["size"] = self.size
 		return event_data
 
@@ -279,7 +281,7 @@ class LocalFilePrintjob(StoragePrintjob):
 		if position > 0:
 			self._handle.seek(position)
 			self._pos = position
-		self.process_job_started()
+		self.process_job_started(user=user, tags=tags)
 
 	def cancel(self, error=False, user=None, tags=None):
 		self._cancel_pos = self.pos
@@ -408,8 +410,8 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
 	def remote(self):
 		return self._remote
 
-	def process(self, protocol, position=0, tags=None):
-		super(LocalGcodeStreamjob, self).process(protocol, position=position, tags=tags)
+	def process(self, protocol, position=0, user=None, tags=None):
+		super(LocalGcodeStreamjob, self).process(protocol, position=position, user=user, tags=tags)
 		self._protocol.record_file(self._remote)
 
 	def process_job_done(self, user=None, tags=None):
@@ -520,8 +522,8 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._last_pos = None
 		self._size = None
 
-	def event_payload(self):
-		payload = Printjob.event_payload(self)
+	def event_payload(self, incl_last=False):
+		payload = Printjob.event_payload(self, incl_last=incl_last)
 		payload["size"] = self.size
 		return payload
 

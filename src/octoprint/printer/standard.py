@@ -876,7 +876,7 @@ class Printer(PrinterInterface,
 
 		else:
 			# no plugin feels responsible, use the default implementation
-			return self._add_sd_file(filename, path, tags=kwargs.get("tags"))
+			return self._add_sd_file(filename, path, user=kwargs.get("user"), tags=kwargs.get("tags"))
 
 	def _get_free_remote_name(self, filename):
 		files = self.refresh_sd_files(blocking=True)
@@ -894,11 +894,11 @@ class Printer(PrinterInterface,
 
 		return remote_name
 
-	def _add_sd_file(self, filename, path, tags=None, **kwargs):
+	def _add_sd_file(self, filename, path, user=None, tags=None, **kwargs):
 		remote_name = self._get_free_remote_name(filename)
 
 		job = LocalGcodeStreamjob.from_job(self._file_manager.create_print_job("local", path,
-		                                                                       user=kwargs.get("user")),
+		                                                                       user=user),
 		                                   "/" + remote_name)
 		self._sd_streaming = True
 		self._update_job(job)
@@ -1215,7 +1215,7 @@ class Printer(PrinterInterface,
 						self._file_manager.log_print(self._get_origin_for_job(self._job.job),
 						                             self._job.job.name,
 						                             time.time(),
-						                             self._job.job.elapsed,
+						                             payload["time"],
 						                             False,
 						                             self._printer_profile_manager.get_current_or_default()["id"])
 						eventManager().fire(Events.PRINT_FAILED, payload)
@@ -1325,18 +1325,17 @@ class Printer(PrinterInterface,
 
 		payload = job.event_payload()
 		if payload:
-			# TODO: shouldn't this be in on_protocol_job_done?
+			if "time" not in payload and job.last_result.available:
+				elapsed = job.last_result.elapsed
+				if elapsed is not None:
+					payload["time"] = elapsed
+
 			self._update_progress_data(completion=100,
-			                           filepos=payload["size"],
-			                           print_time=payload["time"],
+			                           filepos=payload.get("size"),
+			                           print_time=payload.get("time"),
 			                           print_time_left=0)
 			self._state_monitor.set_state(self._dict(text=self.get_state_string(),
 			                                         flags=self._get_state_flags()))
-
-			eventManager().fire(Events.PRINT_DONE, payload)
-			self._logger_job.info("Print job done - origin: {}, path: {}, owner: {}".format(payload.get("origin"),
-			                                                                                payload.get("path"),
-			                                                                                payload.get("owner")))
 
 			if not suppress_script:
 				self.script("afterPrintDone",
@@ -1354,21 +1353,25 @@ class Printer(PrinterInterface,
 		if self._job_event_handled(protocol, job, "done"):
 			return
 
-		if job.last_result.available:
-			payload = job.event_payload()
-			elapsed = job.last_result.elapsed
-			if elapsed is not None:
-				def log_print():
-					self._file_manager.log_print(payload["origin"],
-					                             payload["path"],
-					                             time.time(),
-					                             elapsed,
-					                             True,
-					                             self._printer_profile_manager.get_current_or_default()["id"])
+		payload = job.event_payload(incl_last=True)
+		if payload.get("time") is not None:
+			def log_print():
+				self._file_manager.log_print(payload["origin"],
+				                             payload["path"],
+				                             time.time(),
+				                             payload["time"],
+				                             True,
+				                             self._printer_profile_manager.get_current_or_default()["id"])
 
-				thread = threading.Thread(target=log_print)
-				thread.daemon = True
-				thread.start()
+			thread = threading.Thread(target=log_print)
+			thread.daemon = True
+			thread.start()
+
+		eventManager().fire(Events.PRINT_DONE, payload)
+		self._logger_job.info("Print job done - origin: {}, path: {}, owner: {}".format(payload.get("origin"),
+		                                                                                payload.get("path"),
+		                                                                                payload.get("owner")))
+
 
 	def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
 		if protocol != self._protocol:
@@ -1380,7 +1383,7 @@ class Printer(PrinterInterface,
 		if self._job_event_handled(protocol, job, "failed"):
 			return
 
-		payload = job.event_payload()
+		payload = job.event_payload(incl_last=True)
 		if payload:
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
@@ -1428,7 +1431,7 @@ class Printer(PrinterInterface,
 
 		cancel_position = kwargs.get("position", None)
 
-		payload = job.event_payload()
+		payload = job.event_payload(incl_last=True)
 		if payload:
 			payload["user"] = kwargs.get("user")
 			if cancel_position:
@@ -1443,12 +1446,13 @@ class Printer(PrinterInterface,
 			payload["reason"] = "cancelled"
 
 			def finalize():
-				self._file_manager.log_print(job.storage,
-			                                 job.name,
-			                                 time.time(),
-			                                 payload["time"],
-			                                 False,
-			                                 self._printer_profile_manager.get_current_or_default()["id"])
+				if payload.get("time") is not None:
+					self._file_manager.log_print(job.storage,
+					                             job.name,
+					                             time.time(),
+					                             payload["time"],
+					                             False,
+					                             self._printer_profile_manager.get_current_or_default()["id"])
 				eventManager().fire(Events.PRINT_FAILED, payload)
 
 			thread = threading.Thread(target=finalize)
