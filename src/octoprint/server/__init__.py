@@ -162,7 +162,7 @@ def unauthorized_user():
 
 class Server(object):
 	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
-	             event_manager=None, host=None, port=None, debug=False, safe_mode=False, allow_root=False,
+	             event_manager=None, host=None, port=None, v6_only=False, debug=False, safe_mode=False, allow_root=False,
 	             octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
@@ -171,6 +171,7 @@ class Server(object):
 		self._event_manager = event_manager
 		self._host = host
 		self._port = port
+		self._v6_only = v6_only
 		self._debug = debug
 		self._safe_mode = safe_mode
 		self._allow_root = allow_root
@@ -222,6 +223,9 @@ class Server(object):
 
 		debug = self._debug
 		safe_mode = self._safe_mode
+
+		if self._v6_only and not octoprint.util.net.HAS_V6:
+			raise RuntimeError("IPv6 only mode configured but system doesn't support IPv6")
 
 		if self._host is None:
 			host = self._settings.get(["server", "host"])
@@ -681,9 +685,13 @@ class Server(object):
 			server_kwargs.update(dict(idle_connection_timeout=600))
 
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
-		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
-		                                                                                    # only listens on v4 & v6
-		                                                                                    # if we use None as address
+
+		listening_address = self._host
+		if self._host == "::" and not self._v6_only:
+			# special case - tornado only listens on v4 _and_ v6 if we use None as address
+			listening_address = None
+
+		self._server.listen(self._port, address=listening_address)
 
 		### From now on it's ok to launch subprocesses again
 
@@ -728,8 +736,16 @@ class Server(object):
 
 		# prepare our after startup function
 		def on_after_startup():
-			self._logger.info("Listening on http://{}:{}".format(self._host if not ":" in self._host else "[" + self._host + "]",
-			                                                     self._port))
+			if self._host == "::":
+				if self._v6_only:
+					# only v6
+					self._logger.info("Listening on http://[::]:{port}".format(port=self._port))
+				else:
+					# all v4 and v6
+					self._logger.info("Listening on http://0.0.0.0:{port} and http://[::]:{port}".format(port=self._port))
+			else:
+				self._logger.info("Listening on http://{}:{}".format(self._host if not ":" in self._host else "[" + self._host + "]",
+				                                                     self._port))
 
 			if safe_mode and self._settings.getBoolean(["server", "startOnceInSafeMode"]):
 				self._logger.info("Server started successfully in safe mode as requested from config, removing flag")
@@ -1590,6 +1606,7 @@ class Server(object):
 
 		host = self._host
 		port = self._port
+		v6_only = self._v6_only
 
 		class IntermediaryServerHandler(BaseHTTPRequestHandler):
 			def __init__(self, rules=None, *args, **kwargs):
@@ -1646,23 +1663,42 @@ class Server(object):
 
 		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
 
+		HTTPServerV4 = HTTPServer
+
 		class HTTPServerV6(HTTPServer):
 			address_family = socket.AF_INET6
 
+		class HTTPServerV6SingleStack(HTTPServerV6):
 			def __init__(self, *args, **kwargs):
-				HTTPServer.__init__(self, *args, **kwargs)
+				HTTPServerV6.__init__(self, *args, **kwargs)
 
-				# make sure to enable dual stack mode, otherwise the socket might only listen on IPv6
+				# explicitly set V6ONLY flag - seems to be the default, but just to make sure...
+				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 1)
+
+		class HTTPServerV6DualStack(HTTPServerV6):
+			def __init__(self, *args, **kwargs):
+				HTTPServerV6.__init__(self, *args, **kwargs)
+
+				# explicitly unset V6ONLY flag
 				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 0)
 
 		if ":" in host:
 			# v6
-			ServerClass = HTTPServerV6
+			if host == "::" and not self._v6_only:
+				ServerClass = HTTPServerV6DualStack
+			else:
+				ServerClass = HTTPServerV6SingleStack
 		else:
 			# v4
-			ServerClass = HTTPServer
+			ServerClass = HTTPServerV4
 
-		self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
+		if host == "::":
+			if self._v6_only:
+				self._logger.debug("Starting intermediary server on http://[::]:{port}".format(port=port))
+			else:
+				self._logger.debug("Starting intermediary server on http://0.0.0.0:{port} and http://[::]:{port}".format(port=port))
+		else:
+			self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
 
 		self._intermediary_server = ServerClass((host, port),
 		                                        lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),
