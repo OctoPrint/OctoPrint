@@ -1280,7 +1280,10 @@ class MachineCom(object):
 			                                        user=user)
 
 			def finalize():
-				self._changeState(self.STATE_PAUSED)
+				# only switch to PAUSED if we were still PAUSING, to avoid "swallowing" received resumes during
+				# pausing
+				if self._state == self.STATE_PAUSING:
+					self._changeState(self.STATE_PAUSED)
 			self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
 			self._continue_sending()
 
