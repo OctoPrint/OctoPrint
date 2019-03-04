@@ -68,10 +68,14 @@ $(function() {
         self.changeOffsetDialog = undefined;
 
         self.tools = ko.observableArray([]);
-
+        self.hasTools = ko.pureComputed(function() {
+            return self.tools().length > 0;
+        });
         self.hasBed = ko.observable(true);
 
-        self.tempTabVisible = ko.observable(true);
+        self.visible = ko.pureComputed(function() {
+            return self.hasTools() || self.hasBed();
+        });
 
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
@@ -140,12 +144,8 @@ $(function() {
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
-            var tempTabVisible = self.hasBed() || numExtruders > 0;
 
-            if (tempTabVisible !== self.tempTabVisible()) {
-                self.tempTabVisible(tempTabVisible);
-                OctoPrint.coreui.updateTab();
-            }
+            OctoPrint.coreui.updateTab();
 
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
