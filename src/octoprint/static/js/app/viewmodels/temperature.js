@@ -760,8 +760,9 @@ $(function() {
             }
         };
 
-        self.onAfterTabChange = function(current, previous) {
-            if (current !== "#temp") {
+        self.initOrUpdate = function() {
+            if (OctoPrint.coreui.selectedTab !== "#temp" || !$("#temp").is(":visible")) {
+                // do not try to initialize the graph when it's not visible or its sizing will be off
                 return;
             }
 
@@ -770,6 +771,10 @@ $(function() {
             } else {
                 self.updatePlot();
             }
+        };
+
+        self.onAfterTabChange = function() {
+            self.initOrUpdate();
         };
 
         self.onStartup = function() {
@@ -789,6 +794,7 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
+            self.initOrUpdate();
             self._printerProfileUpdated();
         };
 
@@ -797,6 +803,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#temp", "#change_offset_dialog", "#temp_link"]
+        elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });
