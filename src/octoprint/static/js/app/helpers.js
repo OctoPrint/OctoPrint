@@ -1,4 +1,4 @@
-function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize) {
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize, persistPageSize) {
     var self = this;
 
     self.listType = listType;
@@ -8,6 +8,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.defaultFilters = defaultFilters;
     self.exclusiveFilters = exclusiveFilters;
     self.defaultPageSize = defaultPageSize;
+    self.persistPageSize = !!persistPageSize;
 
     self.searchFunction = undefined;
 
@@ -337,7 +338,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self._savePageSizeToLocalStorage = function(pageSize) {
-        if (self._initializeLocalStorage()) {
+        if (self._initializeLocalStorage() && self.persistPageSize) {
             localStorage[self.storageIds.pageSize] = pageSize;
         }
     };
@@ -345,7 +346,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.pageSize.subscribe(self._savePageSizeToLocalStorage);
 
     self._loadPageSizeFromLocalStorage = function() {
-        if (self._initializeLocalStorage) {
+        if (self._initializeLocalStorage() && self.persistPageSize) {
             self.pageSize(parseInt(localStorage[self.storageIds.pageSize]));
         }
     };
