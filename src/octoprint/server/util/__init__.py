@@ -50,7 +50,11 @@ def loginFromAuthorizationHeaderRequestHandler():
 	"""
 	``before_request`` handler for creating login sessions based on the Authorization header.
 	"""
-	loginUserFromApiKey()
+	try:
+		if loginUserFromAuthorizationHeader():
+			_flask.g.login_via_header = True
+	except InvalidApiKeyException:
+		return _flask.make_response("Invalid API key", 403)
 
 
 class InvalidApiKeyException(Exception): pass
