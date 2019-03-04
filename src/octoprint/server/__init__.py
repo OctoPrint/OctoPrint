@@ -712,13 +712,17 @@ class Server(object):
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
+		watched = self._settings.getBaseFolder("watched")
+		watchdog_handler = util.watchdog.GcodeWatchdogHandler(fileManager, printer)
+		watchdog_handler.initial_scan(watched)
+
 		if self._settings.getBoolean(["feature", "pollWatched"]):
-			# use less performant polling observer if explicitely configured
+			# use less performant polling observer if explicitly configured
 			observer = PollingObserver()
 		else:
 			# use os default
 			observer = Observer()
-		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), self._settings.getBaseFolder("watched"))
+		observer.schedule(watchdog_handler, watched)
 		observer.start()
 
 		# run our startup plugins

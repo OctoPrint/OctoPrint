@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import shutil
 import time
 import threading
 import watchdog.events
@@ -30,7 +31,39 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		self._file_manager = file_manager
 		self._printer = printer
 
+	def initial_scan(self, folder):
+		def run_scan():
+			try:
+				from os import scandir
+			except ImportError:
+				from scandir import scandir
+
+			self._logger.info("Running initial scan on watched folder...")
+			for entry in scandir(folder):
+				path = entry.path
+
+				if not self._valid_path(path):
+					continue
+
+				self._logger.info("Found {}, trying to add it".format(path))
+				self._upload(path)
+			self._logger.info("... initial scan done.")
+
+		thread = threading.Thread(target=run_scan)
+		thread.daemon = True
+		thread.start()
+
+	def on_created(self, event):
+		path = event.src_path
+		if not self._valid_path(path):
+			return
+
+		thread = threading.Thread(target=self._repeatedly_check, args=(path,))
+		thread.daemon = True
+		thread.start()
+
 	def _upload(self, path):
+		# noinspection PyBroadException
 		try:
 			file_wrapper = octoprint.filemanager.util.DiskFileWrapper(os.path.basename(path), path)
 
@@ -67,17 +100,17 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 				self._printer.select_file(self._file_manager.path_on_disk(octoprint.filemanager.FileDestinations.LOCAL,
 				                                                          added_file),
 				                          False)
-		except:
+		except Exception:
 			self._logger.exception("There was an error while processing the file {} in the watched folder".format(path))
-
-	def on_created(self, event):
-		path = event.src_path
-		if octoprint.util.is_hidden_path(path):
-			return
-
-		thread = threading.Thread(target=self._repeatedly_check, args=(path,))
-		thread.daemon = True
-		thread.start()
+		finally:
+			if os.path.exists(path):
+				# file is still there - that should only happen if something went wrong, so mark it as failed
+				# noinspection PyBroadException
+				try:
+					shutil.move(path, "{}.failed".format(path))
+				except:
+					# something went really wrong here.... but we can't do anything about it, so just log it
+					self._logger.exception("There was an error while trying to mark {} as failed in the watched folder".format(path))
 
 	def _repeatedly_check(self, path, interval=1, stable=5):
 		try:
@@ -107,3 +140,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 
 		self._logger.debug("File at {} is stable, moving it".format(path))
 		self._upload(path)
+
+	def _valid_path(self, path):
+		_, ext = os.path.splitext(path)
+		return octoprint.filemanager.valid_file_type(path) and not octoprint.util.is_hidden_path(path) and ext != "failed"
