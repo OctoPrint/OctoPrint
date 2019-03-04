@@ -351,7 +351,7 @@ class FileManager(object):
 					              display=display, links=links, allow_overwrite=True,
 					              printer_profile=printer_profile, analysis=_analysis)
 
-					end_time = time.time()
+					end_time = octoprint.util.monotonic_time()
 					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
 																  stl_location=source_location,
 																  gcode=dest_path,
@@ -376,8 +376,7 @@ class FileManager(object):
 
 		slicer = self._slicing_manager.get_slicer(slicer_name)
 
-		import time
-		start_time = time.time()
+		start_time = octoprint.util.monotonic_time()
 		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
 		                                             "stl_location": source_location,
 		                                             "gcode": dest_path,

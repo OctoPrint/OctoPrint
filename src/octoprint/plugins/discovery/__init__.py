@@ -562,9 +562,8 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		"""
 
 		import socket
-		import time
 
-		if alive and self._ssdp_last_notify + self._ssdp_notify_timeout > time.time():
+		if alive and self._ssdp_last_notify + self._ssdp_notify_timeout > octoprint.util.monotonic_time():
 			# we just sent an alive, no need to send another one now
 			return
 
@@ -603,7 +602,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			except:
 				pass
 
-		self._ssdp_last_notify = time.time()
+		self._ssdp_last_notify = octoprint.util.monotonic_time()
 
 	def _ssdp_monitor(self, timeout=5):
 		"""

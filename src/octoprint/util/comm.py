@@ -37,7 +37,8 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
-	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer
+	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer, \
+	monotonic_time
 
 try:
 	import _winreg
@@ -755,7 +756,7 @@ class MachineCom(object):
 		if self._currentFile is None or self._currentFile.getStartTime() is None:
 			return None
 		else:
-			return time.time() - self._currentFile.getStartTime() - self._pauseWaitTimeLost
+			return monotonic_time() - self._currentFile.getStartTime() - self._pauseWaitTimeLost
 
 	def getCleanedPrintTime(self):
 		printTime = self.getPrintTime()
@@ -872,8 +873,8 @@ class MachineCom(object):
 				self.sendGcodeScript("beforePrinterDisconnected")
 				if wait:
 					if timeout is not None:
-						stop = time.time() + timeout
-						while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and time.time() < stop:
+						stop = monotonic_time() + timeout
+						while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and monotonic_time() < stop:
 							time.sleep(0.1)
 					else:
 						self._command_queue.join()
@@ -1024,7 +1025,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		self._heatupWaitStartTime = None if not self._heating else time.time()
+		self._heatupWaitStartTime = None if not self._heating else monotonic_time()
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
@@ -1301,7 +1302,7 @@ class MachineCom(object):
 		with self._jobLock:
 			if not pause and self._state in (self.STATE_PAUSED, self.STATE_PAUSING):
 				if self._pauseWaitStartTime:
-					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
+					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (monotonic_time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
 
 				self._changeState(self.STATE_RESUMING)
@@ -1327,7 +1328,7 @@ class MachineCom(object):
 
 			elif pause and self._state in (self.STATE_PRINTING, self.STATE_STARTING, self.STATE_RESUMING):
 				if not self._pauseWaitStartTime:
-					self._pauseWaitStartTime = time.time()
+					self._pauseWaitStartTime = monotonic_time()
 
 				self._changeState(self.STATE_PAUSING)
 				if self.isSdFileSelected() and local_handling:
@@ -1555,7 +1556,7 @@ class MachineCom(object):
 				if line is None:
 					break
 
-				now = time.time()
+				now = monotonic_time()
 
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
@@ -1768,7 +1769,7 @@ class MachineCom(object):
 							and self._firmware_info_received:
 						self._logger.info("Externally triggered heatup detected")
 						self._heating = True
-						self._heatupWaitStartTime = time.time()
+						self._heatupWaitStartTime = monotonic_time()
 
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
@@ -2054,7 +2055,7 @@ class MachineCom(object):
 
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
-					if line == '' or time.time() > self._timeout:
+					if line == '' or monotonic_time() > self._timeout:
 						self._perform_baudrate_detection_step()
 					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
@@ -2071,7 +2072,7 @@ class MachineCom(object):
 							# if it was a wait we probably missed an ok, so let's simulate that now
 							self._handle_ok()
 						self._onConnected()
-					elif time.time() > self._timeout:
+					elif monotonic_time() > self._timeout:
 						self._log("There was a timeout while trying to connect to the printer")
 						self.close(wait=False)
 
@@ -2213,7 +2214,7 @@ class MachineCom(object):
 		if self._baudrateDetectRetry > 0:
 			if self._serial.timeout != timeout:
 				self._serial.timeout = timeout
-			self._timeout = time.time() + timeout
+			self._timeout = monotonic_time() + timeout
 
 			self._log("Baudrate test retry #{}".format(5 - self._baudrateDetectRetry))
 			self._baudrateDetectRetry -= 1
@@ -2226,7 +2227,7 @@ class MachineCom(object):
 				self._serial.baudrate = baudrate
 				if self._serial.timeout != timeout:
 					self._serial.timeout = timeout
-				self._timeout = time.time() + timeout
+				self._timeout = monotonic_time() + timeout
 
 				self._log("Trying baudrate: {}".format(baudrate))
 				self._baudrateDetectRetry = 4
@@ -2243,7 +2244,7 @@ class MachineCom(object):
 	def _finish_heatup(self):
 		if self._heating:
 			if self._heatupWaitStartTime:
-				self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+				self._heatupWaitTimeLost = self._heatupWaitTimeLost + (monotonic_time() - self._heatupWaitStartTime)
 				self._heatupWaitStartTime = None
 			self._heating = False
 
@@ -2460,7 +2461,7 @@ class MachineCom(object):
 		return max(comm_timeout, temperature_timeout + 1)
 
 	def _get_new_communication_timeout(self):
-		return time.time() + self._get_communication_timeout_interval()
+		return monotonic_time() + self._get_communication_timeout_interval()
 
 	def _send_from_command_queue(self):
 		# We loop here to make sure that if we do NOT send the first command
@@ -2850,7 +2851,7 @@ class MachineCom(object):
 			#
 			# this it to prevent the log from getting flooded for extremely bad communication issues
 			if self._log_resends:
-				now = time.time()
+				now = monotonic_time()
 				new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
 				in_rate = self._log_resends_rate_count < self._log_resends_max
 
@@ -3036,7 +3037,7 @@ class MachineCom(object):
 						break
 
 					# sleep if we are dwelling
-					now = time.time()
+					now = monotonic_time()
 					if self._blockWhileDwelling and self._dwelling_until and now < self._dwelling_until:
 						time.sleep(self._dwelling_until - now)
 						self._dwelling_until = False
@@ -3486,19 +3487,19 @@ class MachineCom(object):
 				pass
 
 	def _gcode_M109_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self._heatupWaitStartTime = time.time()
+		self._heatupWaitStartTime = monotonic_time()
 		self._long_running_command = True
 		self._heating = True
 		self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self._heatupWaitStartTime = time.time()
+		self._heatupWaitStartTime = monotonic_time()
 		self._long_running_command = True
 		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M116_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
-		self._heatupWaitStartTime = time.time()
+		self._heatupWaitStartTime = monotonic_time()
 		self._long_running_command = True
 		self._heating = True
 
@@ -3597,7 +3598,7 @@ class MachineCom(object):
 			_timeout = float(s_match.group("value"))
 
 		self._timeout = self._get_new_communication_timeout() + _timeout
-		self._dwelling_until = time.time() + _timeout
+		self._dwelling_until = monotonic_time() + _timeout
 
 	def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
 		# only jump the queue with our command if the EMERGENCY_PARSER capability is available
@@ -3787,7 +3788,7 @@ class PrintingFileInformation(object):
 		"""
 		Marks the print job as started and remembers the start time.
 		"""
-		self._start_time = time.time()
+		self._start_time = monotonic_time()
 		self._done = False
 
 	def close(self):
@@ -3937,7 +3938,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		return process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 
 	def _report_stats(self):
-		duration = time.time() - self._start_time
+		duration = monotonic_time() - self._start_time
 		self._logger.info("Finished in {:.3f} s.".format(duration))
 		pass
 
@@ -3949,7 +3950,7 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def start(self):
 		PrintingGcodeFileInformation.start(self)
-		self._start_time = time.time()
+		self._start_time = monotonic_time()
 
 	def getLocalFilename(self):
 		return self._localFilename
@@ -3961,7 +3962,7 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 		return process_gcode_line(line)
 
 	def _report_stats(self):
-		duration = time.time() - self._start_time
+		duration = monotonic_time() - self._start_time
 		read_lines = self._read_lines
 		if duration > 0 and read_lines > 0:
 			stats = dict(lines=read_lines,

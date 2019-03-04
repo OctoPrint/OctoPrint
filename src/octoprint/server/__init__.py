@@ -1097,7 +1097,7 @@ class Server(object):
 					kwargs.update(additional_request_data)
 
 					try:
-						start = time.time()
+						start = octoprint.util.monotonic_time()
 						if plugin:
 							logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
 						else:
@@ -1111,7 +1111,7 @@ class Server(object):
 						builder = EnvironBuilder(**kwargs)
 						app(builder.get_environ(), lambda *a, **kw: None)
 
-						logger.info("... done in {:.2f}s".format(time.time() - start))
+						logger.info("... done in {:.2f}s".format(octoprint.util.monotonic_time() - start))
 					except:
 						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 

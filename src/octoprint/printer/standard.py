@@ -29,6 +29,7 @@ from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
+from octoprint.util import monotonic_time
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -1379,7 +1380,7 @@ class StateMonitor(object):
 		self._state_lock = threading.Lock()
 		self._progress_lock = threading.Lock()
 
-		self._last_update = time.time()
+		self._last_update = monotonic_time()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
@@ -1443,7 +1444,7 @@ class StateMonitor(object):
 			while True:
 				self._change_event.wait()
 
-				now = time.time()
+				now = monotonic_time()
 				delta = now - self._last_update
 				additional_wait_time = self._interval - delta
 				if additional_wait_time > 0:
@@ -1452,7 +1453,7 @@ class StateMonitor(object):
 				with self._state_lock:
 					data = self.get_current_data()
 					self._update_callback(data)
-					self._last_update = time.time()
+					self._last_update = monotonic_time()
 					self._change_event.clear()
 		except:
 			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. Please report this on the OctoPrint issue tracker (make sure to include logs!)")
