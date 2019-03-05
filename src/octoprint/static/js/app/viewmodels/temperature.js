@@ -71,6 +71,8 @@ $(function() {
 
         self.hasBed = ko.observable(true);
 
+        self.tempTabVisible = ko.observable(true);
+
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
         self.bedTemp["key"]("bed");
@@ -138,6 +140,12 @@ $(function() {
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
+            var tempTabVisible = self.hasBed() || numExtruders > 0;
+
+            if (tempTabVisible !== self.tempTabVisible()) {
+                self.tempTabVisible(tempTabVisible);
+                OctoPrint.coreui.updateTab();
+            }
 
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
@@ -789,6 +797,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#temp", "#change_offset_dialog"]
+        elements: ["#temp", "#change_offset_dialog", "#temp_link"]
     });
 });

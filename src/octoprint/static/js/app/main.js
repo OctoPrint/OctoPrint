@@ -123,6 +123,33 @@ $(function() {
                 browserVisibilityCallbacks.push(callback);
             };
 
+            exports.hashFromTabChange = false;
+            exports.updateTab = function () {
+                if (exports.hashFromTabChange) {
+                    exports.hashFromTabChange = false;
+                    return;
+                }
+                var tabs = $('#tabs');
+
+                var hashtag = window.location.hash;
+                if (hashtag) {
+                    var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
+                    if (selectedTab.length) {
+                        selectedTab.tab("show");
+                        return;
+                    }
+                }
+
+                var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
+                if (firstTab.length) {
+                    var firstHash = firstTab[0].hash;
+                    if (firstHash !== exports.selectedTab) {
+                        firstTab.tab("show");
+                    } else {
+                        window.location.hash = firstHash;
+                    }
+                }
+            };
             return exports;
         })();
 
@@ -544,16 +571,6 @@ $(function() {
         onTabChange(OCTOPRINT_INITIAL_TAB);
         onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
 
-        var changeTab = function() {
-            var hashtag = window.location.hash;
-            if (!hashtag) return;
-
-            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
-            if (tab) {
-                tab.tab("show");
-            }
-        };
-
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
             e.stopPropagation();
@@ -676,6 +693,10 @@ $(function() {
             callViewModels(allViewModels, "onStartupComplete");
             setOnViewModels(allViewModels, "_startupComplete", true);
 
+            // this will also allow selecting any tabs that will be hidden later due to overflowing since our
+            // overflow plugin tabdrop hasn't run yet
+            OctoPrint.coreui.updateTab();
+
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
@@ -683,11 +704,11 @@ $(function() {
             });
 
             $(window).on("hashchange", function() {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             });
 
             if (window.location.hash !== "") {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             }
 
             log.info("Application startup complete");
