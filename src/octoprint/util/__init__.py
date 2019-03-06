@@ -1777,3 +1777,16 @@ def count(gen):
 	for _ in gen:
 		n += 1
 	return n
+
+
+def timing(f):
+	@wraps(f)
+	def decorator(*args, **kwargs):
+		start = monotonic_time()
+		try:
+			return f(*args, **kwargs)
+		finally:
+			end = monotonic_time()
+			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
+			                                                                                end - start))
+	return decorator
