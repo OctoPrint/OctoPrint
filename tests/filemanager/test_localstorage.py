@@ -663,7 +663,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		# verify
 		self.assertTrue(os.path.exists(json_path))
-		self.assertTrue(os.path.exists(yaml_path)) # TODO 1.3.10 change to assertFalse
+		self.assertFalse(os.path.exists(yaml_path)) # TODO 1.3.10 change to assertFalse
 
 		import json
 		with io.open(json_path, 'rt', encoding='utf-8') as f:

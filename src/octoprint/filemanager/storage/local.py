@@ -7,9 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import io
 import logging
 import os
-import pylru
 import shutil
 import re
+import pylru
+import copy
 
 try:
 	from os import scandir, walk
@@ -18,7 +19,6 @@ except ImportError:
 
 from octoprint.util import atomic_write
 from contextlib import contextmanager
-from copy import deepcopy
 
 # noinspection PyCompatibility
 from past.builtins import basestring
@@ -78,6 +78,8 @@ class LocalFileStorage(Storage):
 		import threading
 		self._metadata_lock_mutex = threading.RLock()
 		self._metadata_locks = dict()
+		self._persisted_metadata_lock_mutex = threading.RLock()
+		self._persisted_metadata_locks = dict()
 
 		self._metadata_cache = pylru.lrucache(10)
 
@@ -487,6 +489,8 @@ class LocalFileStorage(Storage):
 		if not name in metadata:
 			return
 
+		metadata = self._copied_metadata(metadata, name)
+
 		if not key in metadata[name] or overwrite:
 			metadata[name][key] = data
 			metadata_dirty = True
@@ -511,6 +515,7 @@ class LocalFileStorage(Storage):
 		if not key in metadata[name]:
 			return
 
+		metadata = self._copied_metadata(metadata, name)
 		del metadata[name][key]
 		self._save_metadata(path, metadata)
 
@@ -654,10 +659,7 @@ class LocalFileStorage(Storage):
 	##~~ internals
 
 	def _add_history(self, name, path, data):
-		metadata = self._get_metadata(path)
-
-		if not name in metadata:
-			metadata[name] = dict()
+		metadata = self._copied_metadata(self._get_metadata(path), name)
 
 		if not "hash" in metadata[name]:
 			metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
@@ -675,6 +677,8 @@ class LocalFileStorage(Storage):
 		if not name in metadata or not "history" in metadata[name]:
 			return
 
+		metadata = self._copied_metadata(metadata, name)
+
 		try:
 			metadata[name]["history"][index].update(data)
 			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
@@ -688,6 +692,8 @@ class LocalFileStorage(Storage):
 		if not name in metadata or not "history" in metadata[name]:
 			return
 
+		metadata = self._copied_metadata(metadata, name)
+
 		try:
 			del metadata[name]["history"][index]
 			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
@@ -697,9 +703,9 @@ class LocalFileStorage(Storage):
 
 	def _calculate_stats_from_history(self, name, path, metadata=None, save=True):
 		if metadata is None:
-			metadata = self._get_metadata(path)
+			metadata = self._copied_metadata(self._get_metadata(path), name)
 
-		if not name in metadata or not "history" in metadata[name]:
+		if not "history" in metadata[name]:
 			return
 
 		# collect data from history
@@ -768,11 +774,8 @@ class LocalFileStorage(Storage):
 		if file_type:
 			file_type = file_type[0]
 
-		metadata = self._get_metadata(path)
+		metadata = self._copied_metadata(self._get_metadata(path), name)
 		metadata_dirty = False
-
-		if not name in metadata:
-			metadata[name] = dict()
 
 		if not "hash" in metadata[name]:
 			metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
@@ -845,13 +848,10 @@ class LocalFileStorage(Storage):
 			self._save_metadata(path, metadata)
 
 	def _remove_links(self, name, path, links):
-		metadata = self._get_metadata(path)
+		metadata = self._copied_metadata(self._get_metadata(path), name)
 		metadata_dirty = False
 
-		if not name in metadata or not "hash" in metadata[name]:
-			hash = self._create_hash(os.path.join(path, name))
-		else:
-			hash = metadata[name]["hash"]
+		hash = metadata[name].get("hash", self._create_hash(os.path.join(path, name)))
 
 		for rel, data in links:
 			if (rel == "model" or rel == "machinecode") and "name" in data:
@@ -859,6 +859,7 @@ class LocalFileStorage(Storage):
 					ref_rel = "model" if rel == "machinecode" else "machinecode"
 					for link in metadata[data["name"]]["links"]:
 						if link["rel"] == ref_rel and "name" in link and link["name"] == name and "hash" in link and link["hash"] == hash:
+							metadata[data["name"]] = copy.deepcopy(metadata[data["name"]])
 							metadata[data["name"]]["links"].remove(link)
 							metadata_dirty = True
 
@@ -934,10 +935,14 @@ class LocalFileStorage(Storage):
 					if entry_name in metadata and isinstance(metadata[entry_name], dict):
 						entry_metadata = metadata[entry_name]
 						if not "display" in entry_metadata and entry_display != entry_name:
+							if not metadata_dirty:
+								metadata = self._copied_metadata(metadata, entry_name)
 							metadata[entry_name]["display"] = entry_display
 							entry_metadata["display"] = entry_display
 							metadata_dirty = True
 					else:
+						if not metadata_dirty:
+							metadata = self._copied_metadata(metadata, entry_name)
 						entry_metadata = self._add_basic_metadata(path, entry_name,
 						                                          display_name=entry_display,
 						                                          save=False,
@@ -967,10 +972,14 @@ class LocalFileStorage(Storage):
 					if entry_name in metadata and isinstance(metadata[entry_name], dict):
 						entry_metadata = metadata[entry_name]
 						if not "display" in entry_metadata and entry_display != entry_name:
+							if not metadata_dirty:
+								metadata = self._copied_metadata(metadata, entry_name)
 							metadata[entry_name]["display"] = entry_display
 							entry_metadata["display"] = entry_display
 							metadata_dirty = True
 					elif entry_name != entry_display:
+						if not metadata_dirty:
+							metadata = self._copied_metadata(metadata, entry_name)
 						entry_metadata = self._add_basic_metadata(path, entry_name,
 						                                          display_name=entry_display,
 						                                          save=False,
@@ -1054,6 +1063,8 @@ class LocalFileStorage(Storage):
 			entry_data["display"] = display_name
 
 		entry_data.update(additional_metadata)
+
+		metadata = copy.copy(metadata)
 		metadata[entry] = entry_data
 
 		if save:
@@ -1085,6 +1096,8 @@ class LocalFileStorage(Storage):
 			if not name in metadata:
 				return
 
+			metadata = copy.copy(metadata)
+
 			if "hash" in metadata[name]:
 				hash = metadata[name]["hash"]
 				for m in metadata.values():
@@ -1098,7 +1111,7 @@ class LocalFileStorage(Storage):
 
 	def _update_metadata_entry(self, path, name, data):
 		with self._get_metadata_lock(path):
-			metadata = self._get_metadata(path)
+			metadata = copy.copy(self._get_metadata(path))
 			metadata[name] = data
 			self._save_metadata(path, metadata)
 
@@ -1117,41 +1130,62 @@ class LocalFileStorage(Storage):
 		with self._get_metadata_lock(destination_path):
 			self._update_metadata_entry(destination_path, destination_name, source_data)
 
-	def _get_metadata(self, path):
-		with self._get_metadata_lock(path):
-			if path in self._metadata_cache:
-				return deepcopy(self._metadata_cache[path])
+	def _get_metadata(self, path, force=False):
+		import json
 
-			self._migrate_metadata(path)
+		if not force:
+			metadata = self._metadata_cache.get(path)
+			if metadata:
+				return metadata
 
-			metadata_path = os.path.join(path, ".metadata.json")
+		self._migrate_metadata(path)
+
+		metadata_path = os.path.join(path, ".metadata.json")
+
+		metadata = None
+		with self._get_persisted_metadata_lock(path):
 			if os.path.exists(metadata_path):
 				with io.open(metadata_path, 'rt', encoding='utf-8') as f:
 					try:
-						import json
 						metadata = json.load(f)
 					except Exception:
 						self._logger.exception("Error while reading .metadata.json from {path}".format(**locals()))
-					else:
-						if isinstance(metadata, dict):
-							self._metadata_cache[path] = deepcopy(metadata)
-							return metadata
+
+		if isinstance(metadata, dict):
+			old_size = len(metadata)
+			metadata = { k: v for k, v in metadata.items() if os.path.exists(os.path.join(path, k)) }
+			new_size = len(metadata)
+			if new_size != old_size:
+				self._logger.info("Deleted {} stale entries from metadata for path {}".format(old_size - new_size,
+				                                                                              path))
+				self._save_metadata(path, metadata)
+			else:
+				with self._get_metadata_lock(path):
+					self._metadata_cache[path] = metadata
+			return metadata
+		else:
 			return dict()
 
 	def _save_metadata(self, path, metadata):
+		import json
+
 		with self._get_metadata_lock(path):
+			self._metadata_cache[path] = metadata
+
+		with self._get_persisted_metadata_lock(path):
 			metadata_path = os.path.join(path, ".metadata.json")
 			try:
-				import json
 				with atomic_write(metadata_path, mode='wb') as f:
 					f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
 			except Exception:
 				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
-			else:
-				self._metadata_cache[path] = deepcopy(metadata)
 
 	def _delete_metadata(self, path):
 		with self._get_metadata_lock(path):
+			if path in self._metadata_cache:
+				del self._metadata_cache[path]
+
+		with self._get_persisted_metadata_lock(path):
 			metadata_files = (".metadata.json", ".metadata.yaml")
 			for metadata_file in metadata_files:
 				metadata_path = os.path.join(path, metadata_file)
@@ -1160,15 +1194,19 @@ class LocalFileStorage(Storage):
 						os.remove(metadata_path)
 					except Exception:
 						self._logger.exception("Error while deleting {metadata_file} from {path}".format(**locals()))
-			if path in self._metadata_cache:
-				del self._metadata_cache[path]
+
+	@staticmethod
+	def _copied_metadata(metadata, name):
+		metadata = copy.copy(metadata)
+		metadata[name] = copy.deepcopy(metadata.get(name, dict()))
+		return metadata
 
 	def _migrate_metadata(self, path):
 		# we switched to json in 1.3.9 - if we still have yaml here, migrate it now
 		import yaml
 		import json
 
-		with self._get_metadata_lock(path):
+		with self._get_persisted_metadata_lock(path):
 			metadata_path_yaml = os.path.join(path, ".metadata.yaml")
 			metadata_path_json = os.path.join(path, ".metadata.json")
 
@@ -1178,7 +1216,10 @@ class LocalFileStorage(Storage):
 
 			if os.path.exists(metadata_path_json):
 				# already migrated
-				# TODO 1.3.10 Remove ".metadata.yaml" files
+				try:
+					os.remove(metadata_path_yaml)
+				except Exception:
+					self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 				return
 
 			with io.open(metadata_path_yaml, 'rt', encoding='utf-8') as f:
@@ -1195,7 +1236,10 @@ class LocalFileStorage(Storage):
 			with atomic_write(metadata_path_json, mode='wb') as f:
 				f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
 
-			# TODO 1.3.10 Remove ".metadata.yaml" files
+			try:
+				os.remove(metadata_path_yaml)
+			except Exception:
+				self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 
 	@contextmanager
 	def _get_metadata_lock(self, path):
@@ -1218,3 +1262,23 @@ class LocalFileStorage(Storage):
 			else:
 				self._metadata_locks[path] = (counter, lock)
 
+	@contextmanager
+	def _get_persisted_metadata_lock(self, path):
+		with self._persisted_metadata_lock_mutex:
+			if path not in self._persisted_metadata_locks:
+				import threading
+				self._persisted_metadata_locks[path] = (0, threading.RLock())
+
+			counter, lock = self._persisted_metadata_locks[path]
+			counter += 1
+			self._persisted_metadata_locks[path] = (counter, lock)
+
+		yield lock
+
+		with self._persisted_metadata_lock_mutex:
+			counter = self._persisted_metadata_locks[path][0]
+			counter -= 1
+			if counter <= 0:
+				del self._persisted_metadata_locks[path]
+			else:
+				self._persisted_metadata_locks[path] = (counter, lock)
