@@ -1002,10 +1002,10 @@ class VirtualPrinter(object):
 			self._send("TargetBed:%d" % self.bedTargetTemp)
 
 	def _performMove(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
+		matchX = re.search("X(-?[0-9.]+)", line)
+		matchY = re.search("Y(-?[0-9.]+)", line)
+		matchZ = re.search("Z(-?[0-9.]+)", line)
+		matchE = re.search("E(-?[0-9.]+)", line)
 		matchF = re.search("F([0-9.]+)", line)
 
 		duration = 0.0
@@ -1087,10 +1087,10 @@ class VirtualPrinter(object):
 				time.sleep(duration)
 
 	def _setPosition(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
+		matchX = re.search("X(-?[0-9.]+)", line)
+		matchY = re.search("Y(-?[0-9.]+)", line)
+		matchZ = re.search("Z(-?[0-9.]+)", line)
+		matchE = re.search("E(-?[0-9.]+)", line)
 
 		if matchX is None and matchY is None and matchZ is None and matchE is None:
 			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
