@@ -620,7 +620,7 @@ class VirtualPrinter(object):
 		self._setPosition(data)
 
 	def _gcode_G28(self, data):
-		self._performMove(data)
+		self._home(data)
 
 	def _gcode_G0(self, data):
 		# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
@@ -1115,6 +1115,30 @@ class VirtualPrinter(object):
 					self._lastE[self.currentExtruder] = float(matchE.group(1))
 				except:
 					pass
+
+	def _home(self, line):
+		x = y = z = e = None
+
+		if "X" in line:
+			x = True
+		if "Y" in line:
+			y = True
+		if "Z" in line:
+			z = True
+		if "E" in line:
+			e = True
+
+		if x is None and y is None and z is None and e is None:
+			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
+		else:
+			if x:
+				self._lastX = 0
+			if y:
+				self._lastY = 0
+			if z:
+				self._lastZ = 0
+			if e:
+				self._lastE = 0
 
 	def _writeSdFile(self, filename):
 		if filename.startswith("/"):
