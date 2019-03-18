@@ -560,7 +560,7 @@ def fetch_template_data(refresh=False):
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", data_bind="visible: visible")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
 		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),

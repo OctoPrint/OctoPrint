@@ -122,6 +122,34 @@ $(function() {
             exports.onBrowserVisibilityChange = function(callback) {
                 browserVisibilityCallbacks.push(callback);
             };
+            exports.hashFromTabChange = false;
+            exports.updateTab = function() {
+                if (exports.hashFromTabChange) {
+                    exports.hashFromTabChange = false;
+                    return;
+                }
+
+                var tabs = $('#tabs');
+
+                var hashtag = window.location.hash;
+                if (hashtag) {
+                    var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
+                    if (selectedTab.length) {
+                        selectedTab.tab("show");
+                        return;
+                    }
+                }
+
+                var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
+                if (firstTab.length) {
+                    var firstHash = firstTab[0].hash;
+                    if (firstHash !== exports.selectedTab) {
+                        firstTab.tab("show");
+                    } else {
+                        window.location.hash = firstHash;
+                    }
+                }
+            };
 
             return exports;
         })();
@@ -509,9 +537,6 @@ $(function() {
             });
         };
 
-        // Use bootstrap tabdrop for tabs and pills
-        $('.nav-pills, .nav-tabs').tabdrop();
-
         // Allow components to react to tab change
         var onTabChange = function(current, previous) {
             log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
@@ -526,33 +551,21 @@ $(function() {
         var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
             onAfterTabChange(current, previous);
 
             // make sure we also update the hash but stick to the current scroll position
             var scrollmem = $('body').scrollTop() || $('html').scrollTop();
+            OctoPrint.coreui.hashFromTabChange = true;
             window.location.hash = current;
             $('html,body').scrollTop(scrollmem);
         });
-
-        onTabChange(OCTOPRINT_INITIAL_TAB);
-        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
-
-        var changeTab = function() {
-            var hashtag = window.location.hash;
-            if (!hashtag) return;
-
-            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
-            if (tab) {
-                tab.tab("show");
-            }
-        };
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -672,10 +685,6 @@ $(function() {
             callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
-            // startup complete
-            callViewModels(allViewModels, "onStartupComplete");
-            setOnViewModels(allViewModels, "_startupComplete", true);
-
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
@@ -683,14 +692,21 @@ $(function() {
             });
 
             $(window).on("hashchange", function() {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             });
 
-            if (window.location.hash !== "") {
-                changeTab();
-            }
-
             log.info("Application startup complete");
+
+            // startup complete
+            callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
+
+            // this will also allow selecting any tabs that will be hidden later due to overflowing since our
+            // overflow plugin tabdrop hasn't run yet
+            OctoPrint.coreui.updateTab();
+
+            // Use bootstrap tabdrop for tabs and pills
+            $('.nav-pills, .nav-tabs').tabdrop();
         };
 
         var fetchSettings = function() {
