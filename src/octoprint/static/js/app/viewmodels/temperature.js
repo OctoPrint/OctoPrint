@@ -68,8 +68,14 @@ $(function() {
         self.changeOffsetDialog = undefined;
 
         self.tools = ko.observableArray([]);
-
+        self.hasTools = ko.pureComputed(function() {
+            return self.tools().length > 0;
+        });
         self.hasBed = ko.observable(true);
+
+        self.visible = ko.pureComputed(function() {
+            return self.hasTools() || self.hasBed();
+        });
 
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
@@ -138,6 +144,8 @@ $(function() {
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
+
+            OctoPrint.coreui.updateTab();
 
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
@@ -752,8 +760,9 @@ $(function() {
             }
         };
 
-        self.onAfterTabChange = function(current, previous) {
-            if (current !== "#temp") {
+        self.initOrUpdate = function() {
+            if (OctoPrint.coreui.selectedTab !== "#temp" || !$("#temp").is(":visible")) {
+                // do not try to initialize the graph when it's not visible or its sizing will be off
                 return;
             }
 
@@ -762,6 +771,10 @@ $(function() {
             } else {
                 self.updatePlot();
             }
+        };
+
+        self.onAfterTabChange = function() {
+            self.initOrUpdate();
         };
 
         self.onStartup = function() {
@@ -781,6 +794,7 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
+            self.initOrUpdate();
             self._printerProfileUpdated();
         };
 
@@ -789,6 +803,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#temp", "#change_offset_dialog"]
+        elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });
