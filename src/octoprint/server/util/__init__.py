@@ -66,10 +66,13 @@ def loginUserFromApiKey():
 		return False
 
 	user = get_user_for_apikey(apikey)
+	if user is None:
+		return False
+
 	if not loginUser(user):
-		raise InvalidApiKeyException()
-	else:
-		return True
+		return False
+
+	return True
 
 
 def loginUserFromAuthorizationHeader():
