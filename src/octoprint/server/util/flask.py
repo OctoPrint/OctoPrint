@@ -459,7 +459,7 @@ class ReverseProxiedEnvironment(object):
 
 #~~ request and response versions
 
-from werkzeug.wrappers import cached_property
+from werkzeug.utils import cached_property
 
 class OctoPrintFlaskRequest(flask.Request):
 	environment_wrapper = staticmethod(lambda x: x)
