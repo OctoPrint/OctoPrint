@@ -68,7 +68,8 @@ def loginUserFromApiKey():
 
 	user = get_user_for_apikey(apikey)
 	if user is None:
-		raise InvalidApiKeyException()
+		# invalid API key = no API key
+		return False
 
 	if not loginUser(user):
 		return False
