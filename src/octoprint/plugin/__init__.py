@@ -297,6 +297,17 @@ class PluginSettings(object):
 	.. method:: set_boolean(path, value, force=False)
 
 	   Like :func:`set` but ensures the value is an ``boolean`` through attempted conversion before setting it.
+
+	.. method:: save(force=False, trigger_event=False)
+
+	   Saves the settings to ``config.yaml`` if there are active changes. If ``force`` is set to ``True`` the settings
+	   will be saved even if there are no changes. Settings ``trigger_event`` to ``True`` will cause a ``SettingsUpdated``
+	   :ref:`event <sec-events-available_events-settings>` to get triggered.
+
+	   :param force: Force saving to ``config.yaml`` even if there are no changes.
+	   :type force: boolean
+	   :param trigger_event: Trigger the ``SettingsUpdated`` :ref:`event <sec-events-available_events-settings>` on save.
+	   :type trigger_event: boolean
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):

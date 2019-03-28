@@ -553,4 +553,4 @@ def _saveSettings(data):
 				except:
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 
-	s.save()
+	s.save(trigger_event=True)

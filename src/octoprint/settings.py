@@ -1355,7 +1355,7 @@ class Settings(object):
 		shutil.copy(self._configfile, backup)
 		return backup
 
-	def save(self, force=False):
+	def save(self, force=False, trigger_event=False):
 		if not self._dirty and not force:
 			return False
 
@@ -1372,9 +1372,10 @@ class Settings(object):
 
 			self.load()
 
-			payload = dict(config_hash=self.config_hash,
-			               effective_hash=self.effective_hash)
-			eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+			if trigger_event:
+				payload = dict(config_hash=self.config_hash,
+				               effective_hash=self.effective_hash)
+				eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
 
 			return True
 
