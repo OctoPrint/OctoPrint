@@ -86,7 +86,7 @@ def printerToolCommand():
 	##~~ tool selection
 	if command == "select":
 		tool = data["tool"]
-		if re.match(validation_regex, tool) is None:
+		if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
 			return make_response("Invalid tool: %s" % tool, 400)
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
