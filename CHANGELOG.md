@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.3.11rc1 (2019-03-27)
+## 1.3.11rc1 (2019-03-28)
 
 ### Heads-up: 1.3.11 unbundles the Cura plugin
 
@@ -51,7 +51,7 @@ The plugin uses a [sentry.io](https://sentry.io) instance, kindly provided to Oc
   * [#3073](https://github.com/foosel/OctoPrint/pull/3073) - Hide tool section in "Control" tab for machines with no extruders.
   * [#3074](https://github.com/foosel/OctoPrint/issues/3074) - Updated several dependencies to newer versions.
   * Add elapsed time and reason for failure to `PrintFailed` event.
-  * Always trigger `SettingsUpdated` event on save of settings.
+  * Add `trigger_event` parameter to `Settings.save` and `PluginSettings.save` to trigger `SettingsUpdated` event on save of settings.
   * Simplify configuration change handling of wizards.
   * Minimum Python version is now 2.7.9.
   * Create a backup of working `config.yaml` after successful startup.
