@@ -54,8 +54,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# TODO do we really need to hold the temperature here?
 		self._temp = None
 		self._bedTemp = None
+		self._chamberTemp = None
 		self._targetTemp = None
 		self._targetBedTemp = None
+		self._targetChamberTemp = None
 		self._temps = TemperatureHistory(cutoff=settings().getInt(["temperature", "cutoff"])*60)
 		self._tempBacklog = []
 
