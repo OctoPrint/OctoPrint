@@ -467,6 +467,8 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 
+		self._errorValue = ""
+
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
 		self._firmware_info_received = not self._firmware_detection
 		self._firmware_info = dict()
