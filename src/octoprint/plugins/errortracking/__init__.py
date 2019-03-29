@@ -12,6 +12,8 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
+from serial import SerialException
+
 SENTRY_URL_SERVER = "https://4273b441bb654c4398de42ba86350963@sentry.io/1373987"
 SENTRY_URL_COREUI = "https://f9bcd7185f73430bbe7c09ff69586b0f@sentry.io/1374096"
 
@@ -20,6 +22,10 @@ SETTINGS_DEFAULTS = dict(enabled=False,
                          unique_id=None,
                          url_server=SENTRY_URL_SERVER,
                          url_coreui=SENTRY_URL_COREUI)
+
+IGNORED_EXCEPTIONS = [
+	(SerialException, "octoprint.util.comm"),
+]
 
 
 class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
@@ -102,16 +108,28 @@ def _enable_errortracking():
 				return None
 
 			handled = True
+			logger = event.get("logger", "")
+
+			for ignore in IGNORED_EXCEPTIONS:
+				if isinstance(ignore, tuple):
+					ignored_exc, ignored_logger = ignore
+					if isinstance(hint["exc_info"][1], ignored_exc) and logger.startswith(ignored_logger):
+						# exception ignored for logger
+						return None
+
+				elif isinstance(ignore, type):
+					if isinstance(hint["exc_info"][1], ignore):
+						# exception ignored
+						return None
+
 			if event.get("exception") and event["exception"].get("values"):
 				handled = not any(map(lambda x: x.get("mechanism") and x["mechanism"].get("handled", True) == False,
 				                      event["exception"]["values"]))
 
 			if handled:
 				# error is handled, restrict further based on logger
-				logger = event.get("logger", "")
-
 				if logger != "" and not (logger.startswith("octoprint.") or logger.startswith("tornado.")):
-					# we only want unhandled errors or errors logged by loggers octoprint.* or tornado.*
+					# we only want errors logged by loggers octoprint.* or tornado.*
 					return None
 
 				if logger.startswith("octoprint.plugins."):
