@@ -18,7 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer, monotonic_time
+from octoprint.util import RepeatedTimer, monotonic_time, to_bytes
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -45,7 +45,7 @@ class VirtualPrinter(object):
 			self._seriallog.addHandler(seriallog_handler)
 			self._seriallog.setLevel(logging.INFO)
 
-		self._seriallog.info("-"*78)
+		self._seriallog.info(u"-"*78)
 
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
@@ -1379,13 +1379,13 @@ class VirtualPrinter(object):
 				return 0
 
 			if "M112" in data and self._supportM112:
-				self._seriallog.info("<<< {}".format(data.strip()))
+				self._seriallog.info(u"<<< {}".format(data.strip()))
 				self._kill()
 				return len(data)
 
 			try:
 				written = self.incoming.put(data, timeout=self._write_timeout, partial=True)
-				self._seriallog.info("<<< {}".format(data.strip()))
+				self._seriallog.info(u"<<< {}".format(data.strip()))
 				return written
 			except queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
@@ -1421,9 +1421,9 @@ class VirtualPrinter(object):
 		try:
 			# fetch a line from the queue, wait no longer than timeout
 			line = self.outgoing.get(timeout=timeout)
-			self._seriallog.info(">>> {}".format(line.strip()))
+			self._seriallog.info(u">>> {}".format(line.strip()))
 			self.outgoing.task_done()
-			return line
+			return to_bytes(line, errors="replace")
 		except queue.Empty:
 			# queue empty? return empty line
 			return ""

@@ -636,6 +636,8 @@ class MachineCom(object):
 		self._log(message)
 
 	def _log(self, message):
+		message = to_unicode(message)
+
 		self._terminal_log.append(message)
 		self._callback.on_comm_log(message)
 		self._serialLogger.debug(message)
@@ -2737,17 +2739,17 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
-		if ret != "":
-			try:
-				self._log("Recv: " + sanitize_ascii(ret))
-			except ValueError as e:
-				self._log("WARN: While reading last line: %s" % e)
-				self._log("Recv: " + repr(ret))
+		try:
+			ret = ret.decode('utf-8')
+		except UnicodeDecodeError:
+			ret = ret.decode('latin1')
+
+		self._log(u"Recv: {}".format(ret))
 
 		for name, hook in self._received_message_hooks.items():
 			try:
 				ret = hook(self, ret)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}:".format(**locals()))
 			else:
 				if ret is None:
@@ -3338,7 +3340,7 @@ class MachineCom(object):
 			return
 
 		if log:
-			self._log("Send: " + str(cmd))
+			self._log(u"Send: {}".format(to_unicode(cmd, errors="replace")))
 
 		cmd += "\n"
 		written = 0
