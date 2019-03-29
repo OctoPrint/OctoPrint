@@ -142,5 +142,8 @@ be edited from OctoPrint's settings dialog.
 
 ## Special Thanks
 
-Cross-browser testing services are kindly provided by [BrowserStack](http://www.browserstack.com/).
-Profiling is done with the help of [PyVmMonitor](http://www.pyvmmonitor.com).
+Cross-browser testing services are kindly provided by [BrowserStack](https://www.browserstack.com/).
+
+Profiling is done with the help of [PyVmMonitor](https://www.pyvmmonitor.com).
+
+Error tracking is powered and sponsored by [Sentry](https://sentry.io).
