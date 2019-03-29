@@ -2550,12 +2550,9 @@ class MachineCom(object):
 					self._log("Trying {}".format(p))
 					programmer.connect(p)
 					serial_obj = programmer.leaveISP()
-				except ispBase.IspError as e:
-					self._log("Could not enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
-					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
 				except:
-					self._log("Could not connect to {}: {}".format(p, get_exception_string()))
-					self._logger.exception("Could not connect to {}".format(p))
+					self._log("Could not connect to or enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
+					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
 
 				found = serial_obj is not None
 				programmer.close()
@@ -3371,7 +3368,7 @@ class MachineCom(object):
 						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 						if isinstance(ex, serial.SerialException):
 							self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
-							               level=logging.ERROR)
+							               level=logging.INFO)
 						self._errorValue = get_exception_string()
 						self.close(is_error=True)
 					break
@@ -3381,7 +3378,7 @@ class MachineCom(object):
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					if isinstance(ex, serial.SerialException):
 						self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
-						               level=logging.ERROR)
+						               level=logging.INFO)
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
 				break
