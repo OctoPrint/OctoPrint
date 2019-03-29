@@ -174,8 +174,9 @@ def serialList():
 			   + glob.glob("/dev/rfcomm*")
 
 	additionalPorts = settings().get(["serial", "additionalPorts"])
-	for additional in additionalPorts:
-		baselist += glob.glob(additional)
+	if additionalPorts:
+		for additional in additionalPorts:
+			baselist += glob.glob(additional)
 
 	prev = settings().get(["serial", "port"])
 	if prev in baselist:
