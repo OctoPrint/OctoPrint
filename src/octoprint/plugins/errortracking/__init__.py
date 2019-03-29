@@ -94,13 +94,43 @@ def _enable_errortracking():
 
 	if _is_enabled(enabled, enabled_unreleased):
 		import sentry_sdk
+		from octoprint.plugin import plugin_manager
+
+		def _before_send(event, hint):
+			if not "exc_info" in hint:
+				# we only want exceptions
+				return None
+
+			handled = True
+			if event.get("exception") and event["exception"].get("values"):
+				handled = not any(map(lambda x: x.get("mechanism") and x["mechanism"].get("handled", True) == False,
+				                      event["exception"]["values"]))
+
+			if handled:
+				# error is handled, restrict further based on logger
+				logger = event.get("logger", "")
+
+				if logger != "" and not (logger.startswith("octoprint.") or logger.startswith("tornado.")):
+					# we only want unhandled errors or errors logged by loggers octoprint.* or tornado.*
+					return None
+
+				if logger.startswith("octoprint.plugins."):
+					plugin_id = logger.split(".")[2]
+					plugin_info = plugin_manager().get_plugin_info(plugin_id)
+					if plugin_info is None or not plugin_info.bundled:
+						# we only want our active bundled plugins
+						return None
+
+			return event
+
 		sentry_sdk.init(url_server,
-		                release=version)
+		                release=version,
+		                before_send=_before_send)
 
 		with sentry_sdk.configure_scope() as scope:
 			scope.user = dict(id=unique_id)
 
-		logging.getLogger("octoprint.plugin.errortracking").info("Initialized error tracking")
+		logging.getLogger("octoprint.plugins.errortracking").info("Initialized error tracking")
 		_enabled = True
 
 
