@@ -620,6 +620,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if exclude is None:
 				exclude = []
 
+			if "timelapse" in exclude:
+				exclude.append("timelapse_tmp")
+
 			configfile = settings._configfile
 			basedir = settings._basedir
 
