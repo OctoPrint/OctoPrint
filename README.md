@@ -31,7 +31,7 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
 want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
-might be of more interest for you. You might also want to subscribe to join 
+might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
@@ -39,7 +39,7 @@ able to help you with any questions you might have.
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
 [official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), debugging help
-in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on 
+in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on
 [the community forum at community.octoprint.org](https://community.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
@@ -73,7 +73,7 @@ You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octopri
 for details.
 
 After installation, please make sure you follow the first-run wizard and set up
-access control as necessary. 
+access control as necessary.
 
 ## Dependencies
 
