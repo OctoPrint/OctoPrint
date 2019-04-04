@@ -688,7 +688,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if additional_args:
 				args.append(additional_args)
 
-		return self._pip_caller.execute(*args)
+		kwargs = dict(env=dict(PYTHONWARNINGS="ignore:DEPRECATION::pip._internal.cli.base_command"))
+
+		return self._pip_caller.execute(*args, **kwargs)
 
 	def _log_message(self, *lines):
 		self._log(lines, prefix=u"*", stream="message")
