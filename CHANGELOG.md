@@ -1,5 +1,43 @@
 # OctoPrint Changelog
 
+## 1.3.11rc2 (2019-04-04)
+
+### Improvements
+
+  * More resilience against broken configurations.
+  * More resilience against platform startup issues during environment detection.
+  * Don't confuse users with pip's new "OMG PY2.7 IS EOL!!1!" message.
+  * Error Tracking: Severely restrict what gets tracked:
+    * we are only interested in handled core exceptions or unhandled exceptions
+    * we are not interested at all in `SerialException`
+    * in the frontend we are only interested in things originating in the `static` files
+    * in the frontend we are not interested in anything originating in `packed_plugins.js`
+
+### Bug fixes
+
+  * [#3088](https://github.com/foosel/OctoPrint/issues/3088) (regression) - Fix 500 error on index rendering in case of plugins that use unicode in plugin vars.
+  * [#3089](https://github.com/foosel/OctoPrint/issues/3089) (regression) - Fix missing `_chamberTemp` definition
+  * [#3090](https://github.com/foosel/OctoPrint/issues/3090) (regression) - Fix missing method causing an exception on `/api/printer/tool` endpoint
+  * [#3091](https://github.com/foosel/OctoPrint/issues/3091) (regression) - Printer Safety Check: Fix unicode errors in certain communication scenarios.
+  * [#3092](https://github.com/foosel/OctoPrint/issues/3092) - Fix invalid tool parameter detection on `/api/printer/tool` endpoint.
+  * [#3098](https://github.com/foosel/OctoPrint/issues/3098) - Backup: Exclude temporary timelapse files as well if timelapses are excluded from backup.
+  * Fix missing default value for `self._errorValue` in comm layer.
+  * Don't read return code on async system commands, it won't work.
+
+### Unreproduced issues
+
+The following issues were reported in RC1 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
+
+  * ["Print completes but temp data appears to be 'stuck' at last known value for bed and hotend."](https://github.com/foosel/OctoPrint/issues/3087#issuecomment-478369220)
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11rc1...1.3.11rc1)
+
 ## 1.3.11rc1 (2019-03-28)
 
 ### Heads-up: 1.3.11 unbundles the Cura plugin

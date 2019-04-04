@@ -29,4 +29,5 @@ def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
 	if evaluate_returncode and p.returncode != 0:
 		raise ScriptError(p.returncode, p.stdout.text, p.stderr.text)
 
-	return p.returncode, p.stdout.text, p.stderr.text
+	if not do_async:
+		return p.returncode, p.stdout.text, p.stderr.text

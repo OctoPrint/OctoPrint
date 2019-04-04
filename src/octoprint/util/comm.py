@@ -174,8 +174,9 @@ def serialList():
 			   + glob.glob("/dev/rfcomm*")
 
 	additionalPorts = settings().get(["serial", "additionalPorts"])
-	for additional in additionalPorts:
-		baselist += glob.glob(additional)
+	if additionalPorts:
+		for additional in additionalPorts:
+			baselist += glob.glob(additional)
 
 	prev = settings().get(["serial", "port"])
 	if prev in baselist:
@@ -467,6 +468,8 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 
+		self._errorValue = ""
+
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
 		self._firmware_info_received = not self._firmware_detection
 		self._firmware_info = dict()
@@ -633,6 +636,8 @@ class MachineCom(object):
 		self._log(message)
 
 	def _log(self, message):
+		message = to_unicode(message)
+
 		self._terminal_log.append(message)
 		self._callback.on_comm_log(message)
 		self._serialLogger.debug(message)
@@ -2548,12 +2553,9 @@ class MachineCom(object):
 					self._log("Trying {}".format(p))
 					programmer.connect(p)
 					serial_obj = programmer.leaveISP()
-				except ispBase.IspError as e:
-					self._log("Could not enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
-					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
 				except:
-					self._log("Could not connect to {}: {}".format(p, get_exception_string()))
-					self._logger.exception("Could not connect to {}".format(p))
+					self._log("Could not connect to or enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
+					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
 
 				found = serial_obj is not None
 				programmer.close()
@@ -2737,17 +2739,17 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
-		if ret != "":
-			try:
-				self._log("Recv: " + sanitize_ascii(ret))
-			except ValueError as e:
-				self._log("WARN: While reading last line: %s" % e)
-				self._log("Recv: " + repr(ret))
+		try:
+			ret = ret.decode('utf-8')
+		except UnicodeDecodeError:
+			ret = ret.decode('latin1')
+
+		self._log(u"Recv: {}".format(ret))
 
 		for name, hook in self._received_message_hooks.items():
 			try:
 				ret = hook(self, ret)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}:".format(**locals()))
 			else:
 				if ret is None:
@@ -3338,7 +3340,7 @@ class MachineCom(object):
 			return
 
 		if log:
-			self._log("Send: " + str(cmd))
+			self._log(u"Send: {}".format(to_unicode(cmd, errors="replace")))
 
 		cmd += "\n"
 		written = 0
@@ -3369,7 +3371,7 @@ class MachineCom(object):
 						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 						if isinstance(ex, serial.SerialException):
 							self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
-							               level=logging.ERROR)
+							               level=logging.INFO)
 						self._errorValue = get_exception_string()
 						self.close(is_error=True)
 					break
@@ -3379,7 +3381,7 @@ class MachineCom(object):
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					if isinstance(ex, serial.SerialException):
 						self._dual_log("Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
-						               level=logging.ERROR)
+						               level=logging.INFO)
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
 				break

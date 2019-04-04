@@ -7,7 +7,15 @@
 
         Sentry.init({
             dsn: errortracking_url_coreui,
-            release: VERSION
+            release: VERSION,
+            whitelistUrls: [
+                // only include static assets
+                "/static/"
+            ],
+            blacklistUrls: [
+                // exclude third party plugins
+                "/static/webassets/packed_plugins.js"
+            ]
         });
         Sentry.configureScope(function (scope) {
             scope.setUser({"id": errortracking_unique_id});

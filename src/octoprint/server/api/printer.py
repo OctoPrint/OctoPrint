@@ -33,12 +33,18 @@ def printerState():
 
 	result = {}
 
-	processor = lambda x: x
-	if not printerProfileManager.get_current_or_default()["heatedBed"]:
-		processor = _delete_bed
-
 	# add temperature information
 	if not "temperature" in excludes:
+		processor = lambda x: x
+		heated_bed = printerProfileManager.get_current_or_default()["heatedBed"]
+		heated_chamber = printerProfileManager.get_current_or_default()["heatedChamber"]
+		if not heated_bed and not heated_chamber:
+			processor = _keep_tools
+		elif not heated_bed:
+			processor = _delete_bed
+		elif not heated_chamber:
+			processor = _delete_chamber
+
 		result.update({"temperature": _get_temperature_data(processor)})
 
 	# add sd information
@@ -80,7 +86,7 @@ def printerToolCommand():
 	##~~ tool selection
 	if command == "select":
 		tool = data["tool"]
-		if re.match(validation_regex, tool) is None:
+		if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
 			return make_response("Invalid tool: %s" % tool, 400)
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
@@ -151,7 +157,7 @@ def printerToolState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	return jsonify(_get_temperature_data(_delete_bed))
+	return jsonify(_get_temperature_data(_keep_tools))
 
 
 ##~~ Heated bed
@@ -483,9 +489,14 @@ def _keep_tools(x):
 def _keep_bed(x):
 	return _delete_from_data(x, lambda k: k != "bed")
 
+def _delete_bed(x):
+	return _delete_from_data(x, lambda k: k == "bed")
 
 def _keep_chamber(x):
 	return _delete_from_data(x, lambda k: k != "chamber")
+
+def _delete_chamber(x):
+	return _delete_from_data(x, lambda k: k == "chamber")
 
 
 def _delete_from_data(x, key_matcher):

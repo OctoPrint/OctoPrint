@@ -280,7 +280,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			self.send({type: payload})
 		except Exception as e:
 			if self._logger.isEnabledFor(logging.DEBUG):
-				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
+				self._logger.warn("Could not send message to client {}".format(self._remoteAddress), exc_info=True)
 			else:
 				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
 

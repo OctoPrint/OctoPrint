@@ -18,6 +18,8 @@ from collections import defaultdict
 
 from flask import request, jsonify, make_response
 
+import logging
+
 from octoprint.settings import settings
 
 from octoprint.server import admin_permission
@@ -78,9 +80,19 @@ def getInstalledLanguagePacks():
 				plugin_packs[plugin_entry.name]["display"] = plugin_info.name
 
 				for language_entry in scandir(plugin_entry.path):
-					plugin_packs[plugin_entry.name]["languages"].append(load_meta(language_entry.path, language_entry.name))
+					try:
+						plugin_packs[plugin_entry.name]["languages"].append(load_meta(language_entry.path, language_entry.name))
+					except Exception:
+						logging.getLogger(__name__).exception("Error while parsing metadata for language pack {} from {} for plugin {}".format(language_entry.name,
+						                                                                                                                       language_entry.path,
+						                                                                                                                       plugin_entry.name))
+						continue
 		else:
-			core_packs.append(load_meta(entry.path, entry.name))
+			try:
+				core_packs.append(load_meta(entry.path, entry.name))
+			except Exception:
+				logging.getLogger(__name__).exception("Error while parsing metadata for core language pack {} from {}".format(entry.name,
+				                                                                                                              entry.path))
 
 	result = dict(_core=dict(identifier="_core", display="Core", languages=core_packs))
 	result.update(plugin_packs)
