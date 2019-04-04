@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.3.11.dev281+g40396847e.dirty\n"
+"Project-Id-Version: OctoPrint 1.3.11rc2.dev18+g0b6dd7e76\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2019-03-26 10:49+0100\n"
+"POT-Creation-Date: 2019-04-04 14:21+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -350,7 +350,7 @@ msgstr ""
 msgid "Backup & Restore"
 msgstr ""
 
-#: src/octoprint/plugins/backup/__init__.py:947
+#: src/octoprint/plugins/backup/__init__.py:950
 msgid ""
 "Without this plugin you will no longer be able to backup & restore your "
 "OctoPrint settings and data."
@@ -595,13 +595,13 @@ msgid "Server Commands"
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:49
-#: src/octoprint/server/views.py:583
+#: src/octoprint/server/views.py:585
 msgid "Webcam & Timelapse"
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:64
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
-#: src/octoprint/server/views.py:589
+#: src/octoprint/server/views.py:591
 msgid "Access Control"
 msgstr ""
 
@@ -1002,7 +1002,7 @@ msgid ""
 "discoverable on the network via Bonjour and uPnP."
 msgstr ""
 
-#: src/octoprint/plugins/errortracking/__init__.py:33
+#: src/octoprint/plugins/errortracking/__init__.py:39
 #: src/octoprint/plugins/errortracking/templates/errortracking_settings.jinja2:1
 msgid "Error Tracking"
 msgstr ""
@@ -1288,7 +1288,7 @@ msgid ""
 "shouldn't have to change this."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:181
+#: src/octoprint/plugins/pluginmanager/__init__.py:182
 msgid "Plugin Manager"
 msgstr ""
 
@@ -1859,7 +1859,7 @@ msgid "Software Update"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:1048
-#: src/octoprint/server/views.py:587
+#: src/octoprint/server/views.py:589
 #: src/octoprint/static/js/app/viewmodels/appearance.js:99
 #: src/octoprint/static/js/app/viewmodels/appearance.js:104
 #: src/octoprint/static/js/app/viewmodels/appearance.js:106
@@ -2410,109 +2410,109 @@ msgid ""
 "tracking.octoprint.org</a>.\n"
 msgstr ""
 
-#: src/octoprint/server/views.py:497
+#: src/octoprint/server/views.py:499
 msgid "Plugins"
 msgstr ""
 
-#: src/octoprint/server/views.py:554
+#: src/octoprint/server/views.py:556
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:12
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:555
+#: src/octoprint/server/views.py:557
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:556
+#: src/octoprint/server/views.py:558
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:562
+#: src/octoprint/server/views.py:564
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:563
+#: src/octoprint/server/views.py:565
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:564
+#: src/octoprint/server/views.py:566
 msgid "GCode Viewer"
 msgstr ""
 
-#: src/octoprint/server/views.py:565
+#: src/octoprint/server/views.py:567
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:566
+#: src/octoprint/server/views.py:568
 #: src/octoprint/templates/sidebar/state.jinja2:8
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:572
+#: src/octoprint/server/views.py:574
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:574
+#: src/octoprint/server/views.py:576
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:575
+#: src/octoprint/server/views.py:577
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:576
+#: src/octoprint/server/views.py:578
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:577
+#: src/octoprint/server/views.py:579
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:578
+#: src/octoprint/server/views.py:580
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:580 src/octoprint/server/views.py:582
+#: src/octoprint/server/views.py:582 src/octoprint/server/views.py:584
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:584
+#: src/octoprint/server/views.py:586
 msgid "GCODE Visualizer"
 msgstr ""
 
-#: src/octoprint/server/views.py:585
+#: src/octoprint/server/views.py:587
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:590
+#: src/octoprint/server/views.py:592
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 #: src/octoprint/templates/sidebar/files_header.jinja2:10
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:591
+#: src/octoprint/server/views.py:593
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:592
+#: src/octoprint/server/views.py:594
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:598
+#: src/octoprint/server/views.py:600
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:599
+#: src/octoprint/server/views.py:601
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/server/views.py:615
+#: src/octoprint/server/views.py:617
 msgid "Start"
 msgstr ""
 
-#: src/octoprint/server/views.py:616
+#: src/octoprint/server/views.py:618
 #: src/octoprint/templates/dialogs/wizard.jinja2:57
 msgid "Finish"
 msgstr ""
