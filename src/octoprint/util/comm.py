@@ -687,9 +687,9 @@ class MachineCom(object):
 			if self.isSdFileSelected():
 				return "Starting print from SD"
 			elif self.isStreaming():
-				return "Sending file to SD"
+				return "Starting to send file to SD"
 			else:
-				return "Printing"
+				return "Starting"
 		elif state == self.STATE_PRINTING:
 			if self.isSdFileSelected():
 				return "Printing from SD"
