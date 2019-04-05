@@ -12,9 +12,6 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
-from serial import SerialException
-from requests.exceptions import RequestException
-
 SENTRY_URL_SERVER = "https://4273b441bb654c4398de42ba86350963@sentry.io/1373987"
 SENTRY_URL_COREUI = "https://f9bcd7185f73430bbe7c09ff69586b0f@sentry.io/1374096"
 
@@ -24,9 +21,12 @@ SETTINGS_DEFAULTS = dict(enabled=False,
                          url_server=SENTRY_URL_SERVER,
                          url_coreui=SENTRY_URL_COREUI)
 
+import serial
+import requests.exceptions
+
 IGNORED_EXCEPTIONS = [
-	(SerialException, "octoprint.util.comm"),
-	RequestException
+	(serial.SerialException, "octoprint.util.comm"),
+	requests.exceptions.RequestException,
 ]
 
 
