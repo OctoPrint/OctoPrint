@@ -87,7 +87,8 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 				if isinstance(assets, (tuple, list)):
 					additional_assets += assets
 			except:
-				self._logger.exception("Error fetching theming CSS to include from plugin {}".format(name))
+				self._logger.exception("Error fetching theming CSS to include from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		render_kwargs.update(dict(forcelogin_theming=additional_assets))
 		return make_response(render_template("forcelogin_index.jinja2", **render_kwargs))

@@ -79,7 +79,9 @@ def valid_timelapse(path):
 					continue
 				extensions += result
 			except:
-				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
+				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse "
+				                                      "extensions from hook {name}".format(name=name),
+				                                      extra=dict(plugin=name))
 
 		_extensions = list(set(extensions))
 

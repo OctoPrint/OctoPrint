@@ -123,18 +123,22 @@ def in_cache():
 	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin,
 	                                               sorting_context="UiPlugin.on_ui_render")
 	for plugin in ui_plugins:
-		if plugin.will_handle_ui(request):
-			ui = plugin._identifier
-			key = _cache_key(plugin._identifier,
-			                 url=url,
-			                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
-			unless = _preemptive_unless(url, additional_unless=plugin.get_ui_preemptive_caching_additional_unless)
-			data = _preemptive_data(plugin._identifier,
-			                        path=path,
-			                        base_url=base_url,
-			                        data=plugin.get_ui_data_for_preemptive_caching,
-			                        additional_request_data=plugin.get_ui_additional_request_data_for_preemptive_caching)
-			break
+		try:
+			if plugin.will_handle_ui(request):
+				ui = plugin._identifier
+				key = _cache_key(plugin._identifier,
+				                 url=url,
+				                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
+				unless = _preemptive_unless(url, additional_unless=plugin.get_ui_preemptive_caching_additional_unless)
+				data = _preemptive_data(plugin._identifier,
+				                        path=path,
+				                        base_url=base_url,
+				                        data=plugin.get_ui_data_for_preemptive_caching,
+				                        additional_request_data=plugin.get_ui_additional_request_data_for_preemptive_caching)
+				break
+		except Exception:
+			_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
+			                  extra=dict(plugin=plugin._identifier))
 	else:
 		ui = "_default"
 		key = _cache_key("_default", url=url)
@@ -403,13 +407,17 @@ def index():
 		# select view from plugins and fall back on default view if no plugin will handle it
 		ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
 		for plugin in ui_plugins:
-			if plugin.will_handle_ui(request):
-				# plugin claims responsibility, let it render the UI
-				response = plugin_view(plugin)
-				if response is not None:
-					break
-				else:
-					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+			try:
+				if plugin.will_handle_ui(request):
+					# plugin claims responsibility, let it render the UI
+					response = plugin_view(plugin)
+					if response is not None:
+						break
+					else:
+						_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+			except Exception:
+				_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
+				                  extra=dict(plugin=plugin._identifier))
 		else:
 			response = default_view()
 
@@ -508,7 +516,9 @@ def fetch_template_data(refresh=False):
 		try:
 			result = hook(dict(template_sorting), dict(template_rules))
 		except:
-			_logger.exception("Error while retrieving custom template type definitions from plugin {name}".format(**locals()))
+			_logger.exception("Error while retrieving custom template type "
+			                  "definitions from plugin {name}".format(**locals()),
+			                  extra=dict(plugin=name))
 		else:
 			if not isinstance(result, list):
 				continue
@@ -649,7 +659,8 @@ def fetch_template_data(refresh=False):
 				wizard_required = implementation.is_wizard_required()
 				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
-			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
+			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name),
+			                  extra=dict(plugin=name))
 			continue
 
 		if not isinstance(vars, dict):

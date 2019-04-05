@@ -78,7 +78,9 @@ def full_extension_tree():
 				continue
 			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
 		except:
-			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from SlicerPlugin {name}".format(name=plugin.key))
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from SlicerPlugin {name}".format(name=plugin._identifier),
+			                                      extra=dict(plugin=plugin._identifier))
 
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
@@ -88,7 +90,9 @@ def full_extension_tree():
 				continue
 			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
 		except:
-			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from hook {name}".format(name=name),
+			                                      extra=dict(plugin=name))
 
 	return result
 
@@ -429,7 +433,8 @@ class FileManager(object):
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
 						except:
-							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
+							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier,
+							                       extra=dict(plugin=plugin._identifier))
 
 				import threading
 				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))
@@ -464,11 +469,11 @@ class FileManager(object):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
-		for hook in self._preprocessor_hooks.values():
+		for name, hook in self._preprocessor_hooks.items():
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 			except:
-				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
+				self._logger.exception("Error when calling preprocessor hook for plugin {}, ignoring".format(name), extra=dict(plugin=name))
 				continue
 
 			if hook_file_object is not None:

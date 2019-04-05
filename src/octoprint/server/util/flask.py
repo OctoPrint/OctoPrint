@@ -1539,7 +1539,8 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			all_assets = implementation.get_assets()
 			basefolder = implementation.get_asset_folder()
 		except:
-			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name))
+			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name),
+			                 extra=dict(plugin=name))
 			continue
 
 		def asset_exists(category, asset):

@@ -193,7 +193,9 @@ def get_user_for_apikey(apikey):
 				if user is not None:
 					return user
 			except:
-				logging.getLogger(__name__).exception("Error running api key validator for plugin {} and key {}".format(name, apikey))
+				logging.getLogger(__name__).exception("Error running api key validator "
+				                                      "for plugin {} and key {}".format(name, apikey),
+				                                      extra=dict(plugin=name))
 	return None
 
 

@@ -999,7 +999,8 @@ class MachineCom(object):
 			try:
 				retval = hook(self, "gcode", scriptName)
 			except:
-				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+				self._logger.exception("Error while processing hook {name}.".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if retval is None:
 					continue
@@ -1520,7 +1521,8 @@ class MachineCom(object):
 				if parsedTemps is None or not parsedTemps:
 					return
 			except:
-				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
+				self._logger.exception("Error while processing temperatures in {}, skipping".format(name),
+				                       extra=dict(plugin=name))
 
 		if current_tool_key in parsedTemps.keys():
 			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
@@ -1660,11 +1662,13 @@ class MachineCom(object):
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
 						else:
-							for hook in self._printer_action_hooks:
+							for name, hook in self._printer_action_hooks.items():
 								try:
-									self._printer_action_hooks[hook](self, line, action_command)
+									hook(self, line, action_command)
 								except:
-									self._logger.exception("Error while calling hook {} with action command {}".format(self._printer_action_hooks[hook], action_command))
+									self._logger.exception("Error while calling hook from plugin "
+									                       "{} with action command {}".format(name, action_command),
+									                       extra=dict(plugin=name))
 									continue
 
 					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
@@ -1908,7 +1912,8 @@ class MachineCom(object):
 							try:
 								hook(self, firmware_name, copy.copy(data))
 							except:
-								self._logger.exception("Error processing firmware info hook {}:".format(name))
+								self._logger.exception("Error processing firmware info hook {}:".format(name),
+								                       extra=dict(plugin=name))
 
 				##~~ Firmware capability report triggered by M115
 				elif lower_line.startswith("cap:"):
@@ -1932,7 +1937,8 @@ class MachineCom(object):
 							try:
 								hook(self, capability, enabled, copy.copy(self._firmware_capabilities))
 							except:
-								self._logger.exception("Error processing firmware capability hook {}:".format(name))
+								self._logger.exception("Error processing firmware capability hook {}:".format(name),
+								                       extra=dict(plugin=name))
 
 				##~~ invalid extruder
 				elif 'invalid extruder' in lower_line:
@@ -2692,7 +2698,8 @@ class MachineCom(object):
 					try:
 						ret = hook(self, stripped_error)
 					except:
-						self._logger.exception("Error while processing hook {name}:".format(**locals()))
+						self._logger.exception("Error while processing hook {name}:".format(**locals()),
+						                       extra=dict(plugin=name))
 					else:
 						if ret:
 							return line
@@ -2750,7 +2757,8 @@ class MachineCom(object):
 			try:
 				ret = hook(self, ret)
 			except Exception:
-				self._logger.exception("Error while processing hook {name}:".format(**locals()))
+				self._logger.exception("Error while processing hook {name}:".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if ret is None:
 					return ""
@@ -3209,7 +3217,9 @@ class MachineCom(object):
 				try:
 					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode, tags=tags)
 				except:
-					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
+					self._logger.exception("Error while processing hook {name} for phase "
+					                       "{phase} and command {command}:".format(**locals()),
+					                       extra=dict(plugin=name))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
 					                                               hook_results,
@@ -3290,7 +3300,9 @@ class MachineCom(object):
 			try:
 				hook(self, phase, atcommand, parameters, tags=tags)
 			except:
-				self._logger.exception("Error while processing hook {} for phase {} and command {}:".format(name, phase, atcommand))
+				self._logger.exception("Error while processing hook {} for "
+				                       "phase {} and command {}:".format(name, phase, atcommand),
+				                       extra=dict(plugin=name))
 
 		# trigger built-in handler if available
 		handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)

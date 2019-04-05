@@ -107,7 +107,9 @@ def _get_registered_apps():
 			logger.warn("Plugin {} is still implementing the appkey hook that is deprecated since 1.3.11 and will be removed in 1.4.0. Switch it over to the Application Keys Plugin workflow.".format(name))
 		except:
 			import logging
-			logging.getLogger(__name__).exception("Error while retrieving additional appkeys from plugin {name}".format(**locals()))
+			logging.getLogger(__name__).exception("Error while retrieving additional appkeys "
+			                                      "from plugin {name}".format(**locals()),
+			                                      extra=dict(plugin=name))
 			continue
 
 		any_version_enabled = dict()

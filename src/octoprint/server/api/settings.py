@@ -276,7 +276,8 @@ def _get_plugin_settings():
 			logger.warn("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
 		except:
 			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
-			                                                                                name=plugin._plugin_name))
+			                                                                                name=plugin._plugin_name),
+			                 extra=dict(plugin=plugin._identifier))
 
 	return data
 
@@ -551,6 +552,8 @@ def _saveSettings(data):
 					logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 					logger.warn("octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.")
 				except:
-					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
+					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version,
+					                                                                                name=plugin._plugin_name),
+					                 extra=dict(plugin=plugin._identifier))
 
 	s.save(trigger_event=True)

@@ -95,7 +95,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					self._logger.info("Using print time estimator provided by {}".format(name))
 					self._estimator_factory = estimator
 			except:
-				self._logger.exception("Error while processing analysis queues from {}".format(name))
+				self._logger.exception("Error while processing analysis queues from {}".format(name),
+				                       extra=dict(plugin=name))
 
 		#hook card upload
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
@@ -229,7 +230,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				try:
 					plugin.on_print_progress(storage, filename, progress)
 				except:
-					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier)
+					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier,
+					                       extra=dict(plugin=plugin._identifier))
 
 		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
 		thread.daemon = False
@@ -721,7 +723,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				if result is not None:
 					return result
 			except:
-				self._logger.exception("There was an error running the sd upload hook provided by plugin {}".format(name))
+				self._logger.exception("There was an error running the sd upload "
+				                       "hook provided by plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		else:
 			# no plugin feels responsible, use the default implementation
