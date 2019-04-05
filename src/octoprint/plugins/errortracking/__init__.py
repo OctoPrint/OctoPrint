@@ -111,6 +111,7 @@ def _enable_errortracking():
 
 			handled = True
 			logger = event.get("logger", "")
+			plugin = event.get("extra", dict()).get("plugin", None)
 
 			for ignore in IGNORED_EXCEPTIONS:
 				if isinstance(ignore, tuple):
@@ -137,6 +138,12 @@ def _enable_errortracking():
 				if logger.startswith("octoprint.plugins."):
 					plugin_id = logger.split(".")[2]
 					plugin_info = plugin_manager().get_plugin_info(plugin_id)
+					if plugin_info is None or not plugin_info.bundled:
+						# we only want our active bundled plugins
+						return None
+
+				if plugin is not None:
+					plugin_info = plugin_manager().get_plugin_info(plugin)
 					if plugin_info is None or not plugin_info.bundled:
 						# we only want our active bundled plugins
 						return None
