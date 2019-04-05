@@ -2553,7 +2553,7 @@ class MachineCom(object):
 					self._log("Trying {}".format(p))
 					programmer.connect(p)
 					serial_obj = programmer.leaveISP()
-				except:
+				except Exception as e:
 					self._log("Could not connect to or enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
 					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
 
