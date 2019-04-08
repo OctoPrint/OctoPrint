@@ -23,11 +23,29 @@ SETTINGS_DEFAULTS = dict(enabled=False,
 
 import serial
 import requests.exceptions
+import errno
 
 IGNORED_EXCEPTIONS = [
-	(serial.SerialException, "octoprint.util.comm"),
+	# serial exceptions in octoprint.util.comm
+	(serial.SerialException, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+
+	# IOErrors of any kind due to a full file system
+	(IOError, lambda exc, logger, plugin: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
+
+	# RequestExceptions of any kind
 	requests.exceptions.RequestException,
 ]
+
+try:
+	# noinspection PyUnresolvedReferences
+	from octoprint.plugins.backup import InsufficientSpace
+
+	# if the backup plugin is enabled, ignore InsufficienSpace errors from it as well
+	IGNORED_EXCEPTIONS.append(InsufficientSpace)
+
+	del InsufficientSpace
+except ImportError:
+	pass
 
 
 class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
@@ -115,10 +133,15 @@ def _enable_errortracking():
 
 			for ignore in IGNORED_EXCEPTIONS:
 				if isinstance(ignore, tuple):
-					ignored_exc, ignored_logger = ignore
-					if isinstance(hint["exc_info"][1], ignored_exc) and logger.startswith(ignored_logger):
-						# exception ignored for logger
-						return None
+					ignored_exc, matcher = ignore
+				else:
+					ignored_exc = ignore
+					matcher = lambda *args: True
+
+				exc = hint["exc_info"][1]
+				if isinstance(exc, ignored_exc) and matcher(exc, logger, plugin):
+					# exception ignored for logger
+					return None
 
 				elif isinstance(ignore, type):
 					if isinstance(hint["exc_info"][1], ignore):
