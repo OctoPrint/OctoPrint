@@ -191,8 +191,9 @@ class Server(object):
 		if self._settings is None:
 			self._settings = settings()
 
-		self._settings.setBoolean(["server", "incompleteStartup"], True)
-		self._settings.save()
+		if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
+			self._settings.setBoolean(["server", "incompleteStartup"], True)
+			self._settings.save()
 
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()

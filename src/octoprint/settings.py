@@ -158,6 +158,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"ignoreIncompleteStartup": False,
 		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
