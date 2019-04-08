@@ -283,6 +283,10 @@ class VirtualPrinter(object):
 					self._send("wait")
 					next_wait_timeout = monotonic_time() + self._waitInterval
 				continue
+			except Exception:
+				if self.incoming is None:
+					# just got closed
+					break
 
 			buf += data
 			if "\n" in buf:
