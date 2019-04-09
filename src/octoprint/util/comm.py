@@ -2751,7 +2751,8 @@ class MachineCom(object):
 		except UnicodeDecodeError:
 			ret = ret.decode('latin1').rstrip()
 
-		self._log(u"Recv: {}".format(ret))
+		if ret != u"":
+			self._log(u"Recv: {}".format(ret))
 
 		for name, hook in self._received_message_hooks.items():
 			try:
