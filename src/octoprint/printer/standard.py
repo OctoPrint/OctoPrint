@@ -859,11 +859,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 						statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
 						statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
 
-				printTimeLeft, printTimeLeftOrigin = estimator.estimate(progress,
-				                                                        printTime,
-				                                                        cleanedPrintTime,
-				                                                        statisticalTotalPrintTime,
-				                                                        statisticalTotalPrintTimeType)
+				try:
+					printTimeLeft, printTimeLeftOrigin = estimator.estimate(progress,
+					                                                        printTime,
+					                                                        cleanedPrintTime,
+					                                                        statisticalTotalPrintTime,
+					                                                        statisticalTotalPrintTimeType)
+				except Exception:
+					self._logger.exception("Error while estimating print time via {}".format(estimator))
 
 		return self._dict(completion=progress * 100 if progress is not None else None,
 		                  filepos=filepos,
