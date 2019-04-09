@@ -2747,9 +2747,9 @@ class MachineCom(object):
 			return None
 
 		try:
-			ret = ret.decode('utf-8')
+			ret = ret.decode('utf-8').rstrip()
 		except UnicodeDecodeError:
-			ret = ret.decode('latin1')
+			ret = ret.decode('latin1').rstrip()
 
 		self._log(u"Recv: {}".format(ret))
 
