@@ -37,6 +37,8 @@ class PrintTimeEstimator(object):
 				if interval <= 0:
 					interval = 1.0
 				rolling_window = 15 / interval
+				if rolling_window < 1:
+					rolling_window = 1
 
 				# we are happy when one rolling window has been stable
 				countdown = rolling_window
