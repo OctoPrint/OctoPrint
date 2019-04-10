@@ -25,6 +25,7 @@ import serial
 import requests.exceptions
 import errno
 import octoprint.util.avr_isp.ispBase
+import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
@@ -38,6 +39,9 @@ IGNORED_EXCEPTIONS = [
 
 	# RequestExceptions of any kind
 	requests.exceptions.RequestException,
+
+	# Tornado WebSocketErrors of any kind
+	tornado.websocket.WebSocketError
 ]
 
 try:
