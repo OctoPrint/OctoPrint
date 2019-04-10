@@ -3188,7 +3188,7 @@ class MachineCom(object):
 	def _log_command_phase(self, phase, command, *args, **kwargs):
 		if self._phaseLogger.isEnabledFor(logging.DEBUG):
 			output_parts = [u"phase: {}".format(phase),
-			                u"command: {}".format(command)]
+			                u"command: {}".format(to_unicode(command, errors="replace"))]
 
 			if kwargs.get("command_type"):
 				output_parts.append(u"command_type: {}".format(kwargs["command_type"]))
@@ -3199,7 +3199,7 @@ class MachineCom(object):
 			if kwargs.get("tags"):
 				output_parts.append(u"tags: [ {} ]".format(", ".join(sorted(kwargs["tags"]))))
 
-			self._phaseLogger.debug(" | ".join(output_parts))
+			self._phaseLogger.debug(u" | ".join(output_parts))
 
 	def _process_command_phase(self, phase, command, command_type=None, gcode=None, subcode=None, tags=None):
 		if gcode is None:
@@ -3218,8 +3218,11 @@ class MachineCom(object):
 				try:
 					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode, tags=tags)
 				except:
-					self._logger.exception("Error while processing hook {name} for phase "
-					                       "{phase} and command {command}:".format(**locals()),
+					self._logger.exception(u"Error while processing hook {name} for phase "
+					                       u"{phase} and command {command}:".format(name=name,
+					                                                                phase=phase,
+					                                                                command=to_unicode(command,
+					                                                                                   errors="replace")),
 					                       extra=dict(plugin=name))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
@@ -3230,7 +3233,14 @@ class MachineCom(object):
 
 					# make sure we don't allow multi entry results in anything but the queuing phase
 					if not phase in ("queuing",) and len(normalized) > 1:
-						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
+						self._logger.error(u"Error while processing hook {name} for phase {phase} and command {command}: "
+						                   u"Hook returned multi-entry result for phase {phase} and command {command}. "
+						                   u"That's not supported, if you need to do multi expansion of commands you "
+						                   u"need to do this in the queuing phase. Ignoring hook result and sending "
+						                   u"command as-is.".format(name=name,
+						                                            phase=phase,
+						                                            command=to_unicode(command, errors="replace")),
+						                   extra=dict(plugin=name))
 						new_results.append((command, command_type, gcode, subcode, tags))
 					else:
 						new_results += normalized
@@ -3301,8 +3311,8 @@ class MachineCom(object):
 			try:
 				hook(self, phase, atcommand, parameters, tags=tags)
 			except:
-				self._logger.exception("Error while processing hook {} for "
-				                       "phase {} and command {}:".format(name, phase, atcommand),
+				self._logger.exception(u"Error while processing hook {} for "
+				                       u"phase {} and command {}:".format(name, phase, to_unicode(atcommand, errors="replace")),
 				                       extra=dict(plugin=name))
 
 		# trigger built-in handler if available
@@ -3311,7 +3321,8 @@ class MachineCom(object):
 			try:
 				handler(atcommand, parameters, tags=tags)
 			except:
-				self._logger.exception("Error in handler for phase {} and command {}".format(phase, atcommand))
+				self._logger.exception(u"Error in handler for phase {} and command {}".format(phase,
+				                                                                              to_unicode(atcommand, errors="replace")))
 
 	##~~ actual sending via serial
 
