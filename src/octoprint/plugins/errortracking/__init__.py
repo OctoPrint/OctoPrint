@@ -24,10 +24,14 @@ SETTINGS_DEFAULTS = dict(enabled=False,
 import serial
 import requests.exceptions
 import errno
+import octoprint.util.avr_isp.ispBase
 
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
 	(serial.SerialException, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+
+	# isp errors during port auto detection in octoprint.util.comm
+	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
 
 	# IOErrors of any kind due to a full file system
 	(IOError, lambda exc, logger, plugin: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
@@ -40,7 +44,7 @@ try:
 	# noinspection PyUnresolvedReferences
 	from octoprint.plugins.backup import InsufficientSpace
 
-	# if the backup plugin is enabled, ignore InsufficienSpace errors from it as well
+	# if the backup plugin is enabled, ignore InsufficientSpace errors from it as well
 	IGNORED_EXCEPTIONS.append(InsufficientSpace)
 
 	del InsufficientSpace
