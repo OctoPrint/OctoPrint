@@ -2746,13 +2746,12 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
-		try:
-			ret = ret.decode('utf-8').rstrip()
-		except UnicodeDecodeError:
-			ret = ret.decode('latin1').rstrip()
-
-		if ret != u"":
-			self._log(u"Recv: {}".format(ret))
+		if ret != "":
+			try:
+				self._log("Recv: " + sanitize_ascii(ret))
+			except ValueError as e:
+				self._log("WARN: While reading last line: %s" % e)
+				self._log("Recv: " + repr(ret))
 
 		for name, hook in self._received_message_hooks.items():
 			try:
