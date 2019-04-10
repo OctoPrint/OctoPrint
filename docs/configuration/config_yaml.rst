@@ -409,8 +409,7 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Lines to send on simulated reset
        resetLines:
        - start
-       - Marlin: Virtual Marlin!
-       - "\x80"
+       - "Marlin: Virtual Marlin!"
        - "SD card ok"
 
        # Initial set of prepared oks to use instead of regular ok (e.g. to simulate
