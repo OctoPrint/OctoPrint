@@ -1130,7 +1130,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 	def on_comm_sd_files(self, files):
-		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 		self._sdFilelistAvailable.set()
 
 	def on_comm_file_selected(self, full_path, size, sd, user=None):
