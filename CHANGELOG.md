@@ -2,6 +2,14 @@
 
 ## 1.3.11rc3 (2019-04-11)
 
+### Improvements
+
+  * Define empty `UI_API_KEY` for backwards compatibility with third party plugins
+  * Add config flag `server.ignoredIncompleteStartup` to override incomplete startup detection
+  * Hardening against errors triggered during print time estimation
+  * Introduce setting to disable exclusive claim on serial port. There might be issues with this out there in the field, so having the option to disable it is a good thing.
+  * Error Tracking: Further restriction of what gets tracked
+
 ### Bug fixes
 
   * [#3105](https://github.com/foosel/OctoPrint/issues/3105) (regression) - Virtual printer: Fix an encoding issue
@@ -11,6 +19,7 @@
   * [#3116](https://github.com/foosel/OctoPrint/issues/3116) - Fix potential division by zero
   * Fix wrong textual representation of `STARTING` state
   * Fix some potential encoding errors in the comm layer
+  * Fix for the file list in the UI not getting refreshed after an SD list refresh from the printer.
 
 ### Unreproduced issues
 
