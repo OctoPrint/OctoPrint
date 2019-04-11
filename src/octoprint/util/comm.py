@@ -2591,9 +2591,11 @@ class MachineCom(object):
 				"baudrate": baudrateList()[0] if baudrate == 0 else baudrate,
 				"timeout": read_timeout,
 				"write_timeout": 0,
-				"parity": serial.PARITY_ODD,
-				"exclusive": True
+				"parity": serial.PARITY_ODD
 			}
+
+			if settings().getBoolean(["serial", "exclusive"]):
+				serial_port_args["exclusive"] = True
 
 			serial_obj = serial.Serial(**serial_port_args)
 

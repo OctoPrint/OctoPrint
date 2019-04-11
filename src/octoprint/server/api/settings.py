@@ -130,6 +130,7 @@ def getSettings():
 		"serial": {
 			"port": connectionOptions["portPreference"],
 			"baudrate": connectionOptions["baudratePreference"],
+			"exclusive": s.getBoolean(["serial", "exclusive"]),
 			"portOptions": connectionOptions["ports"],
 			"baudrateOptions": connectionOptions["baudrates"],
 			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
@@ -419,6 +420,7 @@ def _saveSettings(data):
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 		if "port" in data["serial"]: s.set(["serial", "port"], data["serial"]["port"])
 		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+		if "exclusive" in data["serial"]: s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], min=1.0)
 		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"], min=1.0)
 		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], min=1.0)

@@ -8,7 +8,7 @@
 
     <div class="tab-content">
         <div id="settings_serial_general" class="tab-pane active">
-            <fieldset>
+            <fieldset id="settings_serial_general_connection">
                 <legend>{{ _('Connection') }}</legend>
                 <div class="control-group" title="{{ _('Serial port to connect to, setting this to AUTO will make OctoPrint try to automatically find the right setting') }}">
                     <label class="control-label" for="settings-serialPort">{{ _('Serial Port') }}</label>
@@ -43,8 +43,16 @@
                         <span class="help-inline">{{ _('Use this to define additional serial port baud rates to list for connecting with, e.g. <code>123456</code>. Comma separated.') }}</span>
                     </div>
                 </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_exclusive" id="settings-serialExclusive"> {{ _('Request exclusive access to the serial port') }}
+                            <span class="help-block">{{ _('Uncheck this if you are having problems connecting to your printer.') }}</span>
+                        </label>
+                    </div>
+                </div>
             </fieldset>
-            <fieldset>
+            <fieldset id="settings_serial_general_logging">
                 <legend>{{ _('Serial logging') }}</legend>
                 <div class="control-group">
                     <div class="controls">

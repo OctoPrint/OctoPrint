@@ -88,6 +88,7 @@ default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None,
+		"exclusive": True,
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
