@@ -191,8 +191,9 @@ class Server(object):
 		if self._settings is None:
 			self._settings = settings()
 
-		self._settings.setBoolean(["server", "incompleteStartup"], True)
-		self._settings.save()
+		if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
+			self._settings.setBoolean(["server", "incompleteStartup"], True)
+			self._settings.save()
 
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()
@@ -288,7 +289,8 @@ class Server(object):
 				additional_factories = hook()
 				analysis_queue_factories.update(**additional_factories)
 			except:
-				self._logger.exception("Error while processing analysis queues from {}".format(name))
+				self._logger.exception("Error while processing analysis queues from {}".format(name),
+				                       extra=dict(plugin=name))
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
 
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
@@ -345,7 +347,8 @@ class Server(object):
 					self._logger.debug("Created user manager instance from factory {}".format(name))
 					break
 			except:
-				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
+				self._logger.exception("Error while creating user manager instance from factory {}".format(name),
+				                       extra=dict(plugin=name))
 		else:
 			name = self._settings.get(["accessControl", "userManager"])
 			try:
@@ -368,7 +371,8 @@ class Server(object):
 					self._logger.debug("Created printer instance from factory {}".format(name))
 					break
 			except:
-				self._logger.exception("Error while creating printer instance from factory {}".format(name))
+				self._logger.exception("Error while creating printer instance from factory {}".format(name),
+				                       extra=dict(plugin=name))
 		else:
 			printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		components.update(dict(printer=printer))
@@ -457,7 +461,8 @@ class Server(object):
 						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
 						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
 			except:
-				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name))
+				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
 		                                               settings_plugin_inject_factory]
@@ -468,7 +473,9 @@ class Server(object):
 			try:
 				settings_plugin_config_migration_and_cleanup(implementation._identifier, implementation)
 			except:
-				self._logger.exception("Error while trying to migrate settings for plugin {}, ignoring it".format(implementation._identifier))
+				self._logger.exception("Error while trying to migrate settings for "
+				                       "plugin {}, ignoring it".format(implementation._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -540,7 +547,8 @@ class Server(object):
 			try:
 				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
 			except:
-				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin))
+				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin),
+				                       extra=dict(plugin=plugin))
 
 		admin_validators = [util.tornado.access_validation_factory(app, util.flask.admin_validator),] + access_validators_from_plugins
 		user_validators = [util.tornado.access_validation_factory(app, util.flask.user_validator),] + access_validators_from_plugins
@@ -606,7 +614,9 @@ class Server(object):
 			try:
 				result = hook(list(server_routes))
 			except:
-				self._logger.exception("There was an error while retrieving additional server routes from plugin hook {name}".format(**locals()))
+				self._logger.exception("There was an error while retrieving additional "
+				                       "server routes from plugin hook {name}".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -649,7 +659,9 @@ class Server(object):
 			try:
 				result = hook(list(max_body_sizes))
 			except:
-				self._logger.exception("There was an error while retrieving additional upload sizes from plugin hook {name}".format(**locals()))
+				self._logger.exception("There was an error while retrieving additional "
+				                       "upload sizes from plugin hook {name}".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -1179,7 +1191,9 @@ class Server(object):
 				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 				blueprints[prefix] = blueprint
 			except:
-				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
+				self._logger.exception("Error while registering blueprint of "
+				                       "plugin {}, ignoring it".format(plugin._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 				continue
 
 		return blueprints
@@ -1195,7 +1209,9 @@ class Server(object):
 				blueprint, prefix = self._prepare_asset_plugin(plugin)
 				blueprints[prefix] = blueprint
 			except:
-				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
+				self._logger.exception("Error while registering assets of plugin "
+				                       "{}, ignoring it".format(plugin._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 				continue
 
 		return blueprints
@@ -1243,7 +1259,8 @@ class Server(object):
 					for h in result:
 						blueprint.before_request(h)
 			except:
-				self._logger.exception("Error processing before_request hooks from plugin {}".format(name))
+				self._logger.exception("Error processing before_request hooks from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		for name, hook in after_hooks.items():
 			try:
@@ -1252,7 +1269,8 @@ class Server(object):
 					for h in result:
 						blueprint.after_request(h)
 			except:
-				self._logger.exception("Error processing after_request hooks from plugin {}".format(name))
+				self._logger.exception("Error processing after_request hooks from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 	def _setup_assets(self):
 		global app

@@ -54,4 +54,4 @@ thanks to everyone who contributed!
   * Trent Shumay
   * Ulrich Kempken
 
-and 1509 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1521 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

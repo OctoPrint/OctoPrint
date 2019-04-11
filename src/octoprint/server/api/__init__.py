@@ -60,15 +60,20 @@ def pluginData(name):
 	if len(api_plugins) > 1:
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
-	api_plugin = api_plugins[0]
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
-		return make_response("Forbidden", 403)
+	try:
+		api_plugin = api_plugins[0]
+		if api_plugin.is_api_adminonly() and not current_user.is_admin():
+			return make_response("Forbidden", 403)
 
-	response = api_plugin.on_api_get(request)
+		response = api_plugin.on_api_get(request)
 
-	if response is not None:
-		return response
-	return NO_CONTENT
+		if response is not None:
+			return response
+		return NO_CONTENT
+	except Exception:
+		logging.getLogger(__name__).exception("Error calling SimpleApiPlugin {}".format(name),
+		                                      extra=dict(plugin=name))
+		return abort(500)
 
 #~~ commands for plugins
 
@@ -84,21 +89,26 @@ def pluginCommand(name):
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
 	api_plugin = api_plugins[0]
-	valid_commands = api_plugin.get_api_commands()
-	if valid_commands is None:
-		return make_response("Method not allowed", 405)
+	try:
+		valid_commands = api_plugin.get_api_commands()
+		if valid_commands is None:
+			return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
-		return make_response("Forbidden", 403)
+		if api_plugin.is_api_adminonly() and not current_user.is_admin():
+			return make_response("Forbidden", 403)
 
-	command, data, response = get_json_command_from_request(request, valid_commands)
-	if response is not None:
-		return response
+		command, data, response = get_json_command_from_request(request, valid_commands)
+		if response is not None:
+			return response
 
-	response = api_plugin.on_api_command(command, data)
-	if response is not None:
-		return response
-	return NO_CONTENT
+		response = api_plugin.on_api_command(command, data)
+		if response is not None:
+			return response
+		return NO_CONTENT
+	except Exception:
+		logging.getLogger(__name__).exception("Error while excuting SimpleApiPlugin {}".format(name),
+		                                      extra=dict(plugin=name))
+		return abort(500)
 
 #~~ first run setup
 
@@ -119,7 +129,9 @@ def wizardState():
 			version = implementation.get_wizard_version()
 			ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
-			logging.getLogger(__name__).exception("There was an error fetching wizard details for {}, ignoring".format(name))
+			logging.getLogger(__name__).exception("There was an error fetching wizard "
+			                                      "details for {}, ignoring".format(name),
+			                                      extra=dict(plugin=name))
 		else:
 			result[name] = dict(required=required, details=details, version=version, ignored=ignored)
 
@@ -154,7 +166,9 @@ def wizardFinish():
 			if name in handled:
 				seen_wizards[name] = implementation.get_wizard_version()
 		except:
-			logging.getLogger(__name__).exception("There was an error finishing the wizard for {}, ignoring".format(name))
+			logging.getLogger(__name__).exception("There was an error finishing the "
+			                                      "wizard for {}, ignoring".format(name),
+			                                      extra=dict(plugin=name))
 
 	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()

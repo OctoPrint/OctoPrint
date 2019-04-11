@@ -119,7 +119,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					try:
 						hook_checks = hook()
 					except:
-						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
+						self._logger.exception("Error while retrieving update information "
+						                       "from plugin {name}".format(**locals()),
+						                       extra=dict(plugin=name))
 					else:
 						for key, default_config in hook_checks.items():
 							if key in effective_configs or key == "octoprint":

@@ -88,6 +88,7 @@ default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None,
+		"exclusive": True,
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
@@ -158,6 +159,7 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"ignoreIncompleteStartup": False,
 		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,

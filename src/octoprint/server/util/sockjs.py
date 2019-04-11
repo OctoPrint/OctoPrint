@@ -268,7 +268,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			try:
 				proceed = proceed and hook(self, self._user, type, payload)
 			except:
-				self._logger.exception("Error processing emit hook handler from plugin {}".format(name))
+				self._logger.exception("Error processing emit hook handler from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		if not proceed:
 			return
@@ -290,7 +291,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			try:
 				proceed = proceed and hook(self, self._user)
 			except:
-				self._logger.exception("Error processing register hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing register hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		if not proceed:
 			return
@@ -358,7 +360,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			try:
 				hook(self, self._user)
 			except:
-				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 	def _on_logout(self):
 		self._user = None
@@ -367,5 +370,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			try:
 				hook(self, self._user)
 			except:
-				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 

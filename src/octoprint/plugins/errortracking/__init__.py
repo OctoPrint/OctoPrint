@@ -12,10 +12,8 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
-from serial import SerialException
-
-SENTRY_URL_SERVER = "https://4273b441bb654c4398de42ba86350963@sentry.io/1373987"
-SENTRY_URL_COREUI = "https://f9bcd7185f73430bbe7c09ff69586b0f@sentry.io/1374096"
+SENTRY_URL_SERVER = "https://d70b163409984dd6a716788092c3b3fd@sentry.io/1373987"
+SENTRY_URL_COREUI = "https://190fb33f582a46768e24ec8a6db7522f@sentry.io/1374096"
 
 SETTINGS_DEFAULTS = dict(enabled=False,
                          enabled_unreleased=False,
@@ -23,9 +21,39 @@ SETTINGS_DEFAULTS = dict(enabled=False,
                          url_server=SENTRY_URL_SERVER,
                          url_coreui=SENTRY_URL_COREUI)
 
+import serial
+import requests.exceptions
+import errno
+import octoprint.util.avr_isp.ispBase
+import tornado.websocket
+
 IGNORED_EXCEPTIONS = [
-	(SerialException, "octoprint.util.comm"),
+	# serial exceptions in octoprint.util.comm
+	(serial.SerialException, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+
+	# isp errors during port auto detection in octoprint.util.comm
+	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+
+	# IOErrors of any kind due to a full file system
+	(IOError, lambda exc, logger, plugin: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
+
+	# RequestExceptions of any kind
+	requests.exceptions.RequestException,
+
+	# Tornado WebSocketErrors of any kind
+	tornado.websocket.WebSocketError
 ]
+
+try:
+	# noinspection PyUnresolvedReferences
+	from octoprint.plugins.backup import InsufficientSpace
+
+	# if the backup plugin is enabled, ignore InsufficientSpace errors from it as well
+	IGNORED_EXCEPTIONS.append(InsufficientSpace)
+
+	del InsufficientSpace
+except ImportError:
+	pass
 
 
 class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
@@ -109,13 +137,19 @@ def _enable_errortracking():
 
 			handled = True
 			logger = event.get("logger", "")
+			plugin = event.get("extra", dict()).get("plugin", None)
 
 			for ignore in IGNORED_EXCEPTIONS:
 				if isinstance(ignore, tuple):
-					ignored_exc, ignored_logger = ignore
-					if isinstance(hint["exc_info"][1], ignored_exc) and logger.startswith(ignored_logger):
-						# exception ignored for logger
-						return None
+					ignored_exc, matcher = ignore
+				else:
+					ignored_exc = ignore
+					matcher = lambda *args: True
+
+				exc = hint["exc_info"][1]
+				if isinstance(exc, ignored_exc) and matcher(exc, logger, plugin):
+					# exception ignored for logger
+					return None
 
 				elif isinstance(ignore, type):
 					if isinstance(hint["exc_info"][1], ignore):
@@ -135,6 +169,12 @@ def _enable_errortracking():
 				if logger.startswith("octoprint.plugins."):
 					plugin_id = logger.split(".")[2]
 					plugin_info = plugin_manager().get_plugin_info(plugin_id)
+					if plugin_info is None or not plugin_info.bundled:
+						# we only want our active bundled plugins
+						return None
+
+				if plugin is not None:
+					plugin_info = plugin_manager().get_plugin_info(plugin)
 					if plugin_info is None or not plugin_info.bundled:
 						# we only want our active bundled plugins
 						return None

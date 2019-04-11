@@ -902,7 +902,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					reconnect_hooks.extend(filter(lambda x: isinstance(x, basestring), result))
 			except:
 				self._logger.exception("Error while retrieving additional hooks for which a "
-				                       "reconnect is required from plugin {name}".format(**locals()))
+				                       "reconnect is required from plugin {name}".format(**locals()),
+				                       extra=dict(plugin=name))
 
 		return reconnect_hooks
 

@@ -125,7 +125,8 @@ class EnvironmentDetector(object):
 					result[implementation._identifier] = additional
 			except:
 				self._logger.exception("Error while fetching additional "
-				                       "environment data from plugin {}".format(implementation._identifier))
+				                       "environment data from plugin {}".format(implementation._identifier),
+				                       extra=dict(plugin=implementation._identifier))
 
 		return result
 

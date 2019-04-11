@@ -130,6 +130,7 @@ def getSettings():
 		"serial": {
 			"port": connectionOptions["portPreference"],
 			"baudrate": connectionOptions["baudratePreference"],
+			"exclusive": s.getBoolean(["serial", "exclusive"]),
 			"portOptions": connectionOptions["ports"],
 			"baudrateOptions": connectionOptions["baudrates"],
 			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
@@ -276,7 +277,8 @@ def _get_plugin_settings():
 			logger.warn("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
 		except:
 			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
-			                                                                                name=plugin._plugin_name))
+			                                                                                name=plugin._plugin_name),
+			                 extra=dict(plugin=plugin._identifier))
 
 	return data
 
@@ -418,6 +420,7 @@ def _saveSettings(data):
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 		if "port" in data["serial"]: s.set(["serial", "port"], data["serial"]["port"])
 		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+		if "exclusive" in data["serial"]: s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], min=1.0)
 		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"], min=1.0)
 		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], min=1.0)
@@ -551,6 +554,8 @@ def _saveSettings(data):
 					logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 					logger.warn("octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.")
 				except:
-					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
+					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version,
+					                                                                                name=plugin._plugin_name),
+					                 extra=dict(plugin=plugin._identifier))
 
 	s.save(trigger_event=True)

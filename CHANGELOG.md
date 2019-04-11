@@ -1,5 +1,40 @@
 # OctoPrint Changelog
 
+## 1.3.11rc3 (2019-04-11)
+
+### Improvements
+
+  * Define empty `UI_API_KEY` for backwards compatibility with third party plugins
+  * Add config flag `server.ignoredIncompleteStartup` to override incomplete startup detection
+  * Hardening against errors triggered during print time estimation
+  * Introduce setting to disable exclusive claim on serial port. There might be issues with this out there in the field, so having the option to disable it is a good thing.
+  * Error Tracking: Further restriction of what gets tracked
+
+### Bug fixes
+
+  * [#3105](https://github.com/foosel/OctoPrint/issues/3105) (regression) - Virtual printer: Fix an encoding issue
+  * [#3108](https://github.com/foosel/OctoPrint/issues/3108) (regression) - Fix bug in port detection
+  * [#3111](https://github.com/foosel/OctoPrint/issues/3111) (regression) - Refresh port list after disconnect to detect vanishing ports
+  * [#3115](https://github.com/foosel/OctoPrint/issues/3115) (regression) - Fix extra newlines in `serial.log` and empty lines on terminal
+  * [#3116](https://github.com/foosel/OctoPrint/issues/3116) - Fix potential division by zero
+  * Fix wrong textual representation of `STARTING` state
+  * Fix some potential encoding errors in the comm layer
+  * Fix for the file list in the UI not getting refreshed after an SD list refresh from the printer.
+
+### Unreproduced issues
+
+The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
+
+  * ["Print completes but temp data appears to be 'stuck' at last known value for bed and hotend."](https://github.com/foosel/OctoPrint/issues/3087#issuecomment-478369220)
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11rc2...1.3.11rc3)
+
 ## 1.3.11rc2 (2019-04-04)
 
 ### Improvements
