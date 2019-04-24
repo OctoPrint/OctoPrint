@@ -21,12 +21,12 @@ Commands, which are admin-only.
 
 If Access Control is disabled, everything is directly accessible. **That also
 includes all administrative functionality as well as full control over the
-printer!**
+printer**, and without the need for an :ref:`API key <sec-api-general-authorization>`!
 
 Upon first start a configuration wizard is provided which allows configuration
 of the first administrator account or alternatively disabling Access Control
 (which is **NOT** recommended for systems that are directly accessible via the
-Internet!).
+internet or other untrusted networks!).
 
 .. hint::
 
