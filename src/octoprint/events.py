@@ -343,17 +343,24 @@ class CommandTrigger(GenericEventListener):
 				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
-			event = subscription["event"]
+			events = subscription["event"]
 			command = subscription["command"]
 			commandType = subscription["type"]
 			debug = subscription["debug"] if "debug" in subscription else False
 
-			if not event in self._subscriptions.keys():
-				self._subscriptions[event] = []
-			self._subscriptions[event].append((command, commandType, debug))
+			# "event" in the configuration can be a string, or
+			# a list of strings.  If it's the former, convert it
+			# into the latter.
+			if not isinstance(events, (tuple, list, set)):
+				events = [events]
 
-			if not event in eventsToSubscribe:
-				eventsToSubscribe.append(event)
+			for event in events:
+				if not event in self._subscriptions.keys():
+					self._subscriptions[event] = []
+				self._subscriptions[event].append((command, commandType, debug))
+
+				if not event in eventsToSubscribe:
+					eventsToSubscribe.append(event)
 
 		self.subscribe(eventsToSubscribe)
 
@@ -373,9 +380,9 @@ class CommandTrigger(GenericEventListener):
 				if isinstance(command, (tuple, list, set)):
 					processedCommand = []
 					for c in command:
-						processedCommand.append(self._processCommand(c, payload))
+						processedCommand.append(self._processCommand(c, event, payload))
 				else:
-					processedCommand = self._processCommand(command, payload)
+					processedCommand = self._processCommand(command, event, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
 			except KeyError as e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
@@ -424,13 +431,14 @@ class CommandTrigger(GenericEventListener):
 			self._logger.info("Executing GCode commands: %r" % command)
 		self._printer.commands(commands)
 
-	def _processCommand(self, command, payload):
+	def _processCommand(self, command, event, payload):
 		"""
 		Performs string substitutions in the command string based on a few current parameters.
 
 		The following substitutions are currently supported:
 
 		  - {__currentZ} : current Z position of the print head, or -1 if not available
+		  - {__eventname} : the name of the event hook being triggered
 		  - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
 		  - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
 		  - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
@@ -452,6 +460,7 @@ class CommandTrigger(GenericEventListener):
 
 		params = {
 			"__currentZ": "-1",
+			"__eventname": event,
 			"__filename": "NO FILE",
 			"__filepath": "NO PATH",
 			"__progress": "0",
