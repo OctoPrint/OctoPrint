@@ -160,14 +160,6 @@ $(function() {
                 });
             }
 
-            var axesConfiguration = self._retrieveAxesConfiguration(currentProfileData);
-            if (axesConfiguration) {
-                GCODE.ui.updateOptions({
-                    renderer: {
-                        invertAxes: axesConfiguration
-                    }
-                });
-            }
         };
 
         // subscribe to relevant printer settings...
