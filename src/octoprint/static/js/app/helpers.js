@@ -21,6 +21,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
     self.selectedItem = ko.observable(undefined);
+    self.filterSearch = ko.observable(true);
 
     self.storageIds = {
         "currentSorting": self.listType + "." + "currentSorting",
@@ -223,6 +224,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     //~~ filtering
 
+    self.setFilterSearch = function(enabled) {
+        if (self.filterSearch() === enabled)
+            return;
+
+        self.filterSearch(enabled);
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    self.toggleFilterSearch = function() {
+        self.setFilterSearch(!self.filterSearch());
+    };
+
     self.toggleFilter = function(filter) {
         if (!_.contains(_.keys(self.supportedFilters), filter))
             return;
@@ -283,15 +297,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // work on all items
         var result = self.allItems;
 
-        // filter if necessary
-        var filters = self.currentFilters();
-        _.each(filters, function(filter) {
-            if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
-                result = _.filter(result, supportedFilters[filter]);
-        });
+        var hasSearch = typeof self.searchFunction !== 'undefined' && self.searchFunction;
+
+        // filter if we're not searching or have search filtering enabled
+        if (!hasSearch || self.filterSearch()) {
+            var filters = self.currentFilters();
+            _.each(filters, function (filter) {
+                if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
+                    result = _.filter(result, supportedFilters[filter]);
+            });
+        }
 
         // search if necessary
-        if (typeof self.searchFunction !== 'undefined' && self.searchFunction) {
+        if (hasSearch) {
             result = _.filter(result, self.searchFunction);
         }
 
