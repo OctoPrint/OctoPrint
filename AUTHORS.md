@@ -100,6 +100,7 @@ date of first contribution):
   * [Andy Qua](https://github.com/AndyQ)
   * [Fabio Santos](https://github.com/Fabi0San)
   * [Jack Wilsdon](https://github.com/jackwilsdon)
+  * [Ryan Finnie](https://github.com/rfinnie)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
