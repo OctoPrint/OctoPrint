@@ -352,6 +352,12 @@
                         <span class="help-inline">{{ _('Use this to specify commands on which OctoPrint should pause the print job. Just the G or M code, comma separated. Defaults to <code>M0</code>, <code>M1</code> and <code>M25</code>.') }}</span>
                     </div>
                 </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
+                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M118</code> and <code>M410</code>.') }}</span>                    </div>
+                </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">

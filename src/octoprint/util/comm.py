@@ -503,6 +503,7 @@ class MachineCom(object):
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
 		self._blocked_commands = settings().get(["serial", "blockedCommands"])
 		self._pausing_commands = settings().get(["serial", "pausingCommands"])
+		self._emergency_commands = settings().get(["serial", "emergencyCommands"])
 
 		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None)
 		self._send_queue = SendQueue()
@@ -3660,12 +3661,6 @@ class MachineCom(object):
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
 
-	def _gcode_M108_queuing(self, cmd, gcode=None, *args, **kwargs):
-		return self._emergency_force_send(cmd, u"Force-sending M108 to the printer", gcode=gcode, *args, **kwargs)
-
-	def _gcode_M410_queuing(self, cmd, gcode=None, *args, **kwargs):
-		return self._emergency_force_send(cmd, u"Force-sending M410 to the printer", gcode=gcode, *args, **kwargs)
-
 	def _gcode_M114_queued(self, *args, **kwargs):
 		self._reset_position_timers()
 	_gcode_M114_sent = _gcode_M114_queued
@@ -3731,6 +3726,11 @@ class MachineCom(object):
 
 	def _command_phase_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if gcode is not None:
+
+			if gcode in self._emergency_commands and gcode != "M112":
+				msg = u"Force-sending {} to the printer".format(gcode)
+				self._logger.info(msg)
+				return self._emergency_force_send(cmd, msg, gcode=gcode, *args, **kwargs)
 
 			if self.isPrinting() and gcode in self._pausing_commands:
 				self._logger.info("Pausing print job due to command {}".format(gcode))
