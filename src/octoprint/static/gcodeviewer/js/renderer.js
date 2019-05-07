@@ -86,6 +86,10 @@ GCODE.renderer = (function(){
     }
     
     var reRender = function(){
+        if (!model) return;
+
+        log.debug("Rerendering layer " + layerNumStore + " of " + model.length + " with " + GCODE.renderer.getLayerNumSegments(layerNumStore) + " segments");
+
         notifyIfViewportChanged();
 
         var p1 = ctx.transformedPoint(0,0);
