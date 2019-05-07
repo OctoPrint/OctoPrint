@@ -959,6 +959,9 @@ class MachineCom(object):
 				if not cmd:
 					return False
 
+			gcode = gcode_command_for_cmd(cmd)
+			force = force or gcode in self._emergency_commands
+
 		if tags is None:
 			tags = set()
 
