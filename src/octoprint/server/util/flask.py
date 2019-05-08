@@ -271,7 +271,7 @@ def fix_flask_jsonify():
 			data = args or kwargs
 
 		return current_app.response_class(
-			dumps(data, indent=indent, separators=separators) + '\n',
+			dumps(data, indent=indent, separators=separators, allow_nan=False) + '\n',
 			mimetype='application/json'
 		)
 
