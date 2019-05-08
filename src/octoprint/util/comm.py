@@ -1008,21 +1008,24 @@ class MachineCom(object):
 			else:
 				if retval is None:
 					continue
-				if not isinstance(retval, (list, tuple)) or not len(retval) in [2, 3]:
+				if not isinstance(retval, (list, tuple)) or not len(retval) in [2, 3, 4]:
 					continue
 
-				def to_list(data):
-					if isinstance(data, str):
-						data = map(str.strip, data.split("\n"))
-					elif isinstance(data, unicode):
-						data = map(unicode.strip, data.split("\n"))
+				def to_list(data, t):
+					# noinspection PyCompatibility
+					if isinstance(data, basestring):
+						data = map(lambda x: x.strip(), data.split("\n"))
 
 					if isinstance(data, (list, tuple)):
-						return list(data)
+						return list(map(lambda x: (x, t), data))
 					else:
 						return None
 
-				prefix, suffix = map(to_list, retval[0:2])
+				additional_tags = {"plugin:{}".format(name)}
+				if len(retval) == 4:
+					additional_tags |= set(retval[3])
+
+				prefix, suffix = map(lambda x: to_list(x, additional_tags), retval[0:2])
 				if prefix:
 					scriptLinesPrefix = list(prefix) + scriptLinesPrefix
 				if suffix:
@@ -1040,9 +1043,15 @@ class MachineCom(object):
 
 		scriptLines = scriptLinesPrefix + scriptLines + scriptLinesSuffix
 
-		return filter(lambda x: x is not None and x.strip() != "",
-		              map(lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
-		                  scriptLines))
+		def process(line):
+			tags = set()
+			if isinstance(line, tuple) and len(line) == 2 and isinstance(line[0], basestring) and isinstance(line[1], set):
+				tags = line[1]
+				line = line[0]
+			return process_gcode_line(line), tags
+
+		return filter(lambda x: x[0] is not None and x[0].strip() != "",
+		              map(process, scriptLines))
 
 
 	def sendGcodeScript(self, scriptName, replacements=None, tags=None, part_of_job=False):
@@ -1052,8 +1061,21 @@ class MachineCom(object):
 		scriptLines = self._getGcodeScript(scriptName, replacements=replacements)
 		tags_to_use = tags | {"trigger:comm.send_gcode_script", "source:script", "script:{}".format(scriptName)}
 		for line in scriptLines:
-			self.sendCommand(line, part_of_job=part_of_job, tags=tags_to_use)
-		return "\n".join(scriptLines)
+			# noinspection PyCompatibility
+			if isinstance(line, tuple) and len(line) == 2 and isinstance(line[0], basestring) and isinstance(line[1], set):
+				# 2-tuple: line + tags
+				ttu = tags_to_use | line[1]
+				line = line[0]
+			elif isinstance(line, basestring):
+				# just a line
+				ttu = tags_to_use
+			else:
+				# whatever
+				continue
+
+			self.sendCommand(line, part_of_job=part_of_job, tags=ttu)
+
+		return "\n".join(map(lambda x: x if isinstance(x, basestring) else x[0], scriptLines))
 
 	def startPrint(self, pos=None, tags=None, external_sd=False, user=None):
 		if not self.isOperational() or self.isPrinting():
@@ -3449,7 +3471,17 @@ class MachineCom(object):
 			before = self._getGcodeScript("beforeToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
 			after = self._getGcodeScript("afterToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
 
-			return before + [cmd] + after
+			def convert(data):
+				result = []
+				for d in data:
+					# noinspection PyCompatibility
+					if isinstance(d, tuple) and len(d) == 2:
+						result.append((d[0], None, d[1]))
+					elif isinstance(d, basestring):
+						result.append(d)
+				return result
+
+			return convert(before) + [cmd] + convert(after)
 
 	def _gcode_T_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		toolMatch = regexes_parameters["intT"].search(cmd)
