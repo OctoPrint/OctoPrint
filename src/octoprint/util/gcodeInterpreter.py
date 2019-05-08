@@ -474,26 +474,27 @@ class gcode(object):
 		            printing_area=self.printing_area)
 
 def getCodeInt(line, code):
-	n = line.find(code) + 1
-	if n < 1:
-		return None
-	m = line.find(' ', n)
-	try:
-		if m < 0:
-			return int(line[n:])
-		return int(line[n:m])
-	except:
-		return None
+	return getCode(line, code, float)
 
 
 def getCodeFloat(line, code):
+	return getCode(line, code, float)
+
+
+def getCode(line, code, c):
 	n = line.find(code) + 1
 	if n < 1:
 		return None
 	m = line.find(' ', n)
 	try:
 		if m < 0:
-			return float(line[n:])
-		return float(line[n:m])
+			result = c(line[n:])
+		else:
+			result = c(line[n:m])
 	except:
 		return None
+
+	if math.isnan(result) or math.isinf(result):
+		return None
+
+	return result
