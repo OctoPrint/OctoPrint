@@ -147,8 +147,15 @@ def load_user(id):
 
 	return None
 
-def load_user_from_request(request):
-	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+def load_user_from_request_chain(request):
+	user = None
+	if g.get("trust_basic_authentication"):
+		user = util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+	if user is None and g.get("trust_remote_user"):
+		user = util.get_user_for_remote_user_header(request)
+
+	return user
 
 def unauthorized_user():
 	from flask import abort
@@ -1600,7 +1607,13 @@ class Server(object):
 
 		# login users authenticated by basic auth
 		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
+			g.trust_basic_authentication = True
+
+		if  self._settings.get(["accessControl", "trustRemoteUser"]):
+			g.trust_remote_user = True
+			
+		if g.get("trust_basic_authentication") or g.get("trust_remote_user"):
+			loginManager.request_callback = load_user_from_request_chain
 
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser

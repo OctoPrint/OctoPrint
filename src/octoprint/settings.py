@@ -337,7 +337,10 @@ default_settings = {
 		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
-		"checkBasicAuthenticationPassword": True
+		"checkBasicAuthenticationPassword": True,
+		"trustRemoteUser": False,
+		"remoteUserHeader": "REMOTE_USER",
+		"addRemoteUsers": False
 	},
 	"slicing": {
 		"enabled": True,
