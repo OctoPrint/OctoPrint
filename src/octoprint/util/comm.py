@@ -3099,7 +3099,13 @@ class MachineCom(object):
 		while self._send_queue_active:
 			try:
 				# wait until we have something in the queue
-				entry = self._send_queue.get()
+				try:
+					entry = self._send_queue.get()
+				except queue.Empty:
+					# I haven't yet been able to figure out *why* this can happen but according to #3096 and SERVER-2H
+					# an Empty exception can fly here due to resend_active being True but nothing being in the resend
+					# queue of the send queue. So we protect against this possibility...
+					continue
 
 				try:
 					# make sure we are still active
