@@ -25,9 +25,14 @@ class EnvironmentDetector(object):
 		self._cache = None
 		self._cache_lock = threading.RLock()
 
-		self._environment_plugins = self._plugin_manager.get_implementations(EnvironmentDetectionPlugin)
-
 		self._logger = logging.getLogger(__name__)
+
+		try:
+			self._environment_plugins = self._plugin_manager.get_implementations(EnvironmentDetectionPlugin)
+		except Exception:
+			# just in case, see #3100...
+			self._logger.exception("There was an error fetching EnvironmentDetectionPlugins from the plugin manager")
+			self._environment_plugins = []
 
 	@property
 	def environment(self):
@@ -120,7 +125,8 @@ class EnvironmentDetector(object):
 					result[implementation._identifier] = additional
 			except Exception:
 				self._logger.exception("Error while fetching additional "
-				                       "environment data from plugin {}".format(implementation._identifier))
+				                       "environment data from plugin {}".format(implementation._identifier),
+				                       extra=dict(plugin=implementation._identifier))
 
 		return result
 

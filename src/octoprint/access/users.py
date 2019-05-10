@@ -20,7 +20,7 @@ import logging
 from builtins import range, bytes
 
 from octoprint.settings import settings
-from octoprint.util import atomic_write, to_bytes, deprecated
+from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.access.groups import GroupChangeListener, Group
 
@@ -129,11 +129,10 @@ class UserManager(GroupChangeListener, object):
 		self._logger.debug("Logged out user: %r" % user)
 
 	def _cleanup_sessions(self):
-		import time
 		for session, user in self._session_users_by_session.items():
 			if not isinstance(user, SessionUser):
 				continue
-			if user.created + (24 * 60 * 60) < time.time():
+			if user.created + (24 * 60 * 60) < monotonic_time():
 				self.logout_user(user)
 
 	@staticmethod
@@ -1191,8 +1190,8 @@ class SessionUser(wrapt.ObjectProxy):
 		wrapt.ObjectProxy.__init__(self, user)
 
 		self._self_session = "".join('%02X' % z for z in bytes(uuid.uuid4().bytes))
-		self._self_created = time.time()
-		self._self_touched = time.time()
+		self._self_created = monotonic_time()
+		self._self_touched = monotonic_time()
 
 	@property
 	def session(self):
@@ -1207,7 +1206,7 @@ class SessionUser(wrapt.ObjectProxy):
 		return self._self_touched
 
 	def touch(self):
-		self._self_touched = time.time()
+		self._self_touched = monotonic_time()
 
 	@deprecated("SessionUser.get_session() has been deprecated, use SessionUser.session instead", since="1.3.5")
 	def get_session(self):

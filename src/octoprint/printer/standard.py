@@ -29,6 +29,7 @@ from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
+from octoprint.util import monotonic_time
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -53,8 +54,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# TODO do we really need to hold the temperature here?
 		self._temp = None
 		self._bedTemp = None
+		self._chamberTemp = None
 		self._targetTemp = None
 		self._targetBedTemp = None
+		self._targetChamberTemp = None
 		self._temps = TemperatureHistory(cutoff=settings().getInt(["temperature", "cutoff"])*60)
 		self._tempBacklog = []
 
@@ -92,7 +95,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					self._logger.info("Using print time estimator provided by {}".format(name))
 					self._estimator_factory = estimator
 			except Exception:
-				self._logger.exception("Error while processing analysis queues from {}".format(name))
+				self._logger.exception("Error while processing analysis queues from {}".format(name),
+				                       extra=dict(plugin=name))
 
 		#hook card upload
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
@@ -231,7 +235,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				try:
 					plugin.on_print_progress(storage, filename, progress)
 				except Exception:
-					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier)
+					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier,
+					                       extra=dict(plugin=plugin._identifier))
 
 		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
 		thread.daemon = False
@@ -398,10 +403,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def set_temperature(self, heater, value, *args, **kwargs):
 		if not PrinterInterface.valid_heater_regex.match(heater):
-			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
+			raise ValueError("heater must match \"tool[0-9]+\", \"bed\" or \"chamber\": {heater}".format(heater=heater))
 
 		if not isinstance(value, (int, long, float)) or value < 0:
 			raise ValueError("value must be a valid number >= 0: {value}".format(value=value))
+
+		tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
 
 		if heater.startswith("tool"):
 			printer_profile = self._printerProfileManager.get_current_or_default()
@@ -410,14 +417,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
 				self.commands("M104 T{} S{}".format(toolNum, value),
-				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+				              tags=tags)
 			else:
 				self.commands("M104 S{}".format(value),
-				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+				              tags=tags)
 
 		elif heater == "bed":
 			self.commands("M140 S{}".format(value),
-			              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
+			              tags=tags)
+
+		elif heater == "chamber":
+			self.commands("M141 S{}".format(value),
+			              tags=tags)
 
 	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
@@ -618,6 +629,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"target": self._bedTemp[1],
 				"offset": offsets["bed"] if "bed" in offsets and offsets["bed"] is not None else 0
 			}
+		if self._chamberTemp is not None:
+			result["chamber"] = {
+				"actual": self._chamberTemp[0],
+				"target": self._chamberTemp[1],
+				"offset": offsets["chamber"] if "chamber" in offsets and offsets["chamber"] is not None else 0
+			}
 
 		return result
 
@@ -711,7 +728,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				if result is not None:
 					return result
 			except Exception:
-				self._logger.exception("There was an error running the sd upload hook provided by plugin {}".format(name))
+				self._logger.exception("There was an error running the sd upload "
+				                       "hook provided by plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		else:
 			# no plugin feels responsible, use the default implementation
@@ -845,11 +864,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 						statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
 						statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
 
-				printTimeLeft, printTimeLeftOrigin = estimator.estimate(progress,
-				                                                        printTime,
-				                                                        cleanedPrintTime,
-				                                                        statisticalTotalPrintTime,
-				                                                        statisticalTotalPrintTimeType)
+				try:
+					printTimeLeft, printTimeLeftOrigin = estimator.estimate(progress,
+					                                                        printTime,
+					                                                        cleanedPrintTime,
+					                                                        statisticalTotalPrintTime,
+					                                                        statisticalTotalPrintTimeType)
+				except Exception:
+					self._logger.exception("Error while estimating print time via {}".format(estimator))
 
 		return self._dict(completion=progress * 100 if progress is not None else None,
 		                  filepos=filepos,
@@ -857,7 +879,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None,
 		                  printTimeLeftOrigin=printTimeLeftOrigin)
 
-	def _addTemperatureData(self, tools=None, bed=None):
+	def _addTemperatureData(self, tools=None, bed=None, chamber=None):
 		if tools is None:
 			tools = dict()
 
@@ -866,11 +888,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			data["tool%d" % tool] = self._dict(actual=tools[tool][0], target=tools[tool][1])
 		if bed is not None and isinstance(bed, tuple):
 			data["bed"] = self._dict(actual=bed[0], target=bed[1])
+		if chamber is not None and isinstance(chamber, tuple):
+			data["chamber"] = self._dict(actual=chamber[0], target=chamber[1])
 
 		self._temps.append(data)
 
 		self._temp = tools
 		self._bedTemp = bed
+		self._chamberTemp = chamber
 
 		self._stateMonitor.add_temperature(self._dict(**data))
 
@@ -1020,8 +1045,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
-	def on_comm_temperature_update(self, temp, bedTemp):
-		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp))
+	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
+		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp), chamber=copy.deepcopy(chamberTemp))
 
 	def on_comm_position_update(self, position, reason=None):
 		payload = dict(reason=reason)
@@ -1111,7 +1136,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._stateMonitor.set_state(self._dict(text=self.get_state_string(), flags=self._getStateFlags()))
 
 	def on_comm_sd_files(self, files):
-		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 		self._sdFilelistAvailable.set()
 
 	def on_comm_file_selected(self, full_path, size, sd, user=None):
@@ -1385,7 +1410,7 @@ class StateMonitor(object):
 		self._state_lock = threading.Lock()
 		self._progress_lock = threading.Lock()
 
-		self._last_update = time.time()
+		self._last_update = monotonic_time()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
@@ -1449,7 +1474,7 @@ class StateMonitor(object):
 			while True:
 				self._change_event.wait()
 
-				now = time.time()
+				now = monotonic_time()
 				delta = now - self._last_update
 				additional_wait_time = self._interval - delta
 				if additional_wait_time > 0:
@@ -1458,7 +1483,7 @@ class StateMonitor(object):
 				with self._state_lock:
 					data = self.get_current_data()
 					self._update_callback(data)
-					self._last_update = time.time()
+					self._last_update = monotonic_time()
 					self._change_event.clear()
 		except Exception:
 			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. Please report this on the OctoPrint issue tracker (make sure to include logs!)")

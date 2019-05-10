@@ -32,7 +32,7 @@ $(function() {
             "name",
             [],
             [],
-            5
+            0
         );
 
         self.repositoryplugins = new ItemListHelper(

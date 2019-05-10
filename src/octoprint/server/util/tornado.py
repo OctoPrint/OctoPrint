@@ -39,7 +39,7 @@ def fix_json_encode():
 	import json
 
 	def fixed_json_encode(value):
-		return json.dumps(value, default=JsonEncoding.encode).replace("</", "<\\/")
+		return json.dumps(value, default=JsonEncoding.encode, allow_nan=False).replace("</", "<\\/")
 
 	import tornado.escape
 	tornado.escape.json_encode = fixed_json_encode

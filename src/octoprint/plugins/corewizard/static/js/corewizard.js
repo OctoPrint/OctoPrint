@@ -170,10 +170,6 @@ $(function() {
             return false;
         };
 
-        self.onWizardPreventSettingsRefreshDialog = function() {
-            return self.active;
-        };
-
         self.onWizardDetails = function(response) {
             self.required = response && response.corewizard && response.corewizard.details && response.corewizard.details.onlinecheck && response.corewizard.details.onlinecheck.required;
         };
@@ -250,10 +246,6 @@ $(function() {
 
             self._showDecisionNeededDialog();
             return false;
-        };
-
-        self.onWizardPreventSettingsRefreshDialog = function() {
-            return self.active;
         };
 
         self.onWizardDetails = function(response) {

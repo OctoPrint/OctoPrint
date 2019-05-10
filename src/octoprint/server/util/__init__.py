@@ -28,29 +28,9 @@ from . import tornado
 from . import watchdog
 
 
+@deprecated("API keys are no longer needed for anonymous access and thus this is now obsolete")
 def enforceApiKeyRequestHandler():
-	"""
-	``before_request`` handler for blueprints which makes sure an API key is provided if configured as such
-	"""
-
-	import octoprint.server
-
-	if _flask.request.method == 'OPTIONS':
-		# we ignore OPTIONS requests here
-		return
-
-	if _flask.request.endpoint and (_flask.request.endpoint == "static" or _flask.request.endpoint.endswith(".static")):
-		# no further handling for static resources
-		return
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey and settings().getBoolean(["api", "keyEnforced"]):
-		return _flask.make_response("No API key provided", 403)
-
-	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
-		# api disabled => 403
-		return _flask.make_response("API disabled", 403)
+	pass
 
 apiKeyRequestHandler = deprecated("apiKeyRequestHandler has been renamed to enforceApiKeyRequestHandler")(enforceApiKeyRequestHandler)
 
@@ -59,7 +39,7 @@ def loginFromApiKeyRequestHandler():
 	"""
 	``before_request`` handler for blueprints which creates a login session for the provided api key (if available)
 
-	UI_API_KEY and app session keys are handled as anonymous keys here and ignored.
+	App session keys are handled as anonymous keys here and ignored.
 	"""
 	try:
 		if loginUserFromApiKey():
@@ -72,7 +52,11 @@ def loginFromAuthorizationHeaderRequestHandler():
 	"""
 	``before_request`` handler for creating login sessions based on the Authorization header.
 	"""
-	loginUserFromApiKey()
+	try:
+		if loginUserFromAuthorizationHeader():
+			_flask.g.login_via_header = True
+	except InvalidApiKeyException:
+		return _flask.make_response("Invalid API key", 403)
 
 
 class InvalidApiKeyException(Exception): pass
@@ -84,14 +68,15 @@ def loginUserFromApiKey():
 	if not apikey:
 		return False
 
-	if apikey == octoprint.server.UI_API_KEY:
+	user = get_user_for_apikey(apikey)
+	if user is None:
+		# invalid API key = no API key
 		return False
 
-	user = get_user_for_apikey(apikey)
 	if not loginUser(user):
-		raise InvalidApiKeyException()
-	else:
-		return True
+		return False
+
+	return True
 
 
 def loginUserFromAuthorizationHeader():
@@ -192,16 +177,11 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		if apikey == octoprint.server.UI_API_KEY:
-			import flask_login
-			if octoprint.server.userManager.enabled:
-				return octoprint.server.userManager.find_user(session=flask_login.current_user.session)
-			else:
-				return flask_login.current_user
-		elif apikey == settings().get(["api", "key"]):
-			# master key or an app session key was used
+	if apikey is not None:
+		if apikey == settings().get(["api", "key"]):
+			# master key was used
 			return ApiUser([octoprint.server.groupManager.admin_group])
+
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:
@@ -215,8 +195,30 @@ def get_user_for_apikey(apikey):
 				if user is not None:
 					return user
 			except Exception:
-				logging.getLogger(__name__).exception("Error running api key validator for plugin {} and key {}".format(name, apikey))
+				logging.getLogger(__name__).exception("Error running api key validator "
+				                                      "for plugin {} and key {}".format(name, apikey),
+				                                      extra=dict(plugin=name))
 	return None
+
+
+def get_user_for_remote_user_header(request):
+	if not octoprint.server.userManager.enabled:
+		return None
+
+	if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		return None
+
+	header = request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+	if header is None:
+		return None
+
+	user = octoprint.server.userManager.findUser(userid=header)
+
+	if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
+		octoprint.server.userManager.addUser(header, settings().generateApiKey(), active=True)
+		user = octoprint.server.userManager.findUser(userid=header)
+
+	return user
 
 
 def get_user_for_authorization_header(header):

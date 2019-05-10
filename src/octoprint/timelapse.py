@@ -88,7 +88,9 @@ def valid_timelapse(path):
 					continue
 				extensions += result
 			except Exception:
-				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
+				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse "
+				                                      "extensions from hook {name}".format(name=name),
+				                                      extra=dict(plugin=name))
 
 		_extensions = list(set(extensions))
 
@@ -399,7 +401,6 @@ class Timelapse(object):
 		self._capture_success = 0
 
 		self._post_roll = post_roll
-		self._post_roll_start = None
 		self._on_post_roll_done = None
 
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
@@ -555,7 +556,6 @@ class Timelapse(object):
 				                    dict(postroll_duration=self.calculate_post_roll(),
 				                         postroll_length=self.post_roll,
 				                         postroll_fps=self.fps))
-				self._post_roll_start = time.time()
 				if do_create_movie:
 					self._on_post_roll_done = create_wait_for_captures(reset_and_create)
 				else:
@@ -563,7 +563,6 @@ class Timelapse(object):
 				self.process_post_roll()
 			else:
 				# no post roll? perfect, render
-				self._post_roll_start = None
 				if do_create_movie:
 					wait_for_captures(reset_and_create)
 				else:

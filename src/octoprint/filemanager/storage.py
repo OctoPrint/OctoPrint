@@ -1547,13 +1547,21 @@ class LocalFileStorage(StorageInterface):
 					except Exception:
 						self._logger.exception("Error while reading .metadata.json from {path}".format(**locals()))
 
+		def valid_json(value):
+			try:
+				json.dumps(value, allow_nan=False)
+				return True
+			except:
+				return False
+
 		if isinstance(metadata, dict):
 			old_size = len(metadata)
+			metadata = { k: v for k, v in metadata.items() if valid_json(v) }
 			metadata = { k: v for k, v in metadata.items() if os.path.exists(os.path.join(path, k)) }
 			new_size = len(metadata)
 			if new_size != old_size:
-				self._logger.info("Deleted {} stale entries from metadata for path {}".format(old_size - new_size,
-				                                                                              path))
+				self._logger.info("Deleted {} stale or invalid entries from metadata for path {}".format(old_size - new_size,
+				                                                                                         path))
 				self._save_metadata(path, metadata)
 			else:
 				with self._get_metadata_lock(path):

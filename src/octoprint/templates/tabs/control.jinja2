@@ -85,7 +85,7 @@
     </div>
 </div>
 <!-- Extrusion control panel -->
-<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
+<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL) && tools().length > 0">
     <h1>Tool (E)</h1>
     <div>
         <div class="btn-group control-box">

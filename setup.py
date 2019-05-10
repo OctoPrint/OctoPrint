@@ -27,7 +27,7 @@ INSTALL_REQUIRES = [
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
-	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
+	"regex!=2018.11.6",            # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
@@ -35,39 +35,39 @@ INSTALL_REQUIRES = [
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
-	"werkzeug>=0.14.1,<0.15",
-	"PyYAML>=3.13,<4",
+	"werkzeug>=0.15.1,<0.16",
+	"cachelib>=0.1,<0.2",
+	"PyYAML>=5.1,<6",
 	"markdown>=3.0,<3.1",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.9.0,<0.10",
 	"sarge==0.1.5post0",
-	"netifaces>=0.10.7,<0.11",
-	"pylru>=1.1,<1.2",
+	"netifaces>=0.10.9,<0.11",
+	"pylru>=1.2,<1.3",
 	"rsa>=4.0,<5",
-	"pkginfo>=1.4.2,<1.5",
-	"requests>=2.20.0,<3",
+	"pkginfo>=1.5.0.1,<1.6",
+	"requests>=2.21.0,<3",
 	"semantic_version>=2.6,<2.7",
-	"psutil>=5.4.8,<5.5",
+	"psutil>=5.6.1,<5.7",
 	"Click>=7,<8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
 	"future>=0.17,<0.18",
-	"websocket-client>=0.53,<0.54",
-	"python-dateutil>=2.7.5,<2.8",
-	"wrapt>=1.10.11,<1.11",
+	"websocket-client>=0.56,<0.57",
+	"wrapt>=1.11.1,<1.12",
 	"emoji>=0.5.1,<0.6",
 	"frozendict>=1.2,<1.3",
-	"sentry-sdk==0.6.6"
+	"sentry-sdk==0.7.7"
 ]
 
 # Python 2 specific requirements
 INSTALL_REQUIRES_PYTHON2 = [
 	"futures>=3.2,<3.3",
 	"monotonic>=1.5,<1.6",
-	"scandir>=1.9,<1.10",
-	"chainmap>=1.0.2,<1.1",
-	"typing>=3.6.4,<4"
+	"scandir>=1.10,<1.11",
+	"chainmap>=1.0.3,<1.1",
+	"typing>=3.6.6,<4"
 ]
 
 # OSX specific requirements
@@ -227,7 +227,7 @@ def params():
 	keywords = "3dprinting 3dprinter 3d-printing 3d-printer octoprint"
 
 	project_urls={
-		"Community Forum": "https://discourse.octoprint.org",
+		"Community Forum": "https://community.octoprint.org",
 		"Bug Reports": "https://github.com/foosel/OctoPrint/issues",
 		"Source": "https://github.com/foosel/OctoPrint",
 		"Funding": "https://donate.octoprint.org"

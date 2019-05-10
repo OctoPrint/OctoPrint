@@ -1,4 +1,4 @@
-function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize) {
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, defaultPageSize, persistPageSize) {
     var self = this;
 
     self.listType = listType;
@@ -8,6 +8,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.defaultFilters = defaultFilters;
     self.exclusiveFilters = exclusiveFilters;
     self.defaultPageSize = defaultPageSize;
+    self.persistPageSize = !!persistPageSize;
 
     self.searchFunction = undefined;
 
@@ -20,11 +21,12 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
     self.selectedItem = ko.observable(undefined);
+    self.filterSearch = ko.observable(true);
 
     self.storageIds = {
         "currentSorting": self.listType + "." + "currentSorting",
         "currentFilters": self.listType + "." + "currentFilters",
-        "pageSize": self.listType + "." + "pageSize",
+        "pageSize": self.listType + "." + "pageSize"
     };
 
     //~~ item handling
@@ -55,7 +57,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self.isSelected = function(data) {
-        return self.selectedItem() == data;
+        return self.selectedItem() === data;
     };
 
     self.isSelectedByMatcher = function(matcher) {
@@ -81,14 +83,14 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.addItem = function(item) {
         self.allItems.push(item);
         self._updateItems();
-    }
+    };
 
     //~~ pagination
 
     self.paginatedItems = ko.dependentObservable(function() {
-        if (self.items() == undefined) {
+        if (self.items() === undefined) {
             return [];
-        } else if (self.pageSize() == 0) {
+        } else if (self.pageSize() === 0) {
             return self.items();
         } else {
             var from = Math.max(self.currentPage() * self.pageSize(), 0);
@@ -97,31 +99,33 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     });
     self.lastPage = ko.dependentObservable(function() {
-        return (self.pageSize() == 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1);
+        return (self.pageSize() === 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1);
     });
     self.pages = ko.dependentObservable(function() {
         var pages = [];
-        if (self.pageSize() == 0) {
+        var i;
+
+        if (self.pageSize() === 0) {
             pages.push({ number: 0, text: 1 });
         } else if (self.lastPage() < 7) {
-            for (var i = 0; i < self.lastPage() + 1; i++) {
+            for (i = 0; i < self.lastPage() + 1; i++) {
                 pages.push({ number: i, text: i+1 });
             }
         } else {
             pages.push({ number: 0, text: 1 });
             if (self.currentPage() < 5) {
-                for (var i = 1; i < 5; i++) {
+                for (i = 1; i < 5; i++) {
                     pages.push({ number: i, text: i+1 });
                 }
                 pages.push({ number: -1, text: "…"});
             } else if (self.currentPage() > self.lastPage() - 5) {
                 pages.push({ number: -1, text: "…"});
-                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
+                for (i = self.lastPage() - 4; i < self.lastPage(); i++) {
                     pages.push({ number: i, text: i+1 });
                 }
             } else {
                 pages.push({ number: -1, text: "…"});
-                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+                for (i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
                     pages.push({ number: i, text: i+1 });
                 }
                 pages.push({ number: -1, text: "…"});
@@ -176,7 +180,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             }
         }
         return -1;
-    }
+    };
 
     self.getItem = function(matcher, all) {
         var index = self.getIndex(matcher, all);
@@ -220,6 +224,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     //~~ filtering
 
+    self.setFilterSearch = function(enabled) {
+        if (self.filterSearch() === enabled)
+            return;
+
+        self.filterSearch(enabled);
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    self.toggleFilterSearch = function() {
+        self.setFilterSearch(!self.filterSearch());
+    };
+
     self.toggleFilter = function(filter) {
         if (!_.contains(_.keys(self.supportedFilters), filter))
             return;
@@ -238,7 +255,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         for (var i = 0; i < self.exclusiveFilters.length; i++) {
             if (_.contains(self.exclusiveFilters[i], filter)) {
                 for (var j = 0; j < self.exclusiveFilters[i].length; j++) {
-                    if (self.exclusiveFilters[i][j] == filter)
+                    if (self.exclusiveFilters[i][j] === filter)
                         continue;
                     self.removeFilter(self.exclusiveFilters[i][j]);
                 }
@@ -280,15 +297,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // work on all items
         var result = self.allItems;
 
-        // filter if necessary
-        var filters = self.currentFilters();
-        _.each(filters, function(filter) {
-            if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
-                result = _.filter(result, supportedFilters[filter]);
-        });
+        var hasSearch = typeof self.searchFunction !== 'undefined' && self.searchFunction;
+
+        // filter if we're not searching or have search filtering enabled
+        if (!hasSearch || self.filterSearch()) {
+            var filters = self.currentFilters();
+            _.each(filters, function (filter) {
+                if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
+                    result = _.filter(result, supportedFilters[filter]);
+            });
+        }
 
         // search if necessary
-        if (typeof self.searchFunction !== 'undefined' && self.searchFunction) {
+        if (hasSearch) {
             result = _.filter(result, self.searchFunction);
         }
 
@@ -335,18 +356,18 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     };
 
     self._savePageSizeToLocalStorage = function(pageSize) {
-        if (self._initializeLocalStorage()) {
+        if (self._initializeLocalStorage() && self.persistPageSize) {
             localStorage[self.storageIds.pageSize] = pageSize;
         }
-    }
+    };
 
     self.pageSize.subscribe(self._savePageSizeToLocalStorage);
 
     self._loadPageSizeFromLocalStorage = function() {
-        if (self._initializeLocalStorage) {
+        if (self._initializeLocalStorage() && self.persistPageSize) {
             self.pageSize(parseInt(localStorage[self.storageIds.pageSize]));
         }
-    }
+    };
 
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
@@ -381,13 +402,13 @@ function formatSize(bytes) {
 }
 
 function bytesFromSize(size) {
-    if (size == undefined || size.trim() == "") return undefined;
+    if (size === undefined || size.trim() === "") return undefined;
 
     var parsed = size.match(/^([+]?[0-9]*\.?[0-9]+)(?:\s*)?(.*)$/);
     var number = parsed[1];
     var unit = parsed[2].trim();
 
-    if (unit == "") return parseFloat(number);
+    if (unit === "") return parseFloat(number);
 
     var units = {
         b: 1,
@@ -423,7 +444,7 @@ function formatFuzzyEstimation(seconds, base) {
     if (!seconds || seconds < 1) return "-";
 
     var m;
-    if (base != undefined) {
+    if (base !== undefined) {
         m = moment(base);
     } else {
         m = moment();
@@ -621,15 +642,17 @@ function ping(url, callback) {
 }
 
 function showOfflineOverlay(title, message, reconnectCallback) {
-    if (title == undefined) {
+    if (title === undefined) {
         title = gettext("Server is offline");
     }
 
     $("#offline_overlay_title").text(title);
     $("#offline_overlay_message").html(message);
     $("#offline_overlay_reconnect").click(reconnectCallback);
-    if (!$("#offline_overlay").is(":visible"))
-        $("#offline_overlay").show();
+
+    var overlay = $("#offline_overlay");
+    if (!overlay.is(":visible"))
+        overlay.show();
 }
 
 function hideOfflineOverlay() {
@@ -942,7 +965,7 @@ function showProgressModal(options, promise) {
     var progressTextFront = $('<span class="progress-text-front"></span>')
         .width(progress.width());
 
-    if (max == undefined) {
+    if (max === undefined) {
         progress.addClass("progress-striped active");
         progressBar.width("100%");
     }
@@ -1289,7 +1312,7 @@ var sizeObservable = function(observable) {
         },
         write: function(value) {
             var result = bytesFromSize(value);
-            if (result != undefined) {
+            if (result !== undefined) {
                 observable(result);
             }
         }

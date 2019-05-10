@@ -13,6 +13,7 @@ import socket
 from octoprint.vendor.sockjs.tornado import proto, websocket
 from octoprint.vendor.sockjs.tornado.transports import base
 from octoprint.vendor.sockjs.tornado.util import bytes_to_str
+from tornado.websocket import WebSocketError
 from tornado.ioloop import IOLoop
 
 LOG = logging.getLogger("tornado.general")
@@ -89,7 +90,7 @@ class WebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransportMix
             # Send message
             try:
                 self.write_message(message, binary)
-            except IOError:
+            except (IOError, WebSocketError):
                 self.server.io_loop.add_callback(self.on_close)
         else:
             # Not running in Main Thread so use proper thread to send message

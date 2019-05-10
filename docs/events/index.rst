@@ -38,6 +38,13 @@ Example
      - event: PrintDone
        command: python ~/growl.py -t mygrowlserver -d "Completed {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+     - event:
+       - PrintStarted
+       - PrintFailed
+       - PrintDone
+       - PrintCancelled
+       command: python ~/growl.py -t mygrowlserver -d "Event {__eventname} ({name})" -a OctoPrint -i http://raspi/Octoprint_logo.png
+       type: system
      - event: Connected
        command:
        - M115
@@ -53,6 +60,7 @@ Placeholders
 You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
+  * ``{__eventname}`` : the name of the event hook being triggered
   * ``{__filename}`` : name of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__filepath}`` : path in origin location of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__fileorigin}`` : origin of currently selected file, or ``NO FILE`` if no file is selected
@@ -79,6 +87,8 @@ Available Events
 .. note::
 
    Plugins may add additional events via the :ref:`octoprint.events.register_custom_events hook <sec-plugins-hook-events-register_custom_events>`.
+
+.. _sec-events-available_events-server:
 
 Server
 ------
@@ -112,6 +122,8 @@ ConnectivityChanged
 
      * ``old``: Old connectivity value (true for online, false for offline)
      * ``new``: New connectivity value (true for online, false for offline)
+
+.. _sec-events-available_events-printer_commmunication:
 
 Printer communication
 ---------------------
@@ -151,6 +163,8 @@ PrinterStateChanged
      * ``state_id``: Id of the new state. See
        :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
      * ``state_string``: Text representation of the new state.
+
+.. _sec-events-available_events-file_handling:
 
 File handling
 -------------
@@ -299,6 +313,8 @@ TransferDone
      * ``local``: the file's name as stored locally
      * ``remote``: the file's name as stored on SD
 
+.. _sec-events-available_events-printing:
+
 Printing
 --------
 
@@ -443,6 +459,8 @@ PrintResumed
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name. To be removed in 1.4.0.
 
+.. _sec-events-available_events-gcode_processing:
+
 GCODE processing
 ----------------
 
@@ -504,6 +522,8 @@ ToolChange
      * ``old``: old tool index
      * ``new``: new tool index
 
+.. _sec-events-available_events-timelapses:
+
 Timelapses
 ----------
 
@@ -557,6 +577,8 @@ MovieFailed
      * ``reason``: additional machine processable reason string - can be ``returncode`` if ffmpeg
        returned a non-0 return code, ``no_frames`` if no frames were captured that could be rendered
        to a timelapse, or ``unknown`` for any other reason of failure to render.
+
+.. _sec-events-available_events-slicing:
 
 Slicing
 -------
@@ -629,8 +651,13 @@ SlicingProfileDeleted
      * ``slicer``: the slicer for which the profile was deleted
      * ``profile``: the profile that was deleted
 
+.. _sec-events-available_events-settings:
+
 Settings
 --------
 
 SettingsUpdated
-   The internal settings were updated.
+   The settings were updated via the REST API.
+
+   This event may also be triggered if calling code of :py:class:`octoprint.settings.Settings.save` or
+   :py:class:`octoprint.plugin.PluginSettings.save` sets the ``trigger_event`` parameter to ``True``.

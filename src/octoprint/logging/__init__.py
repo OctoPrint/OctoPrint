@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
 from octoprint.logging import handlers
+
+from typing import Union
 
 def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args):
 	"""
@@ -139,13 +141,16 @@ def get_divider_line(c, message=None, length=78, indent=3):
 		return c * indent + " " + message
 
 
-def prefix_multilines(text, prefix=": "):
+def prefix_multilines(text, prefix=u": "):
+	# type: (Union[unicode, bytes], unicode) -> unicode
+	from octoprint.util import to_unicode
+
 	lines = text.splitlines()
 	if not lines:
-		return ""
+		return u""
 
 	if len(lines) == 1:
-		return lines[0]
+		return to_unicode(lines[0])
 
-	return lines[0] + "\n" + "\n".join(map(lambda line: prefix + line,
-	                                       lines[1:]))
+	return to_unicode(lines[0]) + u"\n" + u"\n".join(map(lambda line: prefix + to_unicode(line),
+	                                                     lines[1:]))

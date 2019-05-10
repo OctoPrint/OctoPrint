@@ -398,8 +398,7 @@ class FileManagerTest(unittest.TestCase):
 	@mock.patch("shutil.copyfileobj")
 	@mock.patch("os.remove")
 	@mock.patch("tempfile.NamedTemporaryFile")
-	@mock.patch("time.time", side_effect=[1411979916.422, 1411979932.116])
-	def test_slice(self, mocked_time, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
+	def test_slice(self, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
 		callback = mock.MagicMock()
 		callback_args = ("one", "two", "three")
 
@@ -499,8 +498,7 @@ class FileManagerTest(unittest.TestCase):
 
 	@mock.patch("os.remove")
 	@mock.patch("tempfile.NamedTemporaryFile")
-	@mock.patch("time.time", side_effect=[1411979916.422, 1411979932.116])
-	def test_slice_error(self, mocked_time, mocked_tempfile, mocked_os):
+	def test_slice_error(self, mocked_tempfile, mocked_os):
 		callback = mock.MagicMock()
 		callback_args = ("one", "two", "three")
 
@@ -549,6 +547,3 @@ class FileManagerTest(unittest.TestCase):
 
 		# assert that the temporary file was deleted
 		mocked_os.assert_called_once_with("tmp.file")
-
-		# assert that time.time was only called once
-		self.assertEqual(mocked_time.call_count, 1)

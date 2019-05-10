@@ -361,7 +361,11 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
 				if any(filter(lambda x: x.api_key == api_key, data)):
-					return self._user_manager.findUser(userid=user_id)
+					if self._user_manager.enabled:
+						return self._user_manager.findUser(userid=user_id)
+					elif user_id == "_admin" or user_id == "dummy":
+						# dummy = backwards compatible
+						return self._user_manager.anonymous_user_factory()
 		return None
 
 	def _api_keys_for_user(self, user_id):
