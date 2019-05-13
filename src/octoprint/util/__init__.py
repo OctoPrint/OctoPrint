@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
 """
@@ -24,14 +24,44 @@ import collections
 import frozendict
 import copy
 
+from typing import Union
+
 try:
 	import queue
 except ImportError:
 	import Queue as queue
 
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
+
+
+def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
+	# type: (Union[str, bytes], str, str) -> bytes
+	"""Make sure ``s_or_u`` is a bytestring."""
+	if isinstance(s_or_u, unicode):
+		return s_or_u.encode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+	# type: (Union[str, bytes], str, str) -> str
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if isinstance(s_or_u, bytes):
+		return s_or_u.decode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def to_native_str(s_or_u):
+	# type: (Union[str, bytes]) -> Union[str, bytes]
+	"""Make sure ``s_or_u`` is a 'str'."""
+	if sys.version_info[0] == 2:
+		return to_bytes(s_or_u)
+	else:
+		return to_unicode(s_or_u)
+
 
 def warning_decorator_factory(warning_type):
 	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
@@ -99,6 +129,8 @@ Arguments:
 Returns:
     function: The wrapped function with the deprecation warnings in place.
 """
+
+to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
 
 def get_formatted_size(num):
 	"""
@@ -427,26 +459,10 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
+		to_bytes(to_unicode(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
-
-
-def to_str(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a str."""
-	if isinstance(s_or_u, unicode):
-		return s_or_u.encode(encoding, errors=errors)
-	else:
-		return s_or_u
-
-
-def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-	"""Make sure ``s_or_u`` is a unicode string."""
-	if isinstance(s_or_u, str):
-		return s_or_u.decode(encoding, errors=errors)
-	else:
-		return s_or_u
 
 
 def chunks(l, n):
@@ -1598,3 +1614,16 @@ class CaseInsensitiveSet(collections.Set):
 # originally from https://stackoverflow.com/a/5967539
 def natural_key(text):
 	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
+
+
+def timing(f):
+	@wraps(f)
+	def decorator(*args, **kwargs):
+		start = monotonic_time()
+		try:
+			return f(*args, **kwargs)
+		finally:
+			end = monotonic_time()
+			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
+			                                                                                end - start))
+	return decorator

@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.settings = parameters[1];
 
         self.timelapsePopup = undefined;
 
@@ -523,7 +524,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TimelapseViewModel,
-        dependencies: ["loginStateViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
         elements: ["#timelapse"]
     });
 });

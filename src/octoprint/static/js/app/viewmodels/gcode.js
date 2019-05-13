@@ -52,6 +52,7 @@ $(function() {
         self.renderer_extrusionWidthEnabled = ko.observable(false);
         self.renderer_extrusionWidth = ko.observable(2);
         self.renderer_showNext = ko.observable(false);
+        self.renderer_showCurrent = ko.observable(false);
         self.renderer_showPrevious = ko.observable(false);
         self.renderer_syncProgress = ko.observable(true);
 
@@ -79,6 +80,7 @@ $(function() {
                 showFullSize: self.renderer_showFullSize(),
                 extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
                 showNextLayer: self.renderer_showNext(),
+                showCurrentLayer: self.renderer_showCurrent(),
                 showPreviousLayer: self.renderer_showPrevious(),
                 zoomInOnModel: self.renderer_zoomOnModel(),
                 onInternalOptionChange: self._onInternalRendererOptionChange
@@ -124,6 +126,7 @@ $(function() {
         self.renderer_extrusionWidthEnabled.subscribe(self.rendererOptionUpdated);
         self.renderer_extrusionWidth.subscribe(self.rendererOptionUpdated);
         self.renderer_showNext.subscribe(self.rendererOptionUpdated);
+        self.renderer_showCurrent.subscribe(self.rendererOptionUpdated);
         self.renderer_showPrevious.subscribe(self.rendererOptionUpdated);
 
         self.reader_sortLayers.subscribe(self.readerOptionUpdated);
@@ -341,6 +344,7 @@ $(function() {
             self.renderer_extrusionWidthEnabled(false);
             self.renderer_extrusionWidth(2);
             self.renderer_showNext(false);
+            self.renderer_showCurrent(false);
             self.renderer_showPrevious(false);
             self.renderer_syncProgress(true);
 
@@ -530,6 +534,7 @@ $(function() {
                 output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
                 output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
                 output.push(gettext("Estimated total print time") + ": " + formatFuzzyPrintTime(model.printTime));
+                output.push(gettext("Layers with extrusion") + ": " + model.layersPrinted.toFixed(0));
 
                 self.ui_modelInfo(output.join("<br>"));
 
@@ -567,7 +572,9 @@ $(function() {
                         output.push(gettext("Filament") + ": " + layer.filament[0].toFixed(2) + "mm");
                     } else {
                         for (var i = 0; i < layer.filament.length; i++) {
-                            output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                            if (layer.filament[i] !== undefined) {
+                                output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                            }
                         }
                     }
                 }
@@ -708,6 +715,7 @@ $(function() {
             current["showRetracts"] = self.renderer_showRetracts();
             current["showPrinthead"] = self.renderer_showPrinthead();
             current["showPrevious"] = self.renderer_showPrevious();
+            current["showCurrent"] = self.renderer_showCurrent();
             current["showNext"] = self.renderer_showNext();
             current["showFullsize"] = self.renderer_showFullSize();
             current["showBoundingBox"] = self.renderer_showBoundingBox();
@@ -740,6 +748,7 @@ $(function() {
             if (current["showRetracts"] !== undefined) self.renderer_showRetracts(current["showRetracts"]) ;
             if (current["showPrinthead"] !== undefined) self.renderer_showPrinthead(current["showPrinthead"]);
             if (current["showPrevious"] !== undefined) self.renderer_showPrevious(current["showPrevious"]) ;
+            if (current["showCurrent"] !== undefined) self.renderer_showCurrent(current["showCurrent"]) ;
             if (current["showNext"] !== undefined) self.renderer_showNext(current["showNext"]) ;
             if (current["showFullsize"] !== undefined) self.renderer_showFullSize(current["showFullsize"]) ;
             if (current["showBoundingBox"] !== undefined) self.renderer_showBoundingBox(current["showBoundingBox"]) ;

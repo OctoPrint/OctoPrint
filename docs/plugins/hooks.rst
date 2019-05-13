@@ -208,6 +208,10 @@ octoprint.accesscontrol.appkey
 
 .. py:function:: acl_appkey_hook(*args, **kwargs)
 
+   .. deprecated:: 1.3.11
+
+      This functionality will be removed in 1.4.0. Use the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` instead.
+
    By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
    within the system.
 
@@ -903,6 +907,34 @@ octoprint.comm.transport.serial.factory
    :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
 
+.. _sec-plugins-hook-events-register_custom_events:
+
+octoprint.events.register_custom_events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: register_custom_events_hook(*args, **kwargs)
+
+   Return a list of custom :ref:`events <sec-events>` to register in the system for your plugin.
+
+   Should return a list of strings which represent the custom events. Their name on the `octoprint.events.Events` object
+   will be the returned value transformed into upper case ``CAMEL_CASE`` and prefixed with ``PLUGIN_<IDENTIFIER>``. Their
+   value will be prefixed with ``plugin_<identifier>_``.
+
+   Example:
+
+   Consider the following hook part of a plugin with the identifier ``myplugin``. It will register two custom events
+   in the system, ``octoprint.events.Events.PLUGIN_MYPLUGIN_MY_CUSTOM_EVENT`` with value ``plugin_myplugin_my_custom_event``
+   and ``octoprint.events.Events.PLUGIN_MYPLUGIN_MY_OTHER_CUSTOM_EVENT`` with value ``plugin_myplugin_my_other_custom_event``.
+
+   .. code-block:: python
+      :linenos:
+
+      def register_custom_events(*args, **kwargs):
+          return ["my_custom_event", "my_other_custom_event"]
+
+   :return: A list of custom events to register
+   :rtype: list
+
 .. _sec-plugins-hook-filemanager-analysis-factory:
 
 octoprint.filemanager.analysis.factory
@@ -1089,6 +1121,91 @@ octoprint.printer.estimation.factory
    :return: The :class:`~octoprint.printer.estimation.PrintTimeEstimator` class to use, or a factory method
    :rtype: class or function
 
+.. _sec-plugins-hook-octoprint-printer-sdcardupload:
+
+octoprint.printer.sdcardupload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: sd_card_upload_hook(printer, filename, path, start_callback, success_callback, failure_callback, *args, **kwargs)
+
+   Via this hook plugins can change the way files are being uploaded to the sd card of the printer.
+
+   Implementations **must** call the provided ``start_callback`` on start of the file transfer and either the ``success_callback``
+   or ``failure_callback`` on the end of the file transfer, depending on whether it was successful or not.
+
+   The ``start_callback`` has the following signature:
+
+   .. code-block:: python
+
+      def start_callback(local_filename, remote_filename):
+          # ...
+
+   ``local_filename`` must be the name of the file on the ``local`` storage, ``remote_filename`` the name of the file
+   to be created on the ``sdcard`` storage.
+
+   ``success_callback`` and ``failure_callback`` both have the following signature:
+
+   .. code-block:: python
+
+      def success_or_failure_callback(local_filename, remote_filename, elapsed):
+          # ...
+
+   ``local_filename`` must be the name of the file on the ``local`` storage, ``remote_filename`` the name of the file
+   to be created on the ``sdcard`` storage. ``elapsed`` is the elapsed time in seconds.
+
+   If the hook is going to handle the upload, it must return the (future) remote filename of the file on the ``sdcard``
+   storage. If it returns ``None`` (or an otherwise falsy value), OctoPrint will interpret this as the hook not going to
+   handle the file upload, in which case the next hook or - if no other hook is registered - the default implementation
+   will be called.
+
+   **Example**
+
+   The following example creates a dummy SD card uploader that does nothing but sleep for ten seconds when a file
+   is supposed to be uploaded. Note that the long running process of sleeping for ten seconds is extracted into its
+   own thread, which is important in order to not block the main application!
+
+   .. code-block:: python
+
+      import threading
+      import logging
+      import time
+
+      def nop_upload_to_sd(printer, filename, path, sd_upload_started, sd_upload_succeeded, sd_upload_failed, *args, **kwargs):
+          logger = logging.getLogger(__name__)
+
+          remote_name = printer._get_free_remote_name(filename)
+          logger.info("Starting dummy SDCard upload from {} to {}".format(filename, remote_name))
+
+          sd_upload_started(filename, remote_name)
+
+          def process():
+              logger.info("Sleeping 10s...")
+              time.sleep(10)
+              logger.info("And done!")
+              sd_upload_succeeded(filename, remote_name, 10)
+
+          thread = threading.Thread(target=process)
+          thread.daemon = True
+          thread.start()
+
+          return remote_name
+
+      __plugin_name__ = "No-op SDCard Upload Test"
+      __plugin_hooks__ = {
+          "octoprint.printer.sdcardupload": nop_upload_to_sd
+      }
+
+   .. versionadded:: 1.3.11
+
+   :param object printer: the :py:class:`~octoprint.printer.PrinterInterface` instance the hook was called from
+   :param str filename: filename on the ``local`` storage
+   :param str path: path of the file in the local file system
+   :param function sd_upload_started: callback for when the upload started
+   :param function sd_upload_success: callback for successful finish of upload
+   :param function sd_upload_failure: callback for failure of upload
+   :return: the name of the file on the ``sdcard`` storage or ``None``
+   :rtype: string or ``None``
+
 .. _sec-plugins-hook-server-http-after_request:
 
 octoprint.server.api.after_request
@@ -1210,6 +1327,14 @@ octoprint.server.http.routes
       view on that which matches one of the paths provided via its ``octoprint.server.http.routes`` hook handler, the
       view of the blueprint will thus not be reachable since processing of the request will directly be handed over
       to your defined handler class.
+
+   .. important::
+
+      If you want your route to support CORS if it's enabled in OctoPrint, your `RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_
+      needs to implement the :class:`~octoprint.server.util.tornado.CorsSupportMixin` for this to work. Note that all of
+      :class:`~octoprint.server.util.tornado.LargeResponseHandler`, :class:`~octoprint.server.util.tornado.UrlProxyHandler`,
+      :class:`~octoprint.server.util.tornado.StaticDataHandler` and :class:`~octoprint.server.util.tornado.DeprecatedEndpointHandler`
+      already implement this mixin.
 
    .. important::
 

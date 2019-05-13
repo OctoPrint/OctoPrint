@@ -14,6 +14,7 @@ except ImportError:
 	import Queue as queue
 import threading
 import collections
+import re
 
 from octoprint.settings import settings
 import octoprint.plugin
@@ -23,7 +24,7 @@ _instance = None
 
 
 def all_events():
-	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("__")]
+	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("_") and not name in ("register_event",)]
 
 
 class Events(object):
@@ -119,6 +120,23 @@ class Events(object):
 	# Settings
 	SETTINGS_UPDATED = "SettingsUpdated"
 
+	@classmethod
+	def register_event(cls, event, prefix=None):
+		name = cls._to_identifier(event)
+		if prefix:
+			event = prefix + event
+			name = cls._to_identifier(prefix) + name
+		setattr(cls, name, event)
+		return name, event
+
+	# based on https://stackoverflow.com/a/1176023
+	_first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+	_all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+	@classmethod
+	def _to_identifier(cls, name):
+		s1 = cls._first_cap_re.sub(r'\1_\2', name)
+		return cls._all_cap_re.sub(r'\1_\2', s1).upper()
 
 def eventManager():
 	global _instance
@@ -135,6 +153,7 @@ class EventManager(object):
 	def __init__(self):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
+		self._logger_fire = logging.getLogger("{}.fire".format(__name__))
 
 		self._startup_signaled = False
 		self._shutdown_signaled = False
@@ -156,19 +175,18 @@ class EventManager(object):
 					self._shutdown_signaled = True
 
 				eventListeners = self._registeredListeners[event]
-				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
+				self._logger_fire.debug("Firing event: {} (Payload: {!r})".format(event, payload))
 
 				for listener in eventListeners:
-					self._logger.debug("Sending action to %r" % listener)
+					self._logger.debug("Sending action to {!r}".format(listener))
 					try:
 						listener(event, payload)
 					except:
-						self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
+						self._logger.exception("Got an exception while sending event {} (Payload: {!r}) to {}".format(event, payload, listener))
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
-				                             args=(event, payload),
-				                             initialized=True)
+				                             args=(event, payload))
 			self._logger.info("Event loop shut down")
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
@@ -211,7 +229,7 @@ class EventManager(object):
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
-			# TODO v1.3.0 Remove again
+			# TODO v1.4.0 Remove again
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
@@ -227,7 +245,7 @@ class EventManager(object):
 			return
 
 		self._registeredListeners[event].append(callback)
-		self._logger.debug("Subscribed listener %r for event %s" % (callback, event))
+		self._logger.debug("Subscribed listener {!r} for event {}".format(callback, event))
 
 	def unsubscribe (self, event, callback):
 		"""
@@ -239,7 +257,7 @@ class EventManager(object):
 			return
 
 		self._registeredListeners[event].remove(callback)
-		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+		self._logger.debug("Unsubscribed listener {!r} for event {}".format(callback, event))
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)

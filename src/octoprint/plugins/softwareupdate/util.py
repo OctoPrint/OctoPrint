@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from .exceptions import ScriptError
 
+import logging
+
 
 def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
 	do_async = kwargs.get("do_async", kwargs.get("async", False))
@@ -18,6 +20,7 @@ def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
 	try:
 		p = sarge.run(command, cwd=cwd, stdout=sarge.Capture(), stderr=sarge.Capture(), async_=do_async)
 	except:
+		logging.getLogger(__name__).exception("Error while executing command: {}".format(command))
 		returncode = p.returncode if p is not None else None
 		stdout = p.stdout.text if p is not None and p.stdout is not None else ""
 		stderr = p.stderr.text if p is not None and p.stderr is not None else ""
@@ -26,4 +29,5 @@ def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
 	if evaluate_returncode and p.returncode != 0:
 		raise ScriptError(p.returncode, p.stdout.text, p.stderr.text)
 
-	return p.returncode, p.stdout.text, p.stderr.text
+	if not do_async:
+		return p.returncode, p.stdout.text, p.stderr.text

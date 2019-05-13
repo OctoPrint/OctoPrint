@@ -27,7 +27,7 @@ from flask_babel import gettext
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
 from octoprint.util import dict_merge, to_unicode
-from octoprint.util.version import get_comparable_version
+from octoprint.util.version import get_comparable_version, get_python_version_string
 from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
 
@@ -119,7 +119,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					try:
 						hook_checks = hook()
 					except:
-						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
+						self._logger.exception("Error while retrieving update information "
+						                       "from plugin {name}".format(**locals()),
+						                       extra=dict(plugin=name))
 					else:
 						for key, default_config in hook_checks.items():
 							if key in effective_configs or key == "octoprint":
@@ -174,13 +176,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return self._configured_checks
 
 	def _check_environment(self):
-		from platform import python_version
 		import pkg_resources
 
 		local_pip = LocalPipCaller()
 
 		# check python and setuptools version
-		versions = dict(python=python_version(),
+		versions = dict(python=get_python_version_string(),
 		                setuptools=pkg_resources.get_distribution("setuptools").version,
 		                pip=local_pip.version_string)
 		supported = get_comparable_version(versions["python"]) >= get_comparable_version(MINIMUM_PYTHON) \
@@ -944,17 +945,21 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		target_result = None
 
 		def trigger_event(success, **additional_payload):
+			from octoprint.events import Events
+
 			if success:
-				event = "update_succeeded"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_SUCCEEDED
 			else:
-				event = "update_failed"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_FAILED
 
 			payload = copy.copy(additional_payload)
 			payload.update(dict(target=target,
 			                    from_version=information["local"]["value"],
 			                    to_version=target_version))
 
-			self._event_bus.fire("plugin_softwareupdate_{}".format(event), payload=payload)
+			self._event_bus.fire(event, payload=payload)
 
 		### The actual update procedure starts here...
 
@@ -1198,6 +1203,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return None
 
 
+def _register_custom_events(*args, **kwargs):
+	return ["update_succeeded", "update_failed"]
+
+
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
@@ -1220,7 +1229,8 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli.commands
+		"octoprint.cli.commands": cli.commands,
+		"octoprint.events.register_custom_events": _register_custom_events
 	}
 
 

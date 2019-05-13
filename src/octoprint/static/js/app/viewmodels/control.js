@@ -72,7 +72,7 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else {
+            } else if (numExtruders === 1) {
                 // only one extruder, no need to add numbers
                 tools[0] = self._createToolEntry();
                 tools[0]["name"](gettext("Hotend"));

@@ -20,7 +20,7 @@ from builtins import range, bytes
 
 from octoprint.settings import settings
 
-from octoprint.util import atomic_write, to_str, deprecated
+from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
@@ -121,11 +121,10 @@ class UserManager(object):
 				self._logger.exception("Error while calling logout callback {!r}".format(callback))
 
 	def _cleanup_sessions(self):
-		import time
 		for session, user in self._session_users_by_session.items():
 			if not isinstance(user, SessionUser):
 				continue
-			if user.created + (24 * 60 * 60) < time.time():
+			if user.created + (24 * 60 * 60) < monotonic_time():
 				self.logout_user(user)
 
 	@staticmethod
@@ -140,7 +139,7 @@ class UserManager(object):
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
-		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
+		return hashlib.sha512(to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)).hexdigest()
 
 	def checkPassword(self, username, password):
 		user = self.findUser(username)
@@ -540,7 +539,7 @@ class SessionUser(wrapt.ObjectProxy):
 		import time
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
 		self._self_session = "".join(random.choice(chars) for _ in range(10))
-		self._self_created = time.time()
+		self._self_created = monotonic_time()
 
 	def asDict(self):
 		result = self.__wrapped__.asDict()

@@ -18,7 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer
+from octoprint.util import RepeatedTimer, monotonic_time, to_bytes, to_unicode
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -45,7 +45,7 @@ class VirtualPrinter(object):
 			self._seriallog.addHandler(seriallog_handler)
 			self._seriallog.setLevel(logging.INFO)
 
-		self._seriallog.info("-"*78)
+		self._seriallog.info(u"-"*78)
 
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
@@ -84,7 +84,9 @@ class VirtualPrinter(object):
 		self.targetTemp = [0.0] * self.temperatureCount
 		self.bedTemp = self._ambient_temperature
 		self.bedTargetTemp = 0.0
-		self.lastTempAt = time.time()
+		self.chamberTemp = self._ambient_temperature
+		self.chamberTargetTemp = 0.0
+		self.lastTempAt = monotonic_time()
 
 		self._relative = True
 		self._lastX = 0.0
@@ -264,7 +266,7 @@ class VirtualPrinter(object):
 			pass
 
 	def _processIncoming(self):
-		next_wait_timeout = time.time() + self._waitInterval
+		next_wait_timeout = monotonic_time() + self._waitInterval
 		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
@@ -277,9 +279,9 @@ class VirtualPrinter(object):
 				data = self.incoming.get(timeout=0.01)
 				self.incoming.task_done()
 			except queue.Empty:
-				if self._sendWait and time.time() > next_wait_timeout:
+				if self._sendWait and monotonic_time() > next_wait_timeout:
 					self._send("wait")
-					next_wait_timeout = time.time() + self._waitInterval
+					next_wait_timeout = monotonic_time() + self._waitInterval
 				continue
 
 			buf += data
@@ -289,7 +291,7 @@ class VirtualPrinter(object):
 			else:
 				continue
 
-			next_wait_timeout = time.time() + self._waitInterval
+			next_wait_timeout = monotonic_time() + self._waitInterval
 
 			if data is None:
 				continue
@@ -298,7 +300,7 @@ class VirtualPrinter(object):
 				self._dont_answer = False
 				continue
 
-			data = data.strip()
+			data = to_unicode(data.strip(), errors="replace")
 
 			# strip checksum
 			if "*" in data:
@@ -458,6 +460,12 @@ class VirtualPrinter(object):
 
 	def _gcode_M190(self, data):
 		self._parseBedCommand(data, wait=True, support_r=True)
+
+	def _gcode_M141(self, data):
+		self._parseChamberCommand(data)
+
+	def _gcode_M191(self, data):
+		self._parseChamberCommand(data, wait=True, support_r=True)
 
 	def _gcode_M105(self, data):
 		self._processTemperatureQuery()
@@ -620,7 +628,7 @@ class VirtualPrinter(object):
 		self._setPosition(data)
 
 	def _gcode_G28(self, data):
-		self._performMove(data)
+		self._home(data)
 
 	def _gcode_G0(self, data):
 		# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
@@ -640,8 +648,8 @@ class VirtualPrinter(object):
 			_timeout = float(matchS.group(1))
 
 		if self._sendBusy and self._busyInterval > 0:
-			until = time.time() + _timeout
-			while time.time() < until:
+			until = monotonic_time() + _timeout
+			while monotonic_time() < until:
 				time.sleep(self._busyInterval)
 				self._send("busy:processing")
 		else:
@@ -653,8 +661,8 @@ class VirtualPrinter(object):
 		timeout = 60
 
 		if self._sendBusy and self._busyInterval > 0:
-			until = time.time() + timeout
-			while time.time() < until:
+			until = monotonic_time() + timeout
+			while monotonic_time() < until:
 				time.sleep(self._busyInterval)
 				self._send("busy:processing")
 		else:
@@ -930,6 +938,12 @@ class VirtualPrinter(object):
 				else:
 					allTempsString = "B:%.2f %s" % (self.bedTemp, allTempsString)
 
+			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+				if includeTarget:
+					allTempsString = "C:%.2f /%.2f %s" % (self.chamberTemp, self.chamberTargetTemp, allTempsString)
+				else:
+					allTempsString = "C:%.2f %s" % (self.chamberTemp, allTempsString)
+
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
 					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
@@ -939,9 +953,28 @@ class VirtualPrinter(object):
 				output = allTempsString
 		else:
 			if includeTarget:
-				output = "T:%.2f /%.2f B:%.2f /%.2f" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
+				t = "T:%.2f /%.2f" % (self.temp[0], self.targetTemp[0])
 			else:
-				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
+				t = "T:%.2f" % self.temp[0]
+
+			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+				if includeTarget:
+					b = "B:%.2f /%.2f" % (self.bedTemp, self.bedTargetTemp)
+				else:
+					b = "B:%.2f" % self.bedTemp
+			else:
+				b = ""
+
+			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+				if includeTarget:
+					c = "C:%.2f /%.2f" % (self.chamberTemp, self.chamberTargetTemp)
+				else:
+					c = "C:%.2f" % self.chamberTemp
+			else:
+				c = ""
+
+			output = t + " " + b + " " + c
+			output = output.strip()
 
 		output += " @:64\n"
 		return output
@@ -985,6 +1018,9 @@ class VirtualPrinter(object):
 			self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
 	def _parseBedCommand(self, line, wait=False, support_r=False):
+		if not settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+			return
+
 		only_wait_if_higher = True
 		try:
 			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
@@ -1001,11 +1037,29 @@ class VirtualPrinter(object):
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self._send("TargetBed:%d" % self.bedTargetTemp)
 
+	def _parseChamberCommand(self, line, wait=False, support_r=False):
+		if not settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+			return
+
+		only_wait_if_higher = True
+		try:
+			self.chamberTargetTemp = float(re.search('S([0-9]+)', line).group(1))
+		except:
+			if support_r:
+				try:
+					self.chamberTargetTemp = float(re.search('R([0-9]+)', line).group(1))
+					only_wait_if_higher = False
+				except:
+					pass
+
+		if wait:
+			self._waitForHeatup("chamber", only_wait_if_higher)
+
 	def _performMove(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
+		matchX = re.search("X(-?[0-9.]+)", line)
+		matchY = re.search("Y(-?[0-9.]+)", line)
+		matchZ = re.search("Z(-?[0-9.]+)", line)
+		matchE = re.search("E(-?[0-9.]+)", line)
 		matchF = re.search("F([0-9.]+)", line)
 
 		duration = 0.0
@@ -1087,10 +1141,10 @@ class VirtualPrinter(object):
 				time.sleep(duration)
 
 	def _setPosition(self, line):
-		matchX = re.search("X([0-9.]+)", line)
-		matchY = re.search("Y([0-9.]+)", line)
-		matchZ = re.search("Z([0-9.]+)", line)
-		matchE = re.search("E([0-9.]+)", line)
+		matchX = re.search("X(-?[0-9.]+)", line)
+		matchY = re.search("Y(-?[0-9.]+)", line)
+		matchZ = re.search("Z(-?[0-9.]+)", line)
+		matchE = re.search("E(-?[0-9.]+)", line)
 
 		if matchX is None and matchY is None and matchZ is None and matchE is None:
 			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
@@ -1115,6 +1169,30 @@ class VirtualPrinter(object):
 					self._lastE[self.currentExtruder] = float(matchE.group(1))
 				except:
 					pass
+
+	def _home(self, line):
+		x = y = z = e = None
+
+		if "X" in line:
+			x = True
+		if "Y" in line:
+			y = True
+		if "Z" in line:
+			z = True
+		if "E" in line:
+			e = True
+
+		if x is None and y is None and z is None and e is None:
+			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
+		else:
+			if x:
+				self._lastX = 0
+			if y:
+				self._lastY = 0
+			if z:
+				self._lastZ = 0
+			if e:
+				self._lastE = 0
 
 	def _writeSdFile(self, filename):
 		if filename.startswith("/"):
@@ -1199,7 +1277,7 @@ class VirtualPrinter(object):
 	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
 		delay = 1
-		last_busy = time.time()
+		last_busy = monotonic_time()
 
 		self._heatingUp = True
 		try:
@@ -1210,15 +1288,18 @@ class VirtualPrinter(object):
 			elif heater == "bed":
 				test = lambda: self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)
 				output = lambda: "B:%0.2f" % self.bedTemp
+			elif heater == "chamber":
+				test = lambda: self.chamberTemp < self.chamberTargetTemp - delta or (not only_wait_if_higher and self.chamberTemp > self.chamberTargetTemp + delta)
+				output = lambda: "C:%0.2f" % self.chamberTemp
 			else:
 				return
 
 			while not self._killed and self._heatingUp and test():
 				self._simulateTemps(delta=delta)
 				self._output(output())
-				if self._sendBusy and time.time() - last_busy >= self._busyInterval:
+				if self._sendBusy and monotonic_time() - last_busy >= self._busyInterval:
 					self._output("echo:busy: processing")
-					last_busy = time.time()
+					last_busy = monotonic_time()
 				time.sleep(delay)
 		except AttributeError:
 			if self.outgoing is not None:
@@ -1234,8 +1315,8 @@ class VirtualPrinter(object):
 			os.remove(f)
 
 	def _simulateTemps(self, delta=0.5):
-		timeDiff = self.lastTempAt - time.time()
-		self.lastTempAt = time.time()
+		timeDiff = self.lastTempAt - monotonic_time()
+		self.lastTempAt = monotonic_time()
 
 		def simulate(actual, target, ambient):
 			if target > 0 and abs(actual - target) > delta:
@@ -1261,6 +1342,7 @@ class VirtualPrinter(object):
 				continue
 			self.temp[i] = simulate(self.temp[i], self.targetTemp[i], self._ambient_temperature)
 		self.bedTemp = simulate(self.bedTemp, self.bedTargetTemp, self._ambient_temperature)
+		self.chamberTemp = simulate(self.chamberTemp, self.chamberTargetTemp, self._ambient_temperature)
 
 	def _processBuffer(self):
 		while self.buffered is not None:
@@ -1285,6 +1367,9 @@ class VirtualPrinter(object):
 				pass
 
 	def write(self, data):
+		data = to_bytes(data, errors="replace")
+		u_data = to_unicode(data, errors="replace")
+
 		if self._debug_awol:
 			return len(data)
 
@@ -1297,13 +1382,13 @@ class VirtualPrinter(object):
 				return 0
 
 			if "M112" in data and self._supportM112:
-				self._seriallog.info("<<< {}".format(data.strip()))
+				self._seriallog.info(u"<<< {}".format(u_data))
 				self._kill()
 				return len(data)
 
 			try:
 				written = self.incoming.put(data, timeout=self._write_timeout, partial=True)
-				self._seriallog.info("<<< {}".format(data.strip()))
+				self._seriallog.info(u"<<< {}".format(u_data))
 				return written
 			except queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
@@ -1338,10 +1423,10 @@ class VirtualPrinter(object):
 
 		try:
 			# fetch a line from the queue, wait no longer than timeout
-			line = self.outgoing.get(timeout=timeout)
-			self._seriallog.info(">>> {}".format(line.strip()))
+			line = to_unicode(self.outgoing.get(timeout=timeout), errors="replace")
+			self._seriallog.info(u">>> {}".format(line.strip()))
 			self.outgoing.task_done()
-			return line
+			return to_bytes(line, errors="replace")
 		except queue.Empty:
 			# queue empty? return empty line
 			return ""
@@ -1409,9 +1494,9 @@ class CharCountingQueue(queue.Queue):
 			elif timeout < 0:
 				raise ValueError("'timeout' must be a positive number")
 			else:
-				endtime = time.time() + timeout
+				endtime = monotonic_time() + timeout
 				while not self._will_it_fit(item):
-					remaining = endtime - time.time()
+					remaining = endtime - monotonic_time()
 					if remaining <= 0.0:
 						raise queue.Full
 					self.not_full.wait(remaining)

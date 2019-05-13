@@ -87,6 +87,29 @@ $(function() {
         self.uploadProgressText = ko.observable();
 
         // initialize list helper
+        var listHelperFilters = {
+            "printed": function(data) {
+                return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0)
+                    || (data["type"] && data["type"] === "folder");
+            },
+            "sd": function(data) {
+                return data["origin"] && data["origin"] === "sdcard";
+            },
+            "local": function(data) {
+                return !(data["origin"] && data["origin"] === "sdcard");
+            }
+        };
+        var listHelperExclusiveFilters = [["sd", "local"]];
+
+        if (SUPPORTED_FILETYPES.length > 1) {
+            _.each(SUPPORTED_FILETYPES, function(filetype) {
+                listHelperFilters[filetype] = function(data) {
+                    return data["type"] && (data["type"] === filetype || data["type"] === "folder");
+                }
+            });
+            listHelperExclusiveFilters.push(SUPPORTED_FILETYPES);
+        }
+
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
             {
@@ -109,29 +132,30 @@ $(function() {
                     return 0;
                 }
             },
-            {
-                "printed": function(data) {
-                    return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0)
-                        || (data["type"] && data["type"] === "folder");
-                },
-                "sd": function(data) {
-                    return data["origin"] && data["origin"] === "sdcard";
-                },
-                "local": function(data) {
-                    return !(data["origin"] && data["origin"] === "sdcard");
-                },
-                "machinecode": function(data) {
-                    return data["type"] && (data["type"] === "machinecode" || data["type"] === "folder");
-                },
-                "model": function(data) {
-                    return data["type"] && (data["type"] === "model" || data["type"] === "folder");
-                }
-            },
+            listHelperFilters,
             "name",
             [],
-            [["sd", "local"], ["machinecode", "model"]],
+            listHelperExclusiveFilters,
             0
         );
+
+        self.availableFiletypes = ko.pureComputed(function() {
+            var mapping = {
+                model: gettext("Only show model files"),
+                machinecode: gettext("Only show machine code files")
+            };
+
+            var result = [];
+            _.each(SUPPORTED_FILETYPES, function(filetype) {
+                if (mapping[filetype]) {
+                    result.push({key: filetype, text: mapping[filetype]});
+                } else {
+                    result.push({key: filetype, text: _.sprintf(gettext("Only show %(type)s files"), {type: filetype})});
+                }
+            });
+
+            return result;
+        });
 
         self.foldersOnlyList = ko.dependentObservable(function() {
             var filter = function(data) { return data["type"] && data["type"] === "folder"; };
@@ -625,7 +649,7 @@ $(function() {
                         });
                     }
                 }
-                output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                output += gettext("Estimated print time") + ": " + (self.settingsViewModel.appearance_fuzzyTimes() ? formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
@@ -731,6 +755,10 @@ $(function() {
             } else {
                 return true;
             }
+        };
+
+        self.clearSearchQuery = function() {
+            self.searchQuery("");
         };
 
         self.performSearch = function(e) {
@@ -874,7 +902,7 @@ $(function() {
                 return;
             }
 
-            if (payload.type !== "gcode") {
+            if (payload.type !== "printables") {
                 return;
             }
 

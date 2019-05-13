@@ -117,9 +117,40 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 	return True
 
 
+def get_python_version_string():
+	from platform import python_version
+	version_string = python_version()
+
+	# Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
+	if version_string.endswith("+"):
+		version_string = python_version[:-1]
+
+	return version_string
+
+
+def get_python_version():
+	return get_comparable_version(get_python_version_string())
+
+
+def is_python_compatible(compat, **kwargs):
+	if not compat:
+		return True
+
+	python_version = kwargs.get("python_version")
+	if python_version is None:
+		python_version = get_python_version_string()
+
+	s = pkg_resources.Requirement.parse("Python" + compat)
+	return python_version in s
+
+
 def get_comparable_version(version_string, base=False):
 	if "-" in version_string:
 		version_string = version_string[:version_string.find("-")]
+
+	# Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
+	if version_string.endswith("+"):
+		version_string = version_string[:-1]
 
 	version = pkg_resources.parse_version(version_string)
 

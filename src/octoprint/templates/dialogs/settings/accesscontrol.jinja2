@@ -9,7 +9,7 @@
     </thead>
     <tbody data-bind="foreach: users.listHelper.paginatedItems">
     <tr>
-        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></small></span></td>
+        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></small></span></td>
         <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'fa-square-o': !active }"></i></td>
         <td class="settings_users_admin"><i class="fa" data-bind="css: { 'fa-check-square-o': admin, 'fa-square-o': !admin }"></i></td>
         <td class="settings_users_actions">
@@ -131,7 +131,7 @@
                     <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">{{ _('Passwords do not match') }}</span>
                 </div>
             </div>
-            <fieldset data-bind="visible: api_enabled">
+            <fieldset>
                 <legend>API Key</legend>
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>

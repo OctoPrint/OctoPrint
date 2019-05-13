@@ -154,10 +154,27 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             if (data["safe_mode"]) {
                 // safe mode is active, let's inform the user
                 log.info("Safe mode is active. Third party plugins are disabled and cannot be enabled.");
+                log.info("Reason for safe mode: " + data["safe_mode"]);
+
+                var reason = gettext("Unknown");
+                switch (data["safe_mode"]) {
+                    case "flag": {
+                        reason = gettext("Command line flag");
+                        break;
+                    }
+                    case "settings": {
+                        reason = gettext("Setting in config.yaml");
+                        break;
+                    }
+                    case "incomplete_startup": {
+                        reason = gettext("Problem during last startup");
+                        break;
+                    }
+                }
 
                 self._safeModePopup = new PNotify({
                     title: gettext("Safe mode is active"),
-                    text: gettext("The server is currently running in safe mode. Third party plugins are disabled and cannot be enabled."),
+                    text: _.sprintf(gettext("<p>The server is currently running in safe mode. Third party plugins are disabled and cannot be enabled.</p><p>Reason: %(reason)s</p>"), {reason: reason}),
                     hide: false
                 });
             }

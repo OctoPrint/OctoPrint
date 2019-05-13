@@ -88,6 +88,7 @@ default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None,
+		"exclusive": True,
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
@@ -113,10 +114,13 @@ default_settings = {
 		"additionalPorts": [],
 		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
+		"blockedCommands": ["M0", "M1"],
+		"pausingCommands": ["M0", "M1", "M25"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"terminalLogSize": 20,
 		"logResends": True,
 		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
@@ -129,6 +133,7 @@ default_settings = {
 		"unknownCommandsNeedAck": False,
 		"sdRelativePath": False,
 		"sdAlwaysAvailable": False,
+		"maxNotSdPrinting": 2,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
@@ -147,14 +152,15 @@ default_settings = {
 		},
 
 		# command specific flags
-		"triggerOkForM29": True,
-		"blockM0M1": True
+		"triggerOkForM29": True
 	},
 	"server": {
 		"host": None,
 		"port": 5000,
 		"firstRun": True,
 		"startOnceInSafeMode": False,
+		"ignoreIncompleteStartup": False,
+		"incompleteStartup": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"heartbeat": 15 * 60, # 15 min
@@ -207,6 +213,8 @@ default_settings = {
 		}
 	},
 	"webcam": {
+		"webcamEnabled": True,
+		"timelapseEnabled": True,
 		"stream": None,
 		"streamRatio": "16:9",
 		"streamTimeout": 5,
@@ -287,6 +295,7 @@ default_settings = {
 		"colorIcon": True,
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
+		"fuzzyTimes": True,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
@@ -296,7 +305,8 @@ default_settings = {
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
 					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
-					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_pi_support"
+					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_errortracking",
+					"plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
@@ -323,14 +333,14 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
+		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
 		"checkBasicAuthenticationPassword": True
 	},
 	"slicing": {
 		"enabled": True,
-		"defaultSlicer": "cura",
+		"defaultSlicer": None,
 		"defaultProfiles": None
 	},
 	"events": {
@@ -338,13 +348,12 @@ default_settings = {
 		"subscriptions": []
 	},
 	"api": {
-		"enabled": True,
 		"key": None,
 		"allowCrossOrigin": False,
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)" },
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)" },
 		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
@@ -389,6 +398,7 @@ default_settings = {
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
 			"hasBed": True,
+			"hasChamber": False,
 			"repetierStyleTargetTemperature": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
@@ -950,7 +960,8 @@ class Settings(object):
 			self._migrate_core_system_commands,
 			self._migrate_serial_features,
 			self._migrate_resend_without_ok,
-			self._migrate_string_temperature_profile_values
+			self._migrate_string_temperature_profile_values,
+			self._migrate_blocked_commands
 		)
 
 		for migrate in migrators:
@@ -1309,19 +1320,44 @@ class Settings(object):
 				return True
 		return False
 
-	def backup(self, suffix, path=None):
+	def _migrate_blocked_commands(self, config):
+		if "serial" in config and "blockM0M1" in config["serial"]:
+			blockM0M1 = config["serial"]["blockM0M1"]
+			blockedCommands = config["serial"].get("blockedCommands", [])
+			if blockM0M1:
+				blockedCommands = set(blockedCommands)
+				blockedCommands.add("M0")
+				blockedCommands.add("M1")
+				config["serial"]["blockedCommands"] = sorted(blockedCommands)
+			else:
+				config["serial"]["blockedCommands"] = sorted([v for v in blockedCommands if v not in ("M0", "M1")])
+			del config["serial"]["blockM0M1"]
+			return True
+		return False
+
+	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
 		if path is None:
 			path = os.path.dirname(self._configfile)
-		basename = os.path.basename(self._configfile)
-		name, ext = os.path.splitext(basename)
 
-		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		basename = os.path.basename(self._configfile)
+		name, default_ext = os.path.splitext(basename)
+
+		if ext is None:
+			ext = default_ext
+
+		if suffix is None and ext == default_ext:
+			raise ValueError("Need a suffix or a different extension")
+
+		if suffix is None:
+			suffix = ""
+
+		backup = os.path.join(path, "{}{}.{}{}".format("." if hidden else "", name, suffix, ext))
 		shutil.copy(self._configfile, backup)
 		return backup
 
-	def save(self, force=False):
+	def save(self, force=False, trigger_event=False):
 		if not self._dirty and not force:
 			return False
 
@@ -1334,7 +1370,15 @@ class Settings(object):
 			self._logger.exception("Error while saving config.yaml!")
 			raise
 		else:
+			from octoprint.events import eventManager, Events
+
 			self.load()
+
+			if trigger_event:
+				payload = dict(config_hash=self.config_hash,
+				               effective_hash=self.effective_hash)
+				eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+
 			return True
 
 	##~~ Internal getter

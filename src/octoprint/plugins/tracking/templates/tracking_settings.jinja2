@@ -29,7 +29,13 @@
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printer"> {{ _('Connected to printer') }}
             </label>
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printer_safety_check"> {{ _('Printer Safety Check warnings') }}
+            </label>
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printjob"> {{ _('Print started/cancelled/finished') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.commerror"> {{ _('Errors in the communication with the printer and/or reported by the firmware') }}
             </label>
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.plugin"> {{ _('Plugin installed/uninstalled/enabled/disabled') }}

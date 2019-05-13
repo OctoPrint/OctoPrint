@@ -68,12 +68,23 @@ $(function() {
         self.changeOffsetDialog = undefined;
 
         self.tools = ko.observableArray([]);
-
+        self.hasTools = ko.pureComputed(function() {
+            return self.tools().length > 0;
+        });
         self.hasBed = ko.observable(true);
+        self.hasChamber = ko.observable(false);
+
+        self.visible = ko.pureComputed(function() {
+            return self.hasTools() || self.hasBed();
+        });
 
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
         self.bedTemp["key"]("bed");
+
+        self.chamberTemp = self._createToolEntry();
+        self.chamberTemp["name"](gettext("Chamber"));
+        self.chamberTemp["key"]("chamber");
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -135,6 +146,14 @@ $(function() {
                 self.hasBed(false);
             }
 
+            // heated chamber
+            if (currentProfileData && currentProfileData.heatedChamber()) {
+                self.hasChamber(true);
+                heaterOptions["chamber"] = {name: gettext("Chamber"), color: "black"};
+            } else {
+                self.hasChamber(false);
+            }
+
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
@@ -144,11 +163,13 @@ $(function() {
             }
             self.updatePlot();
         };
+
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().heatedChamber.subscribe(self._printerProfileUpdated);
         });
 
         self.temperatures = [];
@@ -224,6 +245,14 @@ $(function() {
                 self.bedTemp["target"](0);
             }
 
+            if (lastData.hasOwnProperty("chamber")) {
+                self.chamberTemp["actual"](lastData.chamber.actual);
+                self.chamberTemp["target"](lastData.chamber.target);
+            } else {
+                self.chamberTemp["actual"](0);
+                self.chamberTemp["target"](0);
+            }
+
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(serverTime, data, self.temperatures);
@@ -249,6 +278,12 @@ $(function() {
                 self.bedTemp["offset"](data["bed"]);
             } else {
                 self.bedTemp["offset"](0);
+            }
+
+            if (data.hasOwnProperty("chamber")) {
+                self.chamberTemp["offset"](data["chamber"]);
+            } else {
+                self.chamberTemp["offset"](0);
             }
         };
 
@@ -293,6 +328,27 @@ $(function() {
             }
 
             return result;
+        };
+
+        self.profileText = function(heater, profile) {
+            var text = gettext("Set %(name)s (%(value)s)");
+
+            var value;
+            if (heater.key() === "bed") {
+                value = profile.bed;
+            } else if (heater.key() === "chamber") {
+                value = profile.chamber;
+            } else {
+                value = profile.extruder;
+            }
+
+            if (value === 0 || value === undefined) {
+                value = gettext("Off");
+            } else {
+                value = "" + value + "°C";
+            }
+
+            return _.sprintf(text, {name: profile.name, value: value});
         };
 
         self.updatePlot = function() {
@@ -401,7 +457,7 @@ $(function() {
                 }
 
                 var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
-                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
+                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit, 1) : "-";
 
                 data.push({
                     label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
@@ -560,7 +616,18 @@ $(function() {
             if (!profile) return OctoPrintClient.createRejectedDeferred();
 
             self.clearAutosendTarget(item);
-            return self.setTargetToValue(item, (item.key() === "bed" ? profile.bed : profile.extruder));
+
+            var target;
+            if (item.key() === "bed") {
+                target = profile.bed;
+            } else if (item.key() === "chamber") {
+                target = profile.chamber;
+            } else {
+                target = profile.extruder;
+            }
+
+            if (target === undefined) target = 0;
+            return self.setTargetToValue(item, target);
         };
 
         self.setTargetToZero = function(item) {
@@ -586,6 +653,9 @@ $(function() {
 
             if (item.key() === "bed") {
                 return self._setBedTemperature(value)
+                    .done(onSuccess);
+            } else if (item.key() === "chamber") {
+                return self._setChamberTemperature(value)
                     .done(onSuccess);
             } else {
                 return self._setToolTemperature(item.key(), value)
@@ -674,6 +744,9 @@ $(function() {
             if (item.key() === "bed") {
                 return self._setBedOffset(value)
                     .done(onSuccess);
+            } else if (item.key() === "chamber") {
+                return self._setChamberOffset(value)
+                    .done(onSuccess);
             } else {
                 return self._setToolOffset(item.key(), value)
                     .done(onSuccess);
@@ -700,10 +773,25 @@ $(function() {
             return OctoPrint.printer.setBedTemperatureOffset(parseInt(offset));
         };
 
+        self._setChamberTemperature = function(temperature) {
+            return OctoPrint.printer.setChamberTargetTemperature(parseInt(temperature));
+        };
+
+        self._setChamberOffset = function(offset) {
+            return OctoPrint.printer.setChamberTemperatureOffset(parseInt(offset));
+        };
+
         self._replaceLegendLabel = function(index, series, value, emph) {
             var showFahrenheit = self._shallShowFahrenheit();
 
-            var temp = formatTemperature(value, showFahrenheit);
+            var temp;
+            if (index % 2 === 0) {
+                // actual series
+                temp = formatTemperature(value, showFahrenheit);
+            } else {
+                // target series
+                temp = formatTemperature(value, showFahrenheit, 1);
+            }
             if (emph) {
                 temp = "<em>" + temp + "</em>";
             }
@@ -745,8 +833,9 @@ $(function() {
             }
         };
 
-        self.onAfterTabChange = function(current, previous) {
-            if (current !== "#temp") {
+        self.initOrUpdate = function() {
+            if (OctoPrint.coreui.selectedTab !== "#temp" || !$("#temp").is(":visible")) {
+                // do not try to initialize the graph when it's not visible or its sizing will be off
                 return;
             }
 
@@ -755,6 +844,10 @@ $(function() {
             } else {
                 self.updatePlot();
             }
+        };
+
+        self.onAfterTabChange = function() {
+            self.initOrUpdate();
         };
 
         self.onStartup = function() {
@@ -774,14 +867,18 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
+            self.initOrUpdate();
             self._printerProfileUpdated();
         };
 
+        self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            self.initOrUpdate();
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#temp", "#change_offset_dialog"]
+        elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });

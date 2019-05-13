@@ -11,25 +11,11 @@ $(function() {
 
         //~~ OctoPrint client setup
         OctoPrint.options.baseurl = BASEURL;
-        OctoPrint.options.apikey = UI_API_KEY;
 
         var l10n = getQueryParameterByName("l10n");
         if (l10n) {
             OctoPrint.options.locale = l10n;
         }
-
-        OctoPrint.socket.onMessage("connected", function(data) {
-            var payload = data.data;
-            OctoPrint.options.apikey = payload.apikey;
-
-            // update the API key directly in jquery's ajax options too,
-            // to ensure the fileupload plugin and any plugins still using
-            // $.ajax directly still work fine too
-            UI_API_KEY = payload["apikey"];
-            $.ajaxSetup({
-                headers: {"X-Api-Key": UI_API_KEY}
-            });
-        });
 
         //~~ some CoreUI specific stuff we put into OctoPrint.coreui
 
@@ -122,6 +108,54 @@ $(function() {
             exports.onBrowserVisibilityChange = function(callback) {
                 browserVisibilityCallbacks.push(callback);
             };
+            exports.hashFromTabChange = false;
+            exports.onTabChange = function(current, previous) {
+                log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
+                OctoPrint.coreui.selectedTab = current;
+                callViewModels(allViewModels, "onTabChange", [current, previous]);
+            };
+            exports.onAfterTabChange = function(current, previous) {
+                callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+            };
+            exports.updateTab = function(force) {
+                force = !!force;
+
+                if (exports.hashFromTabChange) {
+                    exports.hashFromTabChange = false;
+                    return;
+                }
+
+                var selectTab = function(tab) {
+                    if (tab.hash !== exports.selectedTab) {
+                        if ($(tab).parent("li").hasClass("active") && force) {
+                            var current = tab.hash;
+                            var previous = exports.selectedTab;
+                            exports.onTabChange(current, previous);
+                            exports.onAfterTabChange(current, previous);
+                        } else {
+                            $(tab).tab("show");
+                        }
+                    } else {
+                        window.location.hash = tab.hash;
+                    }
+                };
+
+                var tabs = $('#tabs');
+
+                var hashtag = window.location.hash;
+                if (hashtag) {
+                    var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
+                    if (selectedTab.length) {
+                        selectTab(selectedTab[0]);
+                        return;
+                    }
+                }
+
+                var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
+                if (firstTab.length) {
+                    selectTab(firstTab[0]);
+                }
+            };
 
             return exports;
         })();
@@ -140,11 +174,6 @@ $(function() {
                     options.headers = { "Cache-Control": "no-cache" };
                 }
             }
-        });
-
-        // send the current UI API key with any request
-        $.ajaxSetup({
-            headers: {"X-Api-Key": UI_API_KEY}
         });
 
         //~~ Initialize file upload plugin
@@ -167,7 +196,8 @@ $(function() {
         moment.locale(LOCALE);
 
         // Dummy translation requests for dynamic strings supplied by the backend
-        var dummyTranslations = [
+        // noinspection BadExpressionStatementJS
+        [
             // printer states
             gettext("Offline"),
             gettext("Opening serial port"),
@@ -175,12 +205,18 @@ $(function() {
             gettext("Detecting baudrate"),
             gettext("Connecting"),
             gettext("Operational"),
+            gettext("Starting"),
+            gettext("Starting print from SD"),
             gettext("Printing from SD"),
             gettext("Sending file to SD"),
             gettext("Printing"),
             gettext("Paused"),
             gettext("Closed"),
-            gettext("Transferring file to SD")
+            gettext("Transferring file to SD"),
+            gettext("Pausing"),
+            gettext("Resuming"),
+            gettext("Cancelling"),
+            gettext("Finishing")
         ];
 
         //~~ Initialize PNotify
@@ -194,6 +230,11 @@ $(function() {
         PNotify.prototype.options.delay = 5000;
         PNotify.prototype.options.animate_speed = "fast";
 
+        PNotify.prototype.options.maxheight.maxheight = function() {
+            return $(window).height() - 170; // top margin + header + footer + some safety margin
+        };
+
+        // single button notify
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
                 return new PNotify(options);
@@ -497,50 +538,25 @@ $(function() {
             });
         };
 
-        // Use bootstrap tabdrop for tabs and pills
-        $('.nav-pills, .nav-tabs').tabdrop();
-
         // Allow components to react to tab change
-        var onTabChange = function(current, previous) {
-            log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
-            OctoPrint.coreui.selectedTab = current;
-            callViewModels(allViewModels, "onTabChange", [current, previous]);
-        };
-
-        var onAfterTabChange = function(current, previous) {
-            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
-        };
-
         var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
-            onTabChange(current, previous);
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
+            OctoPrint.coreui.onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
-            onAfterTabChange(current, previous);
+            var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
+            OctoPrint.coreui.onAfterTabChange(current, previous);
 
             // make sure we also update the hash but stick to the current scroll position
             var scrollmem = $('body').scrollTop() || $('html').scrollTop();
+            OctoPrint.coreui.hashFromTabChange = true;
             window.location.hash = current;
             $('html,body').scrollTop(scrollmem);
         });
-
-        onTabChange(OCTOPRINT_INITIAL_TAB);
-        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
-
-        var changeTab = function() {
-            var hashtag = window.location.hash;
-            if (!hashtag) return;
-
-            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
-            if (tab) {
-                tab.tab("show");
-            }
-        };
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -660,10 +676,6 @@ $(function() {
             callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
-            // startup complete
-            callViewModels(allViewModels, "onStartupComplete");
-            setOnViewModels(allViewModels, "_startupComplete", true);
-
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
@@ -671,14 +683,21 @@ $(function() {
             });
 
             $(window).on("hashchange", function() {
-                changeTab();
+                OctoPrint.coreui.updateTab();
             });
 
-            if (window.location.hash !== "") {
-                changeTab();
-            }
-
             log.info("Application startup complete");
+
+            // startup complete
+            callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
+
+            // this will also allow selecting any tabs that will be hidden later due to overflowing since our
+            // overflow plugin tabdrop hasn't run yet
+            OctoPrint.coreui.updateTab(true);
+
+            // Use bootstrap tabdrop for tabs and pills
+            $('.nav-pills, .nav-tabs').tabdrop();
         };
 
         var fetchSettings = function() {

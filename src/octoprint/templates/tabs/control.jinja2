@@ -1,4 +1,4 @@
-{% if webcamStream %}
+{% if enableWebcam %}
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">
             <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
@@ -7,7 +7,7 @@
             <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
                 <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
                 <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly or require authentication. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
-                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Stream URL". If you don\'t have a webcam just set the URL to an empty value.') }}</small></p>
+                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Webcam" > "Stream URL". If you don\'t have a webcam you can also just disable webcam support there.') }}</small></p>
                 <p data-bind="visible: loginState.isUser"><small>{{ _('Currently configured stream URL') }}: <a target="_blank" rel="noreferrer" data-bind="attr: {href: settings.webcam_streamUrl}, text: settings.webcam_streamUrl"></a></small></p>
             </div>
         </div>
@@ -85,7 +85,7 @@
     </div>
 </div>
 <!-- Extrusion control panel -->
-<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser && tools().length > 0">
     <h1>Tool (E)</h1>
     <div>
         <div class="btn-group control-box">

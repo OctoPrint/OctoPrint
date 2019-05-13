@@ -22,6 +22,11 @@ Bed
   corresponding resource returns temperature information including an optional history. Note that Bed commands
   are only available if the currently selected printer profile has a heated bed.
   See :ref:`sec-api-printer-bedcommand`.
+Chamber
+  Chamber commands allow setting the temperature and temperature offset for the printer's heated chamber. Querying
+  the corresponding resource returns temperature information including an option history. Note that Chamber commands
+  are only available if the currently selected printer profile has a heated chamber.
+  See :ref:`sec-api-printer-chambercommand`.
 SD card
   SD commands allow initialization, refresh and release of the printer's SD card (if available). Querying the
   corresponding resource returns the current SD card state.
@@ -623,12 +628,12 @@ Issue a bed command
    are:
 
    target
-     Sets the given target temperature on the printer's tools. Additional parameters:
+     Sets the given target temperature on the printer's bed. Additional parameters:
 
      * ``target``: Target temperature to set.
 
    offset
-     Sets the given temperature offset on the printer's tools. Additional parameters:
+     Sets the given temperature offset on the printer's bed. Additional parameters:
 
      * ``offset``: Offset to set.
 
@@ -710,7 +715,7 @@ Retrieve the current bed state
    an :http:statuscode:`409`.
 
    .. note::
-      If you want both tool and bed temperature information at the same time, take a look at
+      If you want tool, bed and chamber temperature information at the same time, take a look at
       :ref:`Retrieve the current printer state <sec-api-printer-state>`.
 
    **Example**
@@ -759,6 +764,154 @@ Retrieve the current bed state
    :statuscode 200: No error
    :statuscode 409: If the printer is not operational or the selected printer profile
                     does not have a heated bed.
+
+.. _sec-api-printer-chambercommand:
+
+Issue a chamber command
+=======================
+
+.. http:post:: /api/printer/bed
+
+   Chamber commands allow setting the temperature and temperature offsets for the printer's heated chamber. Available commands
+   are:
+
+   target
+     Sets the given target temperature on the printer's chamber. Additional parameters:
+
+     * ``target``: Target temperature to set.
+
+   offset
+     Sets the given temperature offset on the printer's chamber. Additional parameters:
+
+     * ``offset``: Offset to set.
+
+   All of these commands may only be sent if the printer is currently operational. Otherwise a :http:statuscode:`409`
+   is returned.
+
+   Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   If no heated chambed is configured for the currently selected printer profile, the resource will return
+   an :http:statuscode:`409`.
+
+   Requires user rights.
+
+   **Example Target Temperature Request**
+
+   Set the target temperature for the printer's heated chamber to 50°C.
+
+   .. sourcecode:: http
+
+      POST /api/printer/chamber HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "target",
+        "target": 50
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example Offset Temperature Request**
+
+   Set the temperature offset for the heated chamber to -5°C.
+
+   .. sourcecode:: http
+
+      POST /api/printer/chamber HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "offset",
+        "offset": -5
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   :json string command: The command to issue, either ``target`` or ``offset``.
+   :json object target: ``target`` command: The target temperature to set.
+   :json object offset: ``offset`` command: The offset temperature to set.
+   :statuscode 204: No error
+   :statuscode 400: If ``target`` or ``offset`` is not a valid number or outside of the supported range, or if the
+                    request is otherwise invalid.
+   :statuscode 409: If the printer is not operational or the selected printer profile
+                    does not have a heated chamber.
+
+.. _sec-api-printer-chamberstate:
+
+Retrieve the current chamber state
+==================================
+
+.. http:get:: /api/printer/chamber
+
+   Retrieves the current temperature data (actual, target and offset) plus optionally a (limited) history (actual, target,
+   timestamp) for the printer's heated chamber.
+
+   It's also possible to retrieve the temperature history by supplying the ``history`` query parameter set to ``true``. The
+   amount of returned history data points can be limited using the ``limit`` query parameter.
+
+   Returns a :http:statuscode:`200` with a Temperature Response in the body upon success.
+
+   If no heated chamber is configured for the currently selected printer profile, the resource will return
+   an :http:statuscode:`409`.
+
+   .. note::
+      If you want tool, bed and chamber temperature information at the same time, take a look at
+      :ref:`Retrieve the current printer state <sec-api-printer-state>`.
+
+   **Example**
+
+   Query the chamber temperature data and also include the temperature history but limit it to two entries.
+
+   .. sourcecode:: http
+
+      GET /api/printer/chamber?history=true&limit=2 HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "chamber": {
+          "actual": 50.221,
+          "target": 70.0,
+          "offset": 5
+        },
+        "history": [
+          {
+            "time": 1395651928,
+            "chamber": {
+              "actual": 50.221,
+              "target": 70.0
+            }
+          },
+          {
+            "time": 1395651926,
+            "chamber": {
+              "actual": 49.1123,
+              "target": 70.0
+            }
+          }
+        ]
+      }
+
+   :query history:  If set to ``true`` (or: ``yes``, ``y``, ``1``), history information will be included in the response
+                    too. If no ``limit`` parameter is given, all available temperature history data will be returned.
+   :query limit:    If set to an integer (``n``), only the last ``n`` data points from the printer's temperature history
+                    will be returned. Will be ignored if ``history`` is not enabled.
+   :statuscode 200: No error
+   :statuscode 409: If the printer is not operational or the selected printer profile
+                    does not have a heated chamber.
 
 .. _sec-api-printer-sdcommand:
 

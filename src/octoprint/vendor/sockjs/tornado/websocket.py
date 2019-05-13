@@ -23,7 +23,9 @@ class SockJSWebSocketHandler(websocket.WebSocketHandler):
 
         # this is cross-origin connection - check using SockJS server settings
         allow_origin = self.server.settings.get("websocket_allow_origin", "*")
-        if allow_origin == "*":
+        if allow_origin == "":
+            return False
+        elif allow_origin == "*":
             return True
         else:
             parsed_origin = urlparse(origin)

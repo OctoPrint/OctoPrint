@@ -16,6 +16,7 @@
         <tr data-bind="template: { name: 'temprow-template' }"></tr>
         <!-- /ko -->
         <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
+        <tr data-bind="template: { name: 'temprow-template', data: chamberTemp }, visible: hasChamber"></tr>
     </table>
 
     <script type="text/html" id="temprow-template">
@@ -25,7 +26,7 @@
             <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
                 <div class="input-prepend input-append">
                     <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: -1°C') }}"><i class="fa fa-minus"></i></button>
-                    <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target())}, value: newTarget, valueUpdate: 'input', enable: $root.isOperational() && $root.loginState.isUser(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
+                    <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target(), 1)}, value: newTarget, valueUpdate: 'input', enable: $root.isOperational() && $root.loginState.isUser(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
                     <span class="add-on">&deg;C</span>
                     <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: +1°C') }}"><i class="fa fa-plus"></i></button>
                 </div>
@@ -41,7 +42,7 @@
                         <li class="divider"></li>
                         <!-- ko foreach: $root.temperature_profiles -->
                         <li>
-                            <a href="javascript:void(0)" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                            <a href="javascript:void(0)" data-bind="click: function() { $root.setTargetFromProfile($parent, $data);}, text: $root.profileText($parent, $data)"></a>
                         </li>
                         <!-- /ko -->
                     </ul>

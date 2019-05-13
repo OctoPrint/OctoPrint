@@ -15,6 +15,7 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
+from octoprint.users import DummyUser
 from octoprint.util import atomic_write, monotonic_time, ResettableTimer
 
 
@@ -343,7 +344,10 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
 				if filter(lambda x: x.api_key == api_key, data):
-					return self._user_manager.findUser(userid=user_id)
+					if self._user_manager.enabled:
+						return self._user_manager.findUser(userid=user_id)
+					elif user_id == "dummy":
+						return DummyUser()
 		return None
 
 	def _api_keys_for_user(self, user_id):

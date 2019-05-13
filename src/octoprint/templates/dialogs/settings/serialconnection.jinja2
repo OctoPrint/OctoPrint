@@ -8,7 +8,7 @@
 
     <div class="tab-content">
         <div id="settings_serial_general" class="tab-pane active">
-            <fieldset>
+            <fieldset id="settings_serial_general_connection">
                 <legend>{{ _('Connection') }}</legend>
                 <div class="control-group" title="{{ _('Serial port to connect to, setting this to AUTO will make OctoPrint try to automatically find the right setting') }}">
                     <label class="control-label" for="settings-serialPort">{{ _('Serial Port') }}</label>
@@ -43,8 +43,16 @@
                         <span class="help-inline">{{ _('Use this to define additional serial port baud rates to list for connecting with, e.g. <code>123456</code>. Comma separated.') }}</span>
                     </div>
                 </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_exclusive" id="settings-serialExclusive"> {{ _('Request exclusive access to the serial port') }}
+                            <span class="help-block">{{ _('Uncheck this if you are having problems connecting to your printer.') }}</span>
+                        </label>
+                    </div>
+                </div>
             </fieldset>
-            <fieldset>
+            <fieldset id="settings_serial_general_logging">
                 <legend>{{ _('Serial logging') }}</legend>
                 <div class="control-group">
                     <div class="controls">
@@ -329,11 +337,19 @@
                             <span class="help-block">{{ _('Try checking this if you run into connection timeouts due to your printer taking too long to respond to OctoPrint\'s handshake attempts on connect.') }}</span>
                         </label>
                     </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialBlockedCommands">{{ _('Blocked commands') }}</label>
                     <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: serial_blockM0M1" id="settings-serialBlockM0M1"> {{ _('Do not send <code>M0</code>/<code>M1</code> commands to the firmware, only pause') }}
-                            <span class="help-block">{{ _('Most firmware will block and wait for the user to press the button on the controller when an <code>M0</code> or <code>M1</code> is received. Due to that OctoPrint will normally not send those commands to the printer and only pause any ongoing prints. If you want OctoPrint to send those commands to your printer, uncheck this option.') }}</span>
-                        </label>
+                        <input type="text" class="input-block-level" id="settings-serialBlockedCommands" data-bind="value: serial_blockedCommands">
+                        <span class="help-inline">{{ _('Use this to specify commands that should never be sent to the printer. Just the G or M code, comma separated. Defaults to <code>M0</code> and <code>M1</code> since most firmware will block until a button on the controller has been pressed if it receives either of those two commands.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialPausingCommands">{{ _('Pausing commands') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialPausingCommands" data-bind="value: serial_pausingCommands">
+                        <span class="help-inline">{{ _('Use this to specify commands on which OctoPrint should pause the print job. Just the G or M code, comma separated. Defaults to <code>M0</code>, <code>M1</code> and <code>M25</code>.') }}</span>
                     </div>
                 </div>
                 <div>
@@ -374,11 +390,12 @@
                             <input type="radio" name="errorHandlingGroup" value="disconnect" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourDisconnect"> {{ _('Disconnect from the printer') }}
                         </label>
                         <label class="radio">
-                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }}
+                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }} <span></span>
+                            <span class="help-block">{{ _('Please note that if you choose this, OctoPrint will still disconnect from the printer in case of <em>fatal</em> errors reported by your firmware (e.g. <code>kill() called</code>, <code>fatal:</code>).') }}</span>
                         </label>
                         <label class="radio">
                             <input type="radio" name="errorHandlingGroup" value="ignore" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourIgnore"> {{ _('Ignore') }} <span class="label label-important">{{ _('Warning') }}</span>
-                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues, be careful!') }}</span>
+                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!') }}</span>
                         </label>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -8,7 +8,9 @@ import octoprint.plugin
 
 from octoprint.events import Events
 from octoprint.server import user_permission
-from octoprint.util.version import get_comparable_version
+from octoprint.util import to_unicode
+
+from .checks.firmware_unsafe import FirmwareUnsafeChecks
 
 import flask
 from flask_babel import gettext
@@ -24,57 +26,9 @@ Learn more at https://faq.octoprint.org/warning-{warning_type}
 
 """
 
-# Anet A8
-ANETA8_M115_TEST = lambda name, data: name and name.lower().startswith("anet_a8_")
-
-# Anycubic MEGA
-ANYCUBIC_AUTHOR1 = "| Author: (Jolly, xxxxxxxx.CO.)".lower()
-ANYCUBIC_AUTHOR2 = "| Author: (**Jolly, xxxxxxxx.CO.**)".lower()
-ANYCUBIC_RECEIVED_TEST = lambda line: line and (ANYCUBIC_AUTHOR1 in line.lower() or ANYCUBIC_AUTHOR2 in line.lower())
-
-# Creality CR-10s
-CR10S_AUTHOR = " | Author: (CR-10Slanguage)".lower()
-CR10S_RECEIVED_TEST = lambda line: line and CR10S_AUTHOR in line.lower()
-
-# Creality Ender 3
-ENDER3_AUTHOR = " | Author: (Ender3)".lower()
-ENDER3_RECEIVED_TEST = lambda line: line and ENDER3_AUTHOR in line.lower()
-
-# iMe on Micro3D
-IME_M115_TEST = lambda name, data: name and name.lower().startswith("ime")
-
-# Malyan M200 aka Monoprice Select Mini
-MALYANM200_M115_TEST = lambda name, data: name and name.lower().startswith("malyan") and data.get("MODEL") == "M200"
-
-# Stock Micro3D
-MICRO3D_M115_TEST = lambda name, data: name and name.lower().startswith("micro3d")
-
-# Any Repetier versions < 0.92
-REPETIER_BEFORE_092_M115_TEST = lambda name, data: name and name.lower().startswith("repetier") and extract_repetier_version(name) is not None and extract_repetier_version(name) < get_comparable_version("0.92")
-
-# THERMAL_PROTECTION capability reported as disabled
-THERMAL_PROTECTION_CAP_TEST = lambda cap, enabled: cap == "THERMAL_PROTECTION" and not enabled
-
 SAFETY_CHECKS = {
-	"firmware-unsafe": dict(m115=(ANETA8_M115_TEST, IME_M115_TEST, MALYANM200_M115_TEST, MICRO3D_M115_TEST,
-	                              REPETIER_BEFORE_092_M115_TEST),
-	                        received=(ANYCUBIC_RECEIVED_TEST, CR10S_RECEIVED_TEST, ENDER3_RECEIVED_TEST),
-	                        cap=(THERMAL_PROTECTION_CAP_TEST,),
-	                        message=gettext(u"Your printer's firmware is known to lack mandatory safety features (e.g. "
-	                                        u"thermal runaway protection). This is a fire risk."))
+	"firmware-unsafe": FirmwareUnsafeChecks.as_dict()
 }
-
-def extract_repetier_version(name):
-	"""
-	Extracts the Repetier version number from the firmware name.
-
-	Example: "Repetier_0.91" => 0.91
-	"""
-	version = None
-	if "_" in name:
-		_, version = name.split("_", 1)
-		version = get_comparable_version(version, base=True)
-	return version
 
 class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
                                octoprint.plugin.EventHandlerPlugin,
@@ -110,6 +64,8 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	def on_event(self, event, payload):
 		if event == Events.DISCONNECTED:
 			self._reset_warnings()
+			self._reset_state()
+			self._reset_checks()
 
 	##~~ SimpleApiPlugin API
 
@@ -122,19 +78,24 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_gcode_received(self, comm_instance, line, *args, **kwargs):
 		if self._scan_received:
-			self._run_checks("received", line)
+			self._run_checks("received", to_unicode(line, errors="replace"))
 		return line
 
 	##~~ Firmware info hook handler
 
 	def on_firmware_info_received(self, comm_instance, firmware_name, firmware_data):
-		self._run_checks("m115", firmware_name, firmware_data)
+		self._run_checks("m115",
+		                 to_unicode(firmware_name, errors="replace"),
+		                 dict((to_unicode(key, errors="replace"), to_unicode(value, errors="replace"))
+		                      for key, value in firmware_data.items()))
 		self._scan_received = False
 
 	##~~ Firmware capability hook handler
 
 	def on_firmware_cap_received(self, comm_instance, cap, enabled, all_caps):
-		self._run_checks("cap", cap, enabled)
+		self._run_checks("cap",
+		                 to_unicode(cap, errors="replace"),
+		                 enabled)
 
 	##~~ Helpers
 
@@ -142,14 +103,37 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		changes = False
 
 		for warning_type, check_data in SAFETY_CHECKS.items():
-			checks = check_data.get(check_type)
+			checks = check_data.get("checks")
 			message = check_data.get("message")
 			if not checks or not message:
 				continue
 
-			if any(x(*args, **kwargs) for x in checks):
-				self._register_warning(warning_type, message)
-				changes = True
+			for check in checks:
+				if not check.active:
+					# skip non active checks
+					continue
+
+				method = getattr(check, check_type, None)
+				if not callable(method):
+					# skip uncallable checks
+					continue
+
+				# execute method
+				try:
+					method(*args, **kwargs)
+				except:
+					self._logger.exception("There was an error running method {} on check {!r}".format(check_type, check))
+					continue
+
+				# check if now triggered
+				if check.triggered:
+					self._register_warning(warning_type, message)
+
+					# noinspection PyUnresolvedReferences
+					self._event_bus.fire(Events.PLUGIN_PRINTER_SAFETY_CHECK_WARNING, dict(check_name=check.name,
+					                                                                      warning_type=warning_type))
+					changes = True
+					break
 
 		if changes:
 			self._ping_clients()
@@ -163,6 +147,18 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		self._warnings.clear()
 		self._ping_clients()
 
+	def _reset_state(self):
+		self._scan_received = True
+
+	def _reset_checks(self):
+		for warning_type, check_data in SAFETY_CHECKS.items():
+			checks = check_data.get("checks")
+			if not checks:
+				continue
+
+			for check in checks:
+				check.reset()
+
 	def _log_to_terminal(self, message):
 		if self._printer:
 			lines = message.split("\n")
@@ -170,6 +166,11 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def _ping_clients(self):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="update"))
+
+
+def register_custom_events(*args, **kwargs):
+	return ["warning",]
+
 
 __plugin_name__ = "Printer Safety Check"
 __plugin_author__ = "Gina Häußge"
@@ -183,6 +184,7 @@ __plugin_implementation__ = PrinterSafetyCheckPlugin()
 __plugin_hooks__ = {
 	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
 	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
-	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received
+	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
+	"octoprint.events.register_custom_events": register_custom_events
 }
 

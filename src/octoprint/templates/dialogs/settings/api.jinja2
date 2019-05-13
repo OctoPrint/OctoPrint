@@ -2,14 +2,7 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" id="settings-apiEnabled" data-bind="checked: api_enabled"> {{ _('Enable') }}
-            </label>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }}
+                <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }} <label class="label label-info">{{ _('Needs restart') }}</label>
             </label>
         </div>
     </div>

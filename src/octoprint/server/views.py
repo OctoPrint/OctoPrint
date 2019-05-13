@@ -17,11 +17,11 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
+	debug, LOCALES, VERSION, DISPLAY_VERSION, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
 from octoprint.settings import settings
-from octoprint.filemanager import get_all_extensions
-from octoprint.util import to_unicode
+from octoprint.filemanager import full_extension_tree, get_all_extensions
+from octoprint.util import to_unicode, to_bytes
 
 import re
 import base64
@@ -123,18 +123,22 @@ def in_cache():
 	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin,
 	                                               sorting_context="UiPlugin.on_ui_render")
 	for plugin in ui_plugins:
-		if plugin.will_handle_ui(request):
-			ui = plugin._identifier
-			key = _cache_key(plugin._identifier,
-			                 url=url,
-			                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
-			unless = _preemptive_unless(url, additional_unless=plugin.get_ui_preemptive_caching_additional_unless)
-			data = _preemptive_data(plugin._identifier,
-			                        path=path,
-			                        base_url=base_url,
-			                        data=plugin.get_ui_data_for_preemptive_caching,
-			                        additional_request_data=plugin.get_ui_additional_request_data_for_preemptive_caching)
-			break
+		try:
+			if plugin.will_handle_ui(request):
+				ui = plugin._identifier
+				key = _cache_key(plugin._identifier,
+				                 url=url,
+				                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
+				unless = _preemptive_unless(url, additional_unless=plugin.get_ui_preemptive_caching_additional_unless)
+				data = _preemptive_data(plugin._identifier,
+				                        path=path,
+				                        base_url=base_url,
+				                        data=plugin.get_ui_data_for_preemptive_caching,
+				                        additional_request_data=plugin.get_ui_additional_request_data_for_preemptive_caching)
+				break
+		except Exception:
+			_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
+			                  extra=dict(plugin=plugin._identifier))
 	else:
 		ui = "_default"
 		key = _cache_key("_default", url=url)
@@ -179,7 +183,7 @@ def index():
 
 	enable_accesscontrol = userManager.enabled
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
-	enable_timelapse = bool(settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
+	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
@@ -196,7 +200,9 @@ def index():
 
 	default_additional_etag = [enable_accesscontrol,
 	                           enable_gcodeviewer,
-	                           enable_timelapse]
+	                           enable_timelapse] + sorted(["{}:{}".format(to_bytes(k, errors="replace"),
+	                                                                      to_bytes(v, errors="replace"))
+	                                                       for k, v in _plugin_vars.items()])
 
 	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None, additional_unless=None):
 		if (data is None and additional_request_data is None) or g.locale is None:
@@ -293,7 +299,6 @@ def index():
 			import hashlib
 			hash = hashlib.sha1()
 			hash.update(octoprint.__version__)
-			hash.update(octoprint.server.UI_API_KEY)
 			hash.update(",".join(sorted(files)))
 			if lastmodified:
 				hash.update(lastmodified)
@@ -308,6 +313,7 @@ def index():
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
 		                                   unless_response=lambda response: util.flask.cache_check_response_headers(response) or util.flask.cache_check_status_code(response, _valid_status_for_cache))(decorated_view)
+		decorated_view = util.flask.with_client_revalidation(decorated_view)
 		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
 		return decorated_view
 
@@ -355,7 +361,7 @@ def index():
 		                                   now)
 
 		render_kwargs.update(dict(
-			webcamStream=settings().get(["webcam", "stream"]),
+			enableWebcam=settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"])),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
@@ -401,13 +407,17 @@ def index():
 		# select view from plugins and fall back on default view if no plugin will handle it
 		ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
 		for plugin in ui_plugins:
-			if plugin.will_handle_ui(request):
-				# plugin claims responsibility, let it render the UI
-				response = plugin_view(plugin)
-				if response is not None:
-					break
-				else:
-					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+			try:
+				if plugin.will_handle_ui(request):
+					# plugin claims responsibility, let it render the UI
+					response = plugin_view(plugin)
+					if response is not None:
+						break
+					else:
+						_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+			except Exception:
+				_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
+				                  extra=dict(plugin=plugin._identifier))
 		else:
 			response = default_view()
 
@@ -417,10 +427,20 @@ def index():
 
 
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
+	global _logger
+
 	#~~ a bunch of settings
 
 	first_run = settings().getBoolean(["server", "firstRun"])
-	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+
+	locales = dict()
+	for l in LOCALES:
+		try:
+			locales[l.language] = dict(language=l.language, display=l.display_name, english=l.english_name)
+		except:
+			_logger.exception("Error while collecting available locales")
+
+	filetypes = sorted(full_extension_tree().keys())
 	extensions = map(lambda ext: ".{}".format(ext), get_all_extensions())
 
 	#~~ prepare full set of template vars for rendering
@@ -429,10 +449,10 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		debug=debug,
 		firstRun=first_run,
 		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
-		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
+		supportedFiletypes=filetypes,
 		supportedExtensions=extensions
 	)
 	render_kwargs.update(plugin_vars)
@@ -496,7 +516,9 @@ def fetch_template_data(refresh=False):
 		try:
 			result = hook(dict(template_sorting), dict(template_rules))
 		except:
-			_logger.exception("Error while retrieving custom template type definitions from plugin {name}".format(**locals()))
+			_logger.exception("Error while retrieving custom template type "
+			                  "definitions from plugin {name}".format(**locals()),
+			                  extra=dict(plugin=name))
 		else:
 			if not isinstance(result, list):
 				continue
@@ -549,7 +571,7 @@ def fetch_template_data(refresh=False):
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", data_bind="visible: visible")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
 		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
@@ -637,7 +659,8 @@ def fetch_template_data(refresh=False):
 				wizard_required = implementation.is_wizard_required()
 				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
-			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
+			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name),
+			                  extra=dict(plugin=name))
 			continue
 
 		if not isinstance(vars, dict):

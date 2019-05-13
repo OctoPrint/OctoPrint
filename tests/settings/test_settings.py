@@ -146,6 +146,7 @@ class TestSettings(unittest.TestCase):
 			'Send: N71667 G1 X163.151 Y35.424 E0.02043*83',
 			'Send: N85343 G1 Z29.880 F10800.000*15',
 			'Recv: ok',
+			'Recv: FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410'
 		]
 
 		filters = octoprint.settings.Settings().get(["terminalFilters"])
@@ -155,7 +156,7 @@ class TestSettings(unittest.TestCase):
 		for terminal_string in bad_terminal_entries:
 			match_result = matcher.match(terminal_string)
 			# can switch to assertIsNone after 3.x upgrade.
-			self.assertFalse(match_result, "string matched and it shouldn't have.")
+			self.assertFalse(match_result, "string matched and it shouldn't have: {!r}".format(terminal_string))
 
 
 	def test_temperature_regex_matches(self):
@@ -163,8 +164,11 @@ class TestSettings(unittest.TestCase):
 		#with self.mocked_config():
 
 		common_terminal_entries = [
+			'Send: M105',
+			'Send: N123 M105*456',
 			'Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:', # monoprice mini delta
 			'Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0', # Prusa mk3
+			'Recv:  T:210.3 /210.0',
 		]
 
 		filters = octoprint.settings.Settings().get(["terminalFilters"])
@@ -174,7 +178,7 @@ class TestSettings(unittest.TestCase):
 		for terminal_string in common_terminal_entries:
 			match_result = matcher.match(terminal_string)
 			# can switch to assertIsNotNone after 3.x upgrade.
-			self.assertTrue(match_result, "string did not match and it should have.")
+			self.assertTrue(match_result, "string did not match and it should have: {!r}".format(terminal_string))
 
 
 	##~~ test getters

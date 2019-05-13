@@ -1,0 +1,32 @@
+<script type="text/javascript">
+    var ERRORTRACKING_ENABLED = {% if plugin_errortracking_enabled -%} true; {% else %} false; {%- endif %}
+
+    var ERRORTRACKING_ENABLE = function() {
+        var errortracking_url_coreui = "{{ plugin_errortracking_url_coreui }}";
+        var errortracking_unique_id = "{{ plugin_errortracking_unique_id }}";
+
+        Sentry.init({
+            dsn: errortracking_url_coreui,
+            release: VERSION,
+            whitelistUrls: [
+                // only include static assets
+                "/static/"
+            ],
+            blacklistUrls: [
+                // exclude third party plugins
+                "/static/webassets/packed_plugins.js"
+            ]
+        });
+        Sentry.configureScope(function (scope) {
+            scope.setUser({"id": errortracking_unique_id});
+        });
+        ERRORTRACKING_ENABLED = true;
+        log.info("Initialized error tracking");
+    };
+
+    $(function() {
+        if (ERRORTRACKING_ENABLED) {
+            ERRORTRACKING_ENABLE();
+        }
+    });
+</script>

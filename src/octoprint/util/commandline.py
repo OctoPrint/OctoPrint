@@ -63,7 +63,7 @@ class CommandlineError(Exception):
 
 class CommandlineCaller(object):
 	"""
-	The CommandlineCaller is a utility class that allows running command line commands while logging there stdout
+	The CommandlineCaller is a utility class that allows running command line commands while logging their stdout
 	and stderr via configurable callback functions.
 
 	Callbacks are expected to have a signature matching

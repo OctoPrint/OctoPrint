@@ -36,7 +36,6 @@
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
   * [chainmap](https://bitbucket.org/jeunice/chainmap): Python
   * [Click](http://click.pocoo.org/): BSD
-  * [dateutil](https://dateutil.readthedocs.io/): BSD
   * [emoji](https://github.com/carpedm20/emoji/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
   * [Flask](http://flask.pocoo.org/): BSD

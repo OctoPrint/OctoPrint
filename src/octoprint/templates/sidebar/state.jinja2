@@ -4,14 +4,16 @@
 <!-- ko if: userString -->
 <span title="{{ _('User who selected this file for printing') }}">{{ _('User') }}</span>: <strong data-bind="text: userString"></strong><br>
 <!-- /ko -->
+<!-- ko if: settings.webcam_timelapseEnabled -->
 <span title="{{ _('Current timelapse configuration') }}">{{ _('Timelapse') }}</span>: <strong data-bind="text: timelapseString"></strong><br>
+<!-- /ko -->
 <!-- ko foreach: filament -->
 <span data-bind="text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>
 <!-- /ko -->
-<span title="{{ _('Estimated total print time based on analysis of the file or past prints') }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
+<span title="{{ _('Estimated total print time based on analysis of the file or past prints') }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString, attr: {title: estimatedPrintTimeExactString}"></strong><br>
 <hr>
 <span title="{{ _('Total print time so far') }}">{{ _('Print Time') }}</span>: <strong data-bind="text: printTimeString"></strong><br>
-<span title="{{ _('Estimated time until the print job is done. This is only an estimate and accuracy depends heavily on various factors!') }}">{{ _('Print Time Left') }}</span>: <strong data-bind="text: printTimeLeftString"></strong> <span id="state_printtimeleft_popover" style="display: none" data-bind="visible: printTimeLeftOrigin, attr: {title: printTimeLeftOriginString}, css: printTimeLeftOriginClass">&#9679;</span><br>
+<span title="{{ _('Estimated time until the print job is done. This is only an estimate and accuracy depends heavily on various factors!') }}">{{ _('Print Time Left') }}</span>: <strong data-bind="text: printTimeLeftString, attr: {title: printTimeLeftExactString}"></strong> <span id="state_printtimeleft_popover" style="display: none" data-bind="visible: printTimeLeftOrigin, attr: {title: printTimeLeftOriginString}, css: printTimeLeftOriginClass">&#9679;</span><br>
 <span title="{{ _('Bytes printed vs total bytes of file') }}">{{ _('Printed') }}</span>: <strong data-bind="text: byteString"></strong><br>
 
 

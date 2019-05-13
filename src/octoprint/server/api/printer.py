@@ -33,12 +33,18 @@ def printerState():
 
 	result = {}
 
-	processor = lambda x: x
-	if not printerProfileManager.get_current_or_default()["heatedBed"]:
-		processor = _delete_bed
-
 	# add temperature information
 	if not "temperature" in excludes:
+		processor = lambda x: x
+		heated_bed = printerProfileManager.get_current_or_default()["heatedBed"]
+		heated_chamber = printerProfileManager.get_current_or_default()["heatedChamber"]
+		if not heated_bed and not heated_chamber:
+			processor = _keep_tools
+		elif not heated_bed:
+			processor = _delete_bed
+		elif not heated_chamber:
+			processor = _delete_chamber
+
 		result.update({"temperature": _get_temperature_data(processor)})
 
 	# add sd information
@@ -80,7 +86,7 @@ def printerToolCommand():
 	##~~ tool selection
 	if command == "select":
 		tool = data["tool"]
-		if re.match(validation_regex, tool) is None:
+		if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
 			return make_response("Invalid tool: %s" % tool, 400)
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
@@ -151,7 +157,7 @@ def printerToolState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	return jsonify(_get_temperature_data(_delete_bed))
+	return jsonify(_get_temperature_data(_keep_tools))
 
 
 ##~~ Heated bed
@@ -211,7 +217,71 @@ def printerBedState():
 	if not printerProfileManager.get_current_or_default()["heatedBed"]:
 		return make_response("Printer does not have a heated bed", 409)
 
-	data = _get_temperature_data(_delete_tools)
+	data = _get_temperature_data(_keep_bed)
+	if isinstance(data, Response):
+		return data
+	else:
+		return jsonify(data)
+
+
+##~~ Heated chamber
+
+
+@api.route("/printer/chamber", methods=["POST"])
+@restricted_access
+def printerChamberCommand():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	if not printerProfileManager.get_current_or_default()["heatedChamber"]:
+		return make_response("Printer does not have a heated chamber", 409)
+
+	valid_commands = {
+		"target": ["target"],
+		"offset": ["offset"]
+	}
+	command, data, response = get_json_command_from_request(request, valid_commands)
+	if response is not None:
+		return response
+
+	tags = {"source:api", "api:printer.chamber"}
+
+	##~~ temperature
+	if command == "target":
+		target = data["target"]
+
+		# make sure the target is a number
+		if not isinstance(target, (int, long, float)):
+			return make_response("Not a number: %r" % target, 400)
+
+		# perform the actual temperature command
+		printer.set_temperature("chamber", target, tags=tags)
+
+	##~~ temperature offset
+	elif command == "offset":
+		offset = data["offset"]
+
+		# make sure the offset is valid
+		if not isinstance(offset, (int, long, float)):
+			return make_response("Not a number: %r" % offset, 400)
+		if not -50 <= offset <= 50:
+			return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+
+		# set the offsets
+		printer.set_temperature_offset({"chamber": offset})
+
+	return NO_CONTENT
+
+
+@api.route("/printer/chamber", methods=["GET"])
+def printerChamberState():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	if not printerProfileManager.get_current_or_default()["heatedChamber"]:
+		return make_response("Printer does not have a heated chamber", 409)
+
+	data = _get_temperature_data(_keep_chamber)
 	if isinstance(data, Response):
 		return data
 	else:
@@ -412,12 +482,21 @@ def _get_temperature_data(preprocessor):
 	return preprocessor(tempData)
 
 
-def _delete_tools(x):
-	return _delete_from_data(x, lambda k: k.startswith("tool"))
+def _keep_tools(x):
+	return _delete_from_data(x, lambda k: not k.startswith("tool"))
 
+
+def _keep_bed(x):
+	return _delete_from_data(x, lambda k: k != "bed")
 
 def _delete_bed(x):
 	return _delete_from_data(x, lambda k: k == "bed")
+
+def _keep_chamber(x):
+	return _delete_from_data(x, lambda k: k != "chamber")
+
+def _delete_chamber(x):
+	return _delete_from_data(x, lambda k: k == "chamber")
 
 
 def _delete_from_data(x, key_matcher):

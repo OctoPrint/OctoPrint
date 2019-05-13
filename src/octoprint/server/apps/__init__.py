@@ -7,12 +7,16 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import rsa
 from flask import Blueprint, request, make_response, jsonify
+import logging
 
 import octoprint.server
 import octoprint.plugin
 
 from octoprint.server.util import noCachingResponseHandler, corsResponseHandler
+from octoprint.server.util.flask import get_remote_address
 from octoprint.settings import settings as s
+
+logger = logging.getLogger(__name__)
 
 apps = Blueprint("apps", __name__)
 
@@ -21,11 +25,16 @@ apps.after_request(corsResponseHandler)
 
 @apps.route("/auth", methods=["GET"])
 def getSessionKey():
+	logger.warn("Client {} accessed the apps API which has been deprecated since 1.3.11 and will be removed in "
+	            "1.4.0. Clients should use the Application Keys Plugin workflow instead".format(get_remote_address(request)))
 	unverified_key, valid_until = octoprint.server.appSessionManager.create()
 	return jsonify(unverifiedKey=unverified_key, validUntil=valid_until)
 
 @apps.route("/auth", methods=["POST"])
 def verifySessionKey():
+	logger.warn("Client {} accessed the apps API which has been deprecated since 1.3.11 and will be removed in "
+	            "1.4.0. Clients should use the Application Keys Plugin workflow instead".format(get_remote_address(request)))
+
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
 
@@ -95,9 +104,12 @@ def _get_registered_apps():
 	for name, hook in hooks.items():
 		try:
 			additional_apps = hook()
+			logger.warn("Plugin {} is still implementing the appkey hook that is deprecated since 1.3.11 and will be removed in 1.4.0. Switch it over to the Application Keys Plugin workflow.".format(name))
 		except:
 			import logging
-			logging.getLogger(__name__).exception("Error while retrieving additional appkeys from plugin {name}".format(**locals()))
+			logging.getLogger(__name__).exception("Error while retrieving additional appkeys "
+			                                      "from plugin {name}".format(**locals()),
+			                                      extra=dict(plugin=name))
 			continue
 
 		any_version_enabled = dict()

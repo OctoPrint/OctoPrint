@@ -11,7 +11,7 @@ import sys
 
 from octoprint.cli import bulk_options, standard_options, set_ctx_obj_option, get_ctx_obj_option
 
-def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode,
+def run_server(basedir, configfile, host, port, v6_only, debug, allow_root, logging_config, verbosity, safe_mode,
                ignore_blacklist, octoprint_daemon=None):
 	"""Initializes the environment and starts up the server."""
 
@@ -26,6 +26,15 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		logger.info("Starting OctoPrint {}".format(__display_version__))
 		if safe_mode:
 			logger.info("Starting in SAFE MODE. Third party plugins will be disabled!")
+			if safe_mode == "flag":
+				reason = "command line flag"
+			elif safe_mode == "settings":
+				reason = "setting in config.yaml"
+			elif safe_mode == "incomplete_startup":
+				reason = "problem during last startup"
+			else:
+				reason = "unknown"
+			logger.info("Reason for safe mode: {}".format(reason))
 
 		if recorder and len(recorder):
 			logger.info(get_divider_line("-", "Logged during platform initialization:"))
@@ -101,6 +110,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		                          environment_detector=environment_detector,
 		                          host=host,
 		                          port=port,
+		                          v6_only=v6_only,
 		                          debug=debug,
 		                          safe_mode=safe_mode,
 		                          allow_root=allow_root,
@@ -111,9 +121,13 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 
 server_options = bulk_options([
 	click.option("--host", type=click.STRING, callback=set_ctx_obj_option,
-	             help="Specify the host on which to bind the server."),
+	             help="Specify the host address on which to bind the server."),
 	click.option("--port", type=click.INT, callback=set_ctx_obj_option,
 	             help="Specify the port on which to bind the server."),
+	click.option("-4", "--ipv4", "v4", is_flag=True, callback=set_ctx_obj_option,
+	             help="Bind to IPv4 addresses only. Implies '--host 0.0.0.0'. Silently ignored if -6 is present."),
+	click.option("-6", "--ipv6", "v6", is_flag=True, callback=set_ctx_obj_option,
+	             help="Bind to IPv6 addresses only. Disables dual stack when binding to any v6 addresses. Silently ignored if -4 is present."),
 	click.option("--logging", type=click.Path(), callback=set_ctx_obj_option,
 	             help="Specify the config file to use for configuring logging."),
 	click.option("--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option,
@@ -123,7 +137,7 @@ server_options = bulk_options([
 	click.option("--ignore-blacklist", "ignore_blacklist", is_flag=True, callback=set_ctx_obj_option,
 	             help="Disable processing of the plugin blacklist.")
 ])
-"""Decorator to add the options shared among the server commands: ``--host``, ``--port``,
+"""Decorator to add the options shared among the server commands: ``--host``, ``--port``, ``-4``, ``-6``
    ``--logging``, ``--iknowwhatimdoing`` and ``--debug``."""
 
 daemon_options = bulk_options([
@@ -153,11 +167,11 @@ def enable_safemode(ctx, **kwargs):
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error initializing the settings manager.", err=True)
 		ctx.exit(-1)
+	else:
+		settings.setBoolean(["server", "startOnceInSafeMode"], True)
+		settings.save()
 
-	settings.setBoolean(["server", "startOnceInSafeMode"], True)
-	settings.save()
-
-	click.echo("Safe mode flag set, OctoPrint will start in safe mode on next restart.")
+		click.echo("Safe mode flag set, OctoPrint will start in safe mode on next restart.")
 
 
 @server_commands.command(name="serve")
@@ -172,6 +186,8 @@ def serve_command(ctx, **kwargs):
 
 	host = get_value("host")
 	port = get_value("port")
+	v4 = get_value("v4")
+	v6 = get_value("v6")
 	logging = get_value("logging")
 	allow_root = get_value("allow_root")
 	debug = get_value("debug")
@@ -179,10 +195,13 @@ def serve_command(ctx, **kwargs):
 	basedir = get_value("basedir")
 	configfile = get_value("configfile")
 	verbosity = get_value("verbosity")
-	safe_mode = get_value("safe_mode")
+	safe_mode = "flag" if get_value("safe_mode") else None
 	ignore_blacklist = get_value("ignore_blacklist")
 
-	run_server(basedir, configfile, host, port, debug,
+	if v4 and not host:
+		host = "0.0.0.0"
+
+	run_server(basedir, configfile, host, port, v6, debug,
 	           allow_root, logging, verbosity, safe_mode,
 	           ignore_blacklist)
 
@@ -209,6 +228,8 @@ if sys.platform != "win32" and sys.platform != "darwin":
 
 		host = get_value("host")
 		port = get_value("port")
+		v4 = get_value("v4")
+		v6 = get_value("v6")
 		logging = get_value("logging")
 		allow_root = get_value("allow_root")
 		debug = get_value("debug")
@@ -217,8 +238,11 @@ if sys.platform != "win32" and sys.platform != "darwin":
 		basedir = get_value("basedir")
 		configfile = get_value("configfile")
 		verbosity = get_value("verbosity")
-		safe_mode = get_value("safe_mode")
+		safe_mode = "flag" if get_value("safe_mode") else None
 		ignore_blacklist = get_value("ignore_blacklist")
+
+		if v4 and not host:
+			host = "0.0.0.0"
 
 		if pid is None:
 			click.echo("No path to a pidfile set",
@@ -227,14 +251,15 @@ if sys.platform != "win32" and sys.platform != "darwin":
 
 		from octoprint.daemon import Daemon
 		class OctoPrintDaemon(Daemon):
-			def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity,
-			             safe_mode, ignore_blacklist):
+			def __init__(self, pidfile, basedir, configfile, host, port, v6_only, debug, allow_root, logging_config,
+			             verbosity, safe_mode, ignore_blacklist):
 				Daemon.__init__(self, pidfile)
 
 				self._basedir = basedir
 				self._configfile = configfile
 				self._host = host
 				self._port = port
+				self._v6_only = v6_only
 				self._debug = debug
 				self._allow_root = allow_root
 				self._logging_config = logging_config
@@ -243,12 +268,12 @@ if sys.platform != "win32" and sys.platform != "darwin":
 				self._ignore_blacklist = ignore_blacklist
 
 			def run(self):
-				run_server(self._basedir, self._configfile, self._host, self._port, self._debug,
+				run_server(self._basedir, self._configfile, self._host, self._port, self._v6_only, self._debug,
 				           self._allow_root, self._logging_config, self._verbosity, self._safe_mode,
 				           self._ignore_blacklist, octoprint_daemon=self)
 
-		octoprint_daemon = OctoPrintDaemon(pid, basedir, configfile, host, port, debug, allow_root, logging, verbosity,
-		                                   safe_mode, ignore_blacklist)
+		octoprint_daemon = OctoPrintDaemon(pid, basedir, configfile, host, port, v6, debug, allow_root, logging,
+		                                   verbosity, safe_mode, ignore_blacklist)
 
 		if command == "start":
 			octoprint_daemon.start()
