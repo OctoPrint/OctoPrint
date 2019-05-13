@@ -1,91 +1,12 @@
 # OctoPrint Changelog
 
-## 1.3.11rc3 (2019-04-11)
-
-### Improvements
-
-  * Define empty `UI_API_KEY` for backwards compatibility with third party plugins
-  * Add config flag `server.ignoredIncompleteStartup` to override incomplete startup detection
-  * Hardening against errors triggered during print time estimation
-  * Introduce setting to disable exclusive claim on serial port. There might be issues with this out there in the field, so having the option to disable it is a good thing.
-  * Error Tracking: Further restriction of what gets tracked
-
-### Bug fixes
-
-  * [#3105](https://github.com/foosel/OctoPrint/issues/3105) (regression) - Virtual printer: Fix an encoding issue
-  * [#3108](https://github.com/foosel/OctoPrint/issues/3108) (regression) - Fix bug in port detection
-  * [#3111](https://github.com/foosel/OctoPrint/issues/3111) (regression) - Refresh port list after disconnect to detect vanishing ports
-  * [#3115](https://github.com/foosel/OctoPrint/issues/3115) (regression) - Fix extra newlines in `serial.log` and empty lines on terminal
-  * [#3116](https://github.com/foosel/OctoPrint/issues/3116) - Fix potential division by zero
-  * Fix wrong textual representation of `STARTING` state
-  * Fix some potential encoding errors in the comm layer
-  * Fix for the file list in the UI not getting refreshed after an SD list refresh from the printer.
-
-### Unreproduced issues
-
-The following issues were reported in RC1 or RC2 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
-
-  * ["Print completes but temp data appears to be 'stuck' at last known value for bed and hotend."](https://github.com/foosel/OctoPrint/issues/3087#issuecomment-478369220)
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11rc2...1.3.11rc3)
-
-## 1.3.11rc2 (2019-04-04)
-
-### Improvements
-
-  * More resilience against broken configurations.
-  * More resilience against platform startup issues during environment detection.
-  * Don't confuse users with pip's new "OMG PY2.7 IS EOL!!1!" message.
-  * Error Tracking: Severely restrict what gets tracked:
-    * we are only interested in handled core exceptions or unhandled exceptions
-    * we are not interested at all in `SerialException`
-    * in the frontend we are only interested in things originating in the `static` files
-    * in the frontend we are not interested in anything originating in `packed_plugins.js`
-
-### Bug fixes
-
-  * [#3088](https://github.com/foosel/OctoPrint/issues/3088) (regression) - Fix 500 error on index rendering in case of plugins that use unicode in plugin vars.
-  * [#3089](https://github.com/foosel/OctoPrint/issues/3089) (regression) - Fix missing `_chamberTemp` definition
-  * [#3090](https://github.com/foosel/OctoPrint/issues/3090) (regression) - Fix missing method causing an exception on `/api/printer/tool` endpoint
-  * [#3091](https://github.com/foosel/OctoPrint/issues/3091) (regression) - Printer Safety Check: Fix unicode errors in certain communication scenarios.
-  * [#3092](https://github.com/foosel/OctoPrint/issues/3092) - Fix invalid tool parameter detection on `/api/printer/tool` endpoint.
-  * [#3098](https://github.com/foosel/OctoPrint/issues/3098) - Backup: Exclude temporary timelapse files as well if timelapses are excluded from backup.
-  * Fix missing default value for `self._errorValue` in comm layer.
-  * Don't read return code on async system commands, it won't work.
-
-### Unreproduced issues
-
-The following issues were reported in RC1 but so far have been unreproduced and further data to analyse them is still missing. If you encounter any of them please report back with a [fully filled out issue template](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#what-should-i-include-in-a-bug-report):
-
-  * ["Print completes but temp data appears to be 'stuck' at last known value for bed and hotend."](https://github.com/foosel/OctoPrint/issues/3087#issuecomment-478369220)
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports.
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11rc1...1.3.11rc1)
-
-## 1.3.11rc1 (2019-03-28)
+## 1.3.11 (2019-05-14)
 
 ### Heads-up: 1.3.11 unbundles the Cura plugin
 
-If you rely on the Cura Plugin for your workflow that so far was bundled with OctoPrint, be sure to install the [Cura Legacy plugin](https://github.com/OctoPrint/OctoPrint-CuraLegacy) that's now also available on the plugin repository.
+If you rely on the Cura Plugin for your workflow that so far was bundled with OctoPrint, be sure to install the [Cura Legacy plugin](https://github.com/OctoPrint/OctoPrint-CuraLegacy) that's now also [available on the plugin repository](https://plugins.octoprint.org/plugins/curalegacy/).
 
 Once installed the Cura Legacy plugin will import the settings and profiles from the former bundled Cura plugin automatically on first start.
-
-### Heads-up: 1.3.11 bundles a new Error Tracking plugin, please enable it on Release Candidates
-
-The Error Tracking plugin is a completely separate plugin from the existing Anonymous Usage Tracking plugin. It's tracking is disabled by default. Its purpose is to collect error information from instances in order to allow better issue analysis especially during the Release Candidate phase, or when prompted after reporting a bug. Thus it will also ask you to enable it on start while subscribed to an RC release channel. 
-
-The plugin uses a [sentry.io](https://sentry.io) instance, kindly provided to OctoPrint by sentry.io.
 
 ### Improvements
 
@@ -142,12 +63,23 @@ The plugin uses a [sentry.io](https://sentry.io) instance, kindly provided to Oc
   * Use `monotonic_time` for relative times everywhere.
   * Support for heated chamber firmware capabilities.
   * Remove `UI_API_KEY` and API disabling. With the inclusion of the ForceLogin plugin that doesn't serve a real purpose anymore in most cases, and it was only ever more of a rate limiting feature than an actual security measure anyhow. Plus it lead to a ton of false security alarms. 
+  * More resilience against broken configurations.
+  * More resilience against platform startup issues during environment detection.
+  * Don't confuse users with current `pip`'s "Python 2.7 is EOL" messages
+  * Define empty `UI_API_KEY` for backwards compatibility with third party plugins
+  * Add config flag `server.ignoredIncompleteStartup` to override incomplete startup detection
+  * Hardening against errors triggered during print time estimation
+  * Introduce setting to disable exclusive claim on serial port. There might be issues with this out there in the field, so having the option to disable it is a good thing.
   * Docs: Improve docs of connection API to avoid issues as encountered in [#3043](https://github.com/foosel/OctoPrint/issues/3043).
   * Action Command Prompt plugin: Set `M876` as default command as discussed in [MarlinFirmware/Marlin#12982](https://github.com/MarlinFirmware/Marlin/pull/12982).
   * Action Command Prompt plugin: Add `M876` to `EMERGENCY_PARSER` compliant commands, if configured accordingly. See also [MarlinFirmware/Marlin#12982](https://github.com/MarlinFirmware/Marlin/pull/12982).
   * Action Command Prompt plugin: Signal support for action command prompts to firmware via `M876 P1`, if configured accordingly. See also [MarlinFirmware/Marlin#12982](https://github.com/MarlinFirmware/Marlin/pull/12982).
   * Action Command Prompt plugin: Properly handle `PROMPT_SUPPORT` capability report from firmware and configure action command prompt support accordingly. See also [MarlinFirmware/Marlin#12982](https://github.com/MarlinFirmware/Marlin/pull/12982).
   * Error Tracking plugin: New plugin utilizing [sentry.io](https://sentry.io) to track any kind of errors thrown in either backend or the default UI. Will ship disabled by default, has to be enabled by the user. Release Candidates will prompt users to enable it in order to improve on error detection during RC phase.
+  * Error Tracking: Severely restrict what gets tracked:
+    * we are only interested in handled core exceptions or unhandled exceptions
+    * we are not interested at all in `SerialException`
+  * Error Tracking: Further restriction of what gets tracked
   * Forcelogin plugin: Set sorting key to 0 to increase likelihood of coming before alternative UIs.
   * Forcelogin plugin: Add favicon meta tags.
   * Plugin Manager plugin, Softwareupdate plugin: Use scrollables instead of pagination.
@@ -177,10 +109,26 @@ The plugin uses a [sentry.io](https://sentry.io) instance, kindly provided to Oc
   * [#3053](https://github.com/foosel/OctoPrint/pull/3053) - GCODE Viewer: Fix an issue with multi extruder files where only a higher extruder index is actually used and all prior ones are undefined.
   * [#3080](https://github.com/foosel/OctoPrint/issues/3080) - Virtual Printer plugin: Fix tracking of negative movements and homing.
   * [#3071](https://github.com/foosel/OctoPrint/issues/3071) - Application Keys plugin: Fix appkeys not working when access control is disabled.
+  * [#3088](https://github.com/foosel/OctoPrint/issues/3088) (regression) - Fix 500 error on index rendering in case of plugins that use unicode in plugin vars.
+  * [#3089](https://github.com/foosel/OctoPrint/issues/3089) (regression) - Fix missing `_chamberTemp` definition
+  * [#3090](https://github.com/foosel/OctoPrint/issues/3090) (regression) - Fix missing method causing an exception on `/api/printer/tool` endpoint
+  * [#3091](https://github.com/foosel/OctoPrint/issues/3091) (regression) - Printer Safety Check: Fix unicode errors in certain communication scenarios.
+  * [#3092](https://github.com/foosel/OctoPrint/issues/3092) - Fix invalid tool parameter detection on `/api/printer/tool` endpoint.
+  * [#3098](https://github.com/foosel/OctoPrint/issues/3098) - Backup: Exclude temporary timelapse files as well if timelapses are excluded from backup.
+  * [#3105](https://github.com/foosel/OctoPrint/issues/3105) (regression) - Virtual printer: Fix an encoding issue
+  * [#3108](https://github.com/foosel/OctoPrint/issues/3108) (regression) - Fix bug in port detection
+  * [#3111](https://github.com/foosel/OctoPrint/issues/3111) (regression) - Refresh port list after disconnect to detect vanishing ports
+  * [#3115](https://github.com/foosel/OctoPrint/issues/3115) (regression) - Fix extra newlines in `serial.log` and empty lines on terminal
+  * [#3116](https://github.com/foosel/OctoPrint/issues/3116) - Fix potential division by zero
   * Fix a typo in an error message during startup.
   * `paused` action command must not trigger *any* local processing. See also [MarlinFirmware/Marlin#12982](https://github.com/MarlinFirmware/Marlin/pull/12982).
   * Only use page size from local storage in `ItemListHelper` if configured.
   * Fix caching headers on main view.
+  * Fix missing default value for `self._errorValue` in comm layer.
+  * Don't read return code on async system commands, it won't work.
+  * Fix wrong textual representation of `STARTING` state
+  * Fix some potential encoding errors in the comm layer
+  * Fix for the file list in the UI not getting refreshed after an SD list refresh from the printer.
   * Docs: Fix documentation for firmware info & capability plugin hooks.
   * Docs: Fix a formatting issue in the event docs, making it seem like events were deprecated when it was only payload entries that are deprecated.
   * Forcelogin plugin: Never handle the UI if ACL is disabled.
@@ -189,11 +137,16 @@ The plugin uses a [sentry.io](https://sentry.io) instance, kindly provided to Oc
 
 ### Special thanks to all the contributors!
 
-Special thanks to everyone who contributed to this release candidate, especially [@agrif](https://github.com/agrif), [@akraus53](https://github.com/akraus53), [@AndyQ](https://github.com/AndyQ), [@CapnBry](https://github.com/CapnBry), [@DanielJoyce](https://github.com/DanielJoyce), [@devildant](https://github.com/devildant), [@Fabi0San](https://github.com/Fabi0San), [@fake-name](https://github.com/fake-name), [@fieldOfView](https://github.com/fieldOfView), [@gloomyandy](https://github.com/gloomyandy), [@HarlemSquirrel](https://github.com/HarlemSquirrel), [@hgross](https://github.com/hgross), [@jubaleth](https://github.com/foosel/OctoPrint/commits?author=jubaleth), [@melgish](https://github.com/melgish), [@rgriebl](https://github.com/rgriebl) and [@tedder](https://github.com/tedder) for their PRs.
+Special thanks to everyone who contributed to this release, especially [@agrif](https://github.com/agrif), [@akraus53](https://github.com/akraus53), [@AndyQ](https://github.com/AndyQ), [@CapnBry](https://github.com/CapnBry), [@DanielJoyce](https://github.com/DanielJoyce), [@devildant](https://github.com/devildant), [@Fabi0San](https://github.com/Fabi0San), [@fake-name](https://github.com/fake-name), [@fieldOfView](https://github.com/fieldOfView), [@gloomyandy](https://github.com/gloomyandy), [@HarlemSquirrel](https://github.com/HarlemSquirrel), [@hgross](https://github.com/hgross), [@jubaleth](https://github.com/foosel/OctoPrint/commits?author=jubaleth), [@melgish](https://github.com/melgish), [@rgriebl](https://github.com/rgriebl) and [@tedder](https://github.com/tedder) for their PRs.
 
 ### More information
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10...1.3.11rc1)
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.10...1.3.11)
+  * Release Candidates:
+    * [1.3.11rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.11rc1)
+    * [1.3.11rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.11rc2)
+    * [1.3.11rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.11rc3)
+    * A big **Thank you!** to everyone who reported back on these release candidates this time: [@arhi](https://github.com/arhi), [@b-morgan](https://github.com/b-morgan), [@CRCinAU](https://github.com/CRCinAU), [@devildant](https://github.com/devildant), [@evanquinnalaska](https://github.com/evanquinnalaska), [@FormerLurker](https://github.com/FormerLurker), [@gege2b](https://github.com/gege2b), [@isbric](https://github.com/isbric), [@JohnOCFII](https://github.com/JohnOCFII), [@kazibole](https://github.com/kazibole), [@nionio6915](https://github.com/nionio6915), [@reloxx13](https://github.com/reloxx13), [@schnello](https://github.com/schnello), [@trunzoc](https://github.com/trunzoc), [@vfrdirk](https://github.com/vfrdirk) & [@zeroflow](https://github.com/zeroflow)
 
 ## 1.3.10 (2018-12-10)
 
