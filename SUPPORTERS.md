@@ -21,7 +21,7 @@ thanks to everyone who contributed!
   * E3D BigBox
   * Eric Betts
   * Ernesto Martinez
-  * Frank Sander
+  * Franziska Kunsmann
   * George Robles
   * jean-claude migneault
   * Jeff Renfer
@@ -54,4 +54,4 @@ thanks to everyone who contributed!
   * Trent Shumay
   * Ulrich Kempken
 
-and 1521 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1544 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
