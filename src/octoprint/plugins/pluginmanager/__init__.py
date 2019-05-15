@@ -37,6 +37,9 @@ _DATA_FORMAT_VERSION = "v2"
 
 
 def map_repository_entry(entry):
+	if not isinstance(entry, dict):
+		return None
+
 	result = copy.deepcopy(entry)
 
 	if not "follow_dependency_links" in result:
@@ -797,7 +800,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
 			return None
 
-		repo_data = r.json()
+		try:
+			repo_data = r.json()
+		except Exception as e:
+			self._logger.exception("Error while reading repository data")
+			return None
+
+		# validation
+		if not isinstance(repo_data, (list, tuple)):
+			self._logger.warn("Invalid repository data: expected a list, got {!r}".format(repo_data))
+			return None
 
 		try:
 			import json
@@ -814,7 +826,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		self._repository_plugins = map(map_repository_entry, repo_data)
+		self._repository_plugins = filter(lambda x: x is not None,
+		                                  map(map_repository_entry, repo_data))
 		return True
 
 	def _fetch_notices_from_disk(self):
