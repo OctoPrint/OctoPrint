@@ -485,7 +485,7 @@ class Server(object):
 			except:
 				self._logger.exception("Error while trying to migrate settings for "
 				                       "plugin {}, ignoring it".format(implementation._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra=dict(plugin=implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
