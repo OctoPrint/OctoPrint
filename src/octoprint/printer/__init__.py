@@ -50,7 +50,7 @@ class PrinterInterface(object):
 	valid_tool_regex = re.compile(r"^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
 
-	valid_heater_regex = re.compile(r"^(tool\d+|bed)$")
+	valid_heater_regex = re.compile(r"^(tool\d+|bed|chamber)$")
 	"""Regex for valid heater identifiers."""
 
 	@classmethod

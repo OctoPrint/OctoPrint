@@ -1139,10 +1139,12 @@ $(function() {
             }).sort();
             extensions = extensions.join(", ");
             var error = "<p>"
-                + _.sprintf(gettext("Could not upload the file. Make sure that it is a valid file with one of these extensions: %(extensions)s"),
+                + _.sprintf(gettext("Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"),
                             {extensions: extensions})
                 + "</p>";
-            error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            if (data.jqXHR.responseText) {
+                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            }
             new PNotify({
                 title: "Upload failed",
                 text: error,

@@ -25,7 +25,7 @@ from collections import OrderedDict
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
-from octoprint.util import utmify, count
+from octoprint.util import utmify, count, monotonic_time
 from flask_babel import gettext
 from octoprint import __version__ as OCTOPRINT_VERSION
 
@@ -377,10 +377,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		url = config["url"]
 		try:
-			start = time.time()
+			start = monotonic_time()
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
-			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
+			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], monotonic_time() - start))
 		except Exception:
 			self._logger.exception(
 				"Could not fetch channel {} from {}".format(key, config["url"]))

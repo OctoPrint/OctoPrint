@@ -1,21 +1,32 @@
-table {
-  th, td {
-    &.settings_plugin_plugin_manager_plugins_name {
-      text-overflow: ellipsis;
-      text-align: left;
-    }
+#settings_plugin_pluginmanager_pluginlist {
+  display: block;
+  width: auto;
+  height: 500px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding-right: 2px;
+  margin-bottom: 1em;
 
-    &.settings_plugin_plugin_manager_plugins_actions {
-      text-align: center;
-      width: 80px;
+  table {
 
-      a {
-        text-decoration: none;
-        color: #000;
+    th, td {
+      &.settings_plugin_plugin_manager_plugins_name {
+        text-overflow: ellipsis;
+        text-align: left;
+      }
 
-        &.disabled {
-          color: #ccc;
-          cursor: default;
+      &.settings_plugin_plugin_manager_plugins_actions {
+        text-align: center;
+        width: 80px;
+
+        a {
+          text-decoration: none;
+          color: #000;
+
+          &.disabled {
+            color: #ccc;
+            cursor: default;
+          }
         }
       }
     }

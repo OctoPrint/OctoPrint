@@ -201,8 +201,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
 	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
-	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
-	        is determined be presence of injected ``_identifier`` property.
+	    initialized (boolean): Ignored.
 	"""
 
 	if not isinstance(types, (list, tuple)):
@@ -216,7 +215,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
-		if initialized and not hasattr(plugin, "_identifier"):
+		if not hasattr(plugin, "_identifier"):
 			continue
 
 		if hasattr(plugin, method):
@@ -226,7 +225,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 				if callback:
 					callback(plugin._identifier, plugin, result)
 			except Exception as exc:
-				logger.exception("Error while calling plugin %s" % plugin._identifier)
+				logger.exception("Error while calling plugin %s" % plugin._identifier, extra=dict(plugin=plugin._identifier))
 				if error_callback:
 					error_callback(plugin._identifier, plugin, exc)
 
@@ -302,6 +301,17 @@ class PluginSettings(SubSettings):
 	.. method:: set_boolean(path, value, force=False)
 
 	   Like :func:`set` but ensures the value is an ``boolean`` through attempted conversion before setting it.
+
+	.. method:: save(force=False, trigger_event=False)
+
+	   Saves the settings to ``config.yaml`` if there are active changes. If ``force`` is set to ``True`` the settings
+	   will be saved even if there are no changes. Settings ``trigger_event`` to ``True`` will cause a ``SettingsUpdated``
+	   :ref:`event <sec-events-available_events-settings>` to get triggered.
+
+	   :param force: Force saving to ``config.yaml`` even if there are no changes.
+	   :type force: boolean
+	   :param trigger_event: Trigger the ``SettingsUpdated`` :ref:`event <sec-events-available_events-settings>` on save.
+	   :type trigger_event: boolean
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):

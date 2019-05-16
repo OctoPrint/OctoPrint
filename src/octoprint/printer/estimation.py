@@ -43,6 +43,8 @@ class PrintTimeEstimator(object):
 				if interval <= 0:
 					interval = 1.0
 				rolling_window = 15 / interval
+				if rolling_window < 1:
+					rolling_window = 1
 
 				# we are happy when one rolling window has been stable
 				countdown = rolling_window
@@ -229,14 +231,14 @@ class TimeEstimationHelper(object):
 
 	@property
 	def average_total_rolling(self):
-		if not self._count or self._count < self._rolling_window:
+		if not self._count or self._count < self._rolling_window or not len(self._totals):
 			return -1
 		else:
 			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):
-		if not self._count or self._count < self._rolling_window + 1:
+		if not self._count or self._count < self._rolling_window + 1 or not len(self._distances):
 			return -1
 		else:
 			return sum(self._distances) / len(self._distances)

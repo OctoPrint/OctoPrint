@@ -82,6 +82,7 @@ CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
+CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
 
 
 class FallbackValue(object):
@@ -192,6 +193,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._capability_support = dict()
 		self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = True
 		self._capability_support[CAPABILITY_BUSY_PROTOCOL] = True
+		self._capability_support[CAPABILITY_CHAMBER_TEMP] = True
 
 		self._transport = None
 
@@ -559,6 +561,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
 		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_bed_temperature"}
+		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait),
+		                    tags=tags)
+
+	def set_chamber_temperature(self, temperature, wait=False, *args, **kwargs):
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_chamber_temperature"}
 		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait),
 		                    tags=tags)
 
@@ -1284,6 +1291,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		if "B" in temperatures:
 			actual, target = temperatures["B"]
 			self._internal_flags["temperatures"].set_bed(actual=actual, target=target)
+
+		if "C" in temperatures and (self._capability_support.get(CAPABILITY_CHAMBER_TEMP, False) or self._printer_profile["heatedChamber"]):
+			actual, target = temperatures["C"]
+			self._internal_flags["temperatures"].set_chamber(actual=actual, target=target)
 
 		self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
 
@@ -2049,6 +2060,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["temperatures"].set_bed(target=target)
 			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
 
+	def _gcode_M141_sent(self, command, wait=False, support_r=False):
+		target = None
+		if command.s is not None:
+			target = float(command.s)
+		elif command.r is not None and support_r:
+			target = float(command.r)
+
+		if target:
+			self._internal_flags["temperatures"].set_chamber(target=target)
+			self.notify_listeners("on_protocol_temperature", self, self._internal_flags["temperatures"].as_dict())
+
 	def _gcode_M109_sent(self, command):
 		self._internal_flags["heatup_start"] = monotonic_time()
 		self._internal_flags["long_running_command"] = True
@@ -2060,6 +2082,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._internal_flags["long_running_command"] = True
 		self._internal_flags["heating"] = True
 		self._gcode_M140_sent(command, wait=True, support_r=True)
+
+	def _gcode_M191_sent(self, command):
+		self._internal_flags["heatup_start"] = monotonic_time()
+		self._internal_flags["long_running_command"] = True
+		self._internal_flags["heating"] = True
+		self._gcode_M141_sent(command, wait=True, support_r=True)
 
 	def _gcode_M116_sent(self, command):
 		self._internal_flags["heatup_start"] = monotonic_time()

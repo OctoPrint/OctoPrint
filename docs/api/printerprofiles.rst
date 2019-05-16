@@ -52,6 +52,7 @@ Retrieve all printer profiles
               "height": 200
             },
             "heatedBed": true,
+            "heatedChamber": false,
             "axes": {
               "x": {
                 "speed": 6000,
@@ -93,6 +94,7 @@ Retrieve all printer profiles
               "height": 200
             },
             "heatedBed": true,
+            "heatedChamber": true,
             "axes": {
               "x": {
                 "speed": 6000,
@@ -184,6 +186,7 @@ Add a new printer profile
             "height": 200
           },
           "heatedBed": true,
+          "heatedChamber": false,
           "axes": {
             "x": {
               "speed": 6000,
@@ -267,6 +270,7 @@ Add a new printer profile
             "height": 300
           },
           "heatedBed": false,
+          "heatedChamber": false,
           "axes": {
             "x": {
               "speed": 6000,
@@ -352,6 +356,7 @@ Update an existing printer profile
             "height": 200
           },
           "heatedBed": true,
+          "heatedChamber": false,
           "axes": {
             "x": {
               "speed": 6000,
@@ -578,6 +583,10 @@ Profile
      - 0..1
      - ``boolean``
      - Whether the printer has a heated bed (``true``) or not (``false``)
+   * - ``heatedChamber``
+     - 0..1
+     - ``boolean``
+     - Whether the printer has a heated chamber (``true``) or not (``false``)
    * - ``axes``
      - 0..1
      - Object

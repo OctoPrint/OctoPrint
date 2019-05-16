@@ -20,7 +20,7 @@
                     <th class="settings_users_details_key">{{ _('Permissions') }}</th>
                     <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
                 </tr>
-                <tr data-bind="visible: $root.api_enabled() && apikey">
+                <tr data-bind="visible: apikey">
                     <th class="settings_users_details_key">{{ _('API Key') }}</th>
                     <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></td>
                 </tr>
@@ -150,7 +150,7 @@
                     <span class="help-inline" data-bind="visible: $root.access.users.editor.passwordMismatch()">{{ _('Passwords do not match') }}</span>
                 </div>
             </div>
-            <fieldset data-bind="visible: api_enabled">
+            <fieldset>
                 <legend>API Key</legend>
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>

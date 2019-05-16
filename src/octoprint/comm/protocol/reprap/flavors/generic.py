@@ -433,6 +433,10 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 		return GcodeCommand("M190" if wait else "M140", s=temperature)
 
 	@classmethod
+	def command_set_chamber_temp(cls, temperature, wait=False):
+		return GcodeCommand("M191" if wait else "M141", s=temperature)
+
+	@classmethod
 	def command_set_relative_positioning(cls):
 		return GcodeCommand("G91")
 

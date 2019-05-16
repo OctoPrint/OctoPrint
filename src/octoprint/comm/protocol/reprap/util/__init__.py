@@ -312,10 +312,12 @@ class TemperatureRecord(object):
 	def __init__(self):
 		self._tools = dict()
 		self._bed = (None, None)
+		self._chamber = (None, None)
 
 	def copy_from(self, other):
 		self._tools = other.tools
 		self._bed = other.bed
+		self._chamber = other.chamber
 
 	def set_tool(self, tool, actual=None, target=None):
 		current = self._tools.get(tool, (None, None))
@@ -325,6 +327,10 @@ class TemperatureRecord(object):
 		current = self._bed
 		self._bed = self._to_new_tuple(current, actual, target)
 
+	def set_chamber(self, actual=None, target=None):
+		current = self._chamber()
+		self._chamber = self._to_new_tuple(current, actual, target)
+
 	@property
 	def tools(self):
 		return dict(self._tools)
@@ -332,6 +338,10 @@ class TemperatureRecord(object):
 	@property
 	def bed(self):
 		return self._bed
+
+	@property
+	def chamber(self):
+		return self._chamber
 
 	def as_dict(self):
 		result = dict()
@@ -344,6 +354,10 @@ class TemperatureRecord(object):
 		bed = self.bed
 		result["bed"] = dict(actual=bed[0],
 		                     target=bed[1])
+
+		chamber = self.chamber
+		result["chamber"] = dict(actual=chamber[0],
+		                         target=chamber[1])
 
 		return result
 
@@ -359,6 +373,10 @@ class TemperatureRecord(object):
 		bed = self.bed
 		result["b"] = dict(actual=bed[0],
 		                   target=bed[1])
+
+		chamber = self.chamber
+		result["c"] = dict(actual=chamber[0],
+		                   target=chamber[1])
 
 		return result
 

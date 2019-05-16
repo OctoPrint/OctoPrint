@@ -736,9 +736,10 @@ octoprint.comm.protocol.scripts
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
    handled scripts. If not, None should be returned directly.
 
-   If the hook handler has something to add to the specified script, it may return a 2-tuple or a 3-tuple with the first entry
+   If the hook handler has something to add to the specified script, it may return a 2-tuple, a 3-tuple or a 4-tuple with the first entry
    defining the prefix (what to *prepend* to the script in question), the second entry defining the postfix (what to
-   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script. Both prefix and postfix can be None to signify that nothing should be prepended
+   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script on third and additional tags to set on the
+   commands on fourth position. Both prefix and postfix can be None to signify that nothing should be prepended
    respectively appended.
 
    The returned prefix and postfix entries may be either iterables of script lines or a string including newlines of the script lines (which

@@ -68,6 +68,9 @@ A printer profile is a ``dict`` of the following structure:
    * - ``heatedBed``
      - ``bool``
      - Whether the printer has a heated bed (``True``) or not (``False``)
+   * - ``heatedChamber``
+     - ``bool``
+     - Whether the printer has a heated chamber (``True``) or not (``False``)
    * - ``extruder``
      - ``dict``
      - Information about the printer's extruders
@@ -219,6 +222,7 @@ class PrinterProfileManager(object):
 			custom_box = False
 		),
 		heatedBed = True,
+		heatedChamber = False,
 		extruder=dict(
 			count = 1,
 			offsets = [
@@ -508,6 +512,10 @@ class PrinterProfileManager(object):
 
 		if "extruder" in profile and "sharedNozzle" in profile["extruder"] and profile["extruder"]["sharedNozzle"]:
 			profile["extruder"]["offsets"] = [(0.0, 0.0)]
+			modified = True
+
+		if not "heatedChamber" in profile:
+			profile["heatedChamber"] = False
 			modified = True
 
 		return modified

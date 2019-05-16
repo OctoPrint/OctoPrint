@@ -140,7 +140,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					try:
 						hook_checks = hook()
 					except Exception:
-						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
+						self._logger.exception("Error while retrieving update information "
+						                       "from plugin {name}".format(**locals()),
+						                       extra=dict(plugin=name))
 					else:
 						for key, default_config in hook_checks.items():
 							if key in effective_configs or key == "octoprint":
@@ -941,7 +943,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				elif restart_type == "environment":
 					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
 
-				if restart_command is not None:
+				if restart_command:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))
 					try:
 						self._perform_restart(restart_command)

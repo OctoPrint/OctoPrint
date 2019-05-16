@@ -36,7 +36,7 @@ from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
 
 from werkzeug.local import LocalProxy
-from werkzeug.contrib.cache import BaseCache
+from cachelib import BaseCache
 
 from past.builtins import basestring, long
 
@@ -274,7 +274,7 @@ def fix_flask_jsonify():
 			data = args or kwargs
 
 		return current_app.response_class(
-			dumps(data, indent=indent, separators=separators) + '\n',
+			dumps(data, indent=indent, separators=separators, allow_nan=False) + '\n',
 			mimetype='application/json'
 		)
 
@@ -462,7 +462,7 @@ class ReverseProxiedEnvironment(object):
 
 #~~ request and response versions
 
-from werkzeug.wrappers import cached_property
+from werkzeug.utils import cached_property
 
 class OctoPrintFlaskRequest(flask.Request):
 	environment_wrapper = staticmethod(lambda x: x)
@@ -592,7 +592,8 @@ def passive_login():
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
-			and settings().get(["accessControl", "localNetworks"]) is not None:
+			and settings().get(["accessControl", "localNetworks"]) is not None \
+			and not "active_logout" in flask.request.cookies:
 
 		autologin_as = settings().get(["accessControl", "autologinAs"])
 		local_networks = _local_networks()
@@ -781,7 +782,7 @@ def cache_check_response_headers(response):
 
 	headers = response.headers
 
-	if "Cache-Control" in headers and "no-cache" in headers["Cache-Control"]:
+	if "Cache-Control" in headers and ("no-cache" in headers["Cache-Control"] or "no-store" in headers["Cache-Control"]):
 		return True
 
 	if "Pragma" in headers and "no-cache" in headers["Pragma"]:
@@ -1050,6 +1051,18 @@ def conditional(condition, met):
 	return decorator
 
 
+def with_client_revalidation(f):
+	@functools.wraps(f)
+	def decorated_function(*args, **kwargs):
+		r = f(*args, **kwargs)
+
+		if isinstance(r, flask.Response):
+			r = add_revalidation_response_headers(r)
+
+		return r
+	return decorated_function
+
+
 def with_revalidation_checking(etag_factory=None,
                                lastmodified_factory=None,
                                condition=None,
@@ -1135,6 +1148,11 @@ def check_lastmodified(lastmodified):
 	       lastmodified >= flask.request.if_modified_since
 
 
+def add_revalidation_response_headers(response):
+	response.headers["Cache-Control"] = "no-cache, must-revalidate"
+	return response
+
+
 def add_non_caching_response_headers(response):
 	response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
 	response.headers["Pragma"] = "no-cache"
@@ -1183,12 +1201,11 @@ def get_flask_user_from_request(request):
 	"""
 	import octoprint.server.util
 	import flask_login
-	from octoprint.settings import settings
 
 	user = None
 
 	apikey = octoprint.server.util.get_api_key(request)
-	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
+	if apikey is not None:
 		user = octoprint.server.util.get_user_for_apikey(apikey)
 
 	if user is None:
@@ -1457,7 +1474,8 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			all_assets = implementation.get_assets()
 			basefolder = implementation.get_asset_folder()
 		except Exception:
-			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name))
+			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name),
+			                 extra=dict(plugin=name))
 			continue
 
 		def asset_exists(category, asset):

@@ -79,7 +79,9 @@ def full_extension_tree():
 				continue
 			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
 		except Exception:
-			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from SlicerPlugin {name}".format(name=plugin.key))
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from SlicerPlugin {name}".format(name=plugin._identifier),
+			                                      extra=dict(plugin=plugin._identifier))
 
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
@@ -89,7 +91,9 @@ def full_extension_tree():
 				continue
 			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
 		except Exception:
-			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from hook {name}".format(name=name),
+			                                      extra=dict(plugin=name))
 
 	return result
 
@@ -338,13 +342,13 @@ class FileManager(object):
 																	   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
-					hash = source_meta["hash"]
+					hash = source_meta.get("hash", "n/a")
 
 					import io
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.BytesIO(";Generated from {stl_name} (hash: {hash})\n".format(**locals()).encode("ascii", "replace")),
 					                         io.FileIO(tmp_path, 'rb'))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
@@ -352,7 +356,7 @@ class FileManager(object):
 					              display=display, links=links, allow_overwrite=True,
 					              printer_profile=printer_profile, analysis=_analysis)
 
-					end_time = time.time()
+					end_time = octoprint.util.monotonic_time()
 					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
 																  stl_location=source_location,
 																  gcode=dest_path,
@@ -377,8 +381,7 @@ class FileManager(object):
 
 		slicer = self._slicing_manager.get_slicer(slicer_name)
 
-		import time
-		start_time = time.time()
+		start_time = octoprint.util.monotonic_time()
 		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
 		                                             "stl_location": source_location,
 		                                             "gcode": dest_path,
@@ -433,7 +436,8 @@ class FileManager(object):
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
 						except Exception:
-							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
+							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier,
+							                       extra=dict(plugin=plugin._identifier))
 
 				import threading
 				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))
@@ -468,11 +472,11 @@ class FileManager(object):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
-		for hook in self._preprocessor_hooks.values():
+		for name, hook in self._preprocessor_hooks.items():
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 			except Exception:
-				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
+				self._logger.exception("Error when calling preprocessor hook for plugin {}, ignoring".format(name), extra=dict(plugin=name))
 				continue
 
 			if hook_file_object is not None:

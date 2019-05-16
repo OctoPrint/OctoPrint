@@ -105,7 +105,10 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		after_logging(**kwargs)
 
 	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
-	settings_incomplete_startup_safemode = "incomplete_startup" if settings.getBoolean(["server", "incompleteStartup"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" \
+		if settings.getBoolean(["server", "incompleteStartup"]) \
+		   and not settings.getBoolean(["server", "ignoreIncompleteStartup"]) \
+		else None
 	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):

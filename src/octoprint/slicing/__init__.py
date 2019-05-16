@@ -140,7 +140,8 @@ class SlicingManager(object):
 			try:
 				slicers[plugin.get_slicer_properties()["type"]] = plugin
 			except Exception:
-				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier))
+				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 				continue
 		self._slicers = slicers
 

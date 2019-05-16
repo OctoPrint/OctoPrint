@@ -794,7 +794,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	def get_ui_custom_etag(self):
 		"""
 		Allows to use a custom way to calculate the ETag, instead of the default method (hashing
-		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
+		OctoPrint's version, tracked file paths and ``LastModified`` value).
 
 		Returns:
 		    str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
@@ -1391,8 +1391,9 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 	# noinspection PyMethodMayBeStatic
 	def is_blueprint_protected(self):
 		"""
-		Whether a valid API key is needed to access the blueprint (the default) or not. Note that this only restricts
-		access to the blueprint's dynamic methods, static files are always accessible without API key.
+		Whether a login session is needed to access the blueprint if the forcelogin plugin is enabled or not. Requiring
+		a session is the default. Note that this only restricts access to the blueprint's dynamic methods, static files
+		are always accessible.
 		"""
 
 		return True

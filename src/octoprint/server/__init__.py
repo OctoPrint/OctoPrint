@@ -96,11 +96,9 @@ import octoprint.timelapse
 import octoprint._version
 import octoprint.filemanager.analysis
 import octoprint.slicing
-from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
+from octoprint.server.util import loginFromApiKeyRequestHandler, corsRequestHandler, \
 	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
-
-UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
 VERSION = __version__
 BRANCH = __branch__
@@ -166,7 +164,17 @@ def load_user(id):
 	return None
 
 def load_user_from_request(request):
-	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+	user = None
+
+	if settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
+		# Basic Authentication?
+		user = util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+	if settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		# Remote user header?
+		user = util.get_user_for_remote_user_header(request)
+
+	return user
 
 def unauthorized_user():
 	from flask import abort
@@ -178,7 +186,7 @@ def unauthorized_user():
 
 class Server(object):
 	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
-	             event_manager=None, host=None, port=None, debug=False, safe_mode=False, allow_root=False,
+	             event_manager=None, host=None, port=None, v6_only=False, debug=False, safe_mode=False, allow_root=False,
 	             octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
@@ -187,6 +195,7 @@ class Server(object):
 		self._event_manager = event_manager
 		self._host = host
 		self._port = port
+		self._v6_only = v6_only
 		self._debug = debug
 		self._safe_mode = safe_mode
 		self._allow_root = allow_root
@@ -208,8 +217,9 @@ class Server(object):
 		if self._settings is None:
 			self._settings = settings()
 
-		self._settings.setBoolean(["server", "incompleteStartup"], True)
-		self._settings.save()
+		if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
+			self._settings.setBoolean(["server", "incompleteStartup"], True)
+			self._settings.save()
 
 		if self._plugin_manager is None:
 			self._plugin_manager = octoprint.plugin.plugin_manager()
@@ -241,6 +251,9 @@ class Server(object):
 
 		debug = self._debug
 		safe_mode = self._safe_mode
+
+		if self._v6_only and not octoprint.util.net.HAS_V6:
+			raise RuntimeError("IPv6 only mode configured but system doesn't support IPv6")
 
 		if self._host is None:
 			host = self._settings.get(["server", "host"])
@@ -305,7 +318,8 @@ class Server(object):
 				additional_factories = hook()
 				analysis_queue_factories.update(**additional_factories)
 			except Exception:
-				self._logger.exception("Error while processing analysis queues from {}".format(name))
+				self._logger.exception("Error while processing analysis queues from {}".format(name),
+				                       extra=dict(plugin=name))
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
 
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
@@ -404,7 +418,8 @@ class Server(object):
 					self._logger.debug("Created user manager instance from factory {}".format(name))
 					break
 			except Exception:
-				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
+				self._logger.exception("Error while creating user manager instance from factory {}".format(name),
+				                       extra=dict(plugin=name))
 		else:
 			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
@@ -435,7 +450,8 @@ class Server(object):
 					self._logger.debug("Created printer instance from factory {}".format(name))
 					break
 			except Exception:
-				self._logger.exception("Error while creating printer instance from factory {}".format(name))
+				self._logger.exception("Error while creating printer instance from factory {}".format(name),
+				                       extra=dict(plugin=name))
 		else:
 			printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		components.update(dict(printer=printer))
@@ -524,7 +540,8 @@ class Server(object):
 						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
 						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
 			except Exception:
-				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name))
+				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
 		                                               settings_plugin_inject_factory]
@@ -535,7 +552,9 @@ class Server(object):
 			try:
 				settings_plugin_config_migration_and_cleanup(implementation._identifier, implementation)
 			except Exception:
-				self._logger.exception("Error while trying to migrate settings for plugin {}, ignoring it".format(implementation._identifier))
+				self._logger.exception("Error while trying to migrate settings for "
+				                       "plugin {}, ignoring it".format(implementation._identifier),
+				                       extra=dict(plugin=implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -609,7 +628,8 @@ class Server(object):
 			try:
 				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
 			except Exception:
-				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin))
+				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin),
+				                       extra=dict(plugin=plugin))
 		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
 
 		timelapse_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST),] + access_validators_from_plugins
@@ -679,7 +699,9 @@ class Server(object):
 			try:
 				result = hook(list(server_routes))
 			except Exception:
-				self._logger.exception("There was an error while retrieving additional server routes from plugin hook {name}".format(**locals()))
+				self._logger.exception("There was an error while retrieving additional "
+				                       "server routes from plugin hook {name}".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -722,7 +744,9 @@ class Server(object):
 			try:
 				result = hook(list(max_body_sizes))
 			except Exception:
-				self._logger.exception("There was an error while retrieving additional upload sizes from plugin hook {name}".format(**locals()))
+				self._logger.exception("There was an error while retrieving additional "
+				                       "upload sizes from plugin hook {name}".format(**locals()),
+				                       extra=dict(plugin=name))
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -756,9 +780,13 @@ class Server(object):
 			server_kwargs.update(dict(idle_connection_timeout=600))
 
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
-		self._server.listen(self._port, address=self._host if self._host != "::" else None) # special case - tornado
-		                                                                                    # only listens on v4 & v6
-		                                                                                    # if we use None as address
+
+		listening_address = self._host
+		if self._host == "::" and not self._v6_only:
+			# special case - tornado only listens on v4 _and_ v6 if we use None as address
+			listening_address = None
+
+		self._server.listen(self._port, address=listening_address)
 
 		### From now on it's ok to launch subprocesses again
 
@@ -779,13 +807,17 @@ class Server(object):
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
+		watched = self._settings.getBaseFolder("watched")
+		watchdog_handler = util.watchdog.GcodeWatchdogHandler(fileManager, printer)
+		watchdog_handler.initial_scan(watched)
+
 		if self._settings.getBoolean(["feature", "pollWatched"]):
-			# use less performant polling observer if explicitely configured
+			# use less performant polling observer if explicitly configured
 			observer = PollingObserver()
 		else:
 			# use os default
 			observer = Observer()
-		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), self._settings.getBaseFolder("watched"))
+		observer.schedule(watchdog_handler, watched)
 		observer.start()
 
 		# run our startup plugins
@@ -803,8 +835,16 @@ class Server(object):
 
 		# prepare our after startup function
 		def on_after_startup():
-			self._logger.info("Listening on http://{}:{}".format(self._host if not ":" in self._host else "[" + self._host + "]",
-			                                                     self._port))
+			if self._host == "::":
+				if self._v6_only:
+					# only v6
+					self._logger.info("Listening on http://[::]:{port}".format(port=self._port))
+				else:
+					# all v4 and v6
+					self._logger.info("Listening on http://0.0.0.0:{port} and http://[::]:{port}".format(port=self._port))
+			else:
+				self._logger.info("Listening on http://{}:{}".format(self._host if not ":" in self._host else "[" + self._host + "]",
+				                                                     self._port))
 
 			if safe_mode and self._settings.getBoolean(["server", "startOnceInSafeMode"]):
 				self._logger.info("Server started successfully in safe mode as requested from config, removing flag")
@@ -1168,7 +1208,7 @@ class Server(object):
 					kwargs.update(additional_request_data)
 
 					try:
-						start = time.time()
+						start = octoprint.util.monotonic_time()
 						if plugin:
 							logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
 						else:
@@ -1182,7 +1222,7 @@ class Server(object):
 						builder = EnvironBuilder(**kwargs)
 						app(builder.get_environ(), lambda *a, **kw: None)
 
-						logger.info("... done in {:.2f}s".format(time.time() - start))
+						logger.info("... done in {:.2f}s".format(octoprint.util.monotonic_time() - start))
 					except Exception:
 						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
@@ -1239,7 +1279,9 @@ class Server(object):
 				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 				blueprints[prefix] = blueprint
 			except Exception:
-				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
+				self._logger.exception("Error while registering blueprint of "
+				                       "plugin {}, ignoring it".format(plugin._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 				continue
 
 		return blueprints
@@ -1255,7 +1297,9 @@ class Server(object):
 				blueprint, prefix = self._prepare_asset_plugin(plugin)
 				blueprints[prefix] = blueprint
 			except Exception:
-				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
+				self._logger.exception("Error while registering assets of plugin "
+				                       "{}, ignoring it".format(plugin._identifier),
+				                       extra=dict(plugin=plugin._identifier))
 				continue
 
 		return blueprints
@@ -1266,15 +1310,9 @@ class Server(object):
 		if blueprint is None:
 			return
 
-		if plugin.is_blueprint_protected():
-			blueprint.before_request(corsRequestHandler)
-			blueprint.before_request(enforceApiKeyRequestHandler)
-			blueprint.before_request(loginFromApiKeyRequestHandler)
-			blueprint.after_request(corsResponseHandler)
-		else:
-			blueprint.before_request(corsRequestHandler)
-			blueprint.before_request(loginFromApiKeyRequestHandler)
-			blueprint.after_request(corsResponseHandler)
+		blueprint.before_request(corsRequestHandler)
+		blueprint.before_request(loginFromApiKeyRequestHandler)
+		blueprint.after_request(corsResponseHandler)
 
 		url_prefix = "/plugin/{name}".format(name=name)
 		app.register_blueprint(blueprint, url_prefix=url_prefix)
@@ -1303,22 +1341,24 @@ class Server(object):
 		for plugin, hook in before_hooks.items():
 			for blueprint in blueprints:
 				try:
-					result = hook()
+					result = hook(plugin=plugin)
 					if isinstance(result, (list, tuple)):
 						for h in result:
 							blueprint.before_request(h)
 				except Exception:
-					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin))
+					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin),
+					                       extra=dict(plugin=plugin))
 
 		for plugin, hook in after_hooks.items():
 			for blueprint in blueprints:
 				try:
-					result = hook()
+					result = hook(plugin=plugin)
 					if isinstance(result, (list, tuple)):
 						for h in result:
 							blueprint.after_request(h)
 				except Exception:
-					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin))
+					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
+					                       extra=dict(plugin=plugin))
 
 	def _setup_assets(self):
 		global app
@@ -1666,10 +1706,7 @@ class Server(object):
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
 		loginManager.anonymous_user = userManager.anonymous_user_factory
-
-		# login users authenticated by basic auth
-		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
+		loginManager.request_callback = load_user_from_request
 
 		loginManager.init_app(app, add_context_processor=False)
 
@@ -1744,23 +1781,42 @@ class Server(object):
 
 		rules = list(map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules)))
 
+		HTTPServerV4 = HTTPServer
+
 		class HTTPServerV6(HTTPServer):
 			address_family = socket.AF_INET6
 
+		class HTTPServerV6SingleStack(HTTPServerV6):
 			def __init__(self, *args, **kwargs):
-				HTTPServer.__init__(self, *args, **kwargs)
+				HTTPServerV6.__init__(self, *args, **kwargs)
 
-				# make sure to enable dual stack mode, otherwise the socket might only listen on IPv6
+				# explicitly set V6ONLY flag - seems to be the default, but just to make sure...
+				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 1)
+
+		class HTTPServerV6DualStack(HTTPServerV6):
+			def __init__(self, *args, **kwargs):
+				HTTPServerV6.__init__(self, *args, **kwargs)
+
+				# explicitly unset V6ONLY flag
 				self.socket.setsockopt(octoprint.util.net.IPPROTO_IPV6, octoprint.util.net.IPV6_V6ONLY, 0)
 
 		if ":" in host:
 			# v6
-			ServerClass = HTTPServerV6
+			if host == "::" and not self._v6_only:
+				ServerClass = HTTPServerV6DualStack
+			else:
+				ServerClass = HTTPServerV6SingleStack
 		else:
 			# v4
-			ServerClass = HTTPServer
+			ServerClass = HTTPServerV4
 
-		self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
+		if host == "::":
+			if self._v6_only:
+				self._logger.debug("Starting intermediary server on http://[::]:{port}".format(port=port))
+			else:
+				self._logger.debug("Starting intermediary server on http://0.0.0.0:{port} and http://[::]:{port}".format(port=port))
+		else:
+			self._logger.debug("Starting intermediary server on http://{}:{}".format(host if not ":" in host else "[" + host + "]", port))
 
 		self._intermediary_server = ServerClass((host, port),
 		                                        lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),

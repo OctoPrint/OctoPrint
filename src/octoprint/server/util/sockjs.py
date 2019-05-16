@@ -146,8 +146,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		config_hash = settings().config_hash
 
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", dict(apikey=octoprint.server.UI_API_KEY,
-		                             version=octoprint.server.VERSION,
+		self._emit("connected", dict(version=octoprint.server.VERSION,
 		                             display_version=octoprint.server.DISPLAY_VERSION,
 		                             branch=octoprint.server.BRANCH,
 		                             plugin_hash=plugin_hash.hexdigest(),
@@ -324,7 +323,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			try:
 				proceed = proceed and hook(self, self._user)
 			except Exception:
-				self._logger.exception("Error processing register hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing register hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		if not proceed:
 			return
@@ -385,7 +385,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			try:
 				proceed = proceed and hook(self, self._user, type, payload)
 			except Exception:
-				self._logger.exception("Error processing emit hook handler from plugin {}".format(name))
+				self._logger.exception("Error processing emit hook handler from plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 		if not proceed:
 			return
@@ -416,7 +417,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			try:
 				hook(self, self._user)
 			except Exception:
-				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 
 	def _on_logout(self):
 		self._user = self._userManager.anonymous_user_factory()
@@ -425,5 +427,6 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			try:
 				hook(self, self._user)
 			except Exception:
-				self._logger.exception("Error processing authed hook handler for plugin {}".format(name))
+				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
+				                       extra=dict(plugin=name))
 

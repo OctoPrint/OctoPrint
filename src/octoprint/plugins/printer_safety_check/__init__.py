@@ -9,6 +9,7 @@ import octoprint.plugin
 from octoprint.events import Events
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.util import to_unicode
 
 from .checks.firmware_unsafe import FirmwareUnsafeChecks
 
@@ -78,19 +79,24 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_gcode_received(self, comm_instance, line, *args, **kwargs):
 		if self._scan_received:
-			self._run_checks("received", line)
+			self._run_checks("received", to_unicode(line, errors="replace"))
 		return line
 
 	##~~ Firmware info hook handler
 
 	def on_firmware_info_received(self, comm_instance, firmware_name, firmware_data):
-		self._run_checks("m115", firmware_name, firmware_data)
+		self._run_checks("m115",
+		                 to_unicode(firmware_name, errors="replace"),
+		                 dict((to_unicode(key, errors="replace"), to_unicode(value, errors="replace"))
+		                      for key, value in firmware_data.items()))
 		self._scan_received = False
 
 	##~~ Firmware capability hook handler
 
 	def on_firmware_cap_received(self, comm_instance, cap, enabled, all_caps):
-		self._run_checks("cap", cap, enabled)
+		self._run_checks("cap",
+		                 to_unicode(cap, errors="replace"),
+		                 enabled)
 
 	##~~ Additional permissions hook handler
 

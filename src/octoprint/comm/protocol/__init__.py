@@ -370,6 +370,9 @@ class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin, MultiToolProtocolMixin)
 	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
 		pass
 
+	def set_chamber_temperature(self, temperature, wait=False, *args, **kwargs):
+		pass
+
 
 class FanControlProtocolMixin(object):
 	def set_fan_speed(self, speed, *args, **kwargs):
