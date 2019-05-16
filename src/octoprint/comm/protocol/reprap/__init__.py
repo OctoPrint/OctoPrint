@@ -826,6 +826,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                         run_first=True)
 			self._temperature_poller.start()
 
+	def _on_switched_state_starting(self, old_state):
+		# reset line numbers every time we start a new print job
+		self.send_commands(self.flavor.command_set_line(0))
+
 	def _on_switched_state_disconnecting(self, old_state):
 		self._handle_disconnecting(old_state, False)
 
