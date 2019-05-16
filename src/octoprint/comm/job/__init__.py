@@ -493,16 +493,27 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
 		self._active = True
 		self._last_pos = position
 
-		self._protocol.start_file_print(self._filename, position=position, user=user, tags=tags, **kwargs)
+		self._protocol.start_file_print(self._filename,
+		                                position=position,
+		                                user=user,
+		                                tags=tags,
+		                                part_of_job=True,
+		                                **kwargs)
 		self._protocol.start_file_print_status_monitor()
 
 	def pause(self, user=None, tags=None, **kwargs):
 		super(SDFilePrintjob, self).pause(user=user, tags=tags, **kwargs)
-		self._protocol.pause_file_print(user=user, tags=tags**kwargs)
+		self._protocol.pause_file_print(user=user,
+		                                tags=tags,
+		                                part_of_job=True,
+		                                **kwargs)
 
 	def resume(self, user=None, tags=None, **kwargs):
 		super(SDFilePrintjob, self).resume(user=user, tags=tags, **kwargs)
-		self._protocol.resume_file_print(user=user, tags=tags, **kwargs)
+		self._protocol.resume_file_print(user=user,
+		                                 tags=tags,
+		                                 part_of_job=True,
+		                                 **kwargs)
 
 	def on_protocol_sd_status(self, protocol, pos, total):
 		self._last_pos = pos

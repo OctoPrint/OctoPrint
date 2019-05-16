@@ -11,14 +11,25 @@ class MarlinFlavor(GenericFlavor):
 	key = "marlin"
 	name = "Marlin"
 
-class BqMarlinFlavor(MarlinFlavor):
+	emergency_commands = ["M112", "M108", "M410"]
+	heatup_abortable = True
 
-	key = "bqmarlin"
-	name = "Marlin: BQ variant"
 
-	long_running_commands = MarlinFlavor.long_running_commands + ["G92", "M800", "M801"]
+class MarlinLegacyFlavor(GenericFlavor):
+
+	key = "marlinlegacy"
+	name = "Legacy Marlin"
+
+	@classmethod
+	def identifier(cls, firmware_name, firmware_info):
+		return "marlin v1" in firmware_name.lower()
+
 
 class PrusaMarlinFlavor(MarlinFlavor):
 
 	key = "prusamarlin"
 	name = "Marlin: Prusa variant"
+
+	@classmethod
+	def identifier(cls, firmware_name, firmware_info):
+		return "prusa-firmware" in firmware_name.lower() and "marlin" in firmware_name.lower()

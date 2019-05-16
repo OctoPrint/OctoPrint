@@ -21,6 +21,10 @@ class ScriptQueue(PrependableQueue):
 	pass
 
 
+class JobQueue(PrependableQueue):
+	pass
+
+
 class CommandQueue(TypedQueue):
 
 	def __init__(self, *args, **kwargs):

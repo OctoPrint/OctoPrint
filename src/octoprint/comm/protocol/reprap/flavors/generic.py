@@ -66,6 +66,8 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	pausing_commands = ["M0", "M1", "M25"]
 	emergency_commands = ["M112", "M108", "M410"]
 
+	heatup_abortable = False
+
 	regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 	"""Regex to use for request line numbers in resend requests"""
 
@@ -422,6 +424,10 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	@classmethod
 	def command_emergency_stop(cls):
 		return GcodeCommand("M112")
+
+	@classmethod
+	def command_abort_heatup(cls):
+		return GcodeCommand("M108")
 
 	@classmethod
 	def command_set_extruder_temp(cls, temperature, tool=None, wait=False):
