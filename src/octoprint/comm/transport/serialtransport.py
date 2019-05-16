@@ -23,8 +23,14 @@ class SerialTransport(Transport):
 
 	@classmethod
 	def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
-		patterns = SerialTransport.unix_port_patterns + additional_ports
-		baudrates = SerialTransport.suggested_baudrates + additional_baudrates
+		patterns = SerialTransport.unix_port_patterns
+		if additional_ports:
+			patterns += additional_ports
+
+		baudrates = SerialTransport.suggested_baudrates
+		if additional_baudrates:
+			baudrates += additional_baudrates
+
 		return type(cls.__name__ + b"WithAdditionalPorts",
 		            (cls,),
 		            {b"unix_port_patterns": patterns,
@@ -90,7 +96,7 @@ class SerialTransport(Transport):
 	def create_connection(self, port="AUTO", baudrate=0):
 		factory = self.serial_factory
 		if self.serial_factory is None:
-			factory = serial.Serial
+			factory = self._default_serial_factory
 
 		self._closing = False
 		self._serial = factory(port=port, baudrate=baudrate)
@@ -177,6 +183,9 @@ class SerialTransport(Transport):
 	@property
 	def in_waiting(self):
 		return getattr(self._serial, "in_waiting", 0)
+
+	def _default_serial_factory(self, port=None, baudrate=None):
+		return serial.Serial(port=port, baudrate=baudrate)
 
 	def __str__(self):
 		return "SerialTransport"

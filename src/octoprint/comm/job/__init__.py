@@ -6,7 +6,6 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import time
 import copy
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState, FileManagementProtocolMixin

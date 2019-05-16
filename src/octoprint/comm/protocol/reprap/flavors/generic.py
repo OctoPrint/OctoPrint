@@ -62,6 +62,9 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	checksum_requiring_commands = ["M110"]
 	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M190", "M109", "M400", "M226"]
 	asynchronous_commands = ["G0", "G1", "G2", "G3"]
+	blocked_commands = ["M0", "M1"]
+	pausing_commands = ["M0", "M1", "M25"]
+	emergency_commands = ["M112", "M108", "M410"]
 
 	regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 	"""Regex to use for request line numbers in resend requests"""

@@ -443,7 +443,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                          "continuing without it".format(self.timeouts.get("position_log_wait", 10.0)))
 		self._pause_preparation_done()
 
-	def _pause_preparation_done(self, check_timer=True, suppress_script=None, user=None):
+	def _pause_preparation_done(self, check_timer=True, suppress_script=False, user=None):
 		if user is None:
 			with self._action_users_mutex:
 				try:
@@ -466,12 +466,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			# wait for current commands to be sent, then switch to paused state
 			def finalize():
-				self.state = ProtocolState.PAUSED
+				# only switch to PAUSED if we were still PAUSING, to avoid "swallowing" received resumes during
+				# pausing
+				if self.state == ProtocolState.PAUSING:
+					self.state = ProtocolState.PAUSED
 			self.send_commands(SendQueueMarker(finalize))
 			self._continue_sending()
 
 	def pause_processing(self, user=None, tags=None, log_position=True, local_handling=True):
-		if self._job is None or self.state != ProtocolState.PROCESSING:
+		if self._job is None or self.state != (ProtocolState.PROCESSING,
+		                                       ProtocolState.STARTING,
+		                                       ProtocolState.RESUMING):
 			return
 
 		if isinstance(self._job, CopyJobMixin):
@@ -672,20 +677,25 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			else:
 				return to_command(c, type=ct, tags=t)
 
-		if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not self.job_on_hold and not force:
-			if len(commands) > 1:
-				command_type = None
+		result = False
+		for command in commands:
+			sanitized = sanitize_command(command, command_type, tags)
 
-			result = False
-			for command in commands:
+			emergency = False
+			if isinstance(sanitized, GcodeCommand) and sanitized.code in self.flavor.emergency_commands:
+				emergency = True
+
+			if self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not self.job_on_hold and not force:
 				try:
 					self._command_queue.put((sanitize_command(command, command_type, tags), on_sent), item_type=command_type)
 					result = True
 				except TypeAlreadyInQueue as e:
 					self._logger.debug("Type already in queue: " + e.type)
-			return result
-		elif self._is_operational() or force:
-			return self._send_commands(*commands, on_sent=on_sent, command_type=command_type, tags=tags)
+
+			elif self._is_operational() or force or emergency:
+				result = self._send_commands(command, on_sent=on_sent, command_type=command_type, tags=tags) or result
+
+		return result
 
 	def send_script(self, script, context=None, *args, **kwargs):
 		if context is None:
@@ -839,7 +849,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                      tags=tags)
 
 		def finalize():
-			self.state = ProtocolState.PROCESSING
+			if self.state == ProtocolState.RESUMING:
+				self.state = ProtocolState.PROCESSING
 		self.send_commands(SendQueueMarker(finalize))
 		self._continue_sending()
 
@@ -1683,7 +1694,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		while self._send_queue_active:
 			try:
 				# wait until we have something in the queue
-				entry = self._send_queue.get()
+				try:
+					entry = self._send_queue.get()
+				except queue.Empty:
+					continue
 
 				try:
 					# make sure we are still active
@@ -1919,7 +1933,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		"""
 		Args:
 			command (Command): the command to send
-			message (str): the message to log
+			message (unicode): the message to log
 		"""
 		# only jump the queue with our command if the EMERGENCY_PARSER capability is available
 		if not self._internal_flags["firmware_capability_support"].get(CAPABILITY_EMERGENCY_PARSER, False) \
@@ -1998,24 +2012,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["current_f"] = command.f
 	_gcode_G3_sent = _gcode_G2_sent
 	_gcode_G28_sent = _gcode_G2_sent
-
-	def _gcode_M0_queuing(self, command):
-		self.pause_file_print()
-
-		# TODO make configurable & active
-		#if self._block_M0_M1:
-		#	if self.state in ProtocolState.PROCESSING_STATES:
-		#		self._log("Not sending {} to printer since it's known to block communication, only pausing".format(command))
-		#	else:
-		#		self._log("Not sending {} to printer since it's known to block communication".format(command))
-		#	return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-	_gcode_M1_queuing = _gcode_M0_queuing
-
-	def _gcode_M25_queuing(self, command):
-		# M25 while not printing from SD will be handled as pause. This way it can be used as another marker
-		# for GCODE induced pausing. Send it to the printer anyway though.
-		if self.state == ProtocolState.PROCESSING and not isinstance(self._job, SDFilePrintjob):
-			self.pause_file_print()
 
 	def _gcode_M140_queuing(self, command):
 		if not self._printer_profile["heatedBed"]:
@@ -2156,19 +2152,13 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		"""
 
 		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
-		gcode = "M112"
-		if gcode in GCODE_TO_EVENT:
-			self._event_bus.fire(GCODE_TO_EVENT[gcode])
+		event = GCODE_TO_EVENT.get("M112")
+		if event is not None:
+			self._event_bus.fire(event)
 
 		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
-
-	def _gcode_M108_queuing(self, command):
-		return self._emergency_force_send(command, "Force-sending M108 to the printer")
-
-	def _gcode_M410_queuing(self, command):
-		return self._emergency_force_send(command, "Force-sending M410 to the printer")
 
 	# TODO
 	#def _gcode_M114_queued(self, *args, **kwargs):
@@ -2217,7 +2207,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	##~~ command phase handlers
 
-	def _command_phase_sending(self, cmd, gcode=None):
+	def _command_phase_queuing(self, command):
+		if command.code in self.flavor.emergency_commands and command.code != self.flavor.command_emergency_stop().code:
+			message = "Force-sending {} to the printer".format(command)
+			self._logger.info(message)
+			return self._emergency_force_send(command, message)
+
+		if self.state in ProtocolState.PROCESSING_STATES and command.code in self.flavor.pausing_commands:
+			self._logger.info("Pausing print job due to command {}".format(command))
+			self.pause_processing(tags=command.tags)
+
+		if command.code in self.flavor.blocked_commands:
+			self._logger.info("Not sending {} to printer, it's configured as a blocked command".format(command))
+			return None,
+
+	def _command_phase_sending(self, command, gcode=None):
 		if gcode is not None and gcode.code in self.flavor.long_running_commands:
 			self._internal_flags["long_running_command"] = True
 
