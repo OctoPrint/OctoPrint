@@ -213,26 +213,30 @@ class Protocol(ListenerAware, TransportListener):
 	def process(self, job, position=0, user=None, tags=None, **kwargs):
 		if not job.can_process(self):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
+
 		self._job = job
 		self._job.register_listener(self)
+
+		self.state = ProtocolState.STARTING
+		self.notify_listeners("on_protocol_job_starting", self, self._job, user=user, tags=tags, **kwargs)
 		self._job.process(self, position=position, user=user, tags=tags, **kwargs)
 
 	def pause_processing(self, user=None, tags=None, **kwargs):
-		if self._job is None or self.state != ProtocolState.PROCESSING:
+		if self._job is None or self.state not in ProtocolState.PROCESSING_STATES:
 			return
 		self.state = ProtocolState.PAUSING
 		self.notify_listeners("on_protocol_job_pausing", self, self._job, user=user, tags=tags, **kwargs)
 		self._job.pause(user=user, tags=tags)
 
 	def resume_processing(self, user=None, tags=None, **kwargs):
-		if self._job is None or self.state != ProtocolState.PAUSED:
+		if self._job is None or self.state not in (ProtocolState.PAUSING, ProtocolState.PAUSED):
 			return
 		self.state = ProtocolState.RESUMING
 		self.notify_listeners("on_protocol_job_resuming", self, self._job, user=user, tags=tags, **kwargs)
 		self._job.resume(user=user, tags=tags, **kwargs)
 
 	def cancel_processing(self, error=False, user=None, tags=None, **kwargs):
-		if self._job is not None and self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSED):
+		if self._job is not None and self.state in ProtocolState.PROCESSING_STATES + (ProtocolState.PAUSED,):
 			self.state = ProtocolState.CANCELLING
 			self.notify_listeners("on_protocol_job_cancelling", self, self._job, user=user, tags=tags, **kwargs)
 			self._job.cancel(error=error, user=user, tags=tags, **kwargs)
@@ -317,6 +321,7 @@ class ProtocolState(object):
 	CONNECTED = "connected"
 	DISCONNECTING = "disconnecting"
 	DISCONNECTED = "disconnected"
+	STARTING = "starting"
 	PROCESSING = "processing"
 	FINISHING = "finishing"
 	CANCELLING = "cancelling"
@@ -327,7 +332,7 @@ class ProtocolState(object):
 	DISCONNECTING_WITH_ERROR = "disconnecting_with_error"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
 
-	PROCESSING_STATES = (PROCESSING, CANCELLING, PAUSING, RESUMING, FINISHING)
+	PROCESSING_STATES = (STARTING, PROCESSING, CANCELLING, PAUSING, RESUMING, FINISHING)
 	OPERATIONAL_STATES = (CONNECTED, PAUSED) + PROCESSING_STATES
 
 class ProtocolSettings(SubSettings):

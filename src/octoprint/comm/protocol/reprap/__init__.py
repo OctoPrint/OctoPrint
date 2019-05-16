@@ -392,7 +392,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._continue_sending()
 
 	def cancel_processing(self, error=False, user=None, tags=None, log_position=True):
-		if self.state not in (ProtocolState.PROCESSING, ProtocolState.PAUSED, ProtocolState.PAUSING):
+		if self.state not in ProtocolState.PROCESSING_STATES + (ProtocolState.PAUSED,):
 			return
 
 		if self._job is None:
@@ -805,6 +805,17 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._send_queue_active = False
 
 	##~~ Job handling
+
+	def on_job_started(self, job, *args, **kwargs):
+		if job != self._job:
+			return
+
+		self.notify_listeners("on_protocol_job_started", self, job, *args, **kwargs)
+
+		def finalize():
+			self.state = ProtocolState.PROCESSING
+		self.send_commands(SendQueueMarker(finalize))
+		self._continue_sending()
 
 	def on_job_cancelled(self, job, *args, **kwargs):
 		if job != self._job:
@@ -1288,7 +1299,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					actual, target = temperatures[tool]
 				self._internal_flags["temperatures"].set_tool(x, actual=actual, target=target)
 
-		if "B" in temperatures:
+		if "B" in temperatures and self._printer_profile["heatedBed"]:
 			actual, target = temperatures["B"]
 			self._internal_flags["temperatures"].set_bed(actual=actual, target=target)
 
