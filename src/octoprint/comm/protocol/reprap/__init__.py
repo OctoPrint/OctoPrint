@@ -516,6 +516,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._pause_position_timer.start()
 
 			self.send_commands(self.flavor.command_get_position(),
+			                   part_of_job=True,
 			                   tags=tags | {"trigger:comm.set_pause",
 			                                "trigger:pause",
 			                                "trigger:record_position"})
@@ -526,6 +527,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._action_users["pause"] = user
 
 			self.send_commands(self.flavor.command_finish_moving(),
+			                   part_of_job=True,
 			                   on_sent=on_move_finish_requested,
 			                   tags=tags | {"trigger:comm.set_pause",
 			                                "trigger:pause",
@@ -868,7 +870,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		def finalize():
 			self.state = ProtocolState.PROCESSING
-		self.send_commands(SendQueueMarker(finalize))
+		self.send_commands(SendQueueMarker(finalize), part_of_job=True)
 		self._continue_sending()
 
 	def on_job_cancelled(self, job, *args, **kwargs):
@@ -895,7 +897,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		def finalize():
 			if self.state == ProtocolState.RESUMING:
 				self.state = ProtocolState.PROCESSING
-		self.send_commands(SendQueueMarker(finalize))
+		self.send_commands(SendQueueMarker(finalize), part_of_job=True)
 		self._continue_sending()
 
 	def on_job_done(self, job, *args, **kwargs):
@@ -909,7 +911,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		def finalize():
 			self.state = ProtocolState.CONNECTED
 			self.notify_listeners("on_protocol_job_done", self, job, *args, **kwargs)
-		self.send_commands(SendQueueMarker(finalize))
+		self.send_commands(SendQueueMarker(finalize), part_of_job=True)
 		self._continue_sending()
 
 	def _job_processed(self, job, *args, **kwargs):
