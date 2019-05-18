@@ -39,6 +39,7 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
 	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer, \
 	monotonic_time
+from octoprint.util.platform import get_os
 
 try:
 	import _winreg
@@ -2613,20 +2614,25 @@ class MachineCom(object):
 			self._log("Connecting to: %s" % port)
 
 			serial_port_args = {
-				"port": str(port),
 				"baudrate": baudrateList()[0] if baudrate == 0 else baudrate,
 				"timeout": read_timeout,
 				"write_timeout": 0,
-				"parity": serial.PARITY_ODD
 			}
 
 			if settings().getBoolean(["serial", "exclusive"]):
 				serial_port_args["exclusive"] = True
 
 			serial_obj = serial.Serial(**serial_port_args)
+			serial_obj.port = str(port)
 
-			serial_obj.close()
-			serial_obj.parity = serial.PARITY_NONE
+			# This may also not be applicable to other platforms, in which case
+			# this should probably get rewritten as a whitelist for the platforms
+			# that have issues here.
+			if get_os() != 'freebsd':
+				serial_obj.parity = serial.PARITY_ODD
+				serial_obj.open()
+				serial_obj.close()
+				serial_obj.parity = serial.PARITY_NONE
 			serial_obj.open()
 
 			return BufferedReadlineWrapper(serial_obj)
