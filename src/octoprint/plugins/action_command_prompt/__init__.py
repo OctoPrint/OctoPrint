@@ -69,6 +69,8 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	def on_event(self, event, payload):
 		if event == Events.CONNECTED and self._enable == "always" and self._enable_signal_support:
 			self._printer.commands(["{command} P1".format(command=self._command)])
+		elif event == Events.DISCONNECTED:
+			self._close_prompt()
 
 	#~ SettingsPlugin
 
