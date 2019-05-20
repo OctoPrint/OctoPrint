@@ -2626,7 +2626,7 @@ class MachineCom(object):
 			serial_obj.port = str(port)
 
 			use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
-			needs_parity_workaround = True #get_os() == "linux" and os.path.exists("/etc/debian_version") # See #673
+			needs_parity_workaround = get_os() == "linux" and os.path.exists("/etc/debian_version") # See #673
 
 			if use_parity_workaround == "always" or (needs_parity_workaround and use_parity_workaround == "detect"):
 				serial_obj.parity = serial.PARITY_ODD
