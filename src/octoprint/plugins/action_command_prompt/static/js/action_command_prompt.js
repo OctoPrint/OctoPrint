@@ -24,6 +24,7 @@ $(function() {
                 title: gettext("Message from your printer"),
                 message: text,
                 selections: buttons,
+                maycancel: true, // see #3171
                 onselect: function(index) {
                     if (index > -1) {
                         self._select(index);
