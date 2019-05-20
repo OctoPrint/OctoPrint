@@ -185,6 +185,7 @@ $(function() {
         self.serial_ignoreIdenticalResends =  ko.observable(undefined);
         self.serial_firmwareDetection =  ko.observable(undefined);
         self.serial_blockWhileDwelling =  ko.observable(undefined);
+        self.serial_useParityWorkaround = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);

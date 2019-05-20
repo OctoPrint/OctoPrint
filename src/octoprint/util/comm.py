@@ -2625,14 +2625,15 @@ class MachineCom(object):
 			serial_obj = serial.Serial(**serial_port_args)
 			serial_obj.port = str(port)
 
-			# This may also not be applicable to other platforms, in which case
-			# this should probably get rewritten as a whitelist for the platforms
-			# that have issues here.
-			if get_os() != 'freebsd':
+			use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
+			needs_parity_workaround = True #get_os() == "linux" and os.path.exists("/etc/debian_version") # See #673
+
+			if use_parity_workaround == "always" or (needs_parity_workaround and use_parity_workaround == "detect"):
 				serial_obj.parity = serial.PARITY_ODD
 				serial_obj.open()
 				serial_obj.close()
 				serial_obj.parity = serial.PARITY_NONE
+
 			serial_obj.open()
 
 			return BufferedReadlineWrapper(serial_obj)

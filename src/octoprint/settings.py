@@ -144,6 +144,7 @@ default_settings = {
 		"supportFAsCommand": False,
 		"firmwareDetection": True,
 		"blockWhileDwelling": False,
+		"useParityWorkaround": "detect",
 
 		"capabilities": {
 			"autoreport_temp": True,

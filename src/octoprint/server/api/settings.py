@@ -172,6 +172,7 @@ def getSettings():
 			"ignoreIdenticalResends": s.getBoolean(["serial", "ignoreIdenticalResends"]),
 			"firmwareDetection": s.getBoolean(["serial", "firmwareDetection"]),
 			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
+			"useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
 			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
@@ -459,6 +460,10 @@ def _saveSettings(data):
 		if "ignoreIdenticalResends" in data["serial"]: s.setBoolean(["serial", "ignoreIdenticalResends"], data["serial"]["ignoreIdenticalResends"])
 		if "firmwareDetection" in data["serial"]: s.setBoolean(["serial", "firmwareDetection"], data["serial"]["firmwareDetection"])
 		if "blockWhileDwelling" in data["serial"]: s.setBoolean(["serial", "blockWhileDwelling"], data["serial"]["blockWhileDwelling"])
+		if "useParityWorkaround" in data["serial"]:
+			value = data["serial"]["useParityWorkaround"]
+			if value in ("always", "detect", "never"):
+				s.set(["serial", "useParityWorkaround"], value)
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
 		if "abortHeatupOnCancel" in data["serial"]: s.setBoolean(["serial", "abortHeatupOnCancel"], data["serial"]["abortHeatupOnCancel"])
