@@ -201,7 +201,7 @@ $(function() {
                 return "";
             }
 
-            return formatDate(date);
+            return formatDate(date, {seconds:true});
         });
 
         self.fromCurrentData = function(data) {
