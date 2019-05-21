@@ -1542,6 +1542,8 @@ class MachineCom(object):
 		current_tool_key = "T%d" % current_tool
 		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
 
+		maxToolNum = max(maxToolNum, self._printerProfileManager.get_current_or_default()["extruder"]["count"] - 1)
+
 		for name, hook in self._temperature_hooks.items():
 			try:
 				parsedTemps = hook(self, parsedTemps)
@@ -1551,7 +1553,7 @@ class MachineCom(object):
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name),
 				                       extra=dict(plugin=name))
 
-		if current_tool_key in parsedTemps.keys():
+		if current_tool_key in parsedTemps:
 			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
