@@ -89,19 +89,21 @@ $(function() {
             var profile = response.current.profile;
             var profiles = response.options.printerProfiles;
 
-            var protocol = response.current.protocol;
+            var protocolKey = response.current.protocol;
             var protocolOptions = response.current.protocolOptions;
             if (!protocolOptions) {
                 protocolOptions = {};
             }
             var protocols = response.options.protocols;
+            var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
 
-            var transport = response.current.transport;
+            var transportKey = response.current.transport;
             var transportOptions = response.current.transportOptions;
             if (!transportOptions) {
                 transportOptions = {};
             }
             var transports = response.options.transports;
+            var transport = _.find(transports, function(t) { return t.key === transportKey });
 
             if (!self.selectedPrinter() && profiles && profiles.indexOf(profile) >= 0)
                 self.selectedPrinter(profile);
