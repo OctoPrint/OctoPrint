@@ -19,19 +19,19 @@
         return this.base.get(url, opts);
     };
 
-    OctoPrintConnectionProfileClient.prototype.add = function (profile, opts) {
-        profile = profile || {};
-
-        var data = {profile: profile};
-
-        return this.base.postJson(url, data, opts);
-    };
-
     OctoPrintConnectionProfileClient.prototype.get = function (id, opts) {
         return this.base.get(profileUrl(id), opts);
     };
 
-    OctoPrintConnectionProfileClient.prototype. update = function (id, profile, opts) {
+    OctoPrintConnectionProfileClient.prototype.set = function (id, profile, allowOverwrite, makeDefault, opts) {
+        profile = profile || {};
+
+        var data = {profile: profile, overwrite: allowOverwrite, default: makeDefault};
+
+        return this.base.putJson(profileUrl(id), data, opts);
+    };
+
+    OctoPrintConnectionProfileClient.prototype.update = function (id, profile, opts) {
         profile = profile || {};
 
         var data = {profile: profile};

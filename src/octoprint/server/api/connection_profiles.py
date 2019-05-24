@@ -43,10 +43,21 @@ def connectionProfilesList():
 	all_profiles = connectionProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
-@api.route("/connectionprofiles", methods=["POST"])
+@api.route("/connectionprofiles/<string:identifier>", methods=["GET"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
-def connectionProfilesAdd():
+@Permissions.CONNECTION.require(403)
+def connectionProfilesGet(identifier):
+	profile = connectionProfileManager.get(identifier)
+	if profile is None:
+		return make_response("Unknown profile: {}".format(identifier), 404)
+	else:
+		return jsonify(dict(profile=profile.as_dict()))
+
+
+@api.route("/connectionprofiles/<string:identifier>", methods=["PUT"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def connectionProfileSet(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
@@ -61,39 +72,29 @@ def connectionProfilesAdd():
 	if not "profile" in json_data:
 		return make_response("No profile included in request", 400)
 
+	allow_overwrite = json_data.get("overwrite", False)
+	make_default = json_data.get("default", False)
+
 	new_profile = json_data["profile"]
-	if not "id" in new_profile:
-		return make_response("Profile does not contain mandatory 'id' field", 400)
 	if not "name" in new_profile:
 		return make_response("Profile does not contain mandatory 'name' field", 400)
 
-	make_default = False
-	if "default" in new_profile:
-		make_default = True
-		del new_profile["default"]
+	if not "id" in new_profile:
+		new_profile["id"] = identifier
 
 	profile = connectionProfileManager.to_profile(new_profile)
 
 	try:
-		connectionProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
+		connectionProfileManager.save(profile, allow_overwrite=allow_overwrite, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except SaveError:
-		return make_response("Profile {} could not be saved".format(profile["id"]), 400)
+		return make_response("Profile {} could not be saved".format(profile.id), 400)
 	except Exception as e:
-		return make_response("Could not save profile: {}".format(e), 500)
+		return make_response("Could not save profile due to an unexpected error: {}".format(e), 500)
 	else:
 		return jsonify(dict(profile=profile.as_dict()))
 
-@api.route("/connectionprofiles/<string:identifier>", methods=["GET"])
-@no_firstrun_access
-@Permissions.CONNECTION.require(403)
-def connectionProfilesGet(identifier):
-	profile = connectionProfileManager.get(identifier)
-	if profile is None:
-		return make_response("Unknown profile: {}".format(identifier), 404)
-	else:
-		return jsonify(dict(profile=profile.as_dict()))
 
 @api.route("/connectionprofiles/<string:identifier>", methods=["DELETE"])
 @no_firstrun_access

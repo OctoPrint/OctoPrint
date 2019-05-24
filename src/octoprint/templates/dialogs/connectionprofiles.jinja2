@@ -17,6 +17,13 @@
                     <input class="input-block-level" type="text" data-bind="value: editor.identifier, attr: {placeholder: editor.identifierPlaceholder}">
                 </div>
             </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: editor.overwrite"> {{ _('Overwrite existing profile') }}
+                    </label>
+                </div>
+            </div>
             <!--
             <div class="control-group">
                 <div class="controls">

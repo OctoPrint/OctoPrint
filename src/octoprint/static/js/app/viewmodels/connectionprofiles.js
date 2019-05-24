@@ -7,11 +7,16 @@ $(function() {
 
         self.buttonText = ko.observable(gettext("Save"));
 
+        self.dialog = $("#connectionprofiles_save_dialog");
+
         self.profile = undefined;
 
         self.name = ko.observable();
         self.identifier = ko.observable();
         self.identifierPlaceholder = ko.observable();
+
+        self.overwrite = ko.observable(false);
+        self.makeDefault = ko.observable(false);
 
         self.name.subscribe(function() {
             self.identifierPlaceholder(self._sanitize(self.name()).toLowerCase());
@@ -29,8 +34,10 @@ $(function() {
             self.name(profile.name);
             self.identifier(profile.identifier);
 
+            self.overwrite(profile.identifier !== undefined);
+
             self.deferred = $.Deferred();
-            $("#connectionprofiles_save_dialog").modal("show");
+            self.dialog.modal("show");
             return self.deferred.promise();
         };
 
@@ -42,8 +49,9 @@ $(function() {
 
             self.profile.name = self.name();
 
-            OctoPrint.connectionprofiles.add(self.profile)
+            OctoPrint.connectionprofiles.set(self.profile.id, self.profile, self.overwrite(), self.makeDefault())
                 .done(function(response) {
+                    self.dialog.modal("hide");
                     if (self.deferred) {
                         self.deferred.resolve(response.profile);
                     }
