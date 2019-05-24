@@ -73,9 +73,7 @@ class SerialTransport(Transport):
 				from serial.tools import list_ports_common
 				ports = [list_ports_common.ListPortInfo(d) for d in devices]
 
-		port_values = sorted([Value(port.device, title=port.description) for port in ports], key=lambda x: x.title)
-		if len(port_values) > 1:
-			port_values = [Value(None, title="Auto detect")] + port_values
+		port_values = [Value(None, title="Auto detect")] + sorted([Value(port.device, title=port.description) for port in ports], key=lambda x: x.title)
 		return port_values
 
 	@classmethod

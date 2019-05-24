@@ -4,11 +4,12 @@ $(function() {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
-        self.printerProfiles = parameters[2];
-        self.about = parameters[3];
+        self.connectionProfiles = parameters[2];
+        self.printerProfiles = parameters[3];
+        self.about = parameters[4];
 
         // TODO: remove in upcoming version, this is only for backwards compatibility
-        self.users = parameters[4];
+        self.users = parameters[5];
 
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
@@ -1109,7 +1110,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SettingsViewModel,
-        dependencies: ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "connectionProfilesViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
 });

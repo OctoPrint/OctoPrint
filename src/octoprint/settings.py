@@ -275,6 +275,7 @@ default_settings = {
 		"plugins": None,
 		"slicingProfiles": None,
 		"printerProfiles": None,
+		"connectionProfiles": None,
 		"scripts": None,
 		"translations": None,
 		"generated": None,

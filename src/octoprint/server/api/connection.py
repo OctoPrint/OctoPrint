@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
-from octoprint.server import printer, printerProfileManager, NO_CONTENT
+from octoprint.server import printer, connectionProfileManager, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 from octoprint.access.permissions import Permissions
@@ -25,14 +25,15 @@ def _convert_protocol_options(options):
 @api.route("/connection", methods=["GET"])
 @Permissions.STATUS.require(403)
 def connectionState():
-	state, protocol, protocol_options, transport, transport_options, printer_profile = printer.get_current_connection_parameters()
+	params = printer.get_current_connection_parameters()
 
-	current = dict(state=state,
-	               profile=printer_profile["id"] if printer_profile is not None and "id" in printer_profile else "_default",
-	               protocol=protocol,
-	               protocolOptions=protocol_options,
-	               transport=transport,
-	               transportOptions=transport_options)
+	current = dict(state=params["state"],
+	               connection=params["connection"],
+	               profile=params["printer_profile"],
+	               protocol=params["protocol"],
+	               protocolOptions=params["protocol_args"],
+	               transport=params["transport"],
+	               transportOptions=params["transport_args"])
 
 	##~~ legacy
 
@@ -59,6 +60,9 @@ def connectionCommand():
 
 	if command == "connect":
 		kwargs = dict()
+
+		if "connection" in data:
+			kwargs["connection"] = data["connection"]
 
 		if "protocol" in data:
 			kwargs["protocol"] = data["protocol"]
@@ -126,10 +130,13 @@ def _get_options():
 	profile_options = printerProfileManager.get_all()
 	default_profile = printerProfileManager.get_default()
 
+	connection_profiles = connectionProfileManager.get_all()
+
 	options = dict(
 		ports=connection_options["ports"],
 		baudrates=connection_options["baudrates"],
 		printerProfiles=[dict(id=printer_profile["id"], name=printer_profile["name"] if "name" in printer_profile else printer_profile["id"]) for printer_profile in profile_options.values() if "id" in printer_profile],
+		connectionProfiles=[connection_profile.as_dict() for connection_profile in connection_profiles.values()],
 		portPreference=connection_options["portPreference"],
 		baudratePreference=connection_options["baudratePreference"],
 		printerProfilePreference=default_profile["id"] if "id" in default_profile else None,

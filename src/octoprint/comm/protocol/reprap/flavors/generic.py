@@ -106,6 +106,14 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	  * ``total``: total size of file being printed
 	"""
 
+	##~~ Overrides
+
+	_overrides = dict()
+
+	@classmethod
+	def with_overrides(cls, overrides):
+		return type(b"{}WithOverrides".format(cls.__name__), (cls,), overrides)
+
 	##~~ Identifier
 
 	@classmethod

@@ -30,6 +30,7 @@ api = Blueprint("api", __name__)
 from . import printer as api_printer
 from . import job as api_job
 from . import connection as api_connection
+from . import connection_profiles as api_connection_profiles
 from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse

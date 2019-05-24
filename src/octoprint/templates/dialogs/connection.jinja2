@@ -1,0 +1,120 @@
+<div id="connection_protocol_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Protocol Parameters') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal" action="javascript:void(0)">
+        <!-- ko foreach: protocolParameters -->
+        <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
+    </div>
+</div>
+
+<div id="connection_transport_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Protocol Parameters') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal" action="javascript:void(0)">
+        <!-- ko foreach: transportParameters -->
+        <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
+    </div>
+</div>
+
+<script type="text/html" id="connection_dialog_template_text">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_integer">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <input class="input-block-level" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_float">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <input class="input-block-level" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_choice">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_smallchoice">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <!-- ko foreach: choices -->
+            <label class="radio">
+                <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value"> <span data-bind="text: $data.title"></span>
+                <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            </label>
+            <!-- /ko -->
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_boolean">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="text: $data.title"></span>
+            </label>
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_suggestion">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_list">
+    <div class="control-group">
+        <label class="control-label" data-bind="text: $data.title"></label>
+        <div class="controls">
+            <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
+            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_group">
+    <fieldset>
+        <legend data-bind="text: $data.title"></legend>
+        <p data-bind="visible: $data.help, text: $data.help"></p>
+        <!-- ko foreach: params -->
+        <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+    </fieldset>
+</script>

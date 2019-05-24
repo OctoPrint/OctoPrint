@@ -14,7 +14,7 @@ from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 
-from octoprint.comm.protocol.reprap.flavors import GenericFlavor, all_flavors, lookup_flavor
+from octoprint.comm.protocol.reprap.flavors import FlavorOverride, GenericFlavor, all_flavors, lookup_flavor
 
 from octoprint.comm.protocol.reprap.scripts import GcodeScript
 
@@ -23,7 +23,7 @@ from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, JobQueue, Co
 
 from octoprint.comm.scripts import InvalidScript, UnknownScript
 
-from octoprint.comm.util.parameters import ChoiceType, Value
+from octoprint.comm.util.parameters import ChoiceType, Value, ParamGroup, BooleanType, SmallChoiceType
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob, CopyJobMixin
@@ -127,7 +127,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def get_connection_options(cls):
 		return [ChoiceType("flavor", "Firmware Flavor",
 		                   sorted([Value(f.key, title=f.name) for f in all_flavors()], key=lambda x: x.title),
-		                   default="generic")]
+		                   default="generic"),
+		        ParamGroup("flavor_overrides",
+		                   "Flavor Overrides",
+		                   [BooleanType("always_send_checksum", "Always send checksum", help="Check this to always send checksums", default=False),
+		                    SmallChoiceType("trigger_ok_after_resend",
+		                                    "Trigger ok after resend",
+		                                    [Value("detect", title="As detected"),
+		                                     Value("always", title="Always"),
+		                                     Value("never", title="Never")],
+		                                    default="detect")],
+		                   help="Just a test",
+		                   advanced=True)]
 
 	@staticmethod
 	def get_flavor_attributes_starting_with(flavor, prefix):
@@ -155,7 +166,12 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self.flavor = lookup_flavor(flavor)
 		if self.flavor is None:
 			self.flavor = GenericFlavor
-		self.set_current_args(flavor=self.flavor.key)
+
+		self.flavor_overrides = kwargs.get("flavor_overrides", dict())
+		self.flavor = self.flavor.with_overrides(self.flavor_overrides)
+
+		self.set_current_args(flavor=self.flavor.key,
+		                      flavor_overrides=self.flavor_overrides)
 
 		self._logger = logging.getLogger(__name__)
 		self._commdebug_logger = logging.getLogger("COMMDEBUG")
@@ -1479,7 +1495,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._current_linenumber = 0
 				self._last_lines.clear()
 
-		self.flavor = GenericFlavor
+		self.flavor = GenericFlavor.with_overrides(self.flavor_overrides)
 
 		self.send_commands(self.flavor.command_hello(),
 		                   self.flavor.command_set_line(0))
@@ -2337,7 +2353,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._logger.log(level, log)
 
 	def _switch_flavor(self, new_flavor):
-		self.flavor = new_flavor
+		self.flavor = new_flavor.with_overrides(self.flavor_overrides)
 
 		self._trigger_ok_after_resend = FallbackValue(self._trigger_ok_after_resend.value, fallback=self.flavor.trigger_ok_after_resend)
 

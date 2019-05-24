@@ -52,6 +52,7 @@ debug = False
 safe_mode = False
 
 printer = None
+connectionProfileManager = None
 printerProfileManager = None
 fileManager = None
 slicingManager = None
@@ -85,6 +86,7 @@ user_permission = octoprint.util.variable_deprecated("user_permission has been d
 
 # only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
+from octoprint.comm.connectionprofile import ConnectionProfileManager
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
@@ -228,6 +230,7 @@ class Server(object):
 		global babel
 
 		global printer
+		global connectionProfileManager
 		global printerProfileManager
 		global fileManager
 		global slicingManager
@@ -308,6 +311,7 @@ class Server(object):
 		# then initialize the plugin manager
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
 
+		connectionProfileManager = ConnectionProfileManager()
 		printerProfileManager = PrinterProfileManager()
 		eventManager = self._event_manager
 
@@ -369,6 +373,7 @@ class Server(object):
 
 		components = dict(
 			plugin_manager=pluginManager,
+			connection_profile_manager=connectionProfileManager,
 			printer_profile_manager=printerProfileManager,
 			event_bus=eventManager,
 			analysis_queue=analysisQueue,
@@ -453,7 +458,7 @@ class Server(object):
 				self._logger.exception("Error while creating printer instance from factory {}".format(name),
 				                       extra=dict(plugin=name))
 		else:
-			printer = Printer(fileManager, analysisQueue, printerProfileManager)
+			printer = Printer(fileManager, analysisQueue, connectionProfileManager, printerProfileManager)
 		components.update(dict(printer=printer))
 
 		def octoprint_plugin_inject_factory(name, implementation):

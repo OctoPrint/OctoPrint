@@ -78,7 +78,7 @@ class Printer(PrinterInterface,
 	itself with it as a callback to react to changes on the communication layer.
 	"""
 
-	def __init__(self, fileManager, analysisQueue, printerProfileManager):
+	def __init__(self, fileManager, analysisQueue, connectionProfileManager, printerProfileManager):
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class Printer(PrinterInterface,
 
 		self._analysis_queue = analysisQueue
 		self._file_manager = fileManager
+		self._connection_profile_manager = connectionProfileManager
 		self._printer_profile_manager = printerProfileManager
 
 		# state
@@ -133,6 +134,7 @@ class Printer(PrinterInterface,
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
 
 		# comm
+		self._connection = None
 		self._protocol = None
 		self._transport = None
 		self._job = None
@@ -293,37 +295,95 @@ class Printer(PrinterInterface,
 		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
 		CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
 
-		##~~ Printer profile
+		connection_id = kwargs.get("connection")
+		connection = None
+		if connection_id is not None:
+			connection = self._connection_profile_manager.get(connection_id)
 
-		profile_id = kwargs.get("profile")
-		if not profile_id:
-			profile_id = self._printer_profile_manager.get_default()["id"]
-		self._printer_profile_manager.select(profile_id)
-		profile = self._printer_profile_manager.get_current_or_default()
+		if connection is not None:
+			# we have a connection profile
+			self._connection = connection
 
-		##~~ Transport
+			##~~ Printer profile
+			profile_id = connection.printer_profile
+			self._printer_profile_manager.select(profile_id)
+			profile = self._printer_profile_manager.get_current_or_default()
 
-		selected_transport = kwargs.get("transport")
-		if not selected_transport:
-			port = kwargs.get("port")
-			baudrate = kwargs.get("baudrate")
+			##~~ Transport
 
-			if not port:
-				port = "AUTO"
-			if not baudrate:
-				baudrate = 0
+			selected_transport = connection.transport
+			transport_connect_kwargs = connection.transport_parameters
+			transport_connect_kwargs.update(kwargs.get("transport_options", dict()))
 
-			selected_transport = "serial"
-			transport_kwargs = dict(serial_factory=_serial_factory)
-			transport_connect_kwargs = dict(port=port, baudrate=baudrate)
+			transport_kwargs = dict()
+			transport_kwargs.update(dict(settings=settings(),
+			                             plugin_manager=plugin_manager(),
+			                             event_bus=eventManager(),
+			                             printer_profile=profile))
+
+			##~~ Protocol
+
+			selected_protocol = connection.protocol
+			protocol_kwargs = connection.protocol_parameters
+			protocol_kwargs.update(kwargs.get("protocol_options", dict()))
+
+			protocol_kwargs.update(dict(settings=settings(),
+			                            plugin_manager=plugin_manager(),
+			                            event_bus=eventManager(),
+			                            printer_profile=profile))
+
 		else:
-			transport_kwargs = kwargs.get("transport_kwargs", dict())
-			transport_connect_kwargs = kwargs.get("transport_options", dict())
+			self._connection = None
 
-		transport_kwargs.update(dict(settings=settings(),
-		                             plugin_manager=plugin_manager(),
-		                             event_bus=eventManager(),
-		                             printer_profile=profile))
+			##~~ Printer profile
+
+			profile_id = kwargs.get("profile")
+			if not profile_id:
+				profile_id = self._printer_profile_manager.get_default()["id"]
+
+			self._printer_profile_manager.select(profile_id)
+			profile = self._printer_profile_manager.get_current_or_default()
+
+			##~~ Transport
+
+			selected_transport = kwargs.get("transport")
+			if not selected_transport:
+				port = kwargs.get("port")
+				baudrate = kwargs.get("baudrate")
+
+				if not port:
+					port = "AUTO"
+				if not baudrate:
+					baudrate = 0
+
+				selected_transport = "serial"
+				transport_kwargs = dict(serial_factory=_serial_factory)
+				transport_connect_kwargs = dict(port=port, baudrate=baudrate)
+			else:
+				transport_kwargs = kwargs.get("transport_kwargs", dict())
+				transport_connect_kwargs = kwargs.get("transport_options", dict())
+
+			transport_kwargs.update(dict(settings=settings(),
+			                             plugin_manager=plugin_manager(),
+			                             event_bus=eventManager(),
+			                             printer_profile=profile))
+
+			##~~ Protocol
+
+			# TODO make this depend on the printer profile
+			selected_protocol = kwargs.get("protocol")
+			if not selected_protocol:
+				selected_protocol = "reprap"
+				protocol_kwargs = dict()
+			else:
+				protocol_kwargs = kwargs.get("protocol_options", dict())
+
+			protocol_kwargs.update(dict(settings=settings(),
+			                            plugin_manager=plugin_manager(),
+			                            event_bus=eventManager(),
+			                            printer_profile=profile))
+
+		##~~ Lookup and create transport instances
 
 		from octoprint.comm.transport import lookup_transport
 		transport_class = lookup_transport(selected_transport)
@@ -333,20 +393,7 @@ class Printer(PrinterInterface,
 		transport = transport_class(**transport_kwargs)
 		self._transport = transport
 
-		##~~ Protocol
-
-		# TODO make this depend on the printer profile
-		selected_protocol = kwargs.get("protocol")
-		if not selected_protocol:
-			selected_protocol = "reprap"
-			protocol_kwargs = dict()
-		else:
-			protocol_kwargs = kwargs.get("protocol_options", dict())
-
-		protocol_kwargs.update(dict(settings=settings(),
-		                            plugin_manager=plugin_manager(),
-		                            event_bus=eventManager(),
-		                            printer_profile=profile))
+		##~~ Lookup and create protocol instance
 
 		from octoprint.comm.protocol import lookup_protocol
 		protocol_class = lookup_protocol(selected_protocol)
@@ -775,13 +822,22 @@ class Printer(PrinterInterface,
 
 	def get_current_connection_parameters(self, *args, **kwargs):
 		if self._transport is None or self._protocol is None:
-			return "Closed", None, None, None, None, None
-		return self.get_state_string(), \
-		       self._transport.key, \
-		       self._transport.args(), \
-		       self._protocol.key, \
-		       self._protocol.args(), \
-		       self._printer_profile_manager.get_current_or_default()
+			return dict(state="Closed",
+			            connection=None,
+			            protocol=None,
+			            protocol_args=None,
+			            transport=None,
+			            transport_args=None,
+			            printer_profile=None)
+
+		printer_profile = self._printer_profile_manager.get_current_or_default()
+		return dict(state=self.get_state_string(),
+		            connection=self._connection.id if self._connection is not None else None,
+		            protocol=self._protocol.key,
+		            protocol_args=self._protocol.args(),
+		            transport=self._transport.key,
+		            transport_args=self._transport.args(),
+		            printer_profile=printer_profile["id"] if printer_profile is not None and "id" in printer_profile else "_default")
 
 	def is_connected(self):
 		return self._protocol is not None and self._protocol.state in (ProtocolState.CONNECTED, ProtocolState.PROCESSING, ProtocolState.PAUSED)
