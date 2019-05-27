@@ -338,13 +338,9 @@ $(function() {
             copyToClipboard(lines.join("\n"));
         };
 
-        self.clearLogWidow = function() {
-            if (self.fancyFunctionality()) {
-                self.log([]);
-            } else {
-                self.plainLogLines([]);
-            }
-            
+        self.clearAllLogs = function() {
+            self.log([]);
+            self.plainLogLines([]);            
         };
         // command matching regex
         // (Example output for inputs G0, G1, G28.1, M117 test)
