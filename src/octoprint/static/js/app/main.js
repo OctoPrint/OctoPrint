@@ -708,6 +708,16 @@ $(function() {
 
             viewModelMap["settingsViewModel"].requestData()
                 .done(function() {
+                    var adjustModalDefaultBehaviour = function() {
+                        if (viewModelMap["settingsViewModel"].appearance_closeModalsWithClick()) {
+                            $.fn.modal.defaults.backdrop = true;
+                        } else {
+                            $.fn.modal.defaults.backdrop = "static";
+                        }
+                    };
+                    adjustModalDefaultBehaviour();
+                    viewModelMap["settingsViewModel"].appearance_closeModalsWithClick.subscribe(adjustModalDefaultBehaviour);
+
                     // There appears to be an odd race condition either in JQuery's AJAX implementation or
                     // the browser's implementation of XHR, causing a second GET request from inside the
                     // completion handler of the very same request to never get its completion handler called

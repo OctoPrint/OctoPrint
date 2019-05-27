@@ -298,6 +298,7 @@ default_settings = {
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
 		"fuzzyTimes": True,
+		"closeModalsWithClick": True,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
