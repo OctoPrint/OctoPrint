@@ -234,6 +234,25 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <fieldset>
+                <legend>{{ _('Confirmations') }}</legend>
+
+                <div class="control-group" title="{{ _('Confirm before uninstalling a plugin') }}">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_confirmUninstall"> {{ _('Confirm before uninstalling a plugin') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group" title="{{ _('Confirm before disabling a plugin') }}">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_confirmDisable"> {{ _('Confirm before disabling a plugin') }}
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
             <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
             <fieldset>
