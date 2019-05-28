@@ -103,6 +103,7 @@ date of first contribution):
   * [Ryan Finnie](https://github.com/rfinnie)
   * [Timur Duehr](https://github.com/tduehr)
   * [Nicolai Nielsen](https://github.com/dovecode)
+  * [Janne Mäntyharju](https://github.com/JanneMantyharju)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
