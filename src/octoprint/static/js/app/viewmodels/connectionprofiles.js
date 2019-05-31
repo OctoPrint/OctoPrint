@@ -89,26 +89,22 @@ $(function() {
             [],
             10
         );
+        self.defaultProfile = ko.observable();
+        self.currentProfile = ko.observable();
 
         self.makeDefault = function(data) {
-            /*
-            var profile = {
-                id: data.id,
-                default: true
-            };
-
-            self.updateProfile(profile);
-            */
+            return OctoPrint.connectionprofiles.update(data.id, {default: true})
+                .done(function() {
+                    self.requestData();
+                });
         };
 
         self.canMakeDefault = function(data) {
-            //return !data.isdefault();
-            return true;
+            return !data.is_default();
         };
 
         self.canRemove = function(data) {
-            //return !data.iscurrent() && !data.isdefault();
-            return true;
+            return !data.is_current() && !data.is_default();
         };
 
         self.requestData = function() {
@@ -122,10 +118,43 @@ $(function() {
 
         self.fromResponse = function(data) {
             var items = [];
+            var defaultProfile = undefined;
+            var currentProfile = undefined;
             _.each(data.profiles, function(profile) {
+                if (profile.default) {
+                    defaultProfile = profile.id;
+                }
+                if (profile.current) {
+                    currentProfile = profile.id;
+                }
+                profile.is_default = ko.observable(profile.default);
+                profile.is_current = ko.observable(profile.current);
                 items.push(profile);
             });
             self.profiles.updateItems(items);
+            self.defaultProfile(defaultProfile);
+
+            if (currentProfile) {
+                self.currentProfile(currentProfile);
+            } else {
+                // shouldn't normally happen, but just to not have anything else crash...
+                log.warn("Current printer profile could not be detected, using default values");
+                self.currentProfile(undefined);
+            }
+        };
+
+        self.removeProfile = function(data) {
+            var proceed = function() {
+                OctoPrint.connectionprofiles.delete(data.id)
+                    .done(function() {
+                        self.requestData();
+                    });
+            };
+
+            showConfirmationDialog({
+                message: _.sprintf(gettext("You are about to delete the connection profile \"%(profile)s\"."), {profile: data.name}),
+                onproceed: proceed
+            });
         };
 
         self.onSettingsShown = self.requestData;

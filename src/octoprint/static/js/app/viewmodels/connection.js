@@ -50,6 +50,48 @@ $(function() {
         self.availableConnectionProfiles = ko.observableArray();
         self.selectedConnectionProfile = ko.observable(undefined);
 
+        /*
+         * TODO: Find some way to have sensible behaviour if
+         *
+         *   * a connection profile is selected on server side
+         *   * no connection profile is selected but a default exists
+         *   * there are modifications to the selected connection profile (protocol/transport parameters)
+         *
+         */
+
+        self.connectionProfiles.profiles.items.subscribe(function() {
+            var allProfiles = self.connectionProfiles.profiles.items();
+            self.availableConnectionProfiles(allProfiles);
+        });
+
+        self.connectionProfiles.currentProfile.subscribe(function() {
+            var connection = self.connectionProfiles.currentProfile();
+            if (connection === undefined) {
+                connection = self.connectionProfiles.defaultProfile();
+            }
+
+            var connections = self.availableConnectionProfiles();
+
+            if (connection) {
+                self.selectedConnectionProfile(_.find(connections, function(c) { return c.id === connection }));
+            } else {
+                var profile = response.current.profile;
+
+                var protocolKey = response.current.protocol;
+                var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
+
+                var transportKey = response.current.transport;
+                var transport = _.find(transports, function(t) { return t.key === transportKey });
+
+                if (!self.selectedPrinter() && profiles && profiles.indexOf(profile) >= 0)
+                    self.selectedPrinter(profile);
+
+                self.selectedProtocol(protocol);
+                self.selectedTransport(transport);
+                self.adjustConnectionParameters(true);
+            }
+        });
+
         self.selectedConnectionProfile.subscribe(function() {
             var protocolParameters, transportParameters;
 

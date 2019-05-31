@@ -134,7 +134,6 @@ class Printer(PrinterInterface,
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
 
 		# comm
-		self._connection = None
 		self._protocol = None
 		self._transport = None
 		self._job = None
@@ -302,7 +301,7 @@ class Printer(PrinterInterface,
 
 		if connection is not None:
 			# we have a connection profile
-			self._connection = connection
+			self._connection_profile_manager.select(connection.id)
 
 			##~~ Printer profile
 			profile_id = connection.printer_profile
@@ -333,7 +332,7 @@ class Printer(PrinterInterface,
 			                            printer_profile=profile))
 
 		else:
-			self._connection = None
+			self._connection_profile_manager.deselect()
 
 			##~~ Printer profile
 
@@ -831,8 +830,9 @@ class Printer(PrinterInterface,
 			            printer_profile=None)
 
 		printer_profile = self._printer_profile_manager.get_current_or_default()
+		connection_profile = self._connection_profile_manager.get_current_or_default()
 		return dict(state=self.get_state_string(),
-		            connection=self._connection.id if self._connection is not None else None,
+		            connection=connection_profile.id if connection_profile is not None else None,
 		            protocol=self._protocol.key,
 		            protocol_args=self._protocol.args(),
 		            transport=self._transport.key,
@@ -1289,6 +1289,7 @@ class Printer(PrinterInterface,
 			self._set_offsets(None)
 			self._add_temperature_data()
 			self._update_job()
+			self._connection_profile_manager.deselect()
 			self._printer_profile_manager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
 

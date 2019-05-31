@@ -9,9 +9,9 @@
     </thead>
     <tbody data-bind="foreach: connectionProfiles.profiles.paginatedItems">
     <tr data-bind="attr: {title: name}">
-        <td class="settings_connectionProfiles_profiles_name"><span data-bind="text: name"></span></td>
+        <td class="settings_connectionProfiles_profiles_name"><span class="fa fa-star" data-bind="invisible: !is_default()"></span> <span data-bind="text: name"></span></td>
         <td class="settings_connectionProfiles_profiles_action">
-            <a href="#" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.removeProfile($data); } }, css: {disabled: !$root.connectionProfiles.canRemove($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()"></a>
+            <a href="javascript:void(0)" class="fa fa-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.makeDefault($data); } }, css: {disabled: !$root.connectionProfiles.canMakeDefault($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.removeProfile($data); } }, css: {disabled: !$root.connectionProfiles.canRemove($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()"></a>
         </td>
     </tr>
     </tbody>

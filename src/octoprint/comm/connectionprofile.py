@@ -105,10 +105,32 @@ class ConnectionProfileManager(object):
 		return max(dates)
 
 	def get_default(self):
-		pass
+		default = settings().get(["connectionProfiles", "default"])
+		if default is not None and self.exists(default):
+			profile = self.get(default)
+			if profile is not None:
+				return profile
+			else:
+				self._logger.warning("Default profile {} is invalid".format(default))
 
-	def set_default(self, idenitifier):
-		pass
+		return None
+
+	def set_default(self, identifier):
+		all_identifiers = self._load_all_identifiers()
+		if identifier is not None and identifier not in all_identifiers:
+			return
+
+		settings().set(["connectionProfiles", "default"], identifier)
+		settings().save()
+
+	def get_current_or_default(self):
+		if self._current is not None:
+			return self._current
+		else:
+			return self.get_default()
+
+	def get_current(self):
+		return self._current
 
 	def exists(self, identifier):
 		if identifier is None:
