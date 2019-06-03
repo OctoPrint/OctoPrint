@@ -106,11 +106,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_plugins = []
 		self._repository_cache_path = None
 		self._repository_cache_ttl = 0
+		self._repository_mtime = None
 
 		self._notices = dict()
 		self._notices_available = False
 		self._notices_cache_path = None
 		self._notices_cache_ttl = 0
+		self._notices_mtime = None
 
 		self._console_logger = None
 
@@ -269,11 +271,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		from octoprint.server import safe_mode
 
 		refresh_repository = request.values.get("refresh_repository", "false") in valid_boolean_trues
-		if refresh_repository:
+		if refresh_repository or not self._is_repository_cache_valid():
 			self._repository_available = self._refresh_repository()
 
 		refresh_notices = request.values.get("refresh_notices", "false") in valid_boolean_trues
-		if refresh_notices:
+		if refresh_notices or not self._is_notices_cache_valid():
 			self._notices_available = self._refresh_notices()
 
 		def view():
@@ -776,16 +778,23 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		else:
 			run()
 
+	def _is_repository_cache_valid(self, mtime=None):
+		import time
+		if mtime is None:
+			mtime = self._repository_mtime
+		return mtime + self._repository_cache_ttl >= time.time() > mtime
+
 	def _fetch_repository_from_disk(self):
 		repo_data = None
 		if os.path.isfile(self._repository_cache_path):
 			import time
 			mtime = os.path.getmtime(self._repository_cache_path)
-			if mtime + self._repository_cache_ttl >= time.time() > mtime:
+			if self._is_repository_cache_valid(mtime=mtime):
 				try:
 					import json
 					with open(self._repository_cache_path) as f:
 						repo_data = json.load(f)
+					self._repository_mtime = mtime
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
 				except:
 					self._logger.exception("Error while loading repository data from {}".format(self._repository_cache_path))
@@ -821,6 +830,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			import json
 			with octoprint.util.atomic_write(self._repository_cache_path, "wb") as f:
 				json.dump(repo_data, f)
+			self._repository_mtime = os.path.getmtime(self._repository_cache_path)
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
 
@@ -836,16 +846,23 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                  map(map_repository_entry, repo_data))
 		return True
 
+	def _is_notices_cache_valid(self, mtime=None):
+		import time
+		if mtime is None:
+			mtime = self._notices_mtime
+		return mtime + self._notices_cache_ttl >= time.time() > mtime
+
 	def _fetch_notices_from_disk(self):
 		notice_data = None
 		if os.path.isfile(self._notices_cache_path):
 			import time
 			mtime = os.path.getmtime(self._notices_cache_path)
-			if mtime + self._notices_cache_ttl >= time.time() > mtime:
+			if self._is_notices_cache_valid(mtime=mtime):
 				try:
 					import json
 					with open(self._notices_cache_path) as f:
 						notice_data = json.load(f)
+					self._notices_mtime = mtime
 					self._logger.info("Loaded notice data from disk, was still valid")
 				except:
 					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
@@ -872,6 +889,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			import json
 			with octoprint.util.atomic_write(self._notices_cache_path, "wb") as f:
 				json.dump(notice_data, f)
+			self._notices_mtime = os.path.getmtime(self._notices_cache_path)
 		except Exception as e:
 			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))
 		return notice_data
