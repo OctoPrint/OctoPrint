@@ -29,76 +29,18 @@ $(function() {
 
         };
 
-        self.printerProfiles.profiles.items.subscribe(function() {
-            var allProfiles = self.printerProfiles.profiles.items();
-
-            var printerOptions = [];
-            _.each(allProfiles, function(profile) {
-                printerOptions.push({id: profile.id, name: profile.name});
-            });
-            self.printerOptions(printerOptions);
-        });
-
-        self.printerProfiles.currentProfile.subscribe(function() {
-            self.selectedPrinter(self.printerProfiles.currentProfile());
-        });
-
-        self.printerOptions = ko.observableArray(undefined);
-        self.selectedPrinter = ko.observable(undefined);
-
         // Connection profiles
+
         self.availableConnectionProfiles = ko.observableArray();
+
         self.selectedConnectionProfile = ko.observable(undefined);
-
-        /*
-         * TODO: Find some way to have sensible behaviour if
-         *
-         *   * a connection profile is selected on server side
-         *   * no connection profile is selected but a default exists
-         *   * there are modifications to the selected connection profile (protocol/transport parameters)
-         *
-         */
-
-        self.connectionProfiles.profiles.items.subscribe(function() {
-            var allProfiles = self.connectionProfiles.profiles.items();
-            self.availableConnectionProfiles(allProfiles);
-        });
-
-        self.connectionProfiles.currentProfile.subscribe(function() {
-            var connection = self.connectionProfiles.currentProfile();
-            if (connection === undefined) {
-                connection = self.connectionProfiles.defaultProfile();
-            }
-
-            var connections = self.availableConnectionProfiles();
-
-            if (connection) {
-                self.selectedConnectionProfile(_.find(connections, function(c) { return c.id === connection }));
-            } else {
-                var profile = response.current.profile;
-
-                var protocolKey = response.current.protocol;
-                var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
-
-                var transportKey = response.current.transport;
-                var transport = _.find(transports, function(t) { return t.key === transportKey });
-
-                if (!self.selectedPrinter() && profiles && profiles.indexOf(profile) >= 0)
-                    self.selectedPrinter(profile);
-
-                self.selectedProtocol(protocol);
-                self.selectedTransport(transport);
-                self.adjustConnectionParameters(true);
-            }
-        });
-
         self.selectedConnectionProfile.subscribe(function() {
             var protocolParameters, transportParameters;
 
             var profile = self.selectedConnectionProfile();
 
             if (profile) {
-                self.selectedPrinter(profile.printer_profile);
+                self.selectedPrinter(_.find(self.availablePrinterProfiles(), function(p) { return p.id === profile.printer_profile }));
                 self.selectedProtocol(_.find(self.availableProtocols(), function(p) { return p.key === profile.protocol }));
                 self.selectedTransport(_.find(self.availableTransports(), function(t) { return t.key === profile.transport }));
 
@@ -132,7 +74,13 @@ $(function() {
             }
         });
 
-        // Protocol
+        // Printer profiles
+
+        self.availablePrinterProfiles = ko.observableArray();
+        self.selectedPrinter = ko.observable(undefined);
+
+        // Protocols
+
         self.availableProtocols = ko.observableArray();
         self.selectedProtocol = ko.observable(undefined);
         self.protocolParameters = ko.observable();
@@ -152,7 +100,8 @@ $(function() {
             self.advancedProtocolParameters(_.any(self.protocolParameters(), function(p) { return p.advanced }));
         });
 
-        // Transport
+        // Transports
+
         self.availableTransports = ko.observableArray();
         self.selectedTransport = ko.observable(undefined);
         self.transportParameters = ko.observableArray();
@@ -171,6 +120,8 @@ $(function() {
 
             self.advancedTransportParameters(_.any(self.transportParameters(), function(p) { return p.advanced }));
         });
+
+        // Various other bits
 
         self.adjustConnectionParameters = ko.observable();
         self.updateProfile = ko.observable(undefined);
@@ -201,16 +152,22 @@ $(function() {
                 return;
             }
 
-            OctoPrint.connection.getSettings()
+            return OctoPrint.connection.getSettings()
                 .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
+            //~~ Available options...
+
+            // connection profiles
             var connections = response.options.connectionProfiles;
+            self.availableConnectionProfiles(connections);
 
-            var profiles = response.options.printerProfiles;
+            // printer profiles
+            var printers = response.options.printerProfiles;
+            self.availablePrinterProfiles(printers);
 
-            // protocol
+            // protocols
             var protocols = response.options.protocols;
             var protocolOptions = response.current.protocolOptions;
             if (!protocolOptions) {
@@ -225,7 +182,7 @@ $(function() {
 
             self.availableProtocols(protocols);
 
-            // transport
+            // transports
             var transports = response.options.transports;
             var transportOptions = response.current.transportOptions;
             if (!transportOptions) {
@@ -240,32 +197,55 @@ $(function() {
 
             self.availableTransports(transports);
 
-            self.availableConnectionProfiles(connections);
-
-            //~~ Connection profile or not?
+            //~~ Currently active config
 
             var connectionKey = response.current.connection;
-            if (connectionKey) {
-                var connection = _.find(connections, function(c) { return c.id === connectionKey });
-                self.selectedConnectionProfile(connection);
-            } else if (self.selectedConnectionProfile() === undefined) {
-                var profile = response.current.profile;
-
-                var protocolKey = response.current.protocol;
-                var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
-
-                var transportKey = response.current.transport;
-                var transport = _.find(transports, function(t) { return t.key === transportKey });
-
-                if (!self.selectedPrinter() && profiles && profiles.indexOf(profile) >= 0)
-                    self.selectedPrinter(profile);
-
-                self.selectedProtocol(protocol);
-                self.selectedTransport(transport);
-                self.adjustConnectionParameters(true);
+            if (!connectionKey) {
+                connectionKey = response.options.connectionProfilePreference;
             }
 
-            self.saveSettings(false);
+            if (connectionKey) {
+                // there's currently a connection profile selected on the server
+                var connection = _.find(connections, function (c) {
+                    return c.id === connectionKey
+                });
+                self.selectedConnectionProfile(connection);
+            } else {
+                self.adjustConnectionParameters(true);
+                self.saveSettings(false);
+            }
+
+            var printerKey = response.current.profile;
+            if (!connectionKey && !printerKey) {
+                printerKey = response.options.printerProfilePreference;
+            }
+
+            if (printerKey) {
+                var printer = _.find(printers, function(p) { return p.id === printerKey });
+                self.selectedPrinter(printer);
+            }
+
+            var protocolKey = response.current.protocol;
+            if (protocolKey) {
+                var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
+                self.selectedProtocol(protocol);
+                var protocolParameters = self.protocolParameters();
+                _.each(protocolParameters, function(option) {
+                    extendOption(option, response.current.protocolOptions[option.name]);
+                });
+                self.protocolParameters(protocolParameters);
+            }
+
+            var transportKey = response.current.transport;
+            if (transportKey) {
+                var transport = _.find(transports, function(t) { return t.key === transportKey });
+                self.selectedTransport(transport);
+                var transportParameters = self.transportParameters();
+                _.each(transportParameters, function(option) {
+                    extendOption(option, response.current.transportOptions[option.name]);
+                });
+                self.transportParameters(transportParameters);
+            }
         };
 
         self.fromHistoryData = function(data) {
@@ -331,18 +311,12 @@ $(function() {
                 }
 
                 if (self.adjustConnectionParameters() || connectionProfile === undefined) {
-                    data.printerProfile = self.selectedPrinter();
+                    data.printerProfile = self.selectedPrinter().id;
                     data.protocol = self.selectedProtocol().key;
                     data.protocolOptions = toOptions(self.protocolParameters());
                     data.transport = self.selectedTransport().key;
                     data.transportOptions = toOptions(self.transportParameters());
                 }
-
-                var finalize = function() {
-                    self.settings.requestData();
-                    self.settings.connectionProfiles.requestData();
-                    self.settings.printerProfiles.requestData();
-                };
 
                 if (save) {
                     var profile = {
@@ -360,17 +334,14 @@ $(function() {
 
                     self.connectionProfiles.editor.showDialog(profile, gettext("Save & Connect"))
                         .done(function(profile) {
-                            OctoPrint.connection.connect({connection: profile.id})
-                                .done(finalize);
+                            OctoPrint.connection.connect({connection: profile.id});
                         });
                 } else {
-                    OctoPrint.connection.connect(data)
-                        .done(finalize);
+                    OctoPrint.connection.connect(data);
                 }
 
             } else {
                 if (!self.isPrinting() && !self.isPaused()) {
-                    self.requestData();
                     OctoPrint.connection.disconnect();
                 } else {
                     showConfirmationDialog({
@@ -385,7 +356,6 @@ $(function() {
                         cancel: gettext("Stay Connected"),
                         proceed: gettext("Disconnect"),
                         onproceed:  function() {
-                            self.requestData();
                             OctoPrint.connection.disconnect();
                         }
                     })
@@ -424,7 +394,7 @@ $(function() {
         };
 
         self._sanitize = function(name) {
-            return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
+            return name.replace(/[^a-zA-Z0-9\-_.() ]/g, "").replace(/ /g, "_");
         };
     }
 

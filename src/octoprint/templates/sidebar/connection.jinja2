@@ -6,9 +6,12 @@
     </label>
     <div style="display: none" data-bind="visible: adjustConnectionParameters">
         <hr style="margin: 0">
+
         <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Printer Profile') }}</label>
-        <select class="input-block-level" data-bind="options: printerOptions, optionsText: 'name', optionsValue: 'id', value: selectedPrinter, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+        <select class="input-block-level" data-bind="options: availablePrinterProfiles, optionsText: 'name', value: selectedPrinter, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+
         <hr style="margin: 0">
+
         <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Protocol') }}</label>
         <select class="input-block-level" data-bind="options: availableProtocols, optionsText: 'name', value: selectedProtocol, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
         <!-- ko foreach: protocolParameters -->
@@ -19,7 +22,9 @@
         <!-- ko if: advancedProtocolParameters -->
         <small class="text-block text-right"><a href="javascript:void(0)" data-bind="click: showAdvancedProtocolOptions">{{ _('Advanced...') }}</a></small>
         <!-- /ko -->
+
         <hr style="margin: 0">
+
         <label data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Transport') }}</label>
         <select class="input-block-level" data-bind="options: availableTransports, optionsText: 'name', value: selectedTransport, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
         <!-- ko foreach: transportParameters -->
@@ -30,6 +35,7 @@
         <!-- ko if: advancedTransportParameters -->
         <small class="text-block text-right"><a href="javascript:void(0)">{{ _('Advanced...') }}</a></small>
         <!-- /ko -->
+
         <hr style="margin: 0">
     </div>
     <label class="checkbox">

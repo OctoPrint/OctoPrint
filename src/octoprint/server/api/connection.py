@@ -140,8 +140,8 @@ def _get_options():
 		connectionProfiles=[connection_profile.as_dict() for connection_profile in connection_profiles.values()],
 		portPreference=connection_options["portPreference"],
 		baudratePreference=connection_options["baudratePreference"],
-		printerProfilePreference=default_profile["id"] if "id" in default_profile else None,
-		connectionProfilePreference=default_connection.id,
+		printerProfilePreference=default_profile["id"] if default_profile and "id" in default_profile else None,
+		connectionProfilePreference=default_connection.id if default_connection else None,
 		protocols=protocols,
 		transports=transports
 	)

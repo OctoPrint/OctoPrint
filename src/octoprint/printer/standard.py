@@ -304,13 +304,13 @@ class Printer(PrinterInterface,
 			self._connection_profile_manager.select(connection.id)
 
 			##~~ Printer profile
-			profile_id = connection.printer_profile
+			profile_id = kwargs.get("profile", connection.printer_profile)
 			self._printer_profile_manager.select(profile_id)
 			profile = self._printer_profile_manager.get_current_or_default()
 
 			##~~ Transport
 
-			selected_transport = connection.transport
+			selected_transport = kwargs.get("transport", connection.transport)
 			transport_connect_kwargs = connection.transport_parameters
 			transport_connect_kwargs.update(kwargs.get("transport_options", dict()))
 
@@ -322,7 +322,7 @@ class Printer(PrinterInterface,
 
 			##~~ Protocol
 
-			selected_protocol = connection.protocol
+			selected_protocol = kwargs.get("protocol", connection.protocol)
 			protocol_kwargs = connection.protocol_parameters
 			protocol_kwargs.update(kwargs.get("protocol_options", dict()))
 
@@ -824,9 +824,9 @@ class Printer(PrinterInterface,
 			return dict(state="Closed",
 			            connection=None,
 			            protocol=None,
-			            protocol_args=None,
+			            protocol_args=dict(),
 			            transport=None,
-			            transport_args=None,
+			            transport_args=dict(),
 			            printer_profile=None)
 
 		printer_profile = self._printer_profile_manager.get_current_or_default()
