@@ -33,14 +33,11 @@
         <!-- /ko -->
         <!-- /ko -->
         <!-- ko if: advancedTransportParameters -->
-        <small class="text-block text-right"><a href="javascript:void(0)">{{ _('Advanced...') }}</a></small>
+        <small class="text-block text-right"><a href="javascript:void(0)" data-bind="click: showAdvancedTransportOptions">{{ _('Advanced...') }}</a></small>
         <!-- /ko -->
 
         <hr style="margin: 0">
     </div>
-    <label class="checkbox">
-        <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Save connection settings') }}
-    </label>
     <label class="checkbox">
         <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Auto-connect on server startup') }}
     </label>

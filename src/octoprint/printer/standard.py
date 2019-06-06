@@ -31,6 +31,7 @@ from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 from octoprint.util import monotonic_time
+from octoprint.util import dict_merge
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, PositionAwareProtocolListener, ProtocolState
 from octoprint.comm.job import StoragePrintjob, LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob, CopyJobMixin
@@ -312,7 +313,7 @@ class Printer(PrinterInterface,
 
 			selected_transport = kwargs.get("transport", connection.transport)
 			transport_connect_kwargs = connection.transport_parameters
-			transport_connect_kwargs.update(kwargs.get("transport_options", dict()))
+			transport_connect_kwargs = dict_merge(transport_connect_kwargs, kwargs.get("transport_options", dict()))
 
 			transport_kwargs = dict()
 			transport_kwargs.update(dict(settings=settings(),
@@ -323,9 +324,7 @@ class Printer(PrinterInterface,
 			##~~ Protocol
 
 			selected_protocol = kwargs.get("protocol", connection.protocol)
-			protocol_kwargs = connection.protocol_parameters
-			protocol_kwargs.update(kwargs.get("protocol_options", dict()))
-
+			protocol_kwargs = dict_merge(connection.protocol_parameters, kwargs.get("protocol_options", dict()))
 			protocol_kwargs.update(dict(settings=settings(),
 			                            plugin_manager=plugin_manager(),
 			                            event_bus=eventManager(),

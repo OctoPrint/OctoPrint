@@ -5,7 +5,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
-from octoprint.comm.util.parameters import TextType, IntegerType, SuggestionType, Value
+from octoprint.comm.util.parameters import TextType, IntegerType, ChoiceType, SuggestionType, BooleanType, Value
 
 import serial
 import logging
@@ -40,7 +40,14 @@ class SerialTransport(Transport):
 	def get_connection_options(cls):
 		return [
 			SuggestionType("port", "Port", cls.get_available_serial_ports(), lambda value: Value(value)),
-			SuggestionType("baudrate", "Baudrate", cls.get_available_baudrates(), lambda value: Value(value), default=0)
+			SuggestionType("baudrate", "Baudrate", cls.get_available_baudrates(), lambda value: Value(value), default=0),
+			IntegerType("write_timeout", "Write Timeout (sec)", min=1, default=10, advanced=True),
+			BooleanType("exclusive", "Exclusive access", default=True, advanced=True),
+			ChoiceType("parity", "Parity",
+			           [Value(serial.PARITY_NONE, "none"),
+			            Value(serial.PARITY_ODD, "odd"),
+			            Value(serial.PARITY_EVEN, "even")],
+			           default=serial.PARITY_NONE, advanced=True)
 		]
 
 	@classmethod
@@ -91,14 +98,14 @@ class SerialTransport(Transport):
 
 		self._closing = False
 
-	def create_connection(self, port="AUTO", baudrate=0):
+	def create_connection(self, **kwargs):
 		factory = self.serial_factory
 		if self.serial_factory is None:
 			factory = self._default_serial_factory
 
 		self._closing = False
-		self._serial = factory(port=port, baudrate=baudrate)
-		self.set_current_args(port=port, baudrate=baudrate)
+		self._serial = factory(**kwargs)
+		self.set_current_args(**kwargs)
 
 		return True
 
@@ -182,8 +189,12 @@ class SerialTransport(Transport):
 	def in_waiting(self):
 		return getattr(self._serial, "in_waiting", 0)
 
-	def _default_serial_factory(self, port=None, baudrate=None):
-		return serial.Serial(port=port, baudrate=baudrate)
+	def _default_serial_factory(self, **kwargs):
+		return serial.Serial(port=kwargs.get("port"),
+		                     baudrate=kwargs.get("baudrate"),
+		                     exclusive=kwargs.get("exclusive"),
+		                     parity=kwargs.get("parity"),
+		                     write_timeout=kwargs.get("write_timeout", 10) * 1000)
 
 	def __str__(self):
 		return "SerialTransport"

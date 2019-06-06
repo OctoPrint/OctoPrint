@@ -107,7 +107,7 @@ $(function() {
         self.transportParameters = ko.observableArray();
         self.advancedTransportParameters = ko.observable();
         self.showAdvancedTransportOptions = function() {
-
+            $("#connection_transport_dialog").modal("show");
         };
 
         self.selectedTransport.subscribe(function() {

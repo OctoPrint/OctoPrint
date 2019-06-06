@@ -23,7 +23,7 @@ from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, JobQueue, Co
 
 from octoprint.comm.scripts import InvalidScript, UnknownScript
 
-from octoprint.comm.util.parameters import ChoiceType, Value, ParamGroup, BooleanType, SmallChoiceType
+from octoprint.comm.util.parameters import ChoiceType, Value, ParamGroup, BooleanType, FloatType, IntegerType, SmallChoiceType
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob, CopyJobMixin
@@ -138,6 +138,21 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                                     Value("never", title="Never")],
 		                                    default="detect")],
 		                   help="Just a test",
+		                   advanced=True),
+		        ParamGroup("timeouts_and_intervals",
+		                   "Timeouts and Intervals",
+		                   [FloatType("detection_timeout", "Detection", default=1),
+		                    FloatType("connection_timeout", "Connection", default=10),
+		                    FloatType("communication_timeout_normal", "Communication", default=30),
+		                    FloatType("communication_timeout_busy", "Communication (busy)", default=3),
+		                    FloatType("temperature_interval_idle", "Temperature (idle)", default=5),
+		                    FloatType("temperature_interval_target", "Temperature (target set)", default=2),
+		                    FloatType("temperature_interval_auto", "Temperature (autoreport)", default=2),
+		                    FloatType("sdstatus_interval_normal", "SD Status", default=1),
+		                    FloatType("sdstatus_interval_auto", "SD status (autoreport)", default=1),
+		                    FloatType("resendok_timeout", "Resend OK", default=.5),
+		                    FloatType("baudrate_detection_pause", "Baudrate Detection Pause", default=1.0),
+		                    FloatType("position_log_wait", "Position Log Wait", default=10)],
 		                   advanced=True)]
 
 	@staticmethod

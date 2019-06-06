@@ -54,15 +54,17 @@ class TextType(ParamType):
 class IntegerType(ParamType):
 	type = "integer"
 
-	def __init__(self, name, title, min=None, max=None, **kwargs):
+	def __init__(self, name, title, min=None, max=None, unit=None, **kwargs):
 		self.min = min
 		self.max = max
+		self.unit = unit
 		ParamType.__init__(self, name, title, **kwargs)
 
 	def as_dict(self):
 		result = ParamType.as_dict(self)
 		result.update(dict(min=self.min,
-		                   max=self.max))
+		                   max=self.max,
+		                   unit=self.unit))
 		return result
 
 	def convert(self, value):
@@ -81,15 +83,17 @@ class IntegerType(ParamType):
 class FloatType(ParamType):
 	type = "float"
 
-	def __init__(self, name, title, min=None, max=None, **kwargs):
+	def __init__(self, name, title, min=None, max=None, unit=None, **kwargs):
 		self.min = min
 		self.max = max
+		self.unit = unit
 		ParamType.__init__(self, name, title, **kwargs)
 
 	def as_dict(self):
 		result = ParamType.as_dict(self)
 		result.update(dict(min=self.min,
-		                   max=self.max))
+		                   max=self.max,
+		                   unit=self.unit))
 		return result
 
 	def convert(self, value):
