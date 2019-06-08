@@ -1002,7 +1002,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._stateMonitor.set_job_data(self._dict(file=job_data["file"],
 				                                           estimatedPrintTime=job_data["estimatedPrintTime"],
 				                                           averagePrintTime=job_data["averagePrintTime"],
-				                                           lastPrintTIme=job_data["lastPrintTime"],
+				                                           lastPrintTime=job_data["lastPrintTime"],
 				                                           filament=job_data["filament"],
 				                                           user=user))
 
