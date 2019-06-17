@@ -469,6 +469,10 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 
+		self._currentConsecutiveResendNumber = None
+		self._currentConsecutiveResendCount = 0
+		self._maxConsecutiveResends = settings().getInt(["serial", "maxConsecutiveResends"])
+
 		self._errorValue = ""
 
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
@@ -2910,13 +2914,25 @@ class MachineCom(object):
 				self._currentResendCount += 1
 				return True
 
+			if self._currentConsecutiveResendNumber == lineToResend:
+				self._currentConsecutiveResendCount += 1
+				if self._currentConsecutiveResendCount >= self._maxConsecutiveResends:
+					# printer keeps requesting the same line again and again, something is severely broken here
+					error_text = "Printer keeps requesting line {} again and again, communication stuck".format(lineToResend)
+					self._log(error_text)
+					self._logger.warn(error_text)
+					self._trigger_error(error_text, "resend_loop")
+			else:
+				self._currentConsecutiveResendNumber = lineToResend
+				self._currentConsecutiveResendCount = 0
+
 			self._resendActive = True
 			self._resendDelta = resendDelta
 			self._lastResendNumber = lineToResend
 			self._currentResendCount = 0
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
-				error_text = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
+				error_text = "Printer requested line {} but no sufficient history is available, can't resend".format(lineToResend)
 				self._log(error_text)
 				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
 				if self.isPrinting():

@@ -145,6 +145,7 @@ default_settings = {
 		"firmwareDetection": True,
 		"blockWhileDwelling": False,
 		"useParityWorkaround": "detect",
+		"maxConsecutiveResends": 10,
 
 		"capabilities": {
 			"autoreport_temp": True,

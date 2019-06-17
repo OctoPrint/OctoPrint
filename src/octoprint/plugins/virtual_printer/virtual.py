@@ -146,6 +146,7 @@ class VirtualPrinter(object):
 		self._debug_sleep = None
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
+		self._rerequest_last = False
 
 		self._dont_answer = False
 
@@ -364,6 +365,9 @@ class VirtualPrinter(object):
 					elif isinstance(prepared, basestring):
 						self._send(prepared)
 						continue
+				elif self._rerequest_last:
+					self._triggerResend(actual=linenumber)
+					continue
 				else:
 					self.lastN = linenumber
 				data = data.split(None, 1)[1].strip()
@@ -753,6 +757,8 @@ class VirtualPrinter(object):
 			prepare_ok <broken ok>
 			| Will cause <broken ok> to be enqueued for use,
 			| will be used instead of actual "ok"
+			rerequest_last
+			| Will cause the last line number + 1 to be rerequest add infinitum
 
 			# Reply Timing / Sleeping
 
@@ -814,6 +820,9 @@ class VirtualPrinter(object):
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
+		elif data == "rerequest_last":
+			self._send("// Entering rerequest loop")
+			self._rerequest_last = True
 		elif data == "cancel_sd":
 			if self._sdPrinting and self._sdPrinter:
 				self._pauseSdPrint()
