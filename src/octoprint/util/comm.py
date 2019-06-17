@@ -154,6 +154,10 @@ regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):\s*")
 regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
+regex_advanced_ok = re.compile("^ok\s+N(?P<N>\d+)\s+P(?P<P>\d+)\s+B(?P<B>\d+)")
+"""Regex for marlin advanced_ok responce"""
+
+
 def serialList():
 	baselist=[]
 	if os.name=="nt":
@@ -452,6 +456,10 @@ class MachineCom(object):
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._currentLine = 1
+		self._AdvancedOkSendNextLines = -1
+		self._LastProcessedLine = -1
+		self._SynchronousCommand = -1
+		self._SynchronousCommands = settings().get(["serial", "synchronousCommands"])
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
 
@@ -1614,6 +1622,7 @@ class MachineCom(object):
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
 					self._ok_timeout = self._get_new_communication_timeout()
+					self._AdvancedOkSendNextLines = -1 #reset async commands
 
 					# make sure the printer sends busy in a small enough interval to match our timeout
 					if not self._busy_protocol_detected and self._capability_support.get(self.CAPABILITY_BUSY_PROTOCOL,
@@ -1719,7 +1728,7 @@ class MachineCom(object):
 				if line.startswith("ok") or (self.isPrinting() and supportWait and line == "wait"):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
-					self._handle_ok()
+					self._handle_ok(line)
 					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
 					                         "X:" in line or "NAME:" in line
 					handled = (line == "wait" or line == "ok" or not needs_further_handling)
@@ -1746,7 +1755,7 @@ class MachineCom(object):
 					#            is running dry but not sending a wait.
 					#
 					# Both variants can only happen if we are not currently blocked by a dwelling command
-
+					self._logger.warn("_timeout={} _ok_timeout={} _dwelling_until={}".format(now >= self._timeout, now >= self._ok_timeout,now > self._dwelling_until))
 					self._handle_timeout()
 					self._ok_timeout = self._get_new_communication_timeout()
 
@@ -2158,7 +2167,7 @@ class MachineCom(object):
 				self.close(is_error=True)
 		self._log("Connection closed, closing down monitor")
 
-	def _handle_ok(self):
+	def _handle_ok(self,line=None):
 		if self._resend_ok_timer:
 			self._resend_ok_timer.cancel()
 			self._resend_ok_timer = None
@@ -2179,9 +2188,37 @@ class MachineCom(object):
 		if not self._state in self.OPERATIONAL_STATES:
 			return
 
+
+		if ( line is not None 
+					and self._state == self.STATE_PRINTING):
+			#self._log(u" parse_advanced_ok_line1")
+			parsed = parse_advanced_ok_line(line)
+			if parsed:
+				last_processed_line = parsed.get("N")
+				free_planner_buff   = parsed.get("P")
+				free_command_buff   = parsed.get("B")
+
+				self._LastProcessedLine = last_processed_line
+
+				if (last_processed_line > self._SynchronousCommand):
+					if (free_command_buff >0):
+						self._AdvancedOkSendNextLines = last_processed_line + free_planner_buff + free_command_buff #self._currentLine + self._FillBuffNumber
+					else:
+						self._AdvancedOkSendNextLines = last_processed_line
+
+				self._log(u" parse_advanced_ok_line = L:{} P:{} B:{} _currentLine={} _AdvancedOkSendNextLines={} self._SynchronousCommand={}".format(last_processed_line,free_planner_buff,free_command_buff,self._currentLine,self._AdvancedOkSendNextLines,self._SynchronousCommand))
+
+				#return
+			#else:
+				#self._AdvancedOkSendNextLines = -1
+
+		# ~ if (line == "wait"): #reset asynchronos transactions
+			# ~ self._AdvancedOkSendNextLines = -1
+
 		if self._resendDelta is not None and self._resendNextCommand():
 			# we processed a resend request and are done here
 			return
+
 
 		# continue with our queues and the job
 		self._resendActive = False
@@ -2200,6 +2237,8 @@ class MachineCom(object):
 			consecutive_max = self._consecutive_timeout_maximums.get("printing", 0)
 		else:
 			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
+
+		# ~ self._AdvancedOkSendNextLines = -1
 
 		# now increment the timeout counter
 		self._consecutive_timeouts += 1
@@ -2456,6 +2495,8 @@ class MachineCom(object):
 			self._set_autoreport_sdstatus_interval()
 		if self._busy_protocol_support:
 			self._set_busy_protocol_interval()
+
+		self._AdvancedOkSendNextLines = -1 #_on_external_reset
 
 	def _get_temperature_timer_interval(self):
 		busy_default = 4.0
@@ -2783,11 +2824,16 @@ class MachineCom(object):
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
 			else:
-				self._changeState(self.STATE_FINISHING)
-				self.sendCommand("M400", part_of_job=True)
-				self._callback.on_comm_print_job_done()
+				self._log("The end of _currentFile {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
 				def finalize():
-					self._changeState(self.STATE_OPERATIONAL)
+					self._log("finalize1 {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
+					self._changeState(self.STATE_FINISHING)
+					self.sendCommand("M400", part_of_job=True)
+					self._callback.on_comm_print_job_done()
+					def finalize2():
+						self._log("finalize2 {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
+						self._changeState(self.STATE_OPERATIONAL)
+					self.sendCommand(SendQueueMarker(finalize2), part_of_job=True)
 				return SendQueueMarker(finalize), None, None
 		return line, pos, lineno
 
@@ -3071,7 +3117,15 @@ class MachineCom(object):
 		self._clear_to_send.wait()
 
 		while self._send_queue_active:
+			self._log(u">>> C={} set={} state={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString()))
 			try:
+				if (not self._send_queue.resend_active and self._AdvancedOkSendNextLines > 0 ):
+					if (self._currentLine -1) > self._AdvancedOkSendNextLines:
+						self._log(u"#### {} > {}".format(self._currentLine , self._AdvancedOkSendNextLines))
+						if(self._clear_to_send.is_set()):
+							self._clear_to_send.clear() #wait for next event
+						self._clear_to_send.wait(0.1)
+						continue
 				# wait until we have something in the queue
 				entry = self._send_queue.get()
 
@@ -3179,8 +3233,23 @@ class MachineCom(object):
 					# no matter _how_ we exit this block, we signal that we
 					# are done processing the last fetched queue entry
 					self._send_queue.task_done()
-
+				
+				self._log(u"#### {} < {} ".format(self._currentLine-1 , self._AdvancedOkSendNextLines))
 				# now we just wait for the next clear and then start again
+				if ( self._state == self.STATE_PRINTING 
+						and gcode in self._SynchronousCommands):
+							self._SynchronousCommand = self._currentLine - 1
+							self._AdvancedOkSendNextLines = self._SynchronousCommand;
+							self._log(u"#### skip SynchronousCommand={}".format(self._SynchronousCommand))
+				elif ( self._state == self.STATE_PRINTING 
+						and self._AdvancedOkSendNextLines > 0
+						and not self._send_queue.resend_active
+						and (self._currentLine-1) < self._AdvancedOkSendNextLines ):
+						self._continue_sending()
+						# ~ self._clear_to_send.set()
+						self._log(u"..._continue_sending")
+						continue
+				#~ else:
 				self._clear_to_send.wait()
 			except:
 				self._logger.exception("Caught an exception in the send loop")
@@ -4562,6 +4631,26 @@ def parse_resend_line(line):
 	match = regex_resend_linenumber.search(line)
 	if match is not None:
 		return int(match.group("n"))
+
+	return None
+
+def parse_advanced_ok_line(line):
+	"""
+	Parses the provided marlin ADVANCED_OK line.
+	Args:
+		line (str): the line to parse
+	Returns:
+    last_processed_line
+    free_planner_buff
+    free_command_buff
+     or None:
+	"""
+
+	match = regex_advanced_ok.search(line)
+	if match is not None:
+		return dict(N=int(match.group("N")),
+								P=int(match.group("P")),
+								B=int(match.group("B")))
 
 	return None
 
