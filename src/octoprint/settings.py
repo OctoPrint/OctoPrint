@@ -146,6 +146,7 @@ default_settings = {
 		"blockWhileDwelling": False,
 		"useParityWorkaround": "detect",
 		"maxConsecutiveResends": 10,
+		"sendM112OnError": True,
 
 		"capabilities": {
 			"autoreport_temp": True,

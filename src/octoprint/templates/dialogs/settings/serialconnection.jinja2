@@ -421,6 +421,12 @@
                         </label>
                     </div>
                 </div>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_sendM112OnError" id="settings-serialSendM112OnError"> {{ _('Send <code>M112</code> on disconnect due to error') }}
+                        <span class="help-block">{{ _('If this is checked, OctoPrint will try to send an <code>M112</code> prior to a disconnect due to a (fatal) error in order to disable heaters and motors.') }}</span>
+                    </label>
+                </div>
             </fieldset>
             <fieldset>
                 <legend>{{ _('Pausing') }}</legend>

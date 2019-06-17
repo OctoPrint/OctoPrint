@@ -198,6 +198,7 @@ $(function() {
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
+        self.serial_sendM112OnError = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

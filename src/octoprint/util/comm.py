@@ -2768,6 +2768,8 @@ class MachineCom(object):
 		self._changeState(self.STATE_ERROR)
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
+			if settings().getBoolean(["serial", "sendM112OnError"]) and not self.isSdPrinting():
+				self._gcode_M112_queuing("M112", close=False)
 			self.close(is_error=True)
 
 	def _readline(self):
@@ -3718,9 +3720,12 @@ class MachineCom(object):
 			self._do_increment_and_send_with_checksum("M140 S0")
 
 		# close to reset host state
-		self._errorValue = "Closing serial port due to emergency stop M112."
-		self._log(self._errorValue)
-		self.close(is_error=True)
+		error_text = "Closing serial port due to emergency stop M112."
+		self._log(error_text)
+
+		if kwargs.get("close", True):
+			self._errorValue = error_text
+			self.close(is_error=True)
 
 		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
 		gcode = "M112"
