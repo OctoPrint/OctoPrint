@@ -114,6 +114,7 @@ default_settings = {
 		"additionalPorts": [],
 		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
+		"synchronousCommands": ["M109","M190","G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
 		"blockedCommands": ["M0", "M1"],
 		"pausingCommands": ["M0", "M1", "M25"],
 		"checksumRequiringCommands": ["M110"],
