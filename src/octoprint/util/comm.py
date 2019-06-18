@@ -452,6 +452,7 @@ class MachineCom(object):
 		self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
+		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -2768,8 +2769,8 @@ class MachineCom(object):
 		self._changeState(self.STATE_ERROR)
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
-			if settings().getBoolean(["serial", "sendM112OnError"]) and not self.isSdPrinting():
-				self._gcode_M112_queuing("M112", close=False)
+			if self._send_m112_on_error and not self.isSdPrinting():
+				self._trigger_emergency_stop(close=False)
 			self.close(is_error=True)
 
 	def _readline(self):
@@ -3699,7 +3700,7 @@ class MachineCom(object):
 			self._lastLines.clear()
 		self._resendDelta = None
 
-	def _gcode_M112_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+	def _trigger_emergency_stop(self, close=True):
 		self._logger.info(u"Force-sending M112 to the printer")
 
 		# emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
@@ -3723,7 +3724,7 @@ class MachineCom(object):
 		error_text = "Closing serial port due to emergency stop M112."
 		self._log(error_text)
 
-		if kwargs.get("close", True):
+		if close:
 			self._errorValue = error_text
 			self.close(is_error=True)
 
@@ -3732,8 +3733,8 @@ class MachineCom(object):
 		if gcode in gcodeToEvent:
 			eventManager().fire(gcodeToEvent[gcode])
 
-		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
-		# I hope it got it the first time because as far as I can tell, there is no way to know
+	def _gcode_M112_queuing(self, *args, **kwargs):
+		self._trigger_emergency_stop()
 		return None,
 
 	def _gcode_M114_queued(self, *args, **kwargs):
