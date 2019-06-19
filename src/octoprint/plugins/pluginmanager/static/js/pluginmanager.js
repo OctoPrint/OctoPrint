@@ -7,6 +7,9 @@ $(function() {
         self.printerState = parameters[2];
         self.systemViewModel = parameters[3];
 
+        // optional
+        self.piSupport = parameters[4];
+
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
         self.config_noticesUrl = ko.observable();
@@ -166,8 +169,12 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && !self.throttled() && self.online() && self.isCompatible(data);
         };
+
+        self.throttled = ko.pureComputed(function() {
+            return self.piSupport && self.piSupport.currentIssue();
+        });
 
         self.invalidUrl = ko.pureComputed(function() {
             // supported pip install URL schemes, according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -193,6 +200,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && self.online()
                 && url !== undefined
                 && url.trim() !== ""
@@ -218,6 +226,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && name !== undefined
                 && name.trim() !== ""
                 && !self.invalidArchive();
@@ -457,6 +466,10 @@ $(function() {
             }
 
             if (!self.enableManagement()) {
+                return;
+            }
+
+            if (self.throttled()) {
                 return;
             }
 
@@ -1119,7 +1132,8 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PluginManagerViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "piSupportViewModel"],
+        optional: ["piSupportViewModel"],
         elements: ["#settings_plugin_pluginmanager"]
     });
 });

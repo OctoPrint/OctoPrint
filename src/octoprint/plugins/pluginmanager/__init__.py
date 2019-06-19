@@ -116,6 +116,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._console_logger = None
 
+		self._get_throttled = lambda: False
+
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
 		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
@@ -147,6 +149,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.addHandler(console_logging_handler)
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
+
+		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if helpers and "get_throttled" in helpers:
+			self._get_throttled = helpers["get_throttled"]
 
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
@@ -352,6 +358,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return self.command_toggle(plugin, command)
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
+		throttled = self._get_throttled()
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+			# currently throttled, we refuse to run
+			return make_response("System is currently throttled, refusing to install "
+			                     "anything due to possible stability issues", 409)
+
 		if url is not None:
 			if not any(map(lambda scheme: url.startswith(scheme + "://"), self.URL_SCHEMES)):
 				raise ValueError("Invalid URL to pip install from")
