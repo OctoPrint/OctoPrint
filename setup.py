@@ -81,9 +81,7 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
-		"Jinja2>=2.9" # required by readthedocs-sphinx-ext>=0.6.0, and we can't downgrade that so we
-		              # force a newer jinja version here which is no problem since we install
-		              # OctoPrint plus deps only for autodoc anyhow
+		"readthedocs-sphinx-ext==0.5.7"
 	],
 
 	# Dependencies for developing OctoPrint plugins
