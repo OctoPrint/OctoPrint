@@ -2192,9 +2192,8 @@ class MachineCom(object):
 
 		if (line == "wait"): #reset asynchronos transactions
 			self._AdvancedOkSendNextLines = -1
-		elif ( line is not None 
-			): #and self._state == self.STATE_PRINTING
-			#self._log(u" parse_advanced_ok_line1")
+		elif ( line is not None ):
+
 			parsed = parse_advanced_ok_line(line)
 			if parsed:
 				last_processed_line = parsed.get("N")
@@ -2204,16 +2203,9 @@ class MachineCom(object):
 				self._LastProcessedLine = last_processed_line
 
 				if (last_processed_line >= self._SynchronousCommand ):
-					self._AdvancedOkSendNextLines = last_processed_line + free_planner_buff 
-
-					# ~ if (free_command_buff >0):
-						# ~ self._AdvancedOkSendNextLines = last_processed_line + free_planner_buff + free_command_buff #self._currentLine + self._FillBuffNumber
-					# ~ else:
-						# ~ self._AdvancedOkSendNextLines = last_processed_line
+					self._AdvancedOkSendNextLines = last_processed_line + max(free_planner_buff,free_command_buff)
 
 				# ~ self._log(u" parse_advanced_ok_line = L:{} P:{} B:{} _currentLine={} _AdvancedOkSendNextLines={} self._SynchronousCommand={}".format(last_processed_line,free_planner_buff,free_command_buff,self._currentLine,self._AdvancedOkSendNextLines,self._SynchronousCommand))
-
-				#return
 			else:
 				self._AdvancedOkSendNextLines = -1
 		else:
@@ -3124,17 +3116,11 @@ class MachineCom(object):
 		self._clear_to_send.wait()
 
 		while self._send_queue_active:
-			self._log(u">>> C={} set={} state={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString()))
+			# ~ self._log(u">>> C={} set={} state={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString()))
 			try:
-				# ~ if (not self._send_queue.resend_active and self._AdvancedOkSendNextLines > 0 ):
-					# ~ if (self._currentLine -1) > self._AdvancedOkSendNextLines:
-						# ~ self._log(u"#### {} > {}".format(self._currentLine , self._AdvancedOkSendNextLines))
-						# ~ self._clear_to_send.wait(0.1)
-						# ~ continue
 				total_count = 0
-				next_wait_timeout = monotonic_time() + 0.01
 				while True: #send all right now
-					self._log(u">>> >>> C={} set={} state={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString()))
+					# ~ self._log(u">>> >>> C={} set={} state={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString()))
 					# wait until we have something in the queue
 					entry = self._send_queue.get()
 					
@@ -3244,13 +3230,13 @@ class MachineCom(object):
 						# no matter _how_ we exit this block, we signal that we
 						# are done processing the last fetched queue entry
 						self._send_queue.task_done()
-						self._log(u"#### {} < {} ; {} > {}".format(self._currentLine-1 , self._AdvancedOkSendNextLines,((self._AdvancedOkSendNextLines)-(self._currentLine-1)) , self._send_queue._qsize()))
+						# ~ self._log(u"#### {} < {} ; {} > {}".format(self._currentLine-1 , self._AdvancedOkSendNextLines,((self._AdvancedOkSendNextLines)-(self._currentLine-1)) , self._send_queue._qsize()))
 						# now we just wait for the next clear and then start again
 						if ( self._state == self.STATE_PRINTING 
 								and gcode in self._SynchronousCommands):
 									self._SynchronousCommand = self._currentLine - 1
 									self._AdvancedOkSendNextLines = self._SynchronousCommand;
-									self._log(u"#### skip SynchronousCommand={}".format(self._SynchronousCommand))
+									self._log(u"#### waiting for SynchronousCommand={}".format(self._SynchronousCommand))
 									break
 						else:
 							self._SynchronousCommand = -1
@@ -3266,17 +3252,15 @@ class MachineCom(object):
 								and self._AdvancedOkSendNextLines > 0
 								and not self._send_queue.resend_active
 								and (self._currentLine-1) < self._AdvancedOkSendNextLines
-								and ((self._AdvancedOkSendNextLines)-(self._currentLine-1)) > self._send_queue._qsize()):
-								self._continue_sending()
+								and ((self._AdvancedOkSendNextLines)-(self._currentLine-1)) > self._send_queue._qsize()
+								and self._continue_sending() ):
+								# ~ self._log(u"####??? {} < {} ; {} > {}".format(self._currentLine-1 , self._AdvancedOkSendNextLines,((self._AdvancedOkSendNextLines)-(self._currentLine-1)) , self._send_queue._qsize()))
 								# ~ self._clear_to_send.set()
 								self._log(u"..._continue_sending {}".format((self._currentLine-1)))
 								# ~ continue
 
-						if (total_count > 60): #don't send too quickly
-							self._log(u"#### skip >60")
-							break
-						# ~ if (monotonic_time() > next_wait_timeout): #don't send too quickly
-							# ~ self._log(u"#### skip too fast")
+						# ~ if (total_count > 60): #don't send too quickly
+							# ~ self._log(u"#### skip >60")
 							# ~ break
 				#while _send_queue >1
 				if not self._send_queue_active:
@@ -3288,10 +3272,10 @@ class MachineCom(object):
 					self._log(u"#### wait until all sends will be received")
 					self._clear_to_send.wait() #wait until all sends will be received
 				else:
-					self._log(u"#### sleep 10ms")
+					self._log(u"#### sleep 5ms")
 					cruLineTimeout=100
 					while( self._currentLine > self._AdvancedOkSendNextLines and cruLineTimeout >0):
-						time.sleep(0.01) #pool 10ms
+						time.sleep(0.005) #pool 10ms
 						cruLineTimeout-=1
 			except:
 				self._logger.exception("Caught an exception in the send loop")
