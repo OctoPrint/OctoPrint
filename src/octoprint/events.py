@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -181,14 +181,14 @@ class EventManager(object):
 					self._logger.debug("Sending action to {!r}".format(listener))
 					try:
 						listener(event, payload)
-					except:
+					except Exception:
 						self._logger.exception("Got an exception while sending event {} (Payload: {!r}) to {}".format(event, payload, listener))
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
 				                             args=(event, payload))
 			self._logger.info("Event loop shut down")
-		except:
+		except Exception:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
 	def fire(self, event, payload=None):
@@ -252,12 +252,11 @@ class EventManager(object):
 		Unsubscribe a listener from an event -- pass in the event name (as string) and the callback object
 		"""
 
-		if not callback in self._registeredListeners[event]:
-			# callback not subscribed to event, just return
-			return
-
-		self._registeredListeners[event].remove(callback)
-		self._logger.debug("Unsubscribed listener {!r} for event {}".format(callback, event))
+		try:
+			self._registeredListeners[event].remove(callback)
+		except ValueError:
+			# not registered
+			pass
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)
@@ -300,7 +299,7 @@ class DebugEventListener(GenericEventListener):
 	def __init__(self):
 		GenericEventListener.__init__(self)
 
-		events = filter(lambda x: not x.startswith("__"), dir(Events))
+		events = list(filter(lambda x: not x.startswith("__"), dir(Events)))
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):
@@ -334,26 +333,33 @@ class CommandTrigger(GenericEventListener):
 				self._logger.info("Invalid subscription definition, not a dictionary: {!r}".format(subscription))
 				continue
 
-			if not "event" in subscription.keys() or not "command" in subscription.keys() \
-					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
+			if not "event" in subscription or not "command" in subscription \
+					or not "type" in subscription or not subscription["type"] in ["system", "gcode"]:
 				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(subscription))
 				continue
 
-			if "enabled" in subscription.keys() and not subscription["enabled"]:
+			if "enabled" in subscription and not subscription["enabled"]:
 				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
-			event = subscription["event"]
+			events = subscription["event"]
 			command = subscription["command"]
 			commandType = subscription["type"]
 			debug = subscription["debug"] if "debug" in subscription else False
 
-			if not event in self._subscriptions.keys():
-				self._subscriptions[event] = []
-			self._subscriptions[event].append((command, commandType, debug))
+			# "event" in the configuration can be a string, or
+			# a list of strings.  If it's the former, convert it
+			# into the latter.
+			if not isinstance(events, (tuple, list, set)):
+				events = [events]
 
-			if not event in eventsToSubscribe:
-				eventsToSubscribe.append(event)
+			for event in events:
+				if event not in self._subscriptions:
+					self._subscriptions[event] = []
+				self._subscriptions[event].append((command, commandType, debug))
+
+				if event not in eventsToSubscribe:
+					eventsToSubscribe.append(event)
 
 		self.subscribe(eventsToSubscribe)
 
@@ -373,12 +379,12 @@ class CommandTrigger(GenericEventListener):
 				if isinstance(command, (tuple, list, set)):
 					processedCommand = []
 					for c in command:
-						processedCommand.append(self._processCommand(c, payload))
+						processedCommand.append(self._processCommand(c, event, payload))
 				else:
-					processedCommand = self._processCommand(command, payload)
+					processedCommand = self._processCommand(command, event, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError as e:
-				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
+			except KeyError:
+				self._logger.warning("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
 		if commandType == "system":
@@ -406,10 +412,10 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(command)
 			except subprocess.CalledProcessError as e:
 				if debug:
-					self._logger.warn("Command failed with return code {}: {}".format(e.returncode, str(e)))
+					self._logger.warning("Command failed with return code {}: {}".format(e.returncode, str(e)))
 				else:
-					self._logger.warn("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
-			except:
+					self._logger.warning("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
+			except Exception:
 				self._logger.exception("Command failed")
 
 		t = threading.Thread(target=process)
@@ -424,13 +430,14 @@ class CommandTrigger(GenericEventListener):
 			self._logger.info("Executing GCode commands: %r" % command)
 		self._printer.commands(commands)
 
-	def _processCommand(self, command, payload):
+	def _processCommand(self, command, event, payload):
 		"""
 		Performs string substitutions in the command string based on a few current parameters.
 
 		The following substitutions are currently supported:
 
 		  - {__currentZ} : current Z position of the print head, or -1 if not available
+		  - {__eventname} : the name of the event hook being triggered
 		  - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
 		  - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
 		  - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
@@ -447,11 +454,13 @@ class CommandTrigger(GenericEventListener):
 			import json
 			try:
 				json_string = json.dumps(payload)
-			except:
+			except Exception:
+				self._logger.exception("JSON: Cannot dump %r", payload)
 				json_string = ""
 
 		params = {
 			"__currentZ": "-1",
+			"__eventname": event,
 			"__filename": "NO FILE",
 			"__filepath": "NO PATH",
 			"__progress": "0",

@@ -703,7 +703,7 @@ You can find out more about the change, how to know if a plugin is even affected
   * Make timeout after which to unload the webcam stream after navigating away from it configurable (as suggested in [#1937](https://github.com/foosel/OctoPrint/issues/1937))
   * Add `ToolChange` event and tool change GCODE scripts
   * Support parsing GCODE subcodes.
-  * Add `octoprint.users.factory` hook, allowing plugins to extend/swap out the user manager OctoPrint uses.
+  * Add `octoprint.access.users.factory` hook, allowing plugins to extend/swap out the user manager OctoPrint uses.
   * Corewizard: Disable view model and client code if it's not actually required.
   * Corewizard: Disable injection of JS files into UI when it's not actually required.
   * GCODE analysis: Moved into its own subprocess. That should improve performance on multi core systems.

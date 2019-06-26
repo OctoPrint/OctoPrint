@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
@@ -12,7 +13,7 @@ $(function() {
         };
 
         self.requestCommandData = function() {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
                 return $.Deferred().reject().promise();
             }
 
@@ -42,6 +43,10 @@ $(function() {
         };
 
         self.triggerCommand = function(commandSpec) {
+            if (!self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
+                return $.Deferred().reject().promise();
+            }
+
             var deferred = $.Deferred();
 
             var callback = function() {
@@ -90,21 +95,17 @@ $(function() {
             return deferred.promise();
         };
 
-        self.onUserLoggedIn = function(user) {
-            if (user.admin) {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function(user) {
+            if (self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
                 self.requestData();
             } else {
-                self.onUserLoggedOut();
+                self.lastCommandResponse = undefined;
+                self.systemActions([]);
             }
         };
 
-        self.onUserLoggedOut = function() {
-            self.lastCommandResponse = undefined;
-            self.systemActions([]);
-        };
-
         self.onEventSettingsUpdated = function() {
-            if (self.loginState.isAdmin()) {
+            if (self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
                 self.requestData();
             }
         };
@@ -112,6 +113,6 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SystemViewModel,
-        dependencies: ["loginStateViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });

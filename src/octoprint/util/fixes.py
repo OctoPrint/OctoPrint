@@ -1,8 +1,8 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 """
 This module contains a functions that monkey patch third party dependencies in the one or other way.
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import functools

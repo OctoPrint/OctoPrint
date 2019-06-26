@@ -1,10 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import io
 import unittest
 import os
 import mock
@@ -22,7 +23,7 @@ class FileWrapper(object):
 		import hashlib
 		blocksize = 65536
 		hash = hashlib.sha1()
-		with open(self.path, "rb") as f:
+		with io.open(self.path, 'rb') as f:
 			buffer = f.read(blocksize)
 			while len(buffer) > 0:
 				hash.update(buffer)
@@ -72,19 +73,18 @@ class LocalStorageTest(unittest.TestCase):
 	def test_add_file_overwrite(self):
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 
-		try:
-			self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
-		except:
-			pass
+		from octoprint.filemanager.storage import StorageError
+		self.assertRaises(StorageError, self._add_and_verify_file, "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
 
 		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
 
 	def test_add_file_with_display(self):
-		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, display=u"bp_cäse.stl")
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, display="bp_cäse.stl")
 		stl_metadata = self.storage.get_metadata(stl_name)
 
 		self.assertIsNotNone(stl_metadata)
-		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), stl_metadata)
+		self.assertIn('display', stl_metadata)
+		self.assertEqual("bp_cäse.stl", stl_metadata['display'])
 
 	def test_add_file_with_web(self):
 		import time
@@ -193,7 +193,7 @@ class LocalStorageTest(unittest.TestCase):
 	def test_copy_file_new_display(self):
 		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
 		try:
-			self.storage.copy_file("bp_case.stl", u"bp_cäse.stl")
+			self.storage.copy_file("bp_case.stl", "bp_cäse.stl")
 			self.fail("Expected an exception")
 		except StorageError as e:
 			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
@@ -202,18 +202,19 @@ class LocalStorageTest(unittest.TestCase):
 		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
 
 		before_metadata = self.storage.get_metadata("bp_case.stl")
-		self.storage.move_file("bp_case.stl", u"bp_cäse.stl")
+		self.storage.move_file("bp_case.stl", "bp_cäse.stl")
 		after_metadata = self.storage.get_metadata("bp_case.stl")
 
 		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
 
 		self.assertIsNotNone(before_metadata)
 		self.assertIsNotNone(after_metadata)
-		self.assertDictContainsSubset(dict(display=u"bp_cäse.stl"), after_metadata)
+		self.assertIn('display', after_metadata)
+		self.assertEqual("bp_cäse.stl", after_metadata['display'])
 
 	@data("copy_file", "move_file")
 	def test_copy_move_file_different_display(self, operation):
-		self._add_file("bp_case.stl", FILE_BP_CASE_STL, display=u"bp_cäse.stl")
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL, display="bp_cäse.stl")
 
 		before_metadata = self.storage.get_metadata("bp_case.stl")
 		getattr(self.storage, operation)("bp_case.stl", "test.stl")
@@ -266,10 +267,11 @@ class LocalStorageTest(unittest.TestCase):
 		self._add_and_verify_folder("test", "test")
 
 	def test_add_folder_with_display(self):
-		self._add_and_verify_folder("test", "test", display=u"täst")
+		self._add_and_verify_folder("test", "test", display="täst")
 		metadata = self.storage.get_metadata("test")
 		self.assertIsNotNone(metadata)
-		self.assertDictContainsSubset(dict(display=u"täst"), metadata)
+		self.assertIn('display', metadata)
+		self.assertEqual("täst", metadata['display'])
 
 	def test_add_subfolder(self):
 		folder_name = self._add_and_verify_folder("folder with some spaces", "folder_with_some_spaces")
@@ -288,7 +290,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		try:
 			self.storage.remove_folder(content_folder, recursive=False)
-		except:
+		except Exception:
 			self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
 			self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
 			self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))
@@ -303,14 +305,14 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertFalse(os.path.isdir(os.path.join(self.basefolder, empty_folder)))
 
 	def test_remove_folder_with_display(self):
-		self._add_folder("folder", display=u"földer")
+		self._add_folder("folder", display="földer")
 
 		before_metadata = self.storage.get_metadata("folder")
 		self.storage.remove_folder("folder")
 		after_metadata = self.storage.get_metadata("folder")
 
 		self.assertIsNotNone(before_metadata)
-		self.assertDictEqual(before_metadata, dict(display=u"földer"))
+		self.assertDictEqual(before_metadata, dict(display="földer"))
 		self.assertIsNone(after_metadata)
 
 	def test_copy_folder(self):
@@ -358,7 +360,7 @@ class LocalStorageTest(unittest.TestCase):
 	def test_copy_folder_new_display(self):
 		self._add_folder("folder")
 		try:
-			self.storage.copy_folder("folder", u"földer")
+			self.storage.copy_folder("folder", "földer")
 			self.fail("Expected an exception")
 		except StorageError as e:
 			self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
@@ -367,23 +369,23 @@ class LocalStorageTest(unittest.TestCase):
 		self._add_folder("folder")
 
 		before_metadata = self.storage.get_metadata("folder")
-		self.storage.move_folder("folder", u"földer")
+		self.storage.move_folder("folder", "földer")
 		after_metadata = self.storage.get_metadata("folder")
 
 		self.assertIsNone(before_metadata)
 		self.assertIsNotNone(after_metadata)
-		self.assertDictEqual(after_metadata, dict(display=u"földer"))
+		self.assertDictEqual(after_metadata, dict(display="földer"))
 
 	@data("copy_folder", "move_folder")
 	def test_copy_move_folder_different_display(self, operation):
-		self._add_folder("folder", display=u"földer")
+		self._add_folder("folder", display="földer")
 
 		before_metadata = self.storage.get_metadata("folder")
 		getattr(self.storage, operation)("folder", "test")
 		after_metadata = self.storage.get_metadata("test")
 
 		self.assertIsNotNone(before_metadata)
-		self.assertDictEqual(before_metadata, dict(display=u"földer"))
+		self.assertDictEqual(before_metadata, dict(display="földer"))
 		self.assertIsNone(after_metadata)
 
 	@data("copy_folder", "move_folder")
@@ -571,7 +573,7 @@ class LocalStorageTest(unittest.TestCase):
 			self.storage.sanitize_name(input)
 			self.fail("expected a ValueError")
 		except ValueError as e:
-			self.assertEqual("name must not contain / or \\", e.message)
+			self.assertEqual("name must not contain / or \\", e.args[0])
 
 	@data(
 		("folder/with/subfolder", "/folder/with/subfolder"),
@@ -594,7 +596,7 @@ class LocalStorageTest(unittest.TestCase):
 			self.storage.sanitize_path(input)
 			self.fail("expected a ValueError")
 		except ValueError as e:
-			self.assertTrue(e.message.startswith("path not contained in base folder: "))
+			self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
 
 	@data(
 		("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco"),
@@ -624,9 +626,9 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEqual(expected_name, actual_name)
 
 	@data(
-		(u"test", u"test"),
-		(u"\u2764", u"red_heart"),
-		(u"\u2764\ufe00", u"red_heart")
+		("test", "test"),
+		("\u2764", "red_heart"),
+		("\u2764\ufe00", "red_heart")
 	)
 	@unpack
 	def test_slugify(self, input, expected):
@@ -652,7 +654,7 @@ class LocalStorageTest(unittest.TestCase):
 
 		# prepare
 		import yaml
-		with open(yaml_path, "wb") as f:
+		with io.open(yaml_path, 'wt') as f:
 			yaml.safe_dump(metadata, f)
 
 		# migrate
@@ -663,7 +665,7 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertFalse(os.path.exists(yaml_path)) # TODO 1.3.10 change to assertFalse
 
 		import json
-		with open(json_path) as f:
+		with io.open(json_path, 'rt', encoding='utf-8') as f:
 			json_metadata = json.load(f)
 		self.assertDictEqual(metadata, json_metadata)
 

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,7 +14,7 @@ def log_github_ratelimit(logger, r):
 	try:
 		import time
 		reset = time.strftime("%Y-%m-%d %H:%M", time.gmtime(int(reset)))
-	except:
+	except Exception:
 		reset = "?"
 
 	logger.debug("Github rate limit: %s/%s, reset at %s" % (remaining, ratelimit, reset))

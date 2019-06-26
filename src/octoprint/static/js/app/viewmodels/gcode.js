@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
@@ -139,34 +140,27 @@ $(function() {
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
             if (!currentProfileData) return;
 
+            var options = {
+                reader: {},
+                renderer: {}
+            };
+            var dirty = false;
+
             var toolOffsets = self._retrieveToolOffsets(currentProfileData);
             if (toolOffsets) {
-                GCODE.ui.updateOptions({
-                    reader: {
-                        toolOffsets: toolOffsets
-                    }
-                });
+                options.reader.toolOffsets = toolOffsets;
+                dirty = true;
             }
 
             var bedDimensions = self._retrieveBedDimensions(currentProfileData);
             if (bedDimensions) {
-                GCODE.ui.updateOptions({
-                    renderer: {
-                        bed: bedDimensions
-                    },
-                    reader: {
-                        bed: bedDimensions
-                    }
-                });
+                options.renderer.bed = bedDimensions;
+                options.reader.bed = bedDimensions;
+                dirty = true;
             }
 
-            var axesConfiguration = self._retrieveAxesConfiguration(currentProfileData);
-            if (axesConfiguration) {
-                GCODE.ui.updateOptions({
-                    renderer: {
-                        invertAxes: axesConfiguration
-                    }
-                });
+            if (dirty) {
+                GCODE.ui.updateOptions(options);
             }
         };
 
@@ -759,7 +753,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: GcodeViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#gcode"]
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#gcode", "#gcode_link"]
     });
 });

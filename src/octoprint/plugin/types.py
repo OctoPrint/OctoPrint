@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
 class, :class:`OctoPrintPlugin`.
@@ -15,8 +17,6 @@ Please note that the plugin implementation types are documented in the section
    :members:
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -66,7 +66,7 @@ class OctoPrintPlugin(Plugin):
 
 	.. attribute:: _app_session_manager
 
-	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
+	   The :class:`~octoprint.access.users.SessionManager` instance. Injected by the plugin core system upon initialization of
 	   the implementation.
 
 	.. attribute:: _plugin_lifecycle_manager
@@ -76,7 +76,7 @@ class OctoPrintPlugin(Plugin):
 
 	.. attribute:: _user_manager
 
-	   The :class:`~octoprint.users.UserManager` instance. Injected by the plugin core system upon initialization
+	   The :class:`~octoprint.access.users.UserManager` instance. Injected by the plugin core system upon initialization
 	   of the implementation.
 
 	.. attribute:: _connectivity_checker
@@ -1497,6 +1497,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		from flask_login import current_user
 		import copy
 
+		from octoprint.access.permissions import Permissions
+
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
 			del data[self.config_version_key]
@@ -1540,8 +1542,8 @@ class SettingsPlugin(OctoPrintPlugin):
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and current_user.has_permission(Permissions.SETTINGS),
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():
@@ -1617,8 +1619,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
 
-		Override this in your plugin's implementation to restrict whether a path should only be returned to logged in
-		users & admins, only to admins, or never on the REST API.
+		Override this in your plugin's implementation to restrict whether a path should only be returned to users with
+		the SETTINGS permission, any logged in users, or never on the REST API.
 
 		Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
 		the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``

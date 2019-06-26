@@ -385,8 +385,8 @@ octoprint.plugin.softwareupdate.check_config
 
    .. code-block:: python
 
-      # coding=utf-8
-      from __future__ import absolute_import
+      # -*- coding: utf-8 -*-
+      from __future__ import absolute_import, unicode_literals
 
       def get_update_information(*args, **kwargs):
           return dict(

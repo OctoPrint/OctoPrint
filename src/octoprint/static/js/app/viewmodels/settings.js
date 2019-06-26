@@ -3,9 +3,12 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
+        self.access = parameters[1];
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
+
+        // TODO: remove in upcoming version, this is only for backwards compatibility
+        self.users = parameters[4];
 
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
@@ -97,6 +100,7 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
+        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
 
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
@@ -128,6 +132,7 @@ $(function() {
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
+        self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
@@ -172,6 +177,7 @@ $(function() {
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
+        self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
@@ -783,6 +789,7 @@ $(function() {
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
                     pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
+                    emergencyCommands: function() {return splitTextToArray(self.serial_emergencyCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
                     alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
                     neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
@@ -923,6 +930,7 @@ $(function() {
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
                     pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},
+                    emergencyCommands: function(value) { self.serial_emergencyCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
                     neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},
@@ -1095,22 +1103,16 @@ $(function() {
             self.requestData();
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             // we might have other user rights now, refresh (but only if startup has fully completed)
             if (!self._startupComplete) return;
             self.requestData();
         };
-
-        self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SettingsViewModel,
-        dependencies: ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
 });

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import click
+click.disable_unicode_literals_warning = True
 
 from past.builtins import basestring
 
@@ -116,7 +117,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
 					if key in options:
 						val = options[key]
 					else:
-						raw = raw if isinstance(raw, basestring) else str(raw)
+						if not isinstance(raw, basestring):
+							raw = str(raw)
 						val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 
 						if not no_input:

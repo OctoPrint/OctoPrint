@@ -1,8 +1,9 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module provides a bunch of utility methods and helpers for version handling.
 """
-from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -109,7 +110,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 			s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
 			if octoprint_version in s:
 				break
-		except:
+		except Exception:
 			logger.exception("Something is wrong with this compatibility string for OctoPrint: {}".format(octo_compat))
 	else:
 		return False

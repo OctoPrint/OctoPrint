@@ -1,10 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import click
+click.disable_unicode_literals_warning = True
 
 #~~ "octoprint util" commands
 
@@ -71,7 +72,7 @@ def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle
 
 	click.echo("DONE:{}s".format(monotonic_time() - start_time))
 	click.echo("RESULTS:")
-	click.echo(yaml.safe_dump(interpreter.get_result(), default_flow_style=False, indent="    ", allow_unicode=True))
+	click.echo(yaml.safe_dump(interpreter.get_result(), default_flow_style=False, indent=4, allow_unicode=True))
 
 if __name__ == "__main__":
 	gcode_command()

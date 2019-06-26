@@ -1,11 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
 
 import flask
 import threading
 import os
 import yaml
-import codecs
+import io
 import time
 from binascii import hexlify
 from collections import defaultdict
@@ -15,8 +15,10 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
-from octoprint.users import DummyUser
 from octoprint.util import atomic_write, monotonic_time, ResettableTimer
+
+from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
 
 
 CUTOFF_TIME = 10 * 60 # 10min
@@ -95,6 +97,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def initialize(self):
 		self._key_path = os.path.join(self.get_plugin_data_folder(), "keys.yaml")
 		self._load_keys()
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="ADMIN",
+			     name="Admin access",
+			     description=gettext("Allows administrating all application keys"),
+			     roles=["admin"],
+			     dangerous=True,
+			     default_groups=[ADMIN_GROUP])
+		]
 
 	##~~ TemplatePlugin
 
@@ -193,12 +207,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		if not user_id:
 			return flask.abort(403)
 
-		if request.values.get("all") in valid_boolean_trues and admin_permission.can():
+		if request.values.get("all") in valid_boolean_trues and Permissions.PLUGIN_APPKEYS_ADMIN.can():
 			keys = self._all_api_keys()
 		else:
 			keys = self._api_keys_for_user(user_id)
 
-		return flask.jsonify(keys=map(lambda x: x.external(), keys),
+		return flask.jsonify(keys=list(map(lambda x: x.external(), keys)),
 		                     pending=dict((x.user_token, x.external()) for x in self._get_pending_by_user_id(user_id)))
 
 	def on_api_command(self, command, data):
@@ -267,7 +281,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _expire_pending(self, user_token):
 		with self._pending_lock:
 			len_before = len(self._pending_decisions)
-			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.user_token != user_token,
+				                                  self._pending_decisions))
 			len_after = len(self._pending_decisions)
 
 			if len_after < len_before:
@@ -280,8 +295,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		with self._pending_lock:
 			cutoff = monotonic_time() - CUTOFF_TIME
 			len_before = len(self._pending_decisions)
-			self._pending_decisions = filter(lambda x: x.created >= cutoff,
-			                                 self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.created >= cutoff,
+			                                      self._pending_decisions))
 			len_after = len(self._pending_decisions)
 			if len_after < len_before:
 				self._logger.info("Deleted {} stale pending authorization requests".format(len_before - len_after))
@@ -301,7 +316,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				self._ready_decisions.append(ReadyDecision.for_pending(pending, user_id))
 
 		with self._pending_lock:
-			self._pending_decisions = filter(lambda x: x.user_token != user_token, self._pending_decisions)
+			self._pending_decisions = list(filter(lambda x: x.user_token != user_token,
+				                                  self._pending_decisions))
 
 		return True
 
@@ -319,7 +335,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		api_key = self._add_api_key(decision.user_id, decision.app_id)
 
 		with self._ready_lock:
-			self._ready_decisions = filter(lambda x: x.app_token != app_token, self._ready_decisions)
+			self._ready_decisions = list(filter(lambda x: x.app_token != app_token,
+				                                self._ready_decisions))
 
 		return api_key
 
@@ -337,17 +354,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	def _delete_api_key(self, api_key):
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
-				self._keys[user_id] = filter(lambda x: x.api_key != api_key, data)
+				self._keys[user_id] = list(filter(lambda x: x.api_key != api_key, data))
 			self._save_keys()
 
 	def _user_for_api_key(self, api_key):
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
-				if filter(lambda x: x.api_key == api_key, data):
+				if any(filter(lambda x: x.api_key == api_key, data)):
 					if self._user_manager.enabled:
 						return self._user_manager.findUser(userid=user_id)
-					elif user_id == "dummy":
-						return DummyUser()
+					elif user_id == "_admin" or user_id == "dummy":
+						# dummy = backwards compatible
+						return self._user_manager.anonymous_user_factory()
 		return None
 
 	def _api_keys_for_user(self, user_id):
@@ -370,9 +388,9 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				return
 
 			try:
-				with codecs.open(self._key_path, "rb", encoding="utf-8", errors="strict") as f:
+				with io.open(self._key_path, 'rt', encoding="utf-8", errors="strict") as f:
 					persisted = yaml.safe_load(f)
-			except:
+			except Exception:
 				self._logger.exception("Could not load application keys from {}".format(self._key_path))
 				return
 
@@ -391,17 +409,18 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 				to_persist[user_id] = [x.internal() for x in keys]
 
 			try:
-				with atomic_write(self._key_path) as f:
-					yaml.safe_dump(to_persist, f)
-			except:
+				with atomic_write(self._key_path, mode='wt') as f:
+					yaml.safe_dump(to_persist, f, allow_unicode=True)
+			except Exception:
 				self._logger.exception("Could not write application keys to {}".format(self._key_path))
 
-__plugin_name__ = u"Application Keys Plugin"
-__plugin_description__ = u"Implements a workflow for third party clients to obtain API keys"
-__plugin_author__ = u"Gina Häußge, Aldo Hoeben"
-__plugin_disabling_discouraged__ = gettext(u"Without this plugin third party clients will no longer be able to "
-                                           u"obtain an API key without you manually copy-pasting it.")
+__plugin_name__ = "Application Keys Plugin"
+__plugin_description__ = "Implements a workflow for third party clients to obtain API keys"
+__plugin_author__ = "Gina Häußge, Aldo Hoeben"
+__plugin_disabling_discouraged__ = gettext("Without this plugin third party clients will no longer be able to "
+                                           "obtain an API key without you manually copy-pasting it.")
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
-	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key
+	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }

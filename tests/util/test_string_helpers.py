@@ -48,18 +48,18 @@ class StringHelperTest(unittest.TestCase):
 		self.assertIsInstance(result, bytes)
 
 	def test_to_bytes_unicode_utf8(self):
-		data = b"äöüß"
-		result = octoprint.util.to_bytes(data.decode("utf-8"), encoding="utf-8")
-		self.assertEqual(result, data)
+		data = "äöüß"
+		result = octoprint.util.to_bytes(data, encoding="utf-8")
+		self.assertEqual(result, data.encode("utf-8"))
 		self.assertIsInstance(result, bytes)
 
 	def test_to_bytes_unicode_utf8_vs_ascii(self):
-		self.assertRaises(UnicodeEncodeError, octoprint.util.to_bytes, b"äöüß".decode("utf-8"), encoding="ascii")
+		self.assertRaises(UnicodeEncodeError, octoprint.util.to_bytes, "äöüß", encoding="ascii")
 
 	def test_to_bytes_unicode_utf8_vs_ascii_replace(self):
-		data = b"äöüß"
-		result = octoprint.util.to_bytes(data.decode("utf-8"), encoding="ascii", errors="replace")
-		self.assertEqual(result, data.decode("utf-8").encode("ascii", errors="replace"))
+		data = "äöüß"
+		result = octoprint.util.to_bytes(data, encoding="ascii", errors="replace")
+		self.assertEqual(result, data.encode("ascii", errors="replace"))
 		self.assertIsInstance(result, bytes)
 
 	def test_to_str_still_works(self):

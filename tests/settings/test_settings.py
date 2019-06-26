@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Tests for OctoPrint's Settings class
 
@@ -9,10 +11,12 @@ Tests for OctoPrint's Settings class
      * tests for settings migration
 """
 
+import io
 import unittest
 import shutil
 import contextlib
 import os
+import sys
 import tempfile
 import yaml
 import hashlib
@@ -25,15 +29,21 @@ import octoprint.settings
 @ddt.ddt
 class TestSettings(unittest.TestCase):
 
+	def _load_yaml(self, fname):
+		with io.open(fname, 'rt', encoding='utf-8') as f:
+			return yaml.safe_load(f)
+
+	def _dump_yaml(self, fname, config):
+		with io.open(fname, 'wt', encoding='utf-8') as f:
+			yaml.safe_dump(config, f)
+
 	def setUp(self):
 		self.base_path = os.path.join(os.path.dirname(__file__), "_files")
 		self.config_path = os.path.realpath(os.path.join(self.base_path, "config.yaml"))
 		self.defaults_path = os.path.realpath(os.path.join(self.base_path, "defaults.yaml"))
 
-		with open(self.config_path, "r+b") as f:
-			self.config = yaml.safe_load(f)
-		with open(self.defaults_path, "r+b") as f:
-			self.defaults = yaml.safe_load(f)
+		self.config = self._load_yaml(self.config_path)
+		self.defaults = self._load_yaml(self.defaults_path)
 
 		from octoprint.util import dict_merge
 		self.expected_effective = dict_merge(self.defaults, self.config)
@@ -85,7 +95,7 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_basedir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
 
 	def test_basedir_initialization_with_custom_config(self):
@@ -113,7 +123,7 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_configdir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
 
 	##~~ regexes
@@ -136,7 +146,7 @@ class TestSettings(unittest.TestCase):
 
 		# we know there's a 'name' by now, so just ensure we have the regex key
 		temperature_regex_filter = temperature_regex_filters[0]
-		self.assertIn('regex', temperature_regex_filter.keys())
+		self.assertIn('regex', temperature_regex_filter)
 
 	def test_temperature_regex_should_not_match(self):
 		'''random entries that aren't temperature regex entries'''
@@ -281,10 +291,9 @@ class TestSettings(unittest.TestCase):
 			data = settings.get(["devel", "virtualPrinter"], merged=True)
 
 			self.assertGreater(len(data), 1)
-			self.assertDictContainsSubset(dict(enabled=True,
-			                                   sendWait=True,
-			                                   waitInterval=1.0),
-			                              data)
+			test_dict = dict(enabled=True, sendWait=True, waitInterval=1.0)
+			test_data = dict((k,v) for k,v in data.items() if k in test_dict)
+			self.assertEqual(test_dict, test_data)
 
 	def test_get_multiple(self):
 		with self.mocked_config():
@@ -501,7 +510,7 @@ class TestSettings(unittest.TestCase):
 	def test_effective_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.expected_effective))
+			hash.update(yaml.safe_dump(self.expected_effective).encode('utf-8'))
 			expected_effective_hash = hash.hexdigest()
 			print(yaml.safe_dump(self.expected_effective))
 
@@ -514,7 +523,7 @@ class TestSettings(unittest.TestCase):
 	def test_config_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.config))
+			hash.update(yaml.safe_dump(self.config).encode('utf-8'))
 			expected_config_hash = hash.hexdigest()
 
 			settings = octoprint.settings.Settings()
@@ -569,11 +578,9 @@ class TestSettings(unittest.TestCase):
 			self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
 			# modify yaml file externally
-			with open(configfile, "r+b") as f:
-				config = yaml.safe_load(f)
+			config = self._load_yaml(configfile)
 			config["server"]["host"] = "127.0.0.1"
-			with open(configfile, "w+b") as f:
-				yaml.safe_dump(config, f)
+			self._dump_yaml(configfile, config)
 
 			# set some value, should also reload file before setting new api key
 			settings.set(["api", "key"], "key")
@@ -635,7 +642,7 @@ class TestSettings(unittest.TestCase):
 			if directory is not None:
 				try:
 					shutil.rmtree(directory)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary basedir")
 
 	@contextlib.contextmanager

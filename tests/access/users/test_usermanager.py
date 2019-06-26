@@ -1,6 +1,8 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
-Unit tests for octoprint.users.UserManager
+Unit tests for octoprint.access.users.UserManager
 """
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +11,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import unittest
 import ddt
 
-import octoprint.users
+import octoprint.access.users
 
 @ddt.ddt
 class UserManagerTest(unittest.TestCase):
@@ -17,8 +19,8 @@ class UserManagerTest(unittest.TestCase):
 	def test_createPasswordHash_nonascii(self):
 		"""Test for issue #1891"""
 
-		password = u"password with ümläutß"
+		password = "password with ümläutß"
 		salt = "abc"
 
 		# should not throw an exception
-		octoprint.users.UserManager.createPasswordHash(password, salt=salt)
+		octoprint.access.users.UserManager.create_password_hash(password, salt=salt)

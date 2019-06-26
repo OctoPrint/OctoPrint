@@ -400,8 +400,11 @@ $(function() {
         self.fromProfileData(cleanProfile());
     }
 
-    function PrinterProfilesViewModel() {
+    function PrinterProfilesViewModel(parameters) {
         var self = this;
+
+        self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self.requestInProgress = ko.observable(false);
 
@@ -457,6 +460,10 @@ $(function() {
         };
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
+                return;
+            }
+
             return OctoPrint.printerprofiles.list()
                 .done(self.fromResponse);
         };
@@ -598,10 +605,14 @@ $(function() {
         };
 
         self.onSettingsShown = self.requestData;
-        self.onStartup = self.requestData;
+
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+            self.requestData();
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: PrinterProfilesViewModel
+        construct: PrinterProfilesViewModel,
+        dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });

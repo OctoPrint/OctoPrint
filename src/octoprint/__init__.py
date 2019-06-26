@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import io
 import sys
 import logging as log
 
@@ -297,7 +298,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config
@@ -370,13 +371,16 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 			return True
 		plugin_validators.append(validator)
 
+	compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
+
 	from octoprint.plugin import plugin_manager
 	pm = plugin_manager(init=True,
 	                    plugin_folders=plugin_folders,
 	                    plugin_entry_points=plugin_entry_points,
 	                    plugin_disabled_list=plugin_disabled_list,
 	                    plugin_blacklist=plugin_blacklist,
-	                    plugin_validators=plugin_validators)
+	                    plugin_validators=plugin_validators,
+	                    compatibility_ignored_list=compatibility_ignored_list)
 
 	settings_overlays = dict()
 	disabled_from_overlays = dict()
@@ -489,7 +493,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 		if os.stat(path).st_mtime + ttl < time.time():
 			return None
 
-		with bom_aware_open(path, encoding="utf-8", mode="r") as f:
+		with bom_aware_open(path, encoding="utf-8", mode='rt') as f:
 			result = yaml.safe_load(f)
 
 		if isinstance(result, list):
@@ -503,12 +507,12 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
 			if cache is not None:
 				try:
-					with bom_aware_open(cache, encoding="utf-8", mode="w") as f:
+					with bom_aware_open(cache, encoding="utf-8", mode='wt') as f:
 						yaml.safe_dump(result, f)
-				except:
-					logger.info("Fetched plugin blacklist but couldn't write it to its cache file.")
-		except:
-			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it.".format(url))
+				except Exception as e:
+					logger.info("Fetched plugin blacklist but couldn't write it to its cache file: %s", e)
+		except Exception as e:
+			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(url, e))
 		return result
 
 	try:
@@ -535,7 +539,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 			logger.info("Blacklist processing done")
 
 		return blacklist
-	except:
+	except Exception:
 		logger.exception("Something went wrong while processing the plugin blacklist. Proceeding without it.")
 
 

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -17,10 +17,13 @@ import octoprint.timelapse
 import octoprint.server
 import octoprint.events
 import octoprint.plugin
-import octoprint.users
+import octoprint.access.users
 
 from octoprint.events import Events
 from octoprint.settings import settings
+from octoprint.access.permissions import Permissions
+from octoprint.access.users import LoginStatusListener
+from octoprint.access.groups import GroupChangeListener
 from octoprint.util.json import JsonEncoding
 
 import octoprint.printer
@@ -65,8 +68,16 @@ class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
 		                    stats)
 
 
-class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
-	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
+class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
+                             octoprint.printer.PrinterCallback,
+                             LoginStatusListener,
+                             GroupChangeListener):
+
+	_emit_permissions = {"connected": [],
+	                     "reauthRequired": [],
+	                     "*": [Permissions.STATUS]}
+
+	def __init__(self, printer, fileManager, analysisQueue, userManager, groupManager, eventManager, pluginManager, session):
 		if isinstance(session, octoprint.vendor.sockjs.tornado.session.Session):
 			session = JsonEncodingSessionWrapper(session)
 
@@ -85,13 +96,12 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		self._fileManager = fileManager
 		self._analysisQueue = analysisQueue
 		self._userManager = userManager
+		self._groupManager = groupManager
 		self._eventManager = eventManager
 		self._pluginManager = pluginManager
 
-		self._userManager.register_callback(self._user_manager_callback)
-
 		self._remoteAddress = None
-		self._user = None
+		self._user = self._userManager.anonymous_user_factory()
 
 		self._throttleFactor = 1
 		self._lastCurrent = 0
@@ -103,10 +113,11 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 
 		self._registered = False
 
-	def _getRemoteAddress(self, info):
-		forwardedFor = info.headers.get("X-Forwarded-For")
-		if forwardedFor is not None:
-			return forwardedFor.split(",")[0]
+	@staticmethod
+	def _get_remote_address(info):
+		forwarded_for = info.headers.get("X-Forwarded-For")
+		if forwarded_for is not None:
+			return forwarded_for.split(",")[0]
 		return info.ip
 
 	def __str__(self):
@@ -117,35 +128,43 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 
 	def on_open(self, info):
 		self._pluginManager.register_message_receiver(self.on_plugin_message)
-		self._remoteAddress = self._getRemoteAddress(info)
+		self._remoteAddress = self._get_remote_address(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
+		self._userManager.register_login_status_listener(self)
+		self._groupManager.register_listener(self)
+
 		plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
-		template_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin))
-		asset_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.AssetPlugin))
+		template_plugins = list(map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)))
+		asset_plugins = list(map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.AssetPlugin)))
 		ui_plugins = sorted(set(template_plugins + asset_plugins))
 
 		import hashlib
 		plugin_hash = hashlib.md5()
-		plugin_hash.update(",".join(ui_plugins))
+		plugin_hash.update(",".join(ui_plugins).encode('utf-8'))
 
 		config_hash = settings().config_hash
 
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", dict(
-			version=octoprint.server.VERSION,
-			display_version=octoprint.server.DISPLAY_VERSION,
-			branch=octoprint.server.BRANCH,
-			plugin_hash=plugin_hash.hexdigest(),
-			config_hash=config_hash,
-			debug=octoprint.server.debug,
-			safe_mode=octoprint.server.safe_mode
-		))
+		self._emit("connected", dict(version=octoprint.server.VERSION,
+		                             display_version=octoprint.server.DISPLAY_VERSION,
+		                             branch=octoprint.server.BRANCH,
+		                             plugin_hash=plugin_hash.hexdigest(),
+		                             config_hash=config_hash,
+		                             debug=octoprint.server.debug,
+		                             safe_mode=octoprint.server.safe_mode,
+		                             permissions=[permission.as_dict() for permission in Permissions.all()]))
 
+		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		self._register()
 
 	def on_close(self):
+		self._user = self._userManager.anonymous_user_factory()
+		self._groupManager.unregister_listener(self)
+		self._userManager.unregister_login_status_listener(self)
+
 		self._unregister()
+		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 
@@ -157,8 +176,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		try:
 			import json
 			message = json.loads(message)
-		except:
-			self._logger.warn("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
+		except Exception:
+			self._logger.warning("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
 			return
 
 		if "auth" in message:
@@ -167,11 +186,10 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 				if not len(parts) == 2:
 					raise ValueError()
 			except ValueError:
-				self._logger.warn("Got invalid auth message from client {}, ignoring: {!r]".format(self._remoteAddress,
-				                                                                                   message["auth"]))
+				self._logger.warning("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
 			else:
 				user_id, user_session = parts
-				user = self._userManager.findUser(userid=user_id, session=user_session)
+				user = self._userManager.find_user(userid=user_id, session=user_session)
 
 				if user is not None:
 					self._on_login(user)
@@ -187,12 +205,15 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 				if throttle < 1:
 					raise ValueError()
 			except ValueError:
-				self._logger.warn("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
+				self._logger.warning("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
 			else:
 				self._throttleFactor = throttle
 				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
 
 	def on_printer_send_current_data(self, data):
+		if not self._user.has_permission(Permissions.STATUS):
+			return
+
 		# make sure we rate limit the updates according to our throttle factor
 		now = time.time()
 		if now < self._lastCurrent + self._baseRateLimit * self._throttleFactor:
@@ -226,26 +247,34 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 			"messages": messages,
 			"busyFiles": busy_files,
 		})
-		self._emit("current", data)
+		self._emit("current", payload=data)
 
 	def on_printer_send_initial_data(self, data):
 		data_to_send = dict(data)
 		data_to_send["serverTime"] = time.time()
-		self._emit("history", data_to_send)
+		self._emit("history", payload=data_to_send)
 
 	def sendEvent(self, type, payload=None):
-		self._emit("event", {"type": type, "payload": payload})
+		self._emit("event", payload=dict(type=type, payload=payload))
 
 	def sendTimelapseConfig(self, timelapseConfig):
-		self._emit("timelapse", timelapseConfig)
+		self._emit("timelapse", payload=timelapseConfig)
 
 	def sendSlicingProgress(self, slicer, source_location, source_path, dest_location, dest_path, progress):
-		self._emit("slicingProgress",
-		           dict(slicer=slicer, source_location=source_location, source_path=source_path, dest_location=dest_location, dest_path=dest_path, progress=progress)
+		self._emit("slicingProgress", payload=dict(slicer=slicer,
+		                                           source_location=source_location,
+		                                           source_path=source_path,
+		                                           dest_location=dest_location,
+		                                           dest_path=dest_path,
+		                                           progress=progress))
+
+	def sendRenderProgress(self, progress):
+		self._emit("renderProgress",
+		           dict(progress=progress)
 		)
 
-	def on_plugin_message(self, plugin, data):
-		self._emit("plugin", dict(plugin=plugin, data=data))
+	def on_plugin_message(self, plugin, data, permissions=None):
+		self._emit("plugin", payload=dict(plugin=plugin, data=data), permissions=permissions)
 
 	def on_printer_add_log(self, data):
 		with self._logBacklogMutex:
@@ -259,38 +288,41 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
 
+	def on_user_logged_out(self, user):
+		if user.get_id() == self._user.get_id() and hasattr(user, "session") and user.session == self._user.session:
+			self._logger.info("User {} logged out, logging out on socket".format(user.get_id()))
+			self._on_logout()
+			self._sendReauthRequired("logout")
+
+	def on_user_modified(self, user):
+		if user.get_id() == self._user.get_id():
+			self._sendReauthRequired("modified")
+
+	def on_user_removed(self, userid):
+		if self._user.get_id() == userid:
+			self._logger.info("User {} deleted, logging out on socket".format(userid))
+			self._on_logout()
+			self._sendReauthRequired("removed")
+
+	def on_group_permissions_changed(self, group, added=None, removed=None):
+		if self._user.is_anonymous and group == self._groupManager.guest_group:
+			self._sendReauthRequired("modified")
+
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
+		if self._user.is_anonymous and group == self._groupManager.guest_group:
+			self._sendReauthRequired("modified")
+
 	def _onEvent(self, event, payload):
 		self.sendEvent(event, payload)
 
-	def _emit(self, type, payload):
-		proceed = True
-		for name, hook in self._emit_hooks.items():
-			try:
-				proceed = proceed and hook(self, self._user, type, payload)
-			except:
-				self._logger.exception("Error processing emit hook handler from plugin {}".format(name),
-				                       extra=dict(plugin=name))
-
-		if not proceed:
-			return
-
-		self._do_emit(type, payload)
-
-	def _do_emit(self, type, payload):
-		try:
-			self.send({type: payload})
-		except Exception as e:
-			if self._logger.isEnabledFor(logging.DEBUG):
-				self._logger.warn("Could not send message to client {}".format(self._remoteAddress), exc_info=True)
-			else:
-				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
-
 	def _register(self):
+		"""Register this socket with the system if STATUS permission is available."""
+
 		proceed = True
 		for name, hook in self._register_hooks.items():
 			try:
 				proceed = proceed and hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing register hook handler for plugin {}".format(name),
 				                       extra=dict(plugin=name))
 
@@ -300,56 +332,81 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		if self._registered:
 			return
 
-		self._printer.register_callback(self)
-		self._fileManager.register_slicingprogress_callback(self)
-		octoprint.timelapse.register_callback(self)
+		if not self._user.has_permission(Permissions.STATUS):
+			return
 
-		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
+		# printer
+		self._printer.register_callback(self)
+		self._printer.send_initial_callback(self)
+
+		# files
+		self._fileManager.register_slicingprogress_callback(self)
+
+		# events
 		for event in octoprint.events.all_events():
 			self._eventManager.subscribe(event, self._onEvent)
 
-		octoprint.timelapse.notify_callbacks(octoprint.timelapse.current)
-
-		# This is a horrible hack for now to allow displaying a notification that a render job is still
-		# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
-		# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
-		# start and so on.
-		#
-		# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
-		#
-		# TODO remove when central job management becomes available and takes care of this for us
+		# timelapse
+		octoprint.timelapse.register_callback(self)
+		octoprint.timelapse.notify_callback(self, timelapse=octoprint.timelapse.current)
 		if octoprint.timelapse.current_render_job is not None:
-			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
-
+			# This is a horrible hack for now to allow displaying a notification that a render job is still
+			# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
+			# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
+			# start and so on.
+			#
+			# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
+			#
+			# TODO remove when central job management becomes available and takes care of this for us
+			self._emit("event", payload=dict(type=Events.MOVIE_RENDERING,
+			                                 payload=octoprint.timelapse.current_render_job))
 		self._registered = True
 
 	def _unregister(self):
+		"""Unregister this socket from the system"""
+
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregister_callback(self)
-
-		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.unsubscribe(event, self._onEvent)
 
-		self._registered = False
+	def _reregister(self):
+		"""Unregister and register again"""
+		self._unregister()
+		self._register()
 
-	def _user_manager_callback(self, action, session_user):
-		if action != "logout":
-			# we are only interested in logouts
+	def _sendReauthRequired(self, reason):
+		self._emit("reauthRequired", payload=dict(reason=reason))
+
+	def _emit(self, type, payload=None, permissions=None):
+		proceed = True
+		for name, hook in self._emit_hooks.items():
+			try:
+				proceed = proceed and hook(self, self._user, type, payload)
+			except Exception:
+				self._logger.exception("Error processing emit hook handler from plugin {}".format(name),
+				                       extra=dict(plugin=name))
+
+		if not proceed:
 			return
 
-		if not self._user or not session_user:
-			# we need both users set
+		if permissions is None:
+			permissions = self._emit_permissions.get(type, self._emit_permissions["*"])
+
+		if not self._user or not all(map(lambda p: self._user.has_permission(p), permissions)):
 			return
 
-		if not isinstance(self._user, octoprint.users.SessionUser) or not isinstance(session_user, octoprint.users.SessionUser):
-			# and we need both users to be session users
-			return
+		self._do_emit(type, payload)
 
-		if self._user.get_id() == session_user.get_id() and self._user.session == session_user.session:
-			# our user just logged out
-			self._on_logout()
+	def _do_emit(self, type, payload):
+		try:
+			self.send({type: payload})
+		except Exception as e:
+			if self._logger.isEnabledFor(logging.DEBUG):
+				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
+			else:
+				self._logger.warning("Could not send message to client {}: {}".format(self._remoteAddress, e))
 
 	def _on_login(self, user):
 		self._user = user
@@ -359,17 +416,17 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection, o
 		for name, hook in self._authed_hooks.items():
 			try:
 				hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
 				                       extra=dict(plugin=name))
 
 	def _on_logout(self):
-		self._user = None
+		self._user = self._userManager.anonymous_user_factory()
 
 		for name, hook in self._authed_hooks.items():
 			try:
 				hook(self, self._user)
-			except:
+			except Exception:
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
 				                       extra=dict(plugin=name))
 

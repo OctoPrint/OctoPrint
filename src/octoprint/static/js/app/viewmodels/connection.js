@@ -5,6 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
         self.printerProfiles = parameters[2];
+        self.access = parameters[3];
 
         self.printerProfiles.profiles.items.subscribe(function() {
             var allProfiles = self.printerProfiles.profiles.items();
@@ -49,6 +50,10 @@ $(function() {
         self.refreshVisible = ko.observable(true);
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
+                return;
+            }
+
             OctoPrint.connection.getSettings()
                 .done(self.fromResponse);
         };
@@ -100,12 +105,16 @@ $(function() {
             self._processStateData(data.state);
         };
 
-        self.openOrCloseOnStateChange = function() {
+        self.openOrCloseOnStateChange = function(force) {
+            if (!self._startupComplete && !force) return;
+
             var connectionTab = $("#connection");
             if (self.isOperational() && connectionTab.hasClass("in")) {
                 connectionTab.collapse("hide");
+                self.refreshVisible(false);
             } else if (!self.isOperational() && !connectionTab.hasClass("in")) {
                 connectionTab.collapse("show");
+                self.refreshVisible(true);
             }
         };
 
@@ -120,7 +129,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            if (self.loginState.isUser() && self.previousIsOperational !== self.isOperational()) {
+            if (self.previousIsOperational !== self.isOperational()) {
                 // only open or close if the panel is visible (for admins) and
                 // the state just changed to avoid thwarting manual open/close
                 self.openOrCloseOnStateChange();
@@ -189,22 +198,20 @@ $(function() {
             connectionTab.on("hide", function() {
                 self.refreshVisible(false);
             });
+        };
 
+        self.onStartupComplete = function() {
+            self.openOrCloseOnStateChange(true);
+        };
+
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
-        };
-
-        self.onUserLoggedIn = function() {
-            self.openOrCloseOnStateChange();
-        };
-
-        self.onUserLoggedOut = function() {
-            self.openOrCloseOnStateChange();
         };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ConnectionViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel", "accessViewModel"],
         elements: ["#connection_wrapper"]
     });
 });

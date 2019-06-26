@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module defines the interface for communicating with a connected printer.
 
@@ -14,8 +16,6 @@ abstracted version of the actual printer communication.
 .. autoclass:: PrinterCallback
    :members:
 """
-
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -44,10 +44,10 @@ class PrinterInterface(object):
 	valid_axes = ("x", "y", "z", "e")
 	"""Valid axes identifiers."""
 
-	valid_tool_regex = re.compile("^(tool\d+)$")
+	valid_tool_regex = re.compile(r"^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
 
-	valid_heater_regex = re.compile("^(tool\d+|bed|chamber)$")
+	valid_heater_regex = re.compile(r"^(tool\d+|bed|chamber)$")
 	"""Regex for valid heater identifiers."""
 
 	@classmethod
@@ -579,6 +579,15 @@ class PrinterInterface(object):
 
 		Arguments:
 		    callback (PrinterCallback): The callback object to unregister.
+		"""
+		raise NotImplementedError()
+
+	def send_initial_callback(self, callback):
+		"""
+		Sends the initial printer update to :class:`PrinterCallback`.
+
+		Arguments:
+			callback (PrinterCallback): The callback object to send initial data to.
 		"""
 		raise NotImplementedError()
 

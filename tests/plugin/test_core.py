@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import unittest
 import mock
 import ddt
 
 import octoprint.plugin
 import octoprint.plugin.core
+from octoprint.util import to_native_str
 
 ##~~ Helpers for testing mixin type extraction
 
@@ -67,8 +71,15 @@ class PluginTestCase(unittest.TestCase):
 		                                                          plugin_entry_points,
 		                                                          plugin_disabled_list=[],
 		                                                          logging_prefix="logging_prefix.")
-		self.plugin_manager.reload_plugins(startup=True, initialize_implementations=False)
-		self.plugin_manager.initialize_implementations()
+		# This may warn about __plugin_implementations__
+		import warnings
+		with warnings.catch_warnings(record=True) as w:
+			self.plugin_manager.reload_plugins(startup=True, initialize_implementations=False)
+			self.plugin_manager.initialize_implementations()
+		if len(w):
+			assert len(w) == 1
+			assert issubclass(w[-1].category, DeprecationWarning)
+			assert "__plugin_implementation__" in str(w[-1].message)
 
 	def test_plugin_loading(self):
 		self.assertEqual(7, len(self.plugin_manager.enabled_plugins))
@@ -174,20 +185,20 @@ class PluginTestCase(unittest.TestCase):
 	def test_sorted_hooks(self):
 		hooks = self.plugin_manager.get_hooks("some.ordered.callback")
 		self.assertEqual(3, len(hooks))
-		self.assertListEqual(["one_ordered_hook_plugin", "another_ordered_hook_plugin", "hook_plugin"], hooks.keys())
+		self.assertListEqual(["one_ordered_hook_plugin", "another_ordered_hook_plugin", "hook_plugin"], list(hooks.keys()))
 
 	def test_get_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin)
-		self.assertListEqual(["mixed_plugin", "startup_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin", "startup_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.SettingsPlugin)
-		self.assertListEqual(["mixed_plugin", "settings_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin", "settings_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsPlugin)
-		self.assertListEqual(["mixed_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["mixed_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.AssetPlugin)
-		self.assertListEqual(["deprecated_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["deprecated_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 	def test_get_filtered_implementations(self):
 		implementations = self.plugin_manager.get_filtered_implementations(lambda x: x._identifier.startswith("startup"), octoprint.plugin.StartupPlugin)
@@ -195,7 +206,7 @@ class PluginTestCase(unittest.TestCase):
 
 	def test_get_sorted_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, sorting_context="sorting_test")
-		self.assertListEqual(["startup_plugin", "mixed_plugin"], map(lambda x: x._identifier, implementations))
+		self.assertListEqual(["startup_plugin", "mixed_plugin"], list(map(lambda x: x._identifier, implementations)))
 
 	def test_client_registration(self):
 		def test_client(*args, **kwargs):
@@ -223,8 +234,8 @@ class PluginTestCase(unittest.TestCase):
 		plugin = "some plugin"
 		data = "some data"
 		self.plugin_manager.send_plugin_message(plugin, data)
-		client1.on_plugin_message.assert_called_once_with(plugin, data)
-		client2.on_plugin_message.assert_called_once_with(plugin, data)
+		client1.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
+		client2.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
 
 	def test_validate_plugin(self):
 		self.assertTrue("deprecated_plugin" in self.plugin_manager.enabled_plugins)
@@ -327,7 +338,7 @@ class PluginTestCase(unittest.TestCase):
 	)
 	@ddt.unpack
 	def test_mixins_matching_bases(self, bases_to_set, bases_to_check, expected):
-		Foo = type("Foo", bases_to_set, dict())
+		Foo = type(to_native_str("Foo"), bases_to_set, dict())
 		actual = octoprint.plugin.core.PluginManager.mixins_matching_bases(Foo, *bases_to_check)
 		self.assertSetEqual(actual, set(expected))
 

@@ -1,11 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
+import io
 import logging
 import os
 import shutil
@@ -28,7 +28,7 @@ from slugify import Slugify
 
 import octoprint.filemanager
 
-from octoprint.util import is_hidden_path, to_unicode, timing
+from octoprint.util import is_hidden_path, to_unicode, to_bytes
 
 class StorageInterface(object):
 	"""
@@ -450,11 +450,11 @@ class LocalFileStorage(StorageInterface):
 	This storage type implements :func:`path_on_disk`.
 	"""
 
-	_UNICODE_VARIATIONS = re.compile(u"[\uFE00-\uFE0F]")
+	_UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
 
 	@classmethod
 	def _no_unicode_variations(cls, text):
-		return cls._UNICODE_VARIATIONS.sub(u"", text)
+		return cls._UNICODE_VARIATIONS.sub("", text)
 
 	_SLUGIFY = Slugify()
 	_SLUGIFY.safe_chars = "-_.()[] "
@@ -463,7 +463,7 @@ class LocalFileStorage(StorageInterface):
 	def _slugify(cls, text):
 		text = to_unicode(text)
 		text = cls._no_unicode_variations(text)
-		text = demojize(text, delimiters=(u"", u""))
+		text = demojize(text, delimiters=("", ""))
 		return cls._SLUGIFY(text)
 
 	def __init__(self, basefolder, create=False):
@@ -502,10 +502,10 @@ class LocalFileStorage(StorageInterface):
 		if os.path.exists(old_metadata_path):
 			# load the old metadata file
 			try:
-				with open(old_metadata_path) as f:
+				with io.open(old_metadata_path, 'rt', encoding='utf-8') as f:
 					import yaml
 					self._old_metadata = yaml.safe_load(f)
-			except:
+			except Exception:
 				self._logger.exception("Error while loading old metadata file")
 
 			# make sure the metadata is initialized as far as possible
@@ -516,7 +516,7 @@ class LocalFileStorage(StorageInterface):
 			try:
 				import shutil
 				shutil.move(old_metadata_path, backup_path)
-			except:
+			except Exception:
 				self._logger.exception("Could not rename old metadata.yaml file")
 
 		else:
@@ -599,10 +599,10 @@ class LocalFileStorage(StorageInterface):
 			path = self.sanitize_path(to_unicode(path))
 			base = self.path_in_storage(path)
 			if base:
-				base += u"/"
+				base += "/"
 		else:
 			path = self.basefolder
-			base = u""
+			base = ""
 		return self._list_folder(path, base=base, entry_filter=filter, recursive=recursive)
 
 	def add_folder(self, path, ignore_existing=True, display=None):
@@ -917,14 +917,14 @@ class LocalFileStorage(StorageInterface):
 
 	def split_path(self, path):
 		path = to_unicode(path)
-		split = path.split(u"/")
+		split = path.split("/")
 		if len(split) == 1:
-			return u"", split[0]
+			return "", split[0]
 		else:
 			return self.join_path(*split[:-1]), split[-1]
 
 	def join_path(self, *path):
-		return u"/".join(map(to_unicode, path))
+		return "/".join(map(to_unicode, path))
 
 	def sanitize(self, path):
 		"""
@@ -953,23 +953,23 @@ class LocalFileStorage(StorageInterface):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, u"/")
-			path = path.split(u"/")
+			path = path.replace(os.path.sep, "/")
+			path = path.split("/")
 		if isinstance(path, (list, tuple)):
 			if len(path) == 1:
 				name = to_unicode(path[0])
-				path = u""
+				path = ""
 			else:
 				name = to_unicode(path[-1])
 				path = self.join_path(*map(to_unicode, path[:-1]))
 		if not path:
-			path = u""
+			path = ""
 
 		return path, name
 
 	def sanitize_name(self, name):
 		"""
-		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise
+		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\\``. Otherwise
 		slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
 		``(``, and ``)`` as is.
 		"""
@@ -978,11 +978,11 @@ class LocalFileStorage(StorageInterface):
 		if name is None:
 			return None
 
-		if u"/" in name or u"\\" in name:
+		if "/" in name or "\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		result = self._slugify(name).replace(u" ", u"_")
-		if result and result != u"." and result != u".." and result[0] == u".":
+		result = self._slugify(name).replace(" ", "_")
+		if result and result != "." and result != ".." and result[0] == ".":
 			# hidden files under *nix
 			result = result[1:]
 		return result
@@ -996,12 +996,12 @@ class LocalFileStorage(StorageInterface):
 		path = to_unicode(path)
 
 		if len(path):
-			if path[0] == u"/":
+			if path[0] == "/":
 				path = path[1:]
-			elif path[0] == u"." and path[1] == u"/":
+			elif path[0] == "." and path[1] == "/":
 				path = path[2:]
 
-		path_elements = path.split(u"/")
+		path_elements = path.split("/")
 		joined_path = self.basefolder
 		for path_element in path_elements:
 			joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
@@ -1021,16 +1021,16 @@ class LocalFileStorage(StorageInterface):
 			counter = 1
 			while os.path.exists(sanitized_path):
 				counter += 1
-				sanitized = self.sanitize_name(u"{}_({}){}".format(sanitized_name, counter, sanitized_ext))
+				sanitized = self.sanitize_name("{}_({}){}".format(sanitized_name, counter, sanitized_ext))
 				sanitized_path = os.path.join(path, sanitized)
 
 			try:
 				shutil.move(entry_path, sanitized_path)
 
-				self._logger.info(u"Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
+				self._logger.info("Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
 				return sanitized, sanitized_path
-			except:
-				self._logger.exception(u"Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
+			except Exception:
+				self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
 				raise
 
 		return entry, entry_path
@@ -1038,12 +1038,12 @@ class LocalFileStorage(StorageInterface):
 	def path_in_storage(self, path):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
-		if isinstance(path, (str, unicode, basestring)):
+		if isinstance(path, basestring):
 			path = to_unicode(path)
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, u"/")
-		if path.startswith(u"/"):
+			path = path.replace(os.path.sep, "/")
+		if path.startswith("/"):
 			path = path[1:]
 
 		return path
@@ -1120,8 +1120,8 @@ class LocalFileStorage(StorageInterface):
 			print_time = history_entry["printTime"]
 			try:
 				print_time = float(print_time)
-			except:
-				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
+			except Exception:
+				self._logger.warning("Invalid print time value found in print history for {} in {}/.metadata.json: {!r}".format(name, path, print_time))
 				continue
 
 			if not printer_profile in former_print_times:
@@ -1300,7 +1300,7 @@ class LocalFileStorage(StorageInterface):
 				entry_is_file = entry.is_file()
 				entry_is_dir = entry.is_dir()
 				entry_stat = entry.stat()
-			except:
+			except Exception:
 				# error while trying to fetch file metadata, that might be thanks to file already having
 				# been moved or deleted - ignore it and continue
 				continue
@@ -1312,7 +1312,7 @@ class LocalFileStorage(StorageInterface):
 					entry_name = new_entry_name
 					entry_path = new_entry_path
 					entry_stat = os.stat(entry_path)
-			except:
+			except Exception:
 				# error while trying to rename the file, we'll continue here and ignore it
 				continue
 
@@ -1417,7 +1417,7 @@ class LocalFileStorage(StorageInterface):
 							extended_entry_data["size"] = get_size()
 
 						result[entry_name] = extended_entry_data
-			except:
+			except Exception:
 				# So something went wrong somewhere while processing this file entry - log that and continue
 				self._logger.exception("Error while processing entry {}".format(entry_path))
 				continue
@@ -1473,7 +1473,7 @@ class LocalFileStorage(StorageInterface):
 
 		blocksize = 65536
 		hash = hashlib.sha1()
-		with open(path, "rb") as f:
+		with io.open(path, 'rb') as f:
 			buffer = f.read(blocksize)
 			while len(buffer) > 0:
 				hash.update(buffer)
@@ -1541,19 +1541,27 @@ class LocalFileStorage(StorageInterface):
 		metadata = None
 		with self._get_persisted_metadata_lock(path):
 			if os.path.exists(metadata_path):
-				with open(metadata_path) as f:
+				with io.open(metadata_path, 'rt', encoding='utf-8') as f:
 					try:
 						metadata = json.load(f)
-					except:
+					except Exception:
 						self._logger.exception("Error while reading .metadata.json from {path}".format(**locals()))
+
+		def valid_json(value):
+			try:
+				json.dumps(value, allow_nan=False)
+				return True
+			except:
+				return False
 
 		if isinstance(metadata, dict):
 			old_size = len(metadata)
+			metadata = { k: v for k, v in metadata.items() if valid_json(v) }
 			metadata = { k: v for k, v in metadata.items() if os.path.exists(os.path.join(path, k)) }
 			new_size = len(metadata)
 			if new_size != old_size:
-				self._logger.info("Deleted {} stale entries from metadata for path {}".format(old_size - new_size,
-				                                                                              path))
+				self._logger.info("Deleted {} stale or invalid entries from metadata for path {}".format(old_size - new_size,
+				                                                                                         path))
 				self._save_metadata(path, metadata)
 			else:
 				with self._get_metadata_lock(path):
@@ -1571,9 +1579,9 @@ class LocalFileStorage(StorageInterface):
 		with self._get_persisted_metadata_lock(path):
 			metadata_path = os.path.join(path, ".metadata.json")
 			try:
-				with atomic_write(metadata_path) as f:
-					json.dump(metadata, f, indent=4, separators=(",", ": "))
-			except:
+				with atomic_write(metadata_path, mode='wb') as f:
+					f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
+			except Exception:
 				self._logger.exception("Error while writing .metadata.json to {path}".format(**locals()))
 
 	def _delete_metadata(self, path):
@@ -1588,7 +1596,7 @@ class LocalFileStorage(StorageInterface):
 				if os.path.exists(metadata_path):
 					try:
 						os.remove(metadata_path)
-					except:
+					except Exception:
 						self._logger.exception("Error while deleting {metadata_file} from {path}".format(**locals()))
 
 	@staticmethod
@@ -1614,14 +1622,14 @@ class LocalFileStorage(StorageInterface):
 				# already migrated
 				try:
 					os.remove(metadata_path_yaml)
-				except:
+				except Exception:
 					self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 				return
 
-			with open(metadata_path_yaml) as f:
+			with io.open(metadata_path_yaml, 'rt', encoding='utf-8') as f:
 				try:
 					metadata = yaml.safe_load(f)
-				except:
+				except Exception:
 					self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
 					return
 
@@ -1629,12 +1637,12 @@ class LocalFileStorage(StorageInterface):
 				# looks invalid, ignore it
 				return
 
-			with atomic_write(metadata_path_json) as f:
-				json.dump(metadata, f, indent=4, separators=(",", ": "))
+			with atomic_write(metadata_path_json, mode='wb') as f:
+				f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
 
 			try:
 				os.remove(metadata_path_yaml)
-			except:
+			except Exception:
 				self._logger.exception("Error while removing .metadata.yaml from {path}".format(**locals()))
 
 	@contextmanager

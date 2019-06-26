@@ -86,6 +86,10 @@ GCODE.renderer = (function(){
     }
     
     var reRender = function(){
+        if (!model) return;
+
+        log.debug("Rerendering layer " + layerNumStore + " of " + model.length + " with " + GCODE.renderer.getLayerNumSegments(layerNumStore) + " segments");
+
         notifyIfViewportChanged();
 
         var p1 = ctx.transformedPoint(0,0);
@@ -356,6 +360,11 @@ GCODE.renderer = (function(){
         ctx.fill();
         ctx.stroke();
 
+        // draw origin
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.stroke();
+
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.lineWidth = lineWidthFactor;
 
@@ -407,6 +416,11 @@ GCODE.renderer = (function(){
 
         // draw
         ctx.fill();
+        ctx.stroke();
+
+        // draw origin
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];

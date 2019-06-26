@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -69,8 +69,8 @@ def is_os_compatible(compatibility_entries, current_os=None):
 	if current_os is None:
 		current_os = get_os()
 
-	negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
-	positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
+	negative_entries = list(map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries)))
+	positive_entries = list(filter(lambda x: not x.startswith("!"), compatibility_entries))
 
 	negative_match = False
 	if negative_entries:

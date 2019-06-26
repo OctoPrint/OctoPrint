@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.server import user_permission
+from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 
 import flask
@@ -53,10 +55,21 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		self._cap_prompt_support = False
 
 	def initialize(self):
-		self._enable = self._settings.get([b"enable"])
-		self._command = self._settings.get([b"command"])
-		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
-		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
+		self._enable = self._settings.get(["enable"])
+		self._command = self._settings.get(["command"])
+		self._enable_emergency_sending = self._settings.get_boolean(["enable_emergency_sending"])
+		self._enable_signal_support = self._settings.get_boolean(["enable_signal_support"])
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="INTERACT",
+			     name="Interact with printer prompts",
+			     description=gettext("Allows to see and interact with printer prompts"),
+			     default_groups=[USER_GROUP],
+			     roles=["interact"])
+		]
 
 	#~ AssetPlugin
 
@@ -80,10 +93,10 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-		self._enable = self._settings.get([b"enable"])
-		self._command = self._settings.get([b"command"])
-		self._enable_emergency_sending = self._settings.get_boolean([b"enable_emergency_sending"])
-		self._enable_signal_support = self._settings.get_boolean([b"enable_signal_support"])
+		self._enable = self._settings.get(["enable"])
+		self._command = self._settings.get(["command"])
+		self._enable_emergency_sending = self._settings.get_boolean(["enable_emergency_sending"])
+		self._enable_signal_support = self._settings.get_boolean(["enable_signal_support"])
 
 	#~ SimpleApiPlugin
 
@@ -92,7 +105,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def on_api_command(self, command, data):
 		if command == "select":
-			if not user_permission.can():
+			if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
 				return flask.abort(403, "Insufficient permissions")
 
 			if self._prompt is None:
@@ -105,7 +118,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			self._answer_prompt(choice)
 
 	def on_api_get(self, request):
-		if not user_permission.can():
+		if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
 			return flask.abort(403, "Insufficient permissions")
 		if self._prompt is None:
 			return flask.jsonify()
@@ -120,39 +133,39 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ action command handler
 
 	def action_command_handler(self, comm, line, action, *args, **kwargs):
-		if not action.startswith(b"prompt_"):
+		if not action.startswith("prompt_"):
 			return
 
 		parts = action.split(None, 1)
 		if len(parts) == 1:
 			action = parts[0]
-			parameter = b""
+			parameter = ""
 		else:
 			action, parameter = parts
 
-		if action == b"prompt_begin":
+		if action == "prompt_begin":
 			if self._prompt is not None and self._prompt.active:
-				self._logger.warn("Prompt is already defined")
+				self._logger.warning("Prompt is already defined")
 				return
 			self._prompt = Prompt(parameter.strip())
 
-		elif action == b"prompt_choice" or action == b"prompt_button":
+		elif action == "prompt_choice" or action == "prompt_button":
 			if self._prompt is None:
 				return
 			if self._prompt.active:
-				self._logger.warn("Prompt is already active")
+				self._logger.warning("Prompt is already active")
 				return
 			self._prompt.add_choice(parameter.strip())
 
-		elif action == b"prompt_show":
+		elif action == "prompt_show":
 			if self._prompt is None:
 				return
 			if self._prompt.active:
-				self._logger.warn("Prompt is already active")
+				self._logger.warning("Prompt is already active")
 				return
 			self._show_prompt()
 
-		elif action == b"prompt_end":
+		elif action == "prompt_end":
 			if self._prompt is None:
 				return
 			self._close_prompt()
@@ -172,7 +185,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			return
 
 		# noinspection PyProtectedMember
-		return comm_instance._emergency_force_send(cmd, u"Force-sending {} to the printer".format(self._command), gcode=gcode)
+		return comm_instance._emergency_force_send(cmd, "Force-sending {} to the printer".format(self._command), gcode=gcode)
 
 	#~ capability reporting
 
@@ -217,7 +230,8 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin your printer wil
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
-	b"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
-	b"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.gcode_queuing_handler,
-	b"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.firmware_capability_handler
+	"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
+	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.gcode_queuing_handler,
+	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.firmware_capability_handler,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }

@@ -1,4 +1,6 @@
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 avrChipDB = {
 	'ATMega1280': {
 		'signature': [0x1E, 0x97, 0x03],
@@ -16,5 +18,5 @@ def getChipFromDB(sig):
 	for chip in avrChipDB.values():
 		if chip['signature'] == sig:
 			return chip
-	return False
+	return None
 

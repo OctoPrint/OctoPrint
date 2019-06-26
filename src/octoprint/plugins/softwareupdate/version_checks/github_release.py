@@ -1,5 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
+# MO unicode_literals because fixing all the doctests is too annoying :-P
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -79,7 +80,7 @@ def _filter_out_latest(releases,
 		else:
 			filter_function = lambda rel: not rel["draft"]
 
-	releases = filter(filter_function, releases)
+	releases = list(filter(filter_function, releases))
 	if not releases:
 		return nothing
 
@@ -115,8 +116,8 @@ def _get_latest_release(user, repo, compare_type,
 
 	# sanitize
 	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at", "target_commitish"}
-	releases = filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
-	                  releases)
+	releases = list(filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
+	                  	   releases))
 
 	comparable_factory = _get_comparable_factory(compare_type,
 	                                             force_base=force_base)
@@ -259,7 +260,7 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 	try:
 		return comparator(comparable_factory(sanitized_local),
 		                  comparable_factory(sanitized_remote))
-	except:
+	except Exception:
 		logger.exception("Could not check if version is current due to an error, assuming it is")
 		return True
 

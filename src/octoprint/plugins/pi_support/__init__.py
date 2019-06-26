@@ -1,10 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import flask
+import io
 import os
 import sarge
 
@@ -127,7 +128,7 @@ def get_proc_dt_model():
 	global _proc_dt_model
 
 	if _proc_dt_model is None:
-		with open(_PROC_DT_MODEL_PATH, "r") as f:
+		with io.open(_PROC_DT_MODEL_PATH, 'rt', encoding='utf-8') as f:
 			_proc_dt_model = f.readline().strip(" \t\r\n\0")
 
 	return _proc_dt_model
@@ -153,7 +154,7 @@ def get_octopi_version():
 	global _octopi_version
 
 	if _octopi_version is None:
-		with open(_OCTOPI_VERSION_PATH, "r") as f:
+		with io.open(_OCTOPI_VERSION_PATH, 'rt', encoding='utf-8') as f:
 			_octopi_version = f.readline().strip(" \t\r\n\0")
 
 	return _octopi_version
@@ -261,8 +262,8 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		self._logger.debug("Retrieving throttle state via \"{}\"".format(command))
 		try:
 			state = get_vcgencmd_throttled_state(command)
-		except:
-			self._logger.exception("Got an error while trying to fetch the current throttle state via \"{}\"".format(command))
+		except ValueError:
+			self._logger.warning("Fetching the current throttle state via \"{}\" doesn't work".format(command))
 			self._throttle_functional = False
 			return
 
@@ -287,7 +288,7 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 				message += "\n!!! FREQUENCY CAPPING DUE TO OVERHEATING REPORTED !!! Improve cooling on the Pi's " \
 				           "CPU and GPU."
 
-			self._logger.warn(message)
+			self._logger.warning(message)
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
 		                                                                state=self._throttle_state.as_dict()))
@@ -313,7 +314,7 @@ def __plugin_check__():
 		proc_dt_model = get_proc_dt_model()
 		if proc_dt_model is None:
 			return False
-	except:
+	except Exception:
 		return False
 
 	return "raspberry pi" in proc_dt_model.lower()

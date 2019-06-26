@@ -1,10 +1,10 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
+import io
 import requests
 import time
 
@@ -45,7 +45,7 @@ class SocketClient(object):
 		if self._ws is not None:
 			try:
 				self._ws.close()
-			except:
+			except Exception:
 				# we can't handle that in any meaningful way right now
 				pass
 
@@ -261,7 +261,7 @@ class Client(object):
 		if file_name is None:
 			file_name = os.path.basename(file_path)
 
-		with open(file_path, "rb") as fp:
+		with io.open(file_path, 'rb') as fp:
 			if content_type:
 				files = dict(file=(file_name, fp, content_type))
 			else:

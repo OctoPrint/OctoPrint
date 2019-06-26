@@ -4,11 +4,12 @@ $(function() {
 
         self.loginState = parameters[0];
         self.printerState = parameters[1];
+        self.access = parameters[2];
 
         self.warnings = ko.observableArray([]);
 
         self.requestData = function() {
-            if (!self.loginState.isUser()) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PRINTER_SAFETY_CHECK_DISPLAY)) {
                 self.warnings([]);
                 return;
             }
@@ -32,11 +33,7 @@ $(function() {
             self.requestData();
         };
 
-        self.onUserLoggedIn = function() {
-            self.requestData();
-        };
-
-        self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
         };
 
@@ -52,7 +49,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PrinterSafetyCheckViewModel,
-        dependencies: ["loginStateViewModel", "printerStateViewModel"],
+        dependencies: ["loginStateViewModel", "printerStateViewModel", "accessViewModel"],
         elements: ["#sidebar_plugin_printer_safety_check_wrapper"]
     });
 });

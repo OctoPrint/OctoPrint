@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,6 +14,8 @@ import octoprint.filemanager
 import octoprint.filemanager.util
 
 import octoprint.settings
+
+import _fixups
 
 class FilemanagerMethodTest(unittest.TestCase):
 
@@ -53,15 +55,15 @@ class FilemanagerMethodTest(unittest.TestCase):
 		self.assertTrue("machinecode" in full)
 		self.assertTrue("gcode" in full["machinecode"])
 		self.assertTrue(isinstance(full["machinecode"]["gcode"], octoprint.filemanager.ContentTypeMapping))
-		self.assertItemsEqual(["gcode", "gco", "g"], full["machinecode"]["gcode"].extensions)
+		self.assertSetEqual(set(["gcode", "gco", "g"]), set(full["machinecode"]["gcode"].extensions))
 		self.assertTrue("foo" in full["machinecode"])
 		self.assertTrue(isinstance(full["machinecode"]["foo"], list))
-		self.assertItemsEqual(["f", "foo"], full["machinecode"]["foo"])
+		self.assertSetEqual(set(["f", "foo"]), set(full["machinecode"]["foo"]))
 
 		self.assertTrue("model" in full)
 		self.assertTrue("amf" in full["model"])
 		self.assertTrue(isinstance(full["model"]["amf"], list))
-		self.assertItemsEqual(["amf"], full["model"]["amf"])
+		self.assertSetEqual(set(["amf"]), set(full["model"]["amf"]))
 
 	def test_get_mimetype(self):
 		self.assertEqual(octoprint.filemanager.get_mime_type("foo.gcode"), "text/plain")
@@ -186,14 +188,14 @@ class FileManagerTest(unittest.TestCase):
 		self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
 		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.gcode", wrapper,
-		                                       display=u"täst.gcode")
+		                                       display="täst.gcode")
 
 		self.assertEqual(("", "test.gcode"), file_path)
 		self.local_storage.add_file.assert_called_once_with("test.gcode", wrapper,
 		                                                    printer_profile=test_profile,
 		                                                    allow_overwrite=False,
 		                                                    links=None,
-		                                                    display=u"täst.gcode")
+		                                                    display="täst.gcode")
 
 	def test_remove_file(self):
 		self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
@@ -230,25 +232,21 @@ class FileManagerTest(unittest.TestCase):
 	def test_add_folder_not_ignoring_existing(self):
 		self.local_storage.add_folder.side_effect = RuntimeError("already there")
 
-		try:
+		with self.assertRaises(RuntimeError, msg="already there"):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", ignore_existing=False)
 			self.fail("Expected an exception to occur!")
-		except RuntimeError as e:
-			self.assertEqual("already there", e.message)
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=False, display=None)
 
 	def test_add_folder_display(self):
 		self.local_storage.add_folder.side_effect = RuntimeError("already there")
 
-		try:
+		with self.assertRaises(RuntimeError, msg="already there"):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder",
-			                             display=u"täst_folder")
+			                             display="täst_folder")
 			self.fail("Expected an exception to occur!")
-		except RuntimeError as e:
-			self.assertEqual("already there", e.message)
 		self.local_storage.add_folder.assert_called_once_with("test_folder",
 		                                                      ignore_existing=True,
-		                                                      display=u"täst_folder")
+		                                                      display="täst_folder")
 
 	def test_remove_folder(self):
 		self.local_storage.split_path.return_value = ("", "test_folder")
@@ -282,21 +280,36 @@ class FileManagerTest(unittest.TestCase):
 		pos = 1234
 		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
-		mock_atomic_write.return_value = mock.MagicMock(spec=file)
 		mock_atomic_write_handle = mock_atomic_write.return_value.__enter__.return_value
 		mock_time.return_value = now
 		self.local_storage.path_in_storage.return_value = path
 
-		self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+			mock_atomic_write.assert_called_with(recovery_file, max_permissions=0o666, mode='wt')
 
 		expected = dict(origin=octoprint.filemanager.FileDestinations.LOCAL,
 		                path=path,
 		                pos=pos,
 		                date=now)
 
+		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent=2, allow_unicode=True)
 
-		mock_atomic_write.assert_called_with(recovery_file, max_permissions=438)
-		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent="  ", allow_unicode=True)
+	@mock.patch("octoprint.util.atomic_write", create=True)
+	@mock.patch("yaml.safe_dump", create=True)
+	@mock.patch("time.time")
+	def test_save_recovery_data_with_error(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
+		import os
+
+		path = "some_file.gco"
+		pos = 1234
+
+		self.local_storage.path_in_storage.return_value = path
+
+		mock_yaml_safe_dump.side_effect = RuntimeError
+
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+			self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
 
 	@mock.patch("os.path.isfile")
 	@mock.patch("os.remove")
@@ -334,12 +347,12 @@ class FileManagerTest(unittest.TestCase):
 		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
 		data = dict(path="some_path.gco",
-		          origin="local",
-		          pos=1234,
-		          date=123456789)
+		            origin="local",
+		            pos=1234,
+		            date=123456789)
 		text_data = yaml.dump(data)
 
-		with mock.patch("__builtin__.open", mock.mock_open(read_data=text_data)) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(read_data=text_data)) as m:
 			# moved safe_load to here so we could mock up the return value properly
 			with mock.patch("yaml.safe_load", return_value=data) as n:
 				result = self.file_manager.get_recovery_data()
@@ -465,7 +478,7 @@ class FileManagerTest(unittest.TestCase):
 		                                                    display=None)
 
 		# assert that the generated gcode was manipulated as required
-		expected_atomic_write_calls = [mock.call("prefix/dest.file", "wb")]
+		expected_atomic_write_calls = [mock.call("prefix/dest.file", mode="wb")]
 		self.assertEqual(mocked_atomic_write.call_args_list, expected_atomic_write_calls)
 		#mocked_open.return_value.write.assert_called_once_with(";Generated from source.file aabbccddeeff\r")
 

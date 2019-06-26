@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -28,6 +28,7 @@ class TestSlicingManager(unittest.TestCase):
 		self._mock_slicer_plugins(self.slicer_plugin)
 
 		# mock profile manager
+		import octoprint.printer.profile
 		self.printer_profile_manager = mock.MagicMock(spec=octoprint.printer.profile.PrinterProfileManager)
 
 		# mock settings

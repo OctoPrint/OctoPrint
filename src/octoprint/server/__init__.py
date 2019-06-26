@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +9,7 @@ import uuid
 from octoprint.vendor.sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
 from flask_assets import Environment, Bundle
 from babel import Locale
@@ -18,8 +18,15 @@ from watchdog.observers.polling import PollingObserver
 from collections import defaultdict, OrderedDict
 
 from builtins import bytes, range
-from past.builtins import basestring
+from past.builtins import basestring, unicode
 
+import octoprint.util
+import octoprint.util.net
+
+from octoprint.server import util
+from octoprint.util.json import JsonEncoding
+
+import io
 import os
 import sys
 import logging
@@ -38,6 +45,7 @@ NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
+
 assets = None
 babel = None
 debug = False
@@ -49,38 +57,49 @@ fileManager = None
 slicingManager = None
 analysisQueue = None
 userManager = None
+permissionManager = None
+groupManager = None
 eventManager = None
 loginManager = None
 pluginManager = None
-appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
+jsonEncoder = None
+jsonDecoder = None
 connectivityChecker = None
 
 principals = Principal(app)
-admin_permission = Permission(RoleNeed("admin"))
-user_permission = Permission(RoleNeed("user"))
 
-# only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
+import octoprint.access.permissions as permissions
+import octoprint.access.groups as groups
+
+# we set admin_permission to a GroupPermission with the default admin group
+admin_permission = octoprint.util.variable_deprecated("admin_permission has been deprecated, "
+                                                      "please use individual Permissions instead",
+                                                      since="1.4.0")(groups.GroupPermission(groups.ADMIN_GROUP))
+
+# we set user_permission to a GroupPermission with the default user group
+user_permission = octoprint.util.variable_deprecated("user_permission has been deprecated, "
+                                                     "please use individual Permissions instead",
+                                                     since="1.4.0")(groups.GroupPermission(groups.USER_GROUP))
+
+# only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
-import octoprint.users as users
+import octoprint.access.users as users
+import octoprint.access.groups as groups
 import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
-import octoprint.util
-import octoprint.util.net
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util import loginFromApiKeyRequestHandler, corsRequestHandler, \
 	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
-
-from . import util
 
 VERSION = __version__
 BRANCH = __branch__
@@ -94,13 +113,11 @@ LANGUAGES = set()
 def on_identity_loaded(sender, identity):
 	user = load_user(identity.id)
 	if user is None:
-		return
+		user = userManager.anonymous_user_factory()
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
-		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
-		identity.provides.add(RoleNeed("admin"))
+	for need in user.needs:
+		identity.provides.add(need)
 
 
 def _clear_identity(sender):
@@ -126,11 +143,11 @@ def on_user_logged_out(sender, user=None):
 
 
 def load_user(id):
-	if id == "_api":
-		return users.ApiUser()
+	if id is None or not userManager.enabled:
+		return None
 
-	if not userManager.enabled:
-		return users.DummyUser()
+	if id == "_api":
+		return users.ApiUser([groupManager.admin_group])
 
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
@@ -138,17 +155,27 @@ def load_user(id):
 		sessionid = None
 
 	if sessionid:
-		user = userManager.findUser(userid=id, session=sessionid)
+		user = userManager.find_user(userid=id, session=sessionid)
 	else:
-		user = userManager.findUser(userid=id)
+		user = userManager.find_user(userid=id)
 
-	if user and user.is_active():
+	if user and user.is_active:
 		return user
 
 	return None
 
 def load_user_from_request(request):
-	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+	user = None
+
+	if settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
+		# Basic Authentication?
+		user = util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+	if settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		# Remote user header?
+		user = util.get_user_for_remote_user_header(request)
+
+	return user
 
 def unauthorized_user():
 	from flask import abort
@@ -207,12 +234,15 @@ class Server(object):
 		global slicingManager
 		global analysisQueue
 		global userManager
+		global permissionManager
+		global groupManager
 		global eventManager
 		global loginManager
 		global pluginManager
-		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
+		global jsonEncoder
+		global jsonDecoder
 		global connectivityChecker
 		global debug
 		global safe_mode
@@ -248,7 +278,7 @@ class Server(object):
 		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
-		# monkey patch a bunch of stuff
+		# monkey patch some stuff
 		util.tornado.fix_json_encode()
 		util.flask.fix_flask_jsonify()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
@@ -288,7 +318,7 @@ class Server(object):
 			try:
 				additional_factories = hook()
 				analysis_queue_factories.update(**additional_factories)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing analysis queues from {}".format(name),
 				                       extra=dict(plugin=name))
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
@@ -299,9 +329,21 @@ class Server(object):
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
-		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
+
+		JsonEncoding.add_encoder(users.User, lambda obj: obj.as_dict())
+		JsonEncoding.add_encoder(groups.Group, lambda obj: obj.as_dict())
+		JsonEncoding.add_encoder(permissions.OctoPrintPermission, lambda obj: obj.as_dict())
+
+		# start regular check if we are connected to the internet
+		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
+		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+		def on_connectivity_change(old_value, new_value):
+			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
 
 		connectivityChecker = self._connectivity_checker
 
@@ -331,33 +373,61 @@ class Server(object):
 			analysis_queue=analysisQueue,
 			slicing_manager=slicingManager,
 			file_manager=fileManager,
-			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			preemptive_cache=preemptiveCache,
+			json_encoder=jsonEncoder,
+			json_decoder=jsonDecoder,
 			connectivity_checker=connectivityChecker,
 			environment_detector=self._environment_detector
 		)
 
+		#~~ setup access control
+
+		# get additional permissions from plugins
+		self._setup_plugin_permissions()
+
+		# create group manager instance
+		group_manager_factories = pluginManager.get_hooks("octoprint.access.groups.factory")
+		for name, factory in group_manager_factories.items():
+			try:
+				groupManager = factory(components, self._settings)
+				if groupManager is not None:
+					self._logger.debug("Created group manager instance from factory {}".format(name))
+					break
+			except Exception:
+				self._logger.exception("Error while creating group manager instance from factory {}".format(name))
+		else:
+			group_manager_name = self._settings.get(["accessControl", "groupManager"])
+			try:
+				clazz = octoprint.util.get_class(group_manager_name)
+				groupManager = clazz()
+			except AttributeError:
+				self._logger.exception("Could not instantiate group manager {}, "
+				                       "falling back to FilebasedGroupManager!".format(group_manager_name))
+				groupManager = octoprint.access.groups.FilebasedGroupManager()
+		components.update(dict(group_manager=groupManager))
+
 		# create user manager instance
-		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory")
+		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory") # legacy, set first so that new wins
+		user_manager_factories.update(pluginManager.get_hooks("octoprint.access.users.factory"))
 		for name, factory in user_manager_factories.items():
 			try:
 				userManager = factory(components, self._settings)
 				if userManager is not None:
 					self._logger.debug("Created user manager instance from factory {}".format(name))
 					break
-			except:
+			except Exception:
 				self._logger.exception("Error while creating user manager instance from factory {}".format(name),
 				                       extra=dict(plugin=name))
 		else:
-			name = self._settings.get(["accessControl", "userManager"])
+			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
-				clazz = octoprint.util.get_class(name)
-				userManager = clazz()
-			except:
-				self._logger.exception(
-					"Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(name))
-				userManager = octoprint.users.FilebasedUserManager()
+				clazz = octoprint.util.get_class(user_manager_name)
+				userManager = clazz(groupManager)
+			except Exception:
+				self._logger.exception("Could not instantiate user manager {}, "
+				                       "falling back to FilebasedUserManager!".format(user_manager_name))
+				userManager = octoprint.access.users.FilebasedUserManager(groupManager)
 			finally:
 				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 		components.update(dict(user_manager=userManager))
@@ -370,7 +440,7 @@ class Server(object):
 				if printer is not None:
 					self._logger.debug("Created printer instance from factory {}".format(name))
 					break
-			except:
+			except Exception:
 				self._logger.exception("Error while creating printer instance from factory {}".format(name),
 				                       extra=dict(plugin=name))
 		else:
@@ -460,7 +530,7 @@ class Server(object):
 					for event in result:
 						constant, value = octoprint.events.Events.register_event(event, prefix="plugin_{}_".format(name))
 						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
-			except:
+			except Exception:
 				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name),
 				                       extra=dict(plugin=name))
 
@@ -472,10 +542,10 @@ class Server(object):
 		for implementation in settingsPlugins:
 			try:
 				settings_plugin_config_migration_and_cleanup(implementation._identifier, implementation)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to migrate settings for "
 				                       "plugin {}, ignoring it".format(implementation._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra=dict(plugin=implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -542,24 +612,30 @@ class Server(object):
 
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
 
+		##~~ Permission validators
+
 		access_validators_from_plugins = []
 		for plugin, hook in pluginManager.get_hooks("octoprint.server.http.access_validator").items():
 			try:
 				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
-			except:
+			except Exception:
 				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin),
 				                       extra=dict(plugin=plugin))
-
-		admin_validators = [util.tornado.access_validation_factory(app, util.flask.admin_validator),] + access_validators_from_plugins
-		user_validators = [util.tornado.access_validation_factory(app, util.flask.user_validator),] + access_validators_from_plugins
-
-		admin_validator = dict(access_validation=util.tornado.validation_chain(*admin_validators))
-		user_validator = dict(access_validation=util.tornado.validation_chain(*user_validators))
 		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
+
+		timelapse_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST),] + access_validators_from_plugins
+		download_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.FILES_DOWNLOAD),] + access_validators_from_plugins
+		log_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.PLUGIN_LOGGING_MANAGE),] + access_validators_from_plugins
+		camera_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.WEBCAM),] + access_validators_from_plugins
+
+		timelapse_permission_validator = dict(access_validation=util.tornado.validation_chain(*timelapse_validators))
+		download_permission_validator = dict(access_validation=util.tornado.validation_chain(*download_validators))
+		log_permission_validator = dict(access_validation=util.tornado.validation_chain(*log_validators))
+		camera_permission_validator = dict(access_validation=util.tornado.validation_chain(*camera_validators))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
 		                                                                                      status_code=404))
-		timelapse_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
+		timelapse_path_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
 		                                                                                status_code=404))
 
 		def joined_dict(*dicts):
@@ -578,24 +654,24 @@ class Server(object):
 			# various downloads
 			# .mpg and .mp4 timelapses:
 			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			                                                                              timelapse_permission_validator,
 			                                                                              download_handler_kwargs,
-			                                                                              timelapse_validator,
-			                                                                              access_validator)),
+			                                                                              timelapse_path_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
 			                                                                                     as_attachment=True,
 			                                                                                     name_generator=download_name_generator),
+																							download_permission_validator,
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
-			                                                                                additional_mime_types,
-			                                                                                access_validator)),
+			                                                                                additional_mime_types)),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
 			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
 			                                                                            download_handler_kwargs,
-			                                                                            admin_validator)),
+			                                                                            log_permission_validator)),
 			# camera snapshot
 			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
 			                                                                              as_attachment=True),
-			                                                                         user_validator)),
+			                                                                         camera_permission_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
 
@@ -613,7 +689,7 @@ class Server(object):
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
 				result = hook(list(server_routes))
-			except:
+			except Exception:
 				self._logger.exception("There was an error while retrieving additional "
 				                       "server routes from plugin hook {name}".format(**locals()),
 				                       extra=dict(plugin=name))
@@ -658,7 +734,7 @@ class Server(object):
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.bodysize").items():
 			try:
 				result = hook(list(max_body_sizes))
-			except:
+			except Exception:
 				self._logger.exception("There was an error while retrieving additional "
 				                       "upload sizes from plugin hook {name}".format(**locals()),
 				                       extra=dict(plugin=name))
@@ -683,7 +759,7 @@ class Server(object):
 		# initialize and bind the server
 		trusted_downstream = self._settings.get(["server", "reverseProxy", "trustedDownstream"])
 		if not isinstance(trusted_downstream, list):
-			self._logger.warn("server.reverseProxy.trustedDownstream is not a list, skipping")
+			self._logger.warning("server.reverseProxy.trustedDownstream is not a list, skipping")
 			trusted_downstreams = []
 
 		server_kwargs = dict(max_body_sizes=max_body_sizes,
@@ -718,7 +794,7 @@ class Server(object):
 				connectionOptions = printer.__class__.get_connection_options()
 				if port in connectionOptions["ports"] or port == "AUTO":
 						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
-			except:
+			except Exception:
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
@@ -814,7 +890,7 @@ class Server(object):
 			# wait for shutdown event to be processed, but maximally for 15s
 			event_timeout = 15.0
 			if eventManager.join(timeout=event_timeout):
-				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
+				self._logger.warning("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
 
 			if self._octoprint_daemon is not None:
 				self._logger.info("Cleaning up daemon pidfile")
@@ -838,13 +914,13 @@ class Server(object):
 			self._logger.debug("Tornado's IOLoop stopped")
 		except (KeyboardInterrupt, SystemExit):
 			pass
-		except:
+		except Exception:
 			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			self._logger.exception("Stacktrace follows:")
 
 	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager,
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, groupManager,
 		                                          eventManager, pluginManager, session)
 
 	def _check_for_root(self):
@@ -863,10 +939,10 @@ class Server(object):
 		if hasattr(g, "identity") and g.identity and userManager.enabled:
 			userid = g.identity.id
 			try:
-				user_language = userManager.getUserSetting(userid, ("interface", "language"))
+				user_language = userManager.get_user_setting(userid, ("interface", "language"))
 				if user_language is not None and not user_language == "_default":
 					return Locale.negotiate([user_language], LANGUAGES)
-			except octoprint.users.UnknownUser:
+			except octoprint.access.users.UnknownUser:
 				pass
 
 		default_language = self._settings.get(["appearance", "defaultLanguage"])
@@ -893,9 +969,12 @@ class Server(object):
 
 		s = settings()
 
-		app.debug = self._debug
-
+		# setup octoprint's flask json serialization/deserialization
 		app.json_encoder = OctoPrintJsonEncoder
+
+		app.debug = self._debug
+		app.config["TEMPLATES_AUTO_RELOAD"] = True
+		app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
@@ -976,7 +1055,7 @@ class Server(object):
 		def regex_replace(s, find, replace):
 			return re.sub(find, replace, s)
 
-		html_header_regex = re.compile("<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
+		html_header_regex = re.compile(r"<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
 		def offset_html_headers(s, offset):
 			def repl(match):
 				number = int(match.group("number"))
@@ -988,7 +1067,7 @@ class Server(object):
 				return "<h{number}>{content}</h{number}>".format(number=number, content=match.group("content"))
 			return html_header_regex.sub(repl, s)
 
-		markdown_header_regex = re.compile("^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
+		markdown_header_regex = re.compile(r"^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
 		def offset_markdown_headers(s, offset):
 			def repl(match):
 				number = len(match.group("hashs"))
@@ -1000,18 +1079,18 @@ class Server(object):
 				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
 			return markdown_header_regex.sub(repl, s)
 
-		html_link_regex = re.compile("<(?P<tag>a.*?)>(?P<content>.*?)</a>")
+		html_link_regex = re.compile(r"<(?P<tag>a.*?)>(?P<content>.*?)</a>")
 		def externalize_links(text):
 			def repl(match):
 				tag = match.group("tag")
-				if not u"href" in tag:
+				if not "href" in tag:
 					return match.group(0)
 
-				if not u"target=" in tag and not u"rel=" in tag:
-					tag += u" target=\"_blank\" rel=\"noreferrer noopener\""
+				if not "target=" in tag and not "rel=" in tag:
+					tag += " target=\"_blank\" rel=\"noreferrer noopener\""
 
 				content = match.group("content")
-				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
+				return "<{tag}>{content}</a>".format(tag=tag, content=content)
 			return html_link_regex.sub(repl, text)
 
 		app.jinja_env.filters["regex_replace"] = regex_replace
@@ -1077,7 +1156,7 @@ class Server(object):
 			return all([f(entry) for f in filters])
 
 		# filter out all old and non-http entries
-		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(filter_entries, entries))
+		cache_data = preemptive_cache.clean_all_data(lambda root, entries: list(filter(filter_entries, entries)))
 		if not cache_data:
 			return
 
@@ -1102,7 +1181,7 @@ class Server(object):
 							if not implementation.get_ui_preemptive_caching_enabled():
 								logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
 								continue
-						except:
+						except Exception:
 							logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
 							continue
 
@@ -1126,7 +1205,7 @@ class Server(object):
 						app(builder.get_environ(), lambda *a, **kw: None)
 
 						logger.info("... done in {:.2f}s".format(octoprint.util.monotonic_time() - start))
-					except:
+					except Exception:
 						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
 		# asynchronous caching
@@ -1140,7 +1219,7 @@ class Server(object):
 		for plugin in template_plugins:
 			try:
 				self._register_additional_template_plugin(plugin)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to register templates of plugin {}, ignoring it".format(plugin._identifier))
 
 	def _register_additional_template_plugin(self, plugin):
@@ -1155,16 +1234,10 @@ class Server(object):
 
 	def _setup_blueprints(self):
 		from octoprint.server.api import api
-		from octoprint.server.apps import apps, clear_registered_app
-
 		import octoprint.server.views # do not remove or the index view won't be found
-
-		self._add_plugin_request_handlers_to_blueprint(api)
-		self._add_plugin_request_handlers_to_blueprint(apps)
 
 		blueprints = OrderedDict()
 		blueprints["/api"] = api
-		blueprints["/apps"] = apps
 
 		# also register any blueprints defined in BlueprintPlugins
 		blueprints.update(self._prepare_blueprint_plugins())
@@ -1172,15 +1245,12 @@ class Server(object):
 		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
 		blueprints.update(self._prepare_asset_plugins())
 
+		# make sure all before/after_request hook results are attached as well
+		self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+
 		# register everything with the system
 		for url_prefix, blueprint in blueprints.items():
 			app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-		global pluginLifecycleManager
-		def clear_apps(name, plugin):
-			clear_registered_app()
-		pluginLifecycleManager.add_callback("enabled", clear_apps)
-		pluginLifecycleManager.add_callback("disabled", clear_apps)
 
 	def _prepare_blueprint_plugins(self):
 		blueprints = OrderedDict()
@@ -1190,7 +1260,7 @@ class Server(object):
 			try:
 				blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 				blueprints[prefix] = blueprint
-			except:
+			except Exception:
 				self._logger.exception("Error while registering blueprint of "
 				                       "plugin {}, ignoring it".format(plugin._identifier),
 				                       extra=dict(plugin=plugin._identifier))
@@ -1208,7 +1278,7 @@ class Server(object):
 			try:
 				blueprint, prefix = self._prepare_asset_plugin(plugin)
 				blueprints[prefix] = blueprint
-			except:
+			except Exception:
 				self._logger.exception("Error while registering assets of plugin "
 				                       "{}, ignoring it".format(plugin._identifier),
 				                       extra=dict(plugin=plugin._identifier))
@@ -1225,8 +1295,6 @@ class Server(object):
 		blueprint.before_request(corsRequestHandler)
 		blueprint.before_request(loginFromApiKeyRequestHandler)
 		blueprint.after_request(corsResponseHandler)
-
-		self._add_plugin_request_handlers_to_blueprint(blueprint, plugin=plugin)
 
 		url_prefix = "/plugin/{name}".format(name=name)
 		app.register_blueprint(blueprint, url_prefix=url_prefix)
@@ -1248,29 +1316,31 @@ class Server(object):
 
 		return blueprint, url_prefix
 
-	def _add_plugin_request_handlers_to_blueprint(self, blueprint, plugin=None):
+	def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
 		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
 		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
 
-		for name, hook in before_hooks.items():
-			try:
-				result = hook(plugin=plugin)
-				if isinstance(result, (list, tuple)):
-					for h in result:
-						blueprint.before_request(h)
-			except:
-				self._logger.exception("Error processing before_request hooks from plugin {}".format(name),
-				                       extra=dict(plugin=name))
+		for plugin, hook in before_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook(plugin=plugin)
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.before_request(h)
+				except Exception:
+					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin),
+					                       extra=dict(plugin=plugin))
 
-		for name, hook in after_hooks.items():
-			try:
-				result = hook(plugin=plugin)
-				if isinstance(result, (list, tuple)):
-					for h in result:
-						blueprint.after_request(h)
-			except:
-				self._logger.exception("Error processing after_request hooks from plugin {}".format(name),
-				                       extra=dict(plugin=name))
+		for plugin, hook in after_hooks.items():
+			for blueprint in blueprints:
+				try:
+					result = hook(plugin=plugin)
+					if isinstance(result, (list, tuple)):
+						for h in result:
+							blueprint.after_request(h)
+				except Exception:
+					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
+					                       extra=dict(plugin=plugin))
 
 	def _setup_assets(self):
 		global app
@@ -1286,7 +1356,6 @@ class Server(object):
 		if self._settings.getBoolean(["devel", "webassets", "clean_on_startup"]):
 			import shutil
 			import errno
-			import sys
 
 			for entry in ("webassets", ".webassets-cache"):
 				path = os.path.join(base_folder, entry)
@@ -1296,7 +1365,7 @@ class Server(object):
 					try:
 						self._logger.debug("Deleting {path}...".format(**locals()))
 						shutil.rmtree(path)
-					except:
+					except Exception:
 						self._logger.exception("Error while trying to delete {path}, "
 						                       "leaving it alone".format(**locals()))
 						continue
@@ -1320,7 +1389,7 @@ class Server(object):
 							try:
 								os.makedirs(path)
 								break
-							except:
+							except Exception:
 								if self._logger.isEnabledFor(logging.DEBUG):
 									self._logger.exception("Ignored error while creating "
 									                       "directory {path}".format(**locals()))
@@ -1335,7 +1404,7 @@ class Server(object):
 						# went wrong -> log an error and stop
 						self._logger.exception(error_text)
 						continue
-				except:
+				except Exception:
 					# not an OSError, so something we don't understand
 					# went wrong -> log an error and stop
 					self._logger.exception(error_text)
@@ -1411,7 +1480,28 @@ class Server(object):
 			"js/lib/md5.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs.js"
+			"js/lib/sockjs.js",
+			"js/lib/ResizeSensor.js"
+		]
+		js_client = [
+			"js/app/client/base.js",
+			"js/app/client/socket.js",
+			"js/app/client/browser.js",
+			"js/app/client/connection.js",
+			"js/app/client/control.js",
+			"js/app/client/files.js",
+			"js/app/client/job.js",
+			"js/app/client/languages.js",
+			"js/app/client/printer.js",
+			"js/app/client/printerprofiles.js",
+			"js/app/client/settings.js",
+			"js/app/client/slicing.js",
+			"js/app/client/system.js",
+			"js/app/client/timelapse.js",
+			"js/app/client/users.js",
+			"js/app/client/util.js",
+			"js/app/client/wizard.js",
+			"js/app/client/access.js"
 		]
 
 		css_libs = [
@@ -1597,14 +1687,9 @@ class Server(object):
 
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
+		loginManager.anonymous_user = userManager.anonymous_user_factory
+		loginManager.request_callback = load_user_from_request
 
-		# login users authenticated by basic auth
-		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
-
-		if not userManager.enabled:
-			loginManager.anonymous_user = users.DummyUser
-			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		loginManager.init_app(app, add_context_processor=False)
 
 	def _start_intermediary_server(self):
@@ -1620,7 +1705,6 @@ class Server(object):
 
 		host = self._host
 		port = self._port
-		v6_only = self._v6_only
 
 		class IntermediaryServerHandler(BaseHTTPRequestHandler):
 			def __init__(self, rules=None, *args, **kwargs):
@@ -1641,11 +1725,13 @@ class Server(object):
 						if content_type:
 							self.send_header("Content-Type", content_type)
 						self.end_headers()
+						if isinstance(data, unicode):
+							data = data.encode("utf-8")
 						self.wfile.write(data)
 						break
 				else:
 					self.send_response(404)
-					self.wfile.write("Not found")
+					self.wfile.write("Not found".encode("utf-8"))
 
 		base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "static"))
 		rules = [
@@ -1659,7 +1745,7 @@ class Server(object):
 			if not os.path.isfile(path):
 				return ""
 
-			with open(path, "rb") as f:
+			with io.open(path, 'rb') as f:
 				data = f.read()
 			return data
 
@@ -1675,7 +1761,7 @@ class Server(object):
 
 			return path, data, content_type
 
-		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
+		rules = list(map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules)))
 
 		HTTPServerV4 = HTTPServer
 
@@ -1722,21 +1808,21 @@ class Server(object):
 		from octoprint.util.platform import set_close_exec
 		try:
 			set_close_exec(self._intermediary_server.fileno())
-		except:
+		except Exception:
 			self._logger.exception("Error while attempting to set_close_exec on intermediary server socket")
 
 		# then bind the server and have it serve our handler until stopped
 		try:
 			self._intermediary_server.server_bind()
 			self._intermediary_server.server_activate()
-		except:
+		except Exception:
 			self._intermediary_server.server_close()
 			raise
 
 		def serve():
 			try:
 				self._intermediary_server.serve_forever()
-			except:
+			except Exception:
 				self._logger.exception("Error in intermediary server")
 
 		thread = threading.Thread(target=serve)
@@ -1752,6 +1838,114 @@ class Server(object):
 		self._intermediary_server.shutdown()
 		self._intermediary_server.server_close()
 		self._logger.info("Intermediary server shut down")
+
+	def _setup_plugin_permissions(self):
+		global pluginManager
+
+		from octoprint.access.permissions import PluginOctoPrintPermission
+
+		def permission_key(plugin, definition):
+			return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
+
+		def permission_name(plugin, definition):
+			return "{}: {}".format(plugin, definition["name"])
+
+		def permission_role(plugin, role):
+			return "plugin_{}_{}".format(plugin, role)
+
+		def process_regular_permission(plugin_info, definition):
+			permissions = []
+			for key in definition.get("permissions", []):
+				permission = octoprint.access.permissions.Permissions.find(key)
+
+				if permission is None:
+					# if there is still no permission found, postpone this - maybe it is a permission from
+					# another plugin that hasn't been loaded yet
+					return False
+
+				permissions.append(permission)
+
+			roles = definition.get("roles", [])
+			description = definition.get("description", "")
+			dangerous = definition.get("dangerous", False)
+			default_groups = definition.get("default_groups", [])
+
+			roles_and_permissions = [permission_role(plugin_info.key, role) for role in roles] + permissions
+
+			key = permission_key(plugin_info.key, definition)
+			permission = PluginOctoPrintPermission(permission_name(plugin_info.name, definition),
+			                                       description,
+			                                       plugin=plugin_info.key,
+			                                       dangerous=dangerous,
+			                                       default_groups=default_groups,
+			                                       *roles_and_permissions)
+			setattr(octoprint.access.permissions.Permissions,
+			        key,
+			        PluginOctoPrintPermission(permission_name(plugin_info.name, definition),
+			                                  description,
+			                                  plugin=plugin_info.key,
+			                                  dangerous=dangerous,
+			                                  default_groups=default_groups,
+			                                  *roles_and_permissions))
+
+			self._logger.info("Added new permission from plugin {}: {} (needs: {!r})".format(plugin_info.key,
+			                                                                               key,
+			                                                                               ", ".join(map(repr, permission.needs))))
+			return True
+
+		postponed = []
+
+		hooks = pluginManager.get_hooks("octoprint.access.permissions")
+		for name, factory in hooks.items():
+			try:
+				if isinstance(factory, (tuple, list)):
+					additional_permissions = list(factory)
+				elif callable(factory):
+					additional_permissions = factory()
+				else:
+					raise ValueError("factory must be either a callable, tuple or list")
+
+				if not isinstance(additional_permissions, (tuple, list)):
+					raise ValueError("factory result must be either a tuple or a list of permission definition dicts")
+
+				plugin_info = pluginManager.get_plugin_info(name)
+				for p in additional_permissions:
+					if not isinstance(p, dict):
+						continue
+
+					if not "key" in p or not "name" in p:
+						continue
+
+					if not process_regular_permission(plugin_info, p):
+						postponed.append((plugin_info, p))
+			except Exception:
+				self._logger.exception("Error while creating permission instance/s from {}".format(name))
+
+		# final resolution passes
+		pass_number = 1
+		still_postponed = []
+		while len(postponed):
+			start_length = len(postponed)
+			self._logger.debug("Plugin permission resolution pass #{}, "
+			                   "{} unresolved permissions...".format(pass_number, start_length))
+
+			for plugin_info, definition in postponed:
+				if not process_regular_permission(plugin_info, definition):
+					still_postponed.append((plugin_info, definition))
+
+			self._logger.debug("... pass #{} done, {} permissions left to resolve".format(pass_number,
+			                                                                              len(still_postponed)))
+
+			if len(still_postponed) == start_length:
+				# no change, looks like some stuff is unresolvable - let's bail
+				for plugin_info, definition in still_postponed:
+					self._logger.warning("Unable to resolve permission from {}: {!r}".format(plugin_info.key, definition))
+				break
+
+			postponed = still_postponed
+			still_postponed = []
+			pass_number += 1
+
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):
@@ -1784,7 +1978,7 @@ class LifecycleManager(object):
 			lifecycle_callback(name, plugin)
 
 	def add_callback(self, events, callback):
-		if isinstance(events, (str, unicode)):
+		if isinstance(events, basestring):
 			events = [events]
 
 		for event in events:
@@ -1796,7 +1990,7 @@ class LifecycleManager(object):
 				if callback in self._plugin_lifecycle_callbacks[event]:
 					self._plugin_lifecycle_callbacks[event].remove(callback)
 		else:
-			if isinstance(events, (str, unicode)):
+			if isinstance(events, basestring):
 				events = [events]
 
 			for event in events:

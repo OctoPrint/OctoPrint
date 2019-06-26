@@ -28,6 +28,7 @@ or as ``postfix`` (after the existing lines).
 .. code-block:: python
    :linenos:
 
+   from past import basestring
    self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 
    # ...
@@ -35,7 +36,7 @@ or as ``postfix`` (after the existing lines).
    for hook in self._gcodescript_hooks:
        try:
            retval = self._gcodescript_hooks[hook](self, "gcode", scriptName)
-       except:
+       except Exception:
            self._logger.exception("Error while processing gcodescript hook %s" % hook)
        else:
            if retval is None:
@@ -44,10 +45,8 @@ or as ``postfix`` (after the existing lines).
                continue
 
            def to_list(data):
-               if isinstance(data, str):
-                   data = map(str.strip, data.split("\n"))
-               elif isinstance(data, unicode):
-                   data = map(unicode.strip, data.split("\n"))
+               if isinstance(data, basestring):
+                   data = map(x.strip() for x in data.split("\n"))
 
                if isinstance(data, (list, tuple)):
                    return list(data)
@@ -201,35 +200,6 @@ Available plugin hooks
 .. contents::
    :local:
 
-.. _sec-plugins-hook-accesscontrol-appkey:
-
-octoprint.accesscontrol.appkey
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. py:function:: acl_appkey_hook(*args, **kwargs)
-
-   .. deprecated:: 1.3.11
-
-      This functionality will be removed in 1.4.0. Use the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` instead.
-
-   By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
-   within the system.
-
-   Overrides this to return your additional app information to be used for validating app session keys. You'll
-   need to return a list of 3-tuples of the format (id, version, public key).
-
-   The ``id`` should be the (unique) identifier of the app. Using a domain prefix might make sense here, e.g.
-   ``org.octoprint.example.MyApp``.
-
-   ``version`` should be a string specifying the version of the app for which the public key is valid. You can
-   provide the string ``any`` here, in which case the provided public key will be valid for all versions of the
-   app for which no specific public key is defined.
-
-   Finally, the public key is expected to be provided as a PKCS1 string without newlines.
-
-   :return: A list of 3-tuples as described above
-   :rtype: list
-
 .. _sec-plugins-hook-accesscontrol-keyvalidator:
 
 octoprint.accesscontrol.keyvalidator
@@ -241,7 +211,7 @@ octoprint.accesscontrol.keyvalidator
 
    ``apikey`` will be the API key as read from the request headers.
 
-   Hook handlers are expected to return a :class:`~octoprint.users.User` instance here that will then be considered that
+   Hook handlers are expected to return a :class:`~octoprint.access.users.User` instance here that will then be considered that
    user making the request. By returning ``None`` or nothing at all, hook handlers signal that they do not handle the
    provided key.
 
@@ -259,7 +229,7 @@ octoprint.accesscontrol.keyvalidator
 
    :param str apikey: The API key to validate
    :return: The user in whose name the request will be processed further
-   :rtype: :class:`~octoprint.users.User`
+   :rtype: :class:`~octoprint.access.users.User`
 
 .. _sec-plugins-hook-cli-commands:
 
@@ -766,9 +736,10 @@ octoprint.comm.protocol.scripts
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
    handled scripts. If not, None should be returned directly.
 
-   If the hook handler has something to add to the specified script, it may return a 2-tuple or a 3-tuple with the first entry
+   If the hook handler has something to add to the specified script, it may return a 2-tuple, a 3-tuple or a 4-tuple with the first entry
    defining the prefix (what to *prepend* to the script in question), the second entry defining the postfix (what to
-   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script. Both prefix and postfix can be None to signify that nothing should be prepended
+   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script on third and additional tags to set on the
+   commands on fourth position. Both prefix and postfix can be None to signify that nothing should be prepended
    respectively appended.
 
    The returned prefix and postfix entries may be either iterables of script lines or a string including newlines of the script lines (which
@@ -1061,9 +1032,8 @@ octoprint.printer.factory
      * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
      * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
      * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
-     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
      * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
-     * ``user_manager``: The :class:`~octoprint.users.UserManager`
+     * ``user_manager``: The :class:`~octoprint.access.users.UserManager`
      * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
 
    If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
@@ -1557,12 +1527,12 @@ octoprint.ui.web.templatetypes
 
 .. _sec-plugins-hook-users-factory:
 
-octoprint.users.factory
-~~~~~~~~~~~~~~~~~~~~~~~
+octoprint.access.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
 
-   Return a :class:`~octoprint.users.UserManager` instance to use as global user manager object. This will
+   Return a :class:`~octoprint.access.users.UserManager` instance to use as global user manager object. This will
    be called only once during initial server startup.
 
    The provided ``components`` is a dictionary containing the already initialized system components:
@@ -1573,7 +1543,6 @@ octoprint.users.factory
      * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
      * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
      * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
-     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
      * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
      * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
 
@@ -1581,7 +1550,7 @@ octoprint.users.factory
 
    If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
    entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
-   :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   :class:`~octoprint.access.users.FilebasedUserManager` will be instantiated, linked to the default user storage
    file ``~/.octoprint/users.yaml``.
 
    :param dict components: System components to use for user manager instance initialization
@@ -1589,3 +1558,35 @@ octoprint.users.factory
    :return: The ``userManager`` instance to use globally.
    :rtype: UserManager subclass or None
 
+
+.. _sec-plugins-hook-timelapse-capture-pre:
+
+octoprint.timelapse.capture.pre
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_pre_hook(filename)
+
+   Perform specific actions prior to capturing a timelapse frame.
+
+   ``filename`` will be the future path of the frame to be saved.
+
+   :param str filename: The future path of the frame to be saved.
+   :return: None
+   :rtype: None
+
+.. _sec-plugins-hook-timelapse-capture-post:
+
+octoprint.timelapse.capture.post
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_post_hook(filename, success)
+
+   Perform specific actions after capturing a timelapse frame.
+
+   ``filename`` will be the path of the frame that should have been saved.
+   ``sucesss`` indicates whether the capture was successful or not.
+
+   :param str filename: The path of the frame that should have been saved.
+   :param boolean success: Indicates whether the capture was successful or not.
+   :return: None
+   :rtype: None

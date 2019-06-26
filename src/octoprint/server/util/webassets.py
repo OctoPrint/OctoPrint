@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <gina@octoprint.org>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +9,7 @@ import re
 
 try:
 	from urllib import parse as urlparse
-except:
+except ImportError:
 	import urlparse
 
 from webassets.bundle import Bundle
@@ -60,7 +60,7 @@ class LessImportRewrite(UrlRewriter):
 	name = "less_importrewrite"
 
 	patterns = {
-		"import_rewrite": re.compile("(@import(\s+\(.*\))?\s+)\"(.*)\";")
+		"import_rewrite": re.compile(r"(@import(\s+\(.*\))?\s+)\"(.*)\";")
 	}
 
 	def import_rewrite(self, m):
@@ -73,7 +73,7 @@ class SourceMapRewrite(UrlRewriter):
 	name = "sourcemap_urlrewrite"
 
 	patterns = {
-		"url_rewrite": re.compile("(//#\s+sourceMappingURL=)(.*)")
+		"url_rewrite": re.compile(r"(//#\s+sourceMappingURL=)(.*)")
 	}
 
 	def url_rewrite(self, m):
@@ -86,7 +86,7 @@ class SourceMapRemove(PatternRewriter):
 	name = "sourcemap_remove"
 
 	patterns = {
-		"sourcemap_remove": re.compile("(//#\s+sourceMappingURL=)(.*)")
+		"sourcemap_remove": re.compile(r"(//#\s+sourceMappingURL=)(.*)")
 	}
 
 	def sourcemap_remove(self, m):
@@ -113,7 +113,7 @@ class ChainedHunk(BaseHunk):
 		pass
 
 	def data(self):
-		result = u""
+		result = ""
 		for hunk in self._hunks:
 			if isinstance(hunk, tuple) and len(hunk) == 2:
 				hunk, f = hunk
@@ -124,12 +124,12 @@ class ChainedHunk(BaseHunk):
 
 
 _PLUGIN_BUNDLE_WRAPPER_PREFIX = \
-u"""// JS assets for plugin {plugin}
+"""// JS assets for plugin {plugin}
 (function () {{
     try {{
         """
 _PLUGIN_BUNDLE_WRAPPER_SUFFIX = \
-u"""
+"""
     }} catch (error) {{
         log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
     }}

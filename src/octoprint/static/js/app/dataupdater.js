@@ -133,6 +133,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
         var data = event.data;
 
+        // update permissions
+        PERMISSIONS = data["permissions"];
+
         // update version information
         var oldVersion = VERSION;
         VERSION = data["version"];
@@ -230,6 +233,15 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 data["slicer"],
                 data["model_path"],
                 data["machinecode_path"],
+                data["progress"]
+            ]);
+        });
+    };
+
+    self._onRenderProgress = function(event) {
+        self._ifInitialized(function() {
+            var data = event.data;
+            callViewModels(self.allViewModels, "onRenderProgress", [
                 data["progress"]
             ]);
         });
@@ -393,6 +405,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         .onMessage("history", self._onHistoryData)
         .onMessage("current", self._onCurrentData)
         .onMessage("slicingProgress", self._onSlicingProgress)
+        .onMessage("renderProgress", self._onRenderProgress)
         .onMessage("event", self._onEvent)
         .onMessage("timelapse", self._onTimelapse)
         .onMessage("plugin", self._onPluginMessage)

@@ -3657,6 +3657,10 @@ msgstr "Bitte beachte, dass Änderungen am API-Key sofort angewandt werden, ohne
 msgid "QR Code"
 msgstr "QR Code"
 
+#: src/octoprint/templates/dialogs/settings/api.jinja2:14
+msgid "If you check this, requests to any of OctoPrint's APIs without an API key will be denied instead of handled like an anonymous/not logged in user. This is OctoPrint's old default behaviour."
+msgstr "Wenn du hier ankreuzt, wird OctoPrint API-Anfragen ohne API-Key ablehnen, statt sie wie die eines anonymen / nicht eingeloggten Users zu behandeln. Das war früher der Default."
+
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:2
 msgid "Name of this OctoPrint instance, will be shown in the navigation bar and broadcast on the network"
 msgstr "Name dieser OctoPrint-Instanz, wird in der Navigationsleiste angezeigt und im Netzwerk announced."

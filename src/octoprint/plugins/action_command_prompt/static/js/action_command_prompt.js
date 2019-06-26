@@ -3,11 +3,12 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self._modal = undefined;
 
         self.requestData = function() {
-            if (!self.loginState.isUser()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
 
             OctoPrint.plugins.action_command_prompt.get()
                 .done(self.fromResponse);
@@ -52,7 +53,7 @@ $(function() {
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (!self.loginState.isUser()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
             if (plugin !== "action_command_prompt") {
                 return;
             }
@@ -73,6 +74,6 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ActionCommandPromptViewModel,
-        dependencies: ["loginStateViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });
