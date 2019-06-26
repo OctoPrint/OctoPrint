@@ -3150,7 +3150,7 @@ class MachineCom(object):
 					# I haven't yet been able to figure out *why* this can happen but according to #3096 and SERVER-2H
 					# an Empty exception can fly here due to resend_active being True but nothing being in the resend
 					# queue of the send queue. So we protect against this possibility...
-					continue
+					return True
 
 				try:
 					# make sure we are still active
