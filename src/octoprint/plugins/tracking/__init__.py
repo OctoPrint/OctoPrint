@@ -207,7 +207,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
-		self._track("startup", **payload)
+		plugins = self._plugin_manager.enabled_plugins
+		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
+		payload[b"plugins"] = ",".join(map(lambda x: "{}:{}".format(x.key.lower(), x.version.lower()), plugins_thirdparty))
+
+		self._track("startup", body=True, **payload)
 
 	def _track_shutdown(self):
 		if not self._settings.get_boolean([b"enabled"]):
@@ -369,7 +373,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		self._executor.submit(self._do_track, event, **kwargs)
 
-	def _do_track(self, event, **kwargs):
+	def _do_track(self, event, body=False, **kwargs):
 		if not self._connectivity_checker.online:
 			return
 
@@ -389,10 +393,17 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			params = urlencode(kwargs, doseq=True).replace("+", "%20")
 
-			requests.get(url,
-			             params=params,
-			             timeout=3.1,
-			             headers=headers)
+			if body:
+				requests.post(url,
+				              data=params,
+				              timeout=3.1,
+				              headers=headers)
+			else:
+				requests.get(url,
+				             params=params,
+				             timeout=3.1,
+				             headers=headers)
+
 			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
 		except:
 			if self._logger.isEnabledFor(logging.DEBUG):
