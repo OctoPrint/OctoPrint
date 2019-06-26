@@ -3229,7 +3229,6 @@ class MachineCom(object):
 								and gcode in self._SynchronousCommands):
 									self._SynchronousCommand = self._currentLine - 1
 									self._AdvancedOkSendNextLines = self._SynchronousCommand;
-									self._log(u"#### waiting for SynchronousCommand={}".format(self._SynchronousCommand))
 									return False
 						else:
 							self._SynchronousCommand = -1
@@ -3237,10 +3236,7 @@ class MachineCom(object):
 								and self._AdvancedOkSendNextLines > 0
 								and not self._send_queue.resend_active
 								and (self._currentLine-1) < self._AdvancedOkSendNextLines
-								and self._continue_sending() ): #					and ((self._AdvancedOkSendNextLines)-(self._currentLine-1)) > self._send_queue._qsize()
-								# ~ self._log(u"####??? {} < {} ; {} > {}".format(self._currentLine-1 , self._AdvancedOkSendNextLines,((self._AdvancedOkSendNextLines)-(self._currentLine-1)) , self._send_queue._qsize()))
-								# ~ self._clear_to_send.set()
-								self._log(u"..._continue_sending {}".format((self._currentLine-1)))
+								and self._continue_sending() ):
 								return True
 
 				return False
@@ -3262,21 +3258,18 @@ class MachineCom(object):
 					or self._SynchronousCommand >0
 					or self._AdvancedOkSendNextLines < 0
 					):
-					self._log(u"#### wait until all sends will be received counter={}".format(self._clear_to_send.counter))
 					# now we just wait for the next clear and then start again
 					while True:
 						self._clear_to_send.wait()
 						if (self._LastProcessedLine >= self._SynchronousCommand):
 							break
-					self._log(u"#### wait until all sends will be received2 counter={}".format(self._clear_to_send.counter))
 				else:
-					self._log(u"#### sleep 5ms")
 					cruLineTimeout=200 * self._serial.timeout #wait untill busy message will be recieved
 					while( self._currentLine > self._AdvancedOkSendNextLines and cruLineTimeout >0):
 						time.sleep(0.005) #pool 5ms
 						cruLineTimeout-=1
 					if (cruLineTimeout == 0) : # this could happen when printer printing slowly lot of long lines , we not lose synchronisation, just wait a little more 
-						self._log(u"#### warning! sleep 5ms timeout {} > {} ".format(self._currentLine , self._AdvancedOkSendNextLines))
+						self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._AdvancedOkSendNextLines))
 			else:
 				self._clear_to_send.wait()
 
