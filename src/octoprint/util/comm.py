@@ -2270,7 +2270,6 @@ class MachineCom(object):
 			message = "Communication timeout while printing, trying to trigger response from printer."
 			self._logger.info(message)
 			self._log(message + " " + general_message)
-			self._log("timeout C={} set={} state={} send_queue_active={} _qsize={}".format(self._clear_to_send.counter,self._clear_to_send.is_set(),self.getStateString(),self._send_queue_active,self._send_queue._qsize()))
 			if self._sendCommand("M105", cmd_type="temperature", tags={"trigger:comm.handle_timeout"}):
 				self._clear_to_send.set()
 
