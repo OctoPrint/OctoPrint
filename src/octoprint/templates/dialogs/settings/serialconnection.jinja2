@@ -33,7 +33,7 @@
                     <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Additional serial ports') }}</label>
                     <div class="controls">
                         <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: serial_additionalPorts"></textarea>
-                        <span class="help-inline">{{ _('Use this to define additional <a href="%%(glob_url)s">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+                        <span class="help-inline">{{ _('Use this to define additional <a href="%%(glob_url)s">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line. Please note that ports will only be offered to connect to if they get also detected by the <em>operating system</em>. Adding a port here will not make it magically appear in OctoPrint. If the operating system doesn\'t see your printer you need to solve this first.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
                     </div>
                 </div>
                 <div class="control-group">
@@ -48,6 +48,22 @@
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: serial_exclusive" id="settings-serialExclusive"> {{ _('Request exclusive access to the serial port') }}
                             <span class="help-block">{{ _('Uncheck this if you are having problems connecting to your printer.') }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Apply parity double open workaround')}}</label>
+                    <div class="controls">
+                        <label class="radio">
+                            <input type="radio" name="useParityWorkaroundGroup" value="always" data-bind="checked: serial_useParityWorkaround" id="settings-serialUseParityWorkaroundAlways"> {{ _('Always') }}
+                            <span class="help-block">{{ _('Use this if you are running into <a href="%%(url)s" target="_blank" rel="noopener noreferer">this problem</a>.')|format(url="https://forum.arduino.cc/index.php?topic=91291.0") }}</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="useParityWorkaroundGroup" value="detect" data-bind="checked: serial_useParityWorkaround" id="settings-serialUseParityWorkaroundPrint"> {{ _('If detected as potentially needed') }}
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="useParityWorkaroundGroup" value="never" data-bind="checked: serial_useParityWorkaround" id="settings-serialUseParityWorkaroundNever"> {{ _('Never') }}
+                            <span class="help-block">{{ _('Use this if connecting to your printer fails with <code>(22, \'Invalid argument\')</code>.') }}</span>
                         </label>
                     </div>
                 </div>
@@ -352,6 +368,12 @@
                         <span class="help-inline">{{ _('Use this to specify commands on which OctoPrint should pause the print job. Just the G or M code, comma separated. Defaults to <code>M0</code>, <code>M1</code> and <code>M25</code>.') }}</span>
                     </div>
                 </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
+                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M118</code> and <code>M410</code>.') }}</span>                    </div>
+                </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
@@ -405,6 +427,12 @@
                             <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!') }}</span>
                         </label>
                     </div>
+                </div>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_sendM112OnError" id="settings-serialSendM112OnError"> {{ _('Send <code>M112</code> on disconnect due to error') }}
+                        <span class="help-block">{{ _('If this is checked, OctoPrint will try to send an <code>M112</code> prior to a disconnect due to a (fatal) error in order to disable heaters and motors.') }}</span>
+                    </label>
                 </div>
             </fieldset>
             <fieldset>

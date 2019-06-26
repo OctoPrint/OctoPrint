@@ -30,9 +30,10 @@ $(function() {
         self.filename = ko.observable(undefined);
         self.filepath = ko.observable(undefined);
         self.filedisplay = ko.observable(undefined);
-        self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
+        self.filedate = ko.observable(undefined);
+        self.progress = ko.observable(undefined);
         self.printTime = ko.observable(undefined);
         self.printTimeLeft = ko.observable(undefined);
         self.printTimeLeftOrigin = ko.observable(undefined);
@@ -62,7 +63,7 @@ $(function() {
             if (self.estimatedPrintTime())
                 return fmt(self.estimatedPrintTime());
             return "-";
-        }
+        };
         self.estimatedPrintTimeString = ko.pureComputed(function() {
             return estimatedPrintTimeStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
@@ -95,7 +96,7 @@ $(function() {
             } else {
                 return fmt(self.printTimeLeft());
             }
-        }
+        };
         self.printTimeLeftString = ko.pureComputed(function() {
             return printTimeLeftStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
@@ -194,6 +195,15 @@ $(function() {
             return (user ? user : (file ? "-" : ""));
         });
 
+        self.dateString = ko.pureComputed(function() {
+            var date = self.filedate();
+            if (!date) {
+                return "";
+            }
+
+            return formatDate(date, {seconds:true});
+        });
+
         self.fromCurrentData = function(data) {
             self._fromData(data);
         };
@@ -228,7 +238,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isSdReady(data.flags.sdReady);
 
-            if (self.isPaused() != prevPaused) {
+            if (self.isPaused() !== prevPaused) {
                 if (self.isPaused()) {
                     self.titlePrintButton(self.TITLE_PRINT_BUTTON_PAUSED);
                     self.titlePauseButton(self.TITLE_PAUSE_BUTTON_PAUSED);
@@ -245,12 +255,14 @@ $(function() {
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
                 self.filedisplay(data.file.display);
-                self.sd(data.file.origin == "sdcard");
+                self.filedate(data.file.date);
+                self.sd(data.file.origin === "sdcard");
             } else {
                 self.filename(undefined);
                 self.filepath(undefined);
                 self.filesize(undefined);
                 self.filedisplay(undefined);
+                self.filedate(undefined);
                 self.sd(undefined);
             }
 
@@ -258,7 +270,7 @@ $(function() {
             self.lastPrintTime(data.lastPrintTime);
 
             var result = [];
-            if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
+            if (data.filament && typeof(data.filament) === "object" && _.keys(data.filament).length > 0) {
                 var keys = _.keys(data.filament);
                 keys.sort();
                 _.each(keys, function(key) {

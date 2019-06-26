@@ -341,13 +341,13 @@ class FileManager(object):
 																	   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
-					hash = source_meta["hash"]
+					hash = source_meta.get("hash", "n/a")
 
 					import io
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.BytesIO(u";Generated from {stl_name} (hash: {hash})\n".format(**locals()).encode("ascii", "replace")),
 					                         io.FileIO(tmp_path, "rb"))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)

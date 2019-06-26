@@ -20,6 +20,13 @@
 {% endtrans %}</div>
 {% endmacro %}
 
+{% macro pluginmanager_throttled() %}
+<div class="alert" data-bind="visible: throttled">{% trans %}
+    The system OctoPrint is running on is currently throttled. Due to that it's not possible to install new
+    plugins in order to avoid possible issues caused by system instability.
+{% endtrans %}</div>
+{% endmacro %}
+
 {% macro pluginmanager_offline() %}
 <div class="alert" data-bind="visible: !online()">{% trans %}
     It looks like OctoPrint has currently no connection to the internet. Due to that it's not possible
@@ -30,6 +37,7 @@
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
 {{ pluginmanager_safemode() }}
+{{ pluginmanager_throttled() }}
 
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
@@ -122,6 +130,7 @@
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
         {{ pluginmanager_safemode() }}
+        {{ pluginmanager_throttled() }}
         {{ pluginmanager_offline() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='https://plugins.octoprint.org') }}
@@ -234,6 +243,25 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <fieldset>
+                <legend>{{ _('Confirmations') }}</legend>
+
+                <div class="control-group" title="{{ _('Confirm before uninstalling a plugin') }}">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_confirmUninstall"> {{ _('Confirm before uninstalling a plugin') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group" title="{{ _('Confirm before disabling a plugin') }}">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_confirmDisable"> {{ _('Confirm before disabling a plugin') }}
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
             <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
             <fieldset>

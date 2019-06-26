@@ -75,6 +75,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._console_logger = None
 
+		self._get_throttled = lambda: False
+
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.softwareupdate.console")
 
@@ -97,6 +99,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._console_logger.addHandler(console_logging_handler)
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
+
+		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if helpers and "get_throttled" in helpers:
+			self._get_throttled = helpers["get_throttled"]
 
 	def on_after_startup(self):
 		self._check_environment()
@@ -567,6 +573,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@restricted_access
 	@admin_permission.require(403)
 	def perform_update(self):
+		throttled = self._get_throttled()
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+			# currently throttled, we refuse to run
+			return flask.make_response("System is currently throttled, refusing to update "
+			                           "anything due to possible stability issues", 409)
+
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
 			return flask.make_response("Printer is currently printing or paused", 409)
@@ -914,7 +926,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				elif restart_type == "environment":
 					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
 
-				if restart_command is not None:
+				if restart_command:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))
 					try:
 						self._perform_restart(restart_command)

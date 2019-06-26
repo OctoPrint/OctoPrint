@@ -199,6 +199,26 @@ def get_user_for_apikey(apikey):
 	return None
 
 
+def get_user_for_remote_user_header(request):
+	if not octoprint.server.userManager.enabled:
+		return None
+
+	if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		return None
+
+	header = request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+	if header is None:
+		return None
+
+	user = octoprint.server.userManager.findUser(userid=header)
+
+	if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
+		octoprint.server.userManager.addUser(header, settings().generateApiKey(), active=True)
+		user = octoprint.server.userManager.findUser(userid=header)
+
+	return user
+
+
 def get_user_for_authorization_header(header):
 	if not settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
 		return None
