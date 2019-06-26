@@ -305,7 +305,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get(b"time", 0))
 				if elapsed:
 					args[b"elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
@@ -313,7 +313,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get(b"time", 0))
 				if elapsed:
 					args[b"elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			args[b"reason"] = payload.get(b"reason", "unknown")
 
@@ -326,7 +326,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get(b"time", 0))
 				if elapsed:
 					args[b"elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			track_event = "print_cancelled"
 

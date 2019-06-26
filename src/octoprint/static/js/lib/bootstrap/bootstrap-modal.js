@@ -1,5 +1,5 @@
 /* ===========================================================
- * bootstrap-modal.js v2.1
+ * bootstrap-modal.js v2.2.5
  * ===========================================================
  * Copyright 2012 Jordan Schroter
  *
@@ -33,12 +33,17 @@
 		constructor: Modal,
 
 		init: function (element, options) {
+			var that = this;
+
 			this.options = options;
 
 			this.$element = $(element)
 				.delegate('[data-dismiss="modal"]', 'click.dismiss.modal', $.proxy(this.hide, this));
 
-			this.options.remote && this.$element.find('.modal-body').load(this.options.remote);
+			this.options.remote && this.$element.find('.modal-body').load(this.options.remote, function () {
+				var e = $.Event('loaded');
+				that.$element.trigger(e);
+			});
 
 			var manager = typeof this.options.manager === 'function' ?
 				this.options.manager.call(this) : this.options.manager;
@@ -76,7 +81,7 @@
 
 			this.$element.trigger(e);
 
-			if (!this.isShown || e.isDefaultPrevented()) return (this.isShown = false);
+			if (!this.isShown || e.isDefaultPrevented()) return;
 
 			this.isShown = false;
 
@@ -126,8 +131,6 @@
 				.css(prop, '')
 				.css('min-height', '');
 
-			var modalOverflow = $(window).height() - 10 < this.$element.height();
-
 			if (value){
 				this.$element.find('.modal-body')
 					.css('overflow', 'auto')
@@ -138,6 +141,8 @@
 				this.$element.find('.modal-body')
 					.css('min-height', minHeight);
 			}
+
+			var modalOverflow = $(window).height() - 10 < this.$element.height();
 
 			if (modalOverflow || this.options.modalOverflow) {
 				this.$element
@@ -156,23 +161,24 @@
 			if (this.isShown && this.options.consumeTab) {
 				this.$element.on('keydown.tabindex.modal', '[data-tabindex]', function (e) {
 			    	if (e.keyCode && e.keyCode == 9){
-						var $next = $(this),
-							$rollover = $(this);
+						var elements = [],
+							tabindex = Number($(this).data('tabindex'));
 
-						that.$element.find('[data-tabindex]:enabled:not([readonly])').each(function (e) {
-							if (!e.shiftKey){
-						 		$next = $next.data('tabindex') < $(this).data('tabindex') ?
-									$next = $(this) :
-									$rollover = $(this);
-							} else {
-								$next = $next.data('tabindex') > $(this).data('tabindex') ?
-									$next = $(this) :
-									$rollover = $(this);
-							}
+						that.$element.find('[data-tabindex]:enabled:visible:not([readonly])').each(function (ev) {
+							elements.push(Number($(this).data('tabindex')));
 						});
+						elements.sort(function(a,b){return a-b});
 
-						$next[0] !== $(this)[0] ?
-							$next.focus() : $rollover.focus();
+						var arrayPos = $.inArray(tabindex, elements);
+						if (!e.shiftKey){
+						 		arrayPos < elements.length-1 ?
+									that.$element.find('[data-tabindex='+elements[arrayPos+1]+']').focus() :
+									that.$element.find('[data-tabindex='+elements[0]+']').focus();
+							} else {
+								arrayPos == 0 ?
+									that.$element.find('[data-tabindex='+elements[elements.length-1]+']').focus() :
+									that.$element.find('[data-tabindex='+elements[arrayPos-1]+']').focus();
+							}
 
 						e.preventDefault();
 					}
@@ -209,10 +215,6 @@
 		},
 
 		hideModal: function () {
-			this.$element
-				.hide()
-				.trigger('hidden');
-
 			var prop = this.options.height ? 'height' : 'max-height';
 			var value = this.options.height || this.options.maxHeight;
 
@@ -222,6 +224,9 @@
 					.css(prop, '');
 			}
 
+			this.$element
+				.hide()
+				.trigger('hidden');
 		},
 
 		removeLoading: function () {
@@ -297,28 +302,26 @@
 
 		destroy: function () {
 			var e = $.Event('destroy');
+
 			this.$element.trigger(e);
+
 			if (e.isDefaultPrevented()) return;
 
-			this.teardown();
-		},
-
-		teardown: function () {
-			if (!this.$parent.length){
-				this.$element.remove();
-				this.$element = null;
-				return;
-			}
-
-			if (this.$parent !== this.$element.parent()){
-				this.$element.appendTo(this.$parent);
-			}
-
-			this.$element.off('.modal');
-			this.$element.removeData('modal');
 			this.$element
+				.off('.modal')
+				.removeData('modal')
 				.removeClass('in')
 				.attr('aria-hidden', true);
+
+			if (this.$parent !== this.$element.parent()) {
+				this.$element.appendTo(this.$parent);
+			} else if (!this.$parent.length) {
+				// modal is not part of the DOM so remove it.
+				this.$element.remove();
+				this.$element = null;
+			}
+
+			this.$element.trigger('destroyed');
 		}
 	};
 
@@ -354,7 +357,8 @@
 		resize: false,
 		attentionAnimation: 'shake',
 		manager: 'body',
-		spinner: '<div class="loading-spinner" style="width: 200px; margin-left: -100px;"><div class="progress progress-striped active"><div class="bar" style="width: 100%;"></div></div></div>'
+		spinner: '<div class="loading-spinner" style="width: 200px; margin-left: -100px;"><div class="progress progress-striped active"><div class="bar" style="width: 100%;"></div></div></div>',
+		backdropTemplate: '<div class="modal-backdrop" />'
 	};
 
 	$.fn.modal.Constructor = Modal;

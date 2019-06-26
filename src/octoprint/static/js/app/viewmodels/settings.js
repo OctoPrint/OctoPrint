@@ -114,6 +114,7 @@ $(function() {
         self.appearance_defaultLanguage = ko.observable();
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
         self.appearance_fuzzyTimes = ko.observable(undefined);
+        self.appearance_closeModalsWithClick = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -172,6 +173,7 @@ $(function() {
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
+        self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
@@ -185,6 +187,7 @@ $(function() {
         self.serial_ignoreIdenticalResends =  ko.observable(undefined);
         self.serial_firmwareDetection =  ko.observable(undefined);
         self.serial_blockWhileDwelling =  ko.observable(undefined);
+        self.serial_useParityWorkaround = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
@@ -196,6 +199,7 @@ $(function() {
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
+        self.serial_sendM112OnError = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -783,6 +787,7 @@ $(function() {
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
                     pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
+                    emergencyCommands: function() {return splitTextToArray(self.serial_emergencyCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
                     alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
                     neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
@@ -923,6 +928,7 @@ $(function() {
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
                     pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},
+                    emergencyCommands: function(value) { self.serial_emergencyCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
                     neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},

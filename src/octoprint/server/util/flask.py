@@ -271,7 +271,7 @@ def fix_flask_jsonify():
 			data = args or kwargs
 
 		return current_app.response_class(
-			dumps(data, indent=indent, separators=separators) + '\n',
+			dumps(data, indent=indent, separators=separators, allow_nan=False) + '\n',
 			mimetype='application/json'
 		)
 
@@ -584,7 +584,8 @@ def passive_login():
 
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
-			and settings().get(["accessControl", "localNetworks"]) is not None:
+			and settings().get(["accessControl", "localNetworks"]) is not None \
+			and not "active_logout" in flask.request.cookies:
 
 		autologin_as = settings().get(["accessControl", "autologinAs"])
 		local_networks = _local_networks()

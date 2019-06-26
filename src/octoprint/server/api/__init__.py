@@ -236,7 +236,10 @@ def login():
 				response["_is_external_client"] = s().getBoolean(["server", "ipCheck", "enabled"]) \
 				                                  and not util_net.is_lan_address(remote_addr,
 				                                                                  additional_private=s().get(["server", "ipCheck", "trustedSubnets"]))
-				return jsonify(response)
+
+				r = make_response(jsonify(response))
+				r.delete_cookie("active_logout")
+				return r
 
 		return make_response(("User unknown or password incorrect", 401, []))
 
@@ -254,7 +257,11 @@ def logout():
 	# ... and from flask login (and principal)
 	logout_user()
 
-	return NO_CONTENT
+	# ... and send an active logout session cookie
+	r = make_response(NO_CONTENT)
+	r.set_cookie("active_logout", "true")
+
+	return r
 
 
 def _logout(user):

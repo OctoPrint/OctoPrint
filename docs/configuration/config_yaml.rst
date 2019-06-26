@@ -62,6 +62,18 @@ Use the following settings to enable access control:
      # header and login the user without further checks. Use with caution.
      checkBasicAuthenticationPassword: true
 
+     # Whether to trust remote user headers. If you have setup authentication in front of
+     # OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will
+     # be logged into OctoPrint as the user provided in the header. Your should ONLY ENABLE THIS if your
+     # OctoPrint instance is only accessible through a connection locked down through an authenticating reverse proxy!
+     trustRemoteUser: false
+
+     # Header used by the reverse proxy to convey the authenticated user.
+     remoteUserHeader: REMOTE_USER
+
+     # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
+     addRemoteUsers: false
+
 .. _sec-configuration-config_yaml-api:
 
 API

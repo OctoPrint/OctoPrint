@@ -81,6 +81,7 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
+		"readthedocs-sphinx-ext==0.5.7"
 	],
 
 	# Dependencies for developing OctoPrint plugins

@@ -266,6 +266,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         break;
                     }
                     case "resend":
+                    case "resend_loop":
                     case "timeout": {
                         title = gettext("Communication error");
                         text = _.sprintf(gettext("There was a communication error while talking to your printer. Please consult the terminal output and octoprint.log for details. Error: %(error)s"), payload);

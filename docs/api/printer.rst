@@ -350,7 +350,7 @@ Issue a tool command
      Sets the given target temperature on the printer's tools. Additional parameters:
 
      * ``targets``: Target temperature(s) to set, properties must match the format ``tool{n}`` with ``n`` being the
-       tool's index starting with 0.
+       tool's index starting with 0. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's tools. Additional parameters:
@@ -630,7 +630,7 @@ Issue a bed command
    target
      Sets the given target temperature on the printer's bed. Additional parameters:
 
-     * ``target``: Target temperature to set.
+     * ``target``: Target temperature to set. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's bed. Additional parameters:
@@ -778,7 +778,7 @@ Issue a chamber command
    target
      Sets the given target temperature on the printer's chamber. Additional parameters:
 
-     * ``target``: Target temperature to set.
+     * ``target``: Target temperature to set. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's chamber. Additional parameters:
