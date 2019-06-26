@@ -1763,7 +1763,6 @@ class MachineCom(object):
 					self._handle_ok(line)
 					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
 					                         "X:" in line or "NAME:" in line
-					# ~ handled = (line == "wait" or line == "ok" or not needs_further_handling)
 					handled = (line == "wait" or line == "ok" or (line.startswith("ok") and self._state == self.STATE_PRINTING) or not needs_further_handling)
 
 				# process resends
@@ -2262,8 +2261,6 @@ class MachineCom(object):
 			consecutive_max = self._consecutive_timeout_maximums.get("printing", 0)
 		else:
 			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
-
-		# ~ self._AdvancedOkSendNextLines = -1
 
 		# now increment the timeout counter
 		self._consecutive_timeouts += 1
