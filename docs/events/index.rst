@@ -588,6 +588,7 @@ SlicingStarted
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -599,6 +600,7 @@ SlicingDone
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -611,6 +613,7 @@ SlicingCancelled
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -621,6 +624,7 @@ SlicingFailed
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename

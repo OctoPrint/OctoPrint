@@ -67,7 +67,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		                        update=True,
 		                        printer=True,
 		                        printer_safety_check=True,
-		                        throttled=True))
+		                        throttled=True,
+		                        slicing=True))
 
 	def get_settings_restricted_paths(self):
 		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
@@ -120,6 +121,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
 			self._record_next_firmware_info = False
 			self._track_printer_event(event, payload)
+
+		elif event in (Events.SLICING_STARTED,):
+			self._track_slicing_event(event, payload)
 
 		elif hasattr(Events, "PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN") and \
 			event in (Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN, Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN,
@@ -366,6 +370,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track("printer_safety_warning",
 		            printer_safety_warning_type=payload.get(b"warning_type", "unknown"),
 		            printer_safety_check_name=payload.get(b"check_name", "unknown"))
+
+	def _track_slicing_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "slicing"]):
+			return
+
+		self._track("slicing_started",
+		            slicer=payload.get(b"slicer", "unknown"))
 
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean([b"enabled"]):
