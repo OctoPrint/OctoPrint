@@ -1757,7 +1757,6 @@ class MachineCom(object):
 					#            is running dry but not sending a wait.
 					#
 					# Both variants can only happen if we are not currently blocked by a dwelling command
-					self._logger.warn("_timeout={} _ok_timeout={} _dwelling_until={}".format(now >= self._timeout, now >= self._ok_timeout,now > self._dwelling_until))
 					self._handle_timeout()
 					self._ok_timeout = self._get_new_communication_timeout()
 
@@ -2204,8 +2203,6 @@ class MachineCom(object):
 
 				if (self._LastProcessedLine >= self._SynchronousCommand ):
 					self._AdvancedOkSendNextLines = self._LastProcessedLine + max(free_planner_buff,free_command_buff)
-
-				# ~ self._log(u" parse_advanced_ok_line = L:{} P:{} B:{} _currentLine={} _AdvancedOkSendNextLines={} self._SynchronousCommand={}".format(last_processed_line,free_planner_buff,free_command_buff,self._currentLine,self._AdvancedOkSendNextLines,self._SynchronousCommand))
 			else:
 				self._AdvancedOkSendNextLines = -1
 		else:
@@ -2823,14 +2820,11 @@ class MachineCom(object):
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
 			else:
-				self._log("The end of _currentFile {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
 				def finalize():
-					self._log("finalize1 {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
 					self._changeState(self.STATE_FINISHING)
 					self.sendCommand("M400", part_of_job=True)
 					self._callback.on_comm_print_job_done()
 					def finalize2():
-						self._log("finalize2 {} >= {}".format(self._LastProcessedLine , (self._currentLine-1)))
 						self._changeState(self.STATE_OPERATIONAL)
 					self.sendCommand(SendQueueMarker(finalize2), part_of_job=True)
 				return SendQueueMarker(finalize), None, None
