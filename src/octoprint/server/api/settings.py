@@ -149,6 +149,7 @@ def getSettings():
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
 			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
+			"synchronousCommands": s.get(["serial", "synchronousCommands"]),
 			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
 			"blockedCommands": s.get(["serial", "blockedCommands"]),
 			"pausingCommands": s.get(["serial", "pausingCommands"]),
@@ -435,6 +436,7 @@ def _saveSettings(data):
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
+		if "synchronousCommands" in data["serial"] and isinstance(data["serial"]["synchronousCommands"], (list, tuple)): s.set(["serial", "synchronousCommands"], data["serial"]["synchronousCommands"])
 		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
 		if "blockedCommands" in data["serial"] and isinstance(data["serial"]["blockedCommands"], (list, tuple)): s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
 		if "pausingCommands" in data["serial"] and isinstance(data["serial"]["pausingCommands"], (list, tuple)): s.set(["serial", "pausingCommands"], data["serial"]["pausingCommands"])
