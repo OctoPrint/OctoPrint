@@ -458,11 +458,11 @@ class MachineCom(object):
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
 		self._currentLine = 1
-		self._AdvancedOkSupported = False
-		self._AdvancedOkSendNextLines = -1
-		self._LastProcessedLine = -1
-		self._SynchronousCommand = -1
-		self._SynchronousCommands = settings().get(["serial", "synchronousCommands"])
+		self._advanced_ok_detected = False
+		self._advanced_ok_max_line = -1
+		self._advanced_ok_last_line = -1
+		self._advanced_ok_sync_cmd = -1
+		self._advanced_ok_sync_cmds = settings().get(["serial", "synchronousCommands"])
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
 
@@ -1305,6 +1305,12 @@ class MachineCom(object):
 		with self._jobLock:
 			self._changeState(self.STATE_CANCELLING)
 
+			if self._advanced_ok_detected:
+				#speed up canceling in asynchronous mode
+				with self._send_queue.blocked():
+					self._clear_to_send.reset()
+					self._send_queue.clear()
+
 			if self._abort_heatup_on_cancel:
 				# abort any ongoing heatups immediately to get back control over the printer
 				self.sendCommand("M108",
@@ -1657,7 +1663,7 @@ class MachineCom(object):
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
 					self._ok_timeout = self._get_new_communication_timeout()
-					self._AdvancedOkSendNextLines = -1 #reset async commands
+					self._advanced_ok_max_line = -1 #reset async commands
 
 					# make sure the printer sends busy in a small enough interval to match our timeout
 					if not self._busy_protocol_detected and self._capability_support.get(self.CAPABILITY_BUSY_PROTOCOL,
@@ -2224,22 +2230,22 @@ class MachineCom(object):
 
 
 		if (line == "wait"): #reset asynchronos transactions
-			self._AdvancedOkSendNextLines = -1
+			self._advanced_ok_max_line = -1
 		elif ( line is not None ):
 
 			parsed = parse_advanced_ok_line(line)
 			if parsed:
-				self._AdvancedOkSupported = True
-				self._LastProcessedLine = parsed.get("N")
+				self._advanced_ok_detected = True
+				self._advanced_ok_last_line = parsed.get("N")
 				free_planner_buff   = parsed.get("P")
 				free_command_buff   = parsed.get("B")
 
-				if (self._LastProcessedLine >= self._SynchronousCommand ):
-					self._AdvancedOkSendNextLines = self._LastProcessedLine + max(free_planner_buff,free_command_buff)
+				if (self._advanced_ok_last_line >= self._advanced_ok_sync_cmd ):
+					self._advanced_ok_max_line = self._advanced_ok_last_line + max(free_planner_buff,free_command_buff)
 			else:
-				self._AdvancedOkSendNextLines = -1
+				self._advanced_ok_max_line = -1
 		else:
-			self._AdvancedOkSendNextLines = -1
+			self._advanced_ok_max_line = -1
 
 
 		if self._resendDelta is not None and self._resendNextCommand():
@@ -2521,8 +2527,8 @@ class MachineCom(object):
 		if self._busy_protocol_support:
 			self._set_busy_protocol_interval()
 
-		self._AdvancedOkSendNextLines = -1 #_on_external_reset
-		self._AdvancedOkSupported = False
+		self._advanced_ok_max_line = -1 #_on_external_reset
+		self._advanced_ok_detected = False
 
 	def _get_temperature_timer_interval(self):
 		busy_default = 4.0
@@ -3274,18 +3280,18 @@ class MachineCom(object):
 					# are done processing the last fetched queue entry
 					self._send_queue.task_done()
 
-					if ( self._AdvancedOkSupported ):
+					if ( self._advanced_ok_detected ):
 						if ( self._state == self.STATE_PRINTING 
-								and gcode in self._SynchronousCommands):
-									self._SynchronousCommand = self._currentLine - 1
-									self._AdvancedOkSendNextLines = self._SynchronousCommand;
+								and gcode in self._advanced_ok_sync_cmds):
+									self._advanced_ok_sync_cmd = self._currentLine - 1
+									self._advanced_ok_max_line = self._advanced_ok_sync_cmd;
 									return False
 						else:
-							self._SynchronousCommand = -1
+							self._advanced_ok_sync_cmd = -1
 							if ( self._state == self.STATE_PRINTING 
-								and self._AdvancedOkSendNextLines > 0
+								and self._advanced_ok_max_line > 0
 								and not self._send_queue.resend_active
-								and (self._currentLine-1) < self._AdvancedOkSendNextLines
+								and (self._currentLine-1) < self._advanced_ok_max_line
 								and self._continue_sending() ):
 								return True
 
@@ -3303,23 +3309,23 @@ class MachineCom(object):
 			if not self._send_queue_active:
 				break
 
-			if ( self._AdvancedOkSupported ):
+			if ( self._advanced_ok_detected ):
 				if (self._send_queue.resend_active
-					or self._SynchronousCommand >0
-					or self._AdvancedOkSendNextLines < 0
+					or self._advanced_ok_sync_cmd >0
+					or self._advanced_ok_max_line < 0
 					):
 					# now we just wait for the next clear and then start again
 					while True:
 						self._clear_to_send.wait()
-						if (self._LastProcessedLine >= self._SynchronousCommand):
+						if (self._advanced_ok_last_line >= self._advanced_ok_sync_cmd):
 							break
 				else:
 					cruLineTimeout=200 * self._serial.timeout #wait untill busy message will be recieved
-					while( self._currentLine > self._AdvancedOkSendNextLines and cruLineTimeout >0):
+					while( self._currentLine > self._advanced_ok_max_line and cruLineTimeout >0):
 						time.sleep(0.005) #pool 5ms
 						cruLineTimeout-=1
 					if (cruLineTimeout == 0) : # this could happen when printer printing slowly lot of long lines , we not lose synchronisation, just wait a little more 
-						self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._AdvancedOkSendNextLines))
+						self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
 			else:
 				self._clear_to_send.wait()
 
