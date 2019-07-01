@@ -361,7 +361,8 @@ $(function() {
                 response: "bytes",
                 timeout: self.webcam_snapshotTimeout(),
                 validSsl: self.webcam_snapshotSslValidation(),
-                content_type_whitelist: ["image/*"]
+                content_type_whitelist: ["image/*"],
+                content_type_guess: true
             })
                 .done(function(response) {
                     if (!response.result) {
@@ -385,7 +386,7 @@ $(function() {
                     }
 
                     var content = response.response.content;
-                    var contentType = response.response.content_type
+                    var contentType = response.response.assumed_content_type;
 
                     var mimeType = "image/jpeg";
                     if (contentType) {
@@ -395,7 +396,7 @@ $(function() {
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>'),
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" style="border: 1px solid black" /></p>'),
                         onclose: function() {
                             self.testWebcamSnapshotUrlBusy(false);
                         }
