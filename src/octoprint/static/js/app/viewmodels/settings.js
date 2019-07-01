@@ -169,7 +169,7 @@ $(function() {
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
-        self.serial_synchronousCommands = ko.observable(undefined);
+        self.serial_bufferedCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
@@ -783,7 +783,7 @@ $(function() {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
-                    synchronousCommands: function() { return splitTextToArray(self.serial_synchronousCommands(), ",", true) },
+                    bufferedCommands: function() { return splitTextToArray(self.serial_bufferedCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
                     pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
@@ -924,7 +924,7 @@ $(function() {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
-                    synchronousCommands: function(value) { self.serial_synchronousCommands(value.join(", "))},
+                    bufferedCommands: function(value) { self.serial_bufferedCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
                     pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},

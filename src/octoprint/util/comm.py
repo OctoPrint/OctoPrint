@@ -459,10 +459,10 @@ class MachineCom(object):
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
 		self._currentLine = 1
 		self._advanced_ok_detected = False
-		self._advanced_ok_max_line = -1
+		self._advanced_ok_max_line = -1     #the last line which we could send in asynchronous mode without cause overflow
 		self._advanced_ok_last_line = -1
-		self._advanced_ok_sync_cmd = -1
-		self._advanced_ok_sync_cmds = settings().get(["serial", "synchronousCommands"])
+		self._advanced_ok_wait_for_line = -1     #the next line which we will waiting before continue sending
+		self._advanced_ok_buffered_cmds = settings().get(["serial", "bufferedCommands"])
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
 
@@ -2240,8 +2240,8 @@ class MachineCom(object):
 				free_planner_buff   = parsed.get("P")
 				free_command_buff   = parsed.get("B")
 
-				if (self._advanced_ok_last_line >= self._advanced_ok_sync_cmd ):
-					self._advanced_ok_max_line = self._advanced_ok_last_line + max(free_planner_buff,free_command_buff)
+				#if (self._advanced_ok_last_line >= self._advanced_ok_wait_for_line ):
+				self._advanced_ok_max_line = self._advanced_ok_last_line + free_command_buff #max(free_planner_buff,free_command_buff)
 			else:
 				self._advanced_ok_max_line = -1
 		else:
@@ -2271,6 +2271,7 @@ class MachineCom(object):
 		else:
 			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
 
+		self._advanced_ok_max_line = -1 #prevent for infinity loop in _send_loop
 		# now increment the timeout counter
 		self._consecutive_timeouts += 1
 		self._logger.debug("Now at {} consecutive timeouts".format(self._consecutive_timeouts))
@@ -3279,21 +3280,27 @@ class MachineCom(object):
 					# no matter _how_ we exit this block, we signal that we
 					# are done processing the last fetched queue entry
 					self._send_queue.task_done()
+					with self._line_mutex:
+						linenumber = self._currentLine - 1
+						self._log(">>> LN={} G={} State={}".format(linenumber,gcode,self.getStateString()))
 
-					if ( self._advanced_ok_detected ):
-						if ( self._state == self.STATE_PRINTING 
-								and gcode in self._advanced_ok_sync_cmds):
-									self._advanced_ok_sync_cmd = self._currentLine - 1
-									self._advanced_ok_max_line = self._advanced_ok_sync_cmd;
-									return False
-						else:
-							self._advanced_ok_sync_cmd = -1
-							if ( self._state == self.STATE_PRINTING 
-								and self._advanced_ok_max_line > 0
-								and not self._send_queue.resend_active
-								and (self._currentLine-1) < self._advanced_ok_max_line
-								and self._continue_sending() ):
-								return True
+						if ( self._advanced_ok_detected ):
+							if ( self._state == self.STATE_PRINTING ):
+								if( gcode in self._advanced_ok_buffered_cmds
+									and self._advanced_ok_max_line > 0
+									and not self._send_queue.resend_active
+									):
+									if(linenumber < self._advanced_ok_max_line
+									and self._continue_sending() ):
+										self._advanced_ok_wait_for_line = -1 #don't wait, pool instead
+										self._log(">>> continue sending")
+										return True #continue asynchronous sending
+								else:
+									self._advanced_ok_wait_for_line = linenumber
+									self._advanced_ok_max_line = self._advanced_ok_wait_for_line;
+							else:
+								self._advanced_ok_wait_for_line = -1
+								self._advanced_ok_max_line = self._advanced_ok_wait_for_line;
 
 				return False
 			except:
@@ -3309,21 +3316,33 @@ class MachineCom(object):
 			if not self._send_queue_active:
 				break
 
+			self._log("####1 wfl={} maxl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line ))
 			if ( self._advanced_ok_detected ):
 				if (self._send_queue.resend_active
-					or self._advanced_ok_sync_cmd >0
-					or self._advanced_ok_max_line < 0
-					):
+					or self._advanced_ok_wait_for_line > 0
+					or self._advanced_ok_max_line < 0 ):
 					# now we just wait for the next clear and then start again
+					overrun = -1 #prevent inifinity loop
+					if (self._advanced_ok_wait_for_line > self._advanced_ok_last_line):
+						overrun = self._advanced_ok_wait_for_line - self._advanced_ok_last_line
+
 					while True:
 						self._clear_to_send.wait()
-						if (self._advanced_ok_last_line >= self._advanced_ok_sync_cmd):
+						self._log("####2 wfl={} maxl={} lastl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line,self._advanced_ok_last_line ))
+						overrun -= 1
+						#_advanced_ok_last_line will be -1 on timeout
+						if ( overrun < 0
+						or self._advanced_ok_last_line < 0
+						or self._advanced_ok_last_line >= self._advanced_ok_wait_for_line):
 							break
 				else:
 					cruLineTimeout=200 * self._serial.timeout #wait untill busy message will be recieved
-					while( self._currentLine > self._advanced_ok_max_line and cruLineTimeout >0):
+					while( self._advanced_ok_max_line > 0
+						and  self._currentLine > self._advanced_ok_max_line
+						and  cruLineTimeout >0):
 						time.sleep(0.005) #pool 5ms
 						cruLineTimeout-=1
+					self._log("####3 wfl={} maxl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line ))
 					if (cruLineTimeout == 0) : # this could happen when printer printing slowly lot of long lines , we not lose synchronisation, just wait a little more 
 						self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
 			else:
