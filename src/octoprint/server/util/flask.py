@@ -1143,7 +1143,14 @@ def check_lastmodified(lastmodified):
 
 
 def add_revalidation_response_headers(response):
-	response.headers["Cache-Control"] = "no-cache, must-revalidate"
+	import werkzeug.http
+
+	cache_control = werkzeug.http.parse_dict_header(response.headers.get("Cache-Control", ""))
+	if "no-cache" not in cache_control:
+		cache_control["no-cache"] = None
+	if "must-revalidate" not in cache_control:
+		cache_control["must-revalidate"] = None
+	response.headers["Cache-Control"] = werkzeug.http.dump_header(cache_control)
 	return response
 
 
