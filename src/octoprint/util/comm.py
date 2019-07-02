@@ -155,7 +155,7 @@ regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):\s*")
 regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
-regex_advanced_ok = re.compile("^ok\s+N(?P<N>\d+)\s+P(?P<P>\d+)\s+B(?P<B>\d+)")
+regex_advanced_ok = re.compile("^ok\s+(N(?P<N>\d+)\s+)?P(?P<P>\d+)\s+B(?P<B>\d+)")
 """Regex for marlin advanced_ok responce"""
 
 
@@ -459,8 +459,8 @@ class MachineCom(object):
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
 		self._currentLine = 1
 		self._advanced_ok_detected = False
-		self._advanced_ok_max_line = -1     #the last line which we could send in asynchronous mode without cause overflow
-		self._advanced_ok_last_line = -1
+		self._advanced_ok_max_line = -1          #the last line which we could send in asynchronous mode without cause overflow, negative value used to interrupt any waitings
+		self._advanced_ok_last_line = -1         #the last line that printer has successfully processed
 		self._advanced_ok_wait_for_line = -1     #the next line which we will waiting before continue sending
 		self._advanced_ok_buffered_cmds = settings().get(["serial", "bufferedCommands"])
 		self._line_mutex = threading.RLock()
@@ -2229,21 +2229,27 @@ class MachineCom(object):
 			return
 
 
-		if (line == "wait"): #reset asynchronos transactions
-			self._advanced_ok_max_line = -1
-		elif ( line is not None ):
+		if ( line is not None ):
 
 			parsed = parse_advanced_ok_line(line)
 			if parsed:
-				self._advanced_ok_detected = True
-				self._advanced_ok_last_line = parsed.get("N")
+				if not self._advanced_ok_detected :
+					self._advanced_ok_detected = True
+					to_log = "Printer seems to support the advanced_ok protocol, for {} commands will be used " \
+					"asynchronous transfer".format(",".join(self._advanced_ok_buffered_cmds))
+					self._log(to_log)
+					self._logger.info(to_log)
+				n = parsed.get("N")
+				if (n is not None):
+					self._advanced_ok_last_line = n
 				free_planner_buff   = parsed.get("P")
 				free_command_buff   = parsed.get("B")
 
 				#if (self._advanced_ok_last_line >= self._advanced_ok_wait_for_line ):
 				self._advanced_ok_max_line = self._advanced_ok_last_line + free_command_buff #max(free_planner_buff,free_command_buff)
 			else:
-				self._advanced_ok_max_line = -1
+				#if(not ("T:" in line) ): #todo, report marlin bug M105 Report Temperatures without line number when advanced_ok enabled
+				self._advanced_ok_max_line = -1 #we don't know what to do, force an interrupt
 		else:
 			self._advanced_ok_max_line = -1
 
@@ -3158,196 +3164,207 @@ class MachineCom(object):
 			self._logger.debug("Type already in send queue: " + e.type)
 			return False
 
+	def _pool_for_freebuffer(self):
+		self._log("pool")
+		#pool for free buffer
+		_transaction_timeout= 200 * 60 # 60 sec for any long running command
+		while True:
+			if( self._advanced_ok_max_line > 0
+				and self._currentLine > self._advanced_ok_max_line
+				and _transaction_timeout >0):
+				time.sleep(0.005) #pool 5ms
+				_transaction_timeout -= 1
+				if (_transaction_timeout < 0 ):
+					self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
+					return False #something wrong
+			else:
+				return True
+
+	def _wait_for_line(self):
+		self._log("_wait_for_line1")
+
+		while True:
+			if (  self._advanced_ok_max_line > 0
+			and self._advanced_ok_wait_for_line > 0
+			and self._advanced_ok_last_line > 0
+			and self._advanced_ok_wait_for_line > self._advanced_ok_last_line):
+				self._clear_to_send.wait()
+			else:
+				self._log("_wait_for_line2 wfl={} maxl={} lastl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line,self._advanced_ok_last_line ))
+				self._advanced_ok_wait_for_line = -1 #reset
+				return True #line found
+
+	def _send_one_from_queue(self):
+		"""
+		send one item from _send_queue, or wait until we have something in the queue
+		"""
+		gcode = None
+		try:
+			# wait until we have something in the queue
+			try:
+				entry = self._send_queue.get()
+			except queue.Empty:
+				# I haven't yet been able to figure out *why* this can happen but according to #3096 and SERVER-2H
+				# an Empty exception can fly here due to resend_active being True but nothing being in the resend
+				# queue of the send queue. So we protect against this possibility...
+				return True
+
+			try:
+				# make sure we are still active
+				if not self._send_queue_active:
+					return False
+
+				# sleep if we are dwelling
+				now = monotonic_time()
+				if self._blockWhileDwelling and self._dwelling_until and now < self._dwelling_until:
+					time.sleep(self._dwelling_until - now)
+					self._dwelling_until = False
+
+				# fetch command, command type and optional linenumber and sent callback from queue
+				command, linenumber, command_type, on_sent, processed, tags = entry
+
+				if isinstance(command, SendQueueMarker):
+					command.run()
+					self._continue_sending()
+					return True
+
+				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+				# at hand here and only clear our clear_to_send flag later if that's the case
+				gcode, subcode = gcode_and_subcode_for_cmd(command)
+
+				if linenumber is not None:
+					# line number predetermined - this only happens for resends, so we'll use the number and
+					# send directly without any processing (since that already took place on the first sending!)
+					self._do_send_with_checksum(command, linenumber)
+
+				else:
+					if not processed:
+						# trigger "sending" phase if we didn't so far
+						results = self._process_command_phase("sending", command, command_type,
+															  gcode=gcode,
+															  subcode=subcode,
+															  tags=tags)
+
+						if not results:
+							# No, we are not going to send this, that was a last-minute bail.
+							# However, since we already are in the send queue, our _monitor
+							# loop won't be triggered with the reply from this unsent command
+							# now, so we try to tickle the processing of any active
+							# command queues manually
+							self._continue_sending()
+
+							# and now let's fetch the next item from the queue
+							return True
+
+						# we explicitly throw away plugin hook results that try
+						# to perform command expansion in the sending/sent phase,
+						# so "results" really should only have more than one entry
+						# at this point if our core code contains a bug
+						assert len(results) == 1
+
+						# we only use the first (and only!) entry here
+						command, _, gcode, subcode, tags = results[0]
+
+					if command.strip() == "":
+						self._logger.info("Refusing to send an empty line to the printer")
+
+						# same here, tickle the queues manually
+						self._continue_sending()
+
+						# and fetch the next item
+						return True
+
+					# handle @ commands
+					if gcode is None and command.startswith("@"):
+						self._process_atcommand_phase("sending", command, tags=tags)
+
+						# tickle...
+						self._continue_sending()
+
+						# ... and fetch the next item
+						return True
+
+					# now comes the part where we increase line numbers and send stuff - no turning back now
+					self._do_send(command, gcode=gcode)
+
+				# trigger "sent" phase and use up one "ok"
+				if on_sent is not None and callable(on_sent):
+					# we have a sent callback for this specific command, let's execute it now
+					on_sent()
+				self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode, tags=tags)
+
+				# we only need to use up a clear if the command we just sent was either a gcode command or if we also
+				# require ack's for unknown commands
+				use_up_clear = self._unknownCommandsNeedAck
+				if gcode is not None:
+					use_up_clear = True
+
+				if use_up_clear:
+					# if we need to use up a clear, do that now
+					self._clear_to_send.clear()
+
+					if ( self._advanced_ok_detected and self._state == self.STATE_PRINTING):
+						with self._line_mutex:
+							linenumber = self._currentLine - 1
+							self._advanced_ok_wait_for_line = linenumber #wait for line by default
+							self._log(">>> LN={} G={} State={}".format(linenumber,gcode,self.getStateString()))
+
+							if( self._advanced_ok_max_line > 0 and not self._send_queue.resend_active):
+								if( gcode in self._advanced_ok_buffered_cmds ):
+									if(linenumber < self._advanced_ok_max_line and self._continue_sending()):
+										self._advanced_ok_wait_for_line = -1 #don't wait, pool instead
+										self._log(">>> continue sending")
+										return True #continue asynchronous sending
+									else:
+										self._advanced_ok_wait_for_line = -1 #don't wait, pool instead
+										return False #stop sending and wait for free buffer
+
+
+				else:
+					# Otherwise we need to tickle the read queue - there might not be a reply
+					# to this command, so our _monitor loop will stay waiting until timeout. We
+					# definitely do not want that, so we tickle the queue manually here
+					self._continue_sending()
+
+			finally:
+				# no matter _how_ we exit this block, we signal that we
+				# are done processing the last fetched queue entry
+				self._send_queue.task_done()
+
+			return False
+		except:
+			self._logger.exception("Caught an exception in the send loop")
+
+
 	def _send_loop(self):
 		"""
 		The send loop is responsible of sending commands in ``self._send_queue`` over the line, if it is cleared for
 		sending (through received ``ok`` responses from the printer's firmware.
 		"""
 
-		def _send_one_from_queue():
-			gcode = None
-			try:
-				# wait until we have something in the queue
-				try:
-					entry = self._send_queue.get()
-				except queue.Empty:
-					# I haven't yet been able to figure out *why* this can happen but according to #3096 and SERVER-2H
-					# an Empty exception can fly here due to resend_active being True but nothing being in the resend
-					# queue of the send queue. So we protect against this possibility...
-					return True
-
-				try:
-					# make sure we are still active
-					if not self._send_queue_active:
-						return False
-
-					# sleep if we are dwelling
-					now = monotonic_time()
-					if self._blockWhileDwelling and self._dwelling_until and now < self._dwelling_until:
-						time.sleep(self._dwelling_until - now)
-						self._dwelling_until = False
-
-					# fetch command, command type and optional linenumber and sent callback from queue
-					command, linenumber, command_type, on_sent, processed, tags = entry
-
-					if isinstance(command, SendQueueMarker):
-						command.run()
-						self._continue_sending()
-						return True
-
-					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
-					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
-					# at hand here and only clear our clear_to_send flag later if that's the case
-					gcode, subcode = gcode_and_subcode_for_cmd(command)
-
-					if linenumber is not None:
-						# line number predetermined - this only happens for resends, so we'll use the number and
-						# send directly without any processing (since that already took place on the first sending!)
-						self._do_send_with_checksum(command, linenumber)
-
-					else:
-						if not processed:
-							# trigger "sending" phase if we didn't so far
-							results = self._process_command_phase("sending", command, command_type,
-							                                      gcode=gcode,
-							                                      subcode=subcode,
-							                                      tags=tags)
-
-							if not results:
-								# No, we are not going to send this, that was a last-minute bail.
-								# However, since we already are in the send queue, our _monitor
-								# loop won't be triggered with the reply from this unsent command
-								# now, so we try to tickle the processing of any active
-								# command queues manually
-								self._continue_sending()
-
-								# and now let's fetch the next item from the queue
-								return True
-
-							# we explicitly throw away plugin hook results that try
-							# to perform command expansion in the sending/sent phase,
-							# so "results" really should only have more than one entry
-							# at this point if our core code contains a bug
-							assert len(results) == 1
-
-							# we only use the first (and only!) entry here
-							command, _, gcode, subcode, tags = results[0]
-
-						if command.strip() == "":
-							self._logger.info("Refusing to send an empty line to the printer")
-
-							# same here, tickle the queues manually
-							self._continue_sending()
-
-							# and fetch the next item
-							return True
-
-						# handle @ commands
-						if gcode is None and command.startswith("@"):
-							self._process_atcommand_phase("sending", command, tags=tags)
-
-							# tickle...
-							self._continue_sending()
-
-							# ... and fetch the next item
-							return True
-
-						# now comes the part where we increase line numbers and send stuff - no turning back now
-						self._do_send(command, gcode=gcode)
-
-					# trigger "sent" phase and use up one "ok"
-					if on_sent is not None and callable(on_sent):
-						# we have a sent callback for this specific command, let's execute it now
-						on_sent()
-					self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode, tags=tags)
-
-					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
-					# require ack's for unknown commands
-					use_up_clear = self._unknownCommandsNeedAck
-					if gcode is not None:
-						use_up_clear = True
-
-					if use_up_clear:
-						# if we need to use up a clear, do that now
-						self._clear_to_send.clear()
-					else:
-						# Otherwise we need to tickle the read queue - there might not be a reply
-						# to this command, so our _monitor loop will stay waiting until timeout. We
-						# definitely do not want that, so we tickle the queue manually here
-						self._continue_sending()
-
-				finally:
-					# no matter _how_ we exit this block, we signal that we
-					# are done processing the last fetched queue entry
-					self._send_queue.task_done()
-					with self._line_mutex:
-						linenumber = self._currentLine - 1
-						self._log(">>> LN={} G={} State={}".format(linenumber,gcode,self.getStateString()))
-
-						if ( self._advanced_ok_detected ):
-							if ( self._state == self.STATE_PRINTING ):
-								if( gcode in self._advanced_ok_buffered_cmds
-									and self._advanced_ok_max_line > 0
-									and not self._send_queue.resend_active
-									):
-									if(linenumber < self._advanced_ok_max_line
-									and self._continue_sending() ):
-										self._advanced_ok_wait_for_line = -1 #don't wait, pool instead
-										self._log(">>> continue sending")
-										return True #continue asynchronous sending
-								else:
-									self._advanced_ok_wait_for_line = linenumber
-									self._advanced_ok_max_line = self._advanced_ok_wait_for_line;
-							else:
-								self._advanced_ok_wait_for_line = -1
-								self._advanced_ok_max_line = self._advanced_ok_wait_for_line;
-
-				return False
-			except:
-				self._logger.exception("Caught an exception in the send loop")
-
 		self._clear_to_send.wait()
 
 		while self._send_queue_active:
 
-			if _send_one_from_queue():
+			if self._send_one_from_queue():
 				continue
 
 			if not self._send_queue_active:
 				break
 
-			self._log("####1 wfl={} maxl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line ))
-			if ( self._advanced_ok_detected ):
-				if (self._send_queue.resend_active
-					or self._advanced_ok_wait_for_line > 0
-					or self._advanced_ok_max_line < 0 ):
-					# now we just wait for the next clear and then start again
-					overrun = -1 #prevent inifinity loop
-					if (self._advanced_ok_wait_for_line > self._advanced_ok_last_line):
-						overrun = self._advanced_ok_wait_for_line - self._advanced_ok_last_line
-
-					while True:
-						self._clear_to_send.wait()
-						self._log("####2 wfl={} maxl={} lastl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line,self._advanced_ok_last_line ))
-						overrun -= 1
-						#_advanced_ok_last_line will be -1 on timeout
-						if ( overrun < 0
-						or self._advanced_ok_last_line < 0
-						or self._advanced_ok_last_line >= self._advanced_ok_wait_for_line):
-							break
+			self._log("####1 wfl={} maxl={} lastl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line,self._advanced_ok_last_line ))
+			if ( self._advanced_ok_detected
+			and self._advanced_ok_max_line > 0
+			and self._state == self.STATE_PRINTING):
+				if(self._advanced_ok_wait_for_line > 0 ):
+					self._wait_for_line()
 				else:
-					cruLineTimeout=200 * self._serial.timeout #wait untill busy message will be recieved
-					while( self._advanced_ok_max_line > 0
-						and  self._currentLine > self._advanced_ok_max_line
-						and  cruLineTimeout >0):
-						time.sleep(0.005) #pool 5ms
-						cruLineTimeout-=1
-					self._log("####3 wfl={} maxl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line ))
-					if (cruLineTimeout == 0) : # this could happen when printer printing slowly lot of long lines , we not lose synchronisation, just wait a little more 
-						self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
+					self._pool_for_freebuffer()
 			else:
 				self._clear_to_send.wait()
 
+			self._log("####2 wfl={} maxl={} lastl={}".format(self._advanced_ok_wait_for_line, self._advanced_ok_max_line,self._advanced_ok_last_line ))
 		self._log("Closing down send loop")
 
 	def _log_command_phase(self, phase, command, *args, **kwargs):
@@ -4747,19 +4764,23 @@ def parse_resend_line(line):
 
 def parse_advanced_ok_line(line):
 	"""
-	Parses the provided marlin ADVANCED_OK line.
+	Parses the provided ADVANCED_OK line.
+
+	Format:
+		ok N<last processed line> P<free planner slots> B<free command slots>
+
 	Args:
 		line (str): the line to parse
+
 	Returns:
-    last_processed_line
-    free_planner_buff
-    free_command_buff
-     or None:
+		(dict or None) A dict containing the last processed line number (``N``) or None if command was send without line, the amount of free 
+		slots in the motion planner buffer (``P``) and the amount of free slots in the command buffer (``B``), 
+		or None if no match could be made.
 	"""
 
 	match = regex_advanced_ok.search(line)
 	if match is not None:
-		return dict(N=int(match.group("N")),
+		return dict(N=( int(match.group("N")) if (match.group("N") is not None)  else None),
 								P=int(match.group("P")),
 								B=int(match.group("B")))
 
