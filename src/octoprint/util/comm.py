@@ -441,6 +441,7 @@ class MachineCom(object):
 		self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
+		self._hello_sent = 0
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
@@ -1508,6 +1509,7 @@ class MachineCom(object):
 
 		self.sendCommand(self._hello_command, force=True, tags=tags | {"trigger:comm.say_hello",})
 		self._clear_to_send.set()
+		self._hello_sent += 1
 
 	def resetLineNumbers(self, number=0, part_of_job=False, tags=None):
 		if not self.isOperational():
@@ -1621,6 +1623,10 @@ class MachineCom(object):
 
 		# enqueue the "hello command" first thing
 		if try_hello:
+			self.sayHello()
+
+			# we send a second one right away because sometimes there's garbage on the line on first connect
+			# that can kill oks
 			self.sayHello()
 
 		while self._monitoring_active:
@@ -2150,8 +2156,12 @@ class MachineCom(object):
 							self._handle_ok()
 						self._onConnected()
 					elif monotonic_time() > self._timeout:
-						self._log("There was a timeout while trying to connect to the printer")
-						self.close(wait=False)
+						if try_hello and self._hello_sent < 3:
+							self._log("No answer from the printer within the connection timeout, trying another hello")
+							self.sayHello()
+						else:
+							self._log("There was a timeout while trying to connect to the printer")
+							self.close(wait=False)
 
 				### Operational (idle or busy)
 				elif self._state in (self.STATE_OPERATIONAL,
