@@ -2248,7 +2248,7 @@ class MachineCom(object):
 				free_command_buff   = parsed.get("B")
 
 				#if (self._advanced_ok_last_line >= self._advanced_ok_wait_for_line ):
-				self._advanced_ok_max_line = self._advanced_ok_last_line + max(free_planner_buff,free_command_buff)
+				self._advanced_ok_max_line = self._advanced_ok_last_line + free_command_buff#max(free_planner_buff,free_command_buff)
 			else:
 				#if(not ("T:" in line) ): #todo, report marlin bug M105 Report Temperatures without line number when advanced_ok enabled
 				if (self._advanced_ok_detected):
@@ -3182,16 +3182,10 @@ class MachineCom(object):
 		"""
 		self._log("pool")
 		#pool for free buffer
-		#_transaction_timeout= 200 * 60 # 60 sec for any long running command
 		while True:
 			if( self._advanced_ok_max_line > 0
 				and self._currentLine > self._advanced_ok_max_line):
-				#and _transaction_timeout >0):
 				time.sleep(0.005) #pool 5ms
-				#_transaction_timeout -= 1
-				#if (_transaction_timeout < 0 ):
-				#	self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
-				#	return False #something wrong
 			else:
 				return True
 
