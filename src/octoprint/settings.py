@@ -153,7 +153,8 @@ default_settings = {
 			"autoreport_temp": True,
 			"autoreport_sdstatus": True,
 			"busy_protocol": True,
-			"emergency_parser": True
+			"emergency_parser": True,
+			"advanced_ok_protocol": True
 		},
 
 		# command specific flags

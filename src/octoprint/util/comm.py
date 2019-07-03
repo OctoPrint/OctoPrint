@@ -377,6 +377,7 @@ class MachineCom(object):
 	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 	CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
 	CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+	CAPABILITY_ADVANCED_OK_PROTOCOL = "ADVANCED_OK_PROTOCOL"
 
 	CAPABILITY_SUPPORT_ENABLED = "enabled"
 	CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -471,7 +472,8 @@ class MachineCom(object):
 			self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
 			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"]),
 			self.CAPABILITY_EMERGENCY_PARSER: settings().getBoolean(["serial", "capabilities", "emergency_parser"]),
-			self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(["serial", "capabilities", "chamber_temp"])
+			self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(["serial", "capabilities", "chamber_temp"]),
+			self.CAPABILITY_ADVANCED_OK_PROTOCOL: settings().getBoolean(["serial", "capabilities", "advanced_ok_protocol"])
 		}
 
 		self._lastLines = deque([], 50)
@@ -1663,7 +1665,6 @@ class MachineCom(object):
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
 					# reset the ok timeout, the regular comm timeout has already been reset
 					self._ok_timeout = self._get_new_communication_timeout()
-					self._advanced_ok_max_line = -1 #reset async commands
 
 					# make sure the printer sends busy in a small enough interval to match our timeout
 					if not self._busy_protocol_detected and self._capability_support.get(self.CAPABILITY_BUSY_PROTOCOL,
@@ -2233,7 +2234,8 @@ class MachineCom(object):
 
 			parsed = parse_advanced_ok_line(line)
 			if parsed:
-				if not self._advanced_ok_detected :
+				if not self._advanced_ok_detected and self._capability_support.get(self.CAPABILITY_ADVANCED_OK_PROTOCOL,
+					                                                                     False):
 					self._advanced_ok_detected = True
 					to_log = "Printer seems to support the advanced_ok protocol, for {} commands will be used " \
 					"asynchronous transfer".format(",".join(self._advanced_ok_buffered_cmds))
@@ -2246,12 +2248,21 @@ class MachineCom(object):
 				free_command_buff   = parsed.get("B")
 
 				#if (self._advanced_ok_last_line >= self._advanced_ok_wait_for_line ):
-				self._advanced_ok_max_line = self._advanced_ok_last_line + free_command_buff #max(free_planner_buff,free_command_buff)
+				self._advanced_ok_max_line = self._advanced_ok_last_line + max(free_planner_buff,free_command_buff)
 			else:
 				#if(not ("T:" in line) ): #todo, report marlin bug M105 Report Temperatures without line number when advanced_ok enabled
-				self._advanced_ok_max_line = -1 #we don't know what to do, force an interrupt
+				if (self._advanced_ok_detected):
+					to_log = "Unknown protocol line format in ADVANCED_OK_PROTOCOL: {}".format(line)
+					self._log(to_log)
+					self._logger.info(to_log)
+					self._advanced_ok_max_line = -1 #unknown line in protocol ,we don't know what to do, force an interrupt
 		else:
-			self._advanced_ok_max_line = -1
+			if (self._advanced_ok_detected):
+				to_log = "Empty line while ADVANCED_OK_PROTOCOL detected"
+				self._log(to_log)
+				self._logger.info(to_log)
+				self._advanced_ok_max_line = -1 #unknown line in protocol ,we don't know what to do, force an interrupt
+			self._advanced_ok_max_line = -1 #ADVANCED_OK_PROTOCOL not supported
 
 
 		if self._resendDelta is not None and self._resendNextCommand():
@@ -2535,7 +2546,6 @@ class MachineCom(object):
 			self._set_busy_protocol_interval()
 
 		self._advanced_ok_max_line = -1 #_on_external_reset
-		self._advanced_ok_detected = False
 
 	def _get_temperature_timer_interval(self):
 		busy_default = 4.0
@@ -3165,22 +3175,32 @@ class MachineCom(object):
 			return False
 
 	def _pool_for_freebuffer(self):
+		"""
+		Waiting for free buffer in printer, and while _advanced_ok_max_line >0
+		if for some reason transaction with printer will be broken, the _advanced_ok_max_line will be setted to -1 from outside
+		return value not used
+		"""
 		self._log("pool")
 		#pool for free buffer
-		_transaction_timeout= 200 * 60 # 60 sec for any long running command
+		#_transaction_timeout= 200 * 60 # 60 sec for any long running command
 		while True:
 			if( self._advanced_ok_max_line > 0
-				and self._currentLine > self._advanced_ok_max_line
-				and _transaction_timeout >0):
+				and self._currentLine > self._advanced_ok_max_line):
+				#and _transaction_timeout >0):
 				time.sleep(0.005) #pool 5ms
-				_transaction_timeout -= 1
-				if (_transaction_timeout < 0 ):
-					self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
-					return False #something wrong
+				#_transaction_timeout -= 1
+				#if (_transaction_timeout < 0 ):
+				#	self._log(u"warning! sleep 5ms timeout {} > {} , ignore it if you printing slowly long lines".format(self._currentLine , self._advanced_ok_max_line))
+				#	return False #something wrong
 			else:
 				return True
 
 	def _wait_for_line(self):
+		"""
+		Waiting for delivery confirmation of specific line, and while _advanced_ok_max_line >0
+		if for some reason transaction with printer will be broken, the _advanced_ok_max_line will be setted to -1 from outside
+		return value not used
+		"""
 		self._log("_wait_for_line1")
 
 		while True:
@@ -3197,6 +3217,8 @@ class MachineCom(object):
 	def _send_one_from_queue(self):
 		"""
 		send one item from _send_queue, or wait until we have something in the queue
+		return True to continue sending
+		return False to stop sending and wait for free buffer or delivery confirmation
 		"""
 		gcode = None
 		try:
