@@ -137,7 +137,7 @@ class VirtualPrinter(object):
 		self._temperature_reporter = None
 		self._sdstatus_reporter = None
 
-		self.currentLine = 0
+		self.current_line = 0
 		self.lastN = 0
 
 		self._incoming_lock = threading.RLock()
@@ -204,7 +204,7 @@ class VirtualPrinter(object):
 
 			self._heatingUp = False
 
-			self.currentLine = 0
+			self.current_line = 0
 			self.lastN = 0
 
 			self._debug_awol = False
@@ -307,10 +307,10 @@ class VirtualPrinter(object):
 				checksum = int(data[data.rfind("*") + 1:])
 				data = data[:data.rfind("*")]
 				if not checksum == self._calculate_checksum(data):
-					self._triggerResend(expected=self.currentLine + 1)
+					self._triggerResend(expected=self.current_line + 1)
 					continue
 
-				self.currentLine += 1
+				self.current_line += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
 				self._send(self._error("checksum_missing"))
 				continue
@@ -319,7 +319,7 @@ class VirtualPrinter(object):
 			if data.startswith("N") and "M110" in data:
 				linenumber = int(re.search("N([0-9]+)", data).group(1))
 				self.lastN = linenumber
-				self.currentLine = linenumber
+				self.current_line = linenumber
 
 				self._triggerResendAt100 = True
 				self._triggerResendWithTimeoutAt105 = True

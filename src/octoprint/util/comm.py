@@ -451,7 +451,7 @@ class MachineCom(object):
 		self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
-		self._currentLine = 1
+		self._current_line = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
 
@@ -2444,7 +2444,7 @@ class MachineCom(object):
 			self._send_queue.clear()
 
 			with self._line_mutex:
-				self._currentLine = 0
+				self._current_line = 0
 				self._lastLines.clear()
 
 		self.sayHello(tags={"trigger:comm.on_external_reset"})
@@ -2842,17 +2842,17 @@ class MachineCom(object):
 			if lineToResend is None:
 				return False
 
-			if self._resendDelta is None and lineToResend == self._currentLine == 1:
+			if self._resendDelta is None and lineToResend == self._current_line == 1:
 				# We probably just handled a resend and this request originates from lines sent before that
 				self._logger.info("Got a resend request for line 1 which is also our current line. It looks "
 				                  "like we just handled a reset and this is a left over of this")
 				return False
 
-			elif self._resendDelta is None and lineToResend == self._currentLine:
+			elif self._resendDelta is None and lineToResend == self._current_line:
 				# We don't expect to have an active resend request and the printer is requesting a resend of
 				# a line we haven't yet sent.
 				#
-				# This means the printer got a line from us with N = self._currentLine - 1 but had already
+				# This means the printer got a line from us with N = self._current_line - 1 but had already
 				# acknowledged that. This can happen if the last line was resent due to a timeout during
 				# an active (prior) resend request.
 				#
@@ -2864,7 +2864,7 @@ class MachineCom(object):
 			lastCommError = self._lastCommError
 			self._lastCommError = None
 
-			resendDelta = self._currentLine - lineToResend
+			resendDelta = self._current_line - lineToResend
 
 			if lastCommError is not None \
 					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
@@ -2883,7 +2883,7 @@ class MachineCom(object):
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				error_text = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._log(error_text)
-				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._current_line, len(self._lastLines)))
 				if self.isPrinting():
 					# abort the print & disconnect, there's nothing we can do to rescue it
 					self._trigger_error(error_text, "resend")
@@ -2905,7 +2905,7 @@ class MachineCom(object):
 						self._log_resends_rate_count = 0
 
 					self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
-					                               u"current line = {}".format(lineToResend, self._currentLine))
+					                               u"current line = {}".format(lineToResend, self._current_line))
 					self._log_resends_rate_count += 1
 
 			self._send_queue.resend_active = True
@@ -2949,7 +2949,7 @@ class MachineCom(object):
 				return False
 
 			cmd = self._lastLines[-self._resendDelta]
-			lineNumber = self._currentLine - self._resendDelta
+			lineNumber = self._current_line - self._resendDelta
 
 			result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
@@ -3347,9 +3347,9 @@ class MachineCom(object):
 
 	def _do_increment_and_send_with_checksum(self, cmd):
 		with self._line_mutex:
-			linenumber = self._currentLine
+			linenumber = self._current_line
 			self._addToLastLines(cmd)
-			self._currentLine += 1
+			self._current_line += 1
 			self._do_send_with_checksum(cmd, linenumber)
 
 	def _do_send_with_checksum(self, command, linenumber):
@@ -3620,7 +3620,7 @@ class MachineCom(object):
 			self._logger.info("M110 detected, setting current line number to {}".format(newLineNumber))
 
 			# send M110 command with new line number
-			self._currentLine = newLineNumber
+			self._current_line = newLineNumber
 
 			# after a reset of the line number we have no way to determine what line exactly the printer now wants
 			self._lastLines.clear()
