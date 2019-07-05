@@ -92,7 +92,8 @@ def getSettings():
 			"colorIcon": s.getBoolean(["appearance", "colorIcon"]),
 			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
 			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"]),
-			"fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"])
+			"fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"]),
+			"closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -152,6 +153,7 @@ def getSettings():
 			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
 			"blockedCommands": s.get(["serial", "blockedCommands"]),
 			"pausingCommands": s.get(["serial", "pausingCommands"]),
+			"emergencyCommands": s.get(["serial", "emergencyCommands"]),
 			"helloCommand": s.get(["serial", "helloCommand"]),
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
@@ -171,6 +173,8 @@ def getSettings():
 			"ignoreIdenticalResends": s.getBoolean(["serial", "ignoreIdenticalResends"]),
 			"firmwareDetection": s.getBoolean(["serial", "firmwareDetection"]),
 			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
+			"useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
+			"sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
 			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
@@ -382,6 +386,7 @@ def _saveSettings(data):
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 		if "fuzzyTimes" in data["appearance"]: s.setBoolean(["appearance", "fuzzyTimes"], data["appearance"]["fuzzyTimes"])
+		if "closeModalsWithClick" in data["appearance"]: s.setBoolean(["appearance", "closeModalsWithClick"], data["appearance"]["closeModalsWithClick"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
@@ -438,6 +443,7 @@ def _saveSettings(data):
 		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
 		if "blockedCommands" in data["serial"] and isinstance(data["serial"]["blockedCommands"], (list, tuple)): s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
 		if "pausingCommands" in data["serial"] and isinstance(data["serial"]["pausingCommands"], (list, tuple)): s.set(["serial", "pausingCommands"], data["serial"]["pausingCommands"])
+		if "emergencyCommands" in data["serial"] and isinstance(data["serial"]["emergencyCommands"], (list, tuple)): s.set(["serial", "emergencyCommands"], data["serial"]["emergencyCommands"])
 		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
@@ -457,6 +463,11 @@ def _saveSettings(data):
 		if "ignoreIdenticalResends" in data["serial"]: s.setBoolean(["serial", "ignoreIdenticalResends"], data["serial"]["ignoreIdenticalResends"])
 		if "firmwareDetection" in data["serial"]: s.setBoolean(["serial", "firmwareDetection"], data["serial"]["firmwareDetection"])
 		if "blockWhileDwelling" in data["serial"]: s.setBoolean(["serial", "blockWhileDwelling"], data["serial"]["blockWhileDwelling"])
+		if "useParityWorkaround" in data["serial"]:
+			value = data["serial"]["useParityWorkaround"]
+			if value in ("always", "detect", "never"):
+				s.set(["serial", "useParityWorkaround"], value)
+		if "sendM112OnError" in data["serial"]: s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
 		if "abortHeatupOnCancel" in data["serial"]: s.setBoolean(["serial", "abortHeatupOnCancel"], data["serial"]["abortHeatupOnCancel"])

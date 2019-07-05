@@ -148,7 +148,17 @@ def load_user(id):
 	return None
 
 def load_user_from_request(request):
-	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+	user = None
+
+	if settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
+		# Basic Authentication?
+		user = util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+	if settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		# Remote user header?
+		user = util.get_user_for_remote_user_header(request)
+
+	return user
 
 def unauthorized_user():
 	from flask import abort
@@ -475,7 +485,7 @@ class Server(object):
 			except:
 				self._logger.exception("Error while trying to migrate settings for "
 				                       "plugin {}, ignoring it".format(implementation._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra=dict(plugin=implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -1597,10 +1607,7 @@ class Server(object):
 
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
-
-		# login users authenticated by basic auth
-		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
+		loginManager.request_callback = load_user_from_request
 
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser

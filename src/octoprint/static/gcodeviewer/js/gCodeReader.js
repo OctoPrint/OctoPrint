@@ -54,7 +54,7 @@ GCODE.gCodeReader = (function(){
         lines = [];
     };
 
-    var sortLayers = function(){
+    var sortLayers = function(m){
         var sortedZ = [];
         var tmpModel = [];
 
@@ -68,10 +68,9 @@ GCODE.gCodeReader = (function(){
 
         for(var i=0;i<sortedZ.length;i++){
             if(typeof(z_heights[sortedZ[i]]) === 'undefined')continue;
-            tmpModel[i] = model[z_heights[sortedZ[i]]];
+            tmpModel[i] = m[z_heights[sortedZ[i]]];
         }
-        model = tmpModel;
-        delete tmpModel;
+        return tmpModel;
     };
 
     var prepareLinesIndex = function(){
@@ -97,23 +96,23 @@ GCODE.gCodeReader = (function(){
         }
 
         var elements = percentageTree.findBest(key);
-        if (elements.length == 0) {
+        if (elements.length === 0) {
             return undefined;
         }
 
         return elements[0];
     };
 
-    var purgeLayers = function(){
-        if(!model) return;
+    var purgeLayers = function(m){
+        if(!m) return;
 
         var purge;
-        for(var i = 0; i < model.length; i++){
+        for(var i = 0; i < m.length; i++){
             purge = true;
 
-            if (typeof(model[i]) !== "undefined") {
-                for (var j = 0; j < model[i].length; j++) {
-                    if(model[i][j].extrude) {
+            if (typeof(m[i]) !== "undefined") {
+                for (var j = 0; j < m[i].length; j++) {
+                    if(m[i][j].extrude) {
                         purge = false;
                         break;
                     }
@@ -121,10 +120,12 @@ GCODE.gCodeReader = (function(){
             }
 
             if (purge) {
-                model.splice(i, 1);
+                m.splice(i, 1);
                 i--;
             }
         }
+
+        return m;
     };
 
 // ***** PUBLIC *******
@@ -177,10 +178,11 @@ GCODE.gCodeReader = (function(){
         },
 
         passDataToRenderer: function(){
-            if (gCodeOptions["sortLayers"]) sortLayers();
-            if (gCodeOptions["purgeEmptyLayers"]) purgeLayers();
+            var m = model;
+            if (gCodeOptions["sortLayers"]) m = sortLayers(m);
+            if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
             prepareLinesIndex();
-            GCODE.renderer.doRender(model, 0);
+            GCODE.renderer.doRender(m, 0);
         },
 
         processLayerFromWorker: function(msg){

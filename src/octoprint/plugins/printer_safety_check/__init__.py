@@ -177,7 +177,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/printer_safety_check.html"
 __plugin_description__ = "Checks for unsafe printers/printer firmwares"
 __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
-                                           "check if the printer it is connected to has a known safety"
+                                           "check if the printer it is connected to has a known safety "
                                            "issue and inform you about that fact.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = PrinterSafetyCheckPlugin()

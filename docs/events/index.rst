@@ -38,6 +38,13 @@ Example
      - event: PrintDone
        command: python ~/growl.py -t mygrowlserver -d "Completed {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+     - event:
+       - PrintStarted
+       - PrintFailed
+       - PrintDone
+       - PrintCancelled
+       command: python ~/growl.py -t mygrowlserver -d "Event {__eventname} ({name})" -a OctoPrint -i http://raspi/Octoprint_logo.png
+       type: system
      - event: Connected
        command:
        - M115
@@ -53,6 +60,7 @@ Placeholders
 You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
+  * ``{__eventname}`` : the name of the event hook being triggered
   * ``{__filename}`` : name of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__filepath}`` : path in origin location of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__fileorigin}`` : origin of currently selected file, or ``NO FILE`` if no file is selected
@@ -580,6 +588,7 @@ SlicingStarted
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -591,6 +600,7 @@ SlicingDone
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -603,6 +613,7 @@ SlicingCancelled
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -613,6 +624,7 @@ SlicingFailed
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename

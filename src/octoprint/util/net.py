@@ -46,9 +46,8 @@ else:
 
 def is_lan_address(address, additional_private=None):
 	try:
-		if address.lower().startswith("::ffff:") and "." in address:
-			# ipv6 mapped ipv4 address, unmap
-			address = address[len("::ffff:"):]
+		address = unmap_v4_as_v6(address)
+		address = strip_interface_tag(address)
 
 		ip = netaddr.IPAddress(address)
 		if ip.is_private() or ip.is_loopback():
@@ -71,10 +70,7 @@ def is_lan_address(address, additional_private=None):
 				# v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
 				_, prefix = prefix.split("/")
 
-			addr = address["addr"]
-			if "%" in addr:
-				# interface comment in netifaces output, e.g. "fe80::457f:bbee:d579:1063%wlan0"
-				addr = addr[:addr.find("%")]
+			addr = strip_interface_tag(address["addr"])
 			return netaddr.IPNetwork("{}/{}".format(addr, prefix))
 
 		for interface in netifaces.interfaces():
@@ -103,3 +99,17 @@ def is_lan_address(address, additional_private=None):
 		# we are extra careful here since an unhandled exception in this method will effectively nuke the whole UI
 		logging.getLogger(__name__).exception("Error while trying to determine whether {} is a local address".format(address))
 		return True
+
+
+def strip_interface_tag(address):
+	if "%" in address:
+		# interface comment, e.g. "fe80::457f:bbee:d579:1063%wlan0"
+		address = address[:address.find("%")]
+	return address
+
+
+def unmap_v4_as_v6(address):
+	if address.lower().startswith("::ffff:") and "." in address:
+		# ipv6 mapped ipv4 address, unmap
+		address = address[len("::ffff:"):]
+	return address
