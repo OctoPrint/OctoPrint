@@ -3662,7 +3662,7 @@ class MachineCom(object):
 
 	def _gcode_M191_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = monotonic_time()
-		self._log_running_command = True
+		self._long_running_command = True
 		self._heating = True
 		self._gcode_M141_sent(cmd, cmd_type, wait=True, support_r=True)
 
