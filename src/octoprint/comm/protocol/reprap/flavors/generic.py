@@ -15,6 +15,7 @@ from octoprint.util import chunks, monotonic_time
 
 from future.utils import with_metaclass
 
+
 _flavor_registry = dict()
 
 
@@ -49,8 +50,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	unknown_requires_ack = False
 	unknown_with_checksum = False
 
-	always_send_checksum = False
-	never_send_checksum = False
+	send_checksum = "printing"
 
 	detect_external_heatups = True
 	block_while_dwelling = False
@@ -113,6 +113,23 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	@classmethod
 	def with_overrides(cls, overrides):
 		return type(b"{}WithOverrides".format(cls.__name__), (cls,), overrides)
+
+	@classmethod
+	def overridable(cls):
+		return dict(unknown_requires_ack=cls.unknown_requires_ack,
+		            unknown_with_checksum=cls.unknown_with_checksum,
+		            send_checksum=cls.send_checksum,
+		            detect_external_heatups=cls.detect_external_heatups,
+		            block_while_dwelling=cls.block_while_dwelling,
+		            trigger_ok_after_resend=cls.trigger_ok_after_resend,
+		            sd_relative_path=cls.sd_relative_path,
+		            checksum_requiring_commands=cls.checksum_requiring_commands,
+		            long_running_commands=cls.long_running_commands,
+		            asynchronous_commands=cls.asynchronous_commands,
+		            blocked_commands=cls.blocked_commands,
+		            pausing_commands=cls.pausing_commands,
+		            emergency_commands=cls.emergency_commands,
+		            heatup_abortable=cls.heatup_abortable)
 
 	##~~ Identifier
 

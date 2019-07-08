@@ -83,9 +83,25 @@
     <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
     <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
 </script>
+<script type="text/html" id="connection_template_smalllist">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+</script>
 <script type="text/html" id="connection_template_group">
     <label data-bind="text: $data.title"></label>
     <!-- ko foreach: params -->
     <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="connection_template_groupchoice">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <!-- ko if: !$data.group.advanced -->
+    <label data-bind="text: $data.group.title"></label>
+    <!-- ko foreach: $data.group.params -->
+    <!-- ko if: !advanced -->
+    <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
     <!-- /ko -->
 </script>

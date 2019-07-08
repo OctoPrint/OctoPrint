@@ -34,48 +34,74 @@
 
 <script type="text/html" id="connection_dialog_template_text">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
             <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_integer">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
-            <input class="input-block-level" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko unless: $data.unit -->
+            <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_float">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
-            <input class="input-block-level" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: $data.unit -->
+            <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_choice">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
             <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
+<script type="text/html" id="connection_dialog_template_groupchoice">
+    <div class="control-group">
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+    <!-- ko template: { name: 'connection_dialog_template_group', data: group } --><!-- /ko -->
+</script>
 <script type="text/html" id="connection_dialog_template_smallchoice">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
             <!-- ko foreach: choices -->
             <label class="radio">
-                <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value"> <span data-bind="text: $data.title"></span>
-                <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+                <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span>  <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+                <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
             </label>
             <!-- /ko -->
         </div>
@@ -85,34 +111,43 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="text: $data.title"></span>
+                <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span> <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
             </label>
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_suggestion">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
             <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_list">
     <div class="control-group">
-        <label class="control-label" data-bind="text: $data.title"></label>
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
         <div class="controls">
             <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
-            <span class="help-block" data-bind="visible: $data.help, text: $data.help"></span>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connection_dialog_template_smalllist">
+    <div class="control-group">
+        <label class="control-label" data-bind="markdownInline: $data.title"></label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
         </div>
     </div>
 </script>
 <script type="text/html" id="connection_dialog_template_group">
     <fieldset>
-        <legend data-bind="text: $data.title"></legend>
-        <p data-bind="visible: $data.help, text: $data.help"></p>
+        <legend data-bind="markdownInline: $data.title"></legend>
+        <p data-bind="visible: $data.help, markdownInline: $data.help"></p>
         <!-- ko foreach: params -->
         <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
         <!-- /ko -->

@@ -21,11 +21,16 @@ def get_param_dict(data, options):
 class ParamType(object):
 	type = "generic"
 
-	def __init__(self, name, title, default=None, advanced=False, help=None):
+	def __init__(self, name, title, default=None, advanced=False, warning=False, labels=None, help=None):
+		if labels is None:
+			labels = []
+
 		self.name = name
 		self.title = title
 		self.default = default
 		self.advanced = advanced
+		self.warning = warning
+		self.labels = labels
 		self.help = help
 
 	def as_dict(self):
@@ -33,6 +38,8 @@ class ParamType(object):
 		            title=self.title,
 		            default=self.default,
 		            advanced=self.advanced,
+		            warning=self.warning,
+		            labels=self.labels,
 		            help=self.help,
 		            type=self.type)
 
@@ -135,6 +142,24 @@ class ChoiceType(ParamType):
 class SmallChoiceType(ChoiceType):
 	type = "smallchoice"
 
+class GroupChoiceType(ChoiceType):
+	type = "groupchoice"
+
+	def __init__(self, name, title, choices, group, defaults=None, **kwargs):
+		if defaults is None:
+			defaults = dict()
+
+		ChoiceType.__init__(self, name, title, choices, **kwargs)
+
+		self.group = group
+		self.defaults = defaults
+
+	def as_dict(self):
+		result = ChoiceType.as_dict(self)
+		result["group"] = self.group.as_dict()
+		result["defaults"] = self.defaults
+		return result
+
 class SuggestionType(ParamType):
 	type = "suggestion"
 
@@ -151,7 +176,10 @@ class SuggestionType(ParamType):
 class ListType(ParamType):
 	type = "list"
 
-	def __init__(self, name, title, factory, **kwargs):
+	def __init__(self, name, title, factory=None, **kwargs):
+		if factory is None:
+			factory = lambda x: x
+
 		self.factory = factory
 		ParamType.__init__(self, name, title, **kwargs)
 
@@ -165,11 +193,14 @@ class ListType(ParamType):
 
 		return list(map(self.factory, items))
 
+class SmallListType(ListType):
+	type = "smalllist"
+
 class ParamGroup(ParamType):
 	type = "group"
 
-	def __init__(self, name, title, params, help=None, advanced=False):
-		ParamType.__init__(self, name, title, help=help, advanced=advanced)
+	def __init__(self, name, title, params, **kwargs):
+		ParamType.__init__(self, name, title, **kwargs)
 		self.params = params
 
 	def as_dict(self):
@@ -183,12 +214,20 @@ class ParamGroup(ParamType):
 		return dict((k, v.convert()) for k, v in value.items())
 
 class Value(object):
-	def __init__(self, value, title=None, help=None):
+	def __init__(self, value, title=None, warning=False, labels=None, help=None):
+		if labels is None:
+			labels = []
+
 		self.value = value
 		self.title = title if title else value
+		self.warning = warning
+		self.labels = labels
 		self.help = help
 
 	def as_dict(self):
 		return dict(value=self.value,
 		            title=self.title,
+		            warning=self.warning,
+		            labels=self.labels,
 		            help=self.help)
+

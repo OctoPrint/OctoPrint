@@ -38,6 +38,10 @@ from past.builtins import basestring, unicode
 logger = logging.getLogger(__name__)
 
 
+def dummy_gettext(string):
+	return string
+
+
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> bytes
 	"""Make sure ``s_or_u`` is a bytestring."""

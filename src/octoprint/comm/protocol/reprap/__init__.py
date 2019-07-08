@@ -23,12 +23,13 @@ from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, JobQueue, Co
 
 from octoprint.comm.scripts import InvalidScript, UnknownScript
 
-from octoprint.comm.util.parameters import ChoiceType, Value, ParamGroup, BooleanType, FloatType, IntegerType, SmallChoiceType
+from octoprint.comm.util.parameters import GroupChoiceType, Value, ParamGroup, BooleanType, FloatType, SmallChoiceType, SmallListType
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob, CopyJobMixin
 
 from octoprint.util import TypedQueue, TypeAlreadyInQueue, ResettableTimer, to_bytes, to_unicode, protectedkeydict, CountedEvent, monotonic_time
+from octoprint.util import dummy_gettext as gettext
 
 from octoprint.events import Events
 
@@ -125,34 +126,143 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	@classmethod
 	def get_connection_options(cls):
-		return [ChoiceType("flavor", "Firmware Flavor",
-		                   sorted([Value(f.key, title=f.name) for f in all_flavors()], key=lambda x: x.title),
-		                   default="generic"),
-		        ParamGroup("flavor_overrides",
-		                   "Flavor Overrides",
-		                   [BooleanType("always_send_checksum", "Always send checksum", help="Check this to always send checksums", default=False),
-		                    SmallChoiceType("trigger_ok_after_resend",
-		                                    "Trigger ok after resend",
-		                                    [Value("detect", title="As detected"),
-		                                     Value("always", title="Always"),
-		                                     Value("never", title="Never")],
-		                                    default="detect")],
-		                   help="Just a test",
+		return [GroupChoiceType("flavor",
+		                        "Firmware Flavor",
+		                        sorted([Value(f.key,
+		                                      title=f.name) for f in all_flavors()],
+		                               key=lambda x: x.title),
+		                        ParamGroup("flavor_overrides",
+		                                   "Flavor Overrides",
+		                                   [SmallChoiceType("send_checksum",
+		                                                    gettext("Send a checksum with the command"),
+		                                                    [Value("printing", title=gettext("When printing")),
+		                                                     Value("always", title=gettext("Always")),
+		                                                     Value("never", title=gettext("Never"))]),
+		                                    SmallChoiceType("trigger_ok_after_resend",
+		                                                    gettext("Trigger ok after resend"),
+		                                                    [Value("detect", title=gettext("As detected")),
+		                                                     Value("always", title=gettext("Always")),
+		                                                     Value("never", title=gettext("Never"))]),
+		                                    SmallListType("blocked_commands",
+		                                                  gettext("Blocked commands"),
+		                                                  help=gettext("Use this to specify commands that should never be sent to the printer. Just the G or M code, comma separated. Defaults to `M0` and `M1` since most firmware will block until a button on the controller has been pressed if it receives either of those two commands.")),
+		                                    SmallListType("checksum_requiring_commands",
+		                                                  gettext("Checksum requiring commands"),
+		                                                  help=gettext("")),
+		                                    SmallListType("long_running_commands",
+		                                                  gettext("Long running commands"),
+		                                                  help=gettext("")),
+		                                    SmallListType("asynchronous_commands",
+		                                                  gettext("Asynchronous commands"),
+		                                                  help=gettext("")),
+		                                    SmallListType("pausing_commands",
+		                                                  gettext("Pausing commands"),
+		                                                  help=gettext("")),
+		                                    SmallListType("emergency_commands",
+		                                                  gettext("Emergency commands"),
+		                                                  help=gettext(""))
+		                                    ],
+		                                   help=gettext("You can override the firmware flavor default settings here. You usually should *not* need to do that. Only change anything if the defaults don't work for your printer."),
+		                                   advanced=True),
+		                        defaults=dict((f.key, f.overridable()) for f in all_flavors()),
+		                        default="generic"),
+		        ParamGroup("error_handling",
+		                   gettext("Error handling"),
+		                   [SmallChoiceType("firmware_errors", gettext("What to do on a firmware error (`Error:` or `!!`)"),
+		                                    [Value("disconnect",
+		                                           title=gettext("Disconnect from the printer")),
+		                                     Value("cancel",
+		                                           title=gettext("Cancel any ongoing prints but stay connected to the printer"),
+		                                           help=gettext("Please note that if you choose this, OctoPrint will still disconnect from the printer in  case of *fatal* errors reported by your firmware (e.g. `kill() called`, `fatal:`)")),
+		                                     Value("ignore",
+		                                           title=gettext("Ignore"),
+		                                           warning=True,
+		                                           help=gettext("Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!"))],
+		                                    default="disconnect")],
 		                   advanced=True),
-		        ParamGroup("timeouts_and_intervals",
-		                   "Timeouts and Intervals",
-		                   [FloatType("detection_timeout", "Detection", default=1),
-		                    FloatType("connection_timeout", "Connection", default=10),
-		                    FloatType("communication_timeout_normal", "Communication", default=30),
-		                    FloatType("communication_timeout_busy", "Communication (busy)", default=3),
-		                    FloatType("temperature_interval_idle", "Temperature (idle)", default=5),
-		                    FloatType("temperature_interval_target", "Temperature (target set)", default=2),
-		                    FloatType("temperature_interval_auto", "Temperature (autoreport)", default=2),
-		                    FloatType("sdstatus_interval_normal", "SD Status", default=1),
-		                    FloatType("sdstatus_interval_auto", "SD status (autoreport)", default=1),
-		                    FloatType("resendok_timeout", "Resend OK", default=.5),
-		                    FloatType("baudrate_detection_pause", "Baudrate Detection Pause", default=1.0),
-		                    FloatType("position_log_wait", "Position Log Wait", default=10)],
+		        ParamGroup("pausing",
+		                   gettext("Pausing"),
+		                   [BooleanType("log_position_on_pause",
+		                                gettext("Log position on pause"),
+		                                default=True,
+		                                warning=True,
+		                                help=gettext("If you disable this, the `pause_position` placeholders in your pause/resume GCODE scripts will stay unpopulated! However, pausing speed might improve slightly."))],
+		                   advanced=True),
+		        ParamGroup("cancelling",
+		                   gettext("Cancelling"),
+		                   [BooleanType("log_position_on_cancel",
+		                                gettext("Log position on cancel"),
+		                                default=True,
+		                                warning=True,
+		                                help=gettext("If you disable this, the `cancel_position` placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly.")),
+		                    BooleanType("abort_heatups",
+		                                "Attempt to abort any blocking heatups on cancel via `M108`",
+		                                default=True,
+		                                help=gettext("Uncheck this if your firmware doesn't support `M108` for aborting blocking heatups!"))],
+		                   advanced=True),
+		        ParamGroup("intervals",
+		                   gettext("Query intervals"),
+		                   [FloatType("temperature_interval_idle",
+		                              gettext("Temperature (idle)"),
+		                              default=5,
+		                              unit="sec",
+		                              help=gettext("When printing or idle")),
+		                    FloatType("temperature_interval_target",
+		                              gettext("Temperature (target set)"),
+		                              default=2,
+		                              unit="sec",
+		                              help=gettext("When idle and a target temperature is set")),
+		                    FloatType("temperature_interval_auto",
+		                              gettext("Temperature (autoreport)"),
+		                              default=2,
+		                              unit="sec",
+		                              help=gettext("Autoreport interval to request from the firmware")),
+		                    FloatType("sdstatus_interval_normal",
+		                              gettext("SD Status"),
+		                              default=1,
+		                              unit="sec",
+		                              help=gettext("When printing from the printer's SD")),
+		                    FloatType("sdstatus_interval_auto",
+		                              gettext("SD status (autoreport)"),
+		                              default=1,
+		                              unit="sec",
+		                              help=gettext("Autoreport interval to request from the firmware"))],
+		                   advanced=True),
+		        ParamGroup("timeouts",
+		                   gettext("Timeouts"),
+		                   [FloatType("communication_timeout_normal",
+		                              gettext("Communication"),
+		                              default=30,
+		                              unit="sec",
+		                              help=gettext("`busy` protocol support not detected")),
+		                    FloatType("communication_timeout_busy",
+		                              gettext("Communication (busy)"),
+		                              default=3,
+		                              unit="sec",
+		                              help=gettext("`busy` protocol support detected")),
+		                    FloatType("connection_timeout",
+		                              gettext("Connection"),
+		                              default=10,
+		                              unit="sec"),
+		                    FloatType("detection_timeout",
+		                              gettext("Autodetection"),
+		                              default=1,
+		                              unit="sec",
+		                              help=""),
+		                    FloatType("position_log_wait",
+		                              gettext("Position Log Wait"),
+		                              default=10,
+		                              unit="sec"),
+		                    FloatType("baudrate_detection_pause",
+		                              gettext("Initial baudrate detection pause"),
+		                              default=1.0,
+		                              unit="sec",
+		                              help=gettext("Some controllers need a bit of a breather before baudrate detection after initial connect. If baudrate detection fails due to a hanging controller, try increasing this value.")),
+		                    FloatType("resendok_timeout",
+		                              gettext("Timeout for `ok` after resend detection"),
+		                              default=.5,
+		                              unit="sec",
+		                              help=gettext("Some firmwares do not send an `ok` after a resend request. This timeout configures how long OctoPrint will wait for one until it assumes this particular bug to be present and generate its own."))],
 		                   advanced=True)]
 
 	@staticmethod
@@ -165,15 +275,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def __init__(self,
 	             flavor=None,
-	             connection_timeout=30.0,
-	             communication_timeout=10.0,
-	             communication_busy_timeout=2.0,
-	             temperature_interval_idle=5.0,
-	             temperature_interval_printing=5.0,
-	             temperature_interval_autoreport=2.0,
-	             sd_status_interval=2.0,
-	             sd_status_interval_autoreport=1.0,
-	             trigger_ok_after_resend=None,
 	             *args,
 	             **kwargs):
 		super(ReprapGcodeProtocol, self).__init__(*args, **kwargs)
@@ -195,18 +296,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._terminal_log = collections.deque([], 20)
 
 		self.timeouts = dict(
-			connection=connection_timeout,
-			communication=communication_timeout,
-			communication_busy=communication_busy_timeout
+			connection=kwargs.get("timeouts", dict()).get("connection_timeout", 30.0),
+			communication=kwargs.get("timeouts", dict()).get("communication_timeout_normal", 10.0),
+			communication_busy=kwargs.get("timeouts", dict()).get("communication_timeout_busy", 2.0)
 		)
 		self.interval = dict(
-			temperature_idle=temperature_interval_idle,
-			temperature_printing=temperature_interval_printing,
-			temperature_autoreport=temperature_interval_autoreport,
-			sd_status=sd_status_interval,
-			sd_status_autoreport=sd_status_interval_autoreport
+			temperature_idle=kwargs.get("intervals", dict()).get("temperature_interval_idle", 5.0),
+			temperature_printing=kwargs.get("intervals", dict()).get("temperature_interval_printing", 5.0),
+			temperature_autoreport=kwargs.get("intervals", dict()).get("temperature_interval_autoreport", 2.0),
+			sd_status=kwargs.get("intervals", dict()).get("sd_status_interval_normal", 2.0),
+			sd_status_autoreport=kwargs.get("intervals", dict()).get("sd_status_interval_auto", 1.0)
 		)
-		self._trigger_ok_after_resend = FallbackValue(trigger_ok_after_resend, fallback=self.flavor.trigger_ok_after_resend)
+		self._trigger_ok_after_resend = self.flavor.trigger_ok_after_resend
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
@@ -2014,9 +2115,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	@property
 	def _checksum_enabled(self):
 		if not self._transport.message_integrity:
-			return not self.flavor.never_send_checksum and (self.state == ProtocolState.PROCESSING  # TODO does job need checksum?
-			                                                or self.flavor.always_send_checksum
-			                                                or not self._internal_flags["firmware_identified"])
+			return self.flavor.send_checksum != "never" and (self.state == ProtocolState.PROCESSING  # TODO does job need checksum?
+			                                                 or self.flavor.send_checksum == "always"
+			                                                 or not self._internal_flags["firmware_identified"])
 		else:
 			# transport has message integrity, no checksum
 			return False

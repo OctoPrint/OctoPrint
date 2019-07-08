@@ -8,23 +8,59 @@ $(function() {
         self.printerProfiles = parameters[3];
         self.access = parameters[4];
 
+        var convertValue = function(v, o) {
+            if (v === undefined && o.default !== undefined) {
+                v = o.default;
+            }
+
+            if (v && (o.type === "list" || o.type === "smalllist")) {
+                v = v.join(", ");
+            }
+
+            return v;
+        };
+
         var extendOption = function(option, value) {
             if (option.type === "group") {
                 if (value === undefined) {
                     value = {};
                 }
-                _.each(option.params, function(option) {
+                _.each(option.params, function (option) {
                     extendOption(option, value[option.name]);
                 });
             } else {
-                if (value === undefined && option.default !== undefined) {
-                    value = option.default;
+                value = convertValue(value, option);
+
+                if (option.type === "groupchoice") {
+                    _.each(option.group.params, function(p) {
+                        extendOption(p, option.defaults[option.default][p.name]);
+                    });
                 }
+
                 if (option.value) {
                     option.value(value);
                 } else {
-                    option.value = ko.observable(value);
+                     option.value = ko.observable(value);
+                    if (option.type === "groupchoice" && option.defaults) {
+                        var updateDefaults = function() {
+                            _.each(option.choices, function(c) {
+                                if (c.value === option.value()) {
+                                    _.each(option.group.params, function(p) {
+                                        if (option.defaults[c.value]) {
+                                            var d = option.defaults[c.value][p.name];
+                                            if (d !== undefined) {
+                                                p.value(convertValue(d, p));
+                                            }
+                                        }
+                                    })
+                                }
+                            });
+                        };
+                        option.value.subscribe(updateDefaults);
+                        updateDefaults();
+                    }
                 }
+
             }
 
         };
@@ -294,6 +330,11 @@ $(function() {
                     _.each(parameters, function(parameter) {
                         if (parameter.type === "group") {
                             result[parameter.name] = toOptions(parameter.params);
+                        } else if (parameter.type === "groupchoice") {
+                            result[parameter.name] = parameter.value();
+                            result[parameter.group.name] = toOptions(parameter.group.params);
+                        } else if (parameter.type === "list" || parameter.type === "smalllist") {
+                            result[parameter.name] = splitTextToArray(parameter.value(), ",", true);
                         } else {
                             result[parameter.name] = parameter.value();
                         }

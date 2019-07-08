@@ -21,9 +21,11 @@
   * [JQuery Slimscroll](http://rocha.la/jQuery-slimScroll): MIT, GPL (dual licensed)
   * [JQuery UI Core, Mouse, Slider and Widget](http://jqueryui.com): MIT
   * [Knockout](http://knockoutjs.com/): MIT
+  * [Knockout.Markdown](https://github.com/grofit/knockout.markdown): MIT
   * [LESS](http://lesscss.org): Apache License 2.0
   * [lodash](https://lodash.com): MIT
   * [Loglevel](https://github.com/pimterry/loglevel): MIT
+  * [Markdown-it](https://markdown-it.github.io/): MIT
   * [Modernizr](http://modernizr.com): MIT
   * [Moment.js](http://momentjs.com/): MIT
   * [PNotify](http://sciactive.com/pnotify/): GPL, LGPL, MPL (triple licensed)

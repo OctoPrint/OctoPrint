@@ -15,7 +15,7 @@ class RepetierFlavor(GenericFlavor):
 	key = "repetier"
 	name = "Repetier"
 
-	always_send_checksum = True
+	send_checksum = "always"
 	identical_resends_countdown = 5
 	block_while_dwelling = True
 	detect_external_heatups = False
