@@ -8,19 +8,23 @@ $(function() {
         self.printerProfiles = parameters[3];
         self.access = parameters[4];
 
-        var convertValue = function(v, o) {
-            if (v === undefined && o.default !== undefined) {
-                v = o.default;
+        var convertValue = function(value, option, override) {
+            if (override !== undefined) {
+                value = override;
             }
 
-            if (v && (o.type === "list" || o.type === "smalllist")) {
-                v = v.join(", ");
+            if (value === undefined && option.default !== undefined) {
+                value = option.default;
             }
 
-            return v;
+            if (value && (option.type === "list" || option.type === "smalllist")) {
+                value = value.join(", ");
+            }
+
+            return value;
         };
 
-        var extendOption = function(option, value) {
+        var extendOption = function(option, value, override) {
             if (option.type === "group") {
                 if (value === undefined) {
                     value = {};
@@ -29,32 +33,44 @@ $(function() {
                     extendOption(option, value[option.name]);
                 });
             } else {
-                value = convertValue(value, option);
-
                 if (option.type === "groupchoice") {
+                    value = convertValue(value, option);
                     _.each(option.group.params, function(p) {
-                        extendOption(p, option.defaults[option.default][p.name]);
+                        extendOption(p, option.defaults[option.default][p.name], override ? override[p.name] : undefined);
                     });
+                } else {
+                    value = convertValue(value, option, override);
                 }
 
                 if (option.value) {
                     option.value(value);
                 } else {
-                     option.value = ko.observable(value);
+                    option.value = ko.observable(value);
+                    option.defaultValue = ko.observable(option.default);
+                    option.reset = function() {
+                        option.value(option.defaultValue());
+                    };
+
+                    option.modified = ko.pureComputed(function() {
+                        // noinspection EqualityComparisonWithCoercionJS
+                        return option.value() != option.defaultValue();
+                    });
+
                     if (option.type === "groupchoice" && option.defaults) {
                         var updateDefaults = function() {
-                            _.each(option.choices, function(c) {
-                                if (c.value === option.value()) {
-                                    _.each(option.group.params, function(p) {
-                                        if (option.defaults[c.value]) {
-                                            var d = option.defaults[c.value][p.name];
-                                            if (d !== undefined) {
-                                                p.value(convertValue(d, p));
-                                            }
-                                        }
-                                    })
-                                }
+                            var choice = _.find(option.choices, function (c) {
+                                return c.value === option.value()
                             });
+                            if (choice) {
+                                _.each(option.group.params, function(p) {
+                                    if (option.defaults[choice.value]) {
+                                        var d = option.defaults[choice.value][p.name];
+                                        if (d !== undefined) {
+                                            p.defaultValue(convertValue(d, p, override ? override[p.name] : undefined));
+                                        }
+                                    }
+                                })
+                            }
                         };
                         option.value.subscribe(updateDefaults);
                         updateDefaults();
@@ -82,13 +98,13 @@ $(function() {
 
                 protocolParameters = self.protocolParameters();
                 _.each(protocolParameters, function(option) {
-                    extendOption(option, profile.protocol_parameters[option.name]);
+                    extendOption(option, profile.protocol_parameters[option.name], option.group ? profile.protocol_parameters[option.group.name] : undefined);
                 });
                 self.protocolParameters(protocolParameters);
 
                 transportParameters = self.transportParameters();
                 _.each(transportParameters, function(option) {
-                    extendOption(option, profile.transport_parameters[option.name]);
+                    extendOption(option, profile.transport_parameters[option.name], option.group ? profile.transport_parameters[option.group.name] : undefined);
                 });
                 self.transportParameters(transportParameters);
             } else {
@@ -212,7 +228,7 @@ $(function() {
 
             _.each(protocols, function(protocol) {
                 _.each(protocol.options, function(option) {
-                    extendOption(option, protocolOptions[option.name]);
+                    extendOption(option, protocolOptions[option.name], option.group ? protocolOptions[option.group.name] : undefined);
                 });
             });
 
@@ -227,7 +243,7 @@ $(function() {
 
             _.each(transports, function(transport) {
                 _.each(transport.options, function(option) {
-                    extendOption(option, transportOptions[option.name]);
+                    extendOption(option, transportOptions[option.name], option.group ? transportOptions[option.group.name] : undefined);
                 });
             });
 
