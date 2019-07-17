@@ -106,6 +106,7 @@ date of first contribution):
   * [Janne Mäntyharju](https://github.com/JanneMantyharju)
   * [Steven Spungin](https://github.com/flamenco)
   * [Piotr Usewicz](https://github.com/pusewicz)
+  * [Aliaksei Pilko](https://github.com/aliaksei135)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

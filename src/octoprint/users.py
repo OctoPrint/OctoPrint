@@ -216,10 +216,12 @@ class UserManager(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self):
+	def __init__(self, settingz=None):
 		UserManager.__init__(self)
-
-		userfile = settings().get(["accessControl", "userfile"])
+		if settingz is None:
+			userfile = settings().get(["accessControl", "userfile"])
+		else:
+			userfile = settingz.get(["accessControl", "userfile"])
 		if userfile is None:
 			userfile = os.path.join(settings().getBaseFolder("base"), "users.yaml")
 		self._userfile = userfile
