@@ -58,6 +58,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 	trigger_ok_after_resend = "detect"
 
 	sd_relative_path = False
+	sd_always_available = False
 
 	checksum_requiring_commands = ["M110"]
 	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M190", "M109", "M400", "M226"]

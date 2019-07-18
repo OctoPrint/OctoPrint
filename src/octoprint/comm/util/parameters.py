@@ -21,7 +21,7 @@ def get_param_dict(data, options):
 class ParamType(object):
 	type = "generic"
 
-	def __init__(self, name, title, default=None, advanced=False, warning=False, labels=None, help=None):
+	def __init__(self, name, title, default=None, advanced=False, expert=False, warning=False, labels=None, help=None):
 		if labels is None:
 			labels = []
 
@@ -29,6 +29,7 @@ class ParamType(object):
 		self.title = title
 		self.default = default
 		self.advanced = advanced
+		self.expert = expert
 		self.warning = warning
 		self.labels = labels
 		self.help = help
@@ -38,6 +39,7 @@ class ParamType(object):
 		            title=self.title,
 		            default=self.default,
 		            advanced=self.advanced,
+		            expert=self.expert,
 		            warning=self.warning,
 		            labels=self.labels,
 		            help=self.help,

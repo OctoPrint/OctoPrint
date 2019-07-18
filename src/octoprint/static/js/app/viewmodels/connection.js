@@ -8,6 +8,18 @@ $(function() {
         self.printerProfiles = parameters[3];
         self.access = parameters[4];
 
+        var checkRecursively = function(params, check) {
+            return _.any(params, function(p) {
+                if (p.type === "group") {
+                    return check(p) || checkRecursively(p.params, check);
+                } else if (p.type === "groupchoice" && p.group) {
+                    return check(p) || check(p.group) || checkRecursively(p.group.params, check);
+                } else {
+                    return check(p);
+                }
+            });
+        };
+
         var convertValue = function(value, option, override) {
             if (override !== undefined) {
                 value = override;
@@ -32,6 +44,9 @@ $(function() {
                 _.each(option.params, function (option) {
                     extendOption(option, value[option.name]);
                 });
+
+                option.advancedParameters = option.advanced || _.any(option.params, function(p) { return p.advanced });
+                option.expertParameters = option.expert || _.any(option.params, function(p) { return p.expert });
             } else {
                 if (option.type === "groupchoice") {
                     value = convertValue(value, option);
@@ -57,7 +72,12 @@ $(function() {
                     });
 
                     if (option.type === "groupchoice" && option.defaults) {
-                        var updateDefaults = function() {
+                        option.group.advancedParameters = option.group.advanced || _.any(option.group.params, function(p) { return p.advanced });
+                        option.group.expertParameters = option.group.expert || _.any(option.group.params, function(p) { return p.expert });
+
+                        var updateDefaults = function(keepValue) {
+                            keepValue = !!keepValue;
+
                             var choice = _.find(option.choices, function (c) {
                                 return c.value === option.value()
                             });
@@ -67,13 +87,16 @@ $(function() {
                                         var d = option.defaults[choice.value][p.name];
                                         if (d !== undefined) {
                                             p.defaultValue(convertValue(d, p, override ? override[p.name] : undefined));
+                                            if (!keepValue) {
+                                                p.value(p.defaultValue());
+                                            }
                                         }
                                     }
                                 })
                             }
                         };
-                        option.value.subscribe(updateDefaults);
-                        updateDefaults();
+                        option.value.subscribe(function() { updateDefaults() });
+                        updateDefaults(true);
                     }
                 }
 
@@ -137,6 +160,7 @@ $(function() {
         self.selectedProtocol = ko.observable(undefined);
         self.protocolParameters = ko.observable();
         self.advancedProtocolParameters = ko.observable();
+        self.expertProtocolParameters = ko.observable();
         self.showAdvancedProtocolOptions = function() {
             $("#connection_protocol_dialog").modal("show");
         };
@@ -150,6 +174,7 @@ $(function() {
             }
 
             self.advancedProtocolParameters(_.any(self.protocolParameters(), function(p) { return p.advanced }));
+            self.expertProtocolParameters(_.any(self.protocolParameters(), function(p) { return p.expert }));
         });
 
         // Transports
@@ -158,6 +183,7 @@ $(function() {
         self.selectedTransport = ko.observable(undefined);
         self.transportParameters = ko.observableArray();
         self.advancedTransportParameters = ko.observable();
+        self.expertTransportParameters = ko.observable();
         self.showAdvancedTransportOptions = function() {
             $("#connection_transport_dialog").modal("show");
         };
@@ -171,6 +197,7 @@ $(function() {
             }
 
             self.advancedTransportParameters(_.any(self.transportParameters(), function(p) { return p.advanced }));
+            self.expertTransportParameters(_.any(self.transportParameters(), function(p) { return p.expert }));
         });
 
         // Various other bits

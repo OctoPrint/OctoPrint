@@ -5,9 +5,22 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal" action="javascript:void(0)">
-        <!-- ko foreach: protocolParameters -->
-        <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
-        <!-- /ko -->
+            <!-- ko foreach: protocolParameters -->
+            <!-- ko if: !expert -->
+            <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+            <!-- /ko -->
+            <!-- /ko -->
+
+            <div class="advanced_options" data-bind="visible: expertProtocolParameters">
+                <div><small><a class="muted FNORD" href="#" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> Advanced options</a></small></div>
+                <div class="hide">
+                    <!-- ko foreach: protocolParameters -->
+                    <!-- ko if: expert -->
+                    <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">
@@ -159,7 +172,20 @@
         <legend data-bind="markdownInline: $data.title"></legend>
         <p data-bind="visible: $data.help, markdownInline: $data.help"></p>
         <!-- ko foreach: params -->
+        <!-- ko if: !expert -->
         <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
         <!-- /ko -->
+        <!-- /ko -->
+
+        <div class="advanced_options" data-bind="visible: expertParameters">
+            <div><small><a href="#" class="muted FNORD" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+            <div class="hide">
+                <!-- ko foreach: params -->
+                <!-- ko if: expert -->
+                <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- /ko -->
+                <!-- /ko -->
+            </div>
+        </div>
     </fieldset>
 </script>

@@ -20,6 +20,8 @@ class RepetierFlavor(GenericFlavor):
 	block_while_dwelling = True
 	detect_external_heatups = False
 
+	sd_always_available = True
+
 	regex_tempextr = re.compile("targetextr(?P<toolnum>\d+):(?P<target>%s)" % regex_positive_float_pattern)
 	"""Regex for matching target temp reporting from Repetier.
 

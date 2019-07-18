@@ -11,7 +11,8 @@ class MalyanFlavor(GenericFlavor):
 	key = "malyan"
 	name = "Malyan"
 
-	always_send_checksum = False
+	send_checksum = "printing"
+
 	block_while_dwelling = True
 	sd_always_available = True
 
