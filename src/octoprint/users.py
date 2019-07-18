@@ -18,7 +18,7 @@ import wrapt
 import logging
 from builtins import range, bytes
 
-from octoprint.settings import settings
+import octoprint.settings
 
 from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
 
@@ -216,12 +216,11 @@ class UserManager(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self, settingz=None):
+	def __init__(self, settings=None):
 		UserManager.__init__(self)
-		if settingz is None:
-			userfile = settings().get(["accessControl", "userfile"])
-		else:
-			userfile = settingz.get(["accessControl", "userfile"])
+		if settings is None:
+			settings = octoprint.settings.settings()
+		userfile = settings.get(["accessControl", "userfile"])
 		if userfile is None:
 			userfile = os.path.join(settings().getBaseFolder("base"), "users.yaml")
 		self._userfile = userfile
