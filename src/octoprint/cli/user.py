@@ -64,7 +64,7 @@ def list_users_command(ctx):
 @user.command(name="add")
 @click.argument("username", type=click.STRING, required=True)
 @click.password_option("--password", "password", help="Password for user")
-@click.option("--admin", "is_admin", type=click.BOOL, default=False,
+@click.option("--admin", "is_admin", type=click.BOOL, is_flag=True, default=False,
 			  help="Sets admin role on user")
 @click.pass_context
 def add_user_command(ctx, username, password, is_admin):
