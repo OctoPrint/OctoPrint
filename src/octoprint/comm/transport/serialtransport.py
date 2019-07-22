@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
 from octoprint.comm.util.parameters import TextType, IntegerType, ChoiceType, SuggestionType, BooleanType, Value
 
+from octoprint.util import dummy_gettext as gettext
+
 import serial
 import logging
 
@@ -39,15 +41,34 @@ class SerialTransport(Transport):
 	@classmethod
 	def get_connection_options(cls):
 		return [
-			SuggestionType("port", "Port", cls.get_available_serial_ports(), lambda value: Value(value)),
-			SuggestionType("baudrate", "Baudrate", cls.get_available_baudrates(), lambda value: Value(value), default=0),
-			IntegerType("write_timeout", "Write Timeout (sec)", min=1, default=10, advanced=True),
-			BooleanType("exclusive", "Exclusive access", default=True, advanced=True),
-			ChoiceType("parity", "Parity",
-			           [Value(serial.PARITY_NONE, "none"),
-			            Value(serial.PARITY_ODD, "odd"),
-			            Value(serial.PARITY_EVEN, "even")],
-			           default=serial.PARITY_NONE, advanced=True)
+			SuggestionType("port",
+			               gettext("Port"),
+			               cls.get_available_serial_ports(),
+			               lambda value: Value(value)),
+			SuggestionType("baudrate",
+			               gettext("Baudrate"),
+			               cls.get_available_baudrates(),
+			               lambda value: Value(value),
+			               default=0),
+			IntegerType("write_timeout",
+			            gettext("Write Timeout"),
+			            min=1,
+			            unit="sec",
+			            default=10,
+			            advanced=True),
+			BooleanType("exclusive",
+			            gettext("Request exclusive access to the serial port"),
+			            help=gettext("Uncheck this if you are having problems connecting to your printer."),
+			            default=True,
+			            advanced=True),
+			ChoiceType("parity",
+			           gettext("Parity"),
+			           [Value(serial.PARITY_NONE, gettext("none")),
+			            Value(serial.PARITY_ODD, gettext("odd")),
+			            Value(serial.PARITY_EVEN, gettext("even"))],
+			           default=serial.PARITY_NONE,
+			           advanced=True,
+			           expert=True)
 		]
 
 	@classmethod

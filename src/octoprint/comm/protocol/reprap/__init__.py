@@ -23,7 +23,7 @@ from octoprint.comm.protocol.reprap.util.queues import ScriptQueue, JobQueue, Co
 
 from octoprint.comm.scripts import InvalidScript, UnknownScript
 
-from octoprint.comm.util.parameters import GroupChoiceType, Value, ParamGroup, BooleanType, FloatType, SmallChoiceType, SmallListType
+from octoprint.comm.util.parameters import GroupChoiceType, Value, ParamGroup, BooleanType, FloatType, IntegerType, SmallChoiceType, SmallListType
 
 from octoprint.comm.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 	LocalGcodeStreamjob, CopyJobMixin
@@ -283,7 +283,22 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                              expert=True,
 		                              default=.5,
 		                              unit="sec",
-		                              help=gettext("Some firmwares do not send an `ok` after a resend request. This timeout configures how long OctoPrint will wait for one until it assumes this particular bug to be present and generate its own."),)],
+		                              help=gettext("Some firmwares do not send an `ok` after a resend request. This timeout configures how long OctoPrint will wait for one until it assumes this particular bug to be present and generate its own.")),
+		                    IntegerType("max_consecutive_timeouts_idle",
+		                                gettext("Max. consecutive timeouts while idle"),
+		                                expert=True,
+		                                default=2,
+		                                help=gettext("Set to 0 to disable consecutive timeout detection and handling.")),
+		                    IntegerType("max_consecutive_timeouts_printing",
+		                                gettext("Max. consecutive timeouts while printing"),
+		                                expert=True,
+		                                default=5,
+		                                help=gettext("Set to 0 to disable consecutive timeout detection and handling.")),
+		                    IntegerType("max_consecutive_timeouts_long",
+		                                gettext("Max. consecutive timeouts during long running commands"),
+		                                expert=True,
+		                                default=5,
+		                                help=gettext("Set to 0 to disable consecutive timeout detection and handling."))],
 		                   advanced=True)]
 
 	@staticmethod
@@ -327,6 +342,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			temperature_autoreport=kwargs.get("intervals", dict()).get("temperature_interval_autoreport", 2.0),
 			sd_status=kwargs.get("intervals", dict()).get("sd_status_interval_normal", 2.0),
 			sd_status_autoreport=kwargs.get("intervals", dict()).get("sd_status_interval_auto", 1.0)
+		)
+		self.max_consecutive_timeouts = dict(
+			idle=kwargs.get("timeouts", dict()).get("max_consecutive_idle", 2),
+			printing=kwargs.get("timeouts", dict()).get("max_consecutive_printing", 5),
+			long=kwargs.get("timeouts", dict()).get("max_consecutive_long", 5),
 		)
 		self._trigger_ok_after_resend = self.flavor.trigger_ok_after_resend
 
@@ -1203,11 +1223,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		# figure out which consecutive timeout maximum we have to use
 		if self._internal_flags["long_running_command"]:
-			consecutive_max = 5 # TODO take from config
+			consecutive_max = self.max_consecutive_timeouts["long"]
 		elif self.state in (ProtocolState.PROCESSING, ProtocolState.PAUSING, ProtocolState.CANCELLING):
-			consecutive_max = 10 # TODO take from config
+			consecutive_max = self.max_consecutive_timeouts["printing"]
 		else:
-			consecutive_max = 15 # TODO take from config
+			consecutive_max = self.max_consecutive_timeouts["idle"]
 
 		# now increment the timeout counter
 		self._internal_flags["timeout_consecutive"] += 1
