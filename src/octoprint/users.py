@@ -18,7 +18,7 @@ import wrapt
 import logging
 from builtins import range, bytes
 
-import octoprint.settings
+from octoprint.settings import settings
 
 from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
 
