@@ -105,6 +105,8 @@ date of first contribution):
   * [Nicolai Nielsen](https://github.com/dovecode)
   * [Janne Mäntyharju](https://github.com/JanneMantyharju)
   * [Steven Spungin](https://github.com/flamenco)
+  * [Piotr Usewicz](https://github.com/pusewicz)
+  * [Aliaksei Pilko](https://github.com/aliaksei135)
   * [Denis Konstantinov](https://github.com/linvinus)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by

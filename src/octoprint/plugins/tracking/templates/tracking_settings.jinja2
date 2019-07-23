@@ -46,6 +46,9 @@
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.throttled"> {{ _('System got throttled/unthrottled (currently only detected on RPis)') }}
             </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.slicing"> {{ _('Onboard slicing actions') }}
+            </label>
         </div>
     </div>
 </form>

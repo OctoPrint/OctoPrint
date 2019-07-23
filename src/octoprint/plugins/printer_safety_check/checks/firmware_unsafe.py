@@ -68,7 +68,7 @@ class AnycubicCheck(Check):
 	def _broken_version(self, line):
 		version_str = line[len(self.VERSION):]
 		version = get_comparable_version(version_str, base=True)
-		if version is not None and version <= self.FIXED_VERSION:
+		if version is not None and version < self.FIXED_VERSION:
 			return True
 		else:
 			return False

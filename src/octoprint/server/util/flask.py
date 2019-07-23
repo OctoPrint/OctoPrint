@@ -1143,19 +1143,49 @@ def check_lastmodified(lastmodified):
 
 
 def add_revalidation_response_headers(response):
-	response.headers["Cache-Control"] = "no-cache, must-revalidate"
+	import werkzeug.http
+
+	cache_control = werkzeug.http.parse_dict_header(response.headers.get("Cache-Control", ""))
+	if "no-cache" not in cache_control:
+		cache_control["no-cache"] = None
+	if "must-revalidate" not in cache_control:
+		cache_control["must-revalidate"] = None
+	response.headers["Cache-Control"] = werkzeug.http.dump_header(cache_control)
+
 	return response
 
 
 def add_non_caching_response_headers(response):
-	response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+	import werkzeug.http
+
+	cache_control = werkzeug.http.parse_dict_header(response.headers.get("Cache-Control", ""))
+	if "no-store" not in cache_control:
+		cache_control["no-store"] = None
+	if "no-cache" not in cache_control:
+		cache_control["no-cache"] = None
+	if "must-revalidate" not in cache_control:
+		cache_control["must-revalidate"] = None
+	if "post-check" not in cache_control or cache_control["post-check"] != "0":
+		cache_control["post-check"] = "0"
+	if "pre-check" not in cache_control or cache_control["pre-check"] != "0":
+		cache_control["pre-check"] = "0"
+	if "max-age" not in cache_control or cache_control["max-age"] != "0":
+		cache_control["max-age"] = "0"
+	response.headers["Cache-Control"] = werkzeug.http.dump_header(cache_control)
+
 	response.headers["Pragma"] = "no-cache"
 	response.headers["Expires"] = "-1"
 	return response
 
 
 def add_no_max_age_response_headers(response):
-	response.headers["Cache-Control"] = "max-age=0"
+	import werkzeug.http
+
+	cache_control = werkzeug.http.parse_dict_header(response.headers.get("Cache-Control", ""))
+	if "max-age" not in cache_control or cache_control["max-age"] != "0":
+		cache_control["max-age"] = "0"
+	response.headers["Cache-Control"] = werkzeug.http.dump_header(cache_control)
+
 	return response
 
 

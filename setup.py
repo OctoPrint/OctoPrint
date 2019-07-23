@@ -61,7 +61,8 @@ INSTALL_REQUIRES = [
 	"monotonic>=1.5,<1.6",
 	"frozendict>=1.2,<1.3",
 	"sentry-sdk==0.7.7",
-	"typing>=3.6.6,<4"
+	"typing>=3.6.6,<4",
+	"filetype>=1.0.5,<2"
 ]
 
 if sys.platform == "darwin":
