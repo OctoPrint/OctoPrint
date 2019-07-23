@@ -18,18 +18,22 @@ import wrapt
 import logging
 from builtins import range, bytes
 
-from octoprint.settings import settings
+from octoprint.settings import settings as s
 
 from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
 
-	def __init__(self):
+	def __init__(self, settings=None):
 		self._logger = logging.getLogger(__name__)
 		self._session_users_by_session = dict()
 		self._sessionids_by_userid = dict()
 		self._enabled = True
+
+		if settings is None:
+			settings = s()
+		self._settings = settings
 
 		self._callbacks = []
 
@@ -128,16 +132,18 @@ class UserManager(object):
 				self.logout_user(user)
 
 	@staticmethod
-	def createPasswordHash(password, salt=None):
+	def createPasswordHash(password, salt=None, settings=None):
 		if not salt:
-			salt = settings().get(["accessControl", "salt"])
+			if settings is None:
+				settings = s()
+			salt = settings.get(["accessControl", "salt"])
 			if salt is None:
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
 				salt = "".join(choice(chars) for _ in range(32))
-				settings().set(["accessControl", "salt"], salt)
-				settings().save()
+				settings.set(["accessControl", "salt"], salt)
+				settings.save()
 
 		return hashlib.sha512(to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)).hexdigest()
 
@@ -146,13 +152,15 @@ class UserManager(object):
 		if not user:
 			return False
 
-		hash = UserManager.createPasswordHash(password)
+		hash = UserManager.createPasswordHash(password,
+		                                      settings=self._settings)
 		if user.check_password(hash):
 			# new hash matches, correct password
 			return True
 		else:
 			# new hash doesn't match, but maybe the old one does, so check that!
-			oldHash = UserManager.createPasswordHash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			oldHash = UserManager.createPasswordHash(password,
+			                                         salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
 			if user.check_password(oldHash):
 				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
 				self.changeUserPassword(username, password)
@@ -216,12 +224,11 @@ class UserManager(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self):
-		UserManager.__init__(self)
-
-		userfile = settings().get(["accessControl", "userfile"])
+	def __init__(self, **kwargs):
+		UserManager.__init__(self, **kwargs)
+		userfile = self._settings.get(["accessControl", "userfile"])
 		if userfile is None:
-			userfile = os.path.join(settings().getBaseFolder("base"), "users.yaml")
+			userfile = os.path.join(self._settings.getBaseFolder("base"), "users.yaml")
 		self._userfile = userfile
 		self._users = {}
 		self._dirty = False
@@ -276,7 +283,11 @@ class FilebasedUserManager(UserManager):
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)
+		self._users[username] = User(username,
+		                             UserManager.createPasswordHash(password, settings=self._settings),
+		                             active,
+		                             roles,
+		                             apikey=apikey)
 		self._dirty = True
 		self._save()
 
@@ -327,7 +338,8 @@ class FilebasedUserManager(UserManager):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
-		passwordHash = UserManager.createPasswordHash(password)
+		passwordHash = UserManager.createPasswordHash(password,
+		                                              settings=self._settings)
 		user = self._users[username]
 		if user._passwordHash != passwordHash:
 			user._passwordHash = passwordHash

@@ -446,6 +446,7 @@ class MachineCom(object):
 		self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
+		self._hello_sent = 0
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
@@ -458,7 +459,7 @@ class MachineCom(object):
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
-		self._currentLine = 1
+		self._current_line = 1
 		self._advanced_ok_detected = False
 		self._advanced_ok_max_line = -1          #the last line which we could send in asynchronous mode without cause overflow, negative value used to interrupt any waitings
 		self._advanced_ok_last_line = -1         #the last line that printer has successfully processed
@@ -1525,6 +1526,7 @@ class MachineCom(object):
 
 		self.sendCommand(self._hello_command, force=True, tags=tags | {"trigger:comm.say_hello",})
 		self._clear_to_send.set()
+		self._hello_sent += 1
 
 	def resetLineNumbers(self, number=0, part_of_job=False, tags=None):
 		if not self.isOperational():
@@ -1638,6 +1640,10 @@ class MachineCom(object):
 
 		# enqueue the "hello command" first thing
 		if try_hello:
+			self.sayHello()
+
+			# we send a second one right away because sometimes there's garbage on the line on first connect
+			# that can kill oks
 			self.sayHello()
 
 		while self._monitoring_active:
@@ -2166,8 +2172,12 @@ class MachineCom(object):
 							self._handle_ok()
 						self._onConnected()
 					elif monotonic_time() > self._timeout:
-						self._log("There was a timeout while trying to connect to the printer")
-						self.close(wait=False)
+						if try_hello and self._hello_sent < 3:
+							self._log("No answer from the printer within the connection timeout, trying another hello")
+							self.sayHello()
+						else:
+							self._log("There was a timeout while trying to connect to the printer")
+							self.close(wait=False)
 
 				### Operational (idle or busy)
 				elif self._state in (self.STATE_OPERATIONAL,
@@ -2532,7 +2542,7 @@ class MachineCom(object):
 			self._send_queue.clear()
 
 			with self._line_mutex:
-				self._currentLine = 0
+				self._current_line = 0
 				self._lastLines.clear()
 
 		self.sayHello(tags={"trigger:comm.on_external_reset"})
@@ -2942,17 +2952,17 @@ class MachineCom(object):
 			if lineToResend is None:
 				return False
 
-			if self._resendDelta is None and lineToResend == self._currentLine == 1:
+			if self._resendDelta is None and lineToResend == self._current_line == 1:
 				# We probably just handled a resend and this request originates from lines sent before that
 				self._logger.info("Got a resend request for line 1 which is also our current line. It looks "
 				                  "like we just handled a reset and this is a left over of this")
 				return False
 
-			elif self._resendDelta is None and lineToResend == self._currentLine:
+			elif self._resendDelta is None and lineToResend == self._current_line:
 				# We don't expect to have an active resend request and the printer is requesting a resend of
 				# a line we haven't yet sent.
 				#
-				# This means the printer got a line from us with N = self._currentLine - 1 but had already
+				# This means the printer got a line from us with N = self._current_line - 1 but had already
 				# acknowledged that. This can happen if the last line was resent due to a timeout during
 				# an active (prior) resend request.
 				#
@@ -2964,7 +2974,7 @@ class MachineCom(object):
 			lastCommError = self._lastCommError
 			self._lastCommError = None
 
-			resendDelta = self._currentLine - lineToResend
+			resendDelta = self._current_line - lineToResend
 
 			if lastCommError is not None \
 					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
@@ -2995,7 +3005,7 @@ class MachineCom(object):
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				error_text = "Printer requested line {} but no sufficient history is available, can't resend".format(lineToResend)
 				self._log(error_text)
-				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._current_line, len(self._lastLines)))
 				if self.isPrinting():
 					# abort the print & disconnect, there's nothing we can do to rescue it
 					self._trigger_error(error_text, "resend")
@@ -3017,7 +3027,7 @@ class MachineCom(object):
 						self._log_resends_rate_count = 0
 
 					self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
-					                               u"current line = {}".format(lineToResend, self._currentLine))
+					                               u"current line = {}".format(lineToResend, self._current_line))
 					self._log_resends_rate_count += 1
 
 			self._send_queue.resend_active = True
@@ -3061,7 +3071,7 @@ class MachineCom(object):
 				return False
 
 			cmd = self._lastLines[-self._resendDelta]
-			lineNumber = self._currentLine - self._resendDelta
+			lineNumber = self._current_line - self._resendDelta
 
 			result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
@@ -3544,9 +3554,9 @@ class MachineCom(object):
 
 	def _do_increment_and_send_with_checksum(self, cmd):
 		with self._line_mutex:
-			linenumber = self._currentLine
+			linenumber = self._current_line
 			self._addToLastLines(cmd)
-			self._currentLine += 1
+			self._current_line += 1
 			self._do_send_with_checksum(cmd, linenumber)
 
 	def _do_send_with_checksum(self, command, linenumber):
@@ -3789,7 +3799,7 @@ class MachineCom(object):
 
 	def _gcode_M191_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = monotonic_time()
-		self._log_running_command = True
+		self._long_running_command = True
 		self._heating = True
 		self._gcode_M141_sent(cmd, cmd_type, wait=True, support_r=True)
 
@@ -3831,7 +3841,7 @@ class MachineCom(object):
 			self._logger.info("M110 detected, setting current line number to {}".format(newLineNumber))
 
 			# send M110 command with new line number
-			self._currentLine = newLineNumber
+			self._current_line = newLineNumber
 
 			# after a reset of the line number we have no way to determine what line exactly the printer now wants
 			self._lastLines.clear()

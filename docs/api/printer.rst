@@ -770,7 +770,7 @@ Retrieve the current bed state
 Issue a chamber command
 =======================
 
-.. http:post:: /api/printer/bed
+.. http:post:: /api/printer/chamber
 
    Chamber commands allow setting the temperature and temperature offsets for the printer's heated chamber. Available commands
    are:
@@ -790,7 +790,7 @@ Issue a chamber command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   If no heated chambed is configured for the currently selected printer profile, the resource will return
+   If no heated chamber is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
    Requires user rights.

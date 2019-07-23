@@ -867,6 +867,10 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 	except:
 		return False
 
+def guess_mime_type(data):
+	import filetype
+	return filetype.guess_mime(data)
+
 def parse_mime_type(mime):
 	import cgi
 
