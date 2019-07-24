@@ -348,7 +348,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			printing=kwargs.get("timeouts", dict()).get("max_consecutive_printing", 5),
 			long=kwargs.get("timeouts", dict()).get("max_consecutive_long", 5),
 		)
-		self._trigger_ok_after_resend = self.flavor.trigger_ok_after_resend
+		self._trigger_ok_after_resend = FallbackValue(self.flavor.trigger_ok_after_resend)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
