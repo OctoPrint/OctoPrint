@@ -348,7 +348,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			printing=kwargs.get("timeouts", dict()).get("max_consecutive_printing", 5),
 			long=kwargs.get("timeouts", dict()).get("max_consecutive_long", 5),
 		)
-		self._trigger_ok_after_resend = FallbackValue(self.flavor.trigger_ok_after_resend)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
@@ -1398,9 +1397,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._send_queue.resend_active = True
 
 		finally:
-			if self._trigger_ok_after_resend.effective == "always":
+			if self.flavor.trigger_ok_after_resend == "always":
 				self._on_comm_ok()
-			elif self._trigger_ok_after_resend.effective == "detect":
+			elif self.flavor.trigger_ok_after_resend == "detect":
 				self._resend_ok_timer = threading.Timer(self.timeouts.get("resendOk", 1.0), self._resend_simulate_ok)
 				self._resend_ok_timer.start()
 
@@ -2515,8 +2514,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _switch_flavor(self, new_flavor):
 		self.flavor = new_flavor.with_overrides(self.flavor_overrides)
-
-		self._trigger_ok_after_resend = FallbackValue(self._trigger_ok_after_resend.value, fallback=self.flavor.trigger_ok_after_resend)
 
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
