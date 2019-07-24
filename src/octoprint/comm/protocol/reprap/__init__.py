@@ -1198,6 +1198,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 	def _on_comm_any(self, line, lower_line):
 
+		timeout, _ = self.flavor.comm_timeout(line, lower_line, self._state, self._protected_flags)
+		if not timeout:
+			self._internal_flags["timeout_consecutive"] = 0
+
 		offsets = [self.timeouts.get("communication_busy" if self._internal_flags["busy_detected"] else "communication", 0.0),]
 		if self._temperature_poller:
 			offsets.append(self._temperature_poller.interval())
