@@ -3194,7 +3194,7 @@ class MachineCom(object):
 		#pool for free buffer
 		while True:
 			if( self._advanced_ok_max_line > 0
-				and self._currentLine > self._advanced_ok_max_line):
+				and self._current_line > self._advanced_ok_max_line):
 				time.sleep(0.005) #pool 5ms
 			else:
 				return True
@@ -3332,7 +3332,7 @@ class MachineCom(object):
 
 					if ( self._advanced_ok_detected and self._state == self.STATE_PRINTING):
 						with self._line_mutex:
-							linenumber = self._currentLine - 1
+							linenumber = self._current_line - 1
 							self._advanced_ok_wait_for_line = linenumber #wait for line by default
 							self._log(">>> LN={} G={} State={}".format(linenumber,gcode,self.getStateString()))
 
