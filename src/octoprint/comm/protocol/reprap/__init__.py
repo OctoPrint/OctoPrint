@@ -874,16 +874,30 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		part_of_job = kwargs.get("part_of_job", False)
 
 		def sanitize_command(c, ct, t):
+			if isinstance(c, tuple):
+				# unwrap 2-tuples that consist of a command & additional tags
+				if len(c) != 2:
+					return None
+				c, at = c
+
+				assert isinstance(at, set)
+				t |= at
+
+			# noinspection PyCompatibility
 			if isinstance(c, Command):
 				return c.with_type(ct).with_tags(t)
 			elif isinstance(c, QueueMarker):
 				return c
-			else:
+			elif isinstance(c, basestring):
 				return to_command(c, type=ct, tags=t)
+			else:
+				return None
 
 		result = False
 		for command in commands:
 			sanitized = sanitize_command(command, command_type, tags)
+			if sanitized is None:
+				continue
 
 			emergency = False
 			if isinstance(sanitized, GcodeCommand) and sanitized.code in self.flavor.emergency_commands:
@@ -893,7 +907,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				if isinstance(sanitized, Command):
 					sanitized = sanitized.with_tags({"source:job"})
 				self._job_queue.put((sanitized, on_sent))
-				return True
+				result = True
 
 			elif self.state in ProtocolState.PROCESSING_STATES and not self._job.parallel and not self.job_on_hold and not force:
 				try:
@@ -932,6 +946,50 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                    cancel_temperature=self.cancel_temperature.as_script_dict()))
 
 		lines = script.render(context=context)
+
+		# process any hooks
+		prefix = []
+		postfix = []
+
+		for name, hook in self._script_hooks.items():
+			try:
+				retval = hook(self, "gcode", script.name) # prefix, postfix [ , variables [ , additional tags ] ]
+			except Exception:
+				self._logger.exception("Error while processing hook {}.".format(name),
+				                       extra=dict(plugin=name))
+			else:
+				if retval is None:
+					continue
+				if not isinstance(retval, (list, tuple)) or not len(retval) in [2, 3, 4]:
+					continue
+
+				def to_list(data, t):
+					# noinspection PyCompatibility
+					if isinstance(data, basestring):
+						data = list(x.strip() for x in data.split("\n"))
+
+					if isinstance(data, (list, tuple)):
+						return list(map(lambda x: (x, t), data))
+					else:
+						return None
+
+				if len(retval) >= 3:
+					# variables are defined
+					variables = retval[2]
+					context.update(dict(plugins={name:variables}))
+
+				additional_tags = {"plugin:{}".format(name)}
+				if len(retval) == 4:
+					# additional tags are defined
+					additional_tags |= set(retval[3])
+
+				p, s = map(lambda x: to_list(x, additional_tags), retval[0:2]) # convert prefix & postfix
+				if p:
+					prefix = list(p) + prefix
+				if s:
+					postfix += list(s)
+
+		lines = prefix + lines + postfix
 		self.send_commands(tags={"trigger:protocol.send_script",
 		                         "source:script",
 		                         "script:{}".format(script.name)},
