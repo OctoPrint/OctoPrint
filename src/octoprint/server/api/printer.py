@@ -525,7 +525,9 @@ def _delete_chamber(x):
 
 def _delete_from_data(x, key_matcher):
 	data = dict(x)
-	for k in data.keys():
+	# must make list of keys first to avoid
+	# RuntimeError: dictionary changed size during iteration
+	for k in list(data.keys()):
 		if key_matcher(k):
 			del data[k]
 	return data
