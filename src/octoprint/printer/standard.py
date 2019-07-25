@@ -119,7 +119,6 @@ class Printer(PrinterInterface,
 
 		# job handling & estimation
 		self._estimator_factory = PrintTimeEstimator
-		self._estimator = None
 		analysis_queue_hooks = plugin_manager().get_hooks("octoprint.printer.estimation.factory")
 		for name, hook in analysis_queue_hooks.items():
 			try:
@@ -177,20 +176,6 @@ class Printer(PrinterInterface,
 
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
 		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated)
-
-	def _create_estimator(self, job_type=None):
-		if job_type is None:
-			# TODO
-			with self._selectedFileMutex:
-				if self._selectedFile is None:
-					return
-
-				if self._selectedFile["sd"]:
-					job_type = "sdcard"
-				else:
-					job_type = "local"
-
-		self._estimator = self._estimator_factory(job_type)
 
 	#~~ handling of PrinterCallbacks
 
@@ -1066,7 +1051,6 @@ class Printer(PrinterInterface,
 			pos = self._job.job.pos
 
 		print_time_left = print_time_left_origin = None
-		estimator = self._estimator
 		if progress is not None:
 			progress_int = int(progress * 100)
 			if self._last_progress_report != progress_int:
@@ -1079,19 +1063,18 @@ class Printer(PrinterInterface,
 			elif progress == 1.0:
 				print_time_left = 0
 				print_time_left_origin = None
-			elif estimator is not None:
+			elif self._job.estimator is not None:
 				original_estimate = None
 				original_estimate_type = None
 
 				try:
-					# TODO: self._estimator vs self._job.estimator
-					print_time_left, print_time_left_origin = estimator.estimate(progress,
-					                                                             print_time,
-					                                                             cleaned_print_time,
-					                                                             original_estimate,
-					                                                             original_estimate_type)
+					print_time_left, print_time_left_origin = self._job.estimator.estimate(progress,
+					                                                                       print_time,
+					                                                                       cleaned_print_time,
+					                                                                       original_estimate,
+					                                                                       original_estimate_type)
 				except Exception:
-					self._logger.exception("Error while estimating print time via {}".format(estimator))
+					self._logger.exception("Error while estimating print time via {}".format(self._job.estimator))
 
 		return self._dict(completion=progress * 100 if progress is not None else None,
 		                  filepos=pos,
@@ -1181,8 +1164,6 @@ class Printer(PrinterInterface,
 		self._state_monitor.set_job_data(job_data)
 
 		# set our internal job data
-
-		# TODO other way to determine job type?
 		if isinstance(job, SDFilePrintjob):
 			job_type = "sdcard"
 		elif isinstance(job, LocalGcodeStreamjob):
@@ -1193,7 +1174,7 @@ class Printer(PrinterInterface,
 		self._job = JobData(job=job,
 		                    average_past_total=average_past_total,
 		                    analysis_total=analysis_total,
-		                    estimator=self._create_estimator(job_type))
+		                    estimator=self._estimator_factory(job_type))
 		job.register_listener(self)
 
 	def _update_job_user(self, user):
