@@ -69,6 +69,9 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
 	heatup_abortable = False
 
+	regex_min_max_error = re.compile(r"Error:[0-9]\n")
+	"""Regex matching first line of min/max errors from legacy firmware."""
+
 	regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 	"""Regex to use for request line numbers in resend requests"""
 
@@ -179,7 +182,13 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
 	@classmethod
 	def comm_error(cls, line, lower_line, state, flags):
-		return line.startswith("Error:") or line.startswith("!!")
+		single_line = line.startswith("Error:") or line.startswith("!!")
+		multi_line = flags.get("multiline_error", False) is not False
+
+		if cls.regex_min_max_error.match(line):
+			flags["multiline_error"] = line
+
+		return single_line or multi_line
 
 	@classmethod
 	def comm_ignore_ok(cls, line, lower_line, state, flags):
@@ -190,11 +199,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 		return line.startswith("echo:busy:") or line.startswith("busy:")
 
 	@classmethod
-	def error_multiline(cls, line, lower_line, state, flags):
-		return False
-
-	@classmethod
-	def error_communication(cls, line, lower_line, state, flags):
+	def error_communication(cls, line, lower_line, error, state, flags):
 		return "line number" in lower_line or "checksum" in lower_line or "format error" in lower_line or "expected line" in lower_line
 
 	@classmethod
@@ -265,7 +270,14 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
 	@classmethod
 	def parse_comm_error(cls, line, lower_line, state, flags):
-		return dict(line=line, lower_line=lower_line)
+		multiline = flags.get("multiline_error", False)
+		if multiline:
+			flags["multiline_error"] = False
+			line = line.rstrip() + " - " + multiline
+			lower_line = line.lower()
+
+		error = (line[6:] if lower_line.startswith("error:") else line[2:]).strip()
+		return dict(line=line, lower_line=lower_line, error=error)
 
 	@classmethod
 	def parse_comm_timeout(cls, line, lower_line, state, flags):
@@ -277,7 +289,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 		return dict(line=line, lower_line=lower_line, action=action)
 
 	@classmethod
-	def parse_error_communication(cls, line, lower_line, state, flags):
+	def parse_error_communication(cls, line, lower_line, error, state, flags):
 		if "line number" in lower_line or "expected line" in lower_line:
 			error_type = "linenumber"
 		elif "checksum" in lower_line:

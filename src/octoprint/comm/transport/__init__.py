@@ -57,6 +57,11 @@ def all_transports():
 
 
 class Transport(ListenerAware):
+	"""
+	Transport base class.
+
+	Implement at least ``in_waiting``, ``do_read`` and ``do_write``.
+	"""
 
 	name = None
 	key = None

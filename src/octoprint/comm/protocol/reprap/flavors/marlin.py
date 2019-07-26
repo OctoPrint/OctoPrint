@@ -6,6 +6,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
 
+import re
+
 class MarlinFlavor(GenericFlavor):
 
 	key = "marlin"
@@ -13,6 +15,18 @@ class MarlinFlavor(GenericFlavor):
 
 	emergency_commands = ["M112", "M108", "M410"]
 	heatup_abortable = True
+
+	regex_marlin_kill_error = re.compile(r"Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused")
+	"""Regex matching first line of kill causing errors from Marlin."""
+
+	@classmethod
+	def comm_error(cls, line, lower_line, state, flags):
+		result = GenericFlavor.comm_error(line, lower_line, state, flags)
+
+		if cls.regex_min_max_error.match(line):
+			flags["multiline_error"] = line
+
+		return result
 
 
 class MarlinLegacyFlavor(GenericFlavor):

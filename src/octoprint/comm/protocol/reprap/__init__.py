@@ -426,7 +426,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			firmware_capability_support=dict(),
 
 			# busy protocol
-			busy_detected=False
+			busy_detected=False,
+
+			# multiline errors
+			multiline_error=False, # either False or the first error line
 		)
 		self._protected_flags = protectedkeydict(self._internal_flags)
 
@@ -458,22 +461,22 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                         queued=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.queued"),
 		                         sending=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.sending"),
 		                         sent=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.sent"),
-		                         receiving=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.receiving")) # TODO receiving hook
+		                         receiving=self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.receiving"))
 
-		self._error_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.error") # TODO error hook
+		self._error_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.gcode.error")
 
 		self._atcommand_hooks = dict(queuing=self._plugin_manager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
 		                             sending=self._plugin_manager.get_hooks("octoprint.comm.protocol.atcommand.sending")),
 
 		self._action_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.action")
 
-		self._script_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.scripts") # TODO script hook
+		self._script_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.scripts")
 
-		self._temperature_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.temperatures.received") # TODO temperature hook
+		self._temperature_hooks = self._plugin_manager.get_hooks("octoprint.comm.protocol.temperatures.received")
 
-		self._firmware_info_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.info") # TODO firmware info hook
+		self._firmware_info_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.info")
 
-		self._firmware_cap_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.capabilities") # TODO firmware cap hook
+		self._firmware_cap_hooks = self._plugin_manager.get_hooks("octoprint.comm.firmware.capabilities")
 
 
 		# polling
@@ -1181,6 +1184,16 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._receive(None)
 
 	def _receive(self, data):
+		for name, hook in self._gcode_hooks["receiving"].items():
+			try:
+				data = hook(self, data)
+			except Exception:
+				self._logger.exception("Error while processing hook {name}:".format(**locals()),
+				                       extra=dict(plugin=name))
+			else:
+				if data is None:
+					data = ""
+
 		if data is None:
 			# EOF
 			# TODO handle EOF
@@ -1254,7 +1267,6 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			pass
 
 	def _on_comm_any(self, line, lower_line):
-
 		timeout, _ = self.flavor.comm_timeout(line, lower_line, self._state, self._protected_flags)
 		if not timeout:
 			self._internal_flags["timeout_consecutive"] = 0
@@ -1493,18 +1505,18 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 			self.notify_listeners("on_protocol_reset", idle)
 
-	def _on_comm_error(self, line, lower_line):
+	def _on_comm_error(self, line, lower_line, error):
 		for message in self._error_messages:
 			handler_method = getattr(self, "_on_{}".format(message), None)
 			if not handler_method:
 				continue
 
-			if getattr(self.flavor, message)(line, lower_line, self._state, self._protected_flags):
+			if getattr(self.flavor, message)(line, lower_line, error, self._state, self._protected_flags):
 				message_args = dict()
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
 				if parse_method:
-					parse_result = parse_method(line, lower_line, self._state, self._protected_flags)
+					parse_result = parse_method(line, lower_line, error, self._state, self._protected_flags)
 					if parse_result is None:
 						break
 
@@ -1513,14 +1525,24 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				if not handler_method(**message_args):
 					break
 		else:
+			for name, hook in self._error_hooks.items():
+				try:
+					ret = hook(self, error)
+				except Exception:
+					self._logger.exception("Error while processing hook {name}:".format(**locals()),
+					                       extra=dict(plugin=name))
+				else:
+					if ret:
+						# some plugin handled this, we'll return
+						return
+
 			# unknown error message
 			self.error = line
-			pass
+
+			# TODO error handling
 
 	def _on_error_communication(self, error_type):
 		self._last_communication_error = error_type
-
-	# TODO multiline error handling
 
 	def _on_comm_busy(self):
 		self._internal_flags["ok_timeout"] = self._get_timeout("communcation_busy" if self._internal_flags["busy_detected"] else "communication")
@@ -1576,6 +1598,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
 		current_tool_key = "T{}".format(self._internal_flags["current_tool"])
+
+		for name, hook in self._temperature_hooks.items():
+			try:
+				temperatures = hook(self, temperatures)
+				if temperatures is None or not temperatures:
+					return
+			except Exception:
+				self._logger.exception("Error while processing temperatures in {}, skipping".format(name),
+				                       extra=dict(plugin=name))
 
 		if current_tool_key in temperatures:
 			for x in range(max_tool_num + 1):
@@ -1653,6 +1684,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self._internal_flags["firmware_name"] = firmware_name
 			self._internal_flags["firmware_info"] = data
 
+			# notify plugins
+			for name, hook in self._firmware_info_hooks.items():
+				try:
+					hook(self, firmware_name, copy.copy(data))
+				except Exception:
+					self._logger.exception("Error processing firmware info hook {}:".format(name),
+					                       extra=dict(plugin=name))
+
 	def _on_message_firmware_capability(self, cap, enabled):
 		self._internal_flags["firmware_capabilities"][cap] = enabled
 
@@ -1665,6 +1704,14 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 				self._set_autoreport_sdstatus_interval()
 			elif cap == CAPABILITY_EMERGENCY_PARSER and enabled:
 				self._logger.info("Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first")
+
+		# notify plugins
+		for name, hook in self._firmware_cap_hooks.items():
+			try:
+				hook(self, cap, enabled, copy.copy(self._internal_flags["firmware_capabilities"]))
+			except Exception:
+				self._logger.exception("Error processing firmware capability hook {}:".format(name),
+				                       extra=dict(plugin=name))
 
 	def _on_message_sd_init_ok(self):
 		self._internal_flags["sd_available"] = True
@@ -2503,18 +2550,19 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	##~~ command phase handlers
 
 	def _command_phase_queuing(self, command):
-		if command.code in self.flavor.emergency_commands and command.code != self.flavor.command_emergency_stop().code:
-			message = "Force-sending {} to the printer".format(command)
-			self._logger.info(message)
-			return self._emergency_force_send(command, message)
+		if isinstance(command, GcodeCommand):
+			if command.code in self.flavor.emergency_commands and command.code != self.flavor.command_emergency_stop().code:
+				message = "Force-sending {} to the printer".format(command)
+				self._logger.info(message)
+				return self._emergency_force_send(command, message)
 
-		if self.state in ProtocolState.PROCESSING_STATES and command.code in self.flavor.pausing_commands:
-			self._logger.info("Pausing print job due to command {}".format(command))
-			self.pause_processing(tags=command.tags)
+			if self.state in ProtocolState.PROCESSING_STATES and command.code in self.flavor.pausing_commands:
+				self._logger.info("Pausing print job due to command {}".format(command))
+				self.pause_processing(tags=command.tags)
 
-		if command.code in self.flavor.blocked_commands:
-			self._logger.info("Not sending {} to printer, it's configured as a blocked command".format(command))
-			return None,
+			if command.code in self.flavor.blocked_commands:
+				self._logger.info("Not sending {} to printer, it's configured as a blocked command".format(command))
+				return None,
 
 	def _command_phase_sending(self, command, gcode=None):
 		if gcode is not None and gcode.code in self.flavor.long_running_commands:
