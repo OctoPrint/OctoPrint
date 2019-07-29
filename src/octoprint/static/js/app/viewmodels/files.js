@@ -200,7 +200,7 @@ $(function() {
         };
 
         self.highlightFilename = function(filename) {
-            if (filename === undefined) {
+            if (filename === undefined || filename === null) {
                 self.listHelper.selectNone();
             } else {
                 self.listHelper.selectItem(function(item) {
