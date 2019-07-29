@@ -44,6 +44,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._printer_connection_parameters = None
 		self._url = None
 		self._ping_worker = None
+		self._pong_worker = None
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 		self._record_next_firmware_info = False
@@ -60,7 +61,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            unique_id=None,
 		            server=TRACKING_URL,
 		            ping=15*60,
-		            events=dict(startup=True,
+		            pong=24*60*60,
+		            events=dict(pong=True,
+		                        startup=True,
 		                        printjob=True,
 		                        commerror=True,
 		                        plugin=True,
@@ -172,10 +175,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if self._ping_worker is None:
-			ping = self._settings.get_int(["ping"])
-			if ping:
-				self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
+			ping_interval = self._settings.get_int(["ping"])
+			if ping_interval:
+				self._ping_worker = RepeatedTimer(ping_interval, self._track_ping, run_first=True)
 				self._ping_worker.start()
+		
+		if self._pong_worker is None:
+			pong_interval = self._settings.get(["pong"])
+			if pong_interval:
+				self._pong_worker = RepeatedTimer(pong_interval, self._track_pong, run_first=True)
+				self._pong_worker.start()
 
 		if self._helpers_get_throttle_state is None:
 			# cautiously look for the get_throttled helper from pi_support
@@ -192,6 +201,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		uptime = int(monotonic_time() - self._startup_time)
 		self._track("ping", octoprint_uptime=uptime)
+
+	def _track_pong(self):
+		if not self._settings.get_boolean(["events", "pong"]):
+			return
+
+		plugins = self._plugin_manager.enabled_plugins
+		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
+		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(), x.version.lower()), plugins_thirdparty)))
+
+		self._track("pong", body=True, **payload)
 
 	def _track_startup(self):
 		if not self._settings.get_boolean(["events", "startup"]):
@@ -211,11 +230,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
-		plugins = self._plugin_manager.enabled_plugins
-		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
-		payload[b"plugins"] = ",".join(map(lambda x: "{}:{}".format(x.key.lower(), x.version.lower()), plugins_thirdparty))
-
-		self._track("startup", body=True, **payload)
+		self._track("startup", **payload)
 
 	def _track_shutdown(self):
 		if not self._settings.get_boolean([b"enabled"]):
