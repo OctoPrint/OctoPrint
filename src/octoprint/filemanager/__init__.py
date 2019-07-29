@@ -658,6 +658,8 @@ class FileManager(object):
 		try:
 			with open(self._recovery_file) as f:
 				data = yaml.safe_load(f)
+			if not isinstance(data, dict) or not all(map(lambda x: x in data, ("origin", "path", "pos", "date"))):
+				raise ValueError("Invalid recovery data structure")
 			return data
 		except:
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
