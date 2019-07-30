@@ -349,6 +349,8 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			long=kwargs.get("timeouts", dict()).get("max_consecutive_long", 5),
 		)
 
+		self.firmware_errors = kwargs.get("error_handling", dict()).get("firmware_errors", "disconnect")
+
 		flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
 		flavor_message_attrs = self.get_flavor_attributes_starting_with(self.flavor, "message_")
 		flavor_error_attrs = self.get_flavor_attributes_starting_with(self.flavor, "error_")
@@ -567,7 +569,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			self.send_commands(SendQueueMarker(finalize), part_of_job=True)
 			self._continue_sending()
 
-	def cancel_processing(self, error=False, user=None, tags=None, log_position=True):
+	def cancel_processing(self, error=None, user=None, tags=None, log_position=True):
 		if self.state not in ProtocolState.PROCESSING_STATES + (ProtocolState.PAUSED,):
 			return
 
@@ -604,6 +606,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 
 		self._job.cancel(error=error, user=user, tags=tags)
 		self.notify_listeners("on_protocol_job_cancelling", self, self._job,
+		                      error=error,
 		                      user=user,
 		                      tags=tags)
 
@@ -1539,7 +1542,20 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			# unknown error message
 			self.error = line
 
-			# TODO error handling
+			if self.firmware_errors != "ignore":
+				if self.firmware_errors == "disconnect" or self.flavor.error_sdcard(line, lower_line, error, self._state, self._protected_flags):
+					# disconnect
+					self._trigger_error(error, "firmware")
+
+				elif self._state in ProtocolState.PROCESSING_STATES:
+					# cancel the print
+					self.cancel_processing(error=error)
+					self._clear_to_send.set()
+
+			else:
+				self._to_logfile_with_terminal("WARNING! Received an error from the printer's firmware, ignoring that as configured "
+				                               "but you might want to investigate what happened here! Error: {}".format(error))
+				self._clear_to_send.set()
 
 	def _on_error_communication(self, error_type):
 		self._last_communication_error = error_type
@@ -2629,3 +2645,9 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._registered_messages = flavor_comm_attrs + flavor_message_attrs
 		self._current_registered_messages = self._registered_messages
 		self._error_messages = flavor_error_attrs
+
+	def _trigger_error(self, text, reason, disconnect=True):
+		self.state = ProtocolState.ERROR
+		self._event_bus.fire(Events.ERROR, dict(error=text, reason=reason))
+		if disconnect:
+			self.disconnect(error=True)

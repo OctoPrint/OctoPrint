@@ -200,7 +200,25 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
 	@classmethod
 	def error_communication(cls, line, lower_line, error, state, flags):
-		return "line number" in lower_line or "checksum" in lower_line or "format error" in lower_line or "expected line" in lower_line
+		return any(map(lambda x: x in lower_line, ("line number",
+		                                           "checksum",
+		                                           "format error",
+		                                           "expected line")))
+
+	@classmethod
+	def error_sdcard(cls, line, lower_line, error, state, flags):
+		return any(map(lambda x: x in lower_line, ("volume.init",
+		                                           "openroot",
+		                                           "workdir",
+		                                           "error writing to file",
+		                                           "cannot open",
+		                                           "open failed",
+		                                           "cannot enter")))
+
+	@classmethod
+	def error_fatal(cls, line, lower_line, error, state, flags):
+		return any(map(lambda x: x in lower_line, ("kill() called",
+		                                           "fatal:")))
 
 	@classmethod
 	def message_temperature(cls, line, lower_line, state, flags):

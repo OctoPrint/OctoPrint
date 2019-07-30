@@ -117,7 +117,7 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 	def resume(self, user=None, tags=None, **kwargs):
 		self.process_job_resumed(user=user, tags=tags, **kwargs)
 
-	def cancel(self, error=False, user=None, tags=None, **kwargs):
+	def cancel(self, error=None, user=None, tags=None, **kwargs):
 		if error:
 			self.process_job_failed(**kwargs)
 		else:
