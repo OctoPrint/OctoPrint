@@ -117,11 +117,11 @@ class Transport(ListenerAware):
 		self.state = TransportState.CONNECTED
 		self.notify_listeners("on_transport_connected", self)
 
-	def disconnect(self, error=None):
+	def disconnect(self, error=None, wait=True):
 		if self.state == TransportState.DISCONNECTED:
 			raise TransportNotConnectedError("Already disconnected")
 
-		success = self.drop_connection()
+		success = self.drop_connection(wait=wait)
 		if not success and not error:
 			error = "Error disconnecting transport"
 
@@ -136,7 +136,7 @@ class Transport(ListenerAware):
 	def create_connection(self, *args, **kwargs):
 		return True
 
-	def drop_connection(self):
+	def drop_connection(self, wait=True):
 		return True
 
 	def read(self, size=None, timeout=None):

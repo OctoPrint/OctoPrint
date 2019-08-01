@@ -39,7 +39,7 @@ class TcpTransport(Transport):
 
 		return True
 
-	def drop_connection(self):
+	def drop_connection(self, wait=True):
 		try:
 			self._socket.close()
 			return True

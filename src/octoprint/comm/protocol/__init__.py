@@ -185,7 +185,7 @@ class Protocol(ListenerAware, TransportListener):
 			self._transport.connect(*transport_args, **transport_kwargs)
 		self.state = ProtocolState.CONNECTING
 
-	def disconnect(self, error=False):
+	def disconnect(self, error=False, wait=True, timeout=10.0):
 		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR, ProtocolState.DISCONNECTING, ProtocolState.DISCONNECTING_WITH_ERROR):
 			raise ProtocolNotConnectedError("Already disconnecting or disconnected")
 
@@ -197,10 +197,13 @@ class Protocol(ListenerAware, TransportListener):
 		self.process_protocol_log("--- Protocol {} disconnecting from transport {}...".format(self,
 		                                                                                      self._transport))
 
+		if wait:
+			self.join(timeout=timeout)
+
 		self._transport.unregister_listener(self)
 		if self._transport.state == TransportState.CONNECTED:
 			try:
-				self._transport.disconnect()
+				self._transport.disconnect(wait=wait)
 			except Exception:
 				self._logger.exception("Error while disconnecting from transport {}".format(self._transport))
 				error = True
@@ -260,6 +263,9 @@ class Protocol(ListenerAware, TransportListener):
 		pass
 
 	def repair(self):
+		pass
+
+	def join(self, timeout=None):
 		pass
 
 	def on_job_started(self, job, *args, **kwargs):

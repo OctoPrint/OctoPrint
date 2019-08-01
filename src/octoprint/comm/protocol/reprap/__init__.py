@@ -1005,6 +1005,15 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 	def repair(self, *args, **kwargs):
 		self._on_comm_ok()
 
+	def join(self, timeout=None):
+		if timeout is not None:
+			stop = monotonic_time() + timeout
+			while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and monotonic_time() < stop:
+				time.sleep(0.1)
+			else:
+				self._command_queue.join()
+				self._send_queue.join()
+
 	##~~ State handling
 
 	def _is_operational(self):
@@ -1283,7 +1292,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			if self._internal_flags["dwelling_until"] and monotonic_time() > self._internal_flags["dwelling_until"]:
 				self._internal_flags["dwelling_until"] = False
 
-		if self.state == ProtocolState.CONNECTING:
+		if self.state == ProtocolState.CONNECTING and len(line):
 			hello = self.flavor.command_hello()
 			if hello:
 				self._tickle(hello)
@@ -1553,8 +1562,10 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 					self._clear_to_send.set()
 
 			else:
-				self._to_logfile_with_terminal("WARNING! Received an error from the printer's firmware, ignoring that as configured "
-				                               "but you might want to investigate what happened here! Error: {}".format(error))
+				message = "--- WARNING! Received an error from the printer's firmware, ignoring that as configured " \
+				          "but you might want to investigate what happened here! Error: {}".format(error)
+				self._to_logfile_with_terminal(message, level=logging.WARNING)
+				self.process_protocol_log(message)
 				self._clear_to_send.set()
 
 	def _on_error_communication(self, error_type):

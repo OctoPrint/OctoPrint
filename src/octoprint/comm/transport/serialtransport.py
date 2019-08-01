@@ -130,7 +130,7 @@ class SerialTransport(Transport):
 
 		return True
 
-	def drop_connection(self):
+	def drop_connection(self, wait=True):
 		error = False
 
 		if self._serial is not None:
