@@ -12,6 +12,7 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 import unittest
 import mock
+import ddt
 
 import octoprint.comm.protocol.reprap
 
@@ -20,6 +21,7 @@ from octoprint.util import to_bytes
 from .. import TestTransport
 
 
+@ddt.ddt
 class RepRapProtocolTest(unittest.TestCase):
 
 	def setUp(self):
@@ -45,11 +47,11 @@ class RepRapProtocolTest(unittest.TestCase):
 		self.transport.expect_and_send("M155 S2\n", "ok\n")
 
 	def testHandshakeWithTemperatureAutoreportButDisabled(self):
-		self.protocol.interval["temperature_autoreport"] = 2.0
 		self.protocol._capability_support[octoprint.comm.protocol.reprap.CAPABILITY_AUTOREPORT_TEMP] = False
 
 		self.protocol.connect(self.transport)
 		self._perform_and_test_handshake(capabilities=dict(AUTOREPORT_TEMP=True))
+		self.transport.expect_and_send("M105\n", "ok T:21.3/0\n")
 		self.transport.expect_and_send("M105\n", "ok T:21.3/0\n")
 
 	def testHandshakeWithSdAutoreport(self):
@@ -57,6 +59,26 @@ class RepRapProtocolTest(unittest.TestCase):
 		self.protocol.connect(self.transport)
 		self._perform_and_test_handshake(capabilities=dict(AUTOREPORT_SD_STATUS=True))
 		self.transport.expect_and_send("M27 S2\n", "ok\n")
+
+	@ddt.data(
+		# regular notation
+		("Error:Last Line Number is not Last Line Number+1\n", "Resend: N2\nok\n"),
+		("Error:Last Line Number is not Last Line Number+1\n", "Resend: 2\nok\n"),
+
+		# short hand notation
+		("!! Last Line Number is not Last Line Number+1\n", "rs N2\nok\n"),
+		("!! Last Line Number is not Last Line Number+1\n", "rs 2\nok\n"),
+
+		# missing ok
+		("Error:Last Line Number is not Last Line Number+1\n", "Resend: N2\n"),
+	)
+	@ddt.unpack
+	def testResendRequest(self, error, request):
+		self.protocol.connect(self.transport)
+		self._perform_and_test_handshake()
+		self.transport.send(error)
+		self.transport.send(request)
+		self.transport.expect_and_send("N2 M105*37\n", "ok T:21.3/0\n")
 
 	def _perform_and_test_handshake(self, firmware_name=None, capabilities=None):
 		if firmware_name is None:

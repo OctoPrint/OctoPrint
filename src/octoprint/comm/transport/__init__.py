@@ -299,9 +299,9 @@ class PushingTransportWrapper(TransportWrapper):
 		self._receiver_thread.daemon = True
 		self._receiver_thread.start()
 
-	def disconnect(self):
+	def disconnect(self, *args, **kwargs):
 		self._receiver_active = False
-		self.transport.disconnect()
+		self.transport.disconnect(*args, **kwargs)
 
 	def wait(self):
 		self._receiver_thread.join()
