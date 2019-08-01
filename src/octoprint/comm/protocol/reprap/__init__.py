@@ -299,6 +299,29 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                                expert=True,
 		                                default=5,
 		                                help=gettext("Set to 0 to disable consecutive timeout detection and handling."))],
+		                   advanced=True),
+		        ParamGroup("capabilities",
+		                   gettext("Firmware capability support"),
+		                   [BooleanType("autoreport_temp",
+		                                gettext("Enable temperature autoreporting if supported"),
+		                                default=True,
+		                                help=gettext("Uncheck this if you want to disable temperature autoreporting, even if the firmware supports it")),
+		                    BooleanType("autoreport_sd_status",
+		                                gettext("Enable sd status autoreporting if supported"),
+		                                default=True,
+		                                help=gettext("Uncheck this if you want to disable sd status autoreporting, even if the firmware supports it")),
+		                    BooleanType("emergency_parser",
+		                                gettext("Use emergency parser if supported"),
+		                                default=True,
+		                                help=gettext("Uncheck this if you want to disable force-sending emergency commands to compatible printers, even if the firmware supports it")),
+		                    BooleanType("busy_protocol",
+		                                gettext("Use `busy` protocol if supported"),
+		                                default=True,
+		                                help=gettext("Uncheck this if you want to disable use of the `busy` protocol, even if the firmware supports it")),
+		                    BooleanType("chamber_temp",
+		                                gettext("Enable chamber temperature management if supported"),
+		                                default=True,
+		                                help=gettext("Uncheck this if you want to disable chamber temperature management, even if the firmware supports it"))],
 		                   advanced=True)]
 
 	@staticmethod
@@ -365,9 +388,11 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		self._handlers_command_phase = self.get_attributes_starting_with("_command_phase_")
 
 		self._capability_support = dict()
-		self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = True
-		self._capability_support[CAPABILITY_BUSY_PROTOCOL] = True
-		self._capability_support[CAPABILITY_CHAMBER_TEMP] = True
+		self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = kwargs.get("capabilities", dict()).get("autoreport_temp", True)
+		self._capability_support[CAPABILITY_AUTOREPORT_SD_STATUS] = kwargs.get("capabilities", dict()).get("autoreport_sd_status", True)
+		self._capability_support[CAPABILITY_EMERGENCY_PARSER] = kwargs.get("capabilities", dict()).get("emergency_parser", True)
+		self._capability_support[CAPABILITY_BUSY_PROTOCOL] = kwargs.get("capabilities", dict()).get("busy_protocol", True)
+		self._capability_support[CAPABILITY_CHAMBER_TEMP] = kwargs.get("capabilities", dict()).get("chamber_temp", True)
 
 		self._transport = None
 
