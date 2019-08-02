@@ -743,7 +743,7 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 			                             user=user)
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.move"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.move"}
 
 		cmds = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
 
@@ -757,31 +757,31 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 		                   **kwargs)
 
 	def home(self, x=False, y=False, z=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.home"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.home"}
 		self.send_commands(self.flavor.command_home(x=x, y=y, z=z),
 		                   tags=tags,
 		                   **kwargs)
 
 	def change_tool(self, tool, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.change_tool"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.change_tool"}
 		self.send_commands(self.flavor.command_set_tool(tool),
 		                   tags=tags,
 		                   **kwargs)
 
 	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_feedrate_multiplier"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.set_feedrate_multiplier"}
 		self.send_commands(self.flavor.command_set_feedrate_multiplier(multiplier),
 		                   tags=tags,
 		                   **kwargs)
 
 	def set_extrusion_multiplier(self, multiplier, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_extrusion_multiplier"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.set_extrusion_multiplier"}
 		self.send_commands(self.flavor.command_set_extrusion_multiplier(multiplier),
 		                   tags=tags,
 		                   **kwargs)
 
 	def set_temperature(self, heater, temperature, wait=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_temperature"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.set_temperature"}
 
 		if heater.startswith("tool"):
 			try:
@@ -809,7 +809,7 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 	##~~ MotorControlProtocolMixin
 
 	def set_motor_state(self, enabled, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_motor_state"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.set_motor_state"}
 		self.send_commands(self.flavor.command_set_motors(enabled),
 		                   tags=tags,
 		                   **kwargs)
@@ -817,7 +817,7 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 	##~~ FanControlProtocolMixin
 
 	def set_fan_speed(self, speed, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_fan_speed"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.set_fan_speed"}
 		self.send_commands(self.flavor.command_set_fan_speed(speed),
 		                   tags=tags,
 		                   **kwargs)
@@ -825,19 +825,19 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 	##~~ FileStreamingProtocolMixin
 
 	def init_file_storage(self, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.init_file_storage"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.init_file_storage"}
 		self.send_commands(self.flavor.command_sd_init(),
 		                   tags=tags,
 		                   **kwargs)
 
 	def list_files(self, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.list_files"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.list_files"}
 		self.send_commands(self.flavor.command_sd_refresh(),
 		                   tags=tags,
 		                   **kwargs)
 
 	def start_file_print(self, name, position=0, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.start_file_print"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.start_file_print"}
 
 		self.send_commands(self.flavor.command_sd_select_file(name),
 		                   self.flavor.command_sd_set_pos(position),
@@ -847,38 +847,38 @@ class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProto
 
 	def pause_file_print(self, *args, **kwargs):
 		if kwargs.get("local_handling", True):
-			tags = kwargs.get("tags", set()) | {"trigger:protocol.pause_file_print"}
+			tags = kwargs.pop("tags", set()) | {"trigger:protocol.pause_file_print"}
 			self.send_commands(self.flavor.command_sd_pause(),
 			                   tags=tags,
 		                       **kwargs)
 
 	def resume_file_print(self, *args, **kwargs):
 		if kwargs.get("local_handling", True):
-			tags = kwargs.get("tags", set()) | {"trigger:protocol.resume_file_print"}
+			tags = kwargs.pop("tags", set()) | {"trigger:protocol.resume_file_print"}
 			self.send_commands(self.flavor.command_sd_resume(),
 			                   tags=tags,
 		                       **kwargs)
 
 	def delete_file(self, name, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.delete_file"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.delete_file"}
 		self.send_commands(self.flavor.command_sd_delete(name),
 		                   tags=tags,
 		                   **kwargs)
 
 	def record_file(self, name, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.record_file"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.record_file"}
 		self.send_commands(self.flavor.command_sd_begin_write(name),
 		                   tags=tags,
 		                   **kwargs)
 
 	def stop_recording_file(self, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.stop_recording_file"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.stop_recording_file"}
 		self.send_commands(self.flavor.command_sd_end_write(),
 		                   tags=tags,
 		                   **kwargs)
 
 	def get_file_print_status(self, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.get_file_print_status"}
+		tags = kwargs.pop("tags", set()) | {"trigger:protocol.get_file_print_status"}
 		self.send_commands(self.flavor.command_sd_status(),
 		                   tags=tags,
 		                   **kwargs)
