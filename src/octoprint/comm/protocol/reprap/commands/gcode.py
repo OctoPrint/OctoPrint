@@ -105,6 +105,19 @@ class GcodeCommand(Command):
 
 		self._repr = self._to_repr()
 
+	def with_args(self, **kwargs):
+		args = dict(subcode=self.subcode,
+		            tool=self.tool,
+		            feedrate=self.feedrate,
+		            param=self.param,
+		            type=self.type,
+		            tags=self.tags)
+		args.update(self.args)
+
+		args.update(kwargs)
+
+		return GcodeCommand(self.code, **args)
+
 	def __getattr__(self, item):
 		if len(item) == 1:
 			return self.args.get(item, None)

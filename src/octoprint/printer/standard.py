@@ -541,26 +541,7 @@ class Printer(PrinterInterface,
 			raise ValueError("value must be a valid number >= 0: {value}".format(value=value))
 
 		tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
-
-		if heater.startswith("tool"):
-			printer_profile = self._printer_profile_manager.get_current_or_default()
-			extruder_count = printer_profile["extruder"]["count"]
-			shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
-			if extruder_count > 1 and not shared_nozzle:
-				toolNum = int(heater[len("tool"):])
-				self._protocol.set_extruder_temperature(value,
-				                                        tool=toolNum,
-				                                        wait=False,
-				                                        tags=tags)
-			else:
-				self._protocol.set_extruder_temperature(value,
-				                                        wait=False,
-				                                        tags=tags)
-
-		elif heater == "bed":
-			self._protocol.set_bed_temperature(value,
-			                                   wait=False,
-			                                   tags=tags)
+		self._protocol.set_temperature(heater, value, wait=False, tags=tags)
 
 	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
@@ -580,9 +561,9 @@ class Printer(PrinterInterface,
 		if self._protocol is None:
 			return
 
-		# TODO
-		#self._comm.setTemperatureOffset(offsets)
-		#self._setOffsets(self._comm.getOffsets())
+		for heater, offset in offsets.items():
+			self._protocol.set_temperature_offset(heater, offset)
+		self._set_offsets(self._protocol.get_temperature_offsets())
 
 	def _convert_rate_value(self, factor, min=0, max=200):
 		if not isinstance(factor, (int, float, long)):
@@ -770,12 +751,10 @@ class Printer(PrinterInterface,
 		return util.thaw_frozendict(data["job"])
 
 	def get_current_temperatures(self, *args, **kwargs):
-		# TODO temperature offsets
-		#if self._comm is not None:
-		#	offsets = self._comm.getOffsets()
-		#else:
-		#	offsets = dict()
-		offsets = dict()
+		if self._protocol is not None:
+			offsets = self._protocol.get_temperature_offsets()
+		else:
+			offsets = dict()
 
 		result = dict()
 		if not len(self._temperature_history):
@@ -783,9 +762,6 @@ class Printer(PrinterInterface,
 
 		latest_temperature = self._temperature_history[-1]
 		for key, value in latest_temperature.items():
-			if not key.startswith("tool") and not key == "bed":
-				continue
-
 			result[key] = dict(actual=value["actual"],
 			                   target=value["target"],
 			                   offset=offsets.get(key, 0))

@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.comm.protocol import Protocol, ThreeDPrinterProtocolMixin, FileStreamingProtocolMixin, \
+from octoprint.comm.protocol import Protocol, Fdm3dPrinterProtocolMixin, FileStreamingProtocolMixin, \
 	MotorControlProtocolMixin, FanControlProtocolMixin, ProtocolState
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, \
 	PushingTransportWrapper, PushingTransportWrapperListener, TransportListener, TimeoutTransportException, \
@@ -114,7 +114,7 @@ class BooleanCallbackValue(object):
 		return bool(self.callback())
 
 
-class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
+class ReprapGcodeProtocol(Protocol, Fdm3dPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
                           PushingTransportWrapperListener, TransportListener):
 	name = "Reprap GCODE Protocol"
@@ -403,6 +403,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			heating_lost=0,
 			heating=False,
 			temperature_autoreporting=False,
+			temperature_offsets=dict(),
 
 			# current stuff
 			current_tool=0,
@@ -779,23 +780,31 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		                   tags=tags,
 		                   **kwargs)
 
-	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_extruder_temperature"}
-		self.send_commands(self.flavor.command_set_extruder_temp(temperature, tool=tool, wait=wait),
-		                   tags=tags,
-		                   **kwargs)
+	def set_temperature(self, heater, temperature, wait=False, *args, **kwargs):
+		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_temperature"}
 
-	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_bed_temperature"}
-		self.send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait),
-		                   tags=tags,
-		                   **kwargs)
+		if heater.startswith("tool"):
+			try:
+				tool = int(heater[len("tool"):])
+			except ValueError:
+				self._logger.error("Got invalid tool heater, expected tool<n>, got: {}".format(heater))
+				return
+			command = self.flavor.command_set_extruder_temp(temperature, tool=tool, wait=wait)
+		elif heater == "bed":
+			command = self.flavor.command_set_bed_temp(temperature, wait=wait)
+		elif heater == "chamber":
+			command = self.flavor.command_set_chamber_temp(temperature, wait=wait)
+		else:
+			self._logger.warn("Got unknown heater identifier to set temperature on: {}".format(heater))
+			return
 
-	def set_chamber_temperature(self, temperature, wait=False, *args, **kwargs):
-		tags = kwargs.get("tags", set()) | {"trigger:protocol.set_chamber_temperature"}
-		self.send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait),
-		                   tags=tags,
-		                   **kwargs)
+		self.send_commands(command, tags=tags, **kwargs)
+
+	def set_temperature_offset(self, heater, offset, *args, **kwargs):
+		self._internal_flags["temperature_offsets"][heater] = offset
+
+	def get_temperature_offsets(self):
+		return copy.copy(self._internal_flags["temperature_offsets"])
 
 	##~~ MotorControlProtocolMixin
 
@@ -2430,6 +2439,42 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 			                                                  and (interval > 0)
 		except Exception:
 			pass
+
+	def _apply_temperature_offset(self, heater, command, support_r=False):
+		offset = self._internal_flags["temperature_offsets"].get(heater, 0)
+		if offset == 0 or not "source:file" in command.tags:
+			return
+
+		try:
+			if command.s is not None:
+				return command.with_args(s=float(command.s) + offset)
+			elif command.r is not None and support_r:
+				return command.with_args(r=float(command.r) + offset)
+		except Exception:
+			self._logger.exception("Error applying temperature offset")
+
+	def _gcode_M104_sending(self, command, support_r=False):
+		if command.t:
+			tool_num = command.t
+		else:
+			tool_num = self._internal_flags["current_tool"]
+
+		return self._apply_temperature_offset("tool{}".format(tool_num), command, support_r=support_r)
+
+	def _gcode_M109_sending(self, command):
+		return self._gcode_M104_sending(command, support_r=True)
+
+	def _gcode_M140_sending(self, command):
+		return self._apply_temperature_offset("bed", command, support_r=False)
+
+	def _gcode_M190_sending(self, command):
+		return self._apply_temperature_offset("bed", command, support_r=True)
+
+	def _gcode_M141_sending(self, command):
+		return self._apply_temperature_offset("chamber", command, support_r=False)
+
+	def _gcode_M191_sending(self, command):
+		return self._apply_temperature_offset("chamber", command, support_r=True)
 
 	def _gcode_M104_sent(self, command, wait=False, support_r=False):
 		tool_num = self._internal_flags["current_tool"]

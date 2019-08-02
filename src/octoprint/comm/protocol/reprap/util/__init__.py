@@ -328,7 +328,7 @@ class TemperatureRecord(object):
 		self._bed = self._to_new_tuple(current, actual, target)
 
 	def set_chamber(self, actual=None, target=None):
-		current = self._chamber()
+		current = self._chamber
 		self._chamber = self._to_new_tuple(current, actual, target)
 
 	@property

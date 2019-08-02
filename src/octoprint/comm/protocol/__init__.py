@@ -352,6 +352,7 @@ class ProtocolAlreadyConnectedError(Exception):
 class ProtocolNotConnectedError(Exception):
 	pass
 
+
 class ThreeAxisProtocolMixin(object):
 	def move(self, x=None, y=None, z=None, feedrate=None, relative=False, *args, **kwargs):
 		pass
@@ -359,29 +360,31 @@ class ThreeAxisProtocolMixin(object):
 	def home(self, x=False, y=False, z=False, *args, **kwargs):
 		pass
 
+	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
+		pass
+
+
+class HeaterProtocolMixin(object):
+	def set_temperature(self, heater, temperature, wait=False, *args, **kwargs):
+		pass
+
+	def set_temperature_offset(self, heater, offset, *args, **kwargs):
+		pass
+
+	def get_temperature_offsets(self):
+		return dict()
+
 
 class MultiToolProtocolMixin(object):
 	def change_tool(self, tool, *args, **kwargs):
 		pass
 
 
-class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin, MultiToolProtocolMixin):
+class Fdm3dPrinterProtocolMixin(ThreeAxisProtocolMixin, HeaterProtocolMixin, MultiToolProtocolMixin):
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False, *args, **kwargs):
 		pass
 
-	def set_feedrate_multiplier(self, multiplier, *args, **kwargs):
-		pass
-
 	def set_extrusion_multiplier(self, multiplier, *args, **kwargs):
-		pass
-
-	def set_extruder_temperature(self, temperature, tool=None, wait=False, *args, **kwargs):
-		pass
-
-	def set_bed_temperature(self, temperature, wait=False, *args, **kwargs):
-		pass
-
-	def set_chamber_temperature(self, temperature, wait=False, *args, **kwargs):
 		pass
 
 
