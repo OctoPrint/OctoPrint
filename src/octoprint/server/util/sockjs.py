@@ -209,6 +209,14 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			else:
 				self._throttleFactor = throttle
 				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
+		else:
+			# handle custom events
+			for eventIdentfier in message:
+				registeredEvents = octoprint.events.custom_events()
+				if eventIdentfier in registeredEvents:
+					self._eventManager.fire(eventIdentfier, message[eventIdentfier])
+				else:
+					self._logger.warn("received SockJS message without an associated registered event: {} ".format(eventIdentfier))
 
 	def on_printer_send_current_data(self, data):
 		if not self._user.has_permission(Permissions.STATUS):

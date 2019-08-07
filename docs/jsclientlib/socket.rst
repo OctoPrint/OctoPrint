@@ -64,8 +64,14 @@
 
    Sends a message of type ``type`` with the provided ``payload`` to the server.
 
-   Note that at the time of writing, OctoPrint only supports the ``throttle`` message. See
-   also the :ref:`Push API documentation <sec-api-push>`.
+   Note that at the time of writing, OctoPrint supports the ``throttle`` and ``auth`` message as well as messages for registered custom events. See
+   also the :ref:`Push API documentation <sec-api-push>` and the :ref:`custom events hook <sec-plugins-hook-events-register_custom_events>`.
+
+   An example on how to use it with custom events is shown below:
+
+   .. code-block:: javascript
+
+      OctoPrint.socket.sendMessage("plugin_myplugin_my_custom_event", {"data": myData})
 
    :param string type: Type of message to send
    :param object payload: Payload to send
