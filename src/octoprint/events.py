@@ -26,6 +26,9 @@ _instance = None
 def all_events():
 	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("_") and not name in ("register_event",)]
 
+# return all custom events that were created using register_custom_events
+def custom_events():
+	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("_") and not name in ("register_event",) and name.startswith("PLUGIN_")]
 
 class Events(object):
 	# server
