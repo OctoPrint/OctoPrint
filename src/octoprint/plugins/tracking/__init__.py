@@ -179,7 +179,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if ping_interval:
 				self._ping_worker = RepeatedTimer(ping_interval, self._track_ping, run_first=True)
 				self._ping_worker.start()
-		
+
 		if self._pong_worker is None:
 			pong_interval = self._settings.get(["pong"])
 			if pong_interval:
@@ -230,7 +230,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
-		self._track("startup", **payload)
+		plugins = self._plugin_manager.enabled_plugins
+		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
+		payload[b"plugins"] = ",".join(map(lambda x: "{}:{}".format(x.key.lower(),
+		                                                            x.version.lower() if x.version else "?"),
+		                                   plugins_thirdparty))
+
+		self._track("startup", body=True, **payload)
 
 	def _track_shutdown(self):
 		if not self._settings.get_boolean([b"enabled"]):
