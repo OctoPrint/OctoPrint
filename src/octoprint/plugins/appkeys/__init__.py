@@ -121,6 +121,9 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	@no_firstrun_access
 	def handle_request(self):
 		data = flask.request.json
+		if data is None:
+			return flask.make_response("Missing key request", 400)
+
 		if not "app" in data:
 			return flask.make_response("No app name provided", 400)
 
