@@ -146,7 +146,8 @@ def printerProfilesUpdate(identifier):
 		merged_profile["id"] = identifier
 
 	try:
-		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default)
+		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default,
+												   trigger_event=True)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
