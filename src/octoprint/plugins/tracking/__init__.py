@@ -208,7 +208,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		plugins = self._plugin_manager.enabled_plugins
 		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
-		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(), x.version.lower()), plugins_thirdparty)))
+		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(),
+		                                                             x.version.lower() if x.version else "?"),
+		                                    plugins_thirdparty)))
 
 		self._track("pong", body=True, **payload)
 
