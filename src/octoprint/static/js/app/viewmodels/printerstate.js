@@ -322,7 +322,21 @@ $(function() {
                     }
                 });
             } else {
-                OctoPrint.job.start();
+                if (!self.settings.feature_printStartConfirmation()) {
+                    OctoPrint.job.start();
+                } else {
+                    showConfirmationDialog({
+                        message: gettext("This will start a new print job. Please check that the print bed is clear."),
+                        question: gettext("Do you want to start the print job now?"),
+                        cancel: gettext("No"),
+                        proceed: gettext("Yes"),
+                        onproceed: function() {
+                            OctoPrint.job.start();
+                        },
+                        nofade: true
+                    });
+                }
+
             }
         };
 
