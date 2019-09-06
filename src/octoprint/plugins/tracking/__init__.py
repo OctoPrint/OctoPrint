@@ -232,13 +232,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
 				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
 
-		plugins = self._plugin_manager.enabled_plugins
-		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
-		payload[b"plugins"] = ",".join(map(lambda x: "{}:{}".format(x.key.lower(),
-		                                                            x.version.lower() if x.version else "?"),
-		                                   plugins_thirdparty))
-
-		self._track("startup", body=True, **payload)
+		self._track("startup", **payload)
 
 	def _track_shutdown(self):
 		if not self._settings.get_boolean([b"enabled"]):
