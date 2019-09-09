@@ -17,6 +17,7 @@ from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 from collections import namedtuple
 
@@ -429,7 +430,8 @@ class FileManager(object):
 			self._last_slicing_progress = progress_int
 			for callback in self._slicing_progress_callbacks:
 				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-				except: self._logger.exception("Exception while pushing slicing progress")
+				except: self._logger.exception("Exception while pushing slicing progress",
+				                               extra=dict(callback=fqcn(callback)))
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
