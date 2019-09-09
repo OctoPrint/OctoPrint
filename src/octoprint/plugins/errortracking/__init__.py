@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 import octoprint.plugin
 import logging
 
+from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util.version import get_octoprint_version_string, is_released_octoprint_version
 
 from flask import jsonify
@@ -29,19 +30,24 @@ import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
-	(serial.SerialException, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
 
 	# isp errors during port auto detection in octoprint.util.comm
-	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin: logger == "octoprint.util.comm"),
+	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
 
 	# IOErrors of any kind due to a full file system
-	(IOError, lambda exc, logger, plugin: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
+	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
 
 	# RequestExceptions of any kind
 	requests.exceptions.RequestException,
 
 	# Tornado WebSocketErrors of any kind
-	tornado.websocket.WebSocketError
+	tornado.websocket.WebSocketError,
+
+	# Anything triggered by or in third party plugin Astroprint
+	(Exception, lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
+	                                            or plugin == "astroprint"
+	                                            or cb.startswith("octoprint_astroprint."))
 ]
 
 try:
@@ -138,6 +144,7 @@ def _enable_errortracking():
 			handled = True
 			logger = event.get("logger", "")
 			plugin = event.get("extra", dict()).get("plugin", None)
+			callback = event.get("extra", dict()).get("callback", None)
 
 			for ignore in IGNORED_EXCEPTIONS:
 				if isinstance(ignore, tuple):
@@ -147,8 +154,8 @@ def _enable_errortracking():
 					matcher = lambda *args: True
 
 				exc = hint["exc_info"][1]
-				if isinstance(exc, ignored_exc) and matcher(exc, logger, plugin):
-					# exception ignored for logger
+				if isinstance(exc, ignored_exc) and matcher(exc, logger, plugin, callback):
+					# exception ignored for logger, plugin and/or callback
 					return None
 
 				elif isinstance(ignore, type):
