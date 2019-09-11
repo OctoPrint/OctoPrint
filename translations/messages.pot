@@ -2411,7 +2411,7 @@ msgid "Regular ping every 15min (incl. uptime)"
 msgstr ""
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:26
-msgid "Regular pong every 24h (incl. plugin list)"
+msgid "Regular ping every 24h (incl. plugin list)"
 msgstr ""
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:29
