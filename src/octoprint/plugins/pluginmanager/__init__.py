@@ -858,13 +858,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			r.raise_for_status()
 			self._logger.info("Loaded plugin repository data from {}".format(repository_url))
 		except Exception as e:
-			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
+			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=e))
 			return None
 
 		try:
 			repo_data = r.json()
 		except Exception as e:
-			self._logger.exception("Error while reading repository data")
+			self._logger.exception("Error while reading repository data: {}".format(e))
 			return None
 
 		# validation
@@ -878,7 +878,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				f.write(to_bytes(json.dumps(repo_data)))
 			self._repository_mtime = os.path.getmtime(self._repository_cache_path)
 		except Exception as e:
-			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
+			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, e))
 
 		return repo_data
 
