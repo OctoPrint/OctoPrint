@@ -16,8 +16,9 @@ checklist:
     made sure your changes don't interfere with current development by
     talking it through with the maintainers, e.g. through a
     Brainstorming ticket
-  * [ ] Your PR targets OctoPrint's devel branch, or maintenance if it's
-    a bug fix for an issue present in the current stable version (no PRs
+  * [ ] Your PR targets OctoPrint's devel branch if it's a completely 
+    new feature, or maintenance if it's a bug fix or improvement of
+    existing functionality for the current stable version (no PRs 
     against master or anything else please)
   * [ ] Your PR was opened from a custom branch on your repository
     (no PRs from your version of master, maintenance or devel please),

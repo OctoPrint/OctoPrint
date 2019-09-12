@@ -201,9 +201,10 @@ def index():
 
 	default_additional_etag = [enable_accesscontrol,
 	                           enable_gcodeviewer,
-	                           enable_timelapse] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
-	                                                                      to_unicode(v, errors="replace"))
-	                                                       for k, v in _plugin_vars.items()])
+	                           enable_timelapse,
+	                           wizard_active(_templates.get(locale))] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
+	                                                                                           to_unicode(v, errors="replace"))
+	                                                                           for k, v in _plugin_vars.items()])
 
 	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None, additional_unless=None):
 		if (data is None and additional_request_data is None) or g.locale is None:

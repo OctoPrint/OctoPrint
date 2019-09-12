@@ -118,6 +118,7 @@ $(function() {
         self.appearance_defaultLanguage = ko.observable();
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
         self.appearance_fuzzyTimes = ko.observable(undefined);
+        self.appearance_closeModalsWithClick = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -148,6 +149,7 @@ $(function() {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
@@ -190,6 +192,7 @@ $(function() {
         self.serial_ignoreIdenticalResends =  ko.observable(undefined);
         self.serial_firmwareDetection =  ko.observable(undefined);
         self.serial_blockWhileDwelling =  ko.observable(undefined);
+        self.serial_useParityWorkaround = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
@@ -201,6 +204,7 @@ $(function() {
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
+        self.serial_sendM112OnError = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -363,7 +367,8 @@ $(function() {
                 response: "bytes",
                 timeout: self.webcam_snapshotTimeout(),
                 validSsl: self.webcam_snapshotSslValidation(),
-                content_type_whitelist: ["image/*"]
+                content_type_whitelist: ["image/*"],
+                content_type_guess: true
             })
                 .done(function(response) {
                     if (!response.result) {
@@ -387,7 +392,7 @@ $(function() {
                     }
 
                     var content = response.response.content;
-                    var contentType = response.response.content_type
+                    var contentType = response.response.assumed_content_type;
 
                     var mimeType = "image/jpeg";
                     if (contentType) {
@@ -397,7 +402,7 @@ $(function() {
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>'),
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" style="border: 1px solid black" /></p>'),
                         onclose: function() {
                             self.testWebcamSnapshotUrlBusy(false);
                         }

@@ -576,9 +576,19 @@ function formatFuzzyPrintTime(totalSeconds) {
     return _.sprintf(text, replacements);
 }
 
-function formatDate(unixTimestamp) {
+function formatDate(unixTimestamp, options) {
+    if (!options) {
+        options = { seconds: false };
+    }
+
     if (!unixTimestamp) return "-";
-    return moment.unix(unixTimestamp).format(gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm"));
+
+    var format = gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm");
+    if (options.seconds) {
+        format = gettext(/* L10N: Date format with seconds */ "YYYY-MM-DD HH:mm:ss");
+    }
+
+    return moment.unix(unixTimestamp).format(format);
 }
 
 function formatTimeAgo(unixTimestamp) {

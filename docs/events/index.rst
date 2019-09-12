@@ -588,6 +588,7 @@ SlicingStarted
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -599,6 +600,7 @@ SlicingDone
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -611,6 +613,7 @@ SlicingCancelled
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -621,6 +624,7 @@ SlicingFailed
 
    Payload:
 
+     * ``slicer``: the used slicer
      * ``stl``: the STL's filename
      * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
@@ -636,7 +640,7 @@ SlicingProfileAdded
      * ``profile``: the profile that was added
 
 SlicingProfileModified
-   A new slicing profile was modified.
+   A slicing profile was modified.
 
    Payload:
 
@@ -661,3 +665,15 @@ SettingsUpdated
 
    This event may also be triggered if calling code of :py:class:`octoprint.settings.Settings.save` or
    :py:class:`octoprint.plugin.PluginSettings.save` sets the ``trigger_event`` parameter to ``True``.
+
+.. _sec-events-available_events-printer_profile:
+
+Printer Profile
+--------
+
+PrinterProfileModified
+   A printer profile was modified.
+
+   Payload:
+
+     * ``identifier``: the identifier of the modified printer profile

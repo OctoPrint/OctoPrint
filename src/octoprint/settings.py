@@ -150,6 +150,9 @@ default_settings = {
 		"supportFAsCommand": False,
 		"firmwareDetection": True,
 		"blockWhileDwelling": False,
+		"useParityWorkaround": "detect",
+		"maxConsecutiveResends": 10,
+		"sendM112OnError": True,
 
 		"capabilities": {
 			"autoreport_temp": True,
@@ -261,6 +264,7 @@ default_settings = {
 		"keyboardControl": True,
 		"pollWatched": False,
 		"modelSizeDetection": True,
+		"printStartConfirmation": False,
 		"printCancelConfirmation": True,
 		"autoUppercaseBlacklist": ["M117", "M118"],
 		"g90InfluencesExtruder": False
@@ -304,6 +308,7 @@ default_settings = {
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
 		"fuzzyTimes": True,
+		"closeModalsWithClick": True,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],

@@ -305,7 +305,7 @@ __plugin_name__ = "Pi Support Plugin"
 __plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Provides additional information about your Pi in the UI."
 __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
-                                           "provide additional information about your Pi,"
+                                           "provide additional information about your Pi, "
                                            "which will make it more tricky to help you if you need support.")
 __plugin_license__ = "AGPLv3"
 

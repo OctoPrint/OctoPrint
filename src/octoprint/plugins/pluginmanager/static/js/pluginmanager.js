@@ -8,12 +8,17 @@ $(function() {
         self.systemViewModel = parameters[3];
         self.access = parameters[4];
 
+        // optional
+        self.piSupport = parameters[4];
+
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
         self.config_noticesUrl = ko.observable();
         self.config_noticesTtl = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
         self.config_pipForceUser = ko.observable();
+        self.config_confirmUninstall = ko.observable();
+        self.config_confirmDisable = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -165,8 +170,12 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && !self.throttled() && self.online() && self.isCompatible(data);
         };
+
+        self.throttled = ko.pureComputed(function() {
+            return self.piSupport && self.piSupport.currentIssue();
+        });
 
         self.invalidUrl = ko.pureComputed(function() {
             // supported pip install URL schemes, according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -192,6 +201,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && self.online()
                 && url !== undefined
                 && url.trim() !== ""
@@ -217,6 +227,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && name !== undefined
                 && name.trim() !== ""
                 && !self.invalidArchive();
@@ -395,12 +406,13 @@ $(function() {
                     .done(onSuccess)
                     .fail(onError);
             } else {
-                var perform = function() {
+                var performDisabling = function() {
                     OctoPrint.plugins.pluginmanager.disable(data.key)
                         .done(onSuccess)
                         .fail(onError);
                 };
 
+                // always warn if plugin is marked "disabling discouraged"
                 if (data.disabling_discouraged) {
                     var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: data.name})
                         + "</p><p>" + data.disabling_discouraged;
@@ -410,10 +422,21 @@ $(function() {
                         question: gettext("Do you still want to disable it?"),
                         cancel: gettext("Keep enabled"),
                         proceed: gettext("Disable anyway"),
-                        onproceed: perform
-                    })
+                        onproceed: performDisabling
+                    });
+                }
+                // warn if global "warn disabling" setting is set"
+                else if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable()) {
+                    showConfirmationDialog({
+                        message: _.sprintf(gettext("You are about to disable \"%(name)s\""), {name: data.name}),
+                        cancel: gettext("Keep enabled"),
+                        proceed: gettext("Disable plugin"),
+                        onproceed: performDisabling,
+                        nofade: true
+                    });
                 } else {
-                    perform();
+                    // otherwise just go ahead and disable...
+                    performDisabling();
                 }
             }
         };
@@ -444,6 +467,10 @@ $(function() {
             }
 
             if (!self.enableManagement()) {
+                return;
+            }
+
+            if (self.throttled()) {
                 return;
             }
 
@@ -512,23 +539,41 @@ $(function() {
             if (data.bundled) return;
             if (data.key == "pluginmanager") return;
 
-            self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
+            // defining actual uninstall logic as functor in order to handle
+            // the confirm/no-confirm logic without duplication of logic
+            var performUninstall = function() {
+                self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 
-            OctoPrint.plugins.pluginmanager.uninstall(data.key)
-                .done(function() {
-                    self.requestData();
-                })
-                .fail(function() {
-                    new PNotify({
-                        title: gettext("Something went wrong"),
-                        text: gettext("Please consult octoprint.log for details"),
-                        type: "error",
-                        hide: false
+                OctoPrint.plugins.pluginmanager.uninstall(data.key)
+                    .done(function() {
+                        self.requestData();
+                    })
+                    .fail(function() {
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    })
+                    .always(function() {
+                        self._markDone();
                     });
-                })
-                .always(function() {
-                    self._markDone();
+            };
+
+            if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall()) {
+                // confirmation needed. Show confirmation dialog and call performUninstall if user clicks Yes
+                showConfirmationDialog({
+                    message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: data.name}),
+                    cancel: gettext("Keep installed"),
+                    proceed: gettext("Uninstall"),
+                    onproceed: performUninstall,
+                    nofade: true
                 });
+            } else {
+                // no confirmation needed, just go ahead and uninstall
+                performUninstall();
+            }
         };
 
         self.refreshRepository = function() {
@@ -597,7 +642,9 @@ $(function() {
                         notices: notices,
                         notices_ttl: noticesTtl,
                         pip_args: pipArgs,
-                        pip_force_user: self.config_pipForceUser()
+                        pip_force_user: self.config_pipForceUser(),
+                        confirm_uninstall: self.config_confirmUninstall(),
+                        confirm_disable: self.config_confirmDisable(),
                     }
                 }
             };
@@ -615,6 +662,8 @@ $(function() {
             self.config_noticesTtl(self.settingsViewModel.settings.plugins.pluginmanager.notices_ttl());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
+            self.config_confirmUninstall(self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall());
+            self.config_confirmDisable(self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable());
         };
 
         self.installed = function(data) {
@@ -1080,7 +1129,8 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PluginManagerViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "accessViewModel", "piSupportViewModel"],
+        optional: ["piSupportViewModel"],
         elements: ["#settings_plugin_pluginmanager"]
     });
 });

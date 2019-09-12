@@ -45,6 +45,12 @@ class PendingDecision(object):
 		            user_id=self.user_id,
 		            user_token=self.user_token)
 
+	def __repr__(self):
+		return u"PendingDecision({!r}, {!r}, {!r}, {!r}, timeout_callback=...)".format(self.app_id,
+		                                                                               self.app_token,
+		                                                                               self.user_id,
+		                                                                               self.user_token)
+
 
 class ReadyDecision(object):
 	def __init__(self, app_id, app_token, user_id):
@@ -55,6 +61,11 @@ class ReadyDecision(object):
 	@classmethod
 	def for_pending(cls, pending, user_id):
 		return cls(pending.app_id, pending.app_token, user_id)
+
+	def __repr__(self):
+		return u"ReadyDecision({!r}, {!r}, {!r})".format(self.app_id,
+		                                                 self.app_token,
+		                                                 self.user_id)
 
 
 class ActiveKey(object):
@@ -75,6 +86,11 @@ class ActiveKey(object):
 	@classmethod
 	def for_internal(cls, internal, user_id):
 		return cls(internal["app_id"], internal["api_key"], user_id)
+
+	def __repr__(self):
+		return u"ActiveKey({!r}, {!r}, {!r})".format(self.app_id,
+		                                             self.api_key,
+		                                             self.user_id)
 
 
 class AppKeysPlugin(octoprint.plugin.AssetPlugin,
@@ -135,12 +151,15 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	@no_firstrun_access
 	def handle_request(self):
 		data = flask.request.json
+		if data is None:
+			return flask.make_response("Missing key request", 400)
+
 		if not "app" in data:
 			return flask.make_response("No app name provided", 400)
 
 		app_name = data["app"]
 		user_id = None
-		if "user" in data:
+		if "user" in data and data["user"]:
 			user_id = data["user"]
 
 		app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
