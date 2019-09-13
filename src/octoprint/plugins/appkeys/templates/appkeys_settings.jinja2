@@ -40,8 +40,8 @@
         <tr>
             <td class="settings_plugin_appkeys_checkbox"><input type="checkbox" data-bind="value: api_key, checked: $root.markedForDeletion"></td>
             <td class="settings_plugin_appkeys_user"><span data-bind="text: user_id"></span></td>
-            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key, $data.user_id) }"></a></td>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key, $data.user_id) }"></a></td>
         </tr>
         </tbody>
     </table>

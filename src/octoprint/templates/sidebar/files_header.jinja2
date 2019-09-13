@@ -1,5 +1,5 @@
 <div class="settings-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
-    <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings') }}">
+    <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings')|edq }}">
         <span class="fa fa-wrench"></span>
     </a>
     <ul class="dropdown-menu">
@@ -33,14 +33,14 @@
 </div>
 
 <div class="refresh-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
-    <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list') }}">
+    <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list')|edq }}">
         <i class="fa fa-refresh"></i>
     </a>
 </div>
 
 {% if enableSdSupport %}
     <div class="sd-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations') }}">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations')|edq }}">
             <span class="icon-sd-black-14"></span>
         </a>
         <ul class="dropdown-menu">
