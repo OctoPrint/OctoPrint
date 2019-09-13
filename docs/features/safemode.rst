@@ -5,19 +5,20 @@ Safe mode
 *********
 
 With the advent of support for plugins in OctoPrint, it quickly became apparent that some of the bugs
-reported on OctoPrint's bug tracker were actually bugs with installed third party plugins instead of
-OctoPrint itself.
+reported on OctoPrint's bug tracker were actually bugs with installed third party plugins or language
+packs instead of OctoPrint itself.
 
 To allow an easier identification of these cases, OctoPrint 1.3.0 introduced safe mode. Starting
-OctoPrint in safe mode disables all plugins that are not bundled with OctoPrint, allowing to easier
-identify most cases where a third party plugin is the culprit of an observed issue.
+OctoPrint in safe mode disables all plugins (and starting with 1.3.13 also all language packs) that are
+not bundled with OctoPrint, allowing to easier identify most cases where a third party plugin or language
+pack is the culprit of an observed issue.
 
-Additionally, OctoPrint allows uninstalling plugins in this mode, allowing recovery from cases where
-a third party plugin causes the server to not start up or the web interface to not render or function
-correctly anymore.
+Additionally, OctoPrint allows uninstalling plugins and language packs in this mode, allowing recovery
+from cases where a third party addition causes the server to not start up or the web interface to not
+render or function correctly anymore.
 
 Whenever reporting an issue with OctoPrint, please always attempt to reproduce it in safe mode as well to
-ensure it really is an issue in OctoPrint itself and now caused by one of your installed third party plugins.
+ensure it really is an issue in OctoPrint itself and now caused by one of your installed third party additions.
 
 .. _sec-features-safemode-how:
 
@@ -73,11 +74,17 @@ When OctoPrint is running in safe mode the following changes to its normal opera
 
   * OctoPrint will not enable any of the installed third party plugins. OctoPrint considers all plugins third
     party plugins that do not ship with OctoPrint's sources, so any plugins installed either via `pip` or
-    into OctoPrint's plugin folder at ``~/.octoprint/plugins`` (Linux), ``%APPDATA%/OctoPrint`` (Windows) and
-    ``~/Library/Application Support/OctoPrint`` (MacOS).
+    into OctoPrint's plugin folder at ``~/.octoprint/plugins`` (Linux), ``%APPDATA%/OctoPrint/plugins`` (Windows) and
+    ``~/Library/Application Support/OctoPrint/plugins`` (MacOS).
+  * OctoPrint will not enable any of the installed third party language packs. OctoPrint considers all language packs
+    third party language packs that do not ship with OctoPrint's sources, so any language plugins installed
+    through the language pack manager within settings and/or stored in the language pack folder at
+    ``~/.octoprint/translations`` (Linux), ``%APPDATA%/OctoPrint/translations`` (Windows) or
+    ``~/Library/Application Support/OctoPrint/translations`` (MacOS).
   * OctoPrint will still allow to uninstall third party plugins through the built-in Plugin Manager.
   * OctoPrint will still allow to disable (bundled) plugins that are still enabled.
   * OctoPrint will not allow to enable third party plugins.
+  * OctoPrint will still allow to manage language packs.
   * OctoPrint's web interface will display a notification to remind you that it is running in
     safe mode.
 
