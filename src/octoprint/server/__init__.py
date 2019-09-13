@@ -1024,10 +1024,20 @@ class Server(object):
 				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
 			return html_link_regex.sub(repl, text)
 
+		single_quote_regex = re.compile("(?<!\\\\)'")
+		def escape_single_quote(text):
+			return single_quote_regex.sub("\\'", text)
+
+		double_quote_regex = re.compile('(?<!\\\\)"')
+		def escape_double_quote(text):
+			return double_quote_regex.sub('\\"', text)
+
 		app.jinja_env.filters["regex_replace"] = regex_replace
 		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
 		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
 		app.jinja_env.filters["externalize_links"] = externalize_links
+		app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters["esq"] = escape_single_quote
+		app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters["edq"] = escape_double_quote
 
 		# configure additional template folders for jinja2
 		import jinja2
