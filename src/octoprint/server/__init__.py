@@ -261,7 +261,11 @@ class Server(object):
 		# monkey patch a bunch of stuff
 		util.tornado.fix_json_encode()
 		util.flask.fix_flask_jsonify()
-		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
+
+		additional_translation_folders = []
+		if not safe_mode:
+			additional_translation_folders += [self._settings.getBaseFolder("translations")]
+		util.flask.enable_additional_translations(additional_folders=additional_translation_folders)
 
 		# setup app
 		self._setup_app(app)
