@@ -1,5 +1,24 @@
 # OctoPrint Changelog
 
+## 1.3.12rc2 (2019-09-17)
+
+### Improvements
+
+  * [#3271](https://github.com/foosel/OctoPrint/issues/3271) - Extend safemode to also disable third party language packs
+
+### Bug fixes
+
+  * [#3270](https://github.com/foosel/OctoPrint/issues/3270) - Properly escape translation strings in single/double quoted template locations
+  * [#3272](https://github.com/foosel/OctoPrint/issues/3272) (regression) - GCODE viewer: Fix out-of-sync & layer slider issue
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports!
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.12rc1...1.3.12rc2)
+
 ## 1.3.12rc1 (2019-09-10)
 
 ### Improvements
