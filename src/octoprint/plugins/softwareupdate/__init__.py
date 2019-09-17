@@ -38,7 +38,7 @@ import octoprint.settings
 # OctoPi 0.15+
 MINIMUM_PYTHON = "2.7.9"
 MINIMUM_SETUPTOOLS = "39.0.1"
-MINIMUM_PIP = "10.0.1"
+MINIMUM_PIP = "9.0.3"
 
 
 ##~~ Plugin

@@ -11,13 +11,13 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" title="{{ _('Random unique instance ID') }}">{{ _('Instance ID') }}</label>
+        <label class="control-label" title="{{ _('Random unique instance ID')|edq }}">{{ _('Instance ID') }}</label>
         <div class="controls">
             <span style="padding-top: 5px; margin-bottom: 5px; display: inline-block" data-bind="text: settings.plugins.tracking.unique_id() || 'N/A'"></span>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" title="{{ _('Events to track. The ping is mandatory.') }}">{{ _('Tracked events') }}</label>
+        <label class="control-label" title="{{ _('Events to track. The ping is mandatory.')|edq }}">{{ _('Tracked events') }}</label>
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" checked="checked" disabled="disabled"> {{ _('Regular ping every 15min (incl. uptime)') }}
