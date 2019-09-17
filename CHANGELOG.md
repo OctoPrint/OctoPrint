@@ -10,6 +10,7 @@
 
   * [#3270](https://github.com/foosel/OctoPrint/issues/3270) - Properly escape translation strings in single/double quoted template locations
   * [#3272](https://github.com/foosel/OctoPrint/issues/3272) (regression) - GCODE viewer: Fix out-of-sync & layer slider issue
+  * [#3273](https://github.com/foosel/OctoPrint/issues/3273) (regression) - Fix minimum pip version for OctoPi 0.15.1, which turns out is 9.0.3, not 10.0.1 as on OctoPi 0.15.0 due to a bug related version pin back then when.
 
 ### Special thanks to all the contributors!
 
