@@ -54,7 +54,7 @@
 {% endtrans %}</div>
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Current versions') }}</h3>
@@ -64,7 +64,7 @@
         <tbody data-bind="foreach: versions.paginatedItems">
         <tr data-bind="attr: {title: displayName}">
             <td class="settings_plugin_softwareupdate_column_update">
-                <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
+                <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available')|edq }}"></i></span>
             </td>
             <td class="settings_plugin_softwareupdate_column_information">
                 <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>

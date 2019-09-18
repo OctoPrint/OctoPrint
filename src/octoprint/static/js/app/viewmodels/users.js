@@ -38,24 +38,27 @@ $(function() {
         self.changePasswordDialog = undefined;
 
         self.currentUser.subscribe(function(newValue) {
-            if (newValue === undefined) {
-                self.editorUsername(undefined);
-                self.editorAdmin(undefined);
-                self.editorActive(undefined);
-                self.editorApikey(undefined);
-            } else {
+            self.resetEditUser();
+            if (newValue !== undefined) {
                 self.editorUsername(newValue.name);
                 self.editorAdmin(newValue.admin);
                 self.editorActive(newValue.active);
                 self.editorApikey(newValue.apikey);
             }
-            self.editorPassword(undefined);
-            self.editorRepeatedPassword(undefined);
         });
 
         self.editorPasswordMismatch = ko.pureComputed(function() {
             return self.editorPassword() !== self.editorRepeatedPassword();
         });
+
+        self.resetEditUser = function() {
+            self.editorUsername(undefined);
+            self.editorAdmin(undefined);
+            self.editorActive(undefined);
+            self.editorApikey(undefined);
+            self.editorPassword(undefined);
+            self.editorRepeatedPassword(undefined);
+        };
 
         self.requestData = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
@@ -178,8 +181,19 @@ $(function() {
 
         self.onStartup = function() {
             self.addUserDialog = $("#settings-usersDialogAddUser");
+            self.addUserDialog.on("hidden", function() {
+                self.resetEditUser();
+            });
+
             self.editUserDialog = $("#settings-usersDialogEditUser");
+            self.editUserDialog.on("hidden", function() {
+                self.resetEditUser();
+            });
+
             self.changePasswordDialog = $("#settings-usersDialogChangePassword");
+            self.changePasswordDialog.on("hidden", function() {
+                self.resetEditUser();
+            });
         };
 
         //~~ API calls

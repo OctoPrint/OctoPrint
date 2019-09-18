@@ -73,13 +73,13 @@ GCODE.gCodeReader = (function(){
         return tmpModel;
     };
 
-    var prepareLinesIndex = function(){
+    var prepareLinesIndex = function(m){
         percentageTree = undefined;
 
-        for (var l = 0; l < model.length; l++) {
-            if (model[l] === undefined) continue;
-            for (var i = 0; i < model[l].length; i++) {
-                var percentage = model[l][i].percentage;
+        for (var l = 0; l < m.length; l++) {
+            if (m[l] === undefined) continue;
+            for (var i = 0; i < m[l].length; i++) {
+                var percentage = m[l][i].percentage;
                 var value = {layer: l, cmd: i};
                 if (!percentageTree) {
                     percentageTree = new AVLTree({key: percentage, value: value}, "key");
@@ -178,11 +178,12 @@ GCODE.gCodeReader = (function(){
         },
 
         passDataToRenderer: function(){
-            var m = model;
+            var m = _.cloneDeep(model);
             if (gCodeOptions["sortLayers"]) m = sortLayers(m);
             if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
-            prepareLinesIndex();
+            prepareLinesIndex(m);
             GCODE.renderer.doRender(m, 0);
+            return m;
         },
 
         processLayerFromWorker: function(msg){

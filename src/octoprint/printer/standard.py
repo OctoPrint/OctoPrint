@@ -30,6 +30,7 @@ from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 from octoprint.util import monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -174,28 +175,32 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			try:
 				callback.on_printer_add_temperature(data)
 			except:
-				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_log(data)
 			except:
-				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_message(data)
 			except:
-				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_send_current_data(copy.deepcopy(data))
 			except:
-				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback))
+				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	#~~ callback from metadata analysis event
 
@@ -1020,7 +1025,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			})
 			callback.on_printer_send_initial_data(data)
 		except:
-			self._logger.exception("Error while trying to send initial state update")
+			self._logger.exception(u"Error while pushing initial state update to callback {}".format(callback),
+			                       extra=dict(callback=fqcn(callback)))
 
 	def _getStateFlags(self):
 		return self._dict(operational=self.is_operational(),

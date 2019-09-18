@@ -179,7 +179,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			if ping_interval:
 				self._ping_worker = RepeatedTimer(ping_interval, self._track_ping, run_first=True)
 				self._ping_worker.start()
-		
+
 		if self._pong_worker is None:
 			pong_interval = self._settings.get(["pong"])
 			if pong_interval:
@@ -208,7 +208,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		plugins = self._plugin_manager.enabled_plugins
 		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
-		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(), x.version.lower()), plugins_thirdparty)))
+		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(),
+		                                                             x.version.lower() if x.version else "?"),
+		                                    plugins_thirdparty)))
 
 		self._track("pong", body=True, **payload)
 

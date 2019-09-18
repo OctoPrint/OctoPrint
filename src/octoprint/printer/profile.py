@@ -319,14 +319,21 @@ class PrinterProfileManager(object):
 		except InvalidProfileError:
 			return None
 
-	def remove(self, identifier):
+	def remove(self, identifier, trigger_event=False):
 		if self._current is not None and self._current["id"] == identifier:
 			return False
 		elif settings().get(["printerProfiles", "default"]) == identifier:
 			return False
-		return self._remove_from_path(self._get_profile_path(identifier))
 
-	def save(self, profile, allow_overwrite=False, make_default=False):
+		removed = self._remove_from_path(self._get_profile_path(identifier))
+		if removed and trigger_event:
+			from octoprint.events import eventManager, Events
+			payload = dict(identifier=identifier)
+			eventManager().fire(Events.PRINTER_PROFILE_DELETED, payload=payload)
+
+		return removed
+
+	def save(self, profile, allow_overwrite=False, make_default=False, trigger_event=False):
 		if "id" in profile:
 			identifier = profile["id"]
 		elif "name" in profile:
@@ -341,7 +348,10 @@ class PrinterProfileManager(object):
 		profile = dict_sanitize(profile, self.__class__.default)
 		profile = dict_merge(self.__class__.default, profile)
 
-		self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
+		path = self._get_profile_path(identifier)
+		is_overwrite = os.path.exists(path)
+
+		self._save_to_path(path, profile, allow_overwrite=allow_overwrite)
 
 		if make_default:
 			settings().set(["printerProfiles", "default"], identifier)
@@ -349,6 +359,13 @@ class PrinterProfileManager(object):
 
 		if self._current is not None and self._current["id"] == identifier:
 			self.select(identifier)
+
+		from octoprint.events import eventManager, Events
+		if trigger_event:
+			payload = dict(identifier=identifier)
+			event = Events.PRINTER_PROFILE_MODIFIED if is_overwrite else Events.PRINTER_PROFILE_ADDED
+			eventManager().fire(event, payload=payload)
+
 		return self.get(identifier)
 
 	def is_default_unmodified(self):

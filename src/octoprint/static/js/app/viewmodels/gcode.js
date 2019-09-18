@@ -531,7 +531,7 @@ $(function() {
 
                 self.ui_modelInfo(output.join("<br>"));
 
-                self.maxLayer = model.layersPrinted - 1;
+                self.maxLayer = model.layersActive - 1;
                 if (self.layerSlider !== undefined) {
                     self.layerSlider.slider("enable");
                     self.layerSlider.slider("setMax", self.maxLayer);

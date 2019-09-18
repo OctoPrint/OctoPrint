@@ -203,9 +203,8 @@ $(function() {
                 });
             }
 
-            var js;
             if (control.hasOwnProperty("javascript")) {
-                js = control.javascript;
+                var js = control.javascript;
 
                 // if js is a function everything's fine already, but if it's a string we need to eval that first
                 if (!_.isFunction(js)) {
@@ -216,12 +215,12 @@ $(function() {
             }
 
             if (control.hasOwnProperty("enabled")) {
-                js = control.enabled;
+                var enabled = control.enabled;
 
                 // if js is a function everything's fine already, but if it's a string we need to eval that first
-                if (!_.isFunction(js)) {
+                if (!_.isFunction(enabled)) {
                     control.enabled = function (data) {
-                        return eval(js);
+                        return eval(enabled);
                     }
                 }
             }

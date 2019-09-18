@@ -228,6 +228,25 @@ def get_class(name):
 		raise ImportError("No module named " + name)
 
 
+def get_fully_qualified_classname(o):
+	"""
+	Returns the fully qualified class name for an object.
+
+	Based on https://stackoverflow.com/a/2020083
+
+	Args:
+		o: the object of which to determine the fqcn
+
+	Returns:
+		(str) the fqcn of the object
+	"""
+
+	module = getattr(o.__class__, "__module__", None)
+	if module is None:
+		return o.__class__.__name__
+	return module + "." + o.__class__.__name__
+
+
 def get_exception_string():
 	"""
 	Retrieves the exception info of the last raised exception and returns it as a string formatted as

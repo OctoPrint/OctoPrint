@@ -23,6 +23,7 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.plugin import plugin_manager
 from octoprint.util import monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 import sarge
 import collections
@@ -304,7 +305,8 @@ def notify_callbacks(timelapse):
 		config = timelapse.config_data()
 	for callback in _update_callbacks:
 		try: callback.sendTimelapseConfig(config)
-		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
+		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration",
+		                                              extra=dict(callback=fqcn(callback)))
 
 
 def configure_timelapse(config=None, persist=False):
