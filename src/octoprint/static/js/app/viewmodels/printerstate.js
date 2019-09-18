@@ -17,6 +17,10 @@ $(function() {
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
 
+        self.isBusy = ko.pureComputed(function() {
+            return self.isPrinting() || self.isCancelling() || self.isPausing() || self.isPaused();
+        });
+
         self.enablePrint = ko.pureComputed(function() {
             return self.isOperational() && self.isReady() && !self.isPrinting() && !self.isCancelling() && !self.isPausing() && self.loginState.isUser() && self.filename();
         });

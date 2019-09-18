@@ -149,7 +149,7 @@ $(function() {
         });
 
         self.enableManagement = ko.pureComputed(function() {
-            return !self.printerState.isPrinting();
+            return !self.printerState.isBusy();
         });
 
         self.enableToggle = function(data) {
