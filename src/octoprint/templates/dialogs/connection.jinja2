@@ -60,7 +60,7 @@
 
 <script type="text/html" id="connection_dialog_template_text">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
@@ -70,7 +70,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_integer">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <!-- ko if: $data.unit -->
@@ -88,7 +88,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_float">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <!-- ko if: $data.unit -->
@@ -106,7 +106,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_choice">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
@@ -116,7 +116,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_groupchoice">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
@@ -127,12 +127,12 @@
 </script>
 <script type="text/html" id="connection_dialog_template_smallchoice">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <!-- ko foreach: choices -->
             <label class="radio">
-                <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span>  <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+                <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span>  <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
                 <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
             </label>
             <!-- /ko -->
@@ -141,7 +141,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_boolean">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span> <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
@@ -152,7 +152,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_suggestion">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
@@ -162,7 +162,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_list">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
@@ -172,7 +172,7 @@
 </script>
 <script type="text/html" id="connection_dialog_template_smalllist">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
-        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified"></a>
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
         <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
