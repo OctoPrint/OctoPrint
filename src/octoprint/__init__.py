@@ -256,20 +256,12 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"backupCount": 6,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "octoprint.log")
 				},
-				"protocolFile": {
+				"connectionFile": {
 					"class": "octoprint.logging.handlers.CommunicationLogHandler",
 					"level": "DEBUG",
 					"formatter": "communication",
 					"backupCount": 3,
-					"filename": os.path.join(settings.getBaseFolder("logs"), "protocol.log"),
-					"delay": True
-				},
-				"transportFile": {
-					"class": "octoprint.logging.handlers.CommunicationLogHandler",
-					"level": "DEBUG",
-					"formatter": "communication",
-					"backupCount": 3,
-					"filename": os.path.join(settings.getBaseFolder("logs"), "transport.log"),
+					"filename": os.path.join(settings.getBaseFolder("logs"), "connection.log"),
 					"delay": True
 				},
 				"commDebugFile": {
@@ -282,18 +274,13 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				}
 			},
 			"loggers": {
-				"PROTOCOL": {
-					"level": "DEBUG",
-					"handlers": ["protocolFile"],
-					"propagate": False
-				},
-				"TRANSPORT": {
-					"level": "DEBUG",
-					"handlers": ["transportFile"],
+				"CONNECTION": {
+					"level": "INFO",
+					"handlers": ["connectionFile"],
 					"propagate": False
 				},
 				"COMMDEBUG": {
-					"level": "DEBUG",
+					"level": "INFO",
 					"handlers": ["commDebugFile"],
 					"propagate": False
 				},

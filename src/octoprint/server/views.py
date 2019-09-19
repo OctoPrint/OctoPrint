@@ -585,10 +585,8 @@ def fetch_template_data(refresh=False):
 	# settings dialog
 
 	templates["settings"]["entries"] = dict(
-		section_printer=(gettext("Printer"), None),
-
-		serial=(gettext("Serial Connection"), dict(template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", custom_bindings=False)),
-		connectionprofiles=(gettext("Connection Profiles"), dict(template="dialogs/settings/connectionprofiles.jinja2", _div="settings_connectionProfiles", custom_bindings=False)),
+		section_printer=(gettext("Printer & Connection"), None),
+		connection=(gettext("Connection"), dict(template="dialogs/settings/connection.jinja2", _div="settings_connection", custom_bindings=False)),
 		printerprofiles=(gettext("Printer Profiles"), dict(template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles", custom_bindings=False)),
 		temperatures=(gettext("Temperatures"), dict(template="dialogs/settings/temperatures.jinja2", _div="settings_temperature", custom_bindings=False)),
 		terminalfilters=(gettext("Terminal Filters"), dict(template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters", custom_bindings=False)),

@@ -203,6 +203,9 @@ $(function() {
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
 
+        self.connection_log_connection = ko.observable(undefined);
+        self.connection_log_commdebug = ko.observable(undefined);
+
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
         self.folder_timelapseTmp = ko.observable(undefined);

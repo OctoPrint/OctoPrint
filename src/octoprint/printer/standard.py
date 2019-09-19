@@ -271,14 +271,13 @@ class Printer(PrinterInterface,
 
 		##~~ Logging
 
-		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
-			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
-			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
-
 		from octoprint.logging.handlers import CommunicationLogHandler
-		CommunicationLogHandler.on_open_connection(u"TRANSPORT")
-		CommunicationLogHandler.on_open_connection(u"PROTOCOL")
+		CommunicationLogHandler.on_open_connection(u"CONNECTION")
 		CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
+
+		if not logging.getLogger("CONNECTION").isEnabledFor(logging.DEBUG):
+			# is protocol.log is not enabled, log a line to explain to reduce "connection.log is empty" in tickets...
+			logging.getLogger("CONNECTION").info("connection.log is currently not enabled, you can enable it via Settings > Connection > Log communication to connection.log")
 
 		connection_id = kwargs.get("connection")
 		connection = None

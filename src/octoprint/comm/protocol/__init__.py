@@ -71,7 +71,7 @@ class Protocol(ListenerAware, TransportListener):
 		super(Protocol, self).__init__()
 
 		self._logger = logging.getLogger(__name__)
-		self._protocol_logger = logging.getLogger("PROTOCOL")
+		self._connection_logger = logging.getLogger("CONNECTION")
 		self._state = ProtocolState.DISCONNECTED
 		self._error = None
 
@@ -312,7 +312,7 @@ class Protocol(ListenerAware, TransportListener):
 		self.process_protocol_log(message)
 
 	def process_protocol_log(self, message):
-		self._protocol_logger.info(message)
+		self._connection_logger.debug(message)
 		self.notify_listeners("on_protocol_log", self, message)
 
 	def _job_on_hold_cleared(self):

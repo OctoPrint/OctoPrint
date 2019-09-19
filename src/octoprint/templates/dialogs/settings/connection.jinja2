@@ -1,0 +1,59 @@
+<form class="form-horizontal">
+    <ul class="nav nav-pills">
+        <li class="active"><a href="#settings_connection_general" data-toggle="tab">{{ _('General') }}</a></li>
+        <li><a href="#settings_connection_connectionprofiles" data-toggle="tab">{{ _('Connection profiles') }}</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div id="settings_connection_general" class="tab-pane active">
+            <fieldset id="settings_serial_general_logging">
+                <legend>{{ _('Logging') }}</legend>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: connection_log_connection" id="settings-connectionLogConnection"> {{ _('Log communication to <code>connection.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
+                            <span class="help-block">{{ _('While this can negatively impact performance, a <code>connection.log</code> can be incredibly useful for debugging any issues observed in the communication between OctoPrint and your printer.') }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: connection_log_commdebug" id="settings-connectionLogCommdebug"> {{ _('Log debug information about communication to <code>commdebug.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div id="settings_connection_connectionprofiles" class="tab-pane">
+            <table class="table table-striped table-hover table-condensed table-hover" id="settings_connectionProfiles_profiles" data-bind="visible: connectionProfiles.profiles.items().length > 0" style="display: none">
+                <thead>
+                <tr>
+                    <th class="settings_connectionProfiles_profiles_name">{{ _('Name') }}</th>
+                    <th class="settings_connectionProfiles_profiles_action">{{ _('Action') }}</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: connectionProfiles.profiles.paginatedItems">
+                <tr data-bind="attr: {title: name}">
+                    <td class="settings_connectionProfiles_profiles_name"><span class="fa fa-star" data-bind="invisible: !is_default()"></span> <span data-bind="text: name"></span></td>
+                    <td class="settings_connectionProfiles_profiles_action">
+                        <a href="javascript:void(0)" class="fa fa-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.makeDefault($data); } }, css: {disabled: !$root.connectionProfiles.canMakeDefault($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.removeProfile($data); } }, css: {disabled: !$root.connectionProfiles.canRemove($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()"></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination pagination-mini pagination-centered">
+                <ul>
+                    <li data-bind="css: {disabled: connectionProfiles.profiles.currentPage() === 0}"><a href="#" data-bind="click: connectionProfiles.profiles.prevPage">«</a></li>
+                </ul>
+                <ul data-bind="foreach: connectionProfiles.profiles.pages">
+                    <li data-bind="css: { active: $data.number === $root.connectionProfiles.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.connectionProfiles.profiles.changePage($data.number); }"></a></li>
+                </ul>
+                <ul>
+                    <li data-bind="css: {disabled: connectionProfiles.profiles.currentPage() === connectionProfiles.profiles.lastPage()}"><a href="#" data-bind="click: connectionProfiles.profiles.nextPage">»</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>

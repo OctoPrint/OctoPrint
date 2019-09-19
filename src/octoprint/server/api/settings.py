@@ -185,6 +185,12 @@ def getSettings():
 			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
 			"capEmergencyParser": s.getBoolean(["serial", "capabilities", "emergency_parser"])
 		},
+		"connection": {
+			"log": {
+				"connection": s.getBoolean(["connection", "log", "connection"]),
+				"commdebug": s.getBoolean(["connection", "log", "commdebug"])
+			}
+		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
 			"timelapse": s.getBaseFolder("timelapse"),
@@ -483,6 +489,28 @@ def _saveSettings(data):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
+
+	if "connection" in data:
+		if "log" in data["connection"]:
+
+			def toggle_log(log_type, logger_name):
+				old_setting = s.getBoolean(["connection", "log", log_type])
+				if log_type in data["connection"]["log"]:
+					s.setBoolean(["connection", "log", log_type],
+					             data["connection"]["log"][log_type] in valid_boolean_trues)
+				new_setting = s.getBoolean(["connection", "log", log_type])
+
+				if old_setting and not new_setting:
+					# disable logging
+					logging.getLogger(logger_name).debug("Disabling logging")
+					logging.getLogger(logger_name).setLevel(logging.INFO)
+				elif not old_setting and new_setting:
+					# enable logging
+					logging.getLogger(logger_name).setLevel(logging.DEBUG)
+					logging.getLogger(logger_name).debug("Enabling logging")
+
+			toggle_log("connection", "CONNECTION")
+			toggle_log("commdebug", "COMMDEBUG")
 
 	if "temperature" in data:
 		if "profiles" in data["temperature"]:

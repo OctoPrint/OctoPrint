@@ -161,6 +161,12 @@ default_settings = {
 		# command specific flags
 		"triggerOkForM29": True
 	},
+	"connection": {
+		"log": {
+			"connection": False,
+			"commdebug": False
+		}
+	},
 	"server": {
 		"host": None,
 		"port": 5000,
@@ -314,7 +320,7 @@ default_settings = {
 				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
-					"section_printer", "serial", "connectionprofiles", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
+					"section_printer", "connection", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
 					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
 					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_errortracking",
