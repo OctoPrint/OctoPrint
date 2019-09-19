@@ -762,6 +762,8 @@ class Printer(PrinterInterface,
 
 		latest_temperature = self._temperature_history[-1]
 		for key, value in latest_temperature.items():
+			if key == "time":
+				continue
 			result[key] = dict(actual=value["actual"],
 			                   target=value["target"],
 			                   offset=offsets.get(key, 0))
