@@ -45,9 +45,10 @@ $(function() {
         self.filename = ko.observable(undefined);
         self.filepath = ko.observable(undefined);
         self.filedisplay = ko.observable(undefined);
-        self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
+        self.filedate = ko.observable(undefined);
+        self.progress = ko.observable(undefined);
         self.printTime = ko.observable(undefined);
         self.printTimeLeft = ko.observable(undefined);
         self.printTimeLeftOrigin = ko.observable(undefined);
@@ -77,7 +78,7 @@ $(function() {
             if (self.estimatedPrintTime())
                 return fmt(self.estimatedPrintTime());
             return "-";
-        }
+        };
         self.estimatedPrintTimeString = ko.pureComputed(function() {
             return estimatedPrintTimeStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
@@ -110,7 +111,7 @@ $(function() {
             } else {
                 return fmt(self.printTimeLeft());
             }
-        }
+        };
         self.printTimeLeftString = ko.pureComputed(function() {
             return printTimeLeftStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
         });
@@ -209,6 +210,15 @@ $(function() {
             return (user ? user : (file ? "-" : ""));
         });
 
+        self.dateString = ko.pureComputed(function() {
+            var date = self.filedate();
+            if (!date) {
+                return "";
+            }
+
+            return formatDate(date, {seconds:true});
+        });
+
         self.fromCurrentData = function(data) {
             self._fromData(data);
         };
@@ -260,12 +270,14 @@ $(function() {
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
                 self.filedisplay(data.file.display);
+                self.filedate(data.file.date);
                 self.sd(data.file.origin === "sdcard");
             } else {
                 self.filename(undefined);
                 self.filepath(undefined);
                 self.filesize(undefined);
                 self.filedisplay(undefined);
+                self.filedate(undefined);
                 self.sd(undefined);
             }
 
@@ -325,7 +337,21 @@ $(function() {
                     }
                 });
             } else {
-                OctoPrint.job.start();
+                if (!self.settings.feature_printStartConfirmation()) {
+                    OctoPrint.job.start();
+                } else {
+                    showConfirmationDialog({
+                        message: gettext("This will start a new print job. Please check that the print bed is clear."),
+                        question: gettext("Do you want to start the print job now?"),
+                        cancel: gettext("No"),
+                        proceed: gettext("Yes"),
+                        onproceed: function() {
+                            OctoPrint.job.start();
+                        },
+                        nofade: true
+                    });
+                }
+
             }
         };
 

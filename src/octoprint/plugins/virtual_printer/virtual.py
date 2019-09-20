@@ -146,7 +146,7 @@ class VirtualPrinter(object):
 		self._temperature_reporter = None
 		self._sdstatus_reporter = None
 
-		self.currentLine = 0
+		self.current_line = 0
 		self.lastN = 0
 
 		self._incoming_lock = threading.RLock()
@@ -155,6 +155,7 @@ class VirtualPrinter(object):
 		self._debug_sleep = 0
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
+		self._rerequest_last = False
 
 		self._dont_answer = False
 
@@ -217,7 +218,7 @@ class VirtualPrinter(object):
 
 			self._heatingUp = False
 
-			self.currentLine = 0
+			self.current_line = 0
 			self.lastN = 0
 
 			self._debug_awol = False
@@ -325,10 +326,10 @@ class VirtualPrinter(object):
 				checksum = int(data[data.rfind(b"*") + 1:])
 				data = data[:data.rfind(b"*")]
 				if not checksum == self._calculate_checksum(data):
-					self._triggerResend(expected=self.currentLine + 1)
+					self._triggerResend(expected=self.current_line + 1)
 					continue
 
-				self.currentLine += 1
+				self.current_line += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
 				self._send(self._error("checksum_missing"))
 				continue
@@ -337,7 +338,7 @@ class VirtualPrinter(object):
 			if data.startswith(b"N") and b"M110" in data:
 				linenumber = int(re.search(b"N([0-9]+)", data).group(1))
 				self.lastN = linenumber
-				self.currentLine = linenumber
+				self.current_line = linenumber
 
 				self._triggerResendAt100 = True
 				self._triggerResendWithTimeoutAt105 = True
@@ -379,6 +380,9 @@ class VirtualPrinter(object):
 					elif isinstance(prepared, basestring):
 						self._send(prepared)
 						continue
+				elif self._rerequest_last:
+					self._triggerResend(actual=linenumber)
+					continue
 				else:
 					self.lastN = linenumber
 				data = data.split(None, 1)[1].strip()
@@ -831,6 +835,8 @@ class VirtualPrinter(object):
 			prepare_ok <broken ok>
 			| Will cause <broken ok> to be enqueued for use,
 			| will be used instead of actual "ok"
+			rerequest_last
+			| Will cause the last line number + 1 to be rerequest add infinitum
 
 			# Reply Timing / Sleeping
 
@@ -892,6 +898,9 @@ class VirtualPrinter(object):
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
+		elif data == "rerequest_last":
+			self._send("// Entering rerequest loop")
+			self._rerequest_last = True
 		elif data == "cancel_sd":
 			if self._sdPrinting and self._sdPrinter:
 				self._pauseSdPrint()

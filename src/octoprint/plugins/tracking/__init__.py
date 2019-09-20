@@ -44,6 +44,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._printer_connection_parameters = None
 		self._url = None
 		self._ping_worker = None
+		self._pong_worker = None
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 		self._record_next_firmware_info = False
@@ -60,14 +61,17 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            unique_id=None,
 		            server=TRACKING_URL,
 		            ping=15*60,
-		            events=dict(startup=True,
+		            pong=24*60*60,
+		            events=dict(pong=True,
+		                        startup=True,
 		                        printjob=True,
 		                        commerror=True,
 		                        plugin=True,
 		                        update=True,
 		                        printer=True,
 		                        printer_safety_check=True,
-		                        throttled=True))
+		                        throttled=True,
+		                        slicing=True))
 
 	def get_settings_restricted_paths(self):
 		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
@@ -121,6 +125,9 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._record_next_firmware_info = False
 			self._track_printer_event(event, payload)
 
+		elif event in (Events.SLICING_STARTED,):
+			self._track_slicing_event(event, payload)
+
 		elif hasattr(Events, "PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN") and \
 			event in (Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN, Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN,
 			          Events.PLUGIN_PLUGINMANAGER_ENABLE_PLUGIN, Events.PLUGIN_PLUGINMANAGER_DISABLE_PLUGIN):
@@ -168,10 +175,16 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if self._ping_worker is None:
-			ping = self._settings.get_int(["ping"])
-			if ping:
-				self._ping_worker = RepeatedTimer(ping, self._track_ping, run_first=True)
+			ping_interval = self._settings.get_int(["ping"])
+			if ping_interval:
+				self._ping_worker = RepeatedTimer(ping_interval, self._track_ping, run_first=True)
 				self._ping_worker.start()
+
+		if self._pong_worker is None:
+			pong_interval = self._settings.get(["pong"])
+			if pong_interval:
+				self._pong_worker = RepeatedTimer(pong_interval, self._track_pong, run_first=True)
+				self._pong_worker.start()
 
 		if self._helpers_get_throttle_state is None:
 			# cautiously look for the get_throttled helper from pi_support
@@ -188,6 +201,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 		uptime = int(monotonic_time() - self._startup_time)
 		self._track("ping", octoprint_uptime=uptime)
+
+	def _track_pong(self):
+		if not self._settings.get_boolean(["events", "pong"]):
+			return
+
+		plugins = self._plugin_manager.enabled_plugins
+		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
+		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(),
+		                                                             x.version.lower() if x.version else "?"),
+		                                    plugins_thirdparty)))
+
+		self._track("pong", body=True, **payload)
 
 	def _track_startup(self):
 		if not self._settings.get_boolean(["events", "startup"]):
@@ -305,7 +330,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get("time", 0))
 				if elapsed:
 					args["elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
@@ -313,7 +338,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get("time", 0))
 				if elapsed:
 					args["elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			args["reason"] = payload.get("reason", "unknown")
 
@@ -326,7 +351,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				elapsed = int(payload.get("time", 0))
 				if elapsed:
 					args["elapsed"] = elapsed
-			except ValueError:
+			except (ValueError, TypeError):
 				pass
 			track_event = "print_cancelled"
 
@@ -363,13 +388,20 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            printer_safety_warning_type=payload.get("warning_type", "unknown"),
 		            printer_safety_check_name=payload.get("check_name", "unknown"))
 
+	def _track_slicing_event(self, event, payload):
+		if not self._settings.get_boolean(["events", "slicing"]):
+			return
+
+		self._track("slicing_started",
+		            slicer=payload.get(b"slicer", "unknown"))
+
 	def _track(self, event, **kwargs):
 		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		self._executor.submit(self._do_track, event, **kwargs)
 
-	def _do_track(self, event, **kwargs):
+	def _do_track(self, event, body=False, **kwargs):
 		if not self._connectivity_checker.online:
 			return
 
@@ -389,10 +421,17 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			params = urlencode(kwargs, doseq=True).replace("+", "%20")
 
-			requests.get(url,
-			             params=params,
-			             timeout=3.1,
-			             headers=headers)
+			if body:
+				requests.post(url,
+				              data=params,
+				              timeout=3.1,
+				              headers=headers)
+			else:
+				requests.get(url,
+				             params=params,
+				             timeout=3.1,
+				             headers=headers)
+
 			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
 		except Exception:
 			if self._logger.isEnabledFor(logging.DEBUG):

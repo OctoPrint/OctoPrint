@@ -58,7 +58,8 @@ INSTALL_REQUIRES = [
 	"wrapt>=1.11.1,<1.12",
 	"emoji>=0.5.1,<0.6",
 	"frozendict>=1.2,<1.3",
-	"sentry-sdk==0.7.7"
+	"sentry-sdk==0.7.7",
+	"filetype>=1.0.5,<2"
 ]
 
 # Python 2 specific requirements
@@ -93,6 +94,7 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
+		"readthedocs-sphinx-ext==0.5.7"
 	],
 
 	# Dependencies for developing OctoPrint plugins

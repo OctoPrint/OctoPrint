@@ -19,15 +19,18 @@ import logging
 # noinspection PyCompatibility
 from builtins import range, bytes
 
-from octoprint.settings import settings
+from octoprint.settings import settings as s
+
 from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
+
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.access.groups import GroupChangeListener, Group
 
 from past.builtins import basestring
 
 class UserManager(GroupChangeListener, object):
-	def __init__(self, group_manager):
+	def __init__(self, group_manager, settings=None):
 		self._group_manager = group_manager
 		self._group_manager.register_listener(self)
 
@@ -35,6 +38,10 @@ class UserManager(GroupChangeListener, object):
 		self._session_users_by_session = dict()
 		self._sessionids_by_userid = dict()
 		self._enabled = True
+
+		if settings is None:
+			settings = s()
+		self._settings = settings
 
 		self._login_status_listeners = []
 
@@ -92,7 +99,8 @@ class UserManager(GroupChangeListener, object):
 			try:
 				listener.on_user_logged_in(user)
 			except Exception:
-				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener))
+				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -124,7 +132,8 @@ class UserManager(GroupChangeListener, object):
 			try:
 				listener.on_user_logged_out(user)
 			except Exception:
-				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener))
+				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 		self._logger.debug("Logged out user: %r" % user)
 
@@ -136,16 +145,18 @@ class UserManager(GroupChangeListener, object):
 				self.logout_user(user)
 
 	@staticmethod
-	def create_password_hash(password, salt=None):
+	def create_password_hash(password, salt=None, settings=None):
 		if not salt:
-			salt = settings().get(["accessControl", "salt"])
+			if settings is None:
+				settings = s()
+			salt = settings.get(["accessControl", "salt"])
 			if salt is None:
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
 				salt = "".join(choice(chars) for _ in range(32))
-				settings().set(["accessControl", "salt"], salt)
-				settings().save()
+				settings.set(["accessControl", "salt"], salt)
+				settings.save()
 
 		return hashlib.sha512(to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)).hexdigest()
 
@@ -154,13 +165,16 @@ class UserManager(GroupChangeListener, object):
 		if not user:
 			return False
 
-		hash = UserManager.create_password_hash(password)
+		hash = UserManager.create_password_hash(password,
+		                                        settings=self._settings)
 		if user.check_password(hash):
 			# new hash matches, correct password
 			return True
 		else:
 			# new hash doesn't match, but maybe the old one does, so check that!
-			oldHash = UserManager.create_password_hash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			oldHash = UserManager.create_password_hash(password,
+			                                           salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW",
+			                                           settings=self._settings)
 			if user.check_password(oldHash):
 				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
 				self.change_user_password(username, password)
@@ -261,7 +275,8 @@ class UserManager(GroupChangeListener, object):
 				for user in users:
 					listener.on_user_modified(user)
 			except Exception:
-				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	def on_group_subgroups_changed(self, group, added=None, removed=None):
 		users = self.find_sessions_for(lambda u: group in u.groups)
@@ -271,7 +286,8 @@ class UserManager(GroupChangeListener, object):
 				for user in users:
 					listener.on_user_modified(user)
 			except Exception:
-				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	def _trigger_on_user_modified(self, user):
 		if isinstance(user, basestring):
@@ -300,14 +316,16 @@ class UserManager(GroupChangeListener, object):
 				for user in users:
 					listener.on_user_modified(user)
 			except Exception:
-				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	def _trigger_on_user_removed(self, username):
 		for listener in self._login_status_listeners:
 			try:
 				listener.on_user_removed(username)
 			except Exception:
-				self._logger.exception("Error in on_user_removed on {!r}".format(listener))
+				self._logger.exception("Error in on_user_removed on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	#~~ Deprecated methods follow
 
@@ -428,13 +446,13 @@ class LoginStatusListener(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self, group_manager, path=None):
-		UserManager.__init__(self, group_manager)
+	def __init__(self, group_manager, path=None, settings=None):
+		UserManager.__init__(self, group_manager, settings=settings)
 
 		if path is None:
-			path = settings().get(["accessControl", "userfile"])
+			path = self._settings.get(["accessControl", "userfile"])
 			if path is None:
-				path = os.path.join(settings().getBaseFolder("base"), "users.yaml")
+				path = os.path.join(s().getBaseFolder("base"), "users.yaml")
 
 		self._userfile = path
 
@@ -537,7 +555,13 @@ class FilebasedUserManager(UserManager):
 		if username in self._users and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.create_password_hash(password), active, permissions, groups, apikey=apikey)
+		self._users[username] = User(username,
+		                             UserManager.create_password_hash(password,
+		                                                              settings=self._settings),
+		                             active,
+		                             permissions,
+		                             groups,
+		                             apikey=apikey)
 		self._dirty = True
 		self._save()
 
@@ -670,7 +694,8 @@ class FilebasedUserManager(UserManager):
 		if not username in self._users:
 			raise UnknownUser(username)
 
-		passwordHash = UserManager.create_password_hash(password)
+		passwordHash = UserManager.create_password_hash(password,
+		                                                settings=self._settings)
 		user = self._users[username]
 		if user._passwordHash != passwordHash:
 			user._passwordHash = passwordHash

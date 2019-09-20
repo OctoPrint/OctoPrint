@@ -173,8 +173,9 @@
 
                 <div class="alert alert-error" style="display: none" data-bind="visible: login_error, text: login_error"></div>
 
-                <input type="text" data-bind="value: login_username" class="input-block-level" placeholder="{{ _('Username') }}">
+                <input type="text" data-bind="value: login_username" class="input-block-level" placeholder="{{ _('Username') }} autofocus">
                 <input type="password" data-bind="value: login_password" class="input-block-level" placeholder="{{ _('Password') }}">
+                <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
                 <label class="checkbox">
                     <input type="checkbox" data-bind="value: login_remember"> {{ _('Remember me') }}
                 </label>

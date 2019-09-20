@@ -469,7 +469,17 @@ def _test_url(data):
 			response_result = dict(headers=dict(response.headers),
 			                       content_type=content_type)
 
+			if not content_type and data.get("content_type_guess") in valid_boolean_trues:
+				content = response.content
+				content_type = util.guess_mime_type(bytearray(content))
+
+			if not content_type:
+				content_type = "application/octet-stream"
+
+			response_result = dict(assumed_content_type=content_type)
+
 			parsed_content_type = util.parse_mime_type(content_type)
+
 			in_whitelist = content_type_whitelist is None or any(
 				map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
 			in_blacklist = content_type_blacklist is not None and any(

@@ -200,7 +200,7 @@ $(function() {
         };
 
         self.highlightFilename = function(filename) {
-            if (filename === undefined) {
+            if (filename === undefined || filename === null) {
                 self.listHelper.selectNone();
             } else {
                 self.listHelper.selectItem(function(item) {
@@ -476,7 +476,20 @@ $(function() {
                 var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
                 var print = printAfterLoad && withinPrintDimensions;
 
-                OctoPrint.files.select(data.origin, data.path, print);
+                if (print && self.settingsViewModel.feature_printStartConfirmation()) {
+                    showConfirmationDialog({
+                        message: gettext("This will start a new print job. Please check that the print bed is clear."),
+                        question: gettext("Do you want to start the print job now?"),
+                        cancel: gettext("No"),
+                        proceed: gettext("Yes"),
+                        onproceed: function() {
+                            OctoPrint.files.select(data.origin, data.path, print);
+                        },
+                        nofade: true
+                    });
+                } else {
+                    OctoPrint.files.select(data.origin, data.path, print);
+                }
             }
         };
 

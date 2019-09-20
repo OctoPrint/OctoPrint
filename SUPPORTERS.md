@@ -8,8 +8,8 @@ thanks to everyone who contributed!
 
   * Andre Bubel
   * Andrew Moorby
+  * ANTONIO AUGUSTO DE LIMA PONTES
   * Arnljot Arntsen
-  * Bjorn Breckenridge
   * Boris Hussein
   * Brad Jackson
   * Christian Petropolis
@@ -27,7 +27,6 @@ thanks to everyone who contributed!
   * Jeff Renfer
   * Jefferson Hunt
   * Jeremiah Avery
-  * Joseph Payne
   * Joshua Wills
   * Justin Kaufman
   * Kaile Riser
@@ -41,9 +40,11 @@ thanks to everyone who contributed!
   * Miles Flavel
   * Mosaic Manufacturing
   * OMER MEHMET SUTAS
+  * Patrick Glyré
   * Patrick McGinnis
   * Prof Yuh Wen Chen
   * Randy C. Will
+  * Ranjib Dey
   * Robert Gusek
   * Samer Najia
   * Shawn Lewis
@@ -53,5 +54,6 @@ thanks to everyone who contributed!
   * TEVO 3D Printers
   * Trent Shumay
   * Ulrich Kempken
+  * Vladislav Kuzemchik
 
-and 1544 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1587 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
