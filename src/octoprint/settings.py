@@ -165,6 +165,9 @@ default_settings = {
 		"log": {
 			"connection": False,
 			"commdebug": False
+		},
+		"profiles": {
+			"default": None
 		}
 	},
 	"server": {
@@ -297,9 +300,6 @@ default_settings = {
 		"sendAutomaticallyAfter": 1,
 	},
 	"printerProfiles": {
-		"default": None
-	},
-	"connectionProfiles": {
 		"default": None
 	},
 	"printerParameters": {
@@ -983,7 +983,8 @@ class Settings(object):
 			self._migrate_serial_features,
 			self._migrate_resend_without_ok,
 			self._migrate_string_temperature_profile_values,
-			self._migrate_blocked_commands
+			self._migrate_blocked_commands,
+			self._migrate_serial_to_connection_profile
 		)
 
 		for migrate in migrators:
@@ -1356,6 +1357,170 @@ class Settings(object):
 			del config["serial"]["blockM0M1"]
 			return True
 		return False
+
+	def _migrate_serial_to_connection_profile(self, config):
+		if "serial" in config:
+			from octoprint.comm.connectionprofile import ConnectionProfile
+			from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
+			from octoprint.comm.transport.serialtransport import SerialTransport
+
+			backup_path = self.backup("serial_to_connection_profile")
+			self._logger.info("Made a copy of the current config at {} to allow recovery of serial settings".format(backup_path))
+
+			def copy_config_to_profile(config_path, profile_path, config, profile, converter=None):
+				node = config
+				for p in config_path:
+					if not p in node:
+						return
+					node = node[p]
+				value = node
+				if callable(converter):
+					value = converter(value)
+
+				node = profile
+				for p in profile_path[:-1]:
+					if not p in node:
+						node[p] = dict()
+					node = node[p]
+				node[profile_path[-1]] = value
+
+			printer_profile = config.get("printerProfiles", dict(default="_default")).get("default", "_default")
+
+			protocol_parameters = dict(flavor="generic",
+			                           flavor_overrides=dict())
+
+			### flavor overrides
+			copy_config_to_profile(["longRunningCommands"], ["flavor_overrides", "long_running_commands"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["blockedCommands"], ["flavor_overrides", "blocked_commands"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["pausingCommands"], ["flavor_overrides", "pausing_commands"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["emergencyCommands"], ["flavor_overrides", "emergency_commands"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["checksumRequiringCommands"], ["flavor_overrides", "checksum_requiring_commands"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["supportResendsWithoutOk"], ["flavor_overrides", "trigger_ok_after_resend"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["unknownCommandsNeedAck"], ["flavor_overrides", "unknown_requires_ack"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["sendChecksumWithUnknownCommands"], ["flavor_overrides", "unknown_with_checksum"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["externalHeatupDetection"], ["flavor_overrides", "detect_external_heatup"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["blockWhileDwelling"], ["flavor_overrides", "block_while_dwelling"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["sdRelativePath"], ["flavor_overrides", "sd_relative_path"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["sdAlwaysAvailable"], ["flavor_overrides", "sd_always_available"], config["serial"], protocol_parameters)
+
+			if "alwaysSendChecksum" in config["serial"] or "neverSendChecksum" in config["serial"]:
+				always = config["serial"].get("alwaysSendChecksum", False)
+				never = config["serial"].get("neverSendChecksum", False)
+
+				if not always and not never:
+					protocol_parameters["flavor_overrides"]["send_checksum"] = "printing"
+				elif always:
+					protocol_parameters["flavor_overrides"]["send_checksum"] = "always"
+				elif never:
+					protocol_parameters["flavor_overrides"]["send_checksum"] = "never"
+
+			### error handling
+			if "disconnectOnErrors" in config["serial"] or "ignoreErrorsFromFirmware" in config["serial"]:
+				disconnect = config["serial"].get("disconnectOnErrors", True)
+				ignore = config["serial"].get("ignoreErrorsFromFirmware", False)
+
+				if ignore:
+					protocol_parameters["error_handling"] = dict(firmware_errors="ignore")
+				elif not disconnect:
+					protocol_parameters["error_handling"] = dict(firmware_errors="cancel")
+				else:
+					protocol_parameters["error_handling"] = dict(firmware_errors="disconnect")
+
+			### pausing
+			copy_config_to_profile(["logPositionOnPause"], ["pausing", "log_position_on_pause"], config["serial"], protocol_parameters)
+
+			### cancelling
+			copy_config_to_profile(["logPositionOnCancel"], ["cancelling", "log_position_on_cancel"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["abortHeatupOnCancel"], ["cancelling", "abort_heatups"], config["serial"], protocol_parameters)
+
+			### timeouts
+			copy_config_to_profile(["timeout", "communication"], ["timeouts", "communication_timeout_normal"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "communicationBusy"], ["timeouts", "communication_timeout_busy"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "connection"], ["timeouts", "connection_timeout"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "detection"], ["timeouts", "detection_timeout"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "positionLogWait"], ["timeouts", "position_log_wait"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "baudrateDetectionPause"], ["timeouts", "baudrate_detection_pause"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "resendOk"], ["timeouts", "resendok_timeout"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["maxCommunicationTimeouts", "idle"], ["timeouts", "max_consecutive_timeouts_idle"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["maxCommunicationTimeouts", "printing"], ["timeouts", "max_consecutive_timeouts_printing"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["maxCommunicationTimeouts", "long"], ["timeouts", "max_consecutive_timeouts_long"], config["serial"], protocol_parameters)
+
+			### intervals
+			copy_config_to_profile(["timeout", "temperature"], ["intervals", "temperature_interval_idle"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "temperatureTargetSet"], ["intervals", "temperature_interval_target"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "temperatureAutoreport"], ["intervals", "temperature_interval_auto"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "sdStatus"], ["intervals", "sdstatus_interval_normal"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["timeout", "sdStatusAutoreport"], ["intervals", "sdstatus_interval_auto"], config["serial"], protocol_parameters)
+
+			### capabilities
+			copy_config_to_profile(["capabilities", "autoreport_temp"], ["capabilities", "autoreport_temp"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["capabilities", "autoreport_sdstatus"], ["capabilities", "autoreport_sd_status"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["capabilities", "emergency_parser"], ["capabilities", "emergency_parser"], config["serial"], protocol_parameters)
+			copy_config_to_profile(["capabilities", "busy_protocol"], ["capabilities", "busy_protocol"], config["serial"], protocol_parameters)
+
+			# TODO: chamber temp?
+			# TODO: maxWritePasses
+			# TODO: helloCommand
+			# TODO: terminalLogSize
+			# TODO: logResends
+			# TODO: waitForStartOnConnect
+			# TODO: maxNotSdPrinting
+			# TODO: swallowOkAfterResend
+			# TODO: repetierTargetTemp
+			# TODO: supportWait
+			# TODO: ignoreIdenticalResends
+			# TODO: identicalResendsCountdown
+			# TODO: supportFAsCommand
+			# TODO: firmwareDetection
+			# TODO: triggerOkForM29
+
+			# TODO: sendM112OnError
+			# TODO: useParityWorkaround
+
+			### logging
+			if "log" in config["serial"]:
+				if not "connection" in config["serial"]:
+					config["serial"]["connection"] = dict()
+				if not "log" in config["serial"]["connection"]:
+					config["serial"]["connection"]["log"] = dict()
+				config["serial"]["connection"]["log"]["connection"] = config["serial"]["log"]
+
+			port = config["serial"].get("port")
+			baudrate = config["serial"].get("baudrate")
+			transport_parameters = dict()
+			if port == "VIRTUAL":
+				# special case for the virtual printer plugin
+				transport = "virtual"
+			else:
+				transport = SerialTransport.key
+				transport_parameters["port"] = None if port == "AUTO" else port
+				if baudrate:
+					transport_parameters["baudrate"] = baudrate
+				if "exclusive" in config["serial"]:
+					transport_parameters["exclusive"] = config["serial"]["exclusive"]
+
+			profile = ConnectionProfile("migrated",
+			                            name="Migrated from serial settings",
+			                            printer_profile=printer_profile,
+			                            protocol=ReprapGcodeProtocol.key,
+			                            protocol_parameters=protocol_parameters,
+			                            transport=transport,
+			                            transport_parameters=transport_parameters)
+
+			try:
+				with atomic_write(os.path.join(self.getBaseFolder("connectionProfiles"), "migrated.profile"), mode="wt", max_permissions=0o666) as f:
+					yaml.safe_dump(profile.as_dict(), f,
+					               default_flow_style=False,
+					               indent=2,
+					               allow_unicode=True)
+
+				if "connection" not in config:
+					config["connection"] = dict()
+				if "profiles" not in config["connection"]:
+					config["connection"]["profiles"] = dict()
+				config["connection"]["profiles"]["default"] = "migrated"
+			except Exception as e:
+				self._logger.exception("Error while trying to save migrated connection profile")
 
 	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil

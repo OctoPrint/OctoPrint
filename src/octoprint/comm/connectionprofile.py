@@ -105,7 +105,7 @@ class ConnectionProfileManager(object):
 		return max(dates)
 
 	def get_default(self):
-		default = settings().get(["connectionProfiles", "default"])
+		default = settings().get(["connection", "profiles", "default"])
 		if default is not None and self.exists(default):
 			profile = self.get(default)
 			if profile is not None:
@@ -120,7 +120,7 @@ class ConnectionProfileManager(object):
 		if identifier is not None and identifier not in all_identifiers:
 			return
 
-		settings().set(["connectionProfiles", "default"], identifier)
+		settings().set(["connection", "profiles", "default"], identifier)
 		settings().save()
 
 	def get_current_or_default(self):
