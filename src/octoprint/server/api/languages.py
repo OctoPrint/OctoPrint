@@ -90,6 +90,8 @@ def getInstalledLanguagePacks():
 		else:
 			try:
 				core_packs.append(load_meta(entry.path, entry.name))
+			except ValueError:
+				logging.getLogger(__name__).exception("Core language pack {} doesn't appear to actually be one".format(entry.name))
 			except Exception:
 				logging.getLogger(__name__).exception("Error while parsing metadata for core language pack {} from {}".format(entry.name,
 				                                                                                                              entry.path))
