@@ -15,6 +15,7 @@ import os
 import string
 import threading
 import time
+import re
 
 # noinspection PyCompatibility
 from past.builtins import basestring, long
@@ -116,6 +117,11 @@ class Printer(PrinterInterface,
 
 		self._sd_ready = False
 		self._sd_files = []
+
+		# feedback controls
+		self._feedback_controls = None
+		self._feedback_matcher = None
+		self._feedback_errors = []
 
 		# job handling & estimation
 		self._estimator_factory = PrintTimeEstimator
@@ -266,6 +272,9 @@ class Printer(PrinterInterface,
 
 		if self._protocol is not None or self._transport is not None:
 			self.disconnect()
+
+		## prepare feedback controls
+		self._feedback_controls, self._feedback_matcher = convert_feedback_controls(settings().get(["controls"]))
 
 		eventManager().fire(Events.CONNECTING)
 
@@ -1207,6 +1216,19 @@ class Printer(PrinterInterface,
 
 		self._add_log(message)
 
+	def on_protocol_log_received(self, protocol, message, *args, **kwargs):
+		if protocol != self._protocol:
+			return
+
+		# process feedback controls
+		if self._feedback_controls and not "_all" in self._feedback_errors:
+			try:
+				self._process_registered_message(message)
+			except Exception:
+				# something went wrong while feedback matching
+				self._logger.exception("Error while trying to apply feedback control matching, disabling it")
+				self._feedback_errors.append("_all")
+
 	def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
 		if protocol != self._protocol:
 			return
@@ -1572,6 +1594,50 @@ class Printer(PrinterInterface,
 		except Exception:
 			self._logger.exception("Error while trying to persist print recovery data")
 
+	#~~ feedback controls
+
+	def _process_registered_message(self, line):
+		if not self._feedback_controls or not self._feedback_matcher:
+			return
+
+		feedback_match = self._feedback_matcher.search(line)
+		if feedback_match is None:
+			return
+
+		for match_key in feedback_match.groupdict():
+			try:
+				feedback_key = match_key[len("group"):]
+				if not feedback_key in self._feedback_controls or feedback_key in self._feedback_errors or feedback_match.group(match_key) is None:
+					continue
+				matched_part = feedback_match.group(match_key)
+
+				if self._feedback_controls[feedback_key]["matcher"] is None:
+					continue
+
+				match = self._feedback_controls[feedback_key]["matcher"].search(matched_part)
+				if match is None:
+					continue
+
+				outputs = dict()
+				for template_key, template in self._feedback_controls[feedback_key]["templates"].items():
+					try:
+						output = template.format(*match.groups())
+					except KeyError:
+						output = template.format(**match.groupdict())
+					except Exception:
+						if self._logger.isEnabledFor(logging.DEBUG):
+							self._logger.exception("Could not process template {}: {}".format(template_key, template))
+						output = None
+
+					if output is not None:
+						outputs[template_key] = output
+
+				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED, dict(key=feedback_key, matched=matched_part, outputs=outputs))
+
+			except Exception:
+				self._logger.exception("Error while trying to match feedback control output, disabling key {}".format(match_key))
+				self._feedback_errors.append(match_key)
+
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
 		self._interval = interval
@@ -1689,3 +1755,45 @@ class TemperatureHistory(InvariantContainer):
 			return [item for item in data if item["time"] >= now - cutoff]
 
 		InvariantContainer.__init__(self, guarantee_invariant=temperature_invariant)
+
+
+def convert_feedback_controls(configured_controls):
+	if not configured_controls:
+		return dict(), None
+
+	def preprocess_feedback_control(control, result):
+		if "key" in control and "regex" in control and "template" in control:
+			# key is always the md5sum of the regex
+			key = control["key"]
+
+			if result[key]["pattern"] is None or result[key]["matcher"] is None:
+				# regex has not been registered
+				try:
+					result[key]["matcher"] = re.compile(control["regex"])
+					result[key]["pattern"] = control["regex"]
+				except Exception as exc:
+					logging.getLogger(__name__).warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+
+			result[key]["templates"][control["template_key"]] = control["template"]
+
+		elif "children" in control:
+			for c in control["children"]:
+				preprocess_feedback_control(c, result)
+
+	def prepare_result_entry():
+		return dict(pattern=None, matcher=None, templates=dict())
+
+	from collections import defaultdict
+	feedback_controls = defaultdict(prepare_result_entry)
+
+	for control in configured_controls:
+		preprocess_feedback_control(control, feedback_controls)
+
+	feedback_pattern = []
+	for match_key, entry in feedback_controls.items():
+		if entry["matcher"] is None or entry["pattern"] is None:
+			continue
+		feedback_pattern.append("(?P<group{key}>{pattern})".format(key=match_key, pattern=entry["pattern"]))
+	feedback_matcher = re.compile("|".join(feedback_pattern))
+
+	return feedback_controls, feedback_matcher

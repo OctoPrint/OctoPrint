@@ -300,15 +300,24 @@ class Protocol(ListenerAware, TransportListener):
 		self.disconnect(error=error is not None)
 
 	def on_transport_log_received_data(self, transport, data):
-		message = "<<< {}".format(to_unicode(data, errors="replace").strip())
+		message = to_unicode(data, errors="replace").strip()
+		self.notify_listeners("on_protocol_log_received", self, message)
+
+		message = "<<< {}".format(message)
 		self.process_protocol_log(message)
 
 	def on_transport_log_sent_data(self, transport, data):
-		message = ">>> {}".format(to_unicode(data, errors="replace").strip())
+		message = to_unicode(data, errors="replace").strip()
+		self.notify_listeners("on_protocol_log_sent", self, message)
+
+		message = ">>> {}".format(message)
 		self.process_protocol_log(message)
 
 	def on_transport_log_message(self, transport, data):
-		message = "--- {}".format(to_unicode(data, errors="replace").strip())
+		message = to_unicode(data, errors="replace").strip()
+		self.notify_listeners("on_protocol_log_message", self, message)
+
+		message = "--- {}".format(message)
 		self.process_protocol_log(message)
 
 	def process_protocol_log(self, message):
@@ -474,6 +483,15 @@ class ProtocolListener(object):
 		pass
 
 	def on_protocol_log(self, protocol, message, *args, **kwargs):
+		pass
+
+	def on_protocol_log_received(self, protocol, message, *args, **kwargs):
+		pass
+
+	def on_protocol_log_sent(self, protocol, message, *args, **kwargs):
+		pass
+
+	def on_protocol_log_message(self, protocol, message, *args, **kwargs):
 		pass
 
 	def on_protocol_reset(self, protocol, idle, *args, **kwargs):
