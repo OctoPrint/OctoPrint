@@ -2785,7 +2785,9 @@ class MachineCom(object):
 		self._changeState(self.STATE_ERROR)
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
-			if self._send_m112_on_error and not self.isSdPrinting():
+			if self._send_m112_on_error and not self.isSdPrinting() and reason not in ("connection",
+			                                                                           "autodetect_baudrate",
+			                                                                           "autodetect_port"):
 				self._trigger_emergency_stop(close=False)
 			self.close(is_error=True)
 
@@ -3732,11 +3734,11 @@ class MachineCom(object):
 		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
 			self._do_increment_and_send_with_checksum(b"M140 S0")
 
-		# close to reset host state
-		error_text = "Closing serial port due to emergency stop M112."
-		self._log(error_text)
-
 		if close:
+			# close to reset host state
+			error_text = "Closing serial port due to emergency stop M112."
+			self._log(error_text)
+
 			self._errorValue = error_text
 			self.close(is_error=True)
 
