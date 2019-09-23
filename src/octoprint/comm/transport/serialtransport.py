@@ -5,7 +5,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
-from octoprint.comm.util.parameters import TextType, IntegerType, ChoiceType, SuggestionType, BooleanType, Value
+from octoprint.comm.util.parameters import TextType, IntegerType, ChoiceType, SuggestionType, BooleanType, Value, SmallChoiceType
 
 from octoprint.util import dummy_gettext as gettext
 
@@ -68,7 +68,21 @@ class SerialTransport(Transport):
 			            Value(serial.PARITY_EVEN, gettext("even"))],
 			           default=serial.PARITY_NONE,
 			           advanced=True,
-			           expert=True)
+			           expert=True),
+			# TODO: implement parity workaround flag
+			SmallChoiceType("parity_workaround",
+			                gettext("Apply parity double open workaround"),
+			                [Value("always",
+			                       title=gettext("Always"),
+			                       help=gettext("Use this if you are running into [this problem](https://forum.arduino.cc/index.php?topic=91291.0).")),
+			                 Value("detect",
+			                       title=gettext("If detected as potentially needed")),
+			                 Value("never",
+			                       title=gettext("Never"),
+			                       help=gettext("Use this if connecting to your printer fails with `(22, 'Invalid argument')`."))],
+			                default="detect",
+			                advanced=True,
+			                expert=True)
 		]
 
 	@classmethod

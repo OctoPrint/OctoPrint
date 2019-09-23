@@ -1420,6 +1420,7 @@ class Settings(object):
 					protocol_parameters["flavor_overrides"]["send_checksum"] = "never"
 
 			### error handling
+			copy_config_to_profile(["sendM112OnError"], ["error_handling", "send_m112"], config["serial"], protocol_parameters)
 			if "disconnectOnErrors" in config["serial"] or "ignoreErrorsFromFirmware" in config["serial"]:
 				disconnect = config["serial"].get("disconnectOnErrors", True)
 				ignore = config["serial"].get("ignoreErrorsFromFirmware", False)
@@ -1479,9 +1480,6 @@ class Settings(object):
 			# TODO: firmwareDetection
 			# TODO: triggerOkForM29
 
-			# TODO: sendM112OnError
-			# TODO: useParityWorkaround
-
 			### logging
 			if "log" in config["serial"]:
 				if not "connection" in config["serial"]:
@@ -1498,11 +1496,10 @@ class Settings(object):
 				transport = "virtual"
 			else:
 				transport = SerialTransport.key
-				transport_parameters["port"] = None if port == "AUTO" else port
-				if baudrate:
-					transport_parameters["baudrate"] = baudrate
-				if "exclusive" in config["serial"]:
-					transport_parameters["exclusive"] = config["serial"]["exclusive"]
+				copy_config_to_profile(["port"], ["port"], config["serial"], transport_parameters, converter=lambda x: None if x == "AUTO" else x)
+				copy_config_to_profile(["baudrate"], ["baudrate"], config["serial"], transport_parameters)
+				copy_config_to_profile(["exclusive"], ["exclusive"], config["serial"], transport_parameters)
+				copy_config_to_profile(["useParityWorkaround"], ["parity_workaround"], config["serial"], transport_parameters)
 
 			profile = ConnectionProfile("migrated",
 			                            name="Migrated from serial settings",
