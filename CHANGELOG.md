@@ -1,5 +1,20 @@
 # OctoPrint Changelog
 
+## 1.3.12rc3 (2019-09-23)
+
+### Bug fixes
+
+  * [#3277](https://github.com/foosel/OctoPrint/issues/3277) (regression) - GCODE viewer: Fix huge memory consumption due to misplaced deep clone.
+  * [#3282](https://github.com/foosel/OctoPrint/issues/3282) (regression) - Don't trigger `M112` routine for firmware errors on a connection error when no connection has even been established yet.
+
+### Special thanks to all the contributors!
+
+Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports!
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.12rc2...1.3.12rc3)
+
 ## 1.3.12rc2 (2019-09-17)
 
 ### Improvements
