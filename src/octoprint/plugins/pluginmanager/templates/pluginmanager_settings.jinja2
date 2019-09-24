@@ -40,6 +40,11 @@
 {{ pluginmanager_throttled() }}
 
 <div class="pull-right">
+    <div class="btn-group">
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('all') }, css: {active: _.contains(plugins.currentFilters(), 'all')}" title="{{ _('Show all plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">Bundled</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">3rd Party</button>
+    </div>
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
 

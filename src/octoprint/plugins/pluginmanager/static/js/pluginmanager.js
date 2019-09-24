@@ -32,12 +32,26 @@ $(function() {
                 }
             },
             {
+                "all": function(item) {
+                    return true;
+                },
+                "bundled": function(item) {
+                    return item.bundled;
+                },
+                "3rdparty": function(item) {
+                    return !item.bundled;
+                }
             },
             "name",
-            [],
-            [],
+            ["all"],
+            [["all", "bundled", "3rdparty"]],
             0
         );
+
+        if (self.plugins.currentFilters().length === 0) {
+            // old versions didn't have filters, we might still have that stuck in the local storage
+            self.plugins.addFilter("all");
+        }
 
         self.repositoryplugins = new ItemListHelper(
             "plugin.pluginmanager.repositoryplugins",
