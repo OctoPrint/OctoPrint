@@ -1289,6 +1289,7 @@ class MachineCom(object):
 				self._cancel_position_timer.daemon = True
 				self._cancel_position_timer.start()
 			self.sendCommand("M114", part_of_job=True, tags=tags | {"trigger:comm.cancel",
+			                                                        "trigger:cancel",
 			                                                        "trigger:record_position"})
 
 		self._callback.on_comm_print_job_cancelling(firmware_error=firmware_error,
@@ -1301,14 +1302,14 @@ class MachineCom(object):
 				# abort any ongoing heatups immediately to get back control over the printer
 				self.sendCommand("M108",
 				                 part_of_job=False,
-				                 tags=tags | {"trigger:comm.cancel", "trigger:abort_heatup"},
+				                 tags=tags | {"trigger:comm.cancel", "trigger:cancel", "trigger:abort_heatup"},
 				                 force=True)
 
 			if self.isSdFileSelected():
 				if not external_sd:
-					self.sendCommand("M25", part_of_job=True, tags=tags | {"trigger:comm.cancel",})    # pause print
-					self.sendCommand("M27", part_of_job=True, tags=tags | {"trigger:comm.cancel",})    # get current byte position in file
-					self.sendCommand("M26 S0", part_of_job=True, tags=tags | {"trigger:comm.cancel",}) # reset position in file to byte 0
+					self.sendCommand("M25", part_of_job=True, tags=tags | {"trigger:comm.cancel", "trigger:cancel"})    # pause print
+					self.sendCommand("M27", part_of_job=True, tags=tags | {"trigger:comm.cancel", "trigger:cancel"})    # get current byte position in file
+					self.sendCommand("M26 S0", part_of_job=True, tags=tags | {"trigger:comm.cancel", "trigger:cancel"}) # reset position in file to byte 0
 
 			if self._log_position_on_cancel and not disable_log_position:
 				with self._action_users_mutex:
@@ -1318,6 +1319,7 @@ class MachineCom(object):
 				                 on_sent=_on_M400_sent,
 				                 part_of_job=True,
 				                 tags=tags | {"trigger:comm.cancel",
+				                              "trigger:cancel",
 				                              "trigger:record_position"})
 				self._continue_sending()
 			else:
@@ -1365,8 +1367,14 @@ class MachineCom(object):
 		if tags is None:
 			tags = set()
 
+		valid_paused_states = (self.STATE_PAUSED, self.STATE_PAUSING)
+		valid_running_states = (self.STATE_PRINTING, self.STATE_STARTING, self.STATE_RESUMING)
+
+		if not self._state in valid_paused_states + valid_running_states:
+			return
+
 		with self._jobLock:
-			if not pause and self._state in (self.STATE_PAUSED, self.STATE_PAUSING):
+			if not pause and self._state in valid_paused_states:
 				if self._pauseWaitStartTime:
 					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (monotonic_time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
@@ -1392,7 +1400,7 @@ class MachineCom(object):
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._continue_sending()
 
-			elif pause and self._state in (self.STATE_PRINTING, self.STATE_STARTING, self.STATE_RESUMING):
+			elif pause and self._state in valid_running_states:
 				if not self._pauseWaitStartTime:
 					self._pauseWaitStartTime = monotonic_time()
 
@@ -3814,13 +3822,16 @@ class MachineCom(object):
 
 	def _command_phase_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if gcode is not None:
+			tags = kwargs.get("tags")
+			if tags is None:
+				tags = set()
 
 			if gcode in self._emergency_commands and gcode != "M112":
 				msg = u"Force-sending {} to the printer".format(gcode)
 				self._logger.info(msg)
 				return self._emergency_force_send(cmd, msg, gcode=gcode, *args, **kwargs)
 
-			if self.isPrinting() and gcode in self._pausing_commands:
+			if self.isPrinting() and gcode in self._pausing_commands and not "trigger:cancel" in tags and not "trigger:pause" in tags:
 				self._logger.info("Pausing print job due to command {}".format(gcode))
 				self.setPause(True)
 
