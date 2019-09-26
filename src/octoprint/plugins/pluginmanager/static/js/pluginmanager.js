@@ -93,6 +93,11 @@ $(function() {
             self.performRepositorySearch();
         });
 
+        self.listingSearchQuery = ko.observable();
+        self.listingSearchQuery.subscribe(function() {
+            self.performListingSearch();
+        });
+
         self.installUrl = ko.observable();
         self.uploadFilename = ko.observable();
 
@@ -291,9 +296,21 @@ $(function() {
             }
         });
 
+        self.performListingSearch = function() {
+            var query = self.listingSearchQuery();
+            if (query !== undefined && query.trim() !== "") {
+                query = query.toLocaleLowerCase();
+                self.plugins.changeSearchFunction(function (entry) {
+                    return entry && (entry["name"].toLocaleLowerCase().indexOf(query) > -1 || (entry.description && entry.description.toLocaleLowerCase().indexOf(query) > -1));
+                });
+            } else {
+                self.plugins.resetSearch();
+            }
+        }
+
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
-            if (query !== undefined && query.trim() != "") {
+            if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
