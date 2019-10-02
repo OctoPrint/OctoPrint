@@ -9,7 +9,7 @@ $(function() {
 
         // optional
 
-        self.piSupport = parameters[3]; // might be null!
+        self.piSupport = parameters[4]; // might be null!
 
         self.popup = undefined;
 

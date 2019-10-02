@@ -9,7 +9,7 @@ $(function() {
         self.access = parameters[4];
 
         // optional
-        self.piSupport = parameters[4];
+        self.piSupport = parameters[5];
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
