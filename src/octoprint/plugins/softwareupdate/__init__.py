@@ -1086,15 +1086,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			from octoprint.util.version import is_released_octoprint_version, is_stable_octoprint_version
 
-			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
-			if result["displayName"] is None:
+			displayName = check.get("displayName")
+			if displayName is None:
 				# displayName missing or set to None
-				result["displayName"] = to_unicode(gettext("OctoPrint"), errors="replace")
+				displayName = gettext("OctoPrint")
+			result["displayName"] = to_unicode(displayName, errors="replace")
 
-			result["displayVersion"] = to_unicode(check.get("displayVersion"), errors="replace")
-			if result["displayVersion"] is None:
+			displayVersion = check.get("displayVersion")
+			if displayVersion is None:
 				# displayVersion missing or set to None
-				result["displayVersion"] = "{octoprint_version}"
+				displayVersion = "{octoprint_version}"
+			result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
 			stable_branch = "master"
 			release_branches = []
