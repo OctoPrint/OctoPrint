@@ -316,6 +316,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
 			data["octoprint_checkout_folder"] = self._get_octoprint_checkout_folder(checks=checks)
+			data["octoprint_tracked_branch"] = self._get_octoprint_tracked_branch(checks=checks)
+			data["octoprint_pip_target"] = self._get_octoprint_pip_target(checks=checks)
 			data["octoprint_type"] = checks["octoprint"].get("type", None)
 
 			try:
@@ -386,10 +388,23 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
 				updated_octoprint_check_config = True
 
+			elif octoprint_type == "github_commit":
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
+				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
+				updated_octoprint_check_config = True
+
 			elif octoprint_type == "git_commit":
 				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
 				self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults)
 				updated_octoprint_check_config = True
+
+		if "octoprint_tracked_branch" in data:
+			self._settings.set(["checks", "octoprint", "branch"], data["octoprint_tracked_branch"], defaults=defaults, force=True)
+			updated_octoprint_check_config = True
+
+		if "octoprint_pip_target" in data:
+			self._settings.set(["checks", "octoprint", "pip"], data["octoprint_pip_target"], defaults=defaults)
+			updated_octoprint_check_config = True
 
 		if "octoprint_release_channel" in data:
 			prerelease_branches = self._settings.get(["checks", "octoprint", "prerelease_branches"])
@@ -1244,6 +1259,24 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return checks["octoprint"]["update_folder"]
 
 		return None
+
+	def _get_octoprint_tracked_branch(self, checks=None):
+		if checks is None:
+			checks = self._get_configured_checks()
+
+		if not "octoprint" in checks:
+			return None
+
+		return checks["octoprint"].get("branch")
+
+	def _get_octoprint_pip_target(self, checks=None):
+		if checks is None:
+			checks = self._get_configured_checks()
+
+		if not "octoprint" in checks:
+			return None
+
+		return checks["octoprint"].get("pip")
 
 
 def _register_custom_events(*args, **kwargs):

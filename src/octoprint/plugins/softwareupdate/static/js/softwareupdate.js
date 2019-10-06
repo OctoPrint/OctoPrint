@@ -30,7 +30,8 @@ $(function() {
         self.octoprintReleasedVersion = ko.observable();
 
         self.octoprintUnconfigured = ko.pureComputed(function() {
-            return self.error_checkoutFolder();
+            return self.settings.settings.plugins.softwareupdate.octoprint_type() === "git_commit"
+                && self.error_checkoutFolder();
         });
         self.octoprintUnreleased = ko.pureComputed(function() {
             return self.settings.settings.plugins.softwareupdate.octoprint_type() === "github_release"
@@ -47,7 +48,9 @@ $(function() {
 
         self.config_cacheTtl = ko.observable();
         self.config_notifyUsers = ko.observable();
+        self.config_trackedBranch = ko.observable();
         self.config_checkoutFolder = ko.observable();
+        self.config_pipTarget = ko.observable();
         self.config_checkType = ko.observable();
         self.config_releaseChannel = ko.observable();
 
@@ -62,6 +65,7 @@ $(function() {
 
         self.enable_configSave = ko.pureComputed(function() {
             return self.config_checkType() === "github_release"
+                || self.config_checkType() === "github_commit"
                 || (self.config_checkType() === "git_commit" && !self.error_checkoutFolder());
         });
 
@@ -158,7 +162,9 @@ $(function() {
                         notify_users: self.config_notifyUsers(),
                         octoprint_type: self.config_checkType(),
                         octoprint_release_channel: self.config_releaseChannel(),
-                        octoprint_checkout_folder: self.config_checkoutFolder()
+                        octoprint_checkout_folder: self.config_checkoutFolder(),
+                        octoprint_tracked_branch: self.config_trackedBranch(),
+                        octoprint_pip_target: self.config_pipTarget()
                     }
                 }
             };
@@ -177,7 +183,8 @@ $(function() {
 
         self._copyConfig = function() {
             var availableCheckTypes = [{"key": "github_release", "name": gettext("Release")},
-                                       {"key": "git_commit", "name": gettext("Commit")}];
+                                       {"key": "github_commit", "name": gettext("Github Commit")},
+                                       {"key": "git_commit", "name": gettext("Local checkout")}];
             self.config_availableCheckTypes(availableCheckTypes);
 
             var availableReleaseChannels = [];
@@ -192,6 +199,8 @@ $(function() {
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
             self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
+            self.config_trackedBranch(self.settings.settings.plugins.softwareupdate.octoprint_tracked_branch());
+            self.config_pipTarget(self.settings.settings.plugins.softwareupdate.octoprint_pip_target());
         };
 
         self._copyConfigBack = function() {
