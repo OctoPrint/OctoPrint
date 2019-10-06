@@ -138,7 +138,7 @@ class UserManager(GroupChangeListener, object):
 		self._logger.debug("Logged out user: %r" % user)
 
 	def _cleanup_sessions(self):
-		for session, user in self._session_users_by_session.items():
+		for session, user in list(self._session_users_by_session.items()):
 			if not isinstance(user, SessionUser):
 				continue
 			if user.created + (24 * 60 * 60) < monotonic_time():
