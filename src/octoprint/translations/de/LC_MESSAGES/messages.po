@@ -5593,7 +5593,7 @@ msgid "Minimum interval"
 msgstr "Minimales Intervall"
 
 #: src/octoprint/templates/tabs/timelapse.jinja2:29
-msgid "OctoPrint will rate limit snapshots to this minimum interval. This it to prevent against performance issues with vase mode/continous z prints."
+msgid "OctoPrint will rate limit snapshots to this minimum interval. This is to prevent against performance issues with vase mode/continous z prints."
 msgstr "OctoPrint wird Zeitrafferaufnahmen auf dieses minimale Intervall ratelimiten. Dies soll gegen Performanzprobleme bei Vase-Mode/Continuous-Z-Drucken helfen."
 
 #: src/octoprint/templates/tabs/timelapse.jinja2:34
