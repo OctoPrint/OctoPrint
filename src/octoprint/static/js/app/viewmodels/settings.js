@@ -244,6 +244,8 @@ $(function() {
         self.server_pluginBlacklist_url = ko.observable();
         self.server_pluginBlacklist_ttl = ko.observable();
 
+        self.server_allowFraming = ko.observable();
+
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
 

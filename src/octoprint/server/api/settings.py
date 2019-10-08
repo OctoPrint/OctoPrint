@@ -236,7 +236,8 @@ def getSettings():
 				"enabled": s.getBoolean(["server", "pluginBlacklist", "enabled"]),
 				"url": s.get(["server", "pluginBlacklist", "url"]),
 				"ttl": int(s.getInt(["server", "pluginBlacklist", "ttl"]) / 60)
-			}
+			},
+			"allowFraming": s.getBoolean(["server", "allowFraming"])
 		}
 	}
 
@@ -554,6 +555,8 @@ def _saveSettings(data):
 					s.setInt(["server", "pluginBlacklist", "ttl"], ttl * 60)
 				except ValueError:
 					pass
+		if "allowFraming" in data["server"]:
+			s.setBoolean(["server", "allowFraming"], data["server"]["allowFraming"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
