@@ -121,7 +121,7 @@ $(function() {
                     .done(self.requestData);
             };
 
-            showConfirmationDialog(_.sprintf(gettext("You are about to delete log file \"%(name)s\"."), {name: filename}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete log file \"%(name)s\"."), {name: _.escape(filename)}),
                                    perform);
         };
 
@@ -172,11 +172,11 @@ $(function() {
             var handler = function(filename) {
                 return OctoPrint.plugins.logging.deleteLog(filename)
                     .done(function() {
-                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: _.escape(filename)}), true);
                     })
                     .fail(function(jqXHR) {
-                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
-                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: _.escape(filename)});
+                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: _.escape(filename), error: _.escape(jqXHR.responseText)});
                         deferred.notify(short, long, false);
                     });
             };

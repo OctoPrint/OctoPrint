@@ -32,7 +32,7 @@ $(function() {
 
         self.userMenuTitle = ko.pureComputed(function() {
             if (self.loggedIn()) {
-                return _.sprintf(gettext("Logged in as %(name)s"), {name: self.username()});
+                return _.sprintf(gettext("Logged in as %(name)s"), {name: _.escape(self.username())});
             } else {
                 return gettext("Login");
             }
@@ -160,7 +160,7 @@ $(function() {
 
             return OctoPrint.browser.login(username, password, remember)
                 .done(function(response) {
-                    new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
+                    new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: _.escape(response.name)}), type: "success"});
                     self.fromResponse(response);
 
                     self.loginUser("");

@@ -52,7 +52,7 @@ $(function() {
                     .done(self.requestData);
             };
 
-            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: key}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: _.escape(key)}),
                                    perform);
         };
 
@@ -68,7 +68,7 @@ $(function() {
 
         self.promptForAccess = function(app, token) {
             var message = gettext("\"<strong>%(app)s</strong>\" has requested access to control OctoPrint through the API.");
-            message = _.sprintf(message, {app: app});
+            message = _.sprintf(message, {app: _.escape(app)});
             message = "<p>" + message + "</p><p>" + gettext("Do you want to allow access to this application with your user account?") + "</p>";
             return new PNotify({
                 title: gettext("Access Request"),
@@ -210,7 +210,7 @@ $(function() {
                     .done(self.requestData);
             };
 
-            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: key}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to revoke the application key \"%(key)s\"."), {key: _.escape(key)}),
                                    perform);
         };
 
@@ -258,11 +258,11 @@ $(function() {
             handler = function(key) {
                 return OctoPrint.plugins.appkeys.revokeKey(key)
                     .done(function() {
-                        deferred.notify(_.sprintf(gettext("Revoked %(key)s..."), {key: key}), true);
+                        deferred.notify(_.sprintf(gettext("Revoked %(key)s..."), {key: _.escape(key)}), true);
                     })
                     .fail(function(jqXHR) {
-                        var short = _.sprintf(gettext("Revocation of %(key)s failed, continuing..."), {key: key});
-                        var long = _.sprintf(gettext("Deletion of %(key)s failed: %(error)s"), {key: key, error: jqXHR.responseText});
+                        var short = _.sprintf(gettext("Revocation of %(key)s failed, continuing..."), {key: _.escape(key)});
+                        var long = _.sprintf(gettext("Deletion of %(key)s failed: %(error)s"), {key: _.escape(key), error: _.escape(jqXHR.responseText)});
                         deferred.notify(short, long, false);
                     });
             };
