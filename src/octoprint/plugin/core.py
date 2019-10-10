@@ -39,7 +39,7 @@ import pkginfo
 
 from past.builtins import unicode
 
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode, sv
 from octoprint.util.version import is_python_compatible, get_python_version_string
 
 try:
@@ -1585,7 +1585,7 @@ class PluginManager(object):
 						sorting_value = None
 
 			plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
-			return sorting_value is None, sorting_value, not plugin_info.bundled if plugin_info else True, impl[0]
+			return sorting_value is None, sv(sorting_value), not plugin_info.bundled if plugin_info else True, sv(impl[0])
 
 		return [impl[1] for impl in sorted(result, key=sort_func)]
 
@@ -1672,7 +1672,7 @@ class PluginManager(object):
 
 	def _sort_hooks(self, hook):
 		self._plugin_hooks[hook] = sorted(self._plugin_hooks[hook],
-		                                  key=lambda x: (x[0] is None, x[0], x[1], x[2]))
+		                                  key=lambda x: (x[0] is None, sv(x[0]), sv(x[1]), sv(x[2])))
 
 	def _get_callback_and_order(self, hook):
 		if callable(hook):

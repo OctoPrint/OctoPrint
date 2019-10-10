@@ -71,6 +71,13 @@ def to_native_str(s_or_u):
 		return to_unicode(s_or_u)
 
 
+def sortable_value(value, default_value=""):
+	if value is None:
+		return default_value
+	return default_value
+sv = sortable_value
+
+
 def pp(value):
 	"""
 	>>> pp(dict()) # doctest: +ALLOW_UNICODE

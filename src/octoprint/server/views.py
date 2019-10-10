@@ -22,7 +22,7 @@ from octoprint.server import app, userManager, groupManager, pluginManager, gett
 from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
 from octoprint.filemanager import full_extension_tree, get_all_extensions
-from octoprint.util import to_unicode, to_bytes
+from octoprint.util import to_unicode, to_bytes, sv
 
 import re
 import base64
@@ -750,14 +750,14 @@ def fetch_template_data(refresh=False):
 			def key_func(x):
 				config = templates[t]["entries"][x]
 				entry_order = config_extractor(config, "order", default_value=None)
-				return entry_order is None, entry_order, extractor(config, sort_key)
+				return entry_order is None, sv(entry_order), sv(extractor(config, sort_key))
 
 			sorted_missing = sorted(missing_in_order, key=key_func)
 		else:
 			def key_func(x):
 				config = templates[t]["entries"][x]
 				entry_order = config_extractor(config, "order", default_value=None)
-				return entry_order is None, entry_order
+				return entry_order is None, sv(entry_order)
 
 			sorted_missing = sorted(missing_in_order, key=key_func)
 

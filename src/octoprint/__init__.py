@@ -410,7 +410,9 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 		if not startup:
 			return
 
-		sorted_disabled_from_overlays = sorted([(key, value[0], value[1]) for key, value in disabled_from_overlays.items()], key=lambda x: (x[2] is None, x[2], x[0]))
+		from octoprint.util import sv
+
+		sorted_disabled_from_overlays = sorted([(key, value[0], value[1]) for key, value in disabled_from_overlays.items()], key=lambda x: (x[2] is None, sv(x[2]), sv(x[0])))
 
 		disabled_list = pm.plugin_disabled_list
 		already_processed = []

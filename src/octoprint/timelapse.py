@@ -27,6 +27,7 @@ from octoprint.events import eventManager, Events
 from octoprint.plugin import plugin_manager
 from octoprint.util import monotonic_time
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
 
 import sarge
@@ -172,7 +173,7 @@ def get_unrendered_timelapses():
 
 			return job
 
-		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: x["name"])
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: sv(x["name"]))
 
 
 def delete_unrendered_timelapse(name):

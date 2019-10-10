@@ -9,6 +9,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import requests
 import logging
 
+from octoprint.util import sv
+
 RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_release")
@@ -69,7 +71,7 @@ def _filter_out_latest(releases,
 	nothing = None, None, None
 
 	if sort_key is None:
-		sort_key = lambda release: release.get("published_at", None)
+		sort_key = lambda release: sv(release.get("published_at", None))
 
 	# filter out prereleases and drafts
 	filter_function = lambda rel: not rel["prerelease"] and not rel["draft"]

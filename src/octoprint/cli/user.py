@@ -12,7 +12,7 @@ from octoprint import init_settings
 from octoprint.cli import get_ctx_obj_option
 from octoprint.access.groups import FilebasedGroupManager
 from octoprint.access.users import FilebasedUserManager, UnknownUser, UserAlreadyExists
-from octoprint.util import get_class
+from octoprint.util import get_class, sv
 
 click.disable_unicode_literals_warning = True
 
@@ -170,7 +170,7 @@ def deactivate_command(ctx, username):
 
 def _print_list(users):
 	click.echo("{} users registered in the system:".format(len(users)))
-	for user in sorted(map(lambda x: x.as_dict(), users), key=lambda x: x.get("name")):
+	for user in sorted(map(lambda x: x.as_dict(), users), key=lambda x: sv(x.get("name"))):
 		click.echo("\t{}".format(_user_to_line(user)))
 
 

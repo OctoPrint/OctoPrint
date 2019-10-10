@@ -20,6 +20,8 @@ import octoprint.filemanager.util
 import octoprint.filemanager.storage
 import octoprint.slicing
 
+from octoprint.util import sv
+
 import os
 import psutil
 import hashlib
@@ -85,7 +87,7 @@ def _create_etag(path, filter, recursive, lm=None):
 
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
 		# include sd data in etag
-		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
+		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x[0]))))
 
 	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
