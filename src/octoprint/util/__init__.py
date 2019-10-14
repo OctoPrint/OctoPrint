@@ -74,7 +74,7 @@ def to_native_str(s_or_u):
 def sortable_value(value, default_value=""):
 	if value is None:
 		return default_value
-	return default_value
+	return value
 sv = sortable_value
 
 

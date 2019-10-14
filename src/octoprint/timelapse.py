@@ -173,7 +173,9 @@ def get_unrendered_timelapses():
 
 			return job
 
-		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: sv(x["name"]))
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value))
+		               for key, value in jobs.items()],
+		              key=lambda x: sv(x["name"]))
 
 
 def delete_unrendered_timelapse(name):
