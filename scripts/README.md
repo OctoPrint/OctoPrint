@@ -13,5 +13,5 @@ octoprint.init      => /etc/init.d/octoprint
 ## systemd
 
 ```
-octoprint.service   => /etc/systemd/service/octoprint.service
+octoprint.service   => /etc/systemd/system/octoprint.service
 ```
