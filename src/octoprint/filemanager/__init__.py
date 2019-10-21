@@ -17,6 +17,7 @@ from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 from collections import namedtuple
 
@@ -329,25 +330,27 @@ class FileManager(object):
 		                 printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
-					eventManager().fire(Events.SLICING_FAILED, dict(stl=source_path,
-																	stl_location=source_location,
-																	gcode=dest_path,
-																	gcode_location=dest_location,
-																	reason=_error))
+					eventManager().fire(Events.SLICING_FAILED, dict(slicer=slicer_name,
+					                                                stl=source_path,
+					                                                stl_location=source_location,
+					                                                gcode=dest_path,
+					                                                gcode_location=dest_location,
+					                                                reason=_error))
 				elif _cancelled:
-					eventManager().fire(Events.SLICING_CANCELLED, dict(stl=source_path,
-																	   stl_location=source_location,
-																	   gcode=dest_path,
-																	   gcode_location=dest_location))
+					eventManager().fire(Events.SLICING_CANCELLED, dict(slicer=slicer_name,
+					                                                   stl=source_path,
+					                                                   stl_location=source_location,
+					                                                   gcode=dest_path,
+					                                                   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
-					hash = source_meta["hash"]
+					hash = source_meta.get("hash", "n/a")
 
 					import io
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.BytesIO(u";Generated from {stl_name} (hash: {hash})\n".format(**locals()).encode("ascii", "replace")),
 					                         io.FileIO(tmp_path, "rb"))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
@@ -356,11 +359,12 @@ class FileManager(object):
 					              printer_profile=printer_profile, analysis=_analysis)
 
 					end_time = octoprint.util.monotonic_time()
-					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
-																  stl_location=source_location,
-																  gcode=dest_path,
-																  gcode_location=dest_location,
-																  time=end_time - start_time))
+					eventManager().fire(Events.SLICING_DONE, dict(slicer=slicer_name,
+					                                              stl=source_path,
+					                                              stl_location=source_location,
+					                                              gcode=dest_path,
+					                                              gcode_location=dest_location,
+					                                              time=end_time - start_time))
 
 					if callback is not None:
 						if callback_args is None:
@@ -381,7 +385,8 @@ class FileManager(object):
 		slicer = self._slicing_manager.get_slicer(slicer_name)
 
 		start_time = octoprint.util.monotonic_time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
+		eventManager().fire(Events.SLICING_STARTED, {"slicer": slicer_name,
+		                                             "stl": source_path,
 		                                             "stl_location": source_location,
 		                                             "gcode": dest_path,
 		                                             "gcode_location": dest_location,
@@ -425,7 +430,8 @@ class FileManager(object):
 			self._last_slicing_progress = progress_int
 			for callback in self._slicing_progress_callbacks:
 				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-				except: self._logger.exception("Exception while pushing slicing progress")
+				except: self._logger.exception("Exception while pushing slicing progress",
+				                               extra=dict(callback=fqcn(callback)))
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
@@ -654,6 +660,8 @@ class FileManager(object):
 		try:
 			with open(self._recovery_file) as f:
 				data = yaml.safe_load(f)
+			if not isinstance(data, dict) or not all(map(lambda x: x in data, ("origin", "path", "pos", "date"))):
+				raise ValueError("Invalid recovery data structure")
 			return data
 		except:
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))

@@ -218,6 +218,17 @@ Progress information
      - 1
      - Integer
      - Estimate of time left to print, in seconds
+   * - ``printTimeLeftOrigin``
+     - 1
+     - String
+     - Origin of the current time left estimate. Can currently be either of:
+
+         * ``linear``: based on an linear approximation of the progress in file in bytes vs time
+         * ``analysis``: based on an analysis of the file
+         * ``estimate``: calculated estimate after stabilization of linear estimation
+         * ``average``: based on the average total from past prints of the same model against the same printer profile
+         * ``mixed-analysis``: mixture of ``estimate`` and ``analysis``
+         * ``mixed-average``: mixture of ``estimate`` and ``average``
 
 .. _sec-api-datamodel-files:
 

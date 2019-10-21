@@ -85,7 +85,8 @@ def printerProfilesAdd():
 		return make_response("Profile does not contain mandatory 'name' field", 400)
 
 	try:
-		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
+		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default,
+												   trigger_event=True)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
@@ -114,7 +115,7 @@ def printerProfilesDelete(identifier):
 	if default_profile and default_profile["id"] == identifier:
 		return make_response("Cannot delete default profile: {}".format(identifier), 409)
 
-	printerProfileManager.remove(identifier)
+	printerProfileManager.remove(identifier, trigger_event=True)
 	return NO_CONTENT
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
@@ -146,7 +147,8 @@ def printerProfilesUpdate(identifier):
 		merged_profile["id"] = identifier
 
 	try:
-		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default)
+		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default,
+												   trigger_event=True)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:

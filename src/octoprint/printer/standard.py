@@ -30,6 +30,7 @@ from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 from octoprint.util import monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -174,28 +175,32 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			try:
 				callback.on_printer_add_temperature(data)
 			except:
-				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding temperature data point to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_log(data)
 			except:
-				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding communication log entry to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_add_message(data)
 			except:
-				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback))
+				self._logger.exception(u"Exception while adding printer message to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try:
 				callback.on_printer_send_current_data(copy.deepcopy(data))
 			except:
-				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback))
+				self._logger.exception(u"Exception while pushing current data to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 
 	#~~ callback from metadata analysis event
 
@@ -483,14 +488,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			path_on_disk = self._fileManager.path_on_disk(origin, path)
 			path_in_storage = self._fileManager.path_in_storage(origin, path_on_disk)
 
-		recovery_data = self._fileManager.get_recovery_data()
-		if recovery_data:
-			# clean up recovery data if we just selected a different file than is logged in that
-			actual_origin = recovery_data.get("origin", None)
-			actual_path = recovery_data.get("path", None)
+		try:
+			recovery_data = self._fileManager.get_recovery_data()
+			if recovery_data:
+				# clean up recovery data if we just selected a different file
+				actual_origin = recovery_data.get("origin", None)
+				actual_path = recovery_data.get("path", None)
 
-			if actual_origin is None or actual_path is None or actual_origin != origin or actual_path != path_in_storage:
-				self._fileManager.delete_recovery_data()
+				if actual_origin is None or actual_path is None or actual_origin != origin or actual_path != path_in_storage:
+					self._fileManager.delete_recovery_data()
+		except Exception:
+			# anything goes wrong with the recovery data, we ignore it
+			self._logger.exception("Something was wrong with processing the recovery data")
 
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
@@ -1002,7 +1011,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._stateMonitor.set_job_data(self._dict(file=job_data["file"],
 				                                           estimatedPrintTime=job_data["estimatedPrintTime"],
 				                                           averagePrintTime=job_data["averagePrintTime"],
-				                                           lastPrintTIme=job_data["lastPrintTime"],
+				                                           lastPrintTime=job_data["lastPrintTime"],
 				                                           filament=job_data["filament"],
 				                                           user=user))
 
@@ -1016,7 +1025,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			})
 			callback.on_printer_send_initial_data(data)
 		except:
-			self._logger.exception("Error while trying to send initial state update")
+			self._logger.exception(u"Error while pushing initial state update to callback {}".format(callback),
+			                       extra=dict(callback=fqcn(callback)))
 
 	def _getStateFlags(self):
 		return self._dict(operational=self.is_operational(),

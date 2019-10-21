@@ -59,7 +59,7 @@ GCODE.ui = (function(){
                 setProgress("done", 100);
 
                 GCODE.gCodeReader.processAnalyzeModelDone(data.msg);
-                GCODE.gCodeReader.passDataToRenderer();
+                var activeModel = GCODE.gCodeReader.passDataToRenderer();
 
                 if (uiOptions["onModelLoaded"]) {
                     uiOptions.onModelLoaded({
@@ -70,7 +70,8 @@ GCODE.ui = (function(){
                         printTime: data.msg.printTime,
                         layerHeight: data.msg.layerHeight,
                         layersPrinted: data.msg.layerCnt,
-                        layersTotal: data.msg.layerTotal
+                        layersTotal: data.msg.layerTotal,
+                        layersActive: activeModel.length
                     });
                 }
                 switchLayer(0);

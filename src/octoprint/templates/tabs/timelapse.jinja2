@@ -188,7 +188,7 @@
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="fa fa-refresh fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
                 </td>
             </tr>
             </tbody>

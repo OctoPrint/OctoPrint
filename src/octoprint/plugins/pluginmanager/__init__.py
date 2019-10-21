@@ -37,6 +37,9 @@ _DATA_FORMAT_VERSION = "v2"
 
 
 def map_repository_entry(entry):
+	if not isinstance(entry, dict):
+		return None
+
 	result = copy.deepcopy(entry)
 
 	if not "follow_dependency_links" in result:
@@ -103,13 +106,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_plugins = []
 		self._repository_cache_path = None
 		self._repository_cache_ttl = 0
+		self._repository_mtime = None
 
 		self._notices = dict()
 		self._notices_available = False
 		self._notices_cache_path = None
 		self._notices_cache_ttl = 0
+		self._notices_mtime = None
 
 		self._console_logger = None
+
+		self._get_throttled = lambda: False
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
@@ -117,6 +124,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 		self._notices_cache_path = os.path.join(self.get_plugin_data_folder(), "notices.json")
 		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
+		self._confirm_uninstall = self._settings.global_get_boolean(["confirm_uninstall"])
+		self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
 		self._pip_caller = LocalPipCaller(force_user=self._settings.get_boolean(["pip_force_user"]))
 		self._pip_caller.on_log_call = self._log_call
@@ -141,6 +150,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
 
+		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if helpers and "get_throttled" in helpers:
+			self._get_throttled = helpers["get_throttled"]
+
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
 
@@ -154,6 +167,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,
+			confirm_uninstall=True,
+			confirm_disable=False,
 			dependency_links=False,
 			hidden=[]
 		)
@@ -164,6 +179,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
 		self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
+		self._confirm_uninstall = self._settings.global_get_boolean(["confirm_uninstall"])
+		self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
 	##~~ AssetPlugin
 
@@ -260,11 +277,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		from octoprint.server import safe_mode
 
 		refresh_repository = request.values.get("refresh_repository", "false") in valid_boolean_trues
-		if refresh_repository:
+		if refresh_repository or not self._is_repository_cache_valid():
 			self._repository_available = self._refresh_repository()
 
 		refresh_notices = request.values.get("refresh_notices", "false") in valid_boolean_trues
-		if refresh_notices:
+		if refresh_notices or not self._is_notices_cache_valid():
 			self._notices_available = self._refresh_notices()
 
 		def view():
@@ -341,6 +358,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return self.command_toggle(plugin, command)
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
+		throttled = self._get_throttled()
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+			# currently throttled, we refuse to run
+			return make_response("System is currently throttled, refusing to install "
+			                     "anything due to possible stability issues", 409)
+
 		if url is not None:
 			if not any(map(lambda scheme: url.startswith(scheme + "://"), self.URL_SCHEMES)):
 				raise ValueError("Invalid URL to pip install from")
@@ -767,16 +790,23 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		else:
 			run()
 
+	def _is_repository_cache_valid(self, mtime=None):
+		import time
+		if mtime is None:
+			mtime = self._repository_mtime
+		return mtime + self._repository_cache_ttl >= time.time() > mtime
+
 	def _fetch_repository_from_disk(self):
 		repo_data = None
 		if os.path.isfile(self._repository_cache_path):
 			import time
 			mtime = os.path.getmtime(self._repository_cache_path)
-			if mtime + self._repository_cache_ttl >= time.time() > mtime:
+			if self._is_repository_cache_valid(mtime=mtime):
 				try:
 					import json
 					with open(self._repository_cache_path) as f:
 						repo_data = json.load(f)
+					self._repository_mtime = mtime
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
 				except:
 					self._logger.exception("Error while loading repository data from {}".format(self._repository_cache_path))
@@ -797,12 +827,22 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
 			return None
 
-		repo_data = r.json()
+		try:
+			repo_data = r.json()
+		except Exception as e:
+			self._logger.exception("Error while reading repository data")
+			return None
+
+		# validation
+		if not isinstance(repo_data, (list, tuple)):
+			self._logger.warn("Invalid repository data: expected a list, got {!r}".format(repo_data))
+			return None
 
 		try:
 			import json
 			with octoprint.util.atomic_write(self._repository_cache_path, "wb") as f:
 				json.dump(repo_data, f)
+			self._repository_mtime = os.path.getmtime(self._repository_cache_path)
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
 
@@ -814,19 +854,27 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		self._repository_plugins = map(map_repository_entry, repo_data)
+		self._repository_plugins = filter(lambda x: x is not None,
+		                                  map(map_repository_entry, repo_data))
 		return True
+
+	def _is_notices_cache_valid(self, mtime=None):
+		import time
+		if mtime is None:
+			mtime = self._notices_mtime
+		return mtime + self._notices_cache_ttl >= time.time() > mtime
 
 	def _fetch_notices_from_disk(self):
 		notice_data = None
 		if os.path.isfile(self._notices_cache_path):
 			import time
 			mtime = os.path.getmtime(self._notices_cache_path)
-			if mtime + self._notices_cache_ttl >= time.time() > mtime:
+			if self._is_notices_cache_valid(mtime=mtime):
 				try:
 					import json
 					with open(self._notices_cache_path) as f:
 						notice_data = json.load(f)
+					self._notices_mtime = mtime
 					self._logger.info("Loaded notice data from disk, was still valid")
 				except:
 					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
@@ -853,6 +901,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			import json
 			with octoprint.util.atomic_write(self._notices_cache_path, "wb") as f:
 				json.dump(notice_data, f)
+			self._notices_mtime = os.path.getmtime(self._notices_cache_path)
 		except Exception as e:
 			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))
 		return notice_data

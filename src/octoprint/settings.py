@@ -116,6 +116,7 @@ default_settings = {
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
 		"blockedCommands": ["M0", "M1"],
 		"pausingCommands": ["M0", "M1", "M25"],
+		"emergencyCommands": ["M112", "M108", "M410"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
@@ -143,6 +144,9 @@ default_settings = {
 		"supportFAsCommand": False,
 		"firmwareDetection": True,
 		"blockWhileDwelling": False,
+		"useParityWorkaround": "detect",
+		"maxConsecutiveResends": 10,
+		"sendM112OnError": True,
 
 		"capabilities": {
 			"autoreport_temp": True,
@@ -253,6 +257,7 @@ default_settings = {
 		"keyboardControl": True,
 		"pollWatched": False,
 		"modelSizeDetection": True,
+		"printStartConfirmation": False,
 		"printCancelConfirmation": True,
 		"autoUppercaseBlacklist": ["M117", "M118"],
 		"g90InfluencesExtruder": False
@@ -296,6 +301,7 @@ default_settings = {
 		"defaultLanguage": "_default",
 		"showFahrenheitAlso": False,
 		"fuzzyTimes": True,
+		"closeModalsWithClick": True,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
@@ -336,7 +342,10 @@ default_settings = {
 		"localNetworks": ["127.0.0.0/8", "::1/128"],
 		"autologinAs": None,
 		"trustBasicAuthentication": False,
-		"checkBasicAuthenticationPassword": True
+		"checkBasicAuthenticationPassword": True,
+		"trustRemoteUser": False,
+		"remoteUserHeader": "REMOTE_USER",
+		"addRemoteUsers": False
 	},
 	"slicing": {
 		"enabled": True,

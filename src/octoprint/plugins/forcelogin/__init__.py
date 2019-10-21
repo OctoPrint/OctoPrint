@@ -123,7 +123,7 @@ class ForceLoginPlugin(octoprint.plugin.UiPlugin,
 				# not active, no handling
 				return
 
-			if flask.request.endpoint in ("api.login",):
+			if flask.request.endpoint in ("api.login",) or flask.request.endpoint.endswith(".static"):
 				return
 
 			if plugin is not None and not plugin.is_blueprint_protected():

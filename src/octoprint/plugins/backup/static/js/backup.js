@@ -197,10 +197,10 @@ $(function() {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({line: gettext("Restore successful! The server will now be restarted!"), stream: "message"});
                 self.restoreInProgress(false);
-            } else if (data.type === "install_plugin") {
+            } else if (data.type === "installing_plugin") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({
-                    line: _.sprintf(gettext("Installing plugin \"%(plugin)s}\"..."), {plugin: data.plugin.name}),
+                    line: _.sprintf(gettext("Installing plugin \"%(plugin)s\"..."), {plugin: data.plugin}),
                     stream: "message"
                 });
             } else if (data.type === "plugin_incompatible") {

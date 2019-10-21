@@ -236,7 +236,10 @@ def login():
 				response["_is_external_client"] = s().getBoolean(["server", "ipCheck", "enabled"]) \
 				                                  and not util_net.is_lan_address(remote_addr,
 				                                                                  additional_private=s().get(["server", "ipCheck", "trustedSubnets"]))
-				return jsonify(response)
+
+				r = make_response(jsonify(response))
+				r.delete_cookie("active_logout")
+				return r
 
 		return make_response(("User unknown or password incorrect", 401, []))
 
@@ -254,7 +257,11 @@ def logout():
 	# ... and from flask login (and principal)
 	logout_user()
 
-	return NO_CONTENT
+	# ... and send an active logout session cookie
+	r = make_response(NO_CONTENT)
+	r.set_cookie("active_logout", "true")
+
+	return r
 
 
 def _logout(user):
@@ -457,7 +464,17 @@ def _test_url(data):
 			response_result = dict(headers=dict(response.headers),
 			                       content_type=content_type)
 
+			if not content_type and data.get("content_type_guess") in valid_boolean_trues:
+				content = response.content
+				content_type = util.guess_mime_type(bytearray(content))
+
+			if not content_type:
+				content_type = "application/octet-stream"
+
+			response_result = dict(assumed_content_type=content_type)
+
 			parsed_content_type = util.parse_mime_type(content_type)
+
 			in_whitelist = content_type_whitelist is None or any(
 				map(lambda x: util.mime_type_matches(parsed_content_type, x), content_type_whitelist))
 			in_blacklist = content_type_blacklist is not None and any(

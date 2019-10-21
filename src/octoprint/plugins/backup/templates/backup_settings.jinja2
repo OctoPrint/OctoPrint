@@ -46,7 +46,7 @@
             <td class="settings_plugin_backup_name" data-bind="text: name"></td>
             <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
-            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download') }}" class="fa fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore') }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></span></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download')|edq }}" class="fa fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore')|edq }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></span></td>
         </tr>
         </tbody>
     </table>

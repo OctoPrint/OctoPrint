@@ -123,7 +123,7 @@ def get_python_version_string():
 
 	# Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
 	if version_string.endswith("+"):
-		version_string = python_version[:-1]
+		version_string = version_string[:-1]
 
 	return version_string
 

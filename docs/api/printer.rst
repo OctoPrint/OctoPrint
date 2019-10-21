@@ -350,7 +350,7 @@ Issue a tool command
      Sets the given target temperature on the printer's tools. Additional parameters:
 
      * ``targets``: Target temperature(s) to set, properties must match the format ``tool{n}`` with ``n`` being the
-       tool's index starting with 0.
+       tool's index starting with 0. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's tools. Additional parameters:
@@ -630,7 +630,7 @@ Issue a bed command
    target
      Sets the given target temperature on the printer's bed. Additional parameters:
 
-     * ``target``: Target temperature to set.
+     * ``target``: Target temperature to set. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's bed. Additional parameters:
@@ -770,7 +770,7 @@ Retrieve the current bed state
 Issue a chamber command
 =======================
 
-.. http:post:: /api/printer/bed
+.. http:post:: /api/printer/chamber
 
    Chamber commands allow setting the temperature and temperature offsets for the printer's heated chamber. Available commands
    are:
@@ -778,7 +778,7 @@ Issue a chamber command
    target
      Sets the given target temperature on the printer's chamber. Additional parameters:
 
-     * ``target``: Target temperature to set.
+     * ``target``: Target temperature to set. A value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's chamber. Additional parameters:
@@ -790,7 +790,7 @@ Issue a chamber command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   If no heated chambed is configured for the currently selected printer profile, the resource will return
+   If no heated chamber is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
    Requires user rights.

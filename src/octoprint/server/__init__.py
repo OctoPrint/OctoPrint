@@ -148,7 +148,17 @@ def load_user(id):
 	return None
 
 def load_user_from_request(request):
-	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+	user = None
+
+	if settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
+		# Basic Authentication?
+		user = util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+	if settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		# Remote user header?
+		user = util.get_user_for_remote_user_header(request)
+
+	return user
 
 def unauthorized_user():
 	from flask import abort
@@ -251,7 +261,11 @@ class Server(object):
 		# monkey patch a bunch of stuff
 		util.tornado.fix_json_encode()
 		util.flask.fix_flask_jsonify()
-		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
+
+		additional_translation_folders = []
+		if not safe_mode:
+			additional_translation_folders += [self._settings.getBaseFolder("translations")]
+		util.flask.enable_additional_translations(additional_folders=additional_translation_folders)
 
 		# setup app
 		self._setup_app(app)
@@ -475,7 +489,7 @@ class Server(object):
 			except:
 				self._logger.exception("Error while trying to migrate settings for "
 				                       "plugin {}, ignoring it".format(implementation._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra=dict(plugin=implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -1014,10 +1028,20 @@ class Server(object):
 				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
 			return html_link_regex.sub(repl, text)
 
+		single_quote_regex = re.compile("(?<!\\\\)'")
+		def escape_single_quote(text):
+			return single_quote_regex.sub("\\'", text)
+
+		double_quote_regex = re.compile('(?<!\\\\)"')
+		def escape_double_quote(text):
+			return double_quote_regex.sub('\\"', text)
+
 		app.jinja_env.filters["regex_replace"] = regex_replace
 		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
 		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
 		app.jinja_env.filters["externalize_links"] = externalize_links
+		app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters["esq"] = escape_single_quote
+		app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters["edq"] = escape_double_quote
 
 		# configure additional template folders for jinja2
 		import jinja2
@@ -1597,10 +1621,7 @@ class Server(object):
 
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
-
-		# login users authenticated by basic auth
-		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
-			loginManager.request_callback = load_user_from_request
+		loginManager.request_callback = load_user_from_request
 
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser

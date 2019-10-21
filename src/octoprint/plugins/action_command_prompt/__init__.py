@@ -69,6 +69,8 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	def on_event(self, event, payload):
 		if event == Events.CONNECTED and self._enable == "always" and self._enable_signal_support:
 			self._printer.commands(["{command} P1".format(command=self._command)])
+		elif event == Events.DISCONNECTED:
+			self._close_prompt()
 
 	#~ SettingsPlugin
 
@@ -213,7 +215,7 @@ __plugin_name__ = "Action Command Prompt Support"
 __plugin_description__ = "Allows your printer to trigger prompts via action commands on the connection"
 __plugin_author__ = "Gina Häußge"
 __plugin_disabling_discouraged__ = gettext("Without this plugin your printer will no longer be able to trigger"
-                                           "confirmation or selection prompts in OctoPrint")
+                                           " confirmation or selection prompts in OctoPrint")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
