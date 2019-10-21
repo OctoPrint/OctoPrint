@@ -33,6 +33,7 @@ thanks to everyone who contributed!
   * Kale Stedman
   * Kazuhiro Ogura
   * LA 3D Printer Repair
+  * Lee Dohm
   * LulzBot®
   * Makespace Madrid
   * Mark Walker
@@ -51,9 +52,8 @@ thanks to everyone who contributed!
   * Simon Hallam
   * Stefan Krister
   * Sven Mueller
-  * TEVO 3D Printers
   * Trent Shumay
   * Ulrich Kempken
   * Vladislav Kuzemchik
 
-and 1587 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1615 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!

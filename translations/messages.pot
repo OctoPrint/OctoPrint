@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.3.12.dev193+gbba796d55.dirty\n"
+"Project-Id-Version: OctoPrint 1.3.12rc3\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2019-09-09 17:31+0200\n"
+"POT-Creation-Date: 2019-10-21 11:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1894,24 +1894,24 @@ msgstr ""
 msgid "Learn more..."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:527
+#: src/octoprint/plugins/softwareupdate/__init__.py:528
 msgid "Python"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:528
+#: src/octoprint/plugins/softwareupdate/__init__.py:529
 msgid "pip"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:529
+#: src/octoprint/plugins/softwareupdate/__init__.py:530
 msgid "setuptools"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:622
+#: src/octoprint/plugins/softwareupdate/__init__.py:623
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:1
 msgid "Software Update"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1062
+#: src/octoprint/plugins/softwareupdate/__init__.py:1063
 #: src/octoprint/server/views.py:600
 #: src/octoprint/static/js/app/viewmodels/appearance.js:99
 #: src/octoprint/static/js/app/viewmodels/appearance.js:104
@@ -1922,7 +1922,7 @@ msgstr ""
 msgid "OctoPrint"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1226
+#: src/octoprint/plugins/softwareupdate/__init__.py:1227
 msgid ""
 "Without this plugin OctoPrint will no longer be able to update itself or "
 "any of your installed plugins which might put your system at risk."
@@ -2715,8 +2715,9 @@ msgstr ""
 #: src/octoprint/static/js/app/dataupdater.js:177
 #, python-format
 msgid ""
-"<p>The server is currently running in safe mode. Third party plugins are "
-"disabled and cannot be enabled.</p><p>Reason: %(reason)s</p>"
+"<p>The server is currently running in safe mode. Third party plugins and "
+"language packs are disabled and cannot be enabled.</p><p>Reason: "
+"%(reason)s</p>"
 msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:226
