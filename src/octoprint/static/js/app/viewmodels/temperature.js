@@ -58,11 +58,11 @@ $(function() {
             item: undefined,
 
             title: ko.pureComputed(function() {
-                return _.sprintf(gettext("Changing Offset of %(name)s"), {name: self.changingOffset.name()});
+                return _.sprintf(gettext("Changing Offset of %(name)s"), {name: _.escape(self.changingOffset.name())});
             }),
             description: ko.pureComputed(function() {
                 return _.sprintf(gettext("Use the form below to specify a new offset to apply to all temperature commands sent from printed files for \"%(name)s\""),
-                    {name: self.changingOffset.name()});
+                    {name: _.escape(self.changingOffset.name())});
             })
         };
         self.changeOffsetDialog = undefined;
@@ -348,7 +348,7 @@ $(function() {
                 value = "" + value + "°C";
             }
 
-            return _.sprintf(text, {name: profile.name, value: value});
+            return _.sprintf(text, {name: _.escape(profile.name), value: _.escape(value)});
         };
 
         self.updatePlot = function() {

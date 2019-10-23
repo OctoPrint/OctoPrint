@@ -85,7 +85,7 @@ $(function() {
                         self.requestData();
                     });
             };
-            showConfirmationDialog(_.sprintf(gettext("You are about to delete backup file \"%(name)s\"."), {name: backup}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete backup file \"%(name)s\"."), {name: _.escape(backup)}),
                 perform);
         };
 
@@ -101,7 +101,7 @@ $(function() {
 
                 OctoPrint.plugins.backup.restoreBackup(backup);
             };
-            showConfirmationDialog(_.sprintf(gettext("You are about to restore the backup file \"%(name)s\". This cannot be undone."), {name: backup}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to restore the backup file \"%(name)s\". This cannot be undone."), {name: _.escape(backup)}),
                 perform);
         };
 
@@ -117,7 +117,7 @@ $(function() {
 
                 self.backupUploadData.submit();
             };
-            showConfirmationDialog(_.sprintf(gettext("You are about to upload and restore the backup file \"%(name)s\". This cannot be undone."), {name: self.backupUploadName()}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to upload and restore the backup file \"%(name)s\". This cannot be undone."), {name: _.escape(self.backupUploadName())}),
                 perform);
         };
 
@@ -182,7 +182,7 @@ $(function() {
                 self.backupInProgress(false);
                 new PNotify({
                     title: gettext("Creating the backup failed"),
-                    text: _.sprintf(gettext("OctoPrint could not create your backup. Please consult <code>octoprint.log</code> for details. Error: %(error)s"), {error:data.error}),
+                    text: _.sprintf(gettext("OctoPrint could not create your backup. Please consult <code>octoprint.log</code> for details. Error: %(error)s"), {error: _.escape(data.error)}),
                     type: "error",
                     hide: false
                 });
@@ -200,13 +200,13 @@ $(function() {
             } else if (data.type === "installing_plugin") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({
-                    line: _.sprintf(gettext("Installing plugin \"%(plugin)s\"..."), {plugin: data.plugin}),
+                    line: _.sprintf(gettext("Installing plugin \"%(plugin)s\"..."), {plugin: _.escape(data.plugin)}),
                     stream: "message"
                 });
             } else if (data.type === "plugin_incompatible") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({
-                    line: _.sprintf(gettext("Cannot install plugin \"%(plugin)s\" due to it being incompatible to this OctoPrint version and/or underlying operating system"), {plugin: data.plugin.key}),
+                    line: _.sprintf(gettext("Cannot install plugin \"%(plugin)s\" due to it being incompatible to this OctoPrint version and/or underlying operating system"), {plugin: _.escape(data.plugin.key)}),
                     stream: "stderr"
                 });
             } else if (data.type === "unknown_plugins") {
@@ -245,11 +245,11 @@ $(function() {
             handler = function(filename) {
                 return OctoPrint.plugins.backup.deleteBackup(filename)
                     .done(function() {
-                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                        deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: _.escape(filename)}), true);
                     })
                     .fail(function(jqXHR) {
-                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
-                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                        var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: _.escape(filename)});
+                        var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: _.escape(filename), error: _.escape(jqXHR.responseText)});
                         deferred.notify(short, long, false);
                     });
             };

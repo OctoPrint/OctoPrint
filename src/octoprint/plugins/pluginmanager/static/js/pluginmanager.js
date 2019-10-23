@@ -93,6 +93,11 @@ $(function() {
             self.performRepositorySearch();
         });
 
+        self.listingSearchQuery = ko.observable();
+        self.listingSearchQuery.subscribe(function() {
+            self.performListingSearch();
+        });
+
         self.installUrl = ko.observable();
         self.uploadFilename = ko.observable();
 
@@ -291,9 +296,21 @@ $(function() {
             }
         });
 
+        self.performListingSearch = function() {
+            var query = self.listingSearchQuery();
+            if (query !== undefined && query.trim() !== "") {
+                query = query.toLocaleLowerCase();
+                self.plugins.changeSearchFunction(function (entry) {
+                    return entry && (entry["name"].toLocaleLowerCase().indexOf(query) > -1 || (entry.description && entry.description.toLocaleLowerCase().indexOf(query) > -1));
+                });
+            } else {
+                self.plugins.resetSearch();
+            }
+        }
+
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
-            if (query !== undefined && query.trim() != "") {
+            if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
@@ -427,7 +444,7 @@ $(function() {
 
                 // always warn if plugin is marked "disabling discouraged"
                 if (data.disabling_discouraged) {
-                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: data.name})
+                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: _.escape(data.name)})
                         + "</p><p>" + data.disabling_discouraged;
                     showConfirmationDialog({
                         title: gettext("This is not recommended"),
@@ -441,7 +458,7 @@ $(function() {
                 // warn if global "warn disabling" setting is set"
                 else if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable()) {
                     showConfirmationDialog({
-                        message: _.sprintf(gettext("You are about to disable \"%(name)s\""), {name: data.name}),
+                        message: _.sprintf(gettext("You are about to disable \"%(name)s\""), {name: _.escape(data.name)}),
                         cancel: gettext("Keep enabled"),
                         proceed: gettext("Disable plugin"),
                         onproceed: performDisabling,
@@ -500,13 +517,13 @@ $(function() {
             if (!reinstall) {
                 workTitle = gettext("Installing plugin...");
                 if (name) {
-                    workText = _.sprintf(gettext("Installing plugin \"%(name)s\" from %(url)s..."), {url: url, name: name});
+                    workText = _.sprintf(gettext("Installing plugin \"%(name)s\" from %(url)s..."), {url: _.escape(url), name: _.escape(name)});
                 } else {
-                    workText = _.sprintf(gettext("Installing plugin from %(url)s..."), {url: url});
+                    workText = _.sprintf(gettext("Installing plugin from %(url)s..."), {url: _.escape(url)});
                 }
             } else {
                 workTitle = gettext("Reinstalling plugin...");
-                workText = _.sprintf(gettext("Reinstalling plugin \"%(name)s\" from %(url)s..."), {url: url, name: name});
+                workText = _.sprintf(gettext("Reinstalling plugin \"%(name)s\" from %(url)s..."), {url: _.escape(url), name: _.escape(name)});
             }
             self._markWorking(workTitle, workText);
 
@@ -555,7 +572,7 @@ $(function() {
             // defining actual uninstall logic as functor in order to handle
             // the confirm/no-confirm logic without duplication of logic
             var performUninstall = function() {
-                self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
+                self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: _.escape(data.name)}));
 
                 OctoPrint.plugins.pluginmanager.uninstall(data.key)
                     .done(function() {
@@ -577,7 +594,7 @@ $(function() {
             if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall()) {
                 // confirmation needed. Show confirmation dialog and call performUninstall if user clicks Yes
                 showConfirmationDialog({
-                    message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: data.name}),
+                    message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: _.escape(data.name)}),
                     cancel: gettext("Keep installed"),
                     proceed: gettext("Uninstall"),
                     onproceed: performUninstall,
@@ -739,7 +756,7 @@ $(function() {
                 }
 
                 text += "<li>"
-                    + _.sprintf(line, {plugin: step.plugin, result: step.result ? "<i class=\"fa fa-check\"></i>" : "<i class=\"fa fa-remove\"></i>"})
+                    + _.sprintf(line, {plugin: _.escape(step.plugin), result: step.result ? "<i class=\"fa fa-check\"></i>" : "<i class=\"fa fa-remove\"></i>"})
                     + "</li>";
             });
             text += "</ul></p>";
@@ -917,16 +934,16 @@ $(function() {
 
             var title;
             if (important) {
-                title = _.sprintf(gettext("Important notice regarding plugin \"%(name)s\""), {name: name});
+                title = _.sprintf(gettext("Important notice regarding plugin \"%(name)s\""), {name: _.escape(name)});
             } else {
-                title = _.sprintf(gettext("Notice regarding plugin \"%(name)s\""), {name: name});
+                title = _.sprintf(gettext("Notice regarding plugin \"%(name)s\""), {name: _.escape(name)});
             }
 
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
                 var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
-                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
+                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: _.escape(versions)}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
             }

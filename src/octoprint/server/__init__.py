@@ -536,7 +536,9 @@ class Server(object):
 
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
 		                            session_kls=util.sockjs.ThreadSafeSession,
-		                            user_settings=dict(websocket_allow_origin="*" if enable_cors else ""))
+		                            user_settings=dict(websocket_allow_origin="*" if enable_cors else "",
+		                                               jsessionid=False,
+		                                               sockjs_url="../../static/js/lib/sockjs.min.js"))
 
 		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
@@ -647,7 +649,11 @@ class Server(object):
 						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}".format(**locals()))
 						server_routes.append((route, handler, kwargs))
 
-		headers =         {"X-Robots-Tag": "noindex, nofollow, noimageindex"}
+		headers =         {"X-Robots-Tag": "noindex, nofollow, noimageindex",
+		                   "X-Content-Type-Options": "nosniff"}
+		if not settings().getBoolean(["server", "allowFraming"]):
+			headers["X-Frame-Options"] = "sameorigin"
+
 		removed_headers = ["Server"]
 
 		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app,

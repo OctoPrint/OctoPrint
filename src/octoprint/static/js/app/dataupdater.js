@@ -174,7 +174,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
                 self._safeModePopup = new PNotify({
                     title: gettext("Safe mode is active"),
-                    text: _.sprintf(gettext("<p>The server is currently running in safe mode. Third party plugins and language packs are disabled and cannot be enabled.</p><p>Reason: %(reason)s</p>"), {reason: reason}),
+                    text: _.sprintf(gettext("<p>The server is currently running in safe mode. Third party plugins and language packs are disabled and cannot be enabled.</p><p>Reason: %(reason)s</p>"), {reason: _.escape(reason)}),
                     hide: false
                 });
             }
@@ -251,7 +251,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 }
                 self._printerErrorCancelNotification = new PNotify({
                     title: gettext("Error reported by printer"),
-                    text: _.sprintf(gettext("Your printer's firmware reported an error. Due to that the ongoing print job will be cancelled. Reported error: %(firmwareError)s"), payload),
+                    text: _.sprintf(gettext("Your printer's firmware reported an error. Due to that the ongoing print job will be cancelled. Reported error: %(firmwareError)s"), _.escape(payload)),
                     type: "error",
                     hide: false
                 });
@@ -262,24 +262,24 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 switch (payload.reason) {
                     case "firmware": {
                         title = gettext("Error reported by printer");
-                        text = _.sprintf(gettext("Your printer's firmware reported an error. Due to that OctoPrint will disconnect. Reported error: %(error)s"), payload);
+                        text = _.sprintf(gettext("Your printer's firmware reported an error. Due to that OctoPrint will disconnect. Reported error: %(error)s"), _.escape(payload));
                         break;
                     }
                     case "resend":
                     case "resend_loop":
                     case "timeout": {
                         title = gettext("Communication error");
-                        text = _.sprintf(gettext("There was a communication error while talking to your printer. Please consult the terminal output and octoprint.log for details. Error: %(error)s"), payload);
+                        text = _.sprintf(gettext("There was a communication error while talking to your printer. Please consult the terminal output and octoprint.log for details. Error: %(error)s"), _.escape(payload));
                         break;
                     }
                     case "connection": {
                         title = gettext("Error connecting to printer");
-                        text = _.sprintf(gettext("There was an error while trying to connect to your printer. Error: %(error)s"), payload);
+                        text = _.sprintf(gettext("There was an error while trying to connect to your printer. Error: %(error)s"), _.escape(payload));
                         break;
                     }
                     case "start_print": {
                         title = gettext("Error starting a print");
-                        text = _.sprintf(gettext("There was an error while trying to start a print job. Error: %(error)s"), payload);
+                        text = _.sprintf(gettext("There was an error while trying to start a print job. Error: %(error)s"), _.escape(payload));
                         break;
                     }
                     case "autodetect_port":
@@ -289,7 +289,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     }
                     default: {
                         title = gettext("Unknown error");
-                        text = _.sprintf(gettext("There was an unknown error while talking to your printer. Please consult the terminal output and octoprint.log for details. Error: %(error)s"), payload);
+                        text = _.sprintf(gettext("There was an unknown error while talking to your printer. Please consult the terminal output and octoprint.log for details. Error: %(error)s"), _.escape(payload));
                         break;
                     }
                 }

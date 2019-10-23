@@ -6133,7 +6133,7 @@ msgstr ""
 
 #: src/octoprint/templates/tabs/timelapse.jinja2:29
 msgid ""
-"OctoPrint will rate limit snapshots to this minimum interval. This it to "
+"OctoPrint will rate limit snapshots to this minimum interval. This is to "
 "prevent against performance issues with vase mode/continous z prints."
 msgstr ""
 
