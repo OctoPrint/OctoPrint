@@ -261,7 +261,7 @@ def logout():
 	logout_user()
 
 	# ... and send an active logout session cookie
-	r = make_response(jsonify(octoprint.access.users.AnonymousUser([octoprint.server.groupManager.guest_group])))
+	r = make_response(jsonify(octoprint.server.userManager.anonymous_user_factory()))
 	r.set_cookie("active_logout", "true")
 
 	return r
