@@ -228,11 +228,11 @@ $(function() {
                 var fullNameTemplate = gettext("%(name)s: %(version)s");
                 value.fullNameLocal = _.sprintf(fullNameTemplate, {name: _.escape(value.displayName), version: _.escape(value.displayVersion)});
 
-                var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
+                var fullNameRemoteVars = {name: _.escape(value.displayName), version: gettext("unknown")};
                 if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
-                    fullNameRemoteVars.version = value.information.remote.name;
+                    fullNameRemoteVars.version = _.escape(value.information.remote.name);
                 }
-                value.fullNameRemote = _.sprintf(fullNameTemplate, _.escape(fullNameRemoteVars));
+                value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
                 versions.push(value);
             });
