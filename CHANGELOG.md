@@ -1,45 +1,24 @@
 # OctoPrint Changelog
 
-## 1.3.12rc3 (2019-09-23)
+## 1.3.12 (2019-10-22)
 
-### Bug fixes
+### Heads-up if you are updating from OctoPrint < 1.3.6
 
-  * [#3277](https://github.com/foosel/OctoPrint/issues/3277) (regression) - GCODE viewer: Fix huge memory consumption due to misplaced deep clone.
-  * [#3282](https://github.com/foosel/OctoPrint/issues/3282) (regression) - Don't trigger `M112` routine for firmware errors on a connection error when no connection has even been established yet.
+Due to new versions of third party dependencies, this and future versions of OctoPrint will no longer update via the update script/`python setup.py install` that used to be OctoPrint's standard update mechanism in versions prior to 1.3.6, at least not in older Python environments as they can be found on e.g. OctoPi 0.14. 
 
-### Special thanks to all the contributors!
+If you haven't yet updated from such a version ([which you really should have done a long time ago](https://octoprint.org/blog/2018/03/15/security-issue-update-to-1.3.6/)) you'll need to [update manually via command line](https://community.octoprint.org/t/how-can-i-update-the-octoprint-installation-on-my-octopi-image/207?u=foosel).
 
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports!
+### Heads-up if you are still running OctoPi 0.14
 
-### More information
+As it is becoming increasingly complicated to make OctoPrint *and its third party dependencies* run in the by now ancient Python environment found on OctoPi 0.14, **1.3.12 will no longer allow to be updated from within OctoPrint on OctoPi 0.14** or a similarly outdated Python environment.
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.12rc2...1.3.12rc3)
+Either [backup](https://community.octoprint.org/t/how-do-i-backup-my-octoprint-settings-on-octopi/1489?u=foosel) and migrate to a new version of OctoPi or run future updates [manually](https://community.octoprint.org/t/how-can-i-update-the-octoprint-installation-on-my-octopi-image/207?u=foosel).
 
-## 1.3.12rc2 (2019-09-17)
-
-### Improvements
-
-  * [#3271](https://github.com/foosel/OctoPrint/issues/3271) - Extend safemode to also disable third party language packs
-
-### Bug fixes
-
-  * [#3270](https://github.com/foosel/OctoPrint/issues/3270) - Properly escape translation strings in single/double quoted template locations
-  * [#3272](https://github.com/foosel/OctoPrint/issues/3272) (regression) - GCODE viewer: Fix out-of-sync & layer slider issue
-  * [#3273](https://github.com/foosel/OctoPrint/issues/3273) (regression) - Fix minimum pip version for OctoPi 0.15.1, which turns out is 9.0.3, not 10.0.1 as on OctoPi 0.15.0 due to a bug related version pin back then when.
-
-### Special thanks to all the contributors!
-
-Special thanks to everyone who contributed to this release candidate and provided full, analysable bug reports!
-
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.12rc1...1.3.12rc2)
-
-## 1.3.12rc1 (2019-09-10)
+[See here for more information on the matter](https://community.octoprint.org/t/octoprint-tells-me-it-cant-run-an-update-due-to-my-python-environment-being-outdated-what-do-i-do-now/4756?u=foosel).
 
 ### Improvements
 
-  * [#1239](https://github.com/foosel/OctoPrint/issues/1239) & [#3227](https://github.com/foosel/OctoPrint/pull/3227) - Add command line interface for user management. Via `octoprint user [add_user|remove_user|change_password]` it is now possible to add & remove users or change their passwords right from the command line instead of just through the web interface. That should also make password recovery easier and as simple as `octoprint user change_password username`.
+  * [#1239](https://github.com/foosel/OctoPrint/issues/1239) & [#3227](https://github.com/foosel/OctoPrint/pull/3227) - Add command line interface for user management. Via `octoprint user [list|add|remove|activate|deactivate|password]` it is now possible to list, add, remove, activate & deactivate users or change their passwords right from the command line instead of just through the web interface. That should also make password recovery easier and as simple as `octoprint user password username`.
   * [#2896](https://github.com/foosel/OctoPrint/issues/2896) - Add confirmation dialog when removing a plugin (see also [#3179](https://github.com/foosel/OctoPrint/pull/3179)).
   * [#3075](https://github.com/foosel/OctoPrint/issues/3075) - Calculate filament usage for all extruders in `M605` duplicate/mirror setup (see also [#3181](https://github.com/foosel/OctoPrint/pull/3181)).
   * [#3101](https://github.com/foosel/OctoPrint/issues/3101) - Support tags on GCODE script hook and add `plugin:<plugin id>` to script parts from plugins.
@@ -53,7 +32,7 @@ Special thanks to everyone who contributed to this release candidate and provide
   * [#3167](https://github.com/foosel/OctoPrint/pull/3167) - Make it configurable whether to perform the parity double open workaround on serial needed for (some?) debian based systems. Solves issues for FreeBSD systems & Klipper.
   * [#3180](https://github.com/foosel/OctoPrint/pull/3180) - Add button to terminal tab to clear the log.
   * [#3188](https://github.com/foosel/OctoPrint/issues/3188) - Suppress scary `WebSocketClosedError` messages in the log simply caused by closing the browser.
-  * [#3171](https://github.com/foosel/OctoPrint/issues/3171) & [#3204](https://github.com/foosel/OctoPrint/issues/3204) - Action command prompts: Add close button to prompts triggered through action commands by the firmware. Wouldn't have been necessary if firmware wasn't already abusing this feature created for *interactive prompts* as non interactive fire&forget notification dialogs 🙄
+  * [#3171](https://github.com/foosel/OctoPrint/issues/3171) & [#3204](https://github.com/foosel/OctoPrint/issues/3204) - Action command prompts: Add close button to prompts triggered through action commands by the firmware, in case the firmware forgets to add action buttons.
   * [#3174](https://github.com/foosel/OctoPrint/issues/3174) - Include upload date & time in State panel to make file refreshs clearer.
   * [#3191](https://github.com/foosel/OctoPrint/pull/3191) - Docs: Clarify that a target temperature value of 0 turns heaters off.
   * [#3198](https://github.com/foosel/OctoPrint/issues/3198) - Clarify execution order of GCODE scripts.
@@ -65,6 +44,7 @@ Special thanks to everyone who contributed to this release candidate and provide
   * [#3225](https://github.com/foosel/OctoPrint/pull/3225) - Quote arguments in `pip install` to avoid issues with shells other than bash.
   * [#3249](https://github.com/foosel/OctoPrint/pull/3249) & [#3263](https://github.com/foosel/OctoPrint/pull/3263) - Printer profile events are now properly triggered.
   * [#3250](https://github.com/foosel/OctoPrint/issues/3250) - Add optional confirmation dialog for starting a print.
+  * [#3271](https://github.com/foosel/OctoPrint/issues/3271) - Extend safemode to also disable third party language packs
   * Make emergency codes configurable.
   * Detect endless resend requests of the same line. If the printer keeps requesting the same line over and over again, something is either seriously wrong with the line or with the connection. In any case, log an error and disconnect.
   * Send `M112` on disconnect due to an error (configurable) to try to disable heaters and such.
@@ -108,18 +88,27 @@ Special thanks to everyone who contributed to this release candidate and provide
   * [#3247](https://github.com/foosel/OctoPrint/issues/3247) - Fix scoping issue in JavaScript for custom commands with `javascript`/`enabled` fields.
   * [#3253](https://github.com/foosel/OctoPrint/issues/3253) - Software Update: Fix error in python version detection (see also [#3256](https://github.com/foosel/OctoPrint/pull/3256)).
   * [#3257](https://github.com/foosel/OctoPrint/issues/3257) - Appkeys: Ignore empty username on `request` endpoint to avoid later issues.
-  * Fix broken filtering of valid tools
+  * [#3270](https://github.com/foosel/OctoPrint/issues/3270) - Properly escape translation strings in single/double quoted template locations
+  * [#3272](https://github.com/foosel/OctoPrint/issues/3272) (regression) - GCODE viewer: Fix out-of-sync & layer slider issue
+  * [#3273](https://github.com/foosel/OctoPrint/issues/3273) (regression) - Fix minimum pip version for OctoPi 0.15.1, which turns out is 9.0.3, not 10.0.1 as on OctoPi 0.15.0 due to a bug related version pin back then when.
+  * [#3277](https://github.com/foosel/OctoPrint/issues/3277) (regression) - GCODE viewer: Fix huge memory consumption due to misplaced deep clone.
+  * [#3282](https://github.com/foosel/OctoPrint/issues/3282) (regression) - Don't trigger `M112` routine for firmware errors on a connection error when no connection has even been established yet.  * Fix broken filtering of valid tools
   * Properly clear out user data from user management dialogs
   * Appkeys: Fix handling of empty request body, should return `400 Bad Request` instead of `500 Internal Server Error`.
   * Printer safety: Anycubic 1.1.2 is already safe (off by one error, used to only detect >1.1.2 instead of >=1.1.2)
 
 ### Special thanks to all the contributors!
 
-Special thanks to everyone who contributed to this release candidate and provided full, analyzable bug reports and pull requests, especially [@aliaksei135](https://github.com/aliaksei135), [@AndyQ](https://github.com/AndyQ), [@dmweis](https://github.com/dmweis), [@esver](https://github.com/esver), [@gdombiak](https://github.com/gdombiak), [@jackwilsdon](https://github.com/jackwilsdon), [@JanneMantyharju](https://github.com/JanneMantyharju), [@kevans91](https://github.com/kevans91), [@pusewicz](https://github.com/pusewicz), [@rfinnie](https://github.com/rfinnie) and [@tduehr](https://github.com/tduehr) for their PRs.
+Special thanks to everyone who contributed to this release and provided full, analyzable bug reports and pull requests, especially [@aliaksei135](https://github.com/aliaksei135), [@AndyQ](https://github.com/AndyQ), [@dmweis](https://github.com/dmweis), [@esver](https://github.com/esver), [@gdombiak](https://github.com/gdombiak), [@jackwilsdon](https://github.com/jackwilsdon), [@JanneMantyharju](https://github.com/JanneMantyharju), [@kevans91](https://github.com/kevans91), [@pusewicz](https://github.com/pusewicz), [@rfinnie](https://github.com/rfinnie) and [@tduehr](https://github.com/tduehr) for their PRs.
 
 ### More information
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11...1.3.12rc1)
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.11...1.3.12)
+  * Release Candidates:
+    * [1.3.12rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.12rc1)
+    * [1.3.12rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.12rc2)
+    * [1.3.12rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.12rc3)
+    * A big **Thank you!** to everyone who reported back on these release candidates this time: [@arhi](https://github.com/arhi), [@b-morgan](https://github.com/b-morgan), [@EddyMI3d](https://github.com/EddyMI3d), [@ejjenkins](https://github.com/ejjenkins), [@fieldOfView](https://github.com/fieldOfView), [@gcnix](https://github.com/gcnix), [@gege2b](https://github.com/gege2b), [@gryzlov](https://github.com/gryzlov), [@Guilouz](https://github.com/Guilouz), [@JohnOCFII](https://github.com/JohnOCFII), [@kazibole](https://github.com/kazibole), [@louispires](https://github.com/louispires), [@rknobbe](https://github.com/rknobbe), [@schnello](https://github.com/schnello)
 
 ## 1.3.11 (2019-05-14)
 

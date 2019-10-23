@@ -13,8 +13,8 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
-SENTRY_URL_SERVER = "https://562288d61d724563b6d43e2a6670616e@sentry.io/1373987"
-SENTRY_URL_COREUI = "https://5c2e838ac5554162bfc30142788362db@sentry.io/1374096"
+SENTRY_URL_SERVER = "https://6c066dfe16c244d38fca46dbc05e1028@sentry.io/1373987"
+SENTRY_URL_COREUI = "https://fb45e3d5210b43bfaccd5f3c45c2b28d@sentry.io/1374096"
 
 SETTINGS_DEFAULTS = dict(enabled=False,
                          enabled_unreleased=False,
