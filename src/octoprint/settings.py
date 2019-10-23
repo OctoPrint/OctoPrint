@@ -220,7 +220,8 @@ default_settings = {
 		"ipCheck": {
 			"enabled": True,
 			"trustedSubnets": []
-		}
+		},
+		"allowFraming": False
 	},
 	"webcam": {
 		"webcamEnabled": True,

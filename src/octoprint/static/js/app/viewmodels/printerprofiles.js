@@ -540,7 +540,7 @@ $(function() {
                     });
             };
 
-            showConfirmationDialog(_.sprintf(gettext("You are about to delete the printer profile \"%(name)s\"."), {name: data.name}),
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete the printer profile \"%(name)s\"."), {name: _.escape(data.name)}),
                                    perform);
         };
 
@@ -575,7 +575,7 @@ $(function() {
             var dialogTitle = $("h3.modal-title", editDialog);
 
             var add = data === undefined;
-            dialogTitle.text(add ? gettext("Add Printer Profile") : _.sprintf(gettext("Edit Printer Profile \"%(name)s\""), {name: data.name}));
+            dialogTitle.text(add ? gettext("Add Printer Profile") : _.sprintf(gettext("Edit Printer Profile \"%(name)s\""), {name: _.escape(data.name)}));
             confirmButton.unbind("click");
             confirmButton.bind("click", function() {
                 if (self.enableEditorSubmitButton()) {

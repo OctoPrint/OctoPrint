@@ -226,13 +226,13 @@ $(function() {
                 }
 
                 var fullNameTemplate = gettext("%(name)s: %(version)s");
-                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: value.displayName, version: value.displayVersion});
+                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: _.escape(value.displayName), version: _.escape(value.displayVersion)});
 
                 var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
                 if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
                     fullNameRemoteVars.version = value.information.remote.name;
                 }
-                value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
+                value.fullNameRemote = _.sprintf(fullNameTemplate, _.escape(fullNameRemoteVars));
 
                 versions.push(value);
             });
@@ -655,7 +655,7 @@ $(function() {
                     break;
                 }
                 case "updating": {
-                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
+                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: _.escape(messageData.name), version: _.escape(messageData.version)});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});

@@ -40,10 +40,19 @@
 {{ pluginmanager_throttled() }}
 
 <div class="pull-right">
+    <div class="btn-group">
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('all') }, css: {active: _.contains(plugins.currentFilters(), 'all')}" title="{{ _('Show all plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">Bundled</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">3rd Party</button>
+    </div>
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Installed Plugins') }}</h3>
+
+<form class="form-search" data-bind="submit: performListingSearch">
+    <input type="text" class="input-block search-query" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+</form>
 
 <div id="settings_plugin_pluginmanager_pluginlist">
     <table class="table table-striped table-hover table-condensed table-hover">

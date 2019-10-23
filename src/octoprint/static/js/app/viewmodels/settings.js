@@ -249,6 +249,8 @@ $(function() {
         self.server_pluginBlacklist_url = ko.observable();
         self.server_pluginBlacklist_ttl = ko.observable();
 
+        self.server_allowFraming = ko.observable();
+
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
 
@@ -378,7 +380,7 @@ $(function() {
                                                 "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
                                                 "double check that the URL is returning static images, not multipart data " +
                                                 "or videos.");
-                            errorText = _.sprintf(errorText, {content_type: response.response.content_type});
+                            errorText = _.sprintf(errorText, {content_type: _.escape(response.response.content_type)});
                         }
 
                         showMessageDialog({

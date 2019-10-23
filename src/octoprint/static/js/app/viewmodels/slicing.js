@@ -147,7 +147,7 @@ $(function() {
             self.target = target;
             self.file(file);
             self.path = path;
-            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: display}));
+            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: _.escape(display)}));
             self.destinationFilename(destination);
             self.printerProfile(self.printerProfiles.currentProfile());
             self.afterSlicing("none");

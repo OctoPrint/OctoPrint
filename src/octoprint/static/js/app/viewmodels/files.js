@@ -150,7 +150,7 @@ $(function() {
                 if (mapping[filetype]) {
                     result.push({key: filetype, text: mapping[filetype]});
                 } else {
-                    result.push({key: filetype, text: _.sprintf(gettext("Only show %(type)s files"), {type: filetype})});
+                    result.push({key: filetype, text: _.sprintf(gettext("Only show %(type)s files"), {type: _.escape(filetype)})});
                 }
             });
 
@@ -450,7 +450,7 @@ $(function() {
             if (folder.weight > 0) {
                 // confirm recursive delete
                 var options = {
-                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: folder.name}),
+                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: _.escape(folder.name)}),
                     onproceed: function() {
                         self._removeEntry(folder, event);
                     }
@@ -756,7 +756,7 @@ $(function() {
             }
 
             // model not within bounds, we need to prepare a warning
-            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), data) + "</p>";
+            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), {name: _.escape(data.name)}) + "</p>";
             var info = "";
 
             var formatData = {
@@ -989,7 +989,7 @@ $(function() {
 
             new PNotify({
                 title: gettext("Slicing done"),
-                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload),
+                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), {stl: _.escape(payload.stl), gcode: _.escape(payload.gcode), time: payload.time}),
                 type: "success"
             });
 
@@ -1004,7 +1004,7 @@ $(function() {
                 .css("width", "0%");
             self.uploadProgressText("");
 
-            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), {stl: _.escape(payload.stl), gcode: _.escape(payload.gcode), reason: _.escape(payload.reason)});
             new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
         };
 
@@ -1035,7 +1035,7 @@ $(function() {
 
             new PNotify({
                 title: gettext("Streaming done"),
-                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), {local: _.escape(payload.local), remote: _.escape(payload.remote), time: payload.time}),
                 type: "success"
             });
 
@@ -1052,7 +1052,7 @@ $(function() {
 
             new PNotify({
                 title: gettext("Streaming failed"),
-                text: _.sprintf(gettext("Did not finish streaming %(local)s to %(remote)s on SD"), payload),
+                text: _.sprintf(gettext("Did not finish streaming %(local)s to %(remote)s on SD"), {local: _.escape(payload.local), remote: _.escape(payload.remote)}),
                 type: "error"
             });
 
@@ -1153,10 +1153,10 @@ $(function() {
             extensions = extensions.join(", ");
             var error = "<p>"
                 + _.sprintf(gettext("Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"),
-                            {extensions: extensions})
+                            {extensions: _.escape(extensions)})
                 + "</p>";
             if (data.jqXHR.responseText) {
-                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+                error += pnotifyAdditionalInfo("<pre>" + _.escape(data.jqXHR.responseText) + "</pre>");
             }
             new PNotify({
                 title: "Upload failed",

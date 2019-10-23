@@ -61,15 +61,15 @@ $(function() {
 
                         new PNotify({
                             title: "Success",
-                            text: _.sprintf(text, {command: commandSpec.name}),
+                            text: _.sprintf(text, {command: _.escape(commandSpec.name)}),
                             type: "success"
                         });
                         deferred.resolve(["success", arguments]);
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {
                         if (!commandSpec.hasOwnProperty("ignore") || !commandSpec.ignore) {
-                            var error = "<p>" + _.sprintf(gettext("The command \"%(command)s\" could not be executed."), {command: commandSpec.name}) + "</p>";
-                            error += pnotifyAdditionalInfo("<pre>" + jqXHR.responseText + "</pre>");
+                            var error = "<p>" + _.sprintf(gettext("The command \"%(command)s\" could not be executed."), {command: _.escape(commandSpec.name)}) + "</p>";
+                            error += pnotifyAdditionalInfo("<pre>" + _.escape(jqXHR.responseText) + "</pre>");
                             new PNotify({title: gettext("Error"), text: error, type: "error", hide: false});
                             deferred.reject(["error", arguments]);
                         } else {
