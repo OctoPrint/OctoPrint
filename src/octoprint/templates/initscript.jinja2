@@ -5,6 +5,7 @@
     var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
 
     var CONFIG_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+    var CONFIG_LOADINGANIMATION = {% if enableLoadingAnimation -%} true; {% else %} false; {%- endif %}
 
     var CONFIG_GCODEFILESPERPAGE = 5000;
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;

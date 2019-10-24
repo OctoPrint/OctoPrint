@@ -290,6 +290,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Whether to delete generated web assets on server startup (forcing a regeneration)
        clean_on_startup: true
 
+     # enable or disable the loading animation
+     showLoadingAnimation: true
+
      # Settings for the virtual printer
      virtualPrinter:
 

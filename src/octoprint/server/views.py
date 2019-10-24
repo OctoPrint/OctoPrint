@@ -185,6 +185,7 @@ def index():
 	enable_accesscontrol = userManager.enabled
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
+	enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
@@ -202,6 +203,7 @@ def index():
 	default_additional_etag = [enable_accesscontrol,
 	                           enable_gcodeviewer,
 	                           enable_timelapse,
+	                           enable_loading_animation,
 	                           wizard_active(_templates.get(locale))] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
 	                                                                                           to_unicode(v, errors="replace"))
 	                                                                           for k, v in _plugin_vars.items()])
@@ -368,6 +370,7 @@ def index():
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
+			enableLoadingAnimation=enable_loading_animation,
 			enableSdSupport=settings().get(["feature", "sdSupport"]),
 			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),

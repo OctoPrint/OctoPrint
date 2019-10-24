@@ -16,7 +16,7 @@
         {% include 'initscript.jinja2' %}
     </head>
     <body>
-        <div class="page-container" id="page-container-main" style="display: none" data-bind="visible: visible">
+        <div class="page-container" id="page-container-main" {% if enableLoadAnimation -%}style="display: none"{%- endif %} data-bind="visible: visible">
             <!-- ko allowBindings: false -->
             <div id="navbar" class="navbar navbar-static-top">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
@@ -153,17 +153,21 @@
             <!-- /ko -->
         </div>
 
+        {% if enableLoadingAnimation %}
         <div id="page-container-loading" data-bind="visible: loading">
             <div class="wrapper">
                 <div class="outer">
                     <div class="inner">
                         <div class="content">
-                            <i class="fa fa-spinner fa-spin fa-4x"></i>
+                            <h1 id="page-container-loading-header">Loading OctoPrint's UI, please wait...</h1>
+                            <i id="page-container-loading-spinner" class="fa fa-spinner fa-spin fa-4x"></i>
+                            <p id="page-container-loading-error" style="display: none"></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <div class="container" id="page-container-needlogin" style="display: none" data-bind="visible: needlogin">
             <form class="form-signin">

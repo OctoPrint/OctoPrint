@@ -410,6 +410,7 @@ default_settings = {
 			"clean_on_startup": True
 		},
 		"useFrozenDictForPrinterState": True,
+		"showLoadingAnimation": True,
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
