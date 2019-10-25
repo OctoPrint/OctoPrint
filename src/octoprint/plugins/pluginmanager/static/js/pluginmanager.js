@@ -32,26 +32,24 @@ $(function() {
                 }
             },
             {
-                "all": function(item) {
-                    return true;
-                },
                 "bundled": function(item) {
                     return item.bundled;
                 },
                 "3rdparty": function(item) {
                     return !item.bundled;
+                },
+                "enabled": function(item) {
+                    return item.enabled;
+                },
+                "disabled": function(item) {
+                    return !item.enabled;
                 }
             },
             "name",
-            ["all"],
-            [["all", "bundled", "3rdparty"]],
+            [],
+            [["bundled", "3rdparty"], ["enabled", "disabled"]],
             0
         );
-
-        if (self.plugins.currentFilters().length === 0) {
-            // old versions didn't have filters, we might still have that stuck in the local storage
-            self.plugins.addFilter("all");
-        }
 
         self.repositoryplugins = new ItemListHelper(
             "plugin.pluginmanager.repositoryplugins",
@@ -306,7 +304,7 @@ $(function() {
             } else {
                 self.plugins.resetSearch();
             }
-        }
+        };
 
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
