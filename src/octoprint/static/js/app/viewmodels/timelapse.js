@@ -88,7 +88,7 @@ $(function() {
             return ("timed" === self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN) && self.isDirty() && self.isOperational() && !self.isPrinting();
+            return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN) && self.isDirty() && !self.isPrinting();
         });
         self.resetButtonEnabled = ko.pureComputed(function() {
             return self.saveButtonEnabled() && self.serverConfig() !== undefined;
