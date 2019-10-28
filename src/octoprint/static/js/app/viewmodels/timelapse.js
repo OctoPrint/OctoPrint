@@ -24,15 +24,31 @@ $(function() {
 
         self.renderProgress = ko.observable();
         self.renderTarget = ko.observable();
+        self.renderAnimation = ko.observable(false);
         self.renderProgressString = ko.pureComputed(function() {
-            if (!self.renderProgress())
+            if (!self.renderTarget()) {
                 return 0;
+            }
+
+            if (self.renderAnimation()) {
+                return 100;
+            }
+
+            if (!self.renderProgress()) {
+                return 0;
+            }
+
             return self.renderProgress();
         });
         self.renderProgressBarString = ko.pureComputed(function() {
             if (!self.renderTarget()) {
                 return "";
             }
+
+            if (self.renderAnimation()) {
+                return _.sprintf(gettext("Rendering %(target)s..."), {target: self.renderTarget()});
+            }
+
             var progress = self.renderProgress();
             if (!progress) {
                 progress = 0;
@@ -521,10 +537,12 @@ $(function() {
 
             self.renderProgress(0);
             self.renderTarget(payload.movie_prefix);
+            self.renderAnimation(true);
         };
 
         self.onRenderProgress = function(percentage) {
             self.renderProgress(percentage);
+            self.renderAnimation(false);
         };
 
         self.onEventMovieFailed = function(payload) {
@@ -551,6 +569,7 @@ $(function() {
 
             self.renderProgress(0);
             self.renderTarget(undefined);
+            self.renderAnimation(false);
         };
 
         self.onEventMovieDone = function(payload) {
@@ -569,7 +588,8 @@ $(function() {
             self.requestData();
 
             self.renderProgress(0);
-            self.renderTarget(payload.undefined);
+            self.renderTarget(undefined);
+            self.renderAnimation(false);
         };
 
         self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
