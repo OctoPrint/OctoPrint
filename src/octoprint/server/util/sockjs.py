@@ -73,6 +73,13 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
                              LoginStatusListener,
                              GroupChangeListener):
 
+	_event_permissions = {Events.USER_LOGGED_IN: [Permissions.ADMIN],
+	                      Events.USER_LOGGED_OUT: [Permissions.ADMIN],
+	                      "*": []}
+
+	_event_payload_processors = {Events.CLIENT_OPENED: [lambda user, payload: payload if user.has_permission(Permissions.ADMIN) else dict()],
+	                             "*": []}
+
 	_emit_permissions = {"connected": [],
 	                     "reauthRequired": [],
 	                     "*": [Permissions.STATUS]}
@@ -255,6 +262,15 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._emit("history", payload=data_to_send)
 
 	def sendEvent(self, type, payload=None):
+		permissions = self._event_permissions.get(type, self._event_permissions["*"])
+		permissions = [x(self._user) if callable(x) else x for x in permissions]
+		if not self._user or not all(map(lambda p: self._user.has_permission(p), permissions)):
+			return
+
+		processors = self._event_payload_processors.get(type, self._event_payload_processors["*"])
+		for processor in processors:
+			payload = processor(self._user, payload)
+
 		self._emit("event", payload=dict(type=type, payload=payload))
 
 	def sendTimelapseConfig(self, timelapseConfig):
@@ -358,8 +374,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
 			#
 			# TODO remove when central job management becomes available and takes care of this for us
-			self._emit("event", payload=dict(type=Events.MOVIE_RENDERING,
-			                                 payload=octoprint.timelapse.current_render_job))
+			self.sendEvent(Events.MOVIE_RENDERING, payload=octoprint.timelapse.current_render_job)
 		self._registered = True
 
 	def _unregister(self):
@@ -393,6 +408,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 
 		if permissions is None:
 			permissions = self._emit_permissions.get(type, self._emit_permissions["*"])
+			permissions = [x() if callable(x) else x for x in permissions]
 
 		if not self._user or not all(map(lambda p: self._user.has_permission(p), permissions)):
 			return

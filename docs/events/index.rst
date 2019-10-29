@@ -104,7 +104,8 @@ ClientOpened
 
    Payload:
 
-     * ``remoteAddress``: the remote address (IP) of the client that connected
+     * ``remoteAddress``: the remote address (IP) of the client that connected. On the push socket only available with
+       a valid login session.
 
    **Note:** Name changed in version 1.1.0
 
@@ -114,6 +115,19 @@ ClientClosed
    Payload:
 
      * ``remoteAddress``: the remote address (IP) of the client that disconnected
+
+UserLoggedIn
+   A user logged in. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+
+     * ``username``: the name of the user who logged in
+
+UserLoggedOut
+   A user logged out. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+     * ``username``: the name of the user who logged out
 
 ConnectivityChanged
    The server's internet connectivity changed

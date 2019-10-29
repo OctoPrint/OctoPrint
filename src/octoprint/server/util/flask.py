@@ -35,6 +35,8 @@ from octoprint.util import DefaultOrderedDict
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
 
+from octoprint.events import eventManager, Events
+
 from werkzeug.local import LocalProxy
 from cachelib import BaseCache
 
@@ -583,6 +585,9 @@ def passive_login():
 		if hasattr(u, "session"):
 			flask.session["usersession.id"] = u.session
 		flask.g.user = u
+
+		eventManager().fire(Events.USER_LOGGED_IN, payload=dict(username=u.get_id()))
+
 		return u
 
 	if user is not None and user.is_active:

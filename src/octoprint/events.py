@@ -47,6 +47,10 @@ class Events(object):
 	CLIENT_OPENED = "ClientOpened"
 	CLIENT_CLOSED = "ClientClosed"
 
+	# user login/logout
+	USER_LOGGED_IN = "UserLoggedIn"
+	USER_LOGGED_OUT = "UserLoggedOut"
+
 	# File management
 	UPLOAD = "Upload"
 	FILE_SELECTED = "FileSelected"

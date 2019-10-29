@@ -21,6 +21,7 @@ from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import noCachingExceptGetResponseHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request, passive_login, get_remote_address
 from octoprint.access.permissions import Permissions
+from octoprint.events import eventManager, Events
 
 
 #~~ init api blueprint, including sub modules
@@ -242,6 +243,9 @@ def login():
 
 				r = make_response(jsonify(response))
 				r.delete_cookie("active_logout")
+
+				eventManager().fire(Events.USER_LOGGED_IN, payload=dict(username=user.get_id()))
+
 				return r
 
 		return make_response(("User unknown or password incorrect", 401, []))
@@ -254,6 +258,10 @@ def login():
 
 @api.route("/logout", methods=["POST"])
 def logout():
+	username = None
+	if current_user:
+		username = current_user.get_id()
+
 	# logout from user manager...
 	_logout(current_user)
 
@@ -263,6 +271,9 @@ def logout():
 	# ... and send an active logout session cookie
 	r = make_response(jsonify(octoprint.server.userManager.anonymous_user_factory()))
 	r.set_cookie("active_logout", "true")
+
+	if username:
+		eventManager().fire(Events.USER_LOGGED_OUT, payload=dict(username=username))
 
 	return r
 
