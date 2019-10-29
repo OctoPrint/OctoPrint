@@ -392,10 +392,7 @@ def uploadGcodeFile(target):
 
 		eventManager.fire(Events.UPLOAD, {"name": futureFilename,
 		                                  "path": filename,
-		                                  "target": target,
-
-		                                  # TODO deprecated, remove in 1.4.0
-		                                  "file": filename})
+		                                  "target": target})
 
 		files = {}
 		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)

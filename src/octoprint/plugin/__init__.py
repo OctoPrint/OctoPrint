@@ -528,38 +528,3 @@ class PluginSettings(object):
 				return _func
 
 		return getattr(self.settings, item)
-
-	##~~ deprecated methods follow
-
-	# TODO: Remove with release of 1.3.0
-
-	globalGet            = deprecated("globalGet has been renamed to global_get",
-	                                  includedoc="Replaced by :func:`global_get`",
-	                                  since="1.2.0-dev-546")(global_get)
-	globalGetInt         = deprecated("globalGetInt has been renamed to global_get_int",
-	                                  includedoc="Replaced by :func:`global_get_int`",
-	                                  since="1.2.0-dev-546")(global_get_int)
-	globalGetFloat       = deprecated("globalGetFloat has been renamed to global_get_float",
-	                                  includedoc="Replaced by :func:`global_get_float`",
-	                                  since="1.2.0-dev-546")(global_get_float)
-	globalGetBoolean     = deprecated("globalGetBoolean has been renamed to global_get_boolean",
-	                                  includedoc="Replaced by :func:`global_get_boolean`",
-	                                  since="1.2.0-dev-546")(global_get_boolean)
-	globalSet            = deprecated("globalSet has been renamed to global_set",
-	                                  includedoc="Replaced by :func:`global_set`",
-	                                  since="1.2.0-dev-546")(global_set)
-	globalSetInt         = deprecated("globalSetInt has been renamed to global_set_int",
-	                                  includedoc="Replaced by :func:`global_set_int`",
-	                                  since="1.2.0-dev-546")(global_set_int)
-	globalSetFloat       = deprecated("globalSetFloat has been renamed to global_set_float",
-	                                  includedoc="Replaced by :func:`global_set_float`",
-	                                  since="1.2.0-dev-546")(global_set_float)
-	globalSetBoolean     = deprecated("globalSetBoolean has been renamed to global_set_boolean",
-	                                  includedoc="Replaced by :func:`global_set_boolean`",
-	                                  since="1.2.0-dev-546")(global_set_boolean)
-	globalGetBaseFolder  = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder",
-	                                  includedoc="Replaced by :func:`global_get_basefolder`",
-	                                  since="1.2.0-dev-546")(global_get_basefolder)
-	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path",
-	                                  includedoc="Replaced by :func:`get_plugin_logfile_path`",
-	                                  since="1.2.0-dev-546")(get_plugin_logfile_path)

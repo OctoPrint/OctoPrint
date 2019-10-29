@@ -118,10 +118,7 @@ class AnalysisQueue(object):
 		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"name": entry.name,
 		                                                        "path": entry.path,
 		                                                        "origin": entry.location,
-		                                                        "result": result,
-
-		                                                        # TODO: deprecated, remove in a future release
-		                                                        "file": entry.path})
+		                                                        "result": result})
 
 class AbstractAnalysisQueue(object):
 	"""
@@ -260,10 +257,7 @@ class AbstractAnalysisQueue(object):
 			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"name": entry.name,
 			                                                       "path": entry.path,
 			                                                       "origin": entry.location,
-			                                                       "type": entry.type,
-
-			                                                       # TODO deprecated, remove in 1.4.0
-			                                                       "file": entry.path})
+			                                                       "type": entry.type})
 			try:
 				result = self._do_analysis(high_priority=high_priority)
 			except TypeError:

@@ -1381,11 +1381,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		result= dict(name=name,
 		             path=path,
 		             origin=origin,
-		             size=print_job_size,
-
-		             # TODO deprecated, remove in 1.4.0
-		             file=full_path,
-		             filename=name)
+		             size=print_job_size)
 
 		if position is not None:
 			result["position"] = position
