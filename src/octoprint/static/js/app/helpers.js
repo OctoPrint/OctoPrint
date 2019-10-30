@@ -839,13 +839,12 @@ function showSelectionDialog(options) {
         selectionBody.append(container);
         additionalClass = "span6"
     } else {
-        container = $("<div class='row-fluid'></div>");
-        selectionBody.append(container);
-        additionalClass = "span6 offset3";
+        container = selectionBody;
+        additionalClass = "btn-block";
     }
 
     _.each(selections, function(s, i) {
-        var button = $('<button class="btn" data-index="' + i + '">' + selections[i] + '</button>');
+        var button = $('<button class="btn" style="white-space: normal; word-wrap: break-word" data-index="' + i + '">' + selections[i] + '</button>');
         if (additionalClass) {
             button.addClass(additionalClass);
         }

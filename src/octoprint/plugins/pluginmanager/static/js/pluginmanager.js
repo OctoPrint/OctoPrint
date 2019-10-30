@@ -33,26 +33,24 @@ $(function() {
                 }
             },
             {
-                "all": function(item) {
-                    return true;
-                },
                 "bundled": function(item) {
                     return item.bundled;
                 },
                 "3rdparty": function(item) {
                     return !item.bundled;
+                },
+                "enabled": function(item) {
+                    return item.enabled;
+                },
+                "disabled": function(item) {
+                    return !item.enabled;
                 }
             },
             "name",
-            ["all"],
-            [["all", "bundled", "3rdparty"]],
+            [],
+            [["bundled", "3rdparty"], ["enabled", "disabled"]],
             0
         );
-
-        if (self.plugins.currentFilters().length === 0) {
-            // old versions didn't have filters, we might still have that stuck in the local storage
-            self.plugins.addFilter("all");
-        }
 
         self.repositoryplugins = new ItemListHelper(
             "plugin.pluginmanager.repositoryplugins",
@@ -193,7 +191,7 @@ $(function() {
         };
 
         self.throttled = ko.pureComputed(function() {
-            return self.piSupport && self.piSupport.currentIssue();
+            return self.piSupport && self.piSupport.currentIssue() && !self.settingsViewModel.settings.plugins.pluginmanager.ignore_throttled();
         });
 
         self.invalidUrl = ko.pureComputed(function() {
@@ -307,7 +305,7 @@ $(function() {
             } else {
                 self.plugins.resetSearch();
             }
-        }
+        };
 
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();

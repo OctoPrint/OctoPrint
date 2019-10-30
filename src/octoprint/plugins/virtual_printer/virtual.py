@@ -550,9 +550,9 @@ class VirtualPrinter(object):
 			if self._sdCardReady:
 				self._reportSdStatus()
 
-		match = re.search(r"S([0-9]+)", data)
-		if match:
-			interval = int(match.group(1))
+		matchS = re.search(r"S([0-9]+)", data)
+		if matchS:
+			interval = int(matchS.group(1))
 			if self._sdstatus_reporter is not None:
 				self._sdstatus_reporter.cancel()
 
@@ -584,9 +584,11 @@ class VirtualPrinter(object):
 
 	def _gcode_M113(self, data):
 		# type: (str) -> None
-		interval = int(re.search(r"S([0-9]+)", data).group(1))
-		if 0 <= interval <= 60:
-			self._busyInterval = interval
+		matchS = re.search(r"S([0-9]+)", data)
+		if matchS is not None:
+			interval = int(matchS.group(1))
+			if 0 <= interval <= 60:
+				self._busyInterval = interval
 
 	# noinspection PyUnusedLocal
 	def _gcode_M114(self, data):
@@ -629,23 +631,29 @@ class VirtualPrinter(object):
 
 	def _gcode_M155(self, data):
 		# type: (str) -> None
-		interval = int(re.search(r"S([0-9]+)", data).group(1))
-		if self._temperature_reporter is not None:
-			self._temperature_reporter.cancel()
+		matchS = re.search(r"S([0-9]+)", data)
+		if matchS is not None:
+			interval = int(matchS.group(1))
+			if self._temperature_reporter is not None:
+				self._temperature_reporter.cancel()
 
-		if interval > 0:
-			self._temperature_reporter = RepeatedTimer(interval, lambda: self._send(self._generateTemperatureOutput()))
-			self._temperature_reporter.start()
-		else:
-			self._temperature_reporter = None
+			if interval > 0:
+				self._temperature_reporter = RepeatedTimer(interval, lambda: self._send(self._generateTemperatureOutput()))
+				self._temperature_reporter.start()
+			else:
+				self._temperature_reporter = None
 
 	def _gcode_M220(self, data):
 		# type: (str) -> None
-		self._feedrate_multiplier = float(re.search(r'S([0-9]+)', data).group(1))
+		matchS = re.search(r"S([0-9]+)", data)
+		if matchS is not None:
+			self._feedrate_multiplier = float(matchS.group(1))
 
 	def _gcode_M221(self, data):
 		# type: (str) -> None
-		self._flowrate_multiplier = float(re.search(r'S([0-9]+)', data).group(1))
+		matchS = re.search(r"S([0-9]+)", data)
+		if matchS is not None:
+			self._flowrate_multiplier = float(matchS.group(1))
 
 	# noinspection PyUnusedLocal
 	def _gcode_M400(self, data):

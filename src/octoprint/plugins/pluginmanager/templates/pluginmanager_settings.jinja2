@@ -41,9 +41,14 @@
 
 <div class="pull-right">
     <div class="btn-group">
-        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('all') }, css: {active: _.contains(plugins.currentFilters(), 'all')}" title="{{ _('Show all plugins')|edq }}">All</button>
-        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">Bundled</button>
-        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">3rd Party</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">{{ _('3rd party') }}</button>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins')|edq }}">{{ _('Enabled') }}</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins')|edq }}">{{ _('Disabled') }}</button>
     </div>
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
