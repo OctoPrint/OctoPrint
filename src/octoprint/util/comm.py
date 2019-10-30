@@ -2053,7 +2053,12 @@ class MachineCom(object):
 							else:
 								self._consecutive_not_sd_printing = 0
 								if self.isSdFileSelected():
-									if not self.isSdPrinting() and current != total and current > 0:
+
+									# If we are not yet sd printing, the current does not equal the total, is larger
+									# than zero and has increased since the last time we saw a position report, then
+									# yes, this looks like we just started printing due to an external trigger.
+									if not self.isSdPrinting() and current != total and current > 0 \
+											and self._currentFile and current > self._currentFile.pos:
 										self.startPrint(external_sd=True)
 
 									self._currentFile.pos = current
@@ -2508,6 +2513,8 @@ class MachineCom(object):
 			self._set_autoreport_sdstatus_interval()
 		if self._busy_protocol_support:
 			self._set_busy_protocol_interval()
+
+		self._consecutive_not_sd_printing = 0
 
 	def _get_temperature_timer_interval(self):
 		busy_default = 4.0
