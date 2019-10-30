@@ -118,28 +118,6 @@ class SettingsTestCase(unittest.TestCase):
 			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	@data(
-		("globalGet", "global_get", "get"),
-		("globalGetInt", "global_get_int", "getInt"),
-		("globalGetFloat", "global_get_float", "getFloat"),
-		("globalGetBoolean", "global_get_boolean", "getBoolean")
-	)
-	@unpack
-	def test_deprecated_global_getter(self, deprecated, current, forwarded):
-		with warnings.catch_warnings(record=True) as w:
-			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = to_native_str(forwarded)
-
-			method = getattr(self.plugin_settings, deprecated)
-			self.assertTrue(callable(method))
-			method(["some_raw_key"])
-
-			called_method.assert_called_once_with(["some_raw_key",])
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
-
-	@data(
 		("set", (["some_raw_key",], "some_value"), dict(), "set"),
 		("set", (["some_raw_key",], "some_value"), dict(force=True), "set"),
 		("set_int", (["some_int_key",], 23), dict(), "setInt"),
@@ -203,40 +181,9 @@ class SettingsTestCase(unittest.TestCase):
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
-	@data(
-		("globalSet", "global_set", "set", "some_value"),
-		("globalSetInt", "global_set_int", "setInt", 1),
-		("globalSetFloat", "global_set_float", "setFloat", 2.5),
-		("globalSetBoolean", "global_set_boolean", "setBoolean", True)
-	)
-	@unpack
-	def test_deprecated_global_setter(self, deprecated, current, forwarded, value):
-		with warnings.catch_warnings(record=True) as w:
-			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = to_native_str(forwarded)
-
-			method = getattr(self.plugin_settings, deprecated)
-			self.assertTrue(callable(method))
-			method(["some_raw_key"], value)
-
-			called_method.assert_called_once_with(["some_raw_key"], value)
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
-
 	def test_global_get_basefolder(self):
 		self.plugin_settings.global_get_basefolder("some_folder")
 		self.settings.getBaseFolder.assert_called_once_with("some_folder")
-
-	def test_deprecated_global_get_basefolder(self):
-		with warnings.catch_warnings(record=True) as w:
-			self.plugin_settings.globalGetBaseFolder("some_folder")
-			self.settings.getBaseFolder.assert_called_once_with("some_folder")
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("globalGetBaseFolder has been renamed to global_get_basefolder" in str(w[-1].message))
 
 	def test_logfile_path(self):
 		import os
@@ -257,20 +204,6 @@ class SettingsTestCase(unittest.TestCase):
 
 		self.settings.getBaseFolder.assert_called_once_with("logs")
 		self.assertEqual("/some/folder/plugin_{key}_mypostfix.log".format(key=self.plugin_key), path.replace(os.sep, "/"))
-
-	def test_deprecated_logfile_path(self):
-		import os
-
-		with warnings.catch_warnings(record=True) as w:
-			self.settings.getBaseFolder.return_value = "/some/folder"
-			path = self.plugin_settings.getPluginLogfilePath()
-
-			self.settings.getBaseFolder.assert_called_once_with("logs")
-			self.assertEqual("/some/folder/plugin_{key}.log".format(key=self.plugin_key), path.replace(os.sep, "/"))
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("getPluginLogfilePath has been renamed to get_plugin_logfile_path" in str(w[-1].message))
 
 	def test_unhandled_method(self):
 		try:
