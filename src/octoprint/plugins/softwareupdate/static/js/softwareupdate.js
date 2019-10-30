@@ -97,7 +97,7 @@ $(function() {
         });
 
         self.throttled = ko.pureComputed(function() {
-            return self.piSupport && self.piSupport.currentIssue();
+            return self.piSupport && self.piSupport.currentIssue() && !self.settings.settings.plugins.pluginmanager.ignore_throttled();
         });
 
         self.onUserLoggedIn = function() {
@@ -496,7 +496,7 @@ $(function() {
                 return;
             }
 
-            if (self.piSupport && self.piSupport.currentIssue()) {
+            if (self.throttled()) {
                 self._showPopup({
                     title: gettext("Can't update while throttled"),
                     text: gettext("Your system is currently throttled. OctoPrint refuses to run updates while in this state due to possible stability issues."),

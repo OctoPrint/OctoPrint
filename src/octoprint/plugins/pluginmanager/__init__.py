@@ -153,6 +153,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
+			if self._settings.get_boolean(["ignore_throttled"]):
+				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
@@ -170,7 +172,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			confirm_uninstall=True,
 			confirm_disable=False,
 			dependency_links=False,
-			hidden=[]
+			hidden=[],
+			ignore_throttled=False
 		)
 
 	def on_settings_save(self, data):
@@ -359,7 +362,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		throttled = self._get_throttled()
-		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False) and not self._settings.get_boolean(["ignore_throttled"]):
 			# currently throttled, we refuse to run
 			return make_response("System is currently throttled, refusing to install "
 			                     "anything due to possible stability issues", 409)

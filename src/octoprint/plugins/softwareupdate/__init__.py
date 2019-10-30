@@ -104,6 +104,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
+			if self._settings.get_boolean(["ignore_throttled"]):
+				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 	def on_after_startup(self):
 		self._check_environment()
@@ -281,7 +283,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"cache_ttl": 24 * 60,
 
-			"notify_users": True
+			"notify_users": True,
+
+			"ignore_throttled": False
 		}
 
 	def on_settings_load(self):
@@ -575,7 +579,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@admin_permission.require(403)
 	def perform_update(self):
 		throttled = self._get_throttled()
-		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False) and not self._settings.get_boolean(["ignore_throttled"]):
 			# currently throttled, we refuse to run
 			return flask.make_response("System is currently throttled, refusing to update "
 			                           "anything due to possible stability issues", 409)

@@ -190,7 +190,7 @@ $(function() {
         };
 
         self.throttled = ko.pureComputed(function() {
-            return self.piSupport && self.piSupport.currentIssue();
+            return self.piSupport && self.piSupport.currentIssue() && !self.settingsViewModel.settings.plugins.pluginmanager.ignore_throttled();
         });
 
         self.invalidUrl = ko.pureComputed(function() {
