@@ -151,6 +151,9 @@ Error
    An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
    on the connection.
 
+   Note that this event will not fire for error messages from the firmware that are handled (and as such recovered from)
+   either by OctoPrint or a plugin.
+
    Payload:
 
      * ``error``: the error string
