@@ -734,7 +734,7 @@ class Server(object):
 		if self._settings.getBoolean(["serial", "autoconnect"]):
 			self._logger.info("Autoconnect on startup is configured, trying to connect to the printer...")
 			try:
-				(port, baudrate) = self._settings.get(["serial", "port"]).strip(), self._settings.getInt(["serial", "baudrate"])
+				(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 				printer_profile = printerProfileManager.get_default()
 				connectionOptions = printer.__class__.get_connection_options()
 				if port in connectionOptions["ports"] or port == "AUTO" or port is None:
