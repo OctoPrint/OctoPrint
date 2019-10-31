@@ -378,7 +378,7 @@ class MachineCom(object):
 	CAPABILITY_SUPPORT_DETECTED = "detected"
 	CAPABILITY_SUPPORT_DISABLED = "disabled"
 
-	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
+	def __init__(self, port=None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
 		self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
