@@ -21,7 +21,7 @@ below.
   * Create a virtual environment in the checked out source folder to use for installing and running OctoPrint and its
     dependencies (this avoids potential versioning issues for the dependencies with system wide installed
     instances): ``virtualenv venv``
-  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, MacOS) or
+  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, macOS) or
     ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
   * Update ``pip`` in the virtual environment: ``pip install --upgrade pip``
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
