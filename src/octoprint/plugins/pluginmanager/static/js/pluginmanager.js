@@ -186,6 +186,12 @@ $(function() {
                 && !data.pending_uninstall;
         };
 
+        self.enableCleanup = function(data) {
+            return self.enableManagement()
+                && data.key !== 'pluginmanager'
+                && !data.pending_uninstall;
+        };
+
         self.enableRepoInstall = function(data) {
             return self.enableManagement() && self.pipAvailable() && !self.safeMode() && !self.throttled() && self.online() && self.isCompatible(data);
         };
@@ -566,14 +572,14 @@ $(function() {
             }
 
             if (data.bundled) return;
-            if (data.key == "pluginmanager") return;
+            if (data.key === "pluginmanager") return;
 
             // defining actual uninstall logic as functor in order to handle
             // the confirm/no-confirm logic without duplication of logic
-            var performUninstall = function() {
+            var performUninstall = function(cleanup) {
                 self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: _.escape(data.name)}));
 
-                OctoPrint.plugins.pluginmanager.uninstall(data.key)
+                OctoPrint.plugins.pluginmanager.uninstall(data.key, cleanup)
                     .done(function() {
                         self.requestData();
                     })
@@ -590,19 +596,56 @@ $(function() {
                     });
             };
 
-            if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall()) {
-                // confirmation needed. Show confirmation dialog and call performUninstall if user clicks Yes
-                showConfirmationDialog({
-                    message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: _.escape(data.name)}),
-                    cancel: gettext("Keep installed"),
-                    proceed: gettext("Uninstall"),
-                    onproceed: performUninstall,
-                    nofade: true
-                });
-            } else {
-                // no confirmation needed, just go ahead and uninstall
-                performUninstall();
+            showConfirmationDialog({
+                message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: _.escape(data.name)}),
+                cancel: gettext("Keep installed"),
+                proceed: [
+                    gettext("Uninstall"),
+                    gettext("Uninstall & clean up data")
+                ],
+                onproceed: function(button) {
+                    // buttons: 0=uninstall, 1=uninstall&cleanup
+                    performUninstall(button === 1)
+                },
+                nofade: true
+            });
+        };
+
+        self.cleanupPlugin = function(data) {
+            if (!self.loginState.isAdmin()) {
+                return;
             }
+
+            if (!self.enableUninstall(data)) {
+                return;
+            }
+
+            if (data.key === "pluginmanager") return;
+
+            var performCleanup = function() {
+                self._markWorking(gettext("Cleaning up plugin data..."), _.sprintf(gettext("Cleaning up data of plugin \"%(name)s\""), {name: _.escape(data.name)}));
+
+                OctoPrint.plugins.pluginmanager.cleanup(data.key)
+                    .fail(function() {
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    })
+                    .always(function() {
+                        self._markDone();
+                    })
+            };
+
+            showConfirmationDialog({
+                message: _.sprintf(gettext("You are about to cleanup the plugin data of \"%(name)s\". This operation cannot be reversed."), {name: _.escape(data.name)}),
+                cancel: gettext("Keep data"),
+                proceed: gettext("Cleanup data"),
+                onproceed: performCleanup,
+                nofade: true
+            });
         };
 
         self.refreshRepository = function() {
@@ -747,6 +790,10 @@ $(function() {
                     }
                     case "disable": {
                         line = gettext("Disable <em>%(plugin)s</em>: %(result)s");
+                        break;
+                    }
+                    case "cleanup": {
+                        line = gettext("Cleanup <em>%(plugin)s</em>: %(result)s");
                         break;
                     }
                     default: {

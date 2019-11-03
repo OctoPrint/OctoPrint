@@ -81,7 +81,7 @@
                 </div>
             </td>
             <td class="settings_plugin_plugin_manager_plugins_actions">
-                <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+                <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }">&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
             </td>
         </tr>
         </tbody>
@@ -267,13 +267,6 @@
             <fieldset>
                 <legend>{{ _('Confirmations') }}</legend>
 
-                <div class="control-group" title="{{ _('Confirm before uninstalling a plugin')|edq }}">
-                    <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: config_confirmUninstall"> {{ _('Confirm before uninstalling a plugin') }}
-                        </label>
-                    </div>
-                </div>
                 <div class="control-group" title="{{ _('Confirm before disabling a plugin')|edq }}">
                     <div class="controls">
                         <label class="checkbox">

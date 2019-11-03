@@ -64,36 +64,55 @@ class Vector3D(object):
 		return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
 	def __add__(self, other):
-		if isinstance(other, Vector3D):
+		try:
+			if len(other) == 3:
+				return Vector3D(self.x + other[0],
+				                self.y + other[1],
+				                self.z + other[2])
+		except TypeError:
+			# doesn't look like a 3-tuple
+			pass
+
+		try:
 			return Vector3D(self.x + other.x,
 			                self.y + other.y,
 			                self.z + other.z)
-		elif isinstance(other, (tuple, list)) and len(other) == 3:
-			return Vector3D(self.x + other[0],
-			                self.y + other[1],
-			                self.z + other[2])
-		else:
-			raise ValueError("other must be a Vector3D instance or a list or tuple of length 3")
+		except AttributeError:
+			# also doesn't look like a Vector3D
+			pass
+
+		raise TypeError("other must be a Vector3D instance or a list or tuple of length 3")
 
 	def __sub__(self, other):
-		if isinstance(other, Vector3D):
+		try:
+			if len(other) == 3:
+				return Vector3D(self.x - other[0],
+				                self.y - other[1],
+				                self.z - other[2])
+		except TypeError:
+			# doesn't look like a 3-tuple
+			pass
+
+		try:
 			return Vector3D(self.x - other.x,
 			                self.y - other.y,
 			                self.z - other.z)
-		elif isinstance(other, (tuple, list)) and len(other) == 3:
-			return Vector3D(self.x - other[0],
-			                self.y - other[1],
-			                self.z - other[2])
-		else:
-			raise ValueError("other must be a Vector3D instance or a list or tuple")
+		except AttributeError:
+			# also doesn't look like a Vector3D
+			pass
+
+		raise TypeError("other must be a Vector3D instance or a list or tuple of length 3")
 
 	def __mul__(self, other):
-		if isinstance(other, (int, float)):
+		try:
 			return Vector3D(self.x * other,
 			                self.y * other,
 			                self.z * other)
-		else:
-			raise ValueError("other must be a float or int value")
+		except TypeError:
+			# doesn't look like a scalar
+			pass
+
+		raise ValueError("other must be a float or int value")
 
 	def __rmul__(self, other):
 		return self.__mul__(other)
@@ -344,11 +363,11 @@ class gcode(object):
 						                                    totalExtrusion[currentExtruder])
 
 						if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
- 							# Copy first extruder length to other extruders
+							# Copy first extruder length to other extruders
  							for i in range(1, len(currentE)):
- 								totalExtrusion[i] += e
- 								currentE[i] += e
- 								maxExtrusion[i] = max(maxExtrusion[i],
+								totalExtrusion[i] += e
+								currentE[i] += e
+								maxExtrusion[i] = max(maxExtrusion[i],
  						                          totalExtrusion[i])
 					else:
 						e = 0.0
@@ -438,13 +457,13 @@ class gcode(object):
 						else:
 							fwrecoverTime = (fwretractDist + s) / f
 				elif M == 605:	#Duplication/Mirroring mode
- 					s = getCodeInt(line, 'S')
- 					if s in [2, 4, 5, 6]:
- 						# Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
+					s = getCodeInt(line, 'S')
+					if s in [2, 4, 5, 6]:
+						# Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
  						# from first extruder to all other extruders
  						duplicationMode = True
- 					else:
- 						duplicationMode = False
+					else:
+						duplicationMode = False
 
 			elif T is not None:
 				if T > max_extruders:

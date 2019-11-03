@@ -197,7 +197,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,
-			confirm_uninstall=True,
 			confirm_disable=False,
 			dependency_links=False,
 			hidden=[],
@@ -298,6 +297,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			"uninstall": ["plugin"],
 			"enable": ["plugin"],
 			"disable": ["plugin"],
+			"cleanup": ["plugin"],
 			"refresh_repository": []
 		}
 
@@ -384,7 +384,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return make_response("Unknown plugin: %s" % plugin_name, 404)
 
 			plugin = self._plugin_manager.plugins[plugin_name]
-			return self.command_uninstall(plugin)
+			return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
+
+		elif command == "cleanup":
+			plugin_name = data["plugin"]
+			if not plugin_name in self._plugin_manager.plugins:
+				return make_response("Unknown plugin: %s" % plugin_name, 404)
+
+			plugin = self._plugin_manager.plugins[plugin_name]
+			return self.command_cleanup(plugin)
 
 		elif command == "enable" or command == "disable":
 			plugin_name = data["plugin"]
@@ -565,7 +573,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._send_result_notification("install", result)
 		return jsonify(result)
 
-	def command_uninstall(self, plugin):
+	def command_uninstall(self, plugin, cleanup=False):
 		if plugin.key == "pluginmanager":
 			return make_response("Can't uninstall Plugin Manager", 403)
 
@@ -614,7 +622,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._logger.warning("Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
 			return make_response("Could not uninstall plugin, its origin is unknown")
 
-		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
+		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin) or cleanup
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 		needs_reconnect = self._plugin_manager.has_any_of_hooks(plugin, self._reconnect_hooks) and self._printer.is_operational()
 
@@ -654,6 +662,45 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              needs_reconnect=needs_reconnect,
 		              plugin=self._to_external_plugin(plugin))
 		self._send_result_notification("uninstall", result)
+		self._logger.info("Plugin {} uninstalled".format(plugin.key))
+
+		if cleanup:
+			self.command_cleanup(plugin)
+
+		return jsonify(result)
+
+	def command_cleanup(self, plugin):
+		# delete plugin settings
+		self._settings.global_set(["plugins", plugin.key], None)
+		self._settings.save()
+		message = "Cleaned up settings of plugin {}".format(plugin.key)
+		self._log_stdout(message)
+		self._logger.info(message)
+
+		# delete plugin data folder
+		import os
+		import shutil
+
+		result_data = True
+		data_folder = os.path.join(self._settings.getBaseFolder("data"), plugin.key)
+		if os.path.exists(data_folder):
+			try:
+				shutil.rmtree(data_folder)
+				message = "Cleaned up data folder of plugin {}".format(plugin.key)
+				self._log_stdout(message)
+				self._logger.info(message)
+			except:
+				message = "Could not delete data folder of plugin {} at {}".format(plugin.key, data_folder)
+				self._log_stderr(message)
+				self._logger.exception(message)
+				result_data = False
+
+		result = dict(result=result_data,
+		              needs_restart=True,
+		              plugin=self._to_external_plugin(plugin))
+		self._send_result_notification("cleanup", result)
+		self._logger.info("Plugin {} cleaned up".format(plugin.key))
+
 		return jsonify(result)
 
 	def command_toggle(self, plugin, command):
