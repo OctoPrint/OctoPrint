@@ -197,8 +197,10 @@ PyCharm
 .......
 
   - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-  - "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
+  - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
     folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``)
+  - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
+    "Virtualenv Environment > "Existing Environment", select OctoPrint venv folder (e.g. ``~/devel/OctoPrint/venv``)
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
 
