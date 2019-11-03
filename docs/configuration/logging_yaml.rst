@@ -5,7 +5,7 @@ logging.yaml
 
 The logging configuration file ``logging.yaml`` for OctoPrint is expected in its settings folder, which unless defined
 differently on the command line is located at ``~/.octoprint`` on Linux, at ``%APPDATA%/OctoPrint`` on Windows and at
-``~/Library/Application Support/OctoPrint`` on MacOS.
+``~/Library/Application Support/OctoPrint`` on macOS.
 
 You can use it to change the log levels of the individual components within OctoPrint, which might be necessary to help
 in debugging issues you are experiencing, or to change the configuration of the logging handlers themselves, e.g. in
