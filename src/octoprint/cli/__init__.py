@@ -1,11 +1,12 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import click
+click.disable_unicode_literals_warning = True
 import octoprint
 import sys
 
@@ -137,9 +138,10 @@ from .dev import dev_commands
 from .client import client_commands
 from .config import config_commands
 from .analysis import analysis_commands
+from .user import user_commands
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands, analysis_commands])
+             sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands, analysis_commands, user_commands])
 @standard_options()
 @legacy_options
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)

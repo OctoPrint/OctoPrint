@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response
 from octoprint.settings import settings
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 from octoprint.access.permissions import Permissions
 
 @api.route("/connection", methods=["GET"])
@@ -28,7 +28,7 @@ def connectionState():
 
 
 @api.route("/connection", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def connectionCommand():
 	valid_commands = {
@@ -47,23 +47,23 @@ def connectionCommand():
 		port = None
 		baudrate = None
 		printerProfile = None
-		if "port" in data.keys():
+		if "port" in data:
 			port = data["port"]
 			if port not in connection_options["ports"] and port != "AUTO":
 				return make_response("Invalid port: %s" % port, 400)
-		if "baudrate" in data.keys():
+		if "baudrate" in data:
 			baudrate = data["baudrate"]
 			if baudrate not in connection_options["baudrates"] and baudrate != 0:
 				return make_response("Invalid baudrate: %d" % baudrate, 400)
-		if "printerProfile" in data.keys():
+		if "printerProfile" in data:
 			printerProfile = data["printerProfile"]
 			if not printerProfileManager.exists(printerProfile):
 				return make_response("Invalid printer profile: %s" % printerProfile, 400)
-		if "save" in data.keys() and data["save"]:
+		if "save" in data and data["save"]:
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
 			printerProfileManager.set_default(printerProfile)
-		if "autoconnect" in data.keys():
+		if "autoconnect" in data:
 			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
 		settings().save()
 		printer.connect(port=port, baudrate=baudrate, profile=printerProfile)

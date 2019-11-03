@@ -11,25 +11,11 @@ $(function() {
 
         //~~ OctoPrint client setup
         OctoPrint.options.baseurl = BASEURL;
-        OctoPrint.options.apikey = UI_API_KEY;
 
         var l10n = getQueryParameterByName("l10n");
         if (l10n) {
             OctoPrint.options.locale = l10n;
         }
-
-        OctoPrint.socket.onMessage("connected", function(data) {
-            var payload = data.data;
-            OctoPrint.options.apikey = payload.apikey;
-
-            // update the API key directly in jquery's ajax options too,
-            // to ensure the fileupload plugin and any plugins still using
-            // $.ajax directly still work fine too
-            UI_API_KEY = payload["apikey"];
-            $.ajaxSetup({
-                headers: {"X-Api-Key": UI_API_KEY}
-            });
-        });
 
         //~~ some CoreUI specific stuff we put into OctoPrint.coreui
 
@@ -123,11 +109,36 @@ $(function() {
                 browserVisibilityCallbacks.push(callback);
             };
             exports.hashFromTabChange = false;
-            exports.updateTab = function() {
+            exports.onTabChange = function(current, previous) {
+                log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
+                OctoPrint.coreui.selectedTab = current;
+                callViewModels(allViewModels, "onTabChange", [current, previous]);
+            };
+            exports.onAfterTabChange = function(current, previous) {
+                callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+            };
+            exports.updateTab = function(force) {
+                force = !!force;
+
                 if (exports.hashFromTabChange) {
                     exports.hashFromTabChange = false;
                     return;
                 }
+
+                var selectTab = function(tab) {
+                    if (tab.hash !== exports.selectedTab) {
+                        if ($(tab).parent("li").hasClass("active") && force) {
+                            var current = tab.hash;
+                            var previous = exports.selectedTab;
+                            exports.onTabChange(current, previous);
+                            exports.onAfterTabChange(current, previous);
+                        } else {
+                            $(tab).tab("show");
+                        }
+                    } else {
+                        window.location.hash = tab.hash;
+                    }
+                };
 
                 var tabs = $('#tabs');
 
@@ -135,19 +146,14 @@ $(function() {
                 if (hashtag) {
                     var selectedTab = tabs.find('a[href="' + hashtag + '"]:visible');
                     if (selectedTab.length) {
-                        selectedTab.tab("show");
+                        selectTab(selectedTab[0]);
                         return;
                     }
                 }
 
                 var firstTab = tabs.find('a[data-toggle=tab]:visible').eq(0);
                 if (firstTab.length) {
-                    var firstHash = firstTab[0].hash;
-                    if (firstHash !== exports.selectedTab) {
-                        firstTab.tab("show");
-                    } else {
-                        window.location.hash = firstHash;
-                    }
+                    selectTab(firstTab[0]);
                 }
             };
 
@@ -170,11 +176,6 @@ $(function() {
             }
         });
 
-        // send the current UI API key with any request
-        $.ajaxSetup({
-            headers: {"X-Api-Key": UI_API_KEY}
-        });
-
         //~~ Initialize file upload plugin
 
         $.widget("blueimp.fileupload", $.blueimp.fileupload, {
@@ -195,7 +196,8 @@ $(function() {
         moment.locale(LOCALE);
 
         // Dummy translation requests for dynamic strings supplied by the backend
-        var dummyTranslations = [
+        // noinspection BadExpressionStatementJS
+        [
             // printer states
             gettext("Offline"),
             gettext("Opening serial port"),
@@ -203,12 +205,18 @@ $(function() {
             gettext("Detecting baudrate"),
             gettext("Connecting"),
             gettext("Operational"),
+            gettext("Starting"),
+            gettext("Starting print from SD"),
             gettext("Printing from SD"),
             gettext("Sending file to SD"),
             gettext("Printing"),
             gettext("Paused"),
             gettext("Closed"),
-            gettext("Transferring file to SD")
+            gettext("Transferring file to SD"),
+            gettext("Pausing"),
+            gettext("Resuming"),
+            gettext("Cancelling"),
+            gettext("Finishing")
         ];
 
         //~~ Initialize PNotify
@@ -222,6 +230,11 @@ $(function() {
         PNotify.prototype.options.delay = 5000;
         PNotify.prototype.options.animate_speed = "fast";
 
+        PNotify.prototype.options.maxheight.maxheight = function() {
+            return $(window).height() - 170; // top margin + header + footer + some safety margin
+        };
+
+        // single button notify
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
                 return new PNotify(options);
@@ -526,27 +539,17 @@ $(function() {
         };
 
         // Allow components to react to tab change
-        var onTabChange = function(current, previous) {
-            log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
-            OctoPrint.coreui.selectedTab = current;
-            callViewModels(allViewModels, "onTabChange", [current, previous]);
-        };
-
-        var onAfterTabChange = function(current, previous) {
-            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
-        };
-
         var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
-            onTabChange(current, previous);
+            OctoPrint.coreui.onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget ? e.relatedTarget.hash : undefined;
-            onAfterTabChange(current, previous);
+            OctoPrint.coreui.onAfterTabChange(current, previous);
 
             // make sure we also update the hash but stick to the current scroll position
             var scrollmem = $('body').scrollTop() || $('html').scrollTop();
@@ -587,113 +590,118 @@ $(function() {
         }
 
         var bindViewModels = function() {
-            log.info("Going to bind " + allViewModelData.length + " view models...");
-            _.each(allViewModelData, function(viewModelData) {
-                try {
-                    if (!Array.isArray(viewModelData) || viewModelData.length !== 2) {
-                        log.error("View model data for", viewModel.constructor.name, "has wrong format, expected 2-tuple (viewModel, targets), got:", viewModelData);
-                        return;
-                    }
-
-                    var viewModel = viewModelData[0];
-                    var targets = viewModelData[1];
-
-                    if (targets === undefined) {
-                        log.error("No binding targets defined for view model", viewMode.constructor.name);
-                        return;
-                    }
-
-                    if (!_.isArray(targets)) {
-                        targets = [targets];
-                    }
-
+            try {
+                log.info("Going to bind " + allViewModelData.length + " view models...");
+                _.each(allViewModelData, function (viewModelData) {
                     try {
-                        callViewModel(viewModel, "onBeforeBinding", undefined, true);
-                    } catch (exc) {
-                        log.error("Error calling onBeforeBinding on view model", viewModel.constructor.name, ":", (exc.stack || exc));
-                        return;
-                    }
+                        if (!Array.isArray(viewModelData) || viewModelData.length !== 2) {
+                            log.error("View model data for", viewModelData.constructor.name, "has wrong format, expected 2-tuple (viewModel, targets), got:", viewModelData);
+                            return;
+                        }
 
-                    if (targets !== undefined) {
+                        var viewModel = viewModelData[0];
+                        var targets = viewModelData[1];
+
+                        if (targets === undefined) {
+                            log.error("No binding targets defined for view model", viewMode.constructor.name);
+                            return;
+                        }
+
                         if (!_.isArray(targets)) {
                             targets = [targets];
                         }
 
-                        viewModel._bindings = [];
+                        try {
+                            callViewModel(viewModel, "onBeforeBinding", undefined, true);
+                        } catch (exc) {
+                            log.error("Error calling onBeforeBinding on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+                            return;
+                        }
 
-                        _.each(targets, function (target) {
-                            if (target === undefined) {
-                                log.error("Undefined target for view model", viewModel.constructor.name);
-                                return;
+                        if (targets !== undefined) {
+                            if (!_.isArray(targets)) {
+                                targets = [targets];
                             }
 
-                            var object;
-                            if (!(target instanceof jQuery)) {
-                                try {
-                                    object = $(target);
-                                } catch (exc) {
-                                    log.error("Error while attempting to jquery-fy target", target, "of view model", viewModel.constructor.name, ":", (exc.stack || exc));
+                            viewModel._bindings = [];
+
+                            _.each(targets, function (target) {
+                                if (target === undefined) {
+                                    log.error("Undefined target for view model", viewModel.constructor.name);
                                     return;
                                 }
-                            } else {
-                                object = target;
-                            }
 
-                            if (object === undefined || !object.length) {
-                                log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
-                                return;
-                            }
+                                var object;
+                                if (!(target instanceof jQuery)) {
+                                    try {
+                                        object = $(target);
+                                    } catch (exc) {
+                                        log.error("Error while attempting to jquery-fy target", target, "of view model", viewModel.constructor.name, ":", (exc.stack || exc));
+                                        return;
+                                    }
+                                } else {
+                                    object = target;
+                                }
 
-                            var element = object.get(0);
-                            if (element === undefined) {
-                                log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
-                                return;
-                            }
+                                if (object === undefined || !object.length) {
+                                    log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                                    return;
+                                }
 
-                            try {
-                                ko.applyBindings(viewModel, element);
-                                viewModel._bindings.push(target);
+                                var element = object.get(0);
+                                if (element === undefined) {
+                                    log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                                    return;
+                                }
 
-                                callViewModel(viewModel, "onBoundTo", [target, element], true);
+                                try {
+                                    ko.applyBindings(viewModel, element);
+                                    viewModel._bindings.push(target);
 
-                                log.debug("View model", viewModel.constructor.name, "bound to", target);
-                            } catch (exc) {
-                                log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
-                            }
-                        });
-                    }
+                                    callViewModel(viewModel, "onBoundTo", [target, element], true);
 
-                    viewModel._unbound = viewModel._bindings === undefined || viewModel._bindings.length === 0;
-                    viewModel._bound = viewModel._bindings && viewModel._bindings.length > 0;
+                                    log.debug("View model", viewModel.constructor.name, "bound to", target);
+                                } catch (exc) {
+                                    log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
+                                }
+                            });
+                        }
 
-                    callViewModel(viewModel, "onAfterBinding");
-                } catch (exc) {
-                    var name;
-                    try {
-                        name = viewModel.constructor.name;
+                        viewModel._unbound = viewModel._bindings === undefined || viewModel._bindings.length === 0;
+                        viewModel._bound = viewModel._bindings && viewModel._bindings.length > 0;
+
+                        callViewModel(viewModel, "onAfterBinding");
                     } catch (exc) {
-                        name = "n/a";
+                        var name;
+                        try {
+                            name = viewModel.constructor.name;
+                        } catch (exc) {
+                            name = "n/a";
+                        }
+                        log.error("Error while processing view model", name, "for binding:", (exc.stack || exc));
                     }
-                    log.error("Error while processing view model", name, "for binding:", (exc.stack || exc));
-                }
-            });
+                });
 
-            callViewModels(allViewModels, "onAllBound", [allViewModels]);
-            log.info("... binding done");
+                callViewModels(allViewModels, "onAllBound", [allViewModels]);
+                log.info("... binding done");
 
-            // make sure we can track the browser tab visibility
-            OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
-                log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
-                callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
-            });
+                // make sure we can track the browser tab visibility
+                OctoPrint.coreui.onBrowserVisibilityChange(function (status) {
+                    log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
+                    callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
+                });
 
-            $(window).on("hashchange", function() {
-                OctoPrint.coreui.updateTab();
-            });
+                $(window).on("hashchange", function () {
+                    OctoPrint.coreui.updateTab();
+                });
 
-            log.info("Application startup complete");
+                log.info("Application startup complete");
 
-            viewModelMap["uiStateViewModel"].loading(false);
+                viewModelMap["uiStateViewModel"].loading(false);
+            } catch (exc) {
+                viewModelMap["uiStateViewModel"].showLoadingError("Application startup failed.");
+                throw(exc);
+            }
 
             // startup complete
             callViewModels(allViewModels, "onStartupComplete");
@@ -701,7 +709,7 @@ $(function() {
 
             // this will also allow selecting any tabs that will be hidden later due to overflowing since our
             // overflow plugin tabdrop hasn't run yet
-            OctoPrint.coreui.updateTab();
+            OctoPrint.coreui.updateTab(true);
 
             // Use bootstrap tabdrop for tabs and pills
             $('.nav-pills, .nav-tabs').tabdrop();
@@ -715,6 +723,16 @@ $(function() {
 
             viewModelMap["settingsViewModel"].requestData()
                 .done(function() {
+                    var adjustModalDefaultBehaviour = function() {
+                        if (viewModelMap["settingsViewModel"].appearance_closeModalsWithClick()) {
+                            $.fn.modal.defaults.backdrop = true;
+                        } else {
+                            $.fn.modal.defaults.backdrop = "static";
+                        }
+                    };
+                    adjustModalDefaultBehaviour();
+                    viewModelMap["settingsViewModel"].appearance_closeModalsWithClick.subscribe(adjustModalDefaultBehaviour);
+
                     // There appears to be an odd race condition either in JQuery's AJAX implementation or
                     // the browser's implementation of XHR, causing a second GET request from inside the
                     // completion handler of the very same request to never get its completion handler called
@@ -727,6 +745,9 @@ $(function() {
                     // Decoupling all consecutive calls from this done event handler hence is an easy way
                     // to avoid this problem. A zero timeout should do the trick nicely.
                     window.setTimeout(bindViewModels, 0);
+                })
+                .fail(function() {
+                    viewModelMap["uiStateViewModel"].showLoadingError("Initial settings fetch failed.");
                 });
         };
 
@@ -774,6 +795,9 @@ $(function() {
                     // This is to ensure that we have no concurrent requests triggered by socket events
                     // overriding each other's session during app initialization
                     dataUpdater.initialized();
+                })
+                .fail(function() {
+                    viewModelMap["uiStateViewModel"].showLoadingError("Passive login failed.");
                 });
         };
 
@@ -784,10 +808,14 @@ $(function() {
                 dataUpdater.connectCallback = onServerConnect;
 
                 // perform passive login first
-                onServerConnect().done(function() {
-                    // then trigger a settings fetch
-                    window.setTimeout(fetchSettings, 0);
-                });
+                onServerConnect()
+                    .done(function() {
+                        // then trigger a settings fetch
+                        window.setTimeout(fetchSettings, 0);
+                    });
+            })
+            .fail(function() {
+                viewModelMap["uiStateViewModel"].showLoadingError("Socket connection failed.");
             });
     }
 );

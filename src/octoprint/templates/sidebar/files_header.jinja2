@@ -1,8 +1,10 @@
 <div class="settings-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
-    <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings') }}">
+    <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings')|edq }}">
         <span class="fa fa-wrench"></span>
     </a>
     <ul class="dropdown-menu">
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilterSearch(); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.filterSearch() ? 'visible' : 'hidden'}"></i> {{ _('Apply filters to search results') }}</a></li>
+        <li class="divider"></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
@@ -14,9 +16,12 @@
                 <li><a href="#" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="fa fa-check" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
             </ul>
         </li>
+        <!-- ko if: availableFiletypes().length > 1 -->
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
+        <!-- ko foreach: availableFiletypes -->
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter($data.key); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains($root.listHelper.currentFilters(), $data.key) ? 'visible' : 'hidden'}"></i> <span data-bind="text: $data.text"></span></a></li>
+        <!-- /ko -->
+        <!-- /ko -->
         {% if enableSdSupport %}
             <li class="divider"></li>
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
@@ -28,14 +33,14 @@
 </div>
 
 <div class="refresh-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
-    <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list') }}">
+    <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list')|edq }}">
         <i class="fa fa-refresh"></i>
     </a>
 </div>
 
 {% if enableSdSupport %}
     <div class="sd-trigger accordion-heading-button btn-group" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL) && $root.filesListVisible()">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations') }}">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations')|edq }}">
             <span class="icon-sd-black-14"></span>
         </a>
         <ul class="dropdown-menu">

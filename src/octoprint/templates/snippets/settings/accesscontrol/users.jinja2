@@ -20,15 +20,15 @@
                     <th class="settings_users_details_key">{{ _('Permissions') }}</th>
                     <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
                 </tr>
-                <tr data-bind="visible: $root.api_enabled() && apikey">
+                <tr data-bind="visible: apikey">
                     <th class="settings_users_details_key">{{ _('API Key') }}</th>
-                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></td>
+                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></td>
                 </tr>
             </table>
         </td>
         <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'fa-square-o': !active }"></i></td>
         <td class="settings_users_actions">
-            <a href="#" class="fa fa-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
+            <a href="#" class="fa fa-pencil" title="{{ _('Update User')|edq }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
         </td>
     </tr>
     </tbody>
@@ -45,7 +45,7 @@
     </ul>
 </div>
 
-<button title="{{ _('Add user') }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user...') }}</button>
+<button title="{{ _('Add user')|edq }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user...') }}</button>
 
 <!-- Modals for user management -->
 
@@ -150,13 +150,13 @@
                     <span class="help-inline" data-bind="visible: $root.access.users.editor.passwordMismatch()">{{ _('Passwords do not match') }}</span>
                 </div>
             </div>
-            <fieldset data-bind="visible: api_enabled">
+            <fieldset>
                 <legend>API Key</legend>
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls">
                         <div class="input-append input-block-level ">
-                            <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
+                            <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A')|esq }}'}">
                             <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-copy"></i></a>
                             <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="fa fa-refresh"></i></a>
                             <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-trash-o"></i></a>

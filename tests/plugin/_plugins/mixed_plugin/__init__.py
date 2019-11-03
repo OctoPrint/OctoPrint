@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -19,3 +19,4 @@ class TestMixedPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsP
 __plugin_name__ = "Mixed Plugin"
 __plugin_description__ = "Test mixed plugin"
 __plugin_implementation__ = TestMixedPlugin()
+__plugin_pythoncompat__ = ">=2.7,<4"

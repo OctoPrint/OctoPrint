@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,20 +9,23 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 import calendar
-import codecs
+import io
 import os
 import re
 import time
 import threading
+import sys
+PY2 = sys.version_info[0] < 3
 
 import feedparser
 import flask
 
 from collections import OrderedDict
 
+from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking, check_etag
-from octoprint.util import utmify
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
+from octoprint.util import utmify, count, monotonic_time
 from flask_babel import gettext
 from octoprint import __version__ as OCTOPRINT_VERSION
 
@@ -50,11 +53,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			dict(key="READ",
 			     name="Read announcements",
 			     description=gettext("Allows to read announcements"),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["read"]),
 			dict(key="MANAGE",
 			     name="Manage announcement subscriptions",
 			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
 			                         "permission"),
+			     default_groups=[ADMIN_GROUP],
 			     roles=["manage"],
 			     permissions=["PLUGIN_ANNOUNCEMENTS_READ"])
 		]
@@ -104,7 +109,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                ttl=6*60,
 		                display_limit=3,
 		                summary_limit=300)
-		settings["enabled_channels"] = settings["channels"].keys()
+		settings["enabled_channels"] = list(settings["channels"].keys())
 		return settings
 
 	def get_settings_version(self):
@@ -150,7 +155,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# Blueprint Plugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels", methods=["GET"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
@@ -170,7 +175,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			for key, data in channel_configs.items():
 				read_until = channel_configs[key].get("read_until", None)
 				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-				unread = len(list(filter(lambda e: not e["read"], entries)))
+				unread = count(filter(lambda e: not e["read"], entries))
 
 				if read_until is None and entries:
 					last = entries[0]["published"]
@@ -191,14 +196,16 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		def etag():
 			import hashlib
 			hash = hashlib.sha1()
-			hash.update(repr(sorted(enabled)))
-			hash.update(repr(sorted(forced)))
-			hash.update(OCTOPRINT_VERSION)
+			def hash_update(value):
+				hash.update(value.encode("utf-8"))
+			hash_update(repr(sorted(enabled)))
+			hash_update(repr(sorted(forced)))
+			hash_update(OCTOPRINT_VERSION)
 
 			for channel in sorted(channel_configs.keys()):
-				hash.update(repr(channel_configs[channel]))
+				hash_update(repr(channel_configs[channel]))
 				channel_data = self._get_channel_data_from_cache(channel, channel_configs[channel])
-				hash.update(repr(channel_data))
+				hash_update(repr(channel_data))
 
 			return hash.hexdigest()
 
@@ -211,7 +218,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                  unless=lambda: force)(view)()
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
-	@require_firstrun
+	@no_firstrun_access
 	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def channel_command(self, channel):
 		from octoprint.server.util.flask import get_json_command_from_request
@@ -358,7 +365,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			now = time.time()
 			if os.stat(channel_path).st_mtime + ttl > now:
 				d = feedparser.parse(channel_path)
-				self._logger.debug(u"Loaded channel {} from cache at {}".format(key, channel_path))
+				self._logger.debug("Loaded channel {} from cache at {}".format(key, channel_path))
 				return d
 
 		return None
@@ -370,18 +377,18 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		url = config["url"]
 		try:
-			start = time.time()
+			start = monotonic_time()
 			r = requests.get(url, timeout=30)
 			r.raise_for_status()
-			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
-		except Exception as e:
+			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], monotonic_time() - start))
+		except Exception:
 			self._logger.exception(
-				u"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
+				"Could not fetch channel {} from {}".format(key, config["url"]))
 			return None
 
 		response = r.text
 		channel_path = self._get_channel_cache_path(key)
-		with codecs.open(channel_path, mode="w", encoding="utf-8") as f:
+		with io.open(channel_path, mode="wt", encoding="utf-8") as f:
 			f.write(response)
 		return feedparser.parse(response)
 
@@ -391,15 +398,24 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		result = []
 		if "entries" in feed:
 			for entry in feed["entries"]:
-				internal_entry = self._to_internal_entry(entry, read_until=read_until)
-				if internal_entry:
-					result.append(internal_entry)
+				try:
+					internal_entry = self._to_internal_entry(entry, read_until=read_until)
+					if internal_entry:
+						result.append(internal_entry)
+				except Exception:
+					self._logger.exception("Error while converting entry from feed, skipping it")
 		return result
 
 	def _to_internal_entry(self, entry, read_until=None):
 		"""Convert feed entries to internal data structure."""
 
-		published = calendar.timegm(entry["published_parsed"])
+		timestamp = entry.get("published_parsed", None)
+		if timestamp is None:
+			timestamp = entry.get("updated_parsed", None)
+		if timestamp is None:
+			return  None
+
+		published = calendar.timegm(timestamp)
 
 		read = True
 		if read_until is not None:
@@ -423,22 +439,22 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 _image_tag_re = re.compile(r'<img.*?/?>')
 def _strip_images(text):
 	"""
-	>>> _strip_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
-	u"<a href='test.html'>I'm a link</a> and this is an image: "
-	>>> _strip_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
-	u'One  and two  and three  and four '
-	>>> _strip_images(u"No images here")
-	u'No images here'
+	>>> _strip_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>") # doctest: +ALLOW_UNICODE
+	"<a href='test.html'>I'm a link</a> and this is an image: "
+	>>> _strip_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">") # doctest: +ALLOW_UNICODE
+	'One  and two  and three  and four '
+	>>> _strip_images("No images here") # doctest: +ALLOW_UNICODE
+	'No images here'
 	"""
 	return _image_tag_re.sub('', text)
 
 def _replace_images(text, callback):
 	"""
 	>>> callback = lambda img: "foobar"
-	>>> _replace_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
-	u"<a href='test.html'>I'm a link</a> and this is an image: foobar"
-	>>> _replace_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
-	u'One foobar and two foobar and three foobar and four foobar'
+	>>> _replace_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback) # doctest: +ALLOW_UNICODE
+	"<a href='test.html'>I'm a link</a> and this is an image: foobar"
+	>>> _replace_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback) # doctest: +ALLOW_UNICODE
+	'One foobar and two foobar and three foobar and four foobar'
 	"""
 	result = text
 	for match in _image_tag_re.finditer(text):
@@ -450,14 +466,14 @@ def _replace_images(text, callback):
 _image_src_re = re.compile(r'src=(?P<quote>[\'"]*)(?P<src>.*?)(?P=quote)(?=\s+|>)')
 def _lazy_images(text, placeholder=None):
 	"""
-	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
-	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
-	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-	>>> _lazy_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
-	u'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
-	>>> _lazy_images(u"No images here")
-	u'No images here'
+	>>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>") # doctest: +ALLOW_UNICODE
+	'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png") # doctest: +ALLOW_UNICODE
+	'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png") # doctest: +ALLOW_UNICODE
+	'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
+	>>> _lazy_images("No images here") # doctest: +ALLOW_UNICODE
+	'No images here'
 	"""
 	if placeholder is None:
 		# 1px transparent gif
@@ -476,10 +492,10 @@ def _lazy_images(text, placeholder=None):
 
 def _strip_tags(text):
 	"""
-	>>> _strip_tags(u"<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
-	u"Hello world&lt;img src='foo.jpg'&gt;"
-	>>> _strip_tags(u"&#62; &#x3E; Foo")
-	u'&#62; &#x3E; Foo'
+	>>> _strip_tags("<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;") # doctest: +ALLOW_UNICODE
+	"Hello world&lt;img src='foo.jpg'&gt;"
+	>>> _strip_tags("&#62; &#x3E; Foo") # doctest: +ALLOW_UNICODE
+	'&#62; &#x3E; Foo'
 	"""
 	try:
 		# noinspection PyCompatibility
@@ -490,8 +506,8 @@ def _strip_tags(text):
 
 	class TagStripper(HTMLParser):
 
-		def __init__(self):
-			HTMLParser.__init__(self)
+		def __init__(self, **kw):
+			HTMLParser.__init__(self, **kw)
 			self._fed = []
 
 		def handle_data(self, data):
@@ -506,7 +522,7 @@ def _strip_tags(text):
 		def get_data(self):
 			return "".join(self._fed)
 
-	tag_stripper = TagStripper()
+	tag_stripper = TagStripper() if PY2 else TagStripper(convert_charrefs=False)
 	tag_stripper.feed(text)
 	return tag_stripper.get_data()
 

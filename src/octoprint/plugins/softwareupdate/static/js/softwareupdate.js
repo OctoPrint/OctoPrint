@@ -1,88 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintSoftwareUpdateClient = function(base) {
-        this.base = base;
-
-        var url = this.base.getBlueprintUrl("softwareupdate");
-        this.checkUrl = url + "check";
-        this.updateUrl = url + "update";
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            entries = params.entries;
-            force = params.force;
-            opts = params.opts;
-        }
-
-        entries = entries || [];
-        if (typeof entries == "string") {
-            entries = [entries];
-        }
-
-        var data = {};
-        if (!!force) {
-            data.force = true;
-        }
-        if (entries && entries.length) {
-            data.check = entries.join(",");
-        }
-        return this.base.getWithQuery(this.checkUrl, data, opts);
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            force = params.force;
-            opts = params.opts;
-        }
-
-        return this.checkEntries({entries: [], force: force, opts: opts});
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.update = function(targets, force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            targets = params.targets;
-            force = params.force;
-            opts = params.opts;
-        }
-
-        targets = targets || [];
-        if (typeof targets === "string") {
-            targets = [targets];
-        }
-
-        var data = {
-            targets: targets,
-            force: !!force
-        };
-        return this.base.postJson(this.updateUrl, data, opts);
-    };
-
-    OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
-            var params = arguments[0];
-            force = params.force;
-            opts = params.opts;
-        }
-
-        var data = {
-            force: !!force
-        };
-        return this.base.postJson(this.updateUrl, data, opts);
-    };
-
-    OctoPrintClient.registerPluginComponent("softwareupdate", OctoPrintSoftwareUpdateClient);
-    return OctoPrintSoftwareUpdateClient;
-});
-
 $(function() {
     function SoftwareUpdateViewModel(parameters) {
         var self = this;
@@ -91,6 +6,11 @@ $(function() {
         self.printerState = parameters[1];
         self.settings = parameters[2];
         self.access = parameters[3];
+
+        // optional
+
+        self.piSupport = parameters[4]; // might be null!
+
         self.popup = undefined;
 
         self.updateInProgress = false;
@@ -110,12 +30,16 @@ $(function() {
         self.octoprintReleasedVersion = ko.observable();
 
         self.octoprintUnconfigured = ko.pureComputed(function() {
-            return self.error_checkoutFolder();
+            return self.settings.settings.plugins.softwareupdate.octoprint_type() === "git_commit"
+                && self.error_checkoutFolder();
         });
         self.octoprintUnreleased = ko.pureComputed(function() {
             return self.settings.settings.plugins.softwareupdate.octoprint_type() === "github_release"
                 && !self.octoprintReleasedVersion();
         });
+
+        self.environmentSupported = ko.observable(true);
+        self.environmentVersions = ko.observableArray([]);
 
         self.cacheTimestamp = ko.observable();
         self.cacheTimestampText = ko.pureComputed(function() {
@@ -124,7 +48,9 @@ $(function() {
 
         self.config_cacheTtl = ko.observable();
         self.config_notifyUsers = ko.observable();
+        self.config_trackedBranch = ko.observable();
         self.config_checkoutFolder = ko.observable();
+        self.config_pipTarget = ko.observable();
         self.config_checkType = ko.observable();
         self.config_releaseChannel = ko.observable();
 
@@ -133,8 +59,13 @@ $(function() {
                 && (!self.config_checkoutFolder() || self.config_checkoutFolder().trim() === '');
         });
 
+        self.enableUpdate = ko.pureComputed(function() {
+            return !self.updateInProgress && self.environmentSupported() && !self.printerState.isPrinting() && !self.throttled();
+        });
+
         self.enable_configSave = ko.pureComputed(function() {
             return self.config_checkType() === "github_release"
+                || self.config_checkType() === "github_commit"
                 || (self.config_checkType() === "git_commit" && !self.error_checkoutFolder());
         });
 
@@ -163,11 +94,15 @@ $(function() {
             "name",
             [],
             [],
-            5
+            0
         );
 
         self.availableAndPossible = ko.pureComputed(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
+        });
+
+        self.throttled = ko.pureComputed(function() {
+            return self.piSupport && self.piSupport.currentIssue() && !self.settings.settings.plugins.pluginmanager.ignore_throttled();
         });
 
         self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
@@ -227,7 +162,9 @@ $(function() {
                         notify_users: self.config_notifyUsers(),
                         octoprint_type: self.config_checkType(),
                         octoprint_release_channel: self.config_releaseChannel(),
-                        octoprint_checkout_folder: self.config_checkoutFolder()
+                        octoprint_checkout_folder: self.config_checkoutFolder(),
+                        octoprint_tracked_branch: self.config_trackedBranch(),
+                        octoprint_pip_target: self.config_pipTarget()
                     }
                 }
             };
@@ -246,7 +183,8 @@ $(function() {
 
         self._copyConfig = function() {
             var availableCheckTypes = [{"key": "github_release", "name": gettext("Release")},
-                                       {"key": "git_commit", "name": gettext("Commit")}];
+                                       {"key": "github_commit", "name": gettext("Github Commit")},
+                                       {"key": "git_commit", "name": gettext("Local checkout")}];
             self.config_availableCheckTypes(availableCheckTypes);
 
             var availableReleaseChannels = [];
@@ -261,6 +199,8 @@ $(function() {
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
             self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
+            self.config_trackedBranch(self.settings.settings.plugins.softwareupdate.octoprint_tracked_branch());
+            self.config_pipTarget(self.settings.settings.plugins.softwareupdate.octoprint_pip_target());
         };
 
         self._copyConfigBack = function() {
@@ -286,11 +226,11 @@ $(function() {
                 }
 
                 var fullNameTemplate = gettext("%(name)s: %(version)s");
-                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: value.displayName, version: value.displayVersion});
+                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: _.escape(value.displayName), version: _.escape(value.displayVersion)});
 
-                var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
+                var fullNameRemoteVars = {name: _.escape(value.displayName), version: gettext("unknown")};
                 if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
-                    fullNameRemoteVars.version = value.information.remote.name;
+                    fullNameRemoteVars.version = _.escape(value.information.remote.name);
                 }
                 value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
@@ -300,6 +240,9 @@ $(function() {
 
             var octoprint = data.information["octoprint"];
             self.octoprintReleasedVersion(!octoprint || octoprint.released_version);
+
+            self.environmentSupported(data.environment.supported);
+            self.environmentVersions(data.environment.versions);
 
             if (data.status === "inProgress") {
                 self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
@@ -315,7 +258,7 @@ $(function() {
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='fa fa-li " + (update_info.updatePossible ? "fa-check" : "fa-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -323,7 +266,11 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                if (!self.environmentSupported()) {
+                    text += "<p><small>" + gettext("This version of the Python environment is not supported for direct updates.") + "</small></p>";
+                } else {
+                    text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
+                }
 
                 if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
@@ -547,36 +494,46 @@ $(function() {
                     type: "error"
                 });
                 self._updateClicked = false;
-            } else {
-                var html = "<p>" + gettext("This will update the following components and restart the server:") + "</p>";
-                html += "<ul>";
-                _.each(items, function(item) {
-                    html += "<li>"
-                        + "<span class=\"name\" title=\"" + item.fullNameRemote + "\">" + item.fullNameRemote + "</span>";
-                    if (item.releaseNotes) {
-                        html += "<br><a href=\"" + item.releaseNotes + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + gettext("Release Notes") + "</a>"
-                    }
-                    html += "</li>";
-                });
-                html += "</ul>";
-                html += "<p>" + gettext("Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.") + "</p>"
-                    + "<p><strong>" + gettext("This action may disrupt any ongoing print jobs.") + "</strong></p>"
-                    + "<p>" + gettext("Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset.") + "</p>"
-                    + "<p>" + gettext("Are you sure you want to proceed?") + "</p>";
-                showConfirmationDialog({
-                    title: gettext("Are you sure you want to update now?"),
-                    html: html,
-                    proceed: gettext("Proceed"),
-                    onproceed: function() {
-                        self.performUpdate((force === true),
-                                           _.map(items, function(info) { return info.key }));
-                    },
-                    onclose: function() {
-                        self._updateClicked = false;
-                    }
-                });
+                return;
             }
 
+            if (self.throttled()) {
+                self._showPopup({
+                    title: gettext("Can't update while throttled"),
+                    text: gettext("Your system is currently throttled. OctoPrint refuses to run updates while in this state due to possible stability issues."),
+                    type: "error"
+                });
+                self._updateClicked = false;
+                return;
+            }
+
+            var html = "<p>" + gettext("This will update the following components and restart the server:") + "</p>";
+            html += "<ul>";
+            _.each(items, function(item) {
+                html += "<li>"
+                    + "<span class=\"name\" title=\"" + item.fullNameRemote + "\">" + item.fullNameRemote + "</span>";
+                if (item.releaseNotes) {
+                    html += "<br><a href=\"" + item.releaseNotes + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + gettext("Release Notes") + "</a>"
+                }
+                html += "</li>";
+            });
+            html += "</ul>";
+            html += "<p>" + gettext("Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.") + "</p>"
+                + "<p><strong>" + gettext("This action may disrupt any ongoing print jobs.") + "</strong></p>"
+                + "<p>" + gettext("Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset.") + "</p>"
+                + "<p>" + gettext("Are you sure you want to proceed?") + "</p>";
+            showConfirmationDialog({
+                title: gettext("Are you sure you want to update now?"),
+                html: html,
+                proceed: gettext("Proceed"),
+                onproceed: function() {
+                    self.performUpdate((force === true),
+                                       _.map(items, function(info) { return info.key }));
+                },
+                onclose: function() {
+                    self._updateClicked = false;
+                }
+            });
         };
 
         self._showWorkingDialog = function(title) {
@@ -698,7 +655,7 @@ $(function() {
                     break;
                 }
                 case "updating": {
-                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
+                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: _.escape(messageData.name), version: _.escape(messageData.version)});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});
@@ -852,7 +809,8 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SoftwareUpdateViewModel,
-        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "accessViewModel", "piSupportViewModel"],
+        optional: ["piSupportViewModel"],
         elements: ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
     });
 });

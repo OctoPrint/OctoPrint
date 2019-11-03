@@ -13,6 +13,7 @@ plugin subsystem about themselves. These are simple package attributes defined i
    # ...
 
    __plugin_name__ = "My Plugin"
+   __plugin_pythoncompat__ = ">=2.7,<4"
    def __plugin_load__():
        # whatever you need to do to load your plugin, if anything at all
        pass
@@ -51,6 +52,20 @@ The following properties are recognized:
 
 ``__plugin_license__``
   License of your plugin, optional, overrides the license specified in ``setup.py`` if provided.
+
+.. _sec-plugins-controlproperties-plugin_pythoncompat:
+
+``__plugin_pythoncompat__``
+  Python compatibility string of your plugin, optional, defaults to ``>=2.7,<3`` if not set and thus Python 2 but no
+  Python 3 compatibility.
+
+  If your plugin is compatible to Python 3, you should set this to ``>=2.7,<4``, otherwise your plugin will not load
+  on OctoPrint instances installed under Python 3.
+
+  .. code-block:: python
+
+     __plugin_pythoncompat__ = ">=2.7,<4"
+
 
 .. _sec-plugins-controlproperties-plugin_implementation:
 

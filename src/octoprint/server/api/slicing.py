@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, url_for
 from werkzeug.exceptions import BadRequest
 
 from octoprint.server import slicingManager
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.access.permissions import Permissions
 
@@ -40,7 +40,10 @@ def _etag(configured, lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
 
 	if configured:
 		slicers = slicingManager.configured_slicers
@@ -51,11 +54,11 @@ def _etag(configured, lm=None):
 
 	for slicer in sorted(slicers):
 		slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
-		hash.update(slicer)
-		hash.update(str(slicer_impl.is_slicer_configured()))
-		hash.update(str(slicer == default_slicer))
+		hash_update(slicer)
+		hash_update(str(slicer_impl.is_slicer_configured()))
+		hash_update(str(slicer == default_slicer))
 
-	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
+	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 
@@ -86,8 +89,8 @@ def slicingListAll():
 
 			result[slicer] = dict(
 				key=slicer,
-				displayName=slicer_impl.get_slicer_properties()["name"],
-				sameDevice=slicer_impl.get_slicer_properties()["same_device"],
+				displayName=slicer_impl.get_slicer_properties().get("name", "n/a"),
+				sameDevice=slicer_impl.get_slicer_properties().get("same_device", True),
 				default=default_slicer == slicer,
 				configured=slicer_impl.is_slicer_configured(),
 				profiles=_getSlicingProfilesData(slicer),
@@ -103,7 +106,7 @@ def slicingListAll():
 	return jsonify(result)
 
 @api.route("/slicing/<string:slicer>/profiles", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SLICE.require(403)
 def slicingListSlicerProfiles(slicer):
 	configured = False
@@ -116,7 +119,7 @@ def slicingListSlicerProfiles(slicer):
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SLICE.require(403)
 def slicingGetSlicerProfile(slicer, name):
 	try:
@@ -131,7 +134,7 @@ def slicingGetSlicerProfile(slicer, name):
 	return jsonify(result)
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PUT"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
@@ -167,7 +170,7 @@ def slicingAddSlicerProfile(slicer, name):
 	return r
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["PATCH"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
@@ -211,7 +214,7 @@ def slicingPatchSlicerProfile(slicer, name):
 	return jsonify(_getSlicingProfileData(slicer, name, saved_profile))
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingDelSlicerProfile(slicer, name):
 	try:

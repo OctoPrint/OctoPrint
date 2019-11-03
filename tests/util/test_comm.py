@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
 import mock
@@ -21,11 +23,14 @@ class TestCommErrorHandling(unittest.TestCase):
 		self._comm._errorValue = None
 		self._comm._clear_to_send = mock.Mock()
 		self._comm._error_message_hooks = dict()
+		self._comm._trigger_emergency_stop = mock.Mock()
 
 		# settings
 		self._comm._ignore_errors = False
 		self._comm._disconnect_on_errors = True
+		self._comm._send_m112_on_error = True
 		self._comm.isPrinting.return_value = True
+		self._comm.isSdPrinting.return_value = False
 		self._comm.isError.return_value = False
 
 	@ddt.data(
@@ -132,6 +137,7 @@ class TestCommErrorHandling(unittest.TestCase):
 		self.assertEqual(line, result)
 
 		# what should have happened
+		self.assert_m112_sent()
 		self.assert_disconnected()
 
 		# what should not have happened
@@ -139,6 +145,24 @@ class TestCommErrorHandling(unittest.TestCase):
 		self.assert_not_last_comm_error()
 		self.assert_not_print_cancelled()
 		self.assert_not_cleared_to_send()
+
+	@ddt.data("Error: Printer on fire")
+	def test_other_error_no_m112(self, line):
+		"""Should trigger escalation"""
+		self._comm._send_m112_on_error = False
+
+		result = self._comm._handle_errors(line)
+		self.assertEqual(line, result)
+
+		# what should have happened
+		self.assert_disconnected()
+
+		# what should not have happened
+		self.assert_not_handle_ok()
+		self.assert_not_last_comm_error()
+		self.assert_not_print_cancelled()
+		self.assert_not_cleared_to_send()
+		self.assert_not_m112_sent()
 
 	@ddt.data("Error: Printer on fire")
 	def test_other_error_cancel(self, line):
@@ -155,6 +179,7 @@ class TestCommErrorHandling(unittest.TestCase):
 		# what should not have happened
 		self.assert_not_handle_ok()
 		self.assert_not_last_comm_error()
+		self.assert_not_m112_sent()
 		self.assert_not_disconnected()
 
 	@ddt.data("Error: Printer on fire")
@@ -172,6 +197,8 @@ class TestCommErrorHandling(unittest.TestCase):
 		self.assert_not_handle_ok()
 		self.assert_not_last_comm_error()
 		self.assert_not_print_cancelled()
+		self.assert_not_m112_sent()
+		self.assert_not_disconnected()
 
 	def test_not_an_error(self):
 		"""Should pass"""
@@ -204,6 +231,12 @@ class TestCommErrorHandling(unittest.TestCase):
 
 	def assert_not_last_comm_error(self):
 		self.assertIsNone(self._comm._lastCommError)
+
+	def assert_m112_sent(self):
+		self._comm._trigger_emergency_stop.assert_called_once_with(close=False)
+
+	def assert_not_m112_sent(self):
+		self._comm._trigger_emergency_stop.assert_not_called()
 
 	def assert_disconnected(self):
 		self.assertIsNotNone(self._comm._errorValue)

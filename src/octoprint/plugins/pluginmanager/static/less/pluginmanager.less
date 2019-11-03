@@ -1,21 +1,39 @@
-table {
-  th, td {
-    &.settings_plugin_plugin_manager_plugins_name {
-      text-overflow: ellipsis;
-      text-align: left;
-    }
+#settings_plugin_pluginmanager {
+  .form-search {
+    text-align: center;
+    margin-bottom: 5px !important;
+  }
+}
 
-    &.settings_plugin_plugin_manager_plugins_actions {
-      text-align: center;
-      width: 80px;
+#settings_plugin_pluginmanager_pluginlist {
+  display: block;
+  width: auto;
+  max-height: 400px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding-right: 2px;
+  margin-bottom: 1em;
 
-      a {
-        text-decoration: none;
-        color: #000;
+  table {
 
-        &.disabled {
-          color: #ccc;
-          cursor: default;
+    th, td {
+      &.settings_plugin_plugin_manager_plugins_name {
+        text-overflow: ellipsis;
+        text-align: left;
+      }
+
+      &.settings_plugin_plugin_manager_plugins_actions {
+        text-align: center;
+        width: 80px;
+
+        a {
+          text-decoration: none;
+          color: #000;
+
+          &.disabled {
+            color: #ccc;
+            cursor: default;
+          }
         }
       }
     }
@@ -53,7 +71,8 @@ table {
     }
   }
 
-  #settings_plugin_pluginmanager_repositorydialog_unavailable {
+  #settings_plugin_pluginmanager_repositorydialog_unavailable,
+  #settings_plugin_pluginmanager_repositorydialog_empty {
     overflow: hidden;
     width: 100%;
     height: 300px;

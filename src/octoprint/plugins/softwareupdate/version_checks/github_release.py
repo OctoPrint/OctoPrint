@@ -1,5 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
+# MO unicode_literals because fixing all the doctests is too annoying :-P
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +8,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import requests
 import logging
+
+from octoprint.util import sv
 
 RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 
@@ -68,7 +71,7 @@ def _filter_out_latest(releases,
 	nothing = None, None, None
 
 	if sort_key is None:
-		sort_key = lambda release: release.get("published_at", None)
+		sort_key = lambda release: sv(release.get("published_at", None))
 
 	# filter out prereleases and drafts
 	filter_function = lambda rel: not rel["prerelease"] and not rel["draft"]
@@ -259,7 +262,7 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 	try:
 		return comparator(comparable_factory(sanitized_local),
 		                  comparable_factory(sanitized_remote))
-	except:
+	except Exception:
 		logger.exception("Could not check if version is current due to an error, assuming it is")
 		return True
 

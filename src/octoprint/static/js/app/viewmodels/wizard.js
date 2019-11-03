@@ -193,30 +193,7 @@ $(function() {
         };
 
         self.onSettingsPreventRefresh = function() {
-            if (!self.finishing && self.isDialogActive()
-                && hasDataChanged(self.settingsViewModel.getLocalData(), self.settingsViewModel.lastReceivedSettings)) {
-                var preventSettingsRefreshDialog = false;
-                callViewModels(self.allViewModels, "onWizardPreventSettingsRefreshDialog", function(method) {
-                    // if any of our methods returns that it wants to prevent the dialog
-                    // we'll need to set preventSettingsRefreshDialog to true
-                    //
-                    // order is important here - the method call needs to happen
-                    // first, or it won't happen after the flag has been
-                    // set once due to the || making further evaluation unnecessary
-                    // then
-                    preventSettingsRefreshDialog = (method() === true) || preventSettingsRefreshDialog;
-                });
-
-                // we have local changes, show update dialog
-                if (preventSettingsRefreshDialog) {
-                    return false;
-                } else {
-                    self.settingsViewModel.settingsUpdatedDialog.modal("show");
-                    return true;
-                }
-            }
-
-            return false;
+            return self.isDialogActive();
         }
     }
 

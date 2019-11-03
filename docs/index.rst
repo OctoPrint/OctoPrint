@@ -11,7 +11,7 @@ and released under the `GNU Affero General Public License V3 <http://www.gnu.org
 
 Its website can be found at `octoprint.org <https://octoprint.org/>`_.
 
-The community forum is available at `discourse.octoprint.org <https://discourse.octoprint.org/>`_.
+The community forum is available at `community.octoprint.org <https://community.octoprint.org/>`_.
 
 The FAQ can be accessed by following `faq.octoprint.org <https://faq.octoprint.org/>`_.
 
@@ -23,7 +23,7 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!
 .. note::
 
    This documentation currently focuses primarily on developers and less on end users. If you are interested in
-   helping to change this, please get in touch `on the forum <https://discourse.octoprint.org/>`_!
+   helping to change this, please get in touch `on the forum <https://community.octoprint.org/>`_!
 
 Contents
 ========

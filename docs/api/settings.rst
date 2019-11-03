@@ -274,10 +274,10 @@ Fetch template data
               "plugin_name": "Action Command Prompt Support"
             },
             {
-              "id": "plugin_cura",
-              "name": "CuraEngine (<= 15.04)",
-              "plugin_id": "cura",
-              "plugin_name": "CuraEngine (<= 15.04)"
+              "id": "plugin_curalegacy",
+              "name": "Cura Legacy",
+              "plugin_id": "curalegacy",
+              "plugin_name": "Cura Legacy"
             }
           ],
           "sidebar": [
@@ -396,7 +396,7 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      -
    * - ``feature.sdSupport``
      -
-   * - ``feature.sdReleativePath``
+   * - ``feature.sdRelativePath``
      -
    * - ``feature.sdAlwaysAvailable``
      -

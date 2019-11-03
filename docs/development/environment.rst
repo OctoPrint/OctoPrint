@@ -14,18 +14,25 @@ below.
   * Prerequisites:
 
     * `Python 2.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
+    * `Python 3.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
     * `Git <https://git-scm.com>`_
 
-  * Checkout the OctoPrint sources from their Git repository: ``git clone https://github.com/foosel/OctoPrint.git``
+  * Checkout the OctoPrint sources from their Git repository: 
+      * ``git clone -b devel https://github.com/foosel/OctoPrint.git``
   * Enter the checked out source folder: ``cd OctoPrint``
-  * Create a virtual environment in the checked out source folder to use for installing and running OctoPrint and its
-    dependencies (this avoids potential versioning issues for the dependencies with system wide installed
-    instances): ``virtualenv venv``
-  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, MacOS) or
-    ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
-  * Update ``pip`` in the virtual environment: ``pip install --upgrade pip``
+  * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
+    installing and running OctoPrint and its dependencies (this avoids potential versioning issues for the dependencies
+    with system wide installed instances):
+      * PY2: ``virtualenv --python=python2 venv2``
+      * PY3: ``virtualenv --python=python3 venv3``
+  * Activate one of the virtual environments:
+      * PY2: ``source venv2/bin/activate`` (Linux, MacOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
+      * PY3: ``source venv3/bin/activate`` (Linux, MacOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+  * Update ``pip`` in the virtual environment:
+      * ``pip install --upgrade pip``
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
-    including its regular *and* development and plugin development dependencies: ``pip install -e .[develop,plugins]``
+    including its regular *and* development and plugin development dependencies: 
+      * ``pip install -e .[develop,plugins]``
 
 When the virtual environment is activated you can then:
 
@@ -33,10 +40,18 @@ When the virtual environment is activated you can then:
   * run the test suite from the checked out source folder via ``nosetests --with-doctest``
   * build the documentation from the ``docs`` sub folder of the checked out sources via ``sphinx-build -b html . _build``
 
+To switch the activated virtual environment, simply activate the new environment as described above.
+
+To deactivate the virtual environment and return to the system's default Python: ``deactivate``.
+
 .. _sec-development-environment-source-linux:
 
 Linux
 .....
+
+.. todo::
+
+   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
 
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -70,7 +85,7 @@ Then:
 .. code-block:: none
 
    cd ~/devel
-   git clone https://github.com/foosel/OctoPrint.git
+   git clone -b devel https://github.com/foosel/OctoPrint.git
    cd OctoPrint
    virtualenv venv
    source ./venv/bin/activate
@@ -85,12 +100,16 @@ environment.
 Windows
 .......
 
+.. todo::
+
+   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
+
 This assumes you'll host your OctoPrint development checkout at ``C:\Devel\OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
 First download & install:
 
-  * `Python 2.7.12 Windows x86 MSI installer <https://www.python.org/downloads/release/python-2712/>`_
+  * `Python 2.7.15 Windows x86 MSI installer <https://www.python.org/downloads/release/python-2715/>`_
 
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
 
@@ -119,6 +138,10 @@ Mac OS X
 
    This guide is based on the `Setup Guide for Mac OS X on OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac/>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
+
+.. todo::
+
+   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
 
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -157,6 +180,10 @@ You'll need a user account with administrator privileges.
 
 IDE Setup
 ---------
+
+.. todo::
+
+   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
 
 .. todo::
 

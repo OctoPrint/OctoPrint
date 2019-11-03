@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.local import LocalProxy
 import hashlib
+import io
 import os
 import yaml
 import uuid
@@ -18,14 +19,18 @@ import logging
 # noinspection PyCompatibility
 from builtins import range, bytes
 
-from octoprint.settings import settings
-from octoprint.util import atomic_write, to_str, deprecated
+from octoprint.settings import settings as s
+
+from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
+
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.access.groups import GroupChangeListener, Group
 
+from past.builtins import basestring
 
 class UserManager(GroupChangeListener, object):
-	def __init__(self, group_manager):
+	def __init__(self, group_manager, settings=None):
 		self._group_manager = group_manager
 		self._group_manager.register_listener(self)
 
@@ -33,6 +38,10 @@ class UserManager(GroupChangeListener, object):
 		self._session_users_by_session = dict()
 		self._sessionids_by_userid = dict()
 		self._enabled = True
+
+		if settings is None:
+			settings = s()
+		self._settings = settings
 
 		self._login_status_listeners = []
 
@@ -87,8 +96,11 @@ class UserManager(GroupChangeListener, object):
 		self._sessionids_by_userid[userid].add(user.session)
 
 		for listener in self._login_status_listeners:
-			try: listener.on_user_logged_in(user)
-			except: self._logger.exception("Error in on_user_logged_in on {!r}".format(listener))
+			try:
+				listener.on_user_logged_in(user)
+			except Exception:
+				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -117,45 +129,52 @@ class UserManager(GroupChangeListener, object):
 			del self._session_users_by_session[sessionid]
 
 		for listener in self._login_status_listeners:
-			try: listener.on_user_logged_out(user)
-			except: self._logger.exception("Error in on_user_logged_out on {!r}".format(listener))
+			try:
+				listener.on_user_logged_out(user)
+			except Exception:
+				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 		self._logger.debug("Logged out user: %r" % user)
 
 	def _cleanup_sessions(self):
-		import time
-		for session, user in self._session_users_by_session.items():
+		for session, user in list(self._session_users_by_session.items()):
 			if not isinstance(user, SessionUser):
 				continue
-			if user.created + (24 * 60 * 60) < time.time():
+			if user.created + (24 * 60 * 60) < monotonic_time():
 				self.logout_user(user)
 
 	@staticmethod
-	def create_password_hash(password, salt=None):
+	def create_password_hash(password, salt=None, settings=None):
 		if not salt:
-			salt = settings().get(["accessControl", "salt"])
+			if settings is None:
+				settings = s()
+			salt = settings.get(["accessControl", "salt"])
 			if salt is None:
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
 				salt = "".join(choice(chars) for _ in range(32))
-				settings().set(["accessControl", "salt"], salt)
-				settings().save()
+				settings.set(["accessControl", "salt"], salt)
+				settings.save()
 
-		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
+		return hashlib.sha512(to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)).hexdigest()
 
 	def check_password(self, username, password):
 		user = self.find_user(username)
 		if not user:
 			return False
 
-		hash = UserManager.create_password_hash(password)
+		hash = UserManager.create_password_hash(password,
+		                                        settings=self._settings)
 		if user.check_password(hash):
 			# new hash matches, correct password
 			return True
 		else:
 			# new hash doesn't match, but maybe the old one does, so check that!
-			oldHash = UserManager.create_password_hash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			oldHash = UserManager.create_password_hash(password,
+			                                           salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW",
+			                                           settings=self._settings)
 			if user.check_password(oldHash):
 				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
 				self.change_user_password(username, password)
@@ -255,8 +274,20 @@ class UserManager(GroupChangeListener, object):
 			try:
 				for user in users:
 					listener.on_user_modified(user)
-			except:
-				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+			except Exception:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
+
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
+		users = self.find_sessions_for(lambda u: group in u.groups)
+		for listener in self._login_status_listeners:
+			# noinspection PyBroadException
+			try:
+				for user in users:
+					listener.on_user_modified(user)
+			except Exception:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	def _trigger_on_user_modified(self, user):
 		if isinstance(user, basestring):
@@ -284,15 +315,17 @@ class UserManager(GroupChangeListener, object):
 			try:
 				for user in users:
 					listener.on_user_modified(user)
-			except:
-				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+			except Exception:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	def _trigger_on_user_removed(self, username):
 		for listener in self._login_status_listeners:
 			try:
 				listener.on_user_removed(username)
-			except:
-				self._logger.exception("Error in on_user_removed on {!r}".format(listener))
+			except Exception:
+				self._logger.exception("Error in on_user_removed on {!r}".format(listener),
+				                       extra=dict(callback=fqcn(listener)))
 
 	#~~ Deprecated methods follow
 
@@ -413,13 +446,13 @@ class LoginStatusListener(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self, group_manager, path=None):
-		UserManager.__init__(self, group_manager)
+	def __init__(self, group_manager, path=None, settings=None):
+		UserManager.__init__(self, group_manager, settings=settings)
 
 		if path is None:
-			path = settings().get(["accessControl", "userfile"])
+			path = self._settings.get(["accessControl", "userfile"])
 			if path is None:
-				path = os.path.join(settings().getBaseFolder("base"), "users.yaml")
+				path = os.path.join(s().getBaseFolder("base"), "users.yaml")
 
 		self._userfile = path
 
@@ -432,10 +465,9 @@ class FilebasedUserManager(UserManager):
 	def _load(self):
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			self._customized = True
-			with open(self._userfile, "r") as f:
+			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
-				for name in data.keys():
-					attributes = data[name]
+				for name, attributes in data.items():
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
@@ -480,9 +512,7 @@ class FilebasedUserManager(UserManager):
 			return
 
 		data = {}
-		for name in self._users.keys():
-			user = self._users[name]
-
+		for name, user in self._users.items():
 			if not user or not isinstance(user, User):
 				continue
 
@@ -498,7 +528,7 @@ class FilebasedUserManager(UserManager):
 				"roles": user._roles
 			}
 
-		with atomic_write(self._userfile, "wb", permissions=0o600, max_permissions=0o666) as f:
+		with atomic_write(self._userfile, mode='wt', permissions=0o600, max_permissions=0o666) as f:
 			yaml.safe_dump(data, f, default_flow_style=False, indent=4, allow_unicode=True)
 			self._dirty = False
 		self._load()
@@ -511,7 +541,7 @@ class FilebasedUserManager(UserManager):
 			return [self._group_manager.user_group]
 
 	def _refresh_groups(self, user):
-		user._groups = self._to_groups(*list(map(lambda g: g.key, user.groups)))
+		user._groups = self._to_groups(*map(lambda g: g.key, user.groups))
 
 	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
@@ -522,15 +552,21 @@ class FilebasedUserManager(UserManager):
 			groups = self._group_manager.default_groups
 		groups = self._to_groups(*groups)
 
-		if username in self._users.keys() and not overwrite:
+		if username in self._users and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.create_password_hash(password), active, permissions, groups, apikey=apikey)
+		self._users[username] = User(username,
+		                             UserManager.create_password_hash(password,
+		                                                              settings=self._settings),
+		                             active,
+		                             permissions,
+		                             groups,
+		                             apikey=apikey)
 		self._dirty = True
 		self._save()
 
 	def change_user_activation(self, username, active):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].is_active != active:
@@ -541,7 +577,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def change_user_permissions(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -564,7 +600,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def add_permissions_to_user(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].add_permissions_to_user(self._to_permissions(*permissions)):
@@ -573,7 +609,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def remove_permissions_from_user(self, username, permissions):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].remove_permissions_from_user(self._to_permissions(*permissions)):
@@ -583,7 +619,7 @@ class FilebasedUserManager(UserManager):
 
 	def remove_permissions_from_users(self, permissions):
 		modified = []
-		for user in self._users.keys():
+		for user in self._users:
 			dirty = user.remove_permissions_from_user(self._to_permissions(*permissions))
 			if dirty:
 				self._dirty = True
@@ -595,7 +631,7 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def change_user_groups(self, username, groups):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -615,7 +651,7 @@ class FilebasedUserManager(UserManager):
 			self._trigger_on_user_modified(username)
 
 	def add_groups_to_user(self, username, groups, save=True, notify=True):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].add_groups_to_user(self._to_groups(*groups)):
@@ -628,7 +664,7 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def remove_groups_from_user(self, username, groups, save=True, notify=True):
-		if username not in self._users.keys():
+		if username not in self._users:
 			raise UnknownUser(username)
 
 		if self._users[username].remove_groups_from_user(self._to_groups(*groups)):
@@ -642,8 +678,8 @@ class FilebasedUserManager(UserManager):
 
 	def remove_groups_from_users(self, groups):
 		modified = []
-		for username in self._users.keys():
-			dirty = self._users[username].remove_groups_from_user(self._to_groups(*groups))
+		for username, user in self._users.items():
+			dirty = user.remove_groups_from_user(self._to_groups(*groups))
 			if dirty:
 				self._dirty = True
 				modified.append(username)
@@ -655,10 +691,11 @@ class FilebasedUserManager(UserManager):
 				self._trigger_on_user_modified(username)
 
 	def change_user_password(self, username, password):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
-		passwordHash = UserManager.create_password_hash(password)
+		passwordHash = UserManager.create_password_hash(password,
+		                                                settings=self._settings)
 		user = self._users[username]
 		if user._passwordHash != passwordHash:
 			user._passwordHash = passwordHash
@@ -666,7 +703,7 @@ class FilebasedUserManager(UserManager):
 			self._save()
 
 	def change_user_setting(self, username, key, value):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -688,21 +725,21 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def get_all_user_settings(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_all_settings()
 
 	def get_user_setting(self, username, key):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_setting(key)
 
 	def generate_api_key(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -712,7 +749,7 @@ class FilebasedUserManager(UserManager):
 		return user._apikey
 
 	def delete_api_key(self, username):
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -723,7 +760,7 @@ class FilebasedUserManager(UserManager):
 	def remove_user(self, username):
 		UserManager.remove_user(self, username)
 
-		if not username in self._users.keys():
+		if not username in self._users:
 			raise UnknownUser(username)
 
 		del self._users[username]
@@ -737,7 +774,7 @@ class FilebasedUserManager(UserManager):
 			return user
 
 		if userid is not None:
-			if userid not in self._users.keys():
+			if userid not in self._users:
 				return None
 			return self._users[userid]
 
@@ -765,21 +802,30 @@ class FilebasedUserManager(UserManager):
 		# call parent
 		UserManager.on_group_permissions_changed(self, group, added=added, removed=removed)
 
+	def on_group_subgroups_changed(self, group, added=None, removed=None):
+		# refresh our group references
+		for user in self.get_all_users():
+			if group in user.groups:
+				self._refresh_groups(user)
+
+		# call parent
+		UserManager.on_group_subgroups_changed(self, group, added=added, removed=removed)
+
 	#~~ Helpers
 
 	def _to_groups(self, *groups):
 		return list(set(filter(lambda x: x is not None,
-		                       [self._group_manager._to_group(group) for group in groups])))
+		                       (self._group_manager._to_group(group) for group in groups))))
 
 	def _to_permissions(self, *permissions):
 		return list(set(filter(lambda x: x is not None,
-		                       [Permissions.find(permission) for permission in permissions])))
+		                       (Permissions.find(permission) for permission in permissions))))
 
 	def _from_groups(self, *groups):
-		return list(set([group.key for group in groups]))
+		return list(set(group.key for group in groups))
 
 	def _from_permissions(self, *permissions):
-		return list(set([permission.key for permission in permissions]))
+		return list(set(permission.key for permission in permissions))
 
 	# ~~ Deprecated methods follow
 
@@ -791,6 +837,39 @@ class FilebasedUserManager(UserManager):
 	deleteApiKey   = deprecated("deleteApiKey has been renamed to delete_api_key",
 	                            includedoc="Replaced by :func:`delete_api_key`",
 	                            since="1.4.0")(delete_api_key)
+	addUser              = deprecated("addUser has been renamed to add_user",
+	                                  includedoc="Replaced by :func:`add_user`",
+	                                  since="1.4.0")(add_user)
+	changeUserActivation = deprecated("changeUserActivation has been renamed to change_user_activation",
+	                                  includedoc="Replaced by :func:`change_user_activation`",
+	                                  since="1.4.0")(change_user_activation)
+	changeUserPassword   = deprecated("changeUserPassword has been renamed to change_user_password",
+	                                  includedoc="Replaced by :func:`change_user_password`",
+	                                  since="1.4.0")(change_user_password)
+	getUserSetting       = deprecated("getUserSetting has been renamed to get_user_setting",
+	                                  includedoc="Replaced by :func:`get_user_setting`",
+	                                  since="1.4.0")(get_user_setting)
+	getAllUserSettings   = deprecated("getAllUserSettings has been renamed to get_all_user_settings",
+	                                  includedoc="Replaced by :func:`get_all_user_settings`",
+	                                  since="1.4.0")(get_all_user_settings)
+	changeUserSetting    = deprecated("changeUserSetting has been renamed to change_user_setting",
+	                                  includedoc="Replaced by :func:`change_user_setting`",
+	                                  since="1.4.0")(change_user_setting)
+	changeUserSettings   = deprecated("changeUserSettings has been renamed to change_user_settings",
+	                                  includedoc="Replaced by :func:`change_user_settings`",
+	                                  since="1.4.0")(change_user_settings)
+	removeUser           = deprecated("removeUser has been renamed to remove_user",
+	                                  includedoc="Replaced by :func:`remove_user`",
+	                                  since="1.4.0")(remove_user)
+	findUser             = deprecated("findUser has been renamed to find_user",
+	                                  includedoc="Replaced by :func:`find_user`",
+	                                  since="1.4.0")(find_user)
+	getAllUsers          = deprecated("getAllUsers has been renamed to get_all_users",
+	                                  includedoc="Replaced by :func:`get_all_users`",
+	                                  since="1.4.0")(get_all_users)
+	hasBeenCustomized    = deprecated("hasBeenCustomized has been renamed to has_been_customized",
+	                                  includedoc="Replaced by :func:`has_been_customized`",
+	                                  since="1.4.0")(has_been_customized)
 
 ##~~ Exceptions
 
@@ -1037,7 +1116,7 @@ class User(UserMixin):
 		if Permissions.ADMIN in self._permissions:
 			return Permissions.all()
 
-		return filter(lambda p: p is not None, self._permissions)
+		return list(filter(lambda p: p is not None, self._permissions))
 
 	@property
 	def groups(self):
@@ -1136,8 +1215,8 @@ class SessionUser(wrapt.ObjectProxy):
 		wrapt.ObjectProxy.__init__(self, user)
 
 		self._self_session = "".join('%02X' % z for z in bytes(uuid.uuid4().bytes))
-		self._self_created = time.time()
-		self._self_touched = time.time()
+		self._self_created = monotonic_time()
+		self._self_touched = monotonic_time()
 
 	@property
 	def session(self):
@@ -1152,7 +1231,7 @@ class SessionUser(wrapt.ObjectProxy):
 		return self._self_touched
 
 	def touch(self):
-		self._self_touched = time.time()
+		self._self_touched = monotonic_time()
 
 	@deprecated("SessionUser.get_session() has been deprecated, use SessionUser.session instead", since="1.3.5")
 	def get_session(self):

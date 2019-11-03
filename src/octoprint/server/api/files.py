@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response, url_for
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT, current_user
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
 from octoprint.access.permissions import Permissions
@@ -20,6 +20,9 @@ import octoprint.filemanager.util
 import octoprint.filemanager.storage
 import octoprint.slicing
 
+from octoprint.util import sv
+
+import os
 import psutil
 import hashlib
 import logging
@@ -44,11 +47,11 @@ def _create_lastmodified(path, recursive):
 		for storage in fileManager.registered_storages:
 			try:
 				lms.append(fileManager.last_modified(storage, recursive=recursive))
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(storage))
 				lms.append(None)
 
-		if filter(lambda x: x is None, lms):
+		if any(filter(lambda x: x is None, lms)):
 			# we return None if ANY of the involved storages returned None
 			return None
 
@@ -59,7 +62,7 @@ def _create_lastmodified(path, recursive):
 		# only local storage involved
 		try:
 			return fileManager.last_modified(FileDestinations.LOCAL, recursive=recursive)
-		except:
+		except Exception:
 			logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(FileDestinations.LOCAL))
 			return None
 
@@ -75,15 +78,18 @@ def _create_etag(path, filter, recursive, lm=None):
 		return None
 
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(str(filter))
-	hash.update(str(recursive))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(str(filter))
+	hash_update(str(recursive))
 
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
 		# include sd data in etag
-		hash.update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
+		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x[0]))))
 
-	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
+	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 
@@ -136,7 +142,7 @@ def readGcodeFilesForOrigin(origin):
 
 
 def _getFileDetails(origin, path, recursive=True):
-	parent, path = fileManager.split_path(origin, path)
+	parent, path = os.path.split(path)
 	files = _getFileList(origin, path=parent, recursive=recursive)
 
 	for f in files:
@@ -183,7 +189,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 			cache_key = "{}:{}:{}:{}".format(origin, path, recursive, filter)
 			files, lastmodified = _file_cache.get(cache_key, ([], None))
 			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
-				files = fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values()
+				files = list(fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values())
 				lastmodified = fileManager.last_modified(origin, path=path, recursive=recursive)
 				_file_cache[cache_key] = (files, lastmodified)
 
@@ -247,7 +253,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
-		return filename in map(lambda x: x[0], printer.get_sd_files())
+		return filename in (x[0] for x in printer.get_sd_files())
 	else:
 		return fileManager.file_exists(origin, filename)
 
@@ -267,7 +273,7 @@ def _isBusy(target, path):
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
 
 @api.route("/files/<string:target>", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.FILES_UPLOAD.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
@@ -285,15 +291,15 @@ def uploadGcodeFile(target):
 			import json
 			try:
 				userdata = json.loads(request.values["userdata"])
-			except:
+			except Exception:
 				return make_response("userdata contains invalid JSON", 400)
 
 		if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
 			return make_response("SD card support is disabled", 404)
 
 		sd = target == FileDestinations.SDCARD
-		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues and Permissions.FILES_SELECT.can()
-		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues and Permissions.PRINT.can()
+		selectAfterUpload = "select" in request.values and request.values["select"] in valid_boolean_trues and Permissions.FILES_SELECT.can()
+		printAfterSelect = "print" in request.values and request.values["print"] in valid_boolean_trues and Permissions.PRINT.can()
 
 		if sd:
 			# validate that all preconditions for SD upload are met before attempting it
@@ -308,7 +314,7 @@ def uploadGcodeFile(target):
 			canonPath, canonFilename = fileManager.canonicalize(FileDestinations.LOCAL, upload.filename)
 			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
 			futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, canonFilename)
-		except:
+		except Exception:
 			canonFilename = None
 			futurePath = None
 			futureFilename = None
@@ -340,7 +346,9 @@ def uploadGcodeFile(target):
 			"""
 
 			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "machinecode"):
-				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint, tags={"source:api", "api:files.sd"})
+				return filename, printer.add_sd_file(filename, absFilename,
+				                                     on_success=selectAndOrPrint,
+				                                     tags={"source:api", "api:files.sd"})
 			else:
 				selectAndOrPrint(filename, absFilename, destination)
 				return filename
@@ -384,10 +392,7 @@ def uploadGcodeFile(target):
 
 		eventManager.fire(Events.UPLOAD, {"name": futureFilename,
 		                                  "path": filename,
-		                                  "target": target,
-
-		                                  # TODO deprecated, remove in 1.4.0
-		                                  "file": filename})
+		                                  "target": target})
 
 		files = {}
 		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)
@@ -483,7 +488,7 @@ def readGcodeFile(target, filename):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -513,7 +518,7 @@ def gcodeFileCommand(filename, target):
 				return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
 
 			printAfterLoading = False
-			if "print" in data.keys() and data["print"] in valid_boolean_trues:
+			if "print" in data and data["print"] in valid_boolean_trues:
 				with Permissions.PRINT.require(403):
 					if not printer.is_operational():
 						return make_response("Printer is not operational, cannot directly start printing", 409)
@@ -550,9 +555,10 @@ def gcodeFileCommand(filename, target):
 			if not any([octoprint.filemanager.valid_file_type(filename, type=source_file_type) for source_file_type in slicer_instance.get_slicer_properties().get("source_file_types", ["model"])]):
 				return make_response("Cannot slice {filename}, not a model file".format(**locals()), 415)
 
-			if slicer_instance.get_slicer_properties().get("same_device", True) and (printer.is_printing() or printer.is_paused()):
+			cores = psutil.cpu_count()
+			if slicer_instance.get_slicer_properties().get("same_device", True) and (printer.is_printing() or printer.is_paused()) and (cores is None or cores < 2):
 				# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
-				return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
+				return make_response("Cannot slice on {slicer} while printing on single core systems or systems of unknown core count due to performance reasons".format(**locals()), 409)
 
 			if "destination" in data and data["destination"]:
 				destination = data["destination"]
@@ -586,32 +592,32 @@ def gcodeFileCommand(filename, target):
 			if currentFilename == full_path and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
 				make_response("Trying to slice into file that is currently being printed: %s" % full_path, 409)
 
-			if "profile" in data.keys() and data["profile"]:
+			if "profile" in data and data["profile"]:
 				profile = data["profile"]
 				del data["profile"]
 			else:
 				profile = None
 
-			if "printerProfile" in data.keys() and data["printerProfile"]:
+			if "printerProfile" in data and data["printerProfile"]:
 				printerProfile = data["printerProfile"]
 				del data["printerProfile"]
 			else:
 				printerProfile = None
 
-			if "position" in data.keys() and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
+			if "position" in data and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
 				position = data["position"]
 				del data["position"]
 			else:
 				position = None
 
 			select_after_slicing = False
-			if "select" in data.keys() and data["select"] in valid_boolean_trues:
+			if "select" in data and data["select"] in valid_boolean_trues:
 				if not printer.is_operational():
 					return make_response("Printer is not operational, cannot directly select for printing", 409)
 				select_after_slicing = True
 
 			print_after_slicing = False
-			if "print" in data.keys() and data["print"] in valid_boolean_trues:
+			if "print" in data and data["print"] in valid_boolean_trues:
 				if not printer.is_operational():
 					return make_response("Printer is not operational, cannot directly start printing", 409)
 				select_after_slicing = print_after_slicing = True
@@ -750,7 +756,7 @@ def gcodeFileCommand(filename, target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.FILES_DELETE.require(403)
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
@@ -793,7 +799,7 @@ def deleteGcodeFile(filename, target):
 
 def _getCurrentFile():
 	currentJob = printer.get_current_job()
-	if currentJob is not None and "file" in currentJob.keys() and "path" in currentJob["file"] and "origin" in currentJob["file"]:
+	if currentJob is not None and "file" in currentJob and "path" in currentJob["file"] and "origin" in currentJob["file"]:
 		return currentJob["file"]["origin"], currentJob["file"]["path"]
 	else:
 		return None, None

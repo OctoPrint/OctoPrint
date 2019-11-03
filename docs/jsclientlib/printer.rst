@@ -210,6 +210,64 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. js:function:: OctoPrintClient.printer.getChamberState(data, opts)
+
+   Retrieves the current printer chamber state/temperature information, and optionally also the temperature
+   history.
+
+   The ``flags`` object can be used to specify the data to retrieve further via the following
+   properties:
+
+     * ``history``: a boolean value to specify whether the temperature history should be included (``true``)
+       or not (``false``), defaults to it not being included
+     * ``limit``: an integer value to specify how many history entries to include
+
+   See :ref:`Retrieve the current bed state <sec-api-printer-chamberstate>` for more details.
+
+   :param object flags: Flags that further specify which data to retrieve, see above for details
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.printer.setChamberTargetTemperature(target, opts)
+
+   Sets the given temperature on the printer's heated chamber (if available).
+
+   ``target`` is expected to be the target temperature as a float value.
+
+   **Example:**
+
+   Set the chamber to 50°C.
+
+   .. code-block:: javascript
+
+      OctoPrint.printer.setChamberTargetTemperature(50.0);
+
+   See the ``target`` command in :ref:`Issue a chamber command <sec-api-printer-chambercommand>` for more details.
+
+   :param float target: The target to set
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.printer.setChamberTemperatureOffset(offset, opts)
+
+   Sets the given temperature offset for the printer's heated chamber (if available).
+
+   ``offset`` is expected to be the temperature offset to set.
+
+   **Example:**
+
+   Set the offset for the chamber to -5°C.
+
+   .. code-block:: javascript
+
+      OctoPrint.printer.setChamberTemperatureOffset(-5);
+
+   See the ``offset`` command in :ref:`Issue a chamber command <sec-api-printer-chambercommand>` for more details.
+
+   :param object offsets: The offsets to set
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrintClient.printer.jog(amounts, opts)
 
    Jogs the specified axes by the specified ``amounts``.

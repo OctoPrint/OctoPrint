@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import io
 import sys
 import logging as log
 
@@ -103,8 +104,12 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	if callable(after_logging):
 		after_logging(**kwargs)
 
-	settings_safe_mode = settings.getBoolean(["server", "startOnceInSafeMode"])
-	safe_mode = safe_mode or settings_safe_mode
+	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" \
+		if settings.getBoolean(["server", "incompleteStartup"]) \
+		   and not settings.getBoolean(["server", "ignoreIncompleteStartup"]) \
+		else None
+	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):
 		after_safe_mode(**kwargs)
@@ -141,7 +146,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		                                   ignore_blacklist=ignore_blacklist,
 		                                   connectivity_checker=connectivity_checker)
 	except Exception as ex:
-		raise FatalStartupError("Could not initialize settings manager", cause=ex)
+		raise FatalStartupError("Could not initialize plugin manager", cause=ex)
 
 	kwargs["plugin_manager"] = plugin_manager
 	if callable(after_plugin_manager):
@@ -293,7 +298,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config
@@ -342,9 +347,12 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 
 	import os
 
+	# we need this so that octoprint.plugins is in sys.modules and no warnings are caused when loading bundled plugins
+	import octoprint.plugins
+
 	logger = log.getLogger(__name__ + ".startup")
 
-	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), True),
+	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), "octoprint.plugins", True),
 	                  settings.getBaseFolder("plugins")]
 	plugin_entry_points = ["octoprint.plugin"]
 	plugin_disabled_list = settings.get(["plugins", "_disabled"])
@@ -363,13 +371,16 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 			return True
 		plugin_validators.append(validator)
 
+	compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
+
 	from octoprint.plugin import plugin_manager
 	pm = plugin_manager(init=True,
 	                    plugin_folders=plugin_folders,
 	                    plugin_entry_points=plugin_entry_points,
 	                    plugin_disabled_list=plugin_disabled_list,
 	                    plugin_blacklist=plugin_blacklist,
-	                    plugin_validators=plugin_validators)
+	                    plugin_validators=plugin_validators,
+	                    compatibility_ignored_list=compatibility_ignored_list)
 
 	settings_overlays = dict()
 	disabled_from_overlays = dict()
@@ -399,7 +410,9 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 		if not startup:
 			return
 
-		sorted_disabled_from_overlays = sorted([(key, value[0], value[1]) for key, value in disabled_from_overlays.items()], key=lambda x: (x[2] is None, x[2], x[0]))
+		from octoprint.util import sv
+
+		sorted_disabled_from_overlays = sorted([(key, value[0], value[1]) for key, value in disabled_from_overlays.items()], key=lambda x: (x[2] is None, sv(x[2]), sv(x[0])))
 
 		disabled_list = pm.plugin_disabled_list
 		already_processed = []
@@ -447,7 +460,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 	def format_blacklist(entries):
 		format_entry = lambda x: "{} ({})".format(x[0], x[1]) if isinstance(x, (list, tuple)) and len(x) == 2 \
 			else "{} (any)".format(x)
-		return ", ".join(list(map(format_entry, entries)))
+		return ", ".join(map(format_entry, entries))
 
 	def process_blacklist(entries):
 		result = []
@@ -482,7 +495,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 		if os.stat(path).st_mtime + ttl < time.time():
 			return None
 
-		with bom_aware_open(path, encoding="utf-8", mode="r") as f:
+		with bom_aware_open(path, encoding="utf-8", mode='rt') as f:
 			result = yaml.safe_load(f)
 
 		if isinstance(result, list):
@@ -496,12 +509,12 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
 			if cache is not None:
 				try:
-					with bom_aware_open(cache, encoding="utf-8", mode="w") as f:
+					with bom_aware_open(cache, encoding="utf-8", mode='wt') as f:
 						yaml.safe_dump(result, f)
-				except:
-					logger.info("Fetched plugin blacklist but couldn't write it to its cache file.")
-		except:
-			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it.".format(url))
+				except Exception as e:
+					logger.info("Fetched plugin blacklist but couldn't write it to its cache file: %s", e)
+		except Exception as e:
+			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(url, e))
 		return result
 
 	try:
@@ -528,7 +541,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 			logger.info("Blacklist processing done")
 
 		return blacklist
-	except:
+	except Exception:
 		logger.exception("Something went wrong while processing the plugin blacklist. Proceeding without it.")
 
 
@@ -594,6 +607,9 @@ def main():
 
 		# cut off stuff from the beginning
 		args = args[-1 * sys_args_length:] if sys_args_length else []
+
+	from octoprint.util.fixes import patch_sarge_async_on_py2
+	patch_sarge_async_on_py2()
 
 	from octoprint.cli import octo
 	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")

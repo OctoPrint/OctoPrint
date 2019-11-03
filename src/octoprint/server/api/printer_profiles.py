@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 from past.builtins import basestring
 
 from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
-from octoprint.server.util.flask import require_firstrun, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
@@ -30,9 +30,12 @@ def _etag(lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(repr(printerProfileManager.get_default()))
-	hash.update(repr(printerProfileManager.get_current()))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(repr(printerProfileManager.get_default()))
+	hash_update(repr(printerProfileManager.get_current()))
 	return hash.hexdigest()
 
 
@@ -40,14 +43,14 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerprofiles", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -91,7 +94,8 @@ def printerProfilesAdd():
 		return make_response("Profile does not contain mandatory 'name' field", 400)
 
 	try:
-		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
+		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default,
+												   trigger_event=True)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
@@ -102,7 +106,7 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
@@ -112,7 +116,7 @@ def printerProfilesGet(identifier):
 		return jsonify(_convert_profile(profile))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
 	current_profile = printerProfileManager.get_current()
@@ -123,11 +127,11 @@ def printerProfilesDelete(identifier):
 	if default_profile and default_profile["id"] == identifier:
 		return make_response("Cannot delete default profile: {}".format(identifier), 409)
 
-	printerProfileManager.remove(identifier)
+	printerProfileManager.remove(identifier, trigger_event=True)
 	return NO_CONTENT
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
@@ -159,7 +163,8 @@ def printerProfilesUpdate(identifier):
 		merged_profile["id"] = identifier
 
 	try:
-		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default)
+		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default,
+												   trigger_event=True)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:

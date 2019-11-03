@@ -1,8 +1,10 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import io
 import logging
 import os
 import threading
@@ -24,6 +26,8 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.plugin import plugin_manager
 from octoprint.util import monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
 
 import sarge
@@ -49,12 +53,12 @@ _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
 # ffmpeg progress regexes
-_ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
-_ffmpeg_current_regex = re.compile("time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_duration_regex = re.compile(r"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+_ffmpeg_current_regex = re.compile(r"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
 
 # old capture format, needed to delete old left-overs from
 # versions <1.2.9
-_old_capture_format_re = re.compile("^tmp_\d{5}.jpg$")
+_old_capture_format_re = re.compile(r"^tmp_\d{5}.jpg$")
 
 # valid timelapses
 _valid_timelapse_types = ["off", "timed", "zchange"]
@@ -85,8 +89,10 @@ def valid_timelapse(path):
 				if result is None or not isinstance(result, list):
 					continue
 				extensions += result
-			except:
-				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse extensions from hook {name}".format(name=name))
+			except Exception:
+				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse "
+				                                      "extensions from hook {name}".format(name=name),
+				                                      extra=dict(plugin=name))
 
 		_extensions = list(set(extensions))
 
@@ -97,7 +103,7 @@ def _extract_prefix(filename):
 	"""
 	>>> _extract_prefix("some_long_filename_without_hyphen.jpg")
 	>>> _extract_prefix("-first_char_is_hyphen.jpg")
-	>>> _extract_prefix("some_long_filename_with-stuff.jpg")
+	>>> _extract_prefix("some_long_filename_with-stuff.jpg") # doctest: +ALLOW_UNICODE
 	'some_long_filename_with'
 	"""
 	pos = filename.rfind("-")
@@ -167,7 +173,9 @@ def get_unrendered_timelapses():
 
 			return job
 
-		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: x["name"])
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value))
+		               for key, value in jobs.items()],
+		              key=lambda x: sv(x["name"]))
 
 
 def delete_unrendered_timelapse(name):
@@ -181,7 +189,7 @@ def delete_unrendered_timelapse(name):
 			try:
 				if fnmatch.fnmatch(entry.name, pattern):
 					os.remove(entry.path)
-			except:
+			except Exception:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
@@ -233,7 +241,7 @@ def delete_old_unrendered_timelapses():
 				# delete if both creation and modification time are older than the cutoff
 				if max(entry.stat().st_ctime, entry.stat().st_mtime) < cutoff:
 					prefixes_to_clean.append(prefix)
-			except:
+			except Exception:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
@@ -321,8 +329,9 @@ def notify_callback(callback, config=None, timelapse=None):
 
 	try:
 		callback.sendTimelapseConfig(config)
-	except:
-		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
+	except Exception:
+		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration",
+		                                      extra=dict(callback=fqcn(callback)))
 
 
 def configure_timelapse(config=None, persist=False):
@@ -336,24 +345,16 @@ def configure_timelapse(config=None, persist=False):
 
 	snapshot_url = settings().get(["webcam", "snapshot"])
 	ffmpeg_path = settings().get(["webcam", "ffmpeg"])
+	timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
 	timelapse_precondition = snapshot_url is not None and snapshot_url.strip() != "" \
 	                         and ffmpeg_path is not None and ffmpeg_path.strip() != ""
 
 	type = config["type"]
-	if not timelapse_precondition and type is not None and type != "off":
+	if not timelapse_precondition and timelapse_precondition:
 		logging.getLogger(__name__).warn("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
-		                                 "but timelapse enabled, forcing disabled timelapse and disabling it "
-		                                 "in the config as well.")
-		type = "off"
-		config["type"] = "off"
+		                                 "but timelapse enabled.")
 
-		if not persist:
-			# make sure we persist at least that timelapse is now disabled by default - we don't want the above
-			# warning to log
-			settings().set(["webcam", "timelapse", "type"], "off")
-			settings().save()
-
-	if type is None or "off" == type:
+	if not timelapse_enabled or not timelapse_precondition or type is None or "off" == type:
 		current = None
 
 	else:
@@ -405,7 +406,6 @@ class Timelapse(object):
 		self._capture_success = 0
 
 		self._post_roll = post_roll
-		self._post_roll_start = None
 		self._on_post_roll_done = None
 
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
@@ -561,7 +561,6 @@ class Timelapse(object):
 				                    dict(postroll_duration=self.calculate_post_roll(),
 				                         postroll_length=self.post_roll,
 				                         postroll_fps=self.fps))
-				self._post_roll_start = time.time()
 				if do_create_movie:
 					self._on_post_roll_done = create_wait_for_captures(reset_and_create)
 				else:
@@ -569,7 +568,6 @@ class Timelapse(object):
 				self.process_post_roll()
 			else:
 				# no post roll? perfect, render
-				self._post_roll_start = None
 				if do_create_movie:
 					wait_for_captures(reset_and_create)
 				else:
@@ -592,12 +590,12 @@ class Timelapse(object):
 
 	def capture_image(self):
 		if self._capture_dir is None:
-			self._logger.warn("Cannot capture image, capture directory is unset")
+			self._logger.warning("Cannot capture image, capture directory is unset")
 			return
 
 		with self._capture_mutex:
 			if self._image_number is None:
-				self._logger.warn("Cannot capture image, image number is unset")
+				self._logger.warning("Cannot capture image, image number is unset")
 				return
 
 			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
@@ -634,7 +632,7 @@ class Timelapse(object):
 		for name, hook in self._pre_capture_hooks.items():
 			try:
 				hook(filename)
-			except:
+			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
@@ -646,7 +644,7 @@ class Timelapse(object):
 			                 verify=self._snapshot_validate_ssl)
 			r.raise_for_status()
 
-			with open (filename, "wb") as f:
+			with io.open(filename, 'wb') as f:
 				for chunk in r.iter_content(chunk_size=1024):
 					if chunk:
 						f.write(chunk)
@@ -656,27 +654,27 @@ class Timelapse(object):
 		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
 			self._capture_errors += 1
-			success = False
+			err = e
 		else:
 			self._capture_success += 1
-			success = True
+			err = None
 
 		# post-capture hook
 		for name, hook in self._post_capture_hooks.items():
 			try:
-				hook(filename, success)
-			except:
+				hook(filename, err is None)
+			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
 		# handle events and onerror call
-		if success:
+		if err is None:
 			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
 			return True
 		else:
 			if callable(onerror):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
-			                                                error=str(e),
+			                                                error=str(err),
 			                                                url=self._snapshot_url))
 			return False
 
@@ -696,7 +694,7 @@ class Timelapse(object):
 
 	def clean_capture_dir(self):
 		if not os.path.isdir(self._capture_dir):
-			self._logger.warn("Cannot clean capture directory, it is unset")
+			self._logger.warning("Cannot clean capture directory, it is unset")
 			return
 		delete_unrendered_timelapse(self._file_prefix)
 
@@ -850,7 +848,7 @@ class TimelapseRenderJob(object):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
-			self._logger.warn("Cannot create movie, path to ffmpeg or desired bitrate is unset")
+			self._logger.warning("Cannot create movie, path to ffmpeg or desired bitrate is unset")
 			return
 
 		if self._videocodec == 'mpeg2video':
@@ -870,7 +868,7 @@ class TimelapseRenderJob(object):
 			if os.path.exists(input % i):
 				break
 		else:
-			self._logger.warn("Cannot create a movie, no frames captured")
+			self._logger.warning("Cannot create a movie, no frames captured")
 			self._notify_callback("fail", output, returncode=0, stdout="", stderr="", reason="no_frames")
 			return
 
@@ -907,9 +905,9 @@ class TimelapseRenderJob(object):
 				if returncode == 0:
 					self._notify_callback("success", output)
 				else:
-					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
+					self._logger.warning("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
 					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
-			except:
+			except Exception:
 				self._logger.exception("Could not render movie due to unknown error")
 				self._notify_callback("fail", output, reason="unknown")
 			finally:
@@ -919,7 +917,7 @@ class TimelapseRenderJob(object):
 		for line in lines:
 			# We should be getting the time more often, so try it first
 			current_time = _ffmpeg_current_regex.search(line)
-			if current_time is not None and self._parsed_duration is not 0:
+			if current_time is not None and self._parsed_duration != 0:
 				current_s = self._convert_time(*current_time.groups())
 				progress = current_s / float(self._parsed_duration) * 100
 
@@ -927,7 +925,7 @@ class TimelapseRenderJob(object):
 				for callback in _update_callbacks:
 					try:
 						callback.sendRenderProgress(progress)
-					except Exception as ex:
+					except Exception:
 						self._logger.exception("Exception while pushing render progress")
 
 			else:

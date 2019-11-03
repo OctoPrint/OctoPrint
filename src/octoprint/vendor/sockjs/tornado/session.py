@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
     sockjs.tornado.session
     ~~~~~~~~~~~~~~~~~~~~~~
@@ -134,7 +136,7 @@ class BaseSession(object):
         if self.state != CLOSED:
             try:
                 self.conn.on_close()
-            except:
+            except Exception:
                 LOG.debug("Failed to call on_close().", exc_info=True)
             finally:
                 self.state = CLOSED
@@ -180,7 +182,7 @@ class BaseSession(object):
         `stats`
             If set to True, will update statistics after operation completes
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def send_jsonified(self, msg, stats=True):
         """Send or queue outgoing message which was json-encoded before. Used by the `broadcast`
@@ -191,7 +193,7 @@ class BaseSession(object):
         `stats`
             If set to True, will update statistics after operation completes
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def broadcast(self, clients, msg):
         """Optimized `broadcast` implementation. Depending on type of the session, will json-encode

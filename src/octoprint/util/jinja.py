@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -107,7 +107,7 @@ def get_all_template_paths(loader):
 	def collect_templates_for_loader(loader):
 		if isinstance(loader, SelectedFilesLoader):
 			import copy
-			return copy.copy(loader.files.values())
+			return copy.copy(list(loader.files.values()))
 
 		elif isinstance(loader, FilteredFileSystemLoader):
 			result = []
@@ -207,7 +207,7 @@ class ExceptionHandlerExtension(Extension):
 
 		try:
 			return error.format(exception=exception, filename=filename, lineno=lineno)
-		except:
+		except Exception:
 			self._logger.exception("Error while compiling exception output for template {filename} at line {lineno}".format(**locals()))
 			return "Unknown error"
 

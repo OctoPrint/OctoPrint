@@ -1,5 +1,6 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import _fixups
 
 import unittest
@@ -128,9 +129,9 @@ class DaemonTest(unittest.TestCase):
 		mock_stderr.flush.assert_called_once_with()
 
 		self.assertListEqual(mock_open.mock_calls,
-		                     [mock.call(mock_devnull, "r"),
-		                      mock.call(mock_devnull, "a+"),
-		                      mock.call(mock_devnull, "a+")])
+		                     [mock.call(mock_devnull, 'rt', encoding='utf-8'),
+		                      mock.call(mock_devnull, 'at+', encoding='utf-8'),
+		                      mock.call(mock_devnull, 'at+', encoding='utf-8')])
 		self.assertListEqual(mock_dup2.mock_calls,
 		                     [mock.call("new_stdin", "stdin"),
 		                      mock.call("new_stdout", "stdout"),
@@ -396,7 +397,7 @@ class DaemonTest(unittest.TestCase):
 
 		# assert
 		self.assertEqual(result, pid)
-		m.assert_called_once_with(self.pidfile, "r")
+		m.assert_called_once_with(self.pidfile, 'rt', encoding='utf-8')
 
 	def test_get_pid_ioerror(self):
 		# setup
@@ -409,7 +410,7 @@ class DaemonTest(unittest.TestCase):
 
 		# assert
 		self.assertIsNone(result)
-		m.assert_called_once_with(self.pidfile, "r")
+		m.assert_called_once_with(self.pidfile, 'rt', encoding='utf-8')
 
 	def test_get_pid_valueerror(self):
 		# setup
@@ -421,7 +422,7 @@ class DaemonTest(unittest.TestCase):
 
 		# assert
 		self.assertIsNone(result)
-		m.assert_called_once_with(self.pidfile, "r")
+		m.assert_called_once_with(self.pidfile, 'rt', encoding='utf-8')
 
 	def test_set_pid(self):
 		# setup
@@ -432,7 +433,7 @@ class DaemonTest(unittest.TestCase):
 			self.daemon.set_pid(pid)
 
 		# assert
-		m.assert_called_once_with(self.pidfile, "w+")
+		m.assert_called_once_with(self.pidfile, 'wt+', encoding='utf-8')
 		handle = m()
 		handle.write.assert_called_once_with("{}\n".format(pid))
 
@@ -445,7 +446,7 @@ class DaemonTest(unittest.TestCase):
 			self.daemon.set_pid(pid)
 
 		# assert
-		m.assert_called_once_with(self.pidfile, "w+")
+		m.assert_called_once_with(self.pidfile, 'wt+', encoding='utf-8')
 		handle = m()
 		handle.write.assert_called_once_with("{}\n".format(pid))
 

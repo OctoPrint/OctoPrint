@@ -1,9 +1,9 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Unit tests for ``octoprint.server.util.flask``.
 """
-
-from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -530,11 +530,11 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 	def test_cookie_suffix(self):
 		request = OctoPrintFlaskRequest(standard_environ)
 		self.assertEqual("_P5000", request.cookie_suffix)
-	
+
 	def test_cookie_suffix_with_root(self):
 		script_root_environ = dict(standard_environ)
 		script_root_environ["SCRIPT_NAME"] = "/path/to/octoprint"
-		
+
 		request = OctoPrintFlaskRequest(script_root_environ)
 		self.assertEqual("_P5000_R|path|to|octoprint", request.cookie_suffix)
 
@@ -549,10 +549,10 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 		request = OctoPrintFlaskRequest(environ)
 
 		cookies = request.cookies
-		self.assertDictEqual({"postfixed": u"postfixed_value",
-		                      "postfixed_wrong_P5001": u"postfixed_wrong_value",
-		                      "unpostfixed": u"unpostfixed_value",
-		                      "both": u"both_postfixed_value"},
+		self.assertDictEqual({"postfixed": "postfixed_value",
+		                      "postfixed_wrong_P5001": "postfixed_wrong_value",
+		                      "unpostfixed": "unpostfixed_value",
+		                      "both": "both_postfixed_value"},
 		                     cookies)
 
 ##~~

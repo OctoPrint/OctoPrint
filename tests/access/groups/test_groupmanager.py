@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Unit tests for octoprint.access.groups.GroupManager
 """
@@ -33,7 +35,9 @@ def group_manager_with_temp_file():
 class GroupManagerTestCase(unittest.TestCase):
 	def test_add_remove_group(self):
 		with group_manager_with_temp_file() as group_manager:
-			group_manager.add_group("fancy", "Fancy Group", "My Fancy New Group", permissions=[TEST_PERMISSION_1],
+			group_manager.add_group("fancy", "Fancy Group", "My Fancy New Group",
+			                        permissions=[TEST_PERMISSION_1],
+			                        subgroups=[],
 			                        save=False)
 			self.assertIsNotNone(group_manager.find_group("fancy"))
 

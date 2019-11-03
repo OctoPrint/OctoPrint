@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 	import click
+	click.disable_unicode_literals_warning = True
 	import sys
 	import requests.exceptions
 	from octoprint.cli.client import create_client, client_options
@@ -124,7 +125,8 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		if targets:
 			data["check"] = targets
 
-		client = create_client(apikey=apikey,
+		client = create_client(settings=cli_group.settings,
+		                       apikey=apikey,
 		                       host=host,
 		                       port=port,
 		                       httpuser=httpuser,
@@ -149,7 +151,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 			plugin_message_data = plugin_message["data"]
 
 			if plugin_message_type == "updating":
-				click.echo("Updating {} to {}...".format(plugin_message_data["name"], plugin_message_data["target"]))
+				click.echo("Updating {} to {}...".format(plugin_message_data.get("name", "unknown"), plugin_message_data.get("version", "n/a")))
 
 			elif plugin_message_type == "update_failed":
 				click.echo("\t... failed :(")
@@ -191,9 +193,9 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 				flags["seen_close"] = True
 				click.echo("Disconnected from server...")
 
-		socket = client.connect_socket(on_message=on_message,
-		                               on_open=on_open,
-		                               on_close=on_close)
+		socket = client.create_socket(on_message=on_message,
+		                              on_open=on_open,
+		                              on_close=on_close)
 
 		r = client.post_json("plugin/softwareupdate/update", data=data)
 		try:

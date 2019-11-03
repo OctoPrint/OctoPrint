@@ -1,86 +1,3 @@
-(function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(["OctoPrintClient"], factory);
-    } else {
-        factory(global.OctoPrintClient);
-    }
-})(this, function(OctoPrintClient) {
-    var OctoPrintPluginManagerClient = function(base) {
-        this.base = base;
-    };
-
-    OctoPrintPluginManagerClient.prototype.get = function(refresh, opts) {
-        var refresh_repo, refresh_notices;
-        if (_.isPlainObject(refresh)) {
-            refresh_repo = refresh.repo || false;
-            refresh_notices = refresh.notices || false;
-        } else {
-            refresh_repo = refresh;
-            refresh_notices = false;
-        }
-
-        var query = [];
-        if (refresh_repo) query.push("refresh_repository=true");
-        if (refresh_notices) query.push("refresh_notices=true");
-
-        return this.base.get(this.base.getSimpleApiUrl("pluginmanager") + ((query.length) ? "?" + query.join("&") : ""), opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.getWithRefresh = function(opts) {
-        return this.get(true, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.getWithoutRefresh = function(opts) {
-        return this.get(false, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.install = function(pluginUrl, dependencyLinks, opts) {
-        var data = {
-            url: pluginUrl,
-            dependency_links: !!dependencyLinks
-        };
-        return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
-        var data = {
-            url: pluginUrl,
-            dependency_links: !!dependencyLinks,
-            reinstall: plugin,
-            force: true
-        };
-        return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.uninstall = function(plugin, opts) {
-        var data = {
-            plugin: plugin
-        };
-        return this.base.simpleApiCommand("pluginmanager", "uninstall", data, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.enable = function(plugin, opts) {
-        var data = {
-            plugin: plugin
-        };
-        return this.base.simpleApiCommand("pluginmanager", "enable", data, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.disable = function(plugin, opts) {
-        var data = {
-            plugin: plugin
-        };
-        return this.base.simpleApiCommand("pluginmanager", "disable", data, opts);
-    };
-
-    OctoPrintPluginManagerClient.prototype.upload = function(file) {
-        return this.base.upload(this.base.getBlueprintUrl("pluginmanager") + "upload_archive", file);
-    };
-
-    OctoPrintClient.registerPluginComponent("pluginmanager", OctoPrintPluginManagerClient);
-    return OctoPrintPluginManagerClient;
-});
-
 $(function() {
     function PluginManagerViewModel(parameters) {
         var self = this;
@@ -91,12 +8,17 @@ $(function() {
         self.systemViewModel = parameters[3];
         self.access = parameters[4];
 
+        // optional
+        self.piSupport = parameters[5];
+
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
         self.config_noticesUrl = ko.observable();
         self.config_noticesTtl = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
         self.config_pipForceUser = ko.observable();
+        self.config_confirmUninstall = ko.observable();
+        self.config_confirmDisable = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -111,11 +33,23 @@ $(function() {
                 }
             },
             {
+                "bundled": function(item) {
+                    return item.bundled;
+                },
+                "3rdparty": function(item) {
+                    return !item.bundled;
+                },
+                "enabled": function(item) {
+                    return item.enabled;
+                },
+                "disabled": function(item) {
+                    return !item.enabled;
+                }
             },
             "name",
             [],
-            [],
-            5
+            [["bundled", "3rdparty"], ["enabled", "disabled"]],
+            0
         );
 
         self.repositoryplugins = new ItemListHelper(
@@ -139,7 +73,7 @@ $(function() {
                     return !self.installed(plugin);
                 },
                 "filter_incompatible": function(plugin) {
-                    return plugin.is_compatible.octoprint && plugin.is_compatible.os;
+                    return plugin.is_compatible.octoprint && plugin.is_compatible.os && plugin.is_compatible.python;
                 }
             },
             "title",
@@ -156,6 +90,11 @@ $(function() {
         self.repositorySearchQuery = ko.observable();
         self.repositorySearchQuery.subscribe(function() {
             self.performRepositorySearch();
+        });
+
+        self.listingSearchQuery = ko.observable();
+        self.listingSearchQuery.subscribe(function() {
+            self.performListingSearch();
         });
 
         self.installUrl = ko.observable();
@@ -228,7 +167,7 @@ $(function() {
         });
 
         self.enableManagement = ko.pureComputed(function() {
-            return !self.printerState.isPrinting();
+            return !self.printerState.isBusy();
         });
 
         self.enableToggle = function(data) {
@@ -248,8 +187,12 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && !self.throttled() && self.online() && self.isCompatible(data);
         };
+
+        self.throttled = ko.pureComputed(function() {
+            return self.piSupport && self.piSupport.currentIssue() && !self.settingsViewModel.settings.plugins.pluginmanager.ignore_throttled();
+        });
 
         self.invalidUrl = ko.pureComputed(function() {
             // supported pip install URL schemes, according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -275,6 +218,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && self.online()
                 && url !== undefined
                 && url.trim() !== ""
@@ -300,6 +244,7 @@ $(function() {
             return self.enableManagement()
                 && self.pipAvailable()
                 && !self.safeMode()
+                && !self.throttled()
                 && name !== undefined
                 && name.trim() !== ""
                 && !self.invalidArchive();
@@ -350,9 +295,21 @@ $(function() {
             }
         });
 
+        self.performListingSearch = function() {
+            var query = self.listingSearchQuery();
+            if (query !== undefined && query.trim() !== "") {
+                query = query.toLocaleLowerCase();
+                self.plugins.changeSearchFunction(function (entry) {
+                    return entry && (entry["name"].toLocaleLowerCase().indexOf(query) > -1 || (entry.description && entry.description.toLocaleLowerCase().indexOf(query) > -1));
+                });
+            } else {
+                self.plugins.resetSearch();
+            }
+        };
+
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
-            if (query !== undefined && query.trim() != "") {
+            if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
@@ -478,14 +435,15 @@ $(function() {
                     .done(onSuccess)
                     .fail(onError);
             } else {
-                var perform = function() {
+                var performDisabling = function() {
                     OctoPrint.plugins.pluginmanager.disable(data.key)
                         .done(onSuccess)
                         .fail(onError);
                 };
 
+                // always warn if plugin is marked "disabling discouraged"
                 if (data.disabling_discouraged) {
-                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: data.name})
+                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: _.escape(data.name)})
                         + "</p><p>" + data.disabling_discouraged;
                     showConfirmationDialog({
                         title: gettext("This is not recommended"),
@@ -493,10 +451,21 @@ $(function() {
                         question: gettext("Do you still want to disable it?"),
                         cancel: gettext("Keep enabled"),
                         proceed: gettext("Disable anyway"),
-                        onproceed: perform
-                    })
+                        onproceed: performDisabling
+                    });
+                }
+                // warn if global "warn disabling" setting is set"
+                else if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable()) {
+                    showConfirmationDialog({
+                        message: _.sprintf(gettext("You are about to disable \"%(name)s\""), {name: _.escape(data.name)}),
+                        cancel: gettext("Keep enabled"),
+                        proceed: gettext("Disable plugin"),
+                        onproceed: performDisabling,
+                        nofade: true
+                    });
                 } else {
-                    perform();
+                    // otherwise just go ahead and disable...
+                    performDisabling();
                 }
             }
         };
@@ -530,6 +499,10 @@ $(function() {
                 return;
             }
 
+            if (self.throttled()) {
+                return;
+            }
+
             if (url === undefined) {
                 url = self.installUrl();
             }
@@ -543,13 +516,13 @@ $(function() {
             if (!reinstall) {
                 workTitle = gettext("Installing plugin...");
                 if (name) {
-                    workText = _.sprintf(gettext("Installing plugin \"%(name)s\" from %(url)s..."), {url: url, name: name});
+                    workText = _.sprintf(gettext("Installing plugin \"%(name)s\" from %(url)s..."), {url: _.escape(url), name: _.escape(name)});
                 } else {
-                    workText = _.sprintf(gettext("Installing plugin from %(url)s..."), {url: url});
+                    workText = _.sprintf(gettext("Installing plugin from %(url)s..."), {url: _.escape(url)});
                 }
             } else {
                 workTitle = gettext("Reinstalling plugin...");
-                workText = _.sprintf(gettext("Reinstalling plugin \"%(name)s\" from %(url)s..."), {url: url, name: name});
+                workText = _.sprintf(gettext("Reinstalling plugin \"%(name)s\" from %(url)s..."), {url: _.escape(url), name: _.escape(name)});
             }
             self._markWorking(workTitle, workText);
 
@@ -595,23 +568,41 @@ $(function() {
             if (data.bundled) return;
             if (data.key == "pluginmanager") return;
 
-            self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
+            // defining actual uninstall logic as functor in order to handle
+            // the confirm/no-confirm logic without duplication of logic
+            var performUninstall = function() {
+                self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: _.escape(data.name)}));
 
-            OctoPrint.plugins.pluginmanager.uninstall(data.key)
-                .done(function() {
-                    self.requestData();
-                })
-                .fail(function() {
-                    new PNotify({
-                        title: gettext("Something went wrong"),
-                        text: gettext("Please consult octoprint.log for details"),
-                        type: "error",
-                        hide: false
+                OctoPrint.plugins.pluginmanager.uninstall(data.key)
+                    .done(function() {
+                        self.requestData();
+                    })
+                    .fail(function() {
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    })
+                    .always(function() {
+                        self._markDone();
                     });
-                })
-                .always(function() {
-                    self._markDone();
+            };
+
+            if (self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall()) {
+                // confirmation needed. Show confirmation dialog and call performUninstall if user clicks Yes
+                showConfirmationDialog({
+                    message: _.sprintf(gettext("You are about to uninstall the plugin \"%(name)s\""), {name: _.escape(data.name)}),
+                    cancel: gettext("Keep installed"),
+                    proceed: gettext("Uninstall"),
+                    onproceed: performUninstall,
+                    nofade: true
                 });
+            } else {
+                // no confirmation needed, just go ahead and uninstall
+                performUninstall();
+            }
         };
 
         self.refreshRepository = function() {
@@ -680,7 +671,9 @@ $(function() {
                         notices: notices,
                         notices_ttl: noticesTtl,
                         pip_args: pipArgs,
-                        pip_force_user: self.config_pipForceUser()
+                        pip_force_user: self.config_pipForceUser(),
+                        confirm_uninstall: self.config_confirmUninstall(),
+                        confirm_disable: self.config_confirmDisable(),
                     }
                 }
             };
@@ -698,6 +691,8 @@ $(function() {
             self.config_noticesTtl(self.settingsViewModel.settings.plugins.pluginmanager.notices_ttl());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
+            self.config_confirmUninstall(self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall());
+            self.config_confirmDisable(self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable());
         };
 
         self.installed = function(data) {
@@ -705,7 +700,7 @@ $(function() {
         };
 
         self.isCompatible = function(data) {
-            return data.is_compatible.octoprint && data.is_compatible.os;
+            return data.is_compatible.octoprint && data.is_compatible.os && data.is_compatible.python;
         };
 
         self.installButtonText = function(data) {
@@ -760,7 +755,7 @@ $(function() {
                 }
 
                 text += "<li>"
-                    + _.sprintf(line, {plugin: step.plugin, result: step.result ? "<i class=\"fa fa-check\"></i>" : "<i class=\"fa fa-remove\"></i>"})
+                    + _.sprintf(line, {plugin: _.escape(step.plugin), result: step.result ? "<i class=\"fa fa-check\"></i>" : "<i class=\"fa fa-remove\"></i>"})
                     + "</li>";
             });
             text += "</ul></p>";
@@ -938,16 +933,16 @@ $(function() {
 
             var title;
             if (important) {
-                title = _.sprintf(gettext("Important notice regarding plugin \"%(name)s\""), {name: name});
+                title = _.sprintf(gettext("Important notice regarding plugin \"%(name)s\""), {name: _.escape(name)});
             } else {
-                title = _.sprintf(gettext("Notice regarding plugin \"%(name)s\""), {name: name});
+                title = _.sprintf(gettext("Notice regarding plugin \"%(name)s\""), {name: _.escape(name)});
             }
 
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
                 var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
-                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
+                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: _.escape(versions)}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
             }
@@ -1163,7 +1158,8 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PluginManagerViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "accessViewModel", "piSupportViewModel"],
+        optional: ["piSupportViewModel"],
         elements: ["#settings_plugin_pluginmanager"]
     });
 });

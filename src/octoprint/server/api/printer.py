@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,10 +9,12 @@ from flask import request, jsonify, make_response, Response
 from werkzeug.exceptions import BadRequest
 import re
 
+from past.builtins import long, unicode, basestring
+
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import require_firstrun, get_json_command_from_request
+from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 
 from octoprint.printer import UnknownScript
 
@@ -36,12 +38,18 @@ def printerState():
 
 	result = {}
 
-	processor = lambda x: x
-	if not printerProfileManager.get_current_or_default()["heatedBed"]:
-		processor = _delete_bed
-
 	# add temperature information
 	if not "temperature" in excludes:
+		processor = lambda x: x
+		heated_bed = printerProfileManager.get_current_or_default()["heatedBed"]
+		heated_chamber = printerProfileManager.get_current_or_default()["heatedChamber"]
+		if not heated_bed and not heated_chamber:
+			processor = _keep_tools
+		elif not heated_bed:
+			processor = _delete_bed
+		elif not heated_chamber:
+			processor = _delete_chamber
+
 		result.update({"temperature": _get_temperature_data(processor)})
 
 	# add sd information
@@ -60,7 +68,7 @@ def printerState():
 
 
 @api.route("/printer/tool", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerToolCommand():
 	if not printer.is_operational():
@@ -77,14 +85,14 @@ def printerToolCommand():
 	if response is not None:
 		return response
 
-	validation_regex = re.compile("tool\d+")
+	validation_regex = re.compile(r"tool\d+")
 
 	tags = {"source:api", "api:printer.tool"}
 
 	##~~ tool selection
 	if command == "select":
 		tool = data["tool"]
-		if re.match(validation_regex, tool) is None:
+		if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
 			return make_response("Invalid tool: %s" % tool, 400)
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
@@ -133,9 +141,10 @@ def printerToolCommand():
 			return make_response("Printer is currently printing", 409)
 
 		amount = data["amount"]
+		speed = data.get("speed", None)
 		if not isinstance(amount, (int, long, float)):
 			return make_response("Not a number for extrusion amount: %r" % amount, 400)
-		printer.extrude(amount, tags=tags)
+		printer.extrude(amount, speed=speed, tags=tags)
 
 	elif command == "flowrate":
 		factor = data["factor"]
@@ -150,20 +159,20 @@ def printerToolCommand():
 
 
 @api.route("/printer/tool", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerToolState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	return jsonify(_get_temperature_data(_delete_bed))
+	return jsonify(_get_temperature_data(_keep_tools))
 
 
 ##~~ Heated bed
 
 
 @api.route("/printer/bed", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerBedCommand():
 	if not printer.is_operational():
@@ -210,7 +219,7 @@ def printerBedCommand():
 
 
 @api.route("/printer/bed", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerBedState():
 	if not printer.is_operational():
@@ -219,7 +228,74 @@ def printerBedState():
 	if not printerProfileManager.get_current_or_default()["heatedBed"]:
 		return make_response("Printer does not have a heated bed", 409)
 
-	data = _get_temperature_data(_delete_tools)
+	data = _get_temperature_data(_keep_bed)
+	if isinstance(data, Response):
+		return data
+	else:
+		return jsonify(data)
+
+
+##~~ Heated chamber
+
+
+@api.route("/printer/chamber", methods=["POST"])
+@no_firstrun_access
+@Permissions.CONTROL.require(403)
+def printerChamberCommand():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	if not printerProfileManager.get_current_or_default()["heatedChamber"]:
+		return make_response("Printer does not have a heated chamber", 409)
+
+	valid_commands = {
+		"target": ["target"],
+		"offset": ["offset"]
+	}
+	command, data, response = get_json_command_from_request(request, valid_commands)
+	if response is not None:
+		return response
+
+	tags = {"source:api", "api:printer.chamber"}
+
+	##~~ temperature
+	if command == "target":
+		target = data["target"]
+
+		# make sure the target is a number
+		if not isinstance(target, (int, long, float)):
+			return make_response("Not a number: %r" % target, 400)
+
+		# perform the actual temperature command
+		printer.set_temperature("chamber", target, tags=tags)
+
+	##~~ temperature offset
+	elif command == "offset":
+		offset = data["offset"]
+
+		# make sure the offset is valid
+		if not isinstance(offset, (int, long, float)):
+			return make_response("Not a number: %r" % offset, 400)
+		if not -50 <= offset <= 50:
+			return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+
+		# set the offsets
+		printer.set_temperature_offset({"chamber": offset})
+
+	return NO_CONTENT
+
+
+@api.route("/printer/chamber", methods=["GET"])
+@no_firstrun_access
+@Permissions.STATUS.require(403)
+def printerChamberState():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	if not printerProfileManager.get_current_or_default()["heatedChamber"]:
+		return make_response("Printer does not have a heated chamber", 409)
+
+	data = _get_temperature_data(_keep_chamber)
 	if isinstance(data, Response):
 		return data
 	else:
@@ -230,7 +306,7 @@ def printerBedState():
 
 
 @api.route("/printer/printhead", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerPrintheadCommand():
 	valid_commands = {
@@ -294,7 +370,7 @@ def printerPrintheadCommand():
 
 
 @api.route("/printer/sd", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerSdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -325,7 +401,7 @@ def printerSdCommand():
 
 
 @api.route("/printer/sd", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.STATUS.require(403)
 def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -338,7 +414,7 @@ def printerSdState():
 
 
 @api.route("/printer/command", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def printerCommand():
 	if not printer.is_operational():
@@ -399,7 +475,7 @@ def printerCommand():
 	return NO_CONTENT
 
 @api.route("/printer/command/custom", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.CONTROL.require(403)
 def getCustomControls():
 	# TODO: document me
@@ -413,11 +489,11 @@ def _get_temperature_data(preprocessor):
 
 	tempData = printer.get_current_temperatures()
 
-	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
+	if "history" in request.values and request.values["history"] in valid_boolean_trues:
 		tempHistory = printer.get_temperature_history()
 
 		limit = 300
-		if "limit" in request.values.keys() and unicode(request.values["limit"]).isnumeric():
+		if "limit" in request.values and unicode(request.values["limit"]).isnumeric():
 			limit = int(request.values["limit"])
 
 		history = list(tempHistory)
@@ -430,17 +506,28 @@ def _get_temperature_data(preprocessor):
 	return preprocessor(tempData)
 
 
-def _delete_tools(x):
-	return _delete_from_data(x, lambda k: k.startswith("tool"))
+def _keep_tools(x):
+	return _delete_from_data(x, lambda k: not k.startswith("tool"))
 
+
+def _keep_bed(x):
+	return _delete_from_data(x, lambda k: k != "bed")
 
 def _delete_bed(x):
 	return _delete_from_data(x, lambda k: k == "bed")
 
+def _keep_chamber(x):
+	return _delete_from_data(x, lambda k: k != "chamber")
+
+def _delete_chamber(x):
+	return _delete_from_data(x, lambda k: k == "chamber")
+
 
 def _delete_from_data(x, key_matcher):
 	data = dict(x)
-	for k in data.keys():
+	# must make list of keys first to avoid
+	# RuntimeError: dictionary changed size during iteration
+	for k in list(data.keys()):
 		if key_matcher(k):
 			del data[k]
 	return data

@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module represents OctoPrint's plugin subsystem. This includes management and helper methods as well as the
 registered plugin types.
@@ -13,40 +15,30 @@ registered plugin types.
    :members:
 """
 
-from __future__ import absolute_import, division, print_function
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
 import logging
+import threading
 
 from octoprint.settings import settings as s
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
-from octoprint.plugin.types import *
+from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
+from octoprint.plugin.types import *  # noqa: F403 ## used by multiple other modules
 
-from octoprint.util import deprecated
+from octoprint.util import deprecated, to_native_str
 
 # singleton
 _instance = None
 
 def _validate_plugin(phase, plugin_info):
-	if phase == "after_load":
-		if plugin_info.implementation is not None and isinstance(plugin_info.implementation, AppPlugin):
-			# transform app plugin into hook
-			import warnings
-			warnings.warn("{name} uses deprecated plugin mixin AppPlugin, use octoprint.accesscontrol.appkey hook instead".format(name=plugin_info.key), DeprecationWarning)
-
-			hooks = plugin_info.hooks
-			if not "octoprint.accesscontrol.appkey" in hooks:
-				hooks["octoprint.accesscontrol.appkey"] = plugin_info.implementation.get_additional_apps
-			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
 	return True
 
 def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_entry_points=None, plugin_disabled_list=None,
                    plugin_blacklist=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None,
-                   plugin_validators=None):
+                   plugin_validators=None, compatibility_ignored_list=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -72,6 +64,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_en
 	    plugin_obsolete_hooks (list): A list of hooks that have been declared obsolete. Plugins implementing them will
 	        not be enabled since they might depend on functionality that is no longer available.
 	    plugin_validators (list): A list of additional plugin validators through which to process each plugin.
+	    compatibility_ignored_list (list): A list of plugin keys for which it will be ignored if they are flagged as
+	        incompatible. This is for development purposes only and should not be used in production.
 
 	Returns:
 	    PluginManager: A fully initialized :class:`~octoprint.plugin.core.PluginManager` instance to be used for plugin
@@ -114,7 +108,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_bases=None, plugin_en
 			                          plugin_blacklist=plugin_blacklist,
 			                          plugin_restart_needing_hooks=plugin_restart_needing_hooks,
 			                          plugin_obsolete_hooks=plugin_obsolete_hooks,
-			                          plugin_validators=plugin_validators)
+			                          plugin_validators=plugin_validators,
+			                          compatibility_ignored_list=compatibility_ignored_list)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance
@@ -162,14 +157,15 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 
 	try:
 		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
-	except:
+	except Exception:
 		logging.getLogger(__name__).exception("Error while retrieving preprocessors for plugin {}".format(plugin_key))
 		return None
 
 	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None, initialized=True):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None,
+                initialized=True):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -205,9 +201,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
 	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
-	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
-	        is determined be presence of injected ``_identifier`` property.
-
+	    initialized (boolean): Ignored.
 	"""
 
 	if not isinstance(types, (list, tuple)):
@@ -217,18 +211,21 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if kwargs is None:
 		kwargs = dict()
 
+	logger = logging.getLogger(__name__)
+
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
-		if initialized and not hasattr(plugin, "_identifier"):
+		if not hasattr(plugin, "_identifier"):
 			continue
 
 		if hasattr(plugin, method):
+			logger.debug("Calling {} on {}".format(method, plugin._identifier))
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)
 				if callback:
 					callback(plugin._identifier, plugin, result)
 			except Exception as exc:
-				logging.getLogger(__name__).exception("Error while calling plugin %s" % plugin._identifier)
+				logger.exception("Error while calling plugin %s" % plugin._identifier, extra=dict(plugin=plugin._identifier))
 				if error_callback:
 					error_callback(plugin._identifier, plugin, exc)
 
@@ -304,6 +301,17 @@ class PluginSettings(object):
 	.. method:: set_boolean(path, value, force=False)
 
 	   Like :func:`set` but ensures the value is an ``boolean`` through attempted conversion before setting it.
+
+	.. method:: save(force=False, trigger_event=False)
+
+	   Saves the settings to ``config.yaml`` if there are active changes. If ``force`` is set to ``True`` the settings
+	   will be saved even if there are no changes. Settings ``trigger_event`` to ``True`` will cause a ``SettingsUpdated``
+	   :ref:`event <sec-events-available_events-settings>` to get triggered.
+
+	   :param force: Force saving to ``config.yaml`` even if there are no changes.
+	   :type force: boolean
+	   :param trigger_event: Trigger the ``SettingsUpdated`` :ref:`event <sec-events-available_events-settings>` on save.
+	   :type trigger_event: boolean
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
@@ -498,7 +506,7 @@ class PluginSettings(object):
 		self.settings.remove(self._prefix_path())
 
 	def __getattr__(self, item):
-		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
+		all_access_methods = list(self.access_methods.keys()) + list(self.deprecated_access_methods.keys())
 		if item in all_access_methods:
 			decorator = None
 			if item in self.deprecated_access_methods:
@@ -514,44 +522,9 @@ class PluginSettings(object):
 
 				def _func(*args, **kwargs):
 					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
-				_func.__name__ = item
+				_func.__name__ = to_native_str(item)
 				_func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
 
 				return _func
 
 		return getattr(self.settings, item)
-
-	##~~ deprecated methods follow
-
-	# TODO: Remove with release of 1.3.0
-
-	globalGet            = deprecated("globalGet has been renamed to global_get",
-	                                  includedoc="Replaced by :func:`global_get`",
-	                                  since="1.2.0-dev-546")(global_get)
-	globalGetInt         = deprecated("globalGetInt has been renamed to global_get_int",
-	                                  includedoc="Replaced by :func:`global_get_int`",
-	                                  since="1.2.0-dev-546")(global_get_int)
-	globalGetFloat       = deprecated("globalGetFloat has been renamed to global_get_float",
-	                                  includedoc="Replaced by :func:`global_get_float`",
-	                                  since="1.2.0-dev-546")(global_get_float)
-	globalGetBoolean     = deprecated("globalGetBoolean has been renamed to global_get_boolean",
-	                                  includedoc="Replaced by :func:`global_get_boolean`",
-	                                  since="1.2.0-dev-546")(global_get_boolean)
-	globalSet            = deprecated("globalSet has been renamed to global_set",
-	                                  includedoc="Replaced by :func:`global_set`",
-	                                  since="1.2.0-dev-546")(global_set)
-	globalSetInt         = deprecated("globalSetInt has been renamed to global_set_int",
-	                                  includedoc="Replaced by :func:`global_set_int`",
-	                                  since="1.2.0-dev-546")(global_set_int)
-	globalSetFloat       = deprecated("globalSetFloat has been renamed to global_set_float",
-	                                  includedoc="Replaced by :func:`global_set_float`",
-	                                  since="1.2.0-dev-546")(global_set_float)
-	globalSetBoolean     = deprecated("globalSetBoolean has been renamed to global_set_boolean",
-	                                  includedoc="Replaced by :func:`global_set_boolean`",
-	                                  since="1.2.0-dev-546")(global_set_boolean)
-	globalGetBaseFolder  = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder",
-	                                  includedoc="Replaced by :func:`global_get_basefolder`",
-	                                  since="1.2.0-dev-546")(global_get_basefolder)
-	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path",
-	                                  includedoc="Replaced by :func:`get_plugin_logfile_path`",
-	                                  since="1.2.0-dev-546")(get_plugin_logfile_path)

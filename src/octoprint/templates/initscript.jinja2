@@ -5,6 +5,7 @@
     var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
 
     var CONFIG_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+    var CONFIG_LOADINGANIMATION = {% if enableLoadingAnimation -%} true; {% else %} false; {%- endif %}
 
     var CONFIG_GCODEFILESPERPAGE = 5000;
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
@@ -26,14 +27,13 @@
     // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
     var SOCKJS_CLOSE_NORMAL = 1000;
 
-    // only needed if API keys are enforced, only provides anonymous access on its own
-    var UI_API_KEY = "{{ uiApiKey|e }}";
-
+    var UI_API_KEY = ""; // deprecated, only left for compatibility reasons
     var VERSION = "{{ version.number|e }}";
     var DISPLAY_VERSION = "{{ version.display|e }}";
     var BRANCH = "{{ version.branch|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
+    var SUPPORTED_FILETYPES = {{ supportedFiletypes|tojson }};
     var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
 
     var PERMISSIONS = {{ permissions|tojson }};

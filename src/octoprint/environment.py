@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
-import platform
 import sys
 import threading
 import yaml
@@ -16,6 +15,7 @@ import psutil
 
 from octoprint.plugin import EnvironmentDetectionPlugin
 from octoprint.util.platform import get_os
+from octoprint.util.version import get_python_version_string
 
 class EnvironmentDetector(object):
 
@@ -25,9 +25,14 @@ class EnvironmentDetector(object):
 		self._cache = None
 		self._cache_lock = threading.RLock()
 
-		self._environment_plugins = self._plugin_manager.get_implementations(EnvironmentDetectionPlugin)
-
 		self._logger = logging.getLogger(__name__)
+
+		try:
+			self._environment_plugins = self._plugin_manager.get_implementations(EnvironmentDetectionPlugin)
+		except Exception:
+			# just in case, see #3100...
+			self._logger.exception("There was an error fetching EnvironmentDetectionPlugins from the plugin manager")
+			self._environment_plugins = []
 
 	@property
 	def environment(self):
@@ -54,7 +59,7 @@ class EnvironmentDetector(object):
 				self.notify_plugins()
 
 			return environment
-		except:
+		except Exception:
 			self._logger.exception("Unexpected error while detecting environment")
 			with self._cache_lock:
 				self._cache = dict()
@@ -70,22 +75,22 @@ class EnvironmentDetector(object):
 
 		# determine python version
 		try:
-			result["version"] = platform.python_version()
-		except:
+			result["version"] = get_python_version_string()
+		except Exception:
 			self._logger.exception("Error detecting python version")
 
 		# determine if we are running from a virtual environment
 		try:
 			if hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix)):
 				result["virtualenv"] = sys.prefix
-		except:
+		except Exception:
 			self._logger.exception("Error detecting whether we are running in a virtual environment")
 
 		# try to find pip version
 		try:
 			import pkg_resources
 			result["pip"] = pkg_resources.get_distribution("pip").version
-		except:
+		except Exception:
 			self._logger.exception("Error detecting pip version")
 
 		return result
@@ -105,7 +110,7 @@ class EnvironmentDetector(object):
 				result["freq"] = cpu_freq.max
 			if ram and hasattr(ram, "total"):
 				result["ram"] = ram.total
-		except:
+		except Exception:
 			self._logger.exception("Error while detecting hardware environment")
 
 		return result
@@ -118,9 +123,10 @@ class EnvironmentDetector(object):
 				additional = implementation.get_additional_environment()
 				if additional is not None and isinstance(additional, dict) and len(additional):
 					result[implementation._identifier] = additional
-			except:
+			except Exception:
 				self._logger.exception("Error while fetching additional "
-				                       "environment data from plugin {}".format(implementation._identifier))
+				                       "environment data from plugin {}".format(implementation._identifier),
+				                       extra=dict(plugin=implementation._identifier))
 
 		return result
 
@@ -134,7 +140,7 @@ class EnvironmentDetector(object):
 
 		try:
 			_log(self._format())
-		except:
+		except Exception:
 			self._logger.exception("Error logging detected environment")
 
 	def _format(self):
@@ -148,7 +154,7 @@ class EnvironmentDetector(object):
 		                                    indent=4,
 		                                    allow_unicode=True).strip()
 		environment_lines = "\n".join(map(lambda l: "|  {}".format(l), dumped_environment.split("\n")))
-		return u"Detected environment is Python {} under {} ({}). Details:\n{}".format(environment["python"]["version"],
+		return "Detected environment is Python {} under {} ({}). Details:\n{}".format(environment["python"]["version"],
 		                                                                               environment["os"]["id"].title(),
 		                                                                               environment["os"]["platform"],
 		                                                                               environment_lines)
@@ -162,6 +168,6 @@ class EnvironmentDetector(object):
 		for implementation in self._environment_plugins:
 			try:
 				implementation.on_environment_detected(environment)
-			except:
+			except Exception:
 				self._logger.exception("Error while sending environment "
 				                       "detection result to plugin {}".format(implementation._identifier))

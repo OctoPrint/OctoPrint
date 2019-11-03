@@ -1,11 +1,13 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import sys
+PY3 = sys.version_info[0] == 3
 
 from octoprint.settings import settings
 import octoprint.timelapse
@@ -26,29 +28,9 @@ from . import tornado
 from . import watchdog
 
 
+@deprecated("API keys are no longer needed for anonymous access and thus this is now obsolete")
 def enforceApiKeyRequestHandler():
-	"""
-	``before_request`` handler for blueprints which makes sure an API key is provided if configured as such
-	"""
-
-	import octoprint.server
-
-	if _flask.request.method == 'OPTIONS':
-		# we ignore OPTIONS requests here
-		return
-
-	if _flask.request.endpoint and (_flask.request.endpoint == "static" or _flask.request.endpoint.endswith(".static")):
-		# no further handling for static resources
-		return
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey and settings().getBoolean(["api", "keyEnforced"]):
-		return _flask.make_response("No API key provided", 403)
-
-	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
-		# api disabled => 403
-		return _flask.make_response("API disabled", 403)
+	pass
 
 apiKeyRequestHandler = deprecated("apiKeyRequestHandler has been renamed to enforceApiKeyRequestHandler")(enforceApiKeyRequestHandler)
 
@@ -57,35 +39,50 @@ def loginFromApiKeyRequestHandler():
 	"""
 	``before_request`` handler for blueprints which creates a login session for the provided api key (if available)
 
-	UI_API_KEY and app session keys are handled as anonymous keys here and ignored.
+	App session keys are handled as anonymous keys here and ignored.
 	"""
-
-	apikey = get_api_key(_flask.request)
-
-	if not apikey:
-		return
-
-	if apikey == octoprint.server.UI_API_KEY:
-		return
-
-	if octoprint.server.appSessionManager.validate(apikey):
-		return
-
-	user = get_user_for_apikey(apikey)
-	if not loginUser(user):
+	try:
+		if loginUserFromApiKey():
+			_flask.g.login_via_apikey = True
+	except InvalidApiKeyException:
 		return _flask.make_response("Invalid API key", 403)
-
-	_flask.g.login_via_apikey = True
 
 
 def loginFromAuthorizationHeaderRequestHandler():
 	"""
 	``before_request`` handler for creating login sessions based on the Authorization header.
 	"""
+	try:
+		if loginUserFromAuthorizationHeader():
+			_flask.g.login_via_header = True
+	except InvalidApiKeyException:
+		return _flask.make_response("Invalid API key", 403)
 
+
+class InvalidApiKeyException(Exception): pass
+
+
+def loginUserFromApiKey():
+	apikey = get_api_key(_flask.request)
+
+	if not apikey:
+		return False
+
+	user = get_user_for_apikey(apikey)
+	if user is None:
+		# invalid API key = no API key
+		return False
+
+	if not loginUser(user):
+		return False
+
+	return True
+
+
+def loginUserFromAuthorizationHeader():
 	authorization_header = get_authorization_header(_flask.request)
 	user = get_user_for_authorization_header(authorization_header)
-	loginUser(user)
+	return loginUser(user)
 
 
 def loginUser(user, remember=False):
@@ -180,16 +177,11 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		if apikey == octoprint.server.UI_API_KEY:
-			import flask_login
-			if octoprint.server.userManager.enabled:
-				return octoprint.server.userManager.find_user(session=flask_login.current_user.session)
-			else:
-				return flask_login.current_user
-		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
-			# master key or an app session key was used
+	if apikey is not None:
+		if apikey == settings().get(["api", "key"]):
+			# master key was used
 			return ApiUser([octoprint.server.groupManager.admin_group])
+
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:
@@ -202,9 +194,31 @@ def get_user_for_apikey(apikey):
 				user = hook(apikey)
 				if user is not None:
 					return user
-			except:
-				logging.getLogger(__name__).exception("Error running api key validator for plugin {} and key {}".format(name, apikey))
+			except Exception:
+				logging.getLogger(__name__).exception("Error running api key validator "
+				                                      "for plugin {} and key {}".format(name, apikey),
+				                                      extra=dict(plugin=name))
 	return None
+
+
+def get_user_for_remote_user_header(request):
+	if not octoprint.server.userManager.enabled:
+		return None
+
+	if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
+		return None
+
+	header = request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+	if header is None:
+		return None
+
+	user = octoprint.server.userManager.findUser(userid=header)
+
+	if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
+		octoprint.server.userManager.addUser(header, settings().generateApiKey(), active=True)
+		user = octoprint.server.userManager.findUser(userid=header)
+
+	return user
 
 
 def get_user_for_authorization_header(header):
@@ -248,7 +262,7 @@ def get_api_key(request):
 		return request.arguments["apikey"]
 
 	# Check Tornado and Flask headers
-	if "X-Api-Key" in request.headers.keys():
+	if "X-Api-Key" in request.headers:
 		return request.headers.get("X-Api-Key")
 
 	return None
@@ -269,5 +283,5 @@ def get_plugin_hash():
 
 	import hashlib
 	plugin_hash = hashlib.sha1()
-	plugin_hash.update(",".join(ui_plugins))
+	plugin_hash.update(",".join(ui_plugins).encode('utf-8'))
 	return plugin_hash.hexdigest()

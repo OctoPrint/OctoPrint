@@ -21,17 +21,23 @@ Commands, which are admin-only.
 
 If Access Control is disabled, everything is directly accessible. **That also
 includes all administrative functionality as well as full control over the
-printer!**
+printer**, and without the need for an :ref:`API key <sec-api-general-authorization>`!
 
 Upon first start a configuration wizard is provided which allows configuration
 of the first administrator account or alternatively disabling Access Control
 (which is **NOT** recommended for systems that are directly accessible via the
-Internet!).
+internet or other untrusted networks!).
 
 .. hint::
 
    If you plan to have your OctoPrint instance accessible over the internet,
-   **always enable Access Control**.
+   **always enable Access Control** and ideally **don't make it accessible to
+   everyone over the internet but instead use a VPN** or at the very least
+   HTTP basic authentication on a layer above OctoPrint.
+
+   A physical device that includes heaters and stepper motors really should not be
+   publicly reachable by everyone with an internet connection, even with access
+   control enabled.
 
 .. _sec-features-access_control-rerunning_wizard:
 

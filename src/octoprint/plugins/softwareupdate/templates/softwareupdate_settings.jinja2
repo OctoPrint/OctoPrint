@@ -12,54 +12,76 @@
         If you have a local OctoPrint checkout folder switched to another branch,
         <strong>simply switching over to "Commit" tracking</strong> will already
         take care of that. Otherwise please take a look at the
-        <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+        <a href="http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
+    </p>
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: !environmentSupported()">{% trans %}
+    <p>
+        <strong>This version of the Python environment is not supported for direct updates.</strong>
+    </p>
+    <p>
+        To reduce the likelihood of running into update problems in outdated environments, the following minimal
+        versions are required to use this updater to update OctoPrint or any installed plugins:
+    </p>
+{% endtrans %}
+    <ul data-bind="foreach: environmentVersions">
+        <li><span data-bind="text: name"></span>: <span data-bind="text: minimum"></span> ({{ _('you have') }}: <span data-bind="text: current"></span>)</li>
+    </ul>
+{% trans %}
+    <p>
+        Please take a look at <a href="https://faq.octoprint.org/unsupported-python-environment" target="_blank">this FAQ entry on how to proceed</a>.
+    </p>
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: throttled()">{% trans %}
+    <p>
+        <strong>OctoPrint is running on a throttled system, updates are disabled.</strong>
+    </p>
+    <p>
+        To reduce the likelihood of running into update problems on throttled and hence potentially unstable systems
+        as seen in the past, OctoPrint doesn't support updating under such conditions. Please fix the current issue
+        before trying to update. Take a look at the displayed warning in the navigation bar to learn about what is
+        wrong and to get hints on how to solve the problem.
+    </p>
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: printerState.isPrinting()">{% trans %}
+    <p>
+        <strong>OctoPrint is currently printing, updates are disabled.</strong>
+    </p>
+    <p>
+        Running updates is not supported while printing in order to not risk any kind of disruption to the print job.
+        Please let the print finish before trying to update.
     </p>
 {% endtrans %}</div>
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Current versions') }}</h3>
 
-<table class="table table-striped table-hover table-condensed table-hover">
-    <tbody data-bind="foreach: versions.paginatedItems">
-    <tr data-bind="attr: {title: displayName}">
-        <td class="settings_plugin_softwareupdate_column_update">
-            <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
-        </td>
-        <td class="settings_plugin_softwareupdate_column_information">
-            <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: updateAvailable" class="btn btn-primary pull-right">{{ _('Update') }}</a>
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
-            <small class="muted">
-                <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
-                <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
-                <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
-                <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
-            </small>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<div class="pagination pagination-mini pagination-centered">
-    <ul>
-        <li data-bind="css: {disabled: versions.currentPage() === 0}">
-            <a href="#" data-bind="click: versions.prevPage">«</a>
-        </li>
-    </ul>
-    <ul data-bind="foreach: versions.pages">
-        <li data-bind="css: { active: $data.number === $root.versions.currentPage(), disabled: $data.number === -1 }">
-            <a href="#" data-bind="text: $data.text, click: function() { $root.versions.changePage($data.number); }"></a>
-        </li>
-    </ul>
-    <ul>
-        <li data-bind="css: {disabled: versions.currentPage() === versions.lastPage()}">
-            <a href="#" data-bind="click: versions.nextPage">»</a>
-        </li>
-    </ul>
+<div id="settings_plugin_softwareupdate_updatelist">
+    <table class="table table-striped table-hover table-condensed table-hover">
+        <tbody data-bind="foreach: versions.paginatedItems">
+        <tr data-bind="attr: {title: displayName}">
+            <td class="settings_plugin_softwareupdate_column_update">
+                <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available')|edq }}"></i></span>
+            </td>
+            <td class="settings_plugin_softwareupdate_column_information">
+                <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
+                <small class="muted">
+                    <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
+                    <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
+                    <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
+                    <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
+                </small>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
-<button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: !updateInProgress, css: {disabled: updateInProgress}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
+<button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: enableUpdate, css: {disabled: !enableUpdate}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
 <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>
@@ -67,7 +89,7 @@
     <div class="hide">
         <small class="muted" style="display: block">{{ _('Last cache refresh:') }} <span data-bind="text: cacheTimestampText"></span></small>
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: enableUpdate() && !checking(), css: {disabled: !enableUpdate() || checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 
@@ -79,8 +101,10 @@
     <div class="modal-body">
         <form class="form-horizontal">
             {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/trackedBranch.jinja2" %}
             {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/pipTarget.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">

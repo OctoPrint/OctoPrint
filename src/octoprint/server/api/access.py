@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,7 +14,7 @@ import octoprint.access.users as users
 
 from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
-from octoprint.server.util.flask import require_firstrun
+from octoprint.server.util.flask import no_firstrun_access
 from octoprint.access.permissions import Permissions
 
 #~~ permission api
@@ -26,14 +26,14 @@ def get_permissions():
 #~~ group api
 
 @api.route("/access/groups", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def get_groups():
 	return jsonify(groups=list(map(lambda g: g.as_dict(), groupManager.groups)))
 
 
 @api.route("/access/groups", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def add_group():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -55,17 +55,18 @@ def add_group():
 	name = data["name"]
 	description = data.get("description", "")
 	permissions = data["permissions"]
+	subgroups = data["subgroups"]
 	default = data.get("default", False)
 
 	try:
-		groupManager.add_group(key, name, description=description, permissions=permissions, default=default)
+		groupManager.add_group(key, name, description=description, permissions=permissions, subgroups=subgroups, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return get_groups()
 
 
 @api.route("/access/groups/<key>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def get_group(key):
 	group = groupManager.find_group(key)
@@ -76,7 +77,7 @@ def get_group(key):
 
 
 @api.route("/access/groups/<key>", methods=["PUT"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def update_group(key):
 	if "application/json" not in request.headers["Content-Type"]:
@@ -92,6 +93,9 @@ def update_group(key):
 
 		if "permissions" in data:
 			kwargs["permissions"] = data["permissions"]
+
+		if "subgroups" in data:
+			kwargs["subgroups"] = data["subgroups"]
 
 		if "default" in data:
 			kwargs["default"] = data["default"] in valid_boolean_trues
@@ -109,7 +113,7 @@ def update_group(key):
 
 
 @api.route("/access/groups/<key>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def remove_group(key):
 	try:
@@ -123,7 +127,7 @@ def remove_group(key):
 #~~ user api
 
 @api.route("/access/users", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def get_users():
 	if not userManager.enabled:
@@ -133,7 +137,7 @@ def get_users():
 
 
 @api.route("/access/users", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def add_user():
 	if not userManager.enabled:
@@ -172,7 +176,7 @@ def add_user():
 
 
 @api.route("/access/users/<username>", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 def get_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -188,7 +192,7 @@ def get_user(username):
 
 
 @api.route("/access/users/<username>", methods=["PUT"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def update_user(username):
 	if not userManager.enabled:
@@ -228,7 +232,7 @@ def update_user(username):
 
 
 @api.route("/access/users/<username>", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def remove_user(username):
 	if not userManager.enabled:
@@ -242,7 +246,7 @@ def remove_user(username):
 
 
 @api.route("/access/users/<username>/password", methods=["PUT"])
-@require_firstrun
+@no_firstrun_access
 def change_password_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -273,7 +277,7 @@ def change_password_for_user(username):
 
 
 @api.route("/access/users/<username>/settings", methods=["GET"])
-@require_firstrun
+@no_firstrun_access
 def get_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -287,7 +291,7 @@ def get_settings_for_user(username):
 		return make_response("Unknown user: %s" % username, 404)
 
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
-@require_firstrun
+@no_firstrun_access
 def change_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -310,7 +314,7 @@ def change_settings_for_user(username):
 		return make_response("Unknown user: %s" % username, 404)
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
-@require_firstrun
+@no_firstrun_access
 def delete_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -326,7 +330,7 @@ def delete_apikey_for_user(username):
 
 
 @api.route("/access/users/<username>/apikey", methods=["POST"])
-@require_firstrun
+@no_firstrun_access
 def generate_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -341,7 +345,7 @@ def generate_apikey_for_user(username):
 		return make_response(("Forbidden", 403, []))
 
 def _to_external_permissions(*permissions):
-	return map(lambda p: p.get_name(), permissions)
+	return list(map(lambda p: p.get_name(), permissions))
 
 def _to_external_groups(*groups):
-	return map(lambda g: g.get_name(), groups)
+	return list(map(lambda g: g.get_name(), groups))

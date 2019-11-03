@@ -108,8 +108,6 @@ $(function() {
         })));
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
-        self.api_enabled = ko.observable(undefined);
-        self.api_keyEnforced = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
 
@@ -119,9 +117,13 @@ $(function() {
         self.appearance_colorIcon = ko.observable();
         self.appearance_defaultLanguage = ko.observable();
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
+        self.appearance_fuzzyTimes = ko.observable(undefined);
+        self.appearance_closeModalsWithClick = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
+        self.webcam_webcamEnabled = ko.observable(undefined);
+        self.webcam_timelapseEnabled = ko.observable(undefined);
         self.webcam_streamUrl = ko.observable(undefined);
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
@@ -147,12 +149,14 @@ $(function() {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
+        self.serial_exclusive = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
@@ -172,10 +176,12 @@ $(function() {
         self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
+        self.serial_blockedCommands = ko.observable(undefined);
+        self.serial_pausingCommands = ko.observable(undefined);
+        self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
-        self.serial_blockM0M1 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
         self.serial_sdRelativePath =  ko.observable(undefined);
@@ -186,15 +192,19 @@ $(function() {
         self.serial_ignoreIdenticalResends =  ko.observable(undefined);
         self.serial_firmwareDetection =  ko.observable(undefined);
         self.serial_blockWhileDwelling =  ko.observable(undefined);
+        self.serial_useParityWorkaround = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
+        self.serial_abortHeatupOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
         self.serial_capAutoreportTemp = ko.observable(undefined);
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
+        self.serial_capEmergencyParser = ko.observable(undefined);
+        self.serial_sendM112OnError = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -238,6 +248,8 @@ $(function() {
         self.server_pluginBlacklist_enabled = ko.observable();
         self.server_pluginBlacklist_url = ko.observable();
         self.server_pluginBlacklist_ttl = ko.observable();
+
+        self.server_allowFraming = ko.observable();
 
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
@@ -297,7 +309,7 @@ $(function() {
         });
 
         self.addTemperatureProfile = function() {
-            self.temperature_profiles.push({name: "New", extruder:0, bed:0});
+            self.temperature_profiles.push({name: "New", extruder:0, bed:0, chamber:0});
         };
 
         self.removeTemperatureProfile = function(profile) {
@@ -305,7 +317,7 @@ $(function() {
         };
 
         self.addTerminalFilter = function() {
-            self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"})
+            self.terminalFilters.push({name: "New", regex: "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)"})
         };
 
         self.removeTerminalFilter = function(filter) {
@@ -357,7 +369,8 @@ $(function() {
                 response: "bytes",
                 timeout: self.webcam_snapshotTimeout(),
                 validSsl: self.webcam_snapshotSslValidation(),
-                content_type_whitelist: ["image/*"]
+                content_type_whitelist: ["image/*"],
+                content_type_guess: true
             })
                 .done(function(response) {
                     if (!response.result) {
@@ -367,7 +380,7 @@ $(function() {
                                                 "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
                                                 "double check that the URL is returning static images, not multipart data " +
                                                 "or videos.");
-                            errorText = _.sprintf(errorText, {content_type: response.response.content_type});
+                            errorText = _.sprintf(errorText, {content_type: _.escape(response.response.content_type)});
                         }
 
                         showMessageDialog({
@@ -381,7 +394,7 @@ $(function() {
                     }
 
                     var content = response.response.content;
-                    var contentType = response.response.content_type
+                    var contentType = response.response.assumed_content_type;
 
                     var mimeType = "image/jpeg";
                     if (contentType) {
@@ -391,7 +404,7 @@ $(function() {
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>'),
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" style="border: 1px solid black" /></p>'),
                         onclose: function() {
                             self.testWebcamSnapshotUrlBusy(false);
                         }
@@ -779,6 +792,9 @@ $(function() {
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
+                    blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
+                    pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
+                    emergencyCommands: function() {return splitTextToArray(self.serial_emergencyCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
                     alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
                     neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
@@ -816,7 +832,8 @@ $(function() {
                                 result.push({
                                     name: profile.name,
                                     extruder: Math.floor(_.isNumber(profile.extruder) ? profile.extruder : parseInt(profile.extruder)),
-                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed))
+                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed)),
+                                    chamber: Math.floor(_.isNumber(profile.chamber) ? profile.chamber : (_.isNumber(parseInt(profile.chamber)) ? parseInt(profile.chamber) : 0))
                                 });
                             } catch (ex) {
                                 // ignore
@@ -915,6 +932,9 @@ $(function() {
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
+                    blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
+                    pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},
+                    emergencyCommands: function(value) { self.serial_emergencyCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
                     neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},

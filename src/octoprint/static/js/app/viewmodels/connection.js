@@ -61,6 +61,9 @@ $(function() {
         self.fromResponse = function(response) {
             var ports = response.options.ports;
             var baudrates = response.options.baudrates;
+            var currentPort = response.current.port;
+            var currentBaudrate = response.current.baudrate;
+            var currentPrinterProfile = response.current.printerProfile;
             var portPreference = response.options.portPreference;
             var baudratePreference = response.options.baudratePreference;
             var printerPreference = response.options.printerProfilePreference;
@@ -69,12 +72,27 @@ $(function() {
             self.portOptions(ports);
             self.baudrateOptions(baudrates);
 
-            if (!self.selectedPort() && ports && ports.indexOf(portPreference) >= 0)
-                self.selectedPort(portPreference);
-            if (!self.selectedBaudrate() && baudrates && baudrates.indexOf(baudratePreference) >= 0)
-                self.selectedBaudrate(baudratePreference);
-            if (!self.selectedPrinter() && printerProfiles && printerProfiles.indexOf(printerPreference) >= 0)
-                self.selectedPrinter(printerPreference);
+            if (!self.selectedPort() && ports) {
+                if (ports.indexOf(currentPort) >= 0) {
+                    self.selectedPort(currentPort);
+                } else if (ports.indexOf(portPreference) >= 0) {
+                    self.selectedPort(portPreference);
+                }
+            }
+            if (!self.selectedBaudrate() && baudrates) {
+                if (baudrates.indexOf(currentBaudrate) >= 0) {
+                    self.selectedBaudrate(currentBaudrate);
+                } else if (baudrates.indexOf(baudratePreference) >= 0) {
+                    self.selectedBaudrate(baudratePreference);
+                }
+            }
+            if (!self.selectedPrinter() && printerProfiles) {
+                if (printerProfiles.indexOf(currentPrinterProfile) >= 0) {
+                    self.selectedPrinter(currentPrinterProfile);
+                } else if (printerProfiles.indexOf(printerPreference) >= 0) {
+                    self.selectedPrinter(printerPreference);
+                }
+            }
 
             self.saveSettings(false);
         };
@@ -162,7 +180,15 @@ $(function() {
 
         self.onEventSettingsUpdated = function() {
             self.requestData();
-        }
+        };
+
+        self.onEventConnected = function() {
+            self.requestData();
+        };
+
+        self.onEventDisconnected = function() {
+            self.requestData();
+        };
 
         self.onStartup = function() {
             var connectionTab = $("#connection");

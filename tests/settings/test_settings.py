@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Tests for OctoPrint's Settings class
 
@@ -9,6 +11,7 @@ Tests for OctoPrint's Settings class
      * tests for settings migration
 """
 
+import io
 import unittest
 import shutil
 import contextlib
@@ -19,6 +22,7 @@ import yaml
 import hashlib
 import ddt
 import time
+import re
 
 import octoprint.settings
 
@@ -26,20 +30,12 @@ import octoprint.settings
 class TestSettings(unittest.TestCase):
 
 	def _load_yaml(self, fname):
-		if sys.version_info[0] >= 3:
-			with open(fname, "r+", encoding='utf-8') as f:
-				return yaml.safe_load(f)
-		else:
-			with open(fname, "r+b") as f:
-				return yaml.safe_load(f)
+		with io.open(fname, 'rt', encoding='utf-8') as f:
+			return yaml.safe_load(f)
 
 	def _dump_yaml(self, fname, config):
-		if sys.version_info[0] >= 3:
-			with open(fname, "w+", encoding='utf-8') as f:
-				yaml.safe_dump(config, f)
-		else:
-			with open(fname, "wb+") as f:
-				yaml.safe_dump(config, f)
+		with io.open(fname, 'wt', encoding='utf-8') as f:
+			yaml.safe_dump(config, f)
 
 	def setUp(self):
 		self.base_path = os.path.join(os.path.dirname(__file__), "_files")
@@ -99,7 +95,7 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_basedir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
 
 	def test_basedir_initialization_with_custom_config(self):
@@ -127,8 +123,73 @@ class TestSettings(unittest.TestCase):
 			finally:
 				try:
 					shutil.rmtree(my_configdir)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary custom basedir")
+
+	##~~ regexes
+	def test_should_have_regex_filters(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+
+		# we *should* have at least three, but we'll ensure there's at least one as a sanity check.
+		self.assertGreater(len(filters), 0)
+
+	def test_should_have_suppress_temperature_regex(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_regex_filters = [x for x in filters if x.get('name') == 'Suppress temperature messages']
+		self.assertEqual(len(temperature_regex_filters), 1)
+
+		# we know there's a 'name' by now, so just ensure we have the regex key
+		temperature_regex_filter = temperature_regex_filters[0]
+		self.assertIn('regex', temperature_regex_filter)
+
+	def test_temperature_regex_should_not_match(self):
+		'''random entries that aren't temperature regex entries'''
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+		bad_terminal_entries = [
+			'Send: N71667 G1 X163.151 Y35.424 E0.02043*83',
+			'Send: N85343 G1 Z29.880 F10800.000*15',
+			'Recv: ok',
+			'Recv: FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410'
+		]
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+
+		matcher = re.compile(temperature_pattern)
+		for terminal_string in bad_terminal_entries:
+			match_result = matcher.match(terminal_string)
+			# can switch to assertIsNone after 3.x upgrade.
+			self.assertFalse(match_result, "string matched and it shouldn't have: {!r}".format(terminal_string))
+
+
+	def test_temperature_regex_matches(self):
+		# we don't want the mocked_config, because we're testing the actual value.
+		#with self.mocked_config():
+
+		common_terminal_entries = [
+			'Send: M105',
+			'Send: N123 M105*456',
+			'Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:', # monoprice mini delta
+			'Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0', # Prusa mk3
+			'Recv:  T:210.3 /210.0',
+		]
+
+		filters = octoprint.settings.Settings().get(["terminalFilters"])
+		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+
+		matcher = re.compile(temperature_pattern)
+		for terminal_string in common_terminal_entries:
+			match_result = matcher.match(terminal_string)
+			# can switch to assertIsNotNone after 3.x upgrade.
+			self.assertTrue(match_result, "string did not match and it should have: {!r}".format(terminal_string))
+
 
 	##~~ test getters
 
@@ -230,10 +291,9 @@ class TestSettings(unittest.TestCase):
 			data = settings.get(["devel", "virtualPrinter"], merged=True)
 
 			self.assertGreater(len(data), 1)
-			self.assertDictContainsSubset(dict(enabled=True,
-			                                   sendWait=True,
-			                                   waitInterval=1.0),
-			                              data)
+			test_dict = dict(enabled=True, sendWait=True, waitInterval=1.0)
+			test_data = dict((k,v) for k,v in data.items() if k in test_dict)
+			self.assertEqual(test_dict, test_data)
 
 	def test_get_multiple(self):
 		with self.mocked_config():
@@ -450,7 +510,7 @@ class TestSettings(unittest.TestCase):
 	def test_effective_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.expected_effective))
+			hash.update(yaml.safe_dump(self.expected_effective).encode('utf-8'))
 			expected_effective_hash = hash.hexdigest()
 			print(yaml.safe_dump(self.expected_effective))
 
@@ -463,7 +523,7 @@ class TestSettings(unittest.TestCase):
 	def test_config_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.config))
+			hash.update(yaml.safe_dump(self.config).encode('utf-8'))
 			expected_config_hash = hash.hexdigest()
 
 			settings = octoprint.settings.Settings()
@@ -582,7 +642,7 @@ class TestSettings(unittest.TestCase):
 			if directory is not None:
 				try:
 					shutil.rmtree(directory)
-				except:
+				except Exception:
 					self.fail("Could not remove temporary basedir")
 
 	@contextlib.contextmanager

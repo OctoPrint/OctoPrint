@@ -2,22 +2,7 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" id="settings-apiEnabled" data-bind="checked: api_enabled"> {{ _('Enable') }}
-            </label>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" id="settings-apiEnforcedKey" data-bind="checked: api_keyEnforced"> {{ _('Enforce key') }}
-            </label>
-            <span class="help-block">{{ _('If you check this, requests to any of OctoPrint\'s APIs without an API key will be denied instead of handled like an anonymous/not logged in user. This is OctoPrint\'s old default behaviour.') }}</span>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }}
+                <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }} <label class="label label-info">{{ _('Needs restart') }}</label>
             </label>
         </div>
     </div>
@@ -25,7 +10,7 @@
         <label class="control-label" for="settings-apikey">{{ _('API Key') }}</label>
         <div class="controls">
             <div class="input-append input-block-level">
-                <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A') }}'}">
+                <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A')|esq }}'}">
                 <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApiKey, css: {'disabled': !api_key()}"><i class="fa fa-copy"></i></a>
                 <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApiKey"><i class="fa fa-refresh"></i></a>
             </div>

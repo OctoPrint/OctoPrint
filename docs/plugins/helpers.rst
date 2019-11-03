@@ -3,7 +3,7 @@
 Helpers
 =======
 
-Helpers are methods that plugin can exposed to other plugins in order to make common functionality available on the
+Helpers are methods that plugins can expose to other plugins in order to make common functionality available on the
 system. They are registered with the OctoPrint plugin system through the use of the control property ``__plugin_helpers__``.
 
 An example for providing some helper functions to the system can be found in the
