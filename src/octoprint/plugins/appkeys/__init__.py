@@ -15,6 +15,7 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
+from octoprint.users import DummyUser
 from octoprint.util import atomic_write, monotonic_time, ResettableTimer
 
 
@@ -42,6 +43,12 @@ class PendingDecision(object):
 		            user_id=self.user_id,
 		            user_token=self.user_token)
 
+	def __repr__(self):
+		return u"PendingDecision({!r}, {!r}, {!r}, {!r}, timeout_callback=...)".format(self.app_id,
+		                                                                               self.app_token,
+		                                                                               self.user_id,
+		                                                                               self.user_token)
+
 
 class ReadyDecision(object):
 	def __init__(self, app_id, app_token, user_id):
@@ -52,6 +59,11 @@ class ReadyDecision(object):
 	@classmethod
 	def for_pending(cls, pending, user_id):
 		return cls(pending.app_id, pending.app_token, user_id)
+
+	def __repr__(self):
+		return u"ReadyDecision({!r}, {!r}, {!r})".format(self.app_id,
+		                                                 self.app_token,
+		                                                 self.user_id)
 
 
 class ActiveKey(object):
@@ -72,6 +84,11 @@ class ActiveKey(object):
 	@classmethod
 	def for_internal(cls, internal, user_id):
 		return cls(internal["app_id"], internal["api_key"], user_id)
+
+	def __repr__(self):
+		return u"ActiveKey({!r}, {!r}, {!r})".format(self.app_id,
+		                                             self.api_key,
+		                                             self.user_id)
 
 
 class AppKeysPlugin(octoprint.plugin.AssetPlugin,
@@ -120,12 +137,15 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	@no_firstrun_access
 	def handle_request(self):
 		data = flask.request.json
+		if data is None:
+			return flask.make_response("Missing key request", 400)
+
 		if not "app" in data:
 			return flask.make_response("No app name provided", 400)
 
 		app_name = data["app"]
 		user_id = None
-		if "user" in data:
+		if "user" in data and data["user"]:
 			user_id = data["user"]
 
 		app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
@@ -343,7 +363,10 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		with self._keys_lock:
 			for user_id, data in self._keys.items():
 				if filter(lambda x: x.api_key == api_key, data):
-					return self._user_manager.findUser(userid=user_id)
+					if self._user_manager.enabled:
+						return self._user_manager.findUser(userid=user_id)
+					elif user_id == "dummy":
+						return DummyUser()
 		return None
 
 	def _api_keys_for_user(self, user_id):

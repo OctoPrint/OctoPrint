@@ -177,6 +177,10 @@ $(function() {
             self.requestData();
         };
 
+        self.onEventDisconnected = function() {
+            self.requestData();
+        };
+
         self.onStartup = function() {
             var connectionTab = $("#connection");
             connectionTab.on("show", function() {

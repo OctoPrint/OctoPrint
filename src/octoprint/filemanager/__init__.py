@@ -17,6 +17,7 @@ from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 from collections import namedtuple
 
@@ -30,10 +31,6 @@ extensions = dict(
 
 def full_extension_tree():
 	result = dict(
-		# extensions for 3d model files
-		model=dict(
-			stl=ContentTypeMapping(["stl"], "application/sla")
-		),
 		# extensions for printable machine code
 		machinecode=dict(
 			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
@@ -74,6 +71,18 @@ def full_extension_tree():
 		else:
 			return merged
 
+	slicer_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
+	for plugin in slicer_plugins:
+		try:
+			plugin_result = plugin.get_slicer_extension_tree()
+			if plugin_result is None or not isinstance(plugin_result, dict):
+				continue
+			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
+		except:
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from SlicerPlugin {name}".format(name=plugin._identifier),
+			                                      extra=dict(plugin=plugin._identifier))
+
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
 		try:
@@ -82,12 +91,14 @@ def full_extension_tree():
 				continue
 			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
 		except:
-			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
+			                                      "tree entries from hook {name}".format(name=name),
+			                                      extra=dict(plugin=name))
 
 	return result
 
 def get_extensions(type, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -101,7 +112,7 @@ def get_extensions(type, subtree=None):
 	return None
 
 def get_all_extensions(subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	result = []
@@ -120,7 +131,7 @@ def get_all_extensions(subtree=None):
 	return result
 
 def get_path_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
@@ -136,11 +147,11 @@ def get_path_for_extension(extension, subtree=None):
 	return None
 
 def get_content_type_mapping_for_extension(extension, subtree=None):
-	if not subtree:
+	if subtree is None:
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
-		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value. extensions
+		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value.extensions
 		list_extension_matches = isinstance(value, (list, tuple)) and extension in value
 
 		if content_extension_matches or list_extension_matches:
@@ -319,25 +330,27 @@ class FileManager(object):
 		                 printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
-					eventManager().fire(Events.SLICING_FAILED, dict(stl=source_path,
-																	stl_location=source_location,
-																	gcode=dest_path,
-																	gcode_location=dest_location,
-																	reason=_error))
+					eventManager().fire(Events.SLICING_FAILED, dict(slicer=slicer_name,
+					                                                stl=source_path,
+					                                                stl_location=source_location,
+					                                                gcode=dest_path,
+					                                                gcode_location=dest_location,
+					                                                reason=_error))
 				elif _cancelled:
-					eventManager().fire(Events.SLICING_CANCELLED, dict(stl=source_path,
-																	   stl_location=source_location,
-																	   gcode=dest_path,
-																	   gcode_location=dest_location))
+					eventManager().fire(Events.SLICING_CANCELLED, dict(slicer=slicer_name,
+					                                                   stl=source_path,
+					                                                   stl_location=source_location,
+					                                                   gcode=dest_path,
+					                                                   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
-					hash = source_meta["hash"]
+					hash = source_meta.get("hash", "n/a")
 
 					import io
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
-					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.BytesIO(u";Generated from {stl_name} (hash: {hash})\n".format(**locals()).encode("ascii", "replace")),
 					                         io.FileIO(tmp_path, "rb"))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
@@ -345,12 +358,13 @@ class FileManager(object):
 					              display=display, links=links, allow_overwrite=True,
 					              printer_profile=printer_profile, analysis=_analysis)
 
-					end_time = time.time()
-					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
-																  stl_location=source_location,
-																  gcode=dest_path,
-																  gcode_location=dest_location,
-																  time=end_time - start_time))
+					end_time = octoprint.util.monotonic_time()
+					eventManager().fire(Events.SLICING_DONE, dict(slicer=slicer_name,
+					                                              stl=source_path,
+					                                              stl_location=source_location,
+					                                              gcode=dest_path,
+					                                              gcode_location=dest_location,
+					                                              time=end_time - start_time))
 
 					if callback is not None:
 						if callback_args is None:
@@ -370,9 +384,9 @@ class FileManager(object):
 
 		slicer = self._slicing_manager.get_slicer(slicer_name)
 
-		import time
-		start_time = time.time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
+		start_time = octoprint.util.monotonic_time()
+		eventManager().fire(Events.SLICING_STARTED, {"slicer": slicer_name,
+		                                             "stl": source_path,
 		                                             "stl_location": source_location,
 		                                             "gcode": dest_path,
 		                                             "gcode_location": dest_location,
@@ -416,7 +430,8 @@ class FileManager(object):
 			self._last_slicing_progress = progress_int
 			for callback in self._slicing_progress_callbacks:
 				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-				except: self._logger.exception("Exception while pushing slicing progress")
+				except: self._logger.exception("Exception while pushing slicing progress",
+				                               extra=dict(callback=fqcn(callback)))
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
@@ -424,7 +439,8 @@ class FileManager(object):
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
 						except:
-							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
+							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier,
+							                       extra=dict(plugin=plugin._identifier))
 
 				import threading
 				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))
@@ -459,11 +475,11 @@ class FileManager(object):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
-		for hook in self._preprocessor_hooks.values():
+		for name, hook in self._preprocessor_hooks.items():
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 			except:
-				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
+				self._logger.exception("Error when calling preprocessor hook for plugin {}, ignoring".format(name), extra=dict(plugin=name))
 				continue
 
 			if hook_file_object is not None:
@@ -644,6 +660,8 @@ class FileManager(object):
 		try:
 			with open(self._recovery_file) as f:
 				data = yaml.safe_load(f)
+			if not isinstance(data, dict) or not all(map(lambda x: x in data, ("origin", "path", "pos", "date"))):
+				raise ValueError("Invalid recovery data structure")
 			return data
 		except:
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))

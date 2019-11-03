@@ -49,17 +49,17 @@ def controlJob():
 			return make_response("Printer is neither printing nor paused, 'pause' command cannot be performed", 409)
 		action = data.get("action", "toggle")
 		if action == "toggle":
-			printer.toggle_pause_print(tags=tags)
+			printer.toggle_pause_print(tags=tags, user=user)
 		elif action == "pause":
-			printer.pause_print(tags=tags)
+			printer.pause_print(tags=tags, user=user)
 		elif action == "resume":
-			printer.resume_print(tags=tags)
+			printer.resume_print(tags=tags, user=user)
 		else:
 			return make_response("Unknown action '{}', allowed values for action parameter are 'pause', 'resume' and 'toggle'".format(action), 400)
 	elif command == "cancel":
 		if not activePrintjob:
 			return make_response("Printer is neither printing nor paused, 'cancel' command cannot be performed", 409)
-		printer.cancel_print(tags=tags)
+		printer.cancel_print(tags=tags, user=user)
 	return NO_CONTENT
 
 

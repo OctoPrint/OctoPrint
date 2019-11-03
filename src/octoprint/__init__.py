@@ -104,7 +104,10 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		after_logging(**kwargs)
 
 	settings_start_once_in_safemode = "settings" if settings.getBoolean(["server", "startOnceInSafeMode"]) else None
-	settings_incomplete_startup_safemode = "incomplete_startup" if settings.getBoolean(["server", "incompleteStartup"]) else None
+	settings_incomplete_startup_safemode = "incomplete_startup" \
+		if settings.getBoolean(["server", "incompleteStartup"]) \
+		   and not settings.getBoolean(["server", "ignoreIncompleteStartup"]) \
+		else None
 	safe_mode = safe_mode or settings_start_once_in_safemode or settings_incomplete_startup_safemode
 	kwargs["safe_mode"] = safe_mode
 	if callable(after_safe_mode):
@@ -142,7 +145,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		                                   ignore_blacklist=ignore_blacklist,
 		                                   connectivity_checker=connectivity_checker)
 	except Exception as ex:
-		raise FatalStartupError("Could not initialize settings manager", cause=ex)
+		raise FatalStartupError("Could not initialize plugin manager", cause=ex)
 
 	kwargs["plugin_manager"] = plugin_manager
 	if callable(after_plugin_manager):
@@ -343,9 +346,12 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 
 	import os
 
+	# we need this so that octoprint.plugins is in sys.modules and no warnings are caused when loading bundled plugins
+	import octoprint.plugins
+
 	logger = log.getLogger(__name__ + ".startup")
 
-	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), True),
+	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), "octoprint.plugins", True),
 	                  settings.getBaseFolder("plugins")]
 	plugin_entry_points = ["octoprint.plugin"]
 	plugin_disabled_list = settings.get(["plugins", "_disabled"])
@@ -595,6 +601,9 @@ def main():
 
 		# cut off stuff from the beginning
 		args = args[-1 * sys_args_length:] if sys_args_length else []
+
+	from octoprint.util.fixes import patch_sarge_async_on_py2
+	patch_sarge_async_on_py2()
 
 	from octoprint.cli import octo
 	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")

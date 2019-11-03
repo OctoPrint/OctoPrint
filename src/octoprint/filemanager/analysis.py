@@ -18,6 +18,8 @@ import time
 
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
+from octoprint.util import monotonic_time
+from octoprint.util import get_fully_qualified_classname as fqcn
 
 
 class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile, analysis")):
@@ -108,7 +110,11 @@ class AnalysisQueue(object):
 
 	def _analysis_finished(self, entry, result):
 		for callback in self._callbacks:
-			callback(entry, result)
+			try:
+				callback(entry, result)
+			except:
+				self._logger.exception(u"Error while pushing analysis data to callback {}".format(callback),
+				                       extra=dict(callback=fqcn(callback)))
 		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"name": entry.name,
 		                                                        "path": entry.path,
 		                                                        "origin": entry.location,
@@ -249,7 +255,7 @@ class AbstractAnalysisQueue(object):
 		self._current_progress = 0
 
 		try:
-			start_time = time.time()
+			start_time = monotonic_time()
 			self._logger.info("Starting analysis of {}".format(entry))
 			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"name": entry.name,
 			                                                       "path": entry.path,
@@ -262,7 +268,7 @@ class AbstractAnalysisQueue(object):
 				result = self._do_analysis(high_priority=high_priority)
 			except TypeError:
 				result = self._do_analysis()
-			self._logger.info("Analysis of entry {} finished, needed {:.2f}s".format(entry, time.time() - start_time))
+			self._logger.info("Analysis of entry {} finished, needed {:.2f}s".format(entry, monotonic_time() - start_time))
 			self._finished_callback(self._current, result)
 		finally:
 			self._current = None

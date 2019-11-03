@@ -47,7 +47,7 @@ class PrinterInterface(object):
 	valid_tool_regex = re.compile("^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
 
-	valid_heater_regex = re.compile("^(tool\d+|bed)$")
+	valid_heater_regex = re.compile("^(tool\d+|bed|chamber)$")
 	"""Regex for valid heater identifiers."""
 
 	@classmethod
@@ -419,9 +419,9 @@ class PrinterInterface(object):
 		    tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
 		"""
 		if self.is_printing():
-			self.pause_print(tags=tags)
+			self.pause_print(tags=tags, *args, **kwargs)
 		elif self.is_paused():
-			self.resume_print(tags=tags)
+			self.resume_print(tags=tags, *args, **kwargs)
 
 	def cancel_print(self, tags=None, *args, **kwargs):
 		"""

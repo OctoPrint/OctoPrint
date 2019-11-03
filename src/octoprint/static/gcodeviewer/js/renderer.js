@@ -46,6 +46,7 @@ GCODE.renderer = (function(){
         modelCenter: {x: 0, y: 0},
         differentiateColors: true,
         showNextLayer: false,
+        showCurrentLayer: false,
         showPreviousLayer: false,
         showBoundingBox: false,
         showFullSize: false,
@@ -85,6 +86,10 @@ GCODE.renderer = (function(){
     }
     
     var reRender = function(){
+        if (!model) return;
+
+        log.debug("Rerendering layer " + layerNumStore + " of " + model.length + " with " + GCODE.renderer.getLayerNumSegments(layerNumStore) + " segments");
+
         notifyIfViewportChanged();
 
         var p1 = ctx.transformedPoint(0,0);
@@ -97,6 +102,9 @@ GCODE.renderer = (function(){
             if (layerNumStore < model.length) {
                 if (renderOptions['showNextLayer'] && layerNumStore < model.length - 1) {
                     drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
+                }
+                if (renderOptions['showCurrentLayer'] && layerNumStore < model.length) {
+                    drawLayer(layerNumStore, 0, GCODE.renderer.getLayerNumSegments(layerNumStore), true);
                 }
                 if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {
                     drawLayer(layerNumStore - 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore - 1), true);
@@ -352,6 +360,11 @@ GCODE.renderer = (function(){
         ctx.fill();
         ctx.stroke();
 
+        // draw origin
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.stroke();
+
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.lineWidth = lineWidthFactor;
 
@@ -403,6 +416,11 @@ GCODE.renderer = (function(){
 
         // draw
         ctx.fill();
+        ctx.stroke();
+
+        // draw origin
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
@@ -567,7 +585,8 @@ GCODE.renderer = (function(){
         var sizeRetractSpot = renderOptions["sizeRetractSpot"] * lineWidthFactor * 2;
 
         // alpha value (100% if current layer is being rendered, 30% otherwise)
-        var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
+        // Note - If showing currently layer as preview - also render it at 30% and draw the progress over the top at 100%
+        var alpha = (renderOptions['showNextLayer'] || renderOptions['showCurrentLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
         
         var colorLine = {};
         var colorMove = {};

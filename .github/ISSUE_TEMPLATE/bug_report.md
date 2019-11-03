@@ -1,3 +1,9 @@
+---
+name: Bug report
+about: Create a report to help improve OctoPrint
+
+---
+
 <!--
 READ THE FOLLOWING FIRST:
 
@@ -12,7 +18,7 @@ plugins and not unofficial OctoPrint versions).
 
 Do not seek support here ("I need help with ...", "I have a
 question ..."), that belongs on the community forum at 
-discourse.octoprint.org, NOT here.
+community.octoprint.org, NOT here.
 
 Mark requests with a "[Request]" prefix in the title please. For bug
 reports fully fill out the bug reporting template (if you don't know
@@ -39,9 +45,10 @@ don't know what you did to get it to happen in the first place.
 Ideally provide exact steps to follow in order to reproduce your problem:
 -->
 
-1. ...
-2. ...
-3. ...
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
 <!--
 If you encountered a problem with specific files of any sorts, make sure

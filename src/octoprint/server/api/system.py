@@ -12,6 +12,8 @@ import threading
 from flask import request, make_response, jsonify, url_for
 from flask_babel import gettext
 
+import psutil
+
 from octoprint.settings import settings as s
 
 from octoprint.server import admin_permission, NO_CONTENT
@@ -19,6 +21,21 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_remote_address
 from octoprint.logging import prefix_multilines
 
+
+@api.route("/system/usage", methods=["GET"])
+@restricted_access
+@admin_permission.require(403)
+def readUsageForFolders():
+	return jsonify(usage=_usageForFolders())
+
+def _usageForFolders():
+	data = {}
+	for folder_name in s().get(['folder']).keys():
+		path = s().getBaseFolder(folder_name, check_writable=False)
+		if path is not None:
+			usage = psutil.disk_usage(path)
+			data[folder_name] = { 'free': usage.free, 'total': usage.total }
+	return data
 
 @api.route("/system", methods=["POST"])
 @restricted_access
@@ -31,7 +48,7 @@ def performSystemAction():
 		data = request.json
 
 	if not "action" in data:
-		return make_response("action to perform is not defined", 400)
+		return make_response(u"action to perform is not defined", 400)
 
 	return executeSystemCommand("custom", data["action"])
 
@@ -53,7 +70,7 @@ def retrieveSystemCommandsForSource(source):
 	elif source == "custom":
 		specs = _get_custom_command_specs()
 	else:
-		return make_response("Unknown system command source: {}".format(source), 404)
+		return make_response(u"Unknown system command source: {}".format(source), 404)
 
 	return jsonify(_to_client_specs(specs))
 
@@ -69,26 +86,26 @@ def executeSystemCommand(source, command):
 
 	command_spec = _get_command_spec(source, command)
 	if not command_spec:
-		return make_response("Command {}:{} not found".format(source, command), 404)
+		return make_response(u"Command {}:{} not found".format(source, command), 404)
 
 	if not "command" in command_spec:
-		return make_response("Command {}:{} does not define a command to execute, can't proceed".format(source, command), 500)
+		return make_response(u"Command {}:{} does not define a command to execute, can't proceed".format(source, command), 500)
 
 	do_async = command_spec.get("async", False)
 	do_ignore = command_spec.get("ignore", False)
 	debug = command_spec.get("debug", False)
 
 	if logger.isEnabledFor(logging.DEBUG) or debug:
-		logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+		logger.info(u"Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
 	else:
-		logger.info("Performing command for {}:{}".format(source, command))
+		logger.info(u"Performing command for {}:{}".format(source, command))
 
 	try:
 		if "before" in command_spec and callable(command_spec["before"]):
 			command_spec["before"]()
 	except Exception as e:
 		if not do_ignore:
-			error = "Command \"before\" for {}:{} failed: {}".format(source, command, str(e))
+			error = u"Command \"before\" for {}:{} failed: {}".format(source, command, e)
 			logger.warn(error)
 			return make_response(error, 500)
 
@@ -107,11 +124,11 @@ def executeSystemCommand(source, command):
 				stdout_text = p.stdout.text
 				stderr_text = p.stderr.text
 
-				error = "Command for {}:{} failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(source, command,
-				                                                                                       returncode,
-				                                                                                       stdout_text,
-				                                                                                       stderr_text)
-				logger.warn(prefix_multilines(error, prefix="! "))
+				error = u"Command for {}:{} failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(source, command,
+				                                                                                        returncode,
+				                                                                                        stdout_text,
+				                                                                                        stderr_text)
+				logger.warn(prefix_multilines(error, prefix=u"! "))
 				if not do_async:
 					raise CommandFailed(error)
 
@@ -128,12 +145,11 @@ def executeSystemCommand(source, command):
 
 	except Exception as e:
 		if not do_ignore:
-			error = "Command for {}:{} failed: {}".format(source, command, str(e))
+			error = u"Command for {}:{} failed: {}".format(source, command, e)
 			logger.warn(error)
 			return make_response(error, 500)
 
 	return NO_CONTENT
-
 
 def _to_client_specs(specs):
 	result = list()
@@ -167,19 +183,19 @@ def _get_core_command_specs():
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
 			name=gettext("Shutdown system"),
-			confirm=gettext("<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
+			confirm=gettext(u"<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		reboot=dict(
 			command=s().get(["server", "commands", "systemRestartCommand"]),
 			name=gettext("Reboot system"),
-			confirm=gettext("<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
+			confirm=gettext(u"<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint"),
-			confirm=gettext("<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
+			confirm=gettext(u"<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		restart_safe=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint in safe mode"),
-			confirm=gettext("<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
+			confirm=gettext(u"<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
 			before=enable_safe_mode)
 	)
 
@@ -198,7 +214,7 @@ def _get_core_command_specs():
 def _get_core_command_spec(action):
 	available_actions = _get_core_command_specs()
 	if not action in available_actions:
-		logging.getLogger(__name__).warn("Command for core action {} is not configured, you need to configure the command before it can be used".format(action))
+		logging.getLogger(__name__).warn(u"Command for core action {} is not configured, you need to configure the command before it can be used".format(action))
 		return None
 
 	return available_actions[action]

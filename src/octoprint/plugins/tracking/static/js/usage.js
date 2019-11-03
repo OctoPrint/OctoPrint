@@ -44,10 +44,6 @@ $(function() {
             return false;
         };
 
-        self.onWizardPreventSettingsRefreshDialog = function() {
-            return self.active();
-        };
-
         self.onWizardDetails = function(response) {
             self.required = response && response.tracking && response.tracking.required;
         };

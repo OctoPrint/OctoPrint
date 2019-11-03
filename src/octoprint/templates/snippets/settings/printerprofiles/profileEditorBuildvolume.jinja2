@@ -23,6 +23,12 @@
             <input type="checkbox" data-bind="checked: heatedBed">
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Heated Chamber') }}</label>
+        <div class="controls">
+            <input type="checkbox" data-bind="checked: heatedChamber">
+        </div>
+    </div>
 
     <div class="control-group">
         <div class="controls">
@@ -127,6 +133,6 @@
     </div>
 
     <p>
-        <small>{{ _('This information is used for the temperature tab, the bounding box check, the GCODE Viewer and/or when slicing from OctoPrint. It does NOT influence already sliced files that you upload to OctoPrint!') }}</small>
+        <small>{{ _('This information is used for the temperature tab, the bounding box check, the GCODE Viewer and/or when slicing from OctoPrint.') }}</small>
     </p>
 </form>

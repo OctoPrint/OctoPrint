@@ -5,6 +5,11 @@ $(function() {
         self.loginState = parameters[0];
         self.printerState = parameters[1];
         self.settings = parameters[2];
+
+        // optional
+
+        self.piSupport = parameters[3]; // might be null!
+
         self.popup = undefined;
 
         self.updateInProgress = false;
@@ -51,7 +56,7 @@ $(function() {
         });
 
         self.enableUpdate = ko.pureComputed(function() {
-            return !self.updateInProgress && self.environmentSupported();
+            return !self.updateInProgress && self.environmentSupported() && !self.printerState.isPrinting() && !self.throttled();
         });
 
         self.enable_configSave = ko.pureComputed(function() {
@@ -84,11 +89,15 @@ $(function() {
             "name",
             [],
             [],
-            5
+            0
         );
 
         self.availableAndPossible = ko.pureComputed(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
+        });
+
+        self.throttled = ko.pureComputed(function() {
+            return self.piSupport && self.piSupport.currentIssue() && !self.settings.settings.plugins.pluginmanager.ignore_throttled();
         });
 
         self.onUserLoggedIn = function() {
@@ -207,11 +216,11 @@ $(function() {
                 }
 
                 var fullNameTemplate = gettext("%(name)s: %(version)s");
-                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: value.displayName, version: value.displayVersion});
+                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: _.escape(value.displayName), version: _.escape(value.displayVersion)});
 
-                var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
+                var fullNameRemoteVars = {name: _.escape(value.displayName), version: gettext("unknown")};
                 if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
-                    fullNameRemoteVars.version = value.information.remote.name;
+                    fullNameRemoteVars.version = _.escape(value.information.remote.name);
                 }
                 value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
@@ -484,36 +493,46 @@ $(function() {
                     type: "error"
                 });
                 self._updateClicked = false;
-            } else {
-                var html = "<p>" + gettext("This will update the following components and restart the server:") + "</p>";
-                html += "<ul>";
-                _.each(items, function(item) {
-                    html += "<li>"
-                        + "<span class=\"name\" title=\"" + item.fullNameRemote + "\">" + item.fullNameRemote + "</span>";
-                    if (item.releaseNotes) {
-                        html += "<br><a href=\"" + item.releaseNotes + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + gettext("Release Notes") + "</a>"
-                    }
-                    html += "</li>";
-                });
-                html += "</ul>";
-                html += "<p>" + gettext("Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.") + "</p>"
-                    + "<p><strong>" + gettext("This action may disrupt any ongoing print jobs.") + "</strong></p>"
-                    + "<p>" + gettext("Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset.") + "</p>"
-                    + "<p>" + gettext("Are you sure you want to proceed?") + "</p>";
-                showConfirmationDialog({
-                    title: gettext("Are you sure you want to update now?"),
-                    html: html,
-                    proceed: gettext("Proceed"),
-                    onproceed: function() {
-                        self.performUpdate((force === true),
-                                           _.map(items, function(info) { return info.key }));
-                    },
-                    onclose: function() {
-                        self._updateClicked = false;
-                    }
-                });
+                return;
             }
 
+            if (self.throttled()) {
+                self._showPopup({
+                    title: gettext("Can't update while throttled"),
+                    text: gettext("Your system is currently throttled. OctoPrint refuses to run updates while in this state due to possible stability issues."),
+                    type: "error"
+                });
+                self._updateClicked = false;
+                return;
+            }
+
+            var html = "<p>" + gettext("This will update the following components and restart the server:") + "</p>";
+            html += "<ul>";
+            _.each(items, function(item) {
+                html += "<li>"
+                    + "<span class=\"name\" title=\"" + item.fullNameRemote + "\">" + item.fullNameRemote + "</span>";
+                if (item.releaseNotes) {
+                    html += "<br><a href=\"" + item.releaseNotes + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + gettext("Release Notes") + "</a>"
+                }
+                html += "</li>";
+            });
+            html += "</ul>";
+            html += "<p>" + gettext("Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.") + "</p>"
+                + "<p><strong>" + gettext("This action may disrupt any ongoing print jobs.") + "</strong></p>"
+                + "<p>" + gettext("Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset.") + "</p>"
+                + "<p>" + gettext("Are you sure you want to proceed?") + "</p>";
+            showConfirmationDialog({
+                title: gettext("Are you sure you want to update now?"),
+                html: html,
+                proceed: gettext("Proceed"),
+                onproceed: function() {
+                    self.performUpdate((force === true),
+                                       _.map(items, function(info) { return info.key }));
+                },
+                onclose: function() {
+                    self._updateClicked = false;
+                }
+            });
         };
 
         self._showWorkingDialog = function(title) {
@@ -637,7 +656,7 @@ $(function() {
                 case "updating": {
                     console.log(JSON.stringify(messageData));
 
-                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
+                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: _.escape(messageData.name), version: _.escape(messageData.version)});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});
@@ -795,7 +814,8 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SoftwareUpdateViewModel,
-        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
+        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "piSupportViewModel"],
+        optional: ["piSupportViewModel"],
         elements: ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
     });
 });

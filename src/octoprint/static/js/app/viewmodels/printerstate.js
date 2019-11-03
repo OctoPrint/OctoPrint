@@ -17,6 +17,10 @@ $(function() {
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
 
+        self.isBusy = ko.pureComputed(function() {
+            return self.isPrinting() || self.isCancelling() || self.isPausing() || self.isPaused();
+        });
+
         self.enablePrint = ko.pureComputed(function() {
             return self.isOperational() && self.isReady() && !self.isPrinting() && !self.isCancelling() && !self.isPausing() && self.loginState.isUser() && self.filename();
         });
@@ -30,9 +34,10 @@ $(function() {
         self.filename = ko.observable(undefined);
         self.filepath = ko.observable(undefined);
         self.filedisplay = ko.observable(undefined);
-        self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
+        self.filedate = ko.observable(undefined);
+        self.progress = ko.observable(undefined);
         self.printTime = ko.observable(undefined);
         self.printTimeLeft = ko.observable(undefined);
         self.printTimeLeftOrigin = ko.observable(undefined);
@@ -56,12 +61,18 @@ $(function() {
         self.titlePrintButton = ko.observable(self.TITLE_PRINT_BUTTON_UNPAUSED);
         self.titlePauseButton = ko.observable(self.TITLE_PAUSE_BUTTON_UNPAUSED);
 
-        self.estimatedPrintTimeString = ko.pureComputed(function() {
+        var estimatedPrintTimeStringHlpr = function (fmt) {
             if (self.lastPrintTime())
-                return formatFuzzyPrintTime(self.lastPrintTime());
+                return fmt(self.lastPrintTime());
             if (self.estimatedPrintTime())
-                return formatFuzzyPrintTime(self.estimatedPrintTime());
+                return fmt(self.estimatedPrintTime());
             return "-";
+        };
+        self.estimatedPrintTimeString = ko.pureComputed(function() {
+            return estimatedPrintTimeStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
+        });
+        self.estimatedPrintTimeExactString = ko.pureComputed(function() {
+            return estimatedPrintTimeStringHlpr(formatDuration);
         });
         self.byteString = ko.pureComputed(function() {
             if (!self.filesize())
@@ -79,16 +90,22 @@ $(function() {
                 return "-";
             return formatDuration(self.printTime());
         });
-        self.printTimeLeftString = ko.pureComputed(function() {
-            if (self.printTimeLeft() == undefined) {
+        var printTimeLeftStringHlpr = function (fmt) {
+            if (self.printTimeLeft() === undefined) {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
                 } else {
                     return gettext("Still stabilizing...");
                 }
             } else {
-                return formatFuzzyPrintTime(self.printTimeLeft());
+                return fmt(self.printTimeLeft());
             }
+        };
+        self.printTimeLeftString = ko.pureComputed(function() {
+            return printTimeLeftStringHlpr(self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime : formatDuration);
+        });
+        self.printTimeLeftExactString = ko.pureComputed(function() {
+            return printTimeLeftStringHlpr(formatDuration);
         });
         self.printTimeLeftOriginString = ko.pureComputed(function() {
             var value = self.printTimeLeftOrigin();
@@ -182,6 +199,15 @@ $(function() {
             return (user ? user : (file ? "-" : ""));
         });
 
+        self.dateString = ko.pureComputed(function() {
+            var date = self.filedate();
+            if (!date) {
+                return "";
+            }
+
+            return formatDate(date, {seconds:true});
+        });
+
         self.fromCurrentData = function(data) {
             self._fromData(data);
         };
@@ -216,7 +242,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isSdReady(data.flags.sdReady);
 
-            if (self.isPaused() != prevPaused) {
+            if (self.isPaused() !== prevPaused) {
                 if (self.isPaused()) {
                     self.titlePrintButton(self.TITLE_PRINT_BUTTON_PAUSED);
                     self.titlePauseButton(self.TITLE_PAUSE_BUTTON_PAUSED);
@@ -233,12 +259,14 @@ $(function() {
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
                 self.filedisplay(data.file.display);
-                self.sd(data.file.origin == "sdcard");
+                self.filedate(data.file.date);
+                self.sd(data.file.origin === "sdcard");
             } else {
                 self.filename(undefined);
                 self.filepath(undefined);
                 self.filesize(undefined);
                 self.filedisplay(undefined);
+                self.filedate(undefined);
                 self.sd(undefined);
             }
 
@@ -246,7 +274,7 @@ $(function() {
             self.lastPrintTime(data.lastPrintTime);
 
             var result = [];
-            if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
+            if (data.filament && typeof(data.filament) === "object" && _.keys(data.filament).length > 0) {
                 var keys = _.keys(data.filament);
                 keys.sort();
                 _.each(keys, function(key) {
@@ -298,7 +326,21 @@ $(function() {
                     }
                 });
             } else {
-                OctoPrint.job.start();
+                if (!self.settings.feature_printStartConfirmation()) {
+                    OctoPrint.job.start();
+                } else {
+                    showConfirmationDialog({
+                        message: gettext("This will start a new print job. Please check that the print bed is clear."),
+                        question: gettext("Do you want to start the print job now?"),
+                        cancel: gettext("No"),
+                        proceed: gettext("Yes"),
+                        onproceed: function() {
+                            OctoPrint.job.start();
+                        },
+                        nofade: true
+                    });
+                }
+
             }
         };
 

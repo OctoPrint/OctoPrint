@@ -86,8 +86,8 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 	install_arg = check["pip"].format(target_version=target_version, target=target_version)
 
 	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
-	pip_args = ["install", install_arg, "--no-cache-dir"]
-	pip_kwargs = dict()
+	pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
+	pip_kwargs = dict(env=dict(PYTHONWARNINGS="ignore:DEPRECATION::pip._internal.cli.base_command"))
 	if pip_working_directory is not None:
 		pip_kwargs.update(cwd=pip_working_directory)
 

@@ -12,6 +12,15 @@ import logging
 
 from tornado.web import asynchronous, RequestHandler
 
+try:
+    # python 3
+    # noinspection PyCompatibility
+    from urllib.parse import urlparse
+except ImportError:
+    # python 2
+    # noinspection PyCompatibility
+    from urlparse import urlparse
+
 CACHE_TIME = 31536000
 
 LOG = logging.getLogger("tornado.general")
@@ -126,5 +135,35 @@ class PreflightHandler(BaseHandler):
 
     def verify_origin(self):
         """Verify if request can be served"""
-        # TODO: Verify origin
-        return True
+
+        # adapted from sockjs.tornado.websocket.SockJSWebSocketHandler
+
+        origin = self.request.headers.get('Origin', '*')
+
+        # first check if connection from the same domain
+        same_domain = self.check_origin(origin)
+        if same_domain:
+            return True
+
+        # this is cross-origin connection - check using SockJS server settings
+        allow_origin = self.server.settings.get("websocket_allow_origin", "*")
+        if allow_origin == "":
+            return False
+        elif allow_origin == "*":
+            return True
+        else:
+            parsed_origin = urlparse(origin)
+            origin = parsed_origin.netloc
+            origin = origin.lower()
+            return origin in allow_origin
+
+    def check_origin(self, origin):
+        # adapted from tornado.websocket.WebSocketHandler
+        parsed_origin = urlparse(origin)
+        origin = parsed_origin.netloc
+        origin = origin.lower()
+
+        host = self.request.headers.get("Host")
+
+        # Check to see that origin matches host directly, including ports
+        return origin == host

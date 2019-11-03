@@ -3,7 +3,7 @@
 
 ![GitHub release](https://img.shields.io/github/release/foosel/OctoPrint.svg?colorB=brightgreen)
 [![Travis build status](https://img.shields.io/travis/foosel/OctoPrint.svg)](https://travis-ci.org/foosel/OctoPrint)
-[![Discourse topics](https://img.shields.io/discourse/https/discourse.octoprint.org/users.svg)](https://discourse.octoprint.org)
+[![Discourse topics](https://img.shields.io/discourse/https/community.octoprint.org/users.svg)](https://community.octoprint.org)
 [![IRC](https://img.shields.io/badge/chat-on%20irc-brightgreen.svg)](https://chat.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
 
@@ -13,7 +13,7 @@ and released under the [GNU Affero General Public License V3](http://www.gnu.org
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
-The community forum is available at [discourse.octoprint.org](https://discourse.octoprint.org/?utm_source=github&utm_medium=readme).
+The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme).
 
 The official IRC channel is [#octoprint on freenode](https://chat.octoprint.org). Its logs can be found [here](https://freenode.logbot.info/octoprint).
 
@@ -31,16 +31,16 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
 want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
-might be of more interest for you. You might also want to subscribe to join 
-[the community forum at discourse.octoprint.org](https://discourse.octoprint.org) where there are other active users who might be
+might be of more interest for you. You might also want to subscribe to join
+[the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
 ## Contributing
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
 [official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), debugging help
-in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on 
-[the community forum at discourse.octoprint.org](https://discourse.octoprint.org)
+in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on
+[the community forum at community.octoprint.org](https://community.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
 If you think something is bad about OctoPrint or its documentation the way it is, please help
@@ -65,14 +65,15 @@ you already have Python 2.7, pip and virtualenv set up on your system:
 
 1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
 2. Change into the OctoPrint folder: `cd OctoPrint`
-3. Create a user-owned virtual environment therein: `virtualenv venv`
+3. Create a user-owned virtual environment therein: `virtualenv venv` if your system default python version is
+   python 2.7, otherwise you need to specify the version explicitly, e.g. `virtualenv --python=python2.7 venv`.
 4. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install .`
 
 You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
 for details.
 
 After installation, please make sure you follow the first-run wizard and set up
-access control as necessary. 
+access control as necessary.
 
 ## Dependencies
 
@@ -142,5 +143,8 @@ be edited from OctoPrint's settings dialog.
 
 ## Special Thanks
 
-Cross-browser testing services are kindly provided by [BrowserStack](http://www.browserstack.com/).
-Profiling is done with the help of [PyVmMonitor](http://www.pyvmmonitor.com).
+Cross-browser testing services are kindly provided by [BrowserStack](https://www.browserstack.com/).
+
+Profiling is done with the help of [PyVmMonitor](https://www.pyvmmonitor.com).
+
+Error tracking is powered and sponsored by [Sentry](https://sentry.io).

@@ -27,14 +27,15 @@ from flask_babel import gettext
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
 from octoprint.util import dict_merge, to_unicode
-from octoprint.util.version import get_comparable_version
+from octoprint.util.version import get_comparable_version, get_python_version_string
 from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
 
 
+# OctoPi 0.15+
 MINIMUM_PYTHON = "2.7.9"
-MINIMUM_SETUPTOOLS = "5.5.1"
-MINIMUM_PIP = "9.0.1"
+MINIMUM_SETUPTOOLS = "39.0.1"
+MINIMUM_PIP = "9.0.3"
 
 
 ##~~ Plugin
@@ -69,11 +70,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = None
 
-		self._environment_supported = False
+		self._environment_supported = True
 		self._environment_versions = dict()
 		self._environment_ready = threading.Event()
 
 		self._console_logger = None
+
+		self._get_throttled = lambda: False
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.softwareupdate.console")
@@ -98,16 +101,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
 
-	def on_after_startup(self):
-		# refresh cache now if necessary so it's faster once the user connects to the instance - but decouple it from
-		# the server startup
-		def fetch_data():
-			self.get_current_versions()
-			self._check_environment()
+		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+		if helpers and "get_throttled" in helpers:
+			self._get_throttled = helpers["get_throttled"]
+			if self._settings.get_boolean(["ignore_throttled"]):
+				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
-		thread = threading.Thread(target=fetch_data)
-		thread.daemon = True
-		thread.start()
+	def on_after_startup(self):
+		self._check_environment()
+		self.get_current_versions()
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
@@ -116,9 +118,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
-				check_providers = self._settings.get(["check_providers"], merged=True)
-				if not isinstance(check_providers, dict):
-					check_providers = dict()
+				check_providers = dict()
 
 				effective_configs = dict()
 
@@ -126,7 +126,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					try:
 						hook_checks = hook()
 					except:
-						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
+						self._logger.exception("Error while retrieving update information "
+						                       "from plugin {name}".format(**locals()),
+						                       extra=dict(plugin=name))
 					else:
 						for key, default_config in hook_checks.items():
 							if key in effective_configs or key == "octoprint":
@@ -164,9 +166,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				for key, config in effective_configs.items():
 					self._configured_checks[key] = config
 
-				self._settings.set(["check_providers"], check_providers)
-				self._settings.save()
-
 				# we only want to process checks that came from plugins for
 				# which the plugins are still installed and enabled
 				config_checks = self._settings.get(["checks"])
@@ -181,13 +180,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return self._configured_checks
 
 	def _check_environment(self):
-		from platform import python_version
 		import pkg_resources
 
 		local_pip = LocalPipCaller()
 
 		# check python and setuptools version
-		versions = dict(python=python_version(),
+		versions = dict(python=get_python_version_string(),
 		                setuptools=pkg_resources.get_distribution("setuptools").version,
 		                pip=local_pip.version_string)
 		supported = get_comparable_version(versions["python"]) >= get_comparable_version(MINIMUM_PYTHON) \
@@ -276,20 +274,18 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				},
 			},
 			"pip_command": None,
-			"check_providers": {},
 
 			"cache_ttl": 24 * 60,
 
-			"notify_users": True
+			"notify_users": True,
+
+			"ignore_throttled": False
 		}
 
 	def on_settings_load(self):
 		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 		if "checks" in data:
 			del data["checks"]
-
-		if "check_providers" in data:
-			del data["check_providers"]
 
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
@@ -389,7 +385,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._version_cache_dirty = True
 
 	def get_settings_version(self):
-		return 6
+		return 7
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -474,6 +470,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
 
+		if current is None or current < 7:
+			# remove check_providers again
+			self._settings.set(["check_providers"], None, defaults=dict(check_providers=dict()))
+
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if not data:
 			# nothing to do
@@ -516,7 +516,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		def view():
-			self._environment_ready.wait()
+			self._environment_ready.wait(timeout=30.0)
 
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
@@ -573,6 +573,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@restricted_access
 	@admin_permission.require(403)
 	def perform_update(self):
+		throttled = self._get_throttled()
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False) and not self._settings.get_boolean(["ignore_throttled"]):
+			# currently throttled, we refuse to run
+			return flask.make_response("System is currently throttled, refusing to update "
+			                           "anything due to possible stability issues", 409)
+
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
 			return flask.make_response("Printer is currently printing or paused", 409)
@@ -920,7 +926,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				elif restart_type == "environment":
 					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
 
-				if restart_command is not None:
+				if restart_command:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))
 					try:
 						self._perform_restart(restart_command)
@@ -951,17 +957,21 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		target_result = None
 
 		def trigger_event(success, **additional_payload):
+			from octoprint.events import Events
+
 			if success:
-				event = "update_succeeded"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_SUCCEEDED
 			else:
-				event = "update_failed"
+				# noinspection PyUnresolvedReferences
+				event = Events.PLUGIN_SOFTWAREUPDATE_UPDATE_FAILED
 
 			payload = copy.copy(additional_payload)
 			payload.update(dict(target=target,
 			                    from_version=information["local"]["value"],
 			                    to_version=target_version))
 
-			self._event_bus.fire("plugin_softwareupdate_{}".format(event), payload=payload)
+			self._event_bus.fire(event, payload=payload)
 
 		### The actual update procedure starts here...
 
@@ -1205,6 +1215,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return None
 
 
+def _register_custom_events(*args, **kwargs):
+	return ["update_succeeded", "update_failed"]
+
+
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
@@ -1227,7 +1241,8 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli.commands
+		"octoprint.cli.commands": cli.commands,
+		"octoprint.events.register_custom_events": _register_custom_events
 	}
 
 

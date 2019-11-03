@@ -46,7 +46,7 @@
             <td class="settings_plugin_backup_name" data-bind="text: name"></td>
             <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
-            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download') }}" class="fa fa-download" data-bind="attr: {href: url}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore') }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download')|edq }}" class="fa fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore')|edq }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></span></td>
         </tr>
         </tbody>
     </table>
@@ -91,30 +91,36 @@
     </div>
 </form>
 
-<h3>{{ _('Restore from uploaded backup') }}</h3>
+<div data-bind="visible: restoreSupported()">
+    <h3>{{ _('Restore from uploaded backup') }}</h3>
 
-<p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
+    <p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
 
-<form class="form-horizontal">
-    <div class="control-group">
-        <label class="control-label">{{ _('Backup file') }}</label>
-        <div class="controls">
-            <div class="input-prepend">
-                <span class="btn fileinput-button">
-                    <span>{{ _('Browse...') }}</span>
-                    <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
-                </span>
-                <span class="add-on" data-bind="text: backupUploadName"></span>
+    <form class="form-horizontal">
+        <div class="control-group">
+            <label class="control-label">{{ _('Backup file') }}</label>
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="btn fileinput-button">
+                        <span>{{ _('Browse...') }}</span>
+                        <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
+                    </span>
+                    <span class="add-on" data-bind="text: backupUploadName"></span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="control-group">
-        <div class="controls">
-            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
+        <div class="control-group">
+            <div class="controls">
+                <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
+</div>
+
+<div data-bind="visible: !restoreSupported()">
+    {{ _('Please note that the operating system that this OctoPrint server is running on does not support automatically restoring backups. You will have to <a href="%(url)s" target="_blank" rel="noopener noreferrer">restore your backups manually for now</a>.', url='https://faq.octoprint.org/manual-restore') }}
+</div>
 
 <div id="settings_plugin_backup_restoredialog" class="modal hide fade">
     <div class="modal-header">

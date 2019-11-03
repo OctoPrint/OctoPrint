@@ -62,6 +62,18 @@ Use the following settings to enable access control:
      # header and login the user without further checks. Use with caution.
      checkBasicAuthenticationPassword: true
 
+     # Whether to trust remote user headers. If you have setup authentication in front of
+     # OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will
+     # be logged into OctoPrint as the user provided in the header. Your should ONLY ENABLE THIS if your
+     # OctoPrint instance is only accessible through a connection locked down through an authenticating reverse proxy!
+     trustRemoteUser: false
+
+     # Header used by the reverse proxy to convey the authenticated user.
+     remoteUserHeader: REMOTE_USER
+
+     # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
+     addRemoteUsers: false
+
 .. _sec-configuration-config_yaml-api:
 
 API
@@ -81,7 +93,8 @@ Settings for the REST API:
      # Whether to allow cross origin access to the API or not
      allowCrossOrigin: false
 
-     # Additional app api keys, see REST API > Apps in the docs
+     # Additional app api keys, see REST API > Apps in the docs.
+     # Deprecated since 1.3.11, to be removed in 1.4.0!
      apps:
        "some.app.identifier:some_version":
          pubkey: <RSA pubkey>
@@ -322,6 +335,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Whether the simulated printer should also simulate a heated bed or not
        hasBed: true
 
+       # Whether the simulated printer should also simulate a heated chamber or not
+       hasChamber: false
+
        # If enabled, reports the set target temperatures as separate messages from the firmware
        #
        # True:  > M109 S220.0
@@ -409,8 +425,7 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Lines to send on simulated reset
        resetLines:
        - start
-       - Marlin: Virtual Marlin!
-       - "\x80"
+       - "Marlin: Virtual Marlin!"
        - "SD card ok"
 
        # Initial set of prepared oks to use instead of regular ok (e.g. to simulate
@@ -561,6 +576,9 @@ Use the following settings to enable or disable OctoPrint features:
      autoUppercaseBlacklist:
      - M117
      - M118
+
+     # whether G90/G91 also influence absolute/relative mode of extruders
+     g90InfluencesExtruder: false
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -806,6 +824,19 @@ Use the following settings to configure the serial connection to the printer:
      additionalBaudrates:
      - 123456
 
+     # Commands which should not be sent to the printer, e.g. because they are known to block serial
+     # communication until physical interaction with the printer as is the case on most firmwares with
+     # the default M0 and M1.
+     blockedCommands:
+     - M0
+     - M1
+
+     # Commands which should cause OctoPrint to pause any ongoing prints.
+     pausingCommands:
+     - M0
+     - M1
+     - M25
+
      # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
      # homing, dwelling, auto leveling etc. Defaults to the below commands.
      longRunningCommands:
@@ -931,6 +962,13 @@ Use the following settings to configure the server:
      # If this option is true, OctoPrint will enable safe mode on the next server start and
      # reset the setting to false
      startOnceInSafeMode: false
+
+     # Signals to OctoPrint that the last startup was incomplete. OctoPrint will then startup
+     # in safe mode
+     incompleteStartup: false
+
+     # Set this to true to make OctoPrint ignore incomplete startups. Helpful for development.
+     ignoreIncompleteStartup: false
 
      # Secret key for encrypting cookies and such, randomly generated on first run
      secretKey: someSecretKey
@@ -1058,6 +1096,15 @@ Use the following settings to configure the server:
        # How many days to leave unused entries in the preemptive cache config
        until: 7
 
+     # Configuration of the client IP check to warn about connections from external networks
+     ipCheck:
+
+       # whether to enable the check, defaults to true
+       enabled: true
+
+       # additional non-local subnets to consider trusted, in CIDR notation, e.g. "192.168.1.0/24"
+       trustedSubnets: []
+
 
 .. note::
 
@@ -1087,14 +1134,14 @@ Settings for the built-in slicing support:
    slicing:
 
      # Whether to enable slicing support or not
-     enabled:
+     enabled: true
 
      # Default slicer to use
-     defaultSlicer: cura
+     defaultSlicer: null
 
      # Default slicing profiles per slicer
      defaultProfiles:
-       cura: ...
+       curalegacy: ...
 
 .. _sec-configuration-config_yaml-system:
 

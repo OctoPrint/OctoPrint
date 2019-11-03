@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 # Version: 0.15+dev
 
@@ -369,12 +371,12 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 
 """
 
-from __future__ import print_function
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 import errno
+import io
 import json
 import os
 import re
@@ -426,9 +428,12 @@ def get_config_from_root(root):
     # configparser.NoOptionError (if it lacks "VCS="). See the docstring at
     # the top of versioneer.py for instructions on writing your setup.cfg .
     setup_cfg = os.path.join(root, "setup.cfg")
+
+    # TODO: find a py2 compatible solution for the configparser deprecation issues
     parser = configparser.SafeConfigParser()
-    with open(setup_cfg, "r") as f:
+    with io.open(setup_cfg, 'rt', encoding="utf-8") as f:
         parser.readfp(f)
+
     VCS = parser.get("versioneer", "VCS")  # mandatory
 
     def get(parser, name):
@@ -498,7 +503,10 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
             print("unable to run %s (error)" % dispcmd)
         return None
     return stdout
-LONG_VERSION_PY['git'] = '''
+
+LONG_VERSION_PY['git'] = '''# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 # This file helps to compute a version number in source trees obtained from
 # git-archive tarball (such as those provided by githubs download-from-tag
 # feature). Distribution tarballs (built by setup.py sdist) and build
@@ -511,10 +519,12 @@ LONG_VERSION_PY['git'] = '''
 """Git implementation of _version.py."""
 
 import errno
+import io
 import os
 import re
 import subprocess
 import sys
+import logging
 
 
 def get_keywords():
@@ -629,7 +639,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, "rt", encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -655,11 +665,11 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         if verbose:
             print("keywords are unexpanded, not using")
         raise NotThisMethod("unexpanded keywords, not a git-archive tarball")
-    refs = set([r.strip() for r in refnames.strip("()").split(",")])
+    refs = set(r.strip() for r in refnames.strip("()").split(","))
     # starting in git-1.8.3, tags are listed as "tag: foo-1.0" instead of
     # just "foo-1.0". If we see a "tag: " prefix, prefer those.
     TAG = "tag: "
-    tags = set([r[len(TAG):] for r in refs if r.startswith(TAG)])
+    tags = set(r[len(TAG):] for r in refs if r.startswith(TAG))
     if not tags:
         # Either we're using git < 1.8.3, or there really are no tags. We use
         # a heuristic: assume all version tags have a digit. The old git %%d
@@ -668,7 +678,7 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         # between branches and tags. By ignoring refnames without digits, we
         # filter out many common branch names like "release" and
         # "stabilization", as well as "HEAD" and "master".
-        tags = set([r for r in refs if re.search(r'\d', r)])
+        tags = set(r for r in refs if re.search(r'\d', r))
         if verbose:
             print("discarding '%%s', no digits" %% ",".join(refs-tags))
 
@@ -806,7 +816,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, "rt", encoding="utf-8") as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -815,7 +825,7 @@ def git_parse_lookup_file(path):
                 continue
 
             try:
-                split_line = map(lambda x: x.strip(), line.split())
+                split_line = list(map(lambda x: x.strip(), line.split()))
                 if not len(split_line):
                     continue
 
@@ -836,7 +846,8 @@ def git_parse_lookup_file(path):
                     continue
 
                 lookup.append(entry)
-            except:
+            except Exception:
+                logging.getLogger(__name__).exception("Versioneer problem")
                 break
     return lookup
 
@@ -1201,7 +1212,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, 'rt', encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -1227,11 +1238,11 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         if verbose:
             print("keywords are unexpanded, not using")
         raise NotThisMethod("unexpanded keywords, not a git-archive tarball")
-    refs = set([r.strip() for r in refnames.strip("()").split(",")])
+    refs = set(r.strip() for r in refnames.strip("()").split(","))
     # starting in git-1.8.3, tags are listed as "tag: foo-1.0" instead of
     # just "foo-1.0". If we see a "tag: " prefix, prefer those.
     TAG = "tag: "
-    tags = set([r[len(TAG):] for r in refs if r.startswith(TAG)])
+    tags = set(r[len(TAG):] for r in refs if r.startswith(TAG))
     if not tags:
         # Either we're using git < 1.8.3, or there really are no tags. We use
         # a heuristic: assume all version tags have a digit. The old git %d
@@ -1240,7 +1251,7 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         # between branches and tags. By ignoring refnames without digits, we
         # filter out many common branch names like "release" and
         # "stabilization", as well as "HEAD" and "master".
-        tags = set([r for r in refs if re.search(r'\d', r)])
+        tags = set(r for r in refs if re.search(r'\d', r))
         if verbose:
             print("discarding '%s', no digits" % ",".join(refs-tags))
 
@@ -1378,7 +1389,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, 'r') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.index("#")]
@@ -1387,7 +1398,7 @@ def git_parse_lookup_file(path):
                 continue
 
             try:
-                split_line = map(lambda x: x.strip(), line.split())
+                split_line = list(map(lambda x: x.strip(), line.split()))
                 if not len(split_line):
                     continue
 
@@ -1408,7 +1419,7 @@ def git_parse_lookup_file(path):
                     continue
 
                 lookup.append(entry)
-            except:
+            except Exception:
                 break
     return lookup
 
@@ -1501,7 +1512,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     files.append(versioneer_file)
     present = False
     try:
-        f = open(".gitattributes", "r")
+        f = io.open('.gitattributes', 'rt', encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith(versionfile_source):
                 if "export-subst" in line.strip().split()[1:]:
@@ -1510,7 +1521,7 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     except EnvironmentError:
         pass
     if not present:
-        f = open(".gitattributes", "a+")
+        f = io.open('.gitattributes', 'a+t', encoding="utf-8")
         f.write("%s export-subst\n" % versionfile_source)
         f.close()
         files.append(".gitattributes")
@@ -1554,7 +1565,7 @@ def get_versions():
 
 def versions_from_file(filename):
     try:
-        with open(filename) as f:
+        with io.open(filename, 'rt', encoding="utf-8") as f:
             contents = f.read()
     except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
@@ -1569,7 +1580,7 @@ def write_to_version_file(filename, versions):
     os.unlink(filename)
     contents = json.dumps(versions, sort_keys=True,
                           indent=1, separators=(",", ": "))
-    with open(filename, "w") as f:
+    with io.open(filename, 'wt', encoding="utf-8") as f:
         f.write(SHORT_VERSION_PY % contents)
 
     print("set %s to '%s'" % (filename, versions["version"]))
@@ -1982,7 +1993,7 @@ def get_cmdclass():
 
                 _build_exe.run(self)
                 os.unlink(target_versionfile)
-                with open(cfg.versionfile_source, "w") as f:
+                with io.open(cfg.versionfile_source, 'wt', encoding="utf-8") as f:
                     LONG = LONG_VERSION_PY[cfg.VCS]
                     f.write(LONG %
                             {"DOLLAR": "$",
@@ -2079,13 +2090,13 @@ def do_setup():
         if isinstance(e, (EnvironmentError, configparser.NoSectionError)):
             print("Adding sample versioneer config to setup.cfg",
                   file=sys.stderr)
-            with open(os.path.join(root, "setup.cfg"), "a") as f:
+            with io.open(os.path.join(root, "setup.cfg"), 'at', encoding="utf-8") as f:
                 f.write(SAMPLE_CONFIG)
         print(CONFIG_ERROR, file=sys.stderr)
         return 1
 
     print(" creating %s" % cfg.versionfile_source)
-    with open(cfg.versionfile_source, "w") as f:
+    with io.open(cfg.versionfile_source, 'wt', encoding="utf-8") as f:
         LONG = LONG_VERSION_PY[cfg.VCS]
         f.write(LONG % {"DOLLAR": "$",
                         "STYLE": cfg.style,
@@ -2099,13 +2110,13 @@ def do_setup():
                        "__init__.py")
     if os.path.exists(ipy):
         try:
-            with open(ipy, "r") as f:
+            with io.open(ipy, 'rt', encoding="utf-8") as f:
                 old = f.read()
         except EnvironmentError:
             old = ""
-        if INIT_PY_SNIPPET not in old:
+        if "from ._version import get_versions" not in old:
             print(" appending to %s" % ipy)
-            with open(ipy, "a") as f:
+            with io.open(ipy, 'at', encoding="utf-8") as f:
                 f.write(INIT_PY_SNIPPET)
         else:
             print(" %s unmodified" % ipy)
@@ -2120,7 +2131,7 @@ def do_setup():
     manifest_in = os.path.join(root, "MANIFEST.in")
     simple_includes = set()
     try:
-        with open(manifest_in, "r") as f:
+        with io.open(manifest_in, 'r') as f:
             for line in f:
                 if line.startswith("include "):
                     for include in line.split()[1:]:
@@ -2133,14 +2144,14 @@ def do_setup():
     # lines is safe, though.
     if "versioneer.py" not in simple_includes:
         print(" appending 'versioneer.py' to MANIFEST.in")
-        with open(manifest_in, "a") as f:
+        with io.open(manifest_in, 'at', encoding="utf-8") as f:
             f.write("include versioneer.py\n")
     else:
         print(" 'versioneer.py' already in MANIFEST.in")
     if cfg.versionfile_source not in simple_includes:
         print(" appending versionfile_source ('%s') to MANIFEST.in" %
               cfg.versionfile_source)
-        with open(manifest_in, "a") as f:
+        with io.open(manifest_in, 'at', encoding="utf-8") as f:
             f.write("include %s\n" % cfg.versionfile_source)
     else:
         print(" versionfile_source already in MANIFEST.in")
@@ -2156,7 +2167,7 @@ def scan_setup_py():
     found = set()
     setters = False
     errors = 0
-    with open("setup.py", "r") as f:
+    with io.open("setup.py", 'rt', encoding="utf-8") as f:
         for line in f.readlines():
             if "import versioneer" in line:
                 found.add("import")

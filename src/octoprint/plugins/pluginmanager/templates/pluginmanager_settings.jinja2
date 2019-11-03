@@ -1,6 +1,6 @@
 {% macro pluginmanager_printing() %}
 <div class="alert" data-bind="visible: !enableManagement()">
-  {{ _('Take note that all plugin management functionality is disabled while your printer is printing.') }}
+  {{ _('Take note that all plugin management functionality is disabled while your printer is printing or paused.') }}
 </div>
 {% endmacro %}
 
@@ -20,6 +20,13 @@
 {% endtrans %}</div>
 {% endmacro %}
 
+{% macro pluginmanager_throttled() %}
+<div class="alert" data-bind="visible: throttled">{% trans %}
+    The system OctoPrint is running on is currently throttled. Due to that it's not possible to install new
+    plugins in order to avoid possible issues caused by system instability.
+{% endtrans %}</div>
+{% endmacro %}
+
 {% macro pluginmanager_offline() %}
 <div class="alert" data-bind="visible: !online()">{% trans %}
     It looks like OctoPrint has currently no connection to the internet. Due to that it's not possible
@@ -30,49 +37,55 @@
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
 {{ pluginmanager_safemode() }}
+{{ pluginmanager_throttled() }}
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
+    <div class="btn-group">
+        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">{{ _('3rd party') }}</button>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins')|edq }}">All</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins')|edq }}">{{ _('Enabled') }}</button>
+        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins')|edq }}">{{ _('Disabled') }}</button>
+    </div>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Installed Plugins') }}</h3>
 
-<table class="table table-striped table-hover table-condensed table-hover">
-    <thead>
-    <tr>
-        <th class="settings_plugin_plugin_manager_plugins_name">{{ _('Name') }}</th>
-        <th class="settings_plugin_plugin_manager_plugins_actions">{{ _('Actions') }}</th>
-    </tr>
-    </thead>
-    <tbody data-bind="foreach: plugins.paginatedItems">
-    <tr>
-        <td class="settings_plugin_plugin_manager_plugins_name">
-            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i> <i class="fa fa-ban" title="{{ _('This plugin is blacklisted') }}" data-bind="visible: blacklisted"></i></div>
-            <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
-            <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
-            <div data-bind="css: {muted: !enabled}">
-                <small data-bind="visible: url"><i class="fa fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
-                <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
-                <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
-                <small>&nbsp;</small>
-            </div>
-        </td>
-        <td class="settings_plugin_plugin_manager_plugins_actions">
-            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<div class="pagination pagination-mini pagination-centered">
-    <ul>
-        <li data-bind="css: {disabled: plugins.currentPage() === 0}"><a href="#" data-bind="click: plugins.prevPage">«</a></li>
-    </ul>
-    <ul data-bind="foreach: plugins.pages">
-        <li data-bind="css: { active: $data.number === $root.plugins.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.plugins.changePage($data.number); }"></a></li>
-    </ul>
-    <ul>
-        <li data-bind="css: {disabled: plugins.currentPage() === plugins.lastPage()}"><a href="#" data-bind="click: plugins.nextPage">»</a></li>
-    </ul>
+<form class="form-search" data-bind="submit: performListingSearch">
+    <input type="text" class="input-block search-query" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+</form>
+
+<div id="settings_plugin_pluginmanager_pluginlist">
+    <table class="table table-striped table-hover table-condensed table-hover">
+        <thead>
+        <tr>
+            <th class="settings_plugin_plugin_manager_plugins_name">{{ _('Name') }}</th>
+            <th class="settings_plugin_plugin_manager_plugins_actions">{{ _('Actions') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: plugins.paginatedItems">
+        <tr>
+            <td class="settings_plugin_plugin_manager_plugins_name">
+                <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fa fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
+                <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
+                <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
+                <div data-bind="css: {muted: !enabled}">
+                    <small data-bind="visible: url"><i class="fa fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
+                    <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
+                    <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
+                    <small>&nbsp;</small>
+                </div>
+            </td>
+            <td class="settings_plugin_plugin_manager_plugins_actions">
+                <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }">&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
 <button class="btn btn-block" data-bind="click: $root.showRepository">{{ _('Get More...') }}</button>
@@ -131,6 +144,7 @@
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
         {{ pluginmanager_safemode() }}
+        {{ pluginmanager_throttled() }}
         {{ pluginmanager_offline() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='https://plugins.octoprint.org') }}
@@ -151,7 +165,7 @@
         </h4>
 
         <form class="form-search" data-bind="submit: performRepositorySearch">
-            <input type="text" class="input-block search-query" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+            <input type="text" class="input-block search-query" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
         </form>
 
         <div data-bind="visible: repositoryAvailable()">
@@ -193,7 +207,7 @@
         <form class="form-inline">
             <div class="control-group row-fluid" data-bind="css: {error: invalidUrl}">
                 <div class="span9">
-                    <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...') }}" >
+                    <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...')|edq }}" >
                 </div>
                 <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
             </div>
@@ -243,18 +257,30 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <fieldset>
+                <legend>{{ _('Confirmations') }}</legend>
+
+                <div class="control-group" title="{{ _('Confirm before disabling a plugin')|edq }}">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: config_confirmDisable"> {{ _('Confirm before disabling a plugin') }}
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
             <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
             <fieldset>
                 <legend>{{ _('Plugin repository configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Repository URL') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_repositoryUrl">
                     </div>
                 </div>
-                <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Repository cache TTL') }}</label>
                     <div class="controls">
                         <div class="input-append">
@@ -268,13 +294,13 @@
             <fieldset>
                 <legend>{{ _('Notices configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Notices URL') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_noticesUrl">
                     </div>
                 </div>
-                <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Notices cache TTL') }}</label>
                     <div class="controls">
                         <div class="input-append">
@@ -288,7 +314,7 @@
             <fieldset>
                 <legend>{{ _('pip configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Additional arguments') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">

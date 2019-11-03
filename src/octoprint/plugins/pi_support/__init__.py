@@ -12,19 +12,29 @@ from flask_babel import gettext
 from octoprint.util import RepeatedTimer
 
 import octoprint.plugin
+import octoprint.events
 
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
 _VCGENCMD_THROTTLE = "/usr/bin/vcgencmd get_throttled"
 
-### uncomment for local debugging
-#import sys
-#base = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "tests", "plugins", "pi_support", "fakes"))
-#_PROC_DT_MODEL_PATH = os.path.join(base, "fake_model.txt")
-#_OCTOPI_VERSION_PATH = os.path.join(base, "fake_octopi.txt")
-#_VCGENCMD_THROTTLE = "{} {}".format(sys.executable, os.path.join(base, "fake_vcgencmd.py"))
-#import itertools
-#_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70000"))
+_CHECK_INTERVAL_OK = 300
+_CHECK_INTERVAL_THROTTLED = 30
+
+__LOCAL_DEBUG = False
+
+if __LOCAL_DEBUG:
+	### mocks & settings for local debugging
+	import sys
+	base = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "tests", "plugins", "pi_support", "fakes"))
+	_PROC_DT_MODEL_PATH = os.path.join(base, "fake_model.txt")
+	_OCTOPI_VERSION_PATH = os.path.join(base, "fake_octopi.txt")
+	_VCGENCMD_THROTTLE = "{} {}".format(sys.executable, os.path.join(base, "fake_vcgencmd.py"))
+	import itertools
+	_VCGENCMD_OUTPUT = itertools.chain(iter(("0x0", "0x0", "0x50005", "0x50000", "0x70007")), itertools.repeat("0x70005"))
+
+	_CHECK_INTERVAL_OK = 10
+	_CHECK_INTERVAL_THROTTLED = 5
 
 
 # see https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=147781&start=50#p972790
@@ -133,8 +143,11 @@ def get_proc_dt_model():
 
 
 def get_vcgencmd_throttled_state(command):
-	output = sarge.get_stdout(command)
-	#output = "throttled={}".format(next(_VCGENCMD_OUTPUT)) # for local debugging
+	if __LOCAL_DEBUG:
+		output = "throttled={}".format(next(_VCGENCMD_OUTPUT))  # mock for local debugging
+	else:
+		output = sarge.get_stdout(command)
+
 	if not "throttled=0x" in output:
 		raise ValueError("cannot parse \"{}\" output: {}".format(command, output))
 
@@ -235,11 +248,9 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 	def _check_throttled_state_interval(self):
 		if self._throttle_state.current_issue:
-			# check state every 30s if something's currently amiss
-			return 30
+			return _CHECK_INTERVAL_THROTTLED
 		else:
-			# check state every 5min if nothing's currently amiss
-			return 300
+			return _CHECK_INTERVAL_OK
 
 	def _check_throttled_state_condition(self):
 		return self._throttle_functional
@@ -290,14 +301,20 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
 		                                                                state=self._throttle_state.as_dict()))
-		self._event_bus.fire("plugin_pi_support_throttle_state", self._throttle_state.as_dict())
+
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(octoprint.events.Events.PLUGIN_PI_SUPPORT_THROTTLE_STATE, self._throttle_state.as_dict())
+
+
+def register_custom_events(*args, **kwargs):
+	return ["throttle_state",]
 
 
 __plugin_name__ = "Pi Support Plugin"
 __plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Provides additional information about your Pi in the UI."
 __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
-                                           "provide additional information about your Pi,"
+                                           "provide additional information about your Pi, "
                                            "which will make it more tricky to help you if you need support.")
 __plugin_license__ = "AGPLv3"
 
@@ -315,6 +332,11 @@ def __plugin_load__():
 	plugin = PiSupportPlugin()
 	global __plugin_implementation__
 	__plugin_implementation__ = plugin
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.events.register_custom_events": register_custom_events
+	}
 
 	global __plugin_helpers__
 	__plugin_helpers__ = dict(get_throttled=plugin.get_throttle_state)

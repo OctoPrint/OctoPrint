@@ -1,6 +1,13 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>OctoPrint Login</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
+    <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
     {% include "parts/forcelogin_css.jinja2" %}
 
@@ -14,8 +21,9 @@
             <div id="login-error" class="alert alert-error">{{ _('Incorrect username or password.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
-            <input type="text" id="login-user" class="input-block-level" placeholder="{{ _('Username') }}">
-            <input type="password" id="login-password" class="input-block-level" placeholder="{{ _('Password') }}">
+            <input type="text" id="login-user" class="input-block-level" placeholder="{{ _('Username')|edq }}" autofocus>
+            <input type="password" id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
+            <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
             <label class="checkbox">
                 <input type="checkbox" id="login-remember"> {{ _('Remember me') }}
             </label>
