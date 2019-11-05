@@ -173,18 +173,10 @@ $(function() {
                 })
                 .fail(function(response) {
                     switch(response.status) {
-                        case 401: {
-                            new PNotify({
-                                title: gettext("Login failed"),
-                                text: gettext("User unknown or wrong password"),
-                                type: "error"
-                            });
-                            break;
-                        }
                         case 403: {
                             new PNotify({
                                 title: gettext("Login failed"),
-                                text: gettext("Your account is deactivated"),
+                                text: gettext("User unknown, wrong password or account deactivated"),
                                 type: "error"
                             });
                             break;
@@ -200,7 +192,7 @@ $(function() {
                     self.fromResponse(response);
                 })
                 .fail(function(error) {
-                    if (error && error.status === 401) {
+                    if (error && error.status === 403) {
                          self.fromResponse(false);
                     }
                 });

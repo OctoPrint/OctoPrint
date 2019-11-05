@@ -241,7 +241,7 @@ def login():
 				r.delete_cookie("active_logout")
 				return r
 
-		return make_response(("User unknown or password incorrect", 401, []))
+		return make_response(("User unknown or password incorrect", 403, []))
 
 	elif "passive" in data:
 		return passive_login()
