@@ -39,7 +39,7 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
 	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer, \
 	monotonic_time
-from octoprint.util.platform import get_os
+from octoprint.util.platform import get_os, set_close_exec
 
 try:
 	import _winreg
@@ -2668,6 +2668,15 @@ class MachineCom(object):
 				serial_obj.parity = serial.PARITY_NONE
 
 			serial_obj.open()
+
+			# Set close_exec flag on serial handle, see #3212
+			if hasattr(serial_obj, "fd"):
+				# posix
+				set_close_exec(serial_obj.fd)
+			elif hasattr(serial_obj, "_port_handle"):
+				# win32
+				# noinspection PyProtectedMember
+				set_close_exec(serial_obj._port_handle)
 
 			return BufferedReadlineWrapper(serial_obj)
 
