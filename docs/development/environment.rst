@@ -21,7 +21,7 @@ below.
   * Create a virtual environment in the checked out source folder to use for installing and running OctoPrint and its
     dependencies (this avoids potential versioning issues for the dependencies with system wide installed
     instances): ``virtualenv venv``
-  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, MacOS) or
+  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, macOS) or
     ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
   * Update ``pip`` in the virtual environment: ``pip install --upgrade pip``
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
@@ -170,8 +170,10 @@ PyCharm
 .......
 
   - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-  - "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
+  - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
     folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``)
+  - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
+    "Virtualenv Environment > "Existing Environment", select OctoPrint venv folder (e.g. ``~/devel/OctoPrint/venv``)
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
 

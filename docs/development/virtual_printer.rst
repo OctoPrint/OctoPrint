@@ -17,7 +17,7 @@ be found in the full :ref:`config.yaml documentation <sec-configuration-config_y
 
 The steps to take are as follows:
 
-* Find config.yaml in the OctoPrint settings folder. Usually in ``~/.octoprint`` on Linux, in ``%APPDATA%/OctoPrint`` on Windows and in ``~/Library/Application Support/OctoPrint`` on MacOS.
+* Find config.yaml in the OctoPrint settings folder. Usually in ``~/.octoprint`` on Linux, in ``%APPDATA%/OctoPrint`` on Windows and in ``~/Library/Application Support/OctoPrint`` on macOS.
 * Add or extend the ``devel`` section with:
 
 .. code-block:: yaml
