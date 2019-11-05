@@ -512,7 +512,8 @@ class MachineCom(object):
 		self._pausing_commands = settings().get(["serial", "pausingCommands"])
 		self._emergency_commands = settings().get(["serial", "emergencyCommands"])
 
-		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None)
+		self._ack_max = settings().getInt(["serial", "ackMax"])
+		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None, maximum=self._ack_max)
 		self._send_queue = SendQueue()
 		self._temperature_timer = None
 		self._sd_status_timer = None
@@ -3143,6 +3144,19 @@ class MachineCom(object):
 			self._logger.debug("Type already in send queue: " + e.type)
 			return False
 
+	def _use_up_clear(self, gcode):
+		# we only need to use up a clear if the command we just sent was either a gcode command or if we also
+		# require ack's for unknown commands
+		eats_clear = self._unknownCommandsNeedAck
+		if gcode is not None:
+			eats_clear = True
+
+		if eats_clear:
+			# if we need to use up a clear, do that now
+			self._clear_to_send.clear()
+
+		return eats_clear
+
 	def _send_loop(self):
 		"""
 		The send loop is responsible of sending commands in ``self._send_queue`` over the line, if it is cleared for
@@ -3189,6 +3203,7 @@ class MachineCom(object):
 					if linenumber is not None:
 						# line number predetermined - this only happens for resends, so we'll use the number and
 						# send directly without any processing (since that already took place on the first sending!)
+						self._use_up_clear(gcode)
 						self._do_send_with_checksum(command, linenumber)
 
 					else:
@@ -3239,28 +3254,19 @@ class MachineCom(object):
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
+						used_up_clear = self._use_up_clear(gcode)
 						self._do_send(command, gcode=gcode)
+						if not used_up_clear:
+							# If we didn't use up a clear we need to tickle the read queue - there might
+							# not be a reply to this command, so our _monitor loop will stay waiting until
+							# timeout. We definitely do not want that, so we tickle the queue manually here
+							self._continue_sending()
 
 					# trigger "sent" phase and use up one "ok"
 					if on_sent is not None and callable(on_sent):
 						# we have a sent callback for this specific command, let's execute it now
 						on_sent()
 					self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode, tags=tags)
-
-					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
-					# require ack's for unknown commands
-					use_up_clear = self._unknownCommandsNeedAck
-					if gcode is not None:
-						use_up_clear = True
-
-					if use_up_clear:
-						# if we need to use up a clear, do that now
-						self._clear_to_send.clear()
-					else:
-						# Otherwise we need to tickle the read queue - there might not be a reply
-						# to this command, so our _monitor loop will stay waiting until timeout. We
-						# definitely do not want that, so we tickle the queue manually here
-						self._continue_sending()
 
 				finally:
 					# no matter _how_ we exit this block, we signal that we
@@ -3788,10 +3794,12 @@ class MachineCom(object):
 			return
 
 		self._logger.info(message)
-		self._do_send(cmd, gcode=gcode)
 
 		# use up an ok since we will get one back for this command and don't want to get out of sync
-		self._clear_to_send.clear()
+		used_up_clear = self._use_up_clear(gcode)
+		self._do_send(cmd, gcode=gcode)
+		if not used_up_clear:
+			self._continue_sending()
 
 		return None,
 
