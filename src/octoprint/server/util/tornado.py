@@ -71,7 +71,7 @@ class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
 class CorsSupportMixin(tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ mixin that
-	makes sure to set CORS headers similarily to the Flask backed API endpoints.
+	makes sure to set CORS headers similarly to the Flask backed API endpoints.
 	"""
 
 	ENABLE_CORS = False
