@@ -655,7 +655,7 @@ $(function() {
                 }
             }
 
-            // handler for any explicitely provided callbacks
+            // handler for any explicitly provided callbacks
             var callbackHandler = function() {
                 if (!callback) return;
                 try {

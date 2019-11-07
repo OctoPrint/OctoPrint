@@ -106,7 +106,7 @@ def pluginCommand(name):
 			return response
 		return NO_CONTENT
 	except Exception:
-		logging.getLogger(__name__).exception("Error while excuting SimpleApiPlugin {}".format(name),
+		logging.getLogger(__name__).exception("Error while executing SimpleApiPlugin {}".format(name),
 		                                      extra=dict(plugin=name))
 		return abort(500)
 

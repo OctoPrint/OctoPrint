@@ -286,7 +286,7 @@ class Server(object):
 		### open port and prevent us from firing up Tornado later.
 		###
 		### The intermediary server's socket should have the CLOSE_EXEC flag (or its equivalent) set where possible, but
-		### we can only do that if fcntl is availabel or we are on Windows, so better safe than sorry.
+		### we can only do that if fcntl is available or we are on Windows, so better safe than sorry.
 		###
 		### See also issues #2035 and #2090
 
