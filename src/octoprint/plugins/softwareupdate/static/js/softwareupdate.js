@@ -53,6 +53,7 @@ $(function() {
         self.config_pipTarget = ko.observable();
         self.config_checkType = ko.observable();
         self.config_releaseChannel = ko.observable();
+        self.config_pipEnableCheck = ko.observable();
 
         self.error_checkoutFolder = ko.pureComputed(function() {
             return self.config_checkType() === "git_commit"
@@ -164,7 +165,8 @@ $(function() {
                         octoprint_release_channel: self.config_releaseChannel(),
                         octoprint_checkout_folder: self.config_checkoutFolder(),
                         octoprint_tracked_branch: self.config_trackedBranch(),
-                        octoprint_pip_target: self.config_pipTarget()
+                        octoprint_pip_target: self.config_pipTarget(),
+                        pip_enable_check: self.config_pipEnableCheck()
                     }
                 }
             };
@@ -201,6 +203,8 @@ $(function() {
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
             self.config_trackedBranch(self.settings.settings.plugins.softwareupdate.octoprint_tracked_branch());
             self.config_pipTarget(self.settings.settings.plugins.softwareupdate.octoprint_pip_target());
+
+            self.config_pipEnableCheck(self.settings.settings.plugins.softwareupdate.pip_enable_check());
         };
 
         self._copyConfigBack = function() {

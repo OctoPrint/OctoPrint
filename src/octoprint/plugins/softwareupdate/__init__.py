@@ -352,6 +352,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			data["octoprint_type"] = None
 			data["octoprint_branch_mappings"] = []
 
+		data["pip_enable_check"] = "pip" in checks
+
 		return data
 
 	def on_settings_save(self, data):
@@ -377,6 +379,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		)
 
 		updated_octoprint_check_config = False
+		update_pip_check_config = False
 
 		if "octoprint_checkout_folder" in data:
 			self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], defaults=defaults, force=True)
@@ -421,10 +424,30 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", "octoprint", "prerelease_channel"], None, defaults=defaults, force=True)
 			updated_octoprint_check_config = True
 
+		if "pip_enable_check" in data:
+			checks = self._settings.get(["checks"], merged=True)
+			if data["pip_enable_check"] in octoprint.settings.valid_boolean_trues:
+				checks["pip"] = dict(type="pypi_release",
+				                     package="pip",
+				                     pip="pip=={target_version}")
+			elif "pip" in checks:
+				del checks["pip"]
+			self._settings.set(["checks"], checks, force=True)
+			self._settings.save()
+			update_pip_check_config = True
+
 		if updated_octoprint_check_config:
 			self._refresh_configured_checks = True
 			try:
 				del self._version_cache["octoprint"]
+			except KeyError:
+				pass
+			self._version_cache_dirty = True
+
+		if update_pip_check_config:
+			self._refresh_configured_checks = True
+			try:
+				del self._version_cache["pip"]
 			except KeyError:
 				pass
 			self._version_cache_dirty = True
@@ -903,6 +926,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			to_be_updated.remove("octoprint")
 			tmp = ["octoprint"] + to_be_updated
 			to_be_updated = tmp
+		if "pip" in to_be_updated:
+			to_be_updated.remove("pip")
+			tmp = ["pip"] + to_be_updated
+			to_be_updated = tmp
 
 		updater_thread = threading.Thread(target=self._update_worker, args=(populated_checks, to_be_updated, force))
 		updater_thread.daemon = False
@@ -941,7 +968,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 					if "restart" in check:
 						target_restart_type = check["restart"]
-					elif "pip" in check:
+					elif "pip" in check and target != "pip":
 						target_restart_type = "octoprint"
 					else:
 						target_restart_type = None
@@ -1095,13 +1122,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			raise exceptions.RestartFailed()
 
 	def _populated_check(self, target, check):
+		from flask_babel import gettext
+
 		if not "type" in check:
 			raise exceptions.UnknownCheckType()
 
 		result = dict(check)
 
 		if target == "octoprint":
-			from flask_babel import gettext
 
 			from octoprint.util.version import is_released_octoprint_version, is_stable_octoprint_version
 
@@ -1159,6 +1187,23 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					elif check.get("pip", None):
 						# we force python unequality check for pip installs, to be able to downgrade
 						result["release_compare"] = "python_unequal"
+
+		elif target == "pip":
+			import pkg_resources
+
+			displayName = check.get("displayName")
+			if displayName is None:
+				# displayName missing or set to None
+				displayName = gettext("pip")
+			result["displayName"] = to_unicode(displayName, errors="replace")
+
+			displayVersion = check.get("displayVersion")
+			if displayVersion is None:
+				# displayVersion missing or set to None
+				distribution = pkg_resources.get_distribution("pip")
+				if distribution:
+					displayVersion = distribution.version
+			result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
 		else:
 			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
