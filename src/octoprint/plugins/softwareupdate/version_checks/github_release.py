@@ -10,6 +10,7 @@ import requests
 import logging
 
 from octoprint.util import sv
+from octoprint.util.version import get_comparable_version
 
 RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 
@@ -119,7 +120,7 @@ def _get_latest_release(user, repo, compare_type,
 	# sanitize
 	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at", "target_commitish"}
 	releases = list(filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
-	                  	   releases))
+	                       releases))
 
 	comparable_factory = _get_comparable_factory(compare_type,
 	                                             force_base=force_base)
@@ -168,26 +169,6 @@ def _get_base_from_version_tuple(version_tuple):
 	return tuple(base_version)
 
 
-def _get_comparable_version_pkg_resources(version_string, force_base=True):
-	import pkg_resources
-
-	version = pkg_resources.parse_version(version_string)
-
-	# A leading v is common in github release tags and old setuptools doesn't remove it.
-	if version and isinstance(version, tuple) and version[0].lower() == "*v":
-		version = version[1:]
-
-	if force_base:
-		if isinstance(version, tuple):
-			# old setuptools
-			version = _get_base_from_version_tuple(version)
-		else:
-			# new setuptools
-			version = pkg_resources.parse_version(version.base_version)
-
-	return version
-
-
 def _get_comparable_version_semantic(version_string, force_base=True):
 	import semantic_version
 
@@ -210,7 +191,7 @@ def _get_sanitized_compare_type(compare_type, custom=None):
 
 def _get_comparable_factory(compare_type, force_base=True):
 	if compare_type in ("python", "python_unequal"):
-		return lambda version: _get_comparable_version_pkg_resources(version, force_base=force_base)
+		return lambda version: get_comparable_version(version, base=force_base)
 	elif compare_type in ("semantic", "semantic_unequal"):
 		return lambda version: _get_comparable_version_semantic(version, force_base=force_base)
 	else:
