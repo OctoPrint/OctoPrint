@@ -11,8 +11,6 @@ import requests
 from octoprint.util import to_native_str
 from octoprint.util.version import is_python_compatible, get_comparable_version, is_prerelease
 
-from .. import exceptions
-
 INFO_URL = "https://pypi.org/pypi/{package}/json"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.pypi_release")
@@ -26,7 +24,7 @@ def _filter_out_latest(releases, include_prerelease=False, python_version=None):
 	    >>> requires_py2 = ">=2.7.9,<3"
 	    >>> requires_py23 = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
 	    >>> requires_py3 = ">=3.6, <4"
-	    >>> releases = {"1.3.12": dict(requires_python=requires_py2, upload_time_iso_8601="2019-10-22T10:06:03.190293Z"), "1.4.0rc1": dict(requires_python=requires_py23, upload_time_iso_8601="2019-11-22T10:06:03.190293Z"), "2.0.0rc1": dict(requires_python=requires_py3, upload_time_iso_8601="2020-10-22T10:06:03.190293Z")}
+	    >>> releases = {"1.3.12": [dict(requires_python=requires_py2, upload_time_iso_8601="2019-10-22T10:06:03.190293Z")], "1.4.0rc1": [dict(requires_python=requires_py23, upload_time_iso_8601="2019-11-22T10:06:03.190293Z")], "2.0.0rc1": [dict(requires_python=requires_py3, upload_time_iso_8601="2020-10-22T10:06:03.190293Z")]}
 	    >>> to_native_str(_filter_out_latest(releases, python_version="2.7.9"))
 	    '1.3.12'
 	    >>> to_native_str(_filter_out_latest(releases, include_prerelease=True, python_version="2.7.9"))
@@ -86,8 +84,10 @@ def _is_current(release_information):
 	return remote_version <= local_version
 
 def get_latest(target, check, online=True):
+	from ..exceptions import CannotUpdateOffline
+
 	if not online and not check.get("offline", False):
-		raise exceptions.CannotUpdateOffline()
+		raise CannotUpdateOffline()
 
 	package = check.get("package")
 
