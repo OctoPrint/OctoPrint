@@ -108,7 +108,7 @@ def pluginCommand(name):
 			return response
 		return NO_CONTENT
 	except Exception:
-		logging.getLogger(__name__).exception("Error while excuting SimpleApiPlugin {}".format(name),
+		logging.getLogger(__name__).exception("Error while executing SimpleApiPlugin {}".format(name),
 		                                      extra=dict(plugin=name))
 		return abort(500)
 
@@ -248,7 +248,7 @@ def login():
 
 				return r
 
-		return make_response(("User unknown or password incorrect", 401, []))
+		return make_response(("User unknown or password incorrect", 403, []))
 
 	elif "passive" in data:
 		return passive_login()

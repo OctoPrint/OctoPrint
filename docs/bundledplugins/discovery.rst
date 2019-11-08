@@ -14,7 +14,7 @@ network running Microsoft Windows. You will be able to just double click on the
 OctoPrint instance icon in "Networks > Other Devices" in your Windows Explorer,
 which will take you directly to the web frontend.
 
-The ZeroConf support allows OctoPrint to announce itself to Safari on MacOS X
+The ZeroConf support allows OctoPrint to announce itself to Safari on macOS
 on the same network.
 
 Linux users should install `Avahi <http://avahi.org>`_ and can then use one

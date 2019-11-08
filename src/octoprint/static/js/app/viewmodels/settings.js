@@ -205,6 +205,7 @@ $(function() {
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
         self.serial_sendM112OnError = ko.observable(undefined);
+        self.serial_ackMax = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -659,7 +660,7 @@ $(function() {
                 }
             }
 
-            // handler for any explicitely provided callbacks
+            // handler for any explicitly provided callbacks
             var callbackHandler = function() {
                 if (!callback) return;
                 try {

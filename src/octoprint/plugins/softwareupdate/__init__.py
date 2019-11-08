@@ -139,9 +139,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
-				check_providers = self._settings.get(["check_providers"], merged=True)
-				if not isinstance(check_providers, dict):
-					check_providers = dict()
+				check_providers = dict()
 
 				effective_configs = dict()
 
@@ -188,9 +186,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# finally set all our internal representations to our processed results
 				for key, config in effective_configs.items():
 					self._configured_checks[key] = config
-
-				self._settings.set(["check_providers"], check_providers)
-				self._settings.save()
 
 				# we only want to process checks that came from plugins for
 				# which the plugins are still installed and enabled
@@ -300,7 +295,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				},
 			},
 			"pip_command": None,
-			"check_providers": {},
 
 			"cache_ttl": 24 * 60,
 
@@ -313,9 +307,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 		if "checks" in data:
 			del data["checks"]
-
-		if "check_providers" in data:
-			del data["check_providers"]
 
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
@@ -453,7 +444,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._version_cache_dirty = True
 
 	def get_settings_version(self):
-		return 6
+		return 7
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -537,6 +528,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
 				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
+
+		if current is None or current < 7:
+			# remove check_providers again
+			self._settings.set(["check_providers"], None, defaults=dict(check_providers=dict()))
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if not data:

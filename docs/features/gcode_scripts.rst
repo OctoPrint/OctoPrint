@@ -11,7 +11,7 @@ is clicked.
 
 Unless :ref:`configured otherwise <sec-configuration-config_yaml-folder>`, OctoPrint expects scripts to be located in
 the ``scripts/gcode`` folder in OctoPrint configuration directory (per default ``~/.octoprint`` on Linux, ``%APPDATA%\OctoPrint``
-on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
+on Windows and ``~/Library/Application Support/OctoPrint`` on macOS).
 
 These GCODE scripts are backed by the templating engine Jinja2, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To

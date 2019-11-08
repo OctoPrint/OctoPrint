@@ -52,11 +52,25 @@
         return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
     };
 
-    OctoPrintPluginManagerClient.prototype.uninstall = function(plugin, opts) {
+    OctoPrintPluginManagerClient.prototype.uninstall = function(plugin, cleanup, opts) {
+        // backwards compatibility to former argument list (plugin, opts)
+        if (arguments.length === 2 && typeof cleanup === "object") {
+            opts = cleanup;
+            cleanup = false;
+        }
+
+        var data = {
+            plugin: plugin,
+            cleanup: !!cleanup
+        };
+        return this.base.simpleApiCommand("pluginmanager", "uninstall", data, opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.cleanup = function(plugin, opts) {
         var data = {
             plugin: plugin
         };
-        return this.base.simpleApiCommand("pluginmanager", "uninstall", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "cleanup", data, opts);
     };
 
     OctoPrintPluginManagerClient.prototype.enable = function(plugin, opts) {

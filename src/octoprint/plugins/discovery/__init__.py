@@ -212,7 +212,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
-		Unregisteres a previously registered Zeroconf/Bonjour/Avahi service identified by service and port.
+		Unregisters a previously registered Zeroconf/Bonjour/Avahi service identified by service and port.
 
 		:param reg_type: the type of the service to be unregistered
 		:param port: the port of the service to be unregistered, defaults to OctoPrint's (public) port if not given

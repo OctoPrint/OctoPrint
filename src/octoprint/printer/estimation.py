@@ -69,7 +69,7 @@ class PrintTimeEstimator(object):
 		     but no intelligent estimate yet, we'll use that for the next step. Otherwise, up to a certain percentage
 		     in the print we do a percentage based weighing of the statistical data and the intelligent
 		     estimate - the closer to the beginning of the print, the more precedence for the statistical
-		     data, the closer to the cut off point, the more precendence for the intelligent estimate. This
+		     data, the closer to the cut off point, the more precedence for the intelligent estimate. This
 		     is our preliminary total print time.
 		  3. If the total print time is set, we do a sanity check for it. Based on the total print time
 		     estimate and the time we already spent printing, we calculate at what percentage we SHOULD be

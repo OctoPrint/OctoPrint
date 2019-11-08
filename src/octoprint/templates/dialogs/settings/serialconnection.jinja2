@@ -398,6 +398,13 @@
                                 <span class="help-inline">{{ _('Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.') }}</span>
                             </div>
                         </div>
+                        <div class="control-group" title="{{ _('ok buffer size')|edq }}">
+                            <label class="control-label" for="settings-serialAckMax">{{ _('<code>ok</code> buffer size') }}</label>
+                            <div class="controls">
+                                <input type="number" min="0" class="input-mini text-right" id="settings-serialAckMax" data-bind="value: serial_ackMax">
+                                <span class="help-block">{{ _('Only modify if told to do so') }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </fieldset>

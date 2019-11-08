@@ -306,7 +306,7 @@ class Server(object):
 		### open port and prevent us from firing up Tornado later.
 		###
 		### The intermediary server's socket should have the CLOSE_EXEC flag (or its equivalent) set where possible, but
-		### we can only do that if fcntl is availabel or we are on Windows, so better safe than sorry.
+		### we can only do that if fcntl is available or we are on Windows, so better safe than sorry.
 		###
 		### See also issues #2035 and #2090
 
@@ -798,12 +798,16 @@ class Server(object):
 
 		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
+			self._logger.info("Autoconnect on startup is configured, trying to connect to the printer...")
 			try:
 				(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 				printer_profile = printerProfileManager.get_default()
 				connectionOptions = printer.__class__.get_connection_options()
-				if port in connectionOptions["ports"] or port == "AUTO":
-						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
+				if port in connectionOptions["ports"] or port == "AUTO" or port is None:
+					self._logger.info("Trying to connect to configured serial port {}".format(port))
+					printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
+				else:
+					self._logger.info("Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?")
 			except Exception:
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 

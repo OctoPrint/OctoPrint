@@ -447,7 +447,7 @@ class PluginInfo(object):
 	@property
 	def hooks(self):
 		"""
-		Hooks provided by the plugin. Will be taken from the hooks attribute of the plugin module as defiend in
+		Hooks provided by the plugin. Will be taken from the hooks attribute of the plugin module as defined in
 		:attr:`attr_hooks` if available, otherwise an empty dictionary is returned.
 
 		Returns:

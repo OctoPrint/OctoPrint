@@ -737,6 +737,8 @@ function showConfirmationDialog(msg, onacknowledge, options) {
 
     var html = options.html;
 
+    var checkboxes = options.checkboxes;
+
     var cancel = options.cancel || gettext("Cancel");
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
@@ -764,18 +766,32 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + '</a>')
         .attr("data-dismiss", "modal")
         .attr("aria-hidden", "true");
-    var proceedButton = $('<a href="javascript:void(0)" class="btn">' + proceed + '</a>')
-        .addClass("btn-" + proceedClass);
+
+    if (!_.isArray(proceed)) {
+        proceed = [proceed];
+    }
+
+    var proceedButtons = [];
+    _.each(proceed, function(text) {
+        proceedButtons.push($('<a href="javascript:void(0)" class="btn">' + text + '</a>')
+            .addClass("btn-" + proceedClass));
+    });
 
     var modal = $('<div></div>')
         .addClass('modal hide');
     if (!nofade) {
         modal.addClass('fade');
     }
+
+    var buttons = $('<div></div>').addClass('modal-footer').append(cancelButton);
+    _.each(proceedButtons, function(button) {
+        buttons.append(button);
+    });
+
     modal.addClass(dialogClass)
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
-        .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+        .append(buttons);
     modal.on('hidden', function(event) {
         if (onclose && _.isFunction(onclose)) {
             onclose(event);
@@ -789,12 +805,14 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     }
     modal.modal(modalOptions);
 
-    proceedButton.click(function(e) {
-        e.preventDefault();
-        if (onproceed && _.isFunction(onproceed)) {
-            onproceed(e);
-        }
-        modal.modal("hide");
+    _.each(proceedButtons, function(button, idx) {
+        button.click(function(e) {
+            e.preventDefault();
+            if (onproceed && _.isFunction(onproceed)) {
+                onproceed(idx, e);
+            }
+            modal.modal("hide");
+        })
     });
     cancelButton.click(function(e) {
         if (oncancel && _.isFunction(oncancel)) {

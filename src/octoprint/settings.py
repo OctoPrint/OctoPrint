@@ -153,6 +153,7 @@ default_settings = {
 		"useParityWorkaround": "detect",
 		"maxConsecutiveResends": 10,
 		"sendM112OnError": True,
+		"ackMax": 1,
 
 		"capabilities": {
 			"autoreport_temp": True,
@@ -1240,7 +1241,7 @@ class Settings(object):
 						self._logger.info("Migrated {} action to server.commands.{}".format(action, migrate_to))
 
 					to_delete.append(index)
-					self._logger.info("Deleting {} action from configured system commands, superseeded by server.commands.{}".format(action, migrate_to))
+					self._logger.info("Deleting {} action from configured system commands, superseded by server.commands.{}".format(action, migrate_to))
 
 			for index in reversed(to_delete):
 				actions.pop(index)

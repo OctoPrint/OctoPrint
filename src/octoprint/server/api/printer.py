@@ -507,17 +507,17 @@ def _get_temperature_data(preprocessor):
 
 
 def _keep_tools(x):
-	return _delete_from_data(x, lambda k: not k.startswith("tool"))
+	return _delete_from_data(x, lambda k: not k.startswith("tool") and k != "history")
 
 
 def _keep_bed(x):
-	return _delete_from_data(x, lambda k: k != "bed")
+	return _delete_from_data(x, lambda k: k != "bed" and k != "history")
 
 def _delete_bed(x):
 	return _delete_from_data(x, lambda k: k == "bed")
 
 def _keep_chamber(x):
-	return _delete_from_data(x, lambda k: k != "chamber")
+	return _delete_from_data(x, lambda k: k != "chamber" and k != "history")
 
 def _delete_chamber(x):
 	return _delete_from_data(x, lambda k: k == "chamber")
