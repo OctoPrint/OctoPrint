@@ -41,6 +41,9 @@ logger = logging.getLogger(__name__)
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> bytes
 	"""Make sure ``s_or_u`` is a bytestring."""
+	if s_or_u is None:
+		return s_or_u
+
 	if not isinstance(s_or_u, basestring):
 		s_or_u = str(s_or_u)
 
@@ -53,6 +56,9 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> unicode
 	"""Make sure ``s_or_u`` is a unicode string."""
+	if s_or_u is None:
+		return s_or_u
+
 	if not isinstance(s_or_u, basestring):
 		s_or_u = str(s_or_u)
 
