@@ -364,11 +364,10 @@ class gcode(object):
 
 						if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
 							# Copy first extruder length to other extruders
- 							for i in range(1, len(currentE)):
+							for i in range(1, len(currentE)):
 								totalExtrusion[i] += e
 								currentE[i] += e
-								maxExtrusion[i] = max(maxExtrusion[i],
- 						                          totalExtrusion[i])
+								maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
 					else:
 						e = 0.0
 
