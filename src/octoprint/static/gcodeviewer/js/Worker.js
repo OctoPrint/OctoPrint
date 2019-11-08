@@ -410,9 +410,9 @@ var doParse = function () {
                         break;
                     case 'g':
                         if(args[j].charAt(1).toLowerCase() === '2')
-                            direction=1;
-                        if(args[j].charAt(1).toLowerCase() === '3')
                             direction=-1;
+                        if(args[j].charAt(1).toLowerCase() === '3')
+                            direction=1;
                         break;
                 }
             }
