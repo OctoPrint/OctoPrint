@@ -848,7 +848,7 @@ class PreemptiveCache(object):
 
 		with self._lock:
 			all_data = self.get_all_data()
-			for root, entries in all_data.items():
+			for root, entries in list(all_data.items()):
 				old_count = len(entries)
 				entries = cleanup_function(root, entries)
 				if not entries:
