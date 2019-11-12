@@ -259,7 +259,7 @@ default_settings = {
 		"throttle_normalprio": 0.01,
 		"throttle_highprio": 0.0,
 		"throttle_lines": 100,
-		"pauseDuringPrint": True
+		"runAt": "idle" # 'never', 'idle', 'always'
 	},
 	"feature": {
 		"temperatureGraph": True,

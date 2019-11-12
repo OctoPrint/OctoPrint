@@ -19,6 +19,7 @@ from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.settings import settings
 
 from collections import namedtuple
 
@@ -223,8 +224,7 @@ class FileManager(object):
 		self._progress_plugins = []
 		self._preprocessor_hooks = dict()
 
-		import octoprint.settings
-		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
+		self._recovery_file = os.path.join(settings().getBaseFolder("data"), "print_recovery_data.yaml")
 
 	def initialize(self, process_backlog=False):
 		self.reload_plugins()
@@ -232,6 +232,10 @@ class FileManager(object):
 			self.process_backlog()
 
 	def process_backlog(self):
+		# only check for a backlog if gcodeAnalysis is 'idle' or 'always'
+		if settings().get(["gcodeAnalysis", "runAt"]) == "never":
+			return
+
 		def worker():
 			self._logger.info("Adding backlog items from all storage types to analysis queue...".format(**locals()))
 			for storage_type, storage_manager in self._storage_managers.items():

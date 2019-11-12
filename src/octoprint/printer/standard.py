@@ -1099,8 +1099,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 
 		elif state == comm.MachineCom.STATE_PRINTING:
-			if settings().getBoolean(["gcodeAnalysis", "pauseDuringPrint"]):
-				self._analysisQueue.pause() # do not analyse files while printing
+			if settings().get(["gcodeAnalysis", "runAt"]) == "idle":
+				self._analysisQueue.pause() # only analyse files while idle
 
 		if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:
