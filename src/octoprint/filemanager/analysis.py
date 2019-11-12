@@ -176,7 +176,10 @@ class AbstractAnalysisQueue(object):
 		        (False, default)
 		"""
 
-		if high_priority:
+		if settings().get(["gcodeAnalysis", "runAt"]) == "never":
+			self._logger.debug("Ignoring entry {entry} for analysis queue".format(entry=entry))
+			return
+		elif high_priority:
 			self._logger.debug("Adding entry {entry} to analysis queue with high priority".format(entry=entry))
 			prio = self.__class__.HIGH_PRIO
 		else:

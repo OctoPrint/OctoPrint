@@ -225,6 +225,7 @@ class FileManager(object):
 
 		import octoprint.settings
 		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
+		self._analyzeGcode = octoprint.settings.settings().get(["gcodeAnalysis", "runAt"])
 
 	def initialize(self, process_backlog=False):
 		self.reload_plugins()
@@ -232,6 +233,10 @@ class FileManager(object):
 			self.process_backlog()
 
 	def process_backlog(self):
+		# only check for a backlog if gcodeAnalysis is 'idle' or 'always'
+		if self._analyzeGcode == "never":
+			return
+
 		def worker():
 			self._logger.info("Adding backlog items from all storage types to analysis queue...".format(**locals()))
 			for storage_type, storage_manager in self._storage_managers.items():

@@ -56,4 +56,19 @@
             <span class="help-block">{{ _('Use this to specify the commands that should not have their parameters automatically uppercased in the terminal tab. Just the G or M code, comma separated.') }}</span>
         </div>
     </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('Analyze gcode for time and model size estimates')}}</label>
+        <div class="controls">
+            <label class="radio">
+                <input type="radio" name="analysisRunAtGroup" value="always" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtAlways"> {{ _('Always ') }}
+            </label>
+            <label class="radio">
+                <input type="radio" name="analysisRunAtGroup" value="idle" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtIdle"> {{ _('Only when idle (not printing)') }}
+            </label>
+            <label class="radio">
+                <input type="radio" name="analysisRunAtGroup" value="never" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtNever"> {{ _('Never') }}
+            </label>
+        </div>
+    </div>
 </form>

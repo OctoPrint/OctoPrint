@@ -134,6 +134,9 @@ def getSettings():
 			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
 			"autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"])
 		},
+		"gcodeAnalysis": {
+			"runAt": s.get(["gcodeAnalysis", "runAt"])
+		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
 			"baudrate": connectionOptions["baudratePreference"],
@@ -427,6 +430,9 @@ def _saveSettings(data):
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
 		if "autoUppercaseBlacklist" in data["feature"] and isinstance(data["feature"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["feature", "autoUppercaseBlacklist"], data["feature"]["autoUppercaseBlacklist"])
+
+	if "gcodeAnalysis" in data:
+		if "runAt" in data["gcodeAnalysis"]: s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
 
 	if "serial" in data:
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
