@@ -715,7 +715,6 @@ $(function() {
                         notices_ttl: noticesTtl,
                         pip_args: pipArgs,
                         pip_force_user: self.config_pipForceUser(),
-                        confirm_uninstall: self.config_confirmUninstall(),
                         confirm_disable: self.config_confirmDisable(),
                     }
                 }
@@ -734,7 +733,6 @@ $(function() {
             self.config_noticesTtl(self.settingsViewModel.settings.plugins.pluginmanager.notices_ttl());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
-            self.config_confirmUninstall(self.settingsViewModel.settings.plugins.pluginmanager.confirm_uninstall());
             self.config_confirmDisable(self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable());
         };
 
