@@ -17,6 +17,28 @@
         {% include 'initscript.jinja2' %}
     </head>
     <body>
+        <noscript>
+            <style type="text/css">
+                #page-container-main,
+                #page-container-loading,
+                #page-container-needlogin {
+                    display:none;
+                }
+            </style>
+            <div id="page-container-noscript">
+                <div class="wrapper">
+                    <div class="outer">
+                        <div class="inner">
+                            <div class="content">
+                                <h1 class="text-error">{{ _('You don\'t seem to have JavaScript enabled') }}</h1>
+                                {{ _('OctoPrint\'s UI requires JavaScript to work. Please enable JavaScript and reload.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </noscript>
+
         <div class="page-container" id="page-container-main" {% if enableLoadAnimation -%}style="display: none"{%- endif %} data-bind="visible: visible">
             <!-- ko allowBindings: false -->
             <div id="navbar" class="navbar navbar-static-top">
@@ -160,7 +182,7 @@
                 <div class="outer">
                     <div class="inner">
                         <div class="content">
-                            <h1 id="page-container-loading-header">Loading OctoPrint's UI, please wait...</h1>
+                            <h1 id="page-container-loading-header">{{ _('Loading OctoPrint\'s UI, please wait...') }}</h1>
                             <i id="page-container-loading-spinner" class="fa fa-spinner fa-spin fa-4x"></i>
                             <p id="page-container-loading-error" style="display: none"></p>
                         </div>
