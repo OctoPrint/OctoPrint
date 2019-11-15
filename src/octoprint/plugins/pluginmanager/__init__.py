@@ -876,6 +876,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		import time
 		if mtime is None:
 			mtime = self._repository_mtime
+		if mtime is None:
+			return False
 		return mtime + self._repository_cache_ttl >= time.time() > mtime
 
 	def _fetch_repository_from_disk(self):
@@ -944,6 +946,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		import time
 		if mtime is None:
 			mtime = self._notices_mtime
+		if mtime is None:
+			return False
 		return mtime + self._notices_cache_ttl >= time.time() > mtime
 
 	def _fetch_notices_from_disk(self):
