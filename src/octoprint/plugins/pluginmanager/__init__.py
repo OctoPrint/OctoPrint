@@ -36,7 +36,12 @@ import threading
 
 from datetime import datetime
 
-_DATA_FORMAT_VERSION = "v2"
+try:
+	from os import scandir
+except:
+	from scandir import scandir
+
+_DATA_FORMAT_VERSION = "v3"
 
 
 def map_repository_entry(entry):
@@ -123,6 +128,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._notices_cache_path = None
 		self._notices_cache_ttl = 0
 		self._notices_mtime = None
+
+		self._orphans = None
 
 		self._console_logger = None
 
@@ -296,6 +303,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			"enable": ["plugin"],
 			"disable": ["plugin"],
 			"cleanup": ["plugin"],
+			"cleanup_all": [],
 			"refresh_repository": []
 		}
 
@@ -313,12 +321,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if refresh_notices or not self._is_notices_cache_valid():
 			self._notices_available = self._refresh_notices()
 
+		refresh_orphan = request.values.get("refresh_orphans", "false") in valid_boolean_trues
+
 		def view():
 			return jsonify(plugins=self._get_plugins(),
 			               repository=dict(
 			                   available=self._repository_available,
 			                   plugins=self._repository_plugins
 			               ),
+			               orphan_data=self._get_orphans(refresh=refresh_orphan),
 			               os=get_os(),
 			               octoprint=get_octoprint_version_string(),
 			               pip=dict(
@@ -345,6 +356,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			hash_update(repr(self._repository_plugins))
 			hash_update(str(self._notices_available))
 			hash_update(repr(self._notices))
+			hash_update(repr(self._get_orphans()))
 			hash_update(repr(safe_mode))
 			hash_update(repr(self._connectivity_checker.online))
 			hash_update(repr(_DATA_FORMAT_VERSION))
@@ -355,7 +367,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
 		                                  condition=lambda *args, **kwargs: condition(),
-		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
+		                                  unless=lambda: refresh_repository or refresh_notices or refresh_orphan)(view)()
 
 	def on_api_command(self, command, data):
 		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
@@ -385,12 +397,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
 
 		elif command == "cleanup":
-			plugin_name = data["plugin"]
-			if not plugin_name in self._plugin_manager.plugins:
-				return make_response("Unknown plugin: %s" % plugin_name, 404)
+			plugin = data["plugin"]
+			try:
+				plugin = self._plugin_manager.plugins[plugin]
+			except KeyError:
+				# not installed, we are cleaning up left overs, that's ok
+				pass
 
-			plugin = self._plugin_manager.plugins[plugin_name]
-			return self.command_cleanup(plugin)
+			return self.command_cleanup(plugin, include_disabled=True)
+
+		elif command == "cleanup_all":
+			return self.command_cleanup_all()
 
 		elif command == "enable" or command == "disable":
 			plugin_name = data["plugin"]
@@ -662,44 +679,105 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._send_result_notification("uninstall", result)
 		self._logger.info("Plugin {} uninstalled".format(plugin.key))
 
+		self._cleanup_disabled(plugin.key)
 		if cleanup:
-			self.command_cleanup(plugin)
+			self.command_cleanup(plugin.key, result_notifications=False)
 
 		return jsonify(result)
 
-	def command_cleanup(self, plugin):
-		# delete plugin settings
-		self._settings.global_set(["plugins", plugin.key], None)
-		self._settings.save()
-		message = "Cleaned up settings of plugin {}".format(plugin.key)
-		self._log_stdout(message)
+	def command_cleanup(self, plugin, include_disabled=False, result_notifications=True, settings_save=True):
+		if isinstance(plugin, basestring):
+			key = result_value = plugin
+		else:
+			key = plugin.key
+			result_value = self._to_external_plugin(plugin)
+
+		message = "Cleaning up plugin {}...".format(key)
 		self._logger.info(message)
+		self._log_stdout(message)
+
+		# delete plugin settings
+		self._cleanup_settings(key)
+
+		# delete plugin disabled entry
+		if include_disabled:
+			self._cleanup_disabled(key)
 
 		# delete plugin data folder
-		import os
-		import shutil
-
 		result_data = True
-		data_folder = os.path.join(self._settings.getBaseFolder("data"), plugin.key)
-		if os.path.exists(data_folder):
-			try:
-				shutil.rmtree(data_folder)
-				message = "Cleaned up data folder of plugin {}".format(plugin.key)
-				self._log_stdout(message)
-				self._logger.info(message)
-			except:
-				message = "Could not delete data folder of plugin {} at {}".format(plugin.key, data_folder)
-				self._log_stderr(message)
-				self._logger.exception(message)
-				result_data = False
+		if not self._cleanup_data(key):
+			message = "Could not delete data folder of plugin {}".format(key)
+			self._logger.exception(message)
+			self._log_stderr(message)
+			result_data = False
+
+		if settings_save:
+			self._settings.save()
 
 		result = dict(result=result_data,
 		              needs_restart=True,
-		              plugin=self._to_external_plugin(plugin))
-		self._send_result_notification("cleanup", result)
-		self._logger.info("Plugin {} cleaned up".format(plugin.key))
+		              plugin=result_value)
+		if result_notifications:
+			self._send_result_notification("cleanup", result)
+
+		# cleaning orphan cache
+		self._orphans = None
 
 		return jsonify(result)
+
+	def command_cleanup_all(self):
+		orphans = self._get_orphans()
+		cleaned_up = set()
+
+		for orphan in sorted(orphans.keys()):
+			self.command_cleanup(orphan,
+			                     include_disabled=True,
+			                     result_notifications=False,
+			                     settings_save=False)
+			cleaned_up.add(orphan)
+
+		self._settings.save()
+
+		result = dict(result=True,
+		              needs_restart=len(cleaned_up) > 0,
+		              cleaned_up=sorted(list(cleaned_up)))
+		self._send_result_notification("cleanup_all", result)
+		self._logger.info("Cleaned up all data, {} left overs removed".format(len(cleaned_up)))
+
+		# cleaning orphan cache
+		self._orphans = None
+
+		return jsonify(result)
+
+	def _cleanup_disabled(self, plugin):
+		# delete from disabled list
+		disabled = self._settings.global_get(["plugins", "_disabled"])
+		try:
+			disabled.remove(plugin)
+		except ValueError:
+			# not in list, ok
+			pass
+		self._settings.global_set(["plugins", "_disabled"], disabled)
+
+	def _cleanup_settings(self, plugin):
+		# delete plugin settings
+		self._settings.global_set(["plugins", plugin], None)
+		return True
+
+	def _cleanup_data(self, plugin):
+		import os
+		import shutil
+
+		data_folder = os.path.join(self._settings.getBaseFolder("data"), plugin)
+		if os.path.exists(data_folder):
+			try:
+				shutil.rmtree(data_folder)
+				return True
+			except Exception:
+				self._logger.exception("Could not delete plugin data folder at {}".format(data_folder))
+				return False
+		else:
+			return True
 
 	def command_toggle(self, plugin, command):
 		if plugin.key == "pluginmanager":
@@ -1024,6 +1102,41 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._notices = notices
 		return True
+
+	def _get_orphans(self, refresh=False):
+		from collections import defaultdict
+
+		if self._orphans is not None and not refresh:
+			return self._orphans
+
+		installed_keys = self._plugin_manager.plugins.keys()
+		orphans = defaultdict(lambda: dict(settings=False, data=False, disabled=False))
+
+		# settings
+		for key in list(self._settings.global_get(["plugins"]).keys()):
+			if key.startswith("_"):
+				# internal key, like _disabled
+				continue
+
+			if key not in installed_keys:
+				orphans[key]["settings"] = True
+
+		# data
+		for entry in scandir(self._settings.getBaseFolder("data")):
+			if not entry.is_dir():
+				continue
+
+			if entry.name not in installed_keys:
+				orphans[entry.name]["data"] = True
+
+		# disabled
+		disabled = self._settings.global_get(["plugins", "_disabled"])
+		for key in disabled:
+			if key not in installed_keys:
+				orphans[key]["disabled"] = True
+
+		self._orphans = dict(**orphans)
+		return self._orphans
 
 	@property
 	def _reconnect_hooks(self):

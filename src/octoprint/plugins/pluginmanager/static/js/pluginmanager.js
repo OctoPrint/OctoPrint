@@ -82,6 +82,23 @@ $(function() {
             0
         );
 
+        self.orphans = new ItemListHelper(
+            "plugin.pluginmanager.orphans",
+            {
+                "identifier": function (a, b) {
+                    // sorts ascending
+                    if (a["identifier"].toLocaleLowerCase() < b["identifier"].toLocaleLowerCase()) return -1;
+                    if (a["identifier"].toLocaleLowerCase() > b["identifier"].toLocaleLowerCase()) return 1;
+                    return 0;
+                }
+            },
+            {},
+            "identifier",
+            [],
+            [],
+            0
+        );
+
         self.uploadElement = $("#settings_plugin_pluginmanager_repositorydialog_upload");
         self.uploadButton = $("#settings_plugin_pluginmanager_repositorydialog_upload_start");
 
@@ -328,6 +345,7 @@ $(function() {
 
         self.fromResponse = function(data, options) {
             self._fromPluginsResponse(data.plugins, options);
+            self._fromOrphanResponse(data.orphan_data, options);
             self._fromRepositoryResponse(data.repository, options);
             self._fromPipResponse(data.pip, options);
 
@@ -359,6 +377,14 @@ $(function() {
             if (evalNotices) self.noticeCount(noticeCount);
             self.installedPlugins(installedPlugins);
             self.plugins.updateItems(data);
+        };
+
+        self._fromOrphanResponse = function(data) {
+            var orphans = [];
+            _.each(data, function(value, key) {
+                orphans.push({identifier: key, settings: value.settings, data: value.data});
+            });
+            self.orphans.updateItems(orphans);
         };
 
         self._fromRepositoryResponse = function(data) {
@@ -396,17 +422,18 @@ $(function() {
             if (!_.isPlainObject(options)) {
                 options = {
                     refresh_repo: options,
+                    refresh_orphans: false,
                     refresh_notices: false,
                     eval_notices: false
                 };
-
             }
 
             options.refresh_repo = options.refresh_repo || false;
+            options.refresh_orphans = options.refresh_orphans || false;
             options.refresh_notices = options.refresh_notices || false;
             options.eval_notices = options.eval_notices || false;
 
-            OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices})
+            OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices, orphans: options.refresh_orphans})
                 .done(function(data) {
                     self.fromResponse(data, options);
                 });
@@ -612,20 +639,27 @@ $(function() {
         };
 
         self.cleanupPlugin = function(data) {
+            var key, name;
+            if (_.isObject(data)) {
+                key = data.key;
+                name = data.name;
+            } else {
+                key = name = data;
+            }
+
             if (!self.loginState.isAdmin()) {
                 return;
             }
 
-            if (!self.enableUninstall(data)) {
-                return;
-            }
-
-            if (data.key === "pluginmanager") return;
+            if (key === "pluginmanager") return;
 
             var performCleanup = function() {
-                self._markWorking(gettext("Cleaning up plugin data..."), _.sprintf(gettext("Cleaning up data of plugin \"%(name)s\""), {name: _.escape(data.name)}));
+                self._markWorking(gettext("Cleaning up plugin data..."), _.sprintf(gettext("Cleaning up data of plugin \"%(name)s\""), {name: _.escape(name)}));
 
-                OctoPrint.plugins.pluginmanager.cleanup(data.key)
+                OctoPrint.plugins.pluginmanager.cleanup(key)
+                    .done(function() {
+                        self.requestData();
+                    })
                     .fail(function() {
                         new PNotify({
                             title: gettext("Something went wrong"),
@@ -640,9 +674,41 @@ $(function() {
             };
 
             showConfirmationDialog({
-                message: _.sprintf(gettext("You are about to cleanup the plugin data of \"%(name)s\". This operation cannot be reversed."), {name: _.escape(data.name)}),
+                message: _.sprintf(gettext("You are about to cleanup the plugin data of \"%(name)s\". This operation cannot be reversed."), {name: _.escape(name)}),
                 cancel: gettext("Keep data"),
                 proceed: gettext("Cleanup data"),
+                onproceed: performCleanup,
+                nofade: true
+            });
+        };
+
+        self.cleanupAll = function() {
+            if (!self.loginState.isAdmin()) {
+                return;
+            }
+
+            var performCleanup = function() {
+                var title = gettext("Cleaning up all left over plugin data...");
+                self._markWorking(title, title);
+
+                OctoPrint.plugins.pluginmanager.cleanupAll()
+                    .fail(function() {
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    })
+                    .always(function() {
+                        self._markDone();
+                    })
+            };
+
+            showConfirmationDialog({
+                message: gettext("You are about to cleanup left over plugin settings and data of plugins no longer installed. This operation cannot be reversed."),
+                cancel: gettext("Keep data"),
+                proceed: gettext("Cleanup all data"),
                 onproceed: performCleanup,
                 nofade: true
             });
@@ -792,6 +858,10 @@ $(function() {
                     }
                     case "cleanup": {
                         line = gettext("Cleanup <em>%(plugin)s</em>: %(result)s");
+                        break;
+                    }
+                    case "cleanup_all": {
+                        line = gettext("Cleanup all: %(result)s");
                         break;
                     }
                     default: {
@@ -1183,7 +1253,11 @@ $(function() {
                 var name = "Unknown";
                 if (data.hasOwnProperty("plugin")) {
                     if (data.plugin !== "unknown") {
-                        name = data.plugin.name;
+                        if (_.isPlainObject(data.plugin)) {
+                            name = data.plugin.name;
+                        } else {
+                            name = data.plugin;
+                        }
                     }
                 }
 
