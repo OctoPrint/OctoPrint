@@ -94,6 +94,18 @@ class SelectedFilesLoader(BaseLoader):
 		return self.files.keys()
 
 
+class SelectedFilesWithConversionLoader(SelectedFilesLoader):
+	def __init__(self, files, encoding="utf-8", conversion=None):
+		SelectedFilesLoader.__init__(self, files, encoding=encoding)
+		self.conversion = conversion
+
+	def get_source(self, environment, template):
+		contents = SelectedFilesLoader.get_source(self, environment, template)
+		if callable(self.conversion):
+			contents = self.conversion(contents[0]), contents[1], contents[2]
+		return contents
+
+
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []

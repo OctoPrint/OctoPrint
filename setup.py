@@ -17,6 +17,11 @@ import setuptools
 # we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
 PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
 
+# Requirements for setup.py
+SETUP_REQUIRES = [
+	"markdown>=3.1,<3.2",
+]
+
 # Requirements for our application
 INSTALL_REQUIRES = [
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
@@ -80,7 +85,7 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
-		# Testing dependencies
+		# Testing dependencies - SEE ALSO tox.ini
 		"mock>=3.0.5,<4",
 		"pytest==4.6.6",
 		"pytest-doctest-custom>=1.0.0,<1.1",
@@ -133,14 +138,14 @@ def read_file_contents(path):
 	with codecs.open(path, encoding="utf-8") as f:
 		return f.read()
 
-def data_copy_build_py_factory(files, baseclass):
-	class data_copy_build_py(baseclass):
+def md_to_html_build_py_factory(files, baseclass):
+	class md_to_html_build_py(baseclass):
 		files = dict()
 
 		def run(self):
-			import shutil
+			print("RUNNING md_to_html_build_py")
 			if not self.dry_run:
-				for directory, files in self.__class__.files.items():
+				for directory, files in self.files.items():
 					target_dir = os.path.join(self.build_lib, directory)
 					self.mkpath(target_dir)
 
@@ -148,16 +153,22 @@ def data_copy_build_py_factory(files, baseclass):
 						if isinstance(entry, tuple):
 							if len(entry) != 2:
 								continue
-							source, dest = entry
+							source, dest = entry[0], os.path.join(target_dir, entry[1])
 						else:
-							source = dest = entry
-						shutil.copy(source, os.path.join(target_dir, dest))
+							source = entry
+							dest = os.path.join(target_dir, source + ".html")
 
+						print("Rendering markdown from {} to {}".format(source, dest))
+
+						from markdown import markdownFromFile
+						markdownFromFile(input=source,
+						                 output=dest,
+						                 encoding="utf-8")
 			baseclass.run(self)
 
-	return type(data_copy_build_py)(data_copy_build_py.__name__,
-	                                (data_copy_build_py,),
-	                                dict(files=files))
+	return type(md_to_html_build_py)(md_to_html_build_py.__name__,
+	                                 (md_to_html_build_py,),
+	                                 dict(files=files))
 
 def get_cmdclass():
 	cmdclass = versioneer.get_cmdclass()
@@ -171,10 +182,9 @@ def get_cmdclass():
 	bundled_dir = os.path.join("src", "octoprint", "translations")
 	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, pack_name_prefix="OctoPrint-i18n-", pack_path_prefix="", bundled_dir=bundled_dir))
 
-	cmdclass["build_py"] = data_copy_build_py_factory({
+	cmdclass["build_py"] = md_to_html_build_py_factory({
 		"octoprint/templates/_data": [
 			"AUTHORS.md",
-			"CHANGELOG.md",
 			"SUPPORTERS.md",
 			"THIRDPARTYLICENSES.md",
 		]
@@ -193,6 +203,7 @@ def params():
 	long_description_content_type = "text/markdown"
 
 	python_requires = PYTHON_REQUIRES
+	setup_requires = SETUP_REQUIRES
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
@@ -217,6 +228,7 @@ def params():
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3.6",
 		"Programming Language :: Python :: 3.7",
+		"Programming Language :: Python :: 3.8",
 		"Programming Language :: Python :: Implementation :: CPython",
 		"Programming Language :: JavaScript",
 		"Topic :: Printing",

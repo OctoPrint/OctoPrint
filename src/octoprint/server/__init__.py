@@ -1131,10 +1131,12 @@ class Server(object):
 
 		loaders = [app.jinja_loader, filesystem_loader]
 		if octoprint.util.is_running_from_source():
+			from markdown import markdown
+
 			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-			allowed = ["AUTHORS.md", "CHANGELOG.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
-			files = {"_data/" + name: os.path.join(root, name) for name in allowed}
-			loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
+			allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
+			files = {"_data/" + name + ".html": os.path.join(root, name) for name in allowed}
+			loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files, conversion=markdown))
 
 		jinja_loader = jinja2.ChoiceLoader(loaders)
 		app.jinja_loader = jinja_loader
