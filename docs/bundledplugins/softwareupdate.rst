@@ -196,7 +196,7 @@ Version checks
     * ``checkout_folder``: (mandatory) The full path to the folder with a valid git
       repository to check.
 
-  * ``pypi_release``: Checks `pypi.org`_ for new releases of a specified package.
+  * ``pypi_release``: Checks `pypi.org <https://pypi.org>`_ for new releases of a specified package.
 
     * ``package``: (mandatory) Name of the package which to check.
 

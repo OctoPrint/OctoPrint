@@ -686,7 +686,7 @@ SettingsUpdated
 .. _sec-events-available_events-printer_profile:
 
 Printer Profile
---------
+---------------
 
 PrinterProfileModified
    A printer profile was modified.

@@ -166,7 +166,7 @@ Now, the execution order of the ``on_after_startup`` method will be determined b
 
 This will result in the following messages to be generated:
 
-.. code-block:: plain
+.. code-block:: none
 
    Plugin B starting up
    Plugin C starting up

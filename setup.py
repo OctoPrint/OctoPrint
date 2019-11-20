@@ -27,7 +27,7 @@ INSTALL_REQUIRES = [
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
 	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
-	"regex!=2018.11.6",            # avoid broken 2018.11.6. See #2874
+	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
@@ -35,10 +35,10 @@ INSTALL_REQUIRES = [
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
-	"werkzeug>=0.15.1,<0.16",
+	"werkzeug>=0.16,<0.17",
 	"cachelib>=0.1,<0.2",
 	"PyYAML>=5.1,<6",
-	"markdown>=3.0,<3.1",
+	"markdown>=3.1,<3.2",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.9.0,<0.10",
@@ -47,33 +47,33 @@ INSTALL_REQUIRES = [
 	"pylru>=1.2,<1.3",
 	"rsa>=4.0,<5",
 	"pkginfo>=1.5.0.1,<1.6",
-	"requests>=2.21.0,<3",
-	"semantic_version>=2.6,<2.7",
-	"psutil>=5.6.1,<5.7",
+	"requests>=2.22.0,<3",
+	"semantic_version>=2.8,<2.9",
+	"psutil>=5.6.5,<5.7",
 	"Click>=7,<8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
-	"future>=0.17,<0.18",
+	"future>=0.18.2,<0.19",
 	"websocket-client>=0.56,<0.57",
-	"wrapt>=1.11.1,<1.12",
-	"emoji>=0.5.1,<0.6",
+	"wrapt>=1.11.2,<1.12",
+	"emoji>=0.5.4,<0.6",
 	"frozendict>=1.2,<1.3",
-	"sentry-sdk==0.7.7",
+	"sentry-sdk==0.13.2",
 	"filetype>=1.0.5,<2"
 ]
 
 # Python 2 specific requirements
 INSTALL_REQUIRES_PYTHON2 = [
-	"futures>=3.2,<3.3",
+	"futures>=3.3,<3.4",
 	"monotonic>=1.5,<1.6",
 	"scandir>=1.10,<1.11",
 	"chainmap>=1.0.3,<1.1",
-	"typing>=3.6.6,<4"
+	"typing>=3.7.4.1,<4"
 ]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
-	"appdirs>=1.4.0",
+	"appdirs>=1.4.3",
 ]
 
 # Additional requirements for optional install options
@@ -81,8 +81,8 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=2.0.0,<3",
-		"pytest>=4.2.1,<5.0",
+		"mock>=3.0.5,<4",
+		"pytest==4.6.6",
 		"pytest-doctest-custom>=1.0.0,<1.1",
 		"ddt",
 
@@ -90,11 +90,11 @@ EXTRA_REQUIRES = dict(
 		"flake8",
 
 		# Documentation dependencies
-		"sphinx>=1.6,<1.7",
+		"sphinx>=1.8.5,<2",
 		"sphinxcontrib-httpdomain",
-		"sphinxcontrib-mermaid>=0.3",
+		"sphinxcontrib-mermaid>=0.3.1",
 		"sphinx_rtd_theme",
-		"readthedocs-sphinx-ext==0.5.7"
+		"readthedocs-sphinx-ext==1.0.1"
 	],
 
 	# Dependencies for developing OctoPrint plugins

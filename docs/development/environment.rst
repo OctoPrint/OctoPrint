@@ -18,20 +18,29 @@ below.
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository:
+
       * ``git clone -b devel https://github.com/foosel/OctoPrint.git``
+
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
     installing and running OctoPrint and its dependencies (this avoids potential versioning issues for the dependencies
     with system wide installed instances):
-      * PY2: ``virtualenv --python=python2 venv2``
-      * PY3: ``virtualenv --python=python3 venv3``
+
+    * PY2: ``virtualenv --python=python2 venv2``
+    * PY3: ``virtualenv --python=python3 venv3``
+
   * Activate one of the virtual environments:
-      * PY2: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
-      * PY3: ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+
+    * PY2: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
+    * PY3: ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+
   * Update ``pip`` in the virtual environment:
+
       * ``pip install --upgrade pip``
+
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
     including its regular *and* development and plugin development dependencies:
+
       * ``pip install -e .[develop,plugins]``
 
 When the virtual environment is activated you can then:

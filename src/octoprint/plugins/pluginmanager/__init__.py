@@ -866,7 +866,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(args[0], list())
 			for inapplicable_argument in inapplicable_arguments:
-				additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
+				additional_args = re.sub(r"(^|\s)" + re.escape(inapplicable_argument) + r"\\b", "", additional_args)
 
 			if additional_args:
 				args.append(additional_args)
