@@ -174,8 +174,8 @@ def index():
 	def wizard_active(templates):
 		return templates is not None and bool(templates["wizard"]["order"])
 
-	# we force a refresh if the client forces one or if we have wizards cached
-	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates.get(locale))
+	# we force a refresh if '_refresh' is in the query or if we have wizards cached
+	force_refresh = "_refresh" in request.values or wizard_active(_templates.get(locale))
 
 	# if we need to refresh our template cache or it's not yet set, process it
 	fetch_template_data(refresh=force_refresh)
