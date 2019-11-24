@@ -150,7 +150,7 @@ def get_all_template_paths(loader):
 	return collect_templates_for_loader(loader)
 
 
-def get_all_asset_paths(env):
+def get_all_asset_paths(env, verifyExist=True):
 	result = []
 
 	def get_paths(bundle):
@@ -163,7 +163,7 @@ def get_all_asset_paths(env):
 					r += get_paths(content[1])
 				else:
 					path = content[1]
-					if not os.path.isfile(path):
+					if verifyExist is True and not os.path.isfile(path):
 						continue
 					r.append(path)
 			except IndexError:
