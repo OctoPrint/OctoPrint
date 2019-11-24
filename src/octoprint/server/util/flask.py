@@ -1393,7 +1393,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 			return False
 
 		cache_key = ('octo', 'settings')
-		current_hash = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
+		current_hash = settings().effective_hash
 		cached_hash = ctx.cache.get(cache_key)
 		# This may seem counter-intuitive, but if no cache entry is found
 		# then we actually return "no update needed". This is because
@@ -1411,8 +1411,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 			return
 
 		cache_key = ('octo', 'settings')
-		cache_value = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
-		ctx.cache.set(cache_key, cache_value)
+		ctx.cache.set(cache_key, settings().effective_hash)
 
 ##~~ core assets collector
 def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
