@@ -164,6 +164,8 @@ def in_cache():
 
 @app.route("/")
 def index():
+	from octoprint.server import printer
+
 	global _templates, _plugin_names, _plugin_vars
 
 	preemptive_cache_enabled = settings().getBoolean(["devel", "cache", "preemptive"])
@@ -174,8 +176,18 @@ def index():
 	def wizard_active(templates):
 		return templates is not None and bool(templates["wizard"]["order"])
 
-	# we force a refresh if the client forces one or if we have wizards cached
-	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates.get(locale))
+	# we force a refresh if the client forces one and we are not printing or if we have wizards cached
+	client_refresh = util.flask.cache_check_headers()
+	request_refresh = "_refresh" in request.values
+	printing = printer.is_printing()
+	if client_refresh and printing:
+		logging.getLogger(__name__).warn("Client requested cache refresh via cache-control headers but we are printing. "
+		                                 "Not invalidating caches due to resource limitation. Append ?_refresh=true to "
+		                                 "the URL if you absolutely require a refresh now")
+	client_refresh = client_refresh and not printing
+	force_refresh = client_refresh \
+	                or request_refresh \
+	                or wizard_active(_templates.get(locale))
 
 	# if we need to refresh our template cache or it's not yet set, process it
 	fetch_template_data(refresh=force_refresh)
