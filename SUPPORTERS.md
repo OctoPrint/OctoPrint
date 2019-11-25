@@ -22,21 +22,24 @@ thanks to everyone who contributed!
   * Eric Betts
   * Ernesto Martinez
   * Franziska Kunsmann
+  * GadgetAngel
   * George Robles
   * jean-claude migneault
   * Jeff Renfer
-  * Jefferson Hunt
   * Jeremiah Avery
+  * John Robinson (JRo)
   * Joshua Wills
   * Justin Kaufman
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
+  * Kyle Menigoz
   * LA 3D Printer Repair
   * Lee Dohm
   * LulzBot®
   * Makespace Madrid
   * Mark Walker
+  * Martin Majewski
   * Michael Aumock
   * Miles Flavel
   * Mosaic Manufacturing
@@ -56,4 +59,4 @@ thanks to everyone who contributed!
   * Ulrich Kempken
   * Vladislav Kuzemchik
 
-and 1615 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1653 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
