@@ -587,10 +587,11 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	There are two methods used in order to allow for caching of the actual
 	response sent to the client. Whatever a plugin implementation returns
 	from the call to its :meth:`~octoprint.plugin.UiPlugin.on_ui_render` method
-	will be cached server side. The cache will be emptied if the ``_refresh``
-	query parameter on the request exists and is set to ``true``. To prevent
-	caching of the response altogether, a plugin may set no-cache headers on
-	the returned response as well.
+	will be cached server side. The cache will be emptied in case of explicit
+	no-cache headers sent by the client, or if the ``_refresh`` query parameter
+	on the request exists and is set to ``true``. To prevent caching of the
+	response altogether, a plugin may set no-cache headers on the returned
+	response as well.
 
 	``UiPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin` with a sorting context
 	for :meth:`~octoprint.plugin.UiPlugin.will_handle_ui`. The first plugin to return ``True``
