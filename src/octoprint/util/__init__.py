@@ -131,8 +131,6 @@ def pp(value):
 def warning_decorator_factory(warning_type):
 	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(func):
-			func.__qualname__ = to_native_str('warning_decorator_factory')
-			func.__annotations__ = dict()
 			@wraps(func)
 			def func_wrapper(*args, **kwargs):
 				# we need to increment the stacklevel by one because otherwise we'll get the location of our
