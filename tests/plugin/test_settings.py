@@ -105,7 +105,11 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_getter(self, deprecated, current, forwarded):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
+
+			# further mock out our mocked function so things work as they should
 			called_method.__name__ = to_native_str(forwarded)
+			called_method.__qualname__ = to_native_str(forwarded)
+			called_method.__annotations__ = dict()
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -169,7 +173,11 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_setter(self, deprecated, current, forwarded, value):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
+
+			# further mock out our mocked function so things work as they should
 			called_method.__name__ = to_native_str(forwarded)
+			called_method.__qualname__ = to_native_str(forwarded)
+			called_method.__annotations__ = dict()
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
