@@ -7,7 +7,7 @@ import os
 import yaml
 import io
 import time
-from binascii import hexlify
+import uuid
 from collections import defaultdict
 from flask_babel import gettext
 
@@ -399,7 +399,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		return result
 
 	def _generate_key(self):
-		return hexlify(os.urandom(16))
+		return ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
 	def _load_keys(self):
 		with self._keys_lock:
