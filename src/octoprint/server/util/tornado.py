@@ -460,6 +460,8 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 
 				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
 				for n, p in fields.items():
+					if n is None or p is None:
+						continue
 					key = name + b"." + octoprint.util.to_bytes(n)
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
