@@ -590,31 +590,36 @@ def passive_login():
 
 		return u
 
-	if user is not None and user.is_active:
-		# login known user
-		logger.info("Passively logging in user {} from {}".format(user.get_id(), remote_address))
-		user = login(user)
+	def determine_user(u):
+		if not u.is_anonymous and u.is_active:
+			# known active user
+			logger.info("Passively logging in user {} from {}".format(u.get_id(), remote_address))
 
-	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
-			and settings().get(["accessControl", "autologinAs"]) is not None \
-			and settings().get(["accessControl", "localNetworks"]) is not None \
-			and not "active_logout" in flask.request.cookies:
+		elif settings().getBoolean(["accessControl", "autologinLocal"]) \
+				and settings().get(["accessControl", "autologinAs"]) is not None \
+				and settings().get(["accessControl", "localNetworks"]) is not None \
+				and not "active_logout" in flask.request.cookies:
+			# attempt local autologin
+			autologin_as = settings().get(["accessControl", "autologinAs"])
+			local_networks = _local_networks()
+			logger.debug("Checking if remote address {} is in localNetworks ({!r})".format(remote_address, local_networks))
 
-		autologin_as = settings().get(["accessControl", "autologinAs"])
-		local_networks = _local_networks()
-		logger.debug("Checking if remote address {} is in localNetworks ({!r})".format(remote_address, local_networks))
+			try:
+				if netaddr.IPAddress(remote_address) in local_networks:
+					autologin_user = octoprint.server.userManager.find_user(autologin_as)
+					if autologin_user is not None and autologin_user.is_active:
+						logger.info("Passively logging in user {} from {} via autologin".format(autologin_as, remote_address))
+						return autologin_user
+			except Exception:
+				logger.exception("Could not autologin user {} from {} for networks {}".format(autologin_as, remote_address, local_networks))
 
-		try:
-			if netaddr.IPAddress(remote_address) in local_networks:
-				autologin_user = octoprint.server.userManager.findUser(autologin_as)
-				if autologin_user is not None and autologin_user.is_active:
-					autologin_user = octoprint.server.userManager.login_user(autologin_user)
+		if not u.is_active:
+			# inactive user, switch to anonymous
+			u = octoprint.server.userManager.anonymous_user_factory()
 
-					logger.info("Passively logging in user {} from {} via autologin".format(user.get_id(), local_networks))
-					user = login(autologin_user)
-		except Exception:
-			logger.exception("Could not autologin user {} for networks {}".format(autologin_as, local_networks))
+		return u
 
+	user = login(determine_user(user))
 	response = user.as_dict()
 	response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
 	                                                                          additional_private=ip_check_trusted)
