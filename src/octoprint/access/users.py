@@ -107,7 +107,7 @@ class UserManager(GroupChangeListener, object):
 		return user
 
 	def logout_user(self, user):
-		if user is None or user.is_anonymous:
+		if user is None or user.is_anonymous or isinstance(user, AdminUser):
 			return
 
 		if isinstance(user, LocalProxy):
