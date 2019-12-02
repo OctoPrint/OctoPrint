@@ -837,7 +837,7 @@ $(function() {
                     return element;
                 }
 
-                if (!element.hasOwnProperty("children")) {
+                if (!element.hasOwnProperty("children") || !element.children) {
                     return undefined;
                 }
 

@@ -159,7 +159,7 @@
                 return entry;
             }
 
-            if (!entry.hasOwnProperty("children")) {
+            if (!entry.hasOwnProperty("children") || !entry.children) {
                 return undefined;
             }
 
