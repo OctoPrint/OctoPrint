@@ -157,7 +157,7 @@ $(function() {
                 self.userneeds({});
             }
 
-            if (data.name) {
+            if (data && data.name) {
                 self.username(data.name);
                 self.currentUser(data);
 
