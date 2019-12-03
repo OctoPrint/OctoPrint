@@ -33,6 +33,7 @@ try:
 except ImportError:
 	import Queue as queue
 
+# noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
@@ -1834,3 +1835,11 @@ def timing(f):
 			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
 			                                                                                end - start))
 	return decorator
+
+
+def generate_api_key():
+	# noinspection PyCompatibility
+	from builtins import bytes
+	import uuid
+
+	return ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))

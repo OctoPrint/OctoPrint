@@ -49,7 +49,7 @@ try:
 except ImportError:
 	from collections import KeysView
 
-from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet
+from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet, generate_api_key
 
 _APPNAME = "OctoPrint"
 
@@ -1811,7 +1811,7 @@ class Settings(object):
 			f.write(script)
 
 	def generateApiKey(self):
-		apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		apikey = generate_api_key()
 		self.set(["api", "key"], apikey)
 		self.save(force=True)
 		return apikey

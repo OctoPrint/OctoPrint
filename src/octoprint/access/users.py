@@ -21,7 +21,7 @@ from builtins import range, bytes
 
 from octoprint.settings import settings as s
 
-from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time
+from octoprint.util import atomic_write, to_bytes, deprecated, monotonic_time, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
 
 from octoprint.access.permissions import Permissions, OctoPrintPermission
@@ -743,7 +743,7 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		user._apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		user._apikey = generate_api_key()
 		self._dirty = True
 		self._save()
 		return user._apikey

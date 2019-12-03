@@ -15,11 +15,10 @@ import octoprint.plugin
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, no_firstrun_access
 from octoprint.server import NO_CONTENT, current_user, admin_permission
-from octoprint.util import atomic_write, monotonic_time, ResettableTimer
+from octoprint.util import atomic_write, monotonic_time, ResettableTimer, generate_api_key
 
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-
 
 CUTOFF_TIME = 10 * 60 # 10min
 POLL_TIMEOUT = 5 # 5 seconds
@@ -399,7 +398,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 		return result
 
 	def _generate_key(self):
-		return ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		return generate_api_key()
 
 	def _load_keys(self):
 		with self._keys_lock:
