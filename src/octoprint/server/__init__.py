@@ -147,7 +147,7 @@ def load_user(id):
 		return None
 
 	if id == "_api":
-		return users.ApiUser([groupManager.admin_group])
+		return userManager.api_user_factory()
 
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]

@@ -55,7 +55,10 @@ class UserManager(GroupChangeListener, object):
 		if self.enabled:
 			return AnonymousUser([self._group_manager.guest_group])
 		else:
-			return AdminUser([self._group_manager.admin_group])
+			return AdminUser([self._group_manager.admin_group, self._group_manager.user_group])
+
+	def api_user_factory(self):
+		return ApiUser([self._group_manager.admin_group, self._group_manager.user_group])
 
 	@property
 	def enabled(self):

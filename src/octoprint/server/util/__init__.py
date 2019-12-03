@@ -12,7 +12,6 @@ PY3 = sys.version_info[0] == 3
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
-from octoprint.access.users import ApiUser
 
 from octoprint.util import deprecated
 from octoprint.plugin import plugin_manager
@@ -180,7 +179,7 @@ def get_user_for_apikey(apikey):
 	if apikey is not None:
 		if apikey == settings().get(["api", "key"]):
 			# master key was used
-			return ApiUser([octoprint.server.groupManager.admin_group])
+			return octoprint.server.userManager.api_user_factory()
 
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.find_user(apikey=apikey)
