@@ -31,6 +31,7 @@ import os
 import sys
 import logging
 import logging.config
+import mimetypes
 import atexit
 import signal
 import base64
@@ -279,9 +280,11 @@ class Server(object):
 		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
-		# monkey patch some stuff
+		# monkey patch/fix some stuff
 		util.tornado.fix_json_encode()
 		util.flask.fix_flask_jsonify()
+
+		self._setup_mimetypes()
 
 		additional_translation_folders = []
 		if not safe_mode:
@@ -1368,6 +1371,17 @@ class Server(object):
 				except Exception:
 					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
 					                       extra=dict(plugin=plugin))
+
+	def _setup_mimetypes(self):
+		# Safety measures for Windows... apparently the mimetypes module takes its translation from the windows
+		# registry, and if for some weird reason that gets borked the reported MIME types can be all over the place.
+		# Since at least in Chrome that can cause hilarious issues with JS files (refusal to run them and thus a
+		# borked UI) we make sure that .js always maps to the correct application/javascript, and also throw in a
+		# .css -> text/css for good measure.
+		#
+		# See #3367
+		mimetypes.add_type("application/javascript", ".js")
+		mimetypes.add_type("text/css", ".css")
 
 	def _setup_assets(self):
 		global app
