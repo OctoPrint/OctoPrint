@@ -34,6 +34,7 @@ import logging.config
 import atexit
 import signal
 import base64
+import re
 
 try:
 	import fcntl
@@ -1870,6 +1871,8 @@ class Server(object):
 
 		from octoprint.access.permissions import PluginOctoPrintPermission
 
+		key_whitelist = re.compile(r"[A-Za-z0-9_]*")
+
 		def permission_key(plugin, definition):
 			return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
 
@@ -1940,6 +1943,10 @@ class Server(object):
 						continue
 
 					if not "key" in p or not "name" in p:
+						continue
+
+					if not key_whitelist.match(p["key"]):
+						self._logger.warn("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
 						continue
 
 					if not process_regular_permission(plugin_info, p):

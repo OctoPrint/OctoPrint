@@ -218,7 +218,7 @@ octoprint.access.permissions
        and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``, 
        e.g. ``my_permission`` on the plugin with identifier ``example`` turns into ``PLUGIN_EXAMPLE_MY_PERMISSION`` and
        can be accessed as ``octoprint.access.permissions.Permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the server and
-       ``permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the ``AccessViewModel`` on the client. 
+       ``permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the ``AccessViewModel`` on the client. Must only contain a-z, A-Z, 0-9 and _.
      * ``name``: A human readable name for the permission.
      * ``description``: A human readable description of the permission.
      * ``permissions``: A list of permissions this permission includes, by key.
