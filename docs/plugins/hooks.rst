@@ -200,6 +200,94 @@ Available plugin hooks
 .. contents::
    :local:
 
+.. _sec-plugins-hook-permissions:
+
+octoprint.access.permissions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_permissions_hook(*args, **kwargs)
+
+   Return a list of additional permissions to register in the system on behalf of the plugin. Use this
+   to add granular permissions to your plugin which can be configured for users and user groups in the general
+   access control settings of OctoPrint.
+
+   Additional permissions must be modelled as ``dict``s with at least a ``key`` and ``name`` field. Possible
+   fields are as follows:
+
+     * ``key``: A key for the permission to be used for referring to it from source code. This will turned uppercase
+       and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``, 
+       e.g. ``my_permission`` on the plugin with identifier ``example`` turns into ``PLUGIN_EXAMPLE_MY_PERMISSION`` and
+       can be accessed as ``octoprint.access.permissions.Permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the server and
+       ``permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the ``AccessViewModel`` on the client. 
+     * ``name``: A human readable name for the permission.
+     * ``description``: A human readable description of the permission.
+     * ``permissions``: A list of permissions this permission includes, by key.
+     * ``roles``: A list of roles this permission includes. Roles are simple strings you define. Usually one role will
+       suffice.
+     * ``dangerous``: Whether this permission should be considered dangerous (``True``) or not (``False``)
+     * ``default_groups``: A list of standard groups this permission should be apply to by default. Standard groups
+       are ``admins``, ``users``, ``readonly`` and ``guests``
+
+   The following example is based on some actual code included in the bundled Application Keys plugin and defines
+   one additional permission called ``ADMIN`` with a role ``admin`` which is marked as dangerous (since it gives
+   access to the management to other user's application keys) and by default will only be given to the standard admin
+   group:
+
+   .. code-block:: python
+
+      def get_additional_permissions(*args, **kwargs):
+          return [
+              dict(key="ADMIN",
+                   name="Admin access",
+                   description=gettext("Allows administrating all application keys"),
+                   roles=["admin"],
+                   dangerous=True,
+                   default_groups=[ADMIN_GROUP])
+          ]
+
+      __plugin_hooks__ = {
+          "octoprint.access.permissions": get_additional_permissions
+      }
+
+   Once registered it can be referenced under the key ``PLUGIN_APPKEYS_ADMIN``.
+
+   :return: A list of additional permissions to register in the system.
+   :rtype: A list of dicts.
+
+.. _sec-plugins-hook-users-factory:
+
+octoprint.access.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
+
+   Return a :class:`~octoprint.access.users.UserManager` instance to use as global user manager object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
+
+   If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
+   :class:`~octoprint.access.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   file ``~/.octoprint/users.yaml``.
+
+   :param dict components: System components to use for user manager instance initialization
+   :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
+   :return: The ``userManager`` instance to use globally.
+   :rtype: UserManager subclass or None
+
+
 .. _sec-plugins-hook-accesscontrol-keyvalidator:
 
 octoprint.accesscontrol.keyvalidator
@@ -1524,40 +1612,6 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
-
-.. _sec-plugins-hook-users-factory:
-
-octoprint.access.users.factory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
-
-   Return a :class:`~octoprint.access.users.UserManager` instance to use as global user manager object. This will
-   be called only once during initial server startup.
-
-   The provided ``components`` is a dictionary containing the already initialized system components:
-
-     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
-     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
-     * ``event_bus``: The :class:`~octoprint.events.EventManager`
-     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
-     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
-     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
-     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
-     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
-
-   If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
-
-   If none of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
-   entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
-   :class:`~octoprint.access.users.FilebasedUserManager` will be instantiated, linked to the default user storage
-   file ``~/.octoprint/users.yaml``.
-
-   :param dict components: System components to use for user manager instance initialization
-   :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
-   :return: The ``userManager`` instance to use globally.
-   :rtype: UserManager subclass or None
-
 
 .. _sec-plugins-hook-timelapse-capture-pre:
 
