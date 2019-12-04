@@ -227,6 +227,7 @@ $(function() {
         PNotify.prototype.options.stack.firstpos2 = 20;
         PNotify.prototype.options.stack.spacing1 = 20;
         PNotify.prototype.options.stack.spacing2 = 20;
+        PNotify.prototype.options.stack.context = $("#page-container-main");
         PNotify.prototype.options.delay = 5000;
         PNotify.prototype.options.animate_speed = "fast";
 
