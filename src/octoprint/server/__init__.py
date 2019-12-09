@@ -134,7 +134,7 @@ def _clear_identity(sender):
 @session_protected.connect_via(app)
 def on_session_protected(sender):
 	# session was deleted by session protection, that means the user is no more and we need to clear our identity
-	if session["remember"] == "clear":
+	if session.get("remember", None) == "clear":
 		_clear_identity(sender)
 
 
