@@ -125,8 +125,7 @@ def on_identity_loaded(sender, identity):
 def _clear_identity(sender):
 	# Remove session keys set by Flask-Principal
 	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
+		session.pop(key, None)
 
 	# switch to anonymous identity
 	identity_changed.send(sender, identity=AnonymousIdentity())
@@ -134,8 +133,9 @@ def _clear_identity(sender):
 
 @session_protected.connect_via(app)
 def on_session_protected(sender):
-	# session was protected, that means the user is no more and we need to clear our identity
-	_clear_identity(sender)
+	# session was deleted by session protection, that means the user is no more and we need to clear our identity
+	if session["remember"] == "clear":
+		_clear_identity(sender)
 
 
 @user_logged_out.connect_via(app)
