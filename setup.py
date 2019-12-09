@@ -37,7 +37,6 @@ INSTALL_REQUIRES = [
 	# anything below this should be checked on releases for new versions
 
 	"Flask-Login>=0.4.1,<0.5",
-	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
 	"werkzeug>=0.16,<0.17",

@@ -11,7 +11,7 @@ import tornado.web
 import flask
 import flask.json
 import flask_login
-import flask_principal
+import octoprint.vendor.flask_principal as flask_principal
 import flask_assets
 import webassets.updater
 import webassets.utils

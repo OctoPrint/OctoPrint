@@ -10,7 +10,7 @@ import logging
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
 from flask_login import login_user, logout_user, current_user
-from flask_principal import Identity, identity_changed, AnonymousIdentity
+from octoprint.vendor.flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.access.users
 import octoprint.util.net as util_net

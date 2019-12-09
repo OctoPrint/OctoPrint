@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 from future.utils import with_metaclass
 from flask import g, abort
 from flask_babel import gettext
-from flask_principal import Permission, PermissionDenied, RoleNeed, Need
+from octoprint.vendor.flask_principal import Permission, PermissionDenied, RoleNeed, Need
 
 from functools import wraps
 from collections import OrderedDict, defaultdict

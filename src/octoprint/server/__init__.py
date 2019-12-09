@@ -9,7 +9,7 @@ import uuid
 from octoprint.vendor.sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
+from octoprint.vendor.flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
 from flask_assets import Environment, Bundle
 from babel import Locale

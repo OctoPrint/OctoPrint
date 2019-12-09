@@ -18,7 +18,7 @@ from octoprint.settings import settings
 from octoprint.util import atomic_write
 from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP, READONLY_GROUP
 from octoprint.access.permissions import Permissions, OctoPrintPermission
-from flask_principal import Need, Permission
+from octoprint.vendor.flask_principal import Need, Permission
 
 DEFAULT_ADMIN_PERMISSIONS = [Permissions.ADMIN]
 """Default admin permissions are the legacy permissions from before 1.4.0"""
