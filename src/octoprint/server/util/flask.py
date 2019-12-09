@@ -242,20 +242,6 @@ def fix_webassets_filtertool():
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
-def fix_flask_login_remote_address():
-	def fixed_get_remote_addr():
-		"""Backported from https://github.com/maxcountryman/flask-login/pull/217"""
-
-		from flask import request
-		address = request.headers.get('X-Forwarded-For', request.remote_addr)
-		if address is not None:
-			# An 'X-Forwarded-For' header includes a comma separated list of the
-			# addresses, the first address being the actual remote address.
-			address = address.encode('utf-8').split(b',')[0].strip()
-		return address
-
-	flask_login._get_remote_addr = fixed_get_remote_addr
-
 def fix_flask_jsonify():
 	def fixed_jsonify(*args, **kwargs):
 		"""Backported from https://github.com/pallets/flask/blob/7e714bd28b6e96d82b2848b48cf8ff48b517b09b/flask/json/__init__.py#L257"""
