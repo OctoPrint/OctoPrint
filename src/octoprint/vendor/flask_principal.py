@@ -204,7 +204,7 @@ class IdentityContext(object):
         # check the permission here
         if not self.can():
             if self.http_exception:
-                abort(self.http_exception, self.permission)
+                abort(self.http_exception)
             raise PermissionDenied(self.permission)
 
     def __exit__(self, *args):
