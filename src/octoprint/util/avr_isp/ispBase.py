@@ -31,7 +31,7 @@ class IspBase():
 	def chipErase(self):
 		self.sendISP([0xAC, 0x80, 0x00, 0x00])
 
-class IspError():
+class IspError(Exception):
 	def __init__(self, value):
 		self.value = value
 	def __str__(self):
