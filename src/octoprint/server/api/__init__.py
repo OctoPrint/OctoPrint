@@ -205,7 +205,7 @@ def apiVersion():
 @api.route("/login", methods=["POST"])
 def login():
 	data = request.get_json()
-	if data is None:
+	if not data:
 		data = request.values
 
 	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
