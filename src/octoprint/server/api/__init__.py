@@ -10,6 +10,7 @@ import logging
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
 from flask_login import login_user, logout_user, current_user
+from werkzeug.exceptions import HTTPException
 from octoprint.vendor.flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.access.users
@@ -72,6 +73,8 @@ def pluginData(name):
 		if response is not None:
 			return response
 		return NO_CONTENT
+	except HTTPException:
+		raise
 	except Exception:
 		logging.getLogger(__name__).exception("Error calling SimpleApiPlugin {}".format(name),
 		                                      extra=dict(plugin=name))
@@ -107,6 +110,8 @@ def pluginCommand(name):
 		if response is not None:
 			return response
 		return NO_CONTENT
+	except HTTPException:
+		raise
 	except Exception:
 		logging.getLogger(__name__).exception("Error while executing SimpleApiPlugin {}".format(name),
 		                                      extra=dict(plugin=name))
