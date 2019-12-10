@@ -39,6 +39,7 @@ INSTALL_REQUIRES = [
 	"Flask-Login>=0.4.1,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
+	"blinker>=1.4,<1.5",         # dependency of the now vendor bundled flask_principal
 	"werkzeug>=0.16,<0.17",
 	"cachelib>=0.1,<0.2",
 	"PyYAML>=5.1,<6",
