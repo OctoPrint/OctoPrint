@@ -591,7 +591,7 @@ def fetch_template_data(refresh=False):
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL) && visible()")),
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL)() && visible()")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.WEBCAM, access.permissions.CONTROL)")),
 		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.GCODE_VIEWER)")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.MONITOR_TERMINAL)")),

@@ -34,7 +34,7 @@
             </div>
         </div>
     </div>
-    <div data-bind="visible: keycontrolPossible && loginState.hasPermissionKo(access.permissions.WEBCAM) && loginState.hasPermissionKo(access.permissions.CONTROL)">
+    <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
         <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
     </div>
 {% endif %}
@@ -85,7 +85,7 @@
     </div>
 </div>
 <!-- Extrusion control panel -->
-<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL) && tools().length > 0">
+<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)() && tools().length > 0">
     <h1>Tool (E)</h1>
     <div>
         <div class="btn-group control-box">
