@@ -13,7 +13,7 @@ from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
 
-from octoprint.util import deprecated
+from octoprint.util import deprecated, to_unicode
 from octoprint.plugin import plugin_manager
 
 import flask as _flask
@@ -233,7 +233,7 @@ def get_user_for_authorization_header(header):
 
 	header = header.replace('Basic ', '', 1)
 	try:
-		header = base64.b64decode(header)
+		header = to_unicode(base64.b64decode(header))
 	except TypeError:
 		return None
 
