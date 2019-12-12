@@ -11,7 +11,8 @@ import logging
 import re
 import time
 
-from . import to_unicode
+from . import to_unicode, to_bytes
+from .platform import get_os
 
 from past.builtins import unicode
 
@@ -163,6 +164,10 @@ class CommandlineCaller(object):
 			joined_command = command
 		self._logger.debug("Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
+
+		# if we are running under windows, make sure there are no unicode strings in the env
+		if get_os() == "windows" and "env" in kwargs:
+			kwargs["env"] = dict((k, to_bytes(v)) for k, v in kwargs["env"].items())
 
 		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
