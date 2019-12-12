@@ -8,22 +8,22 @@ thanks to everyone who contributed!
 
   * Andre Bubel
   * Andrew Moorby
-  * ANTONIO AUGUSTO DE LIMA PONTES
   * Arnljot Arntsen
+  * BigTreeTech
   * Boris Hussein
   * Brad Jackson
   * Christian Petropolis
   * Christian Wolf
-  * COLLE+McVOY
   * D Brian Kimmel
   * DeltaMaker 3D Printers
   * Dorian Gray
-  * E3D BigBox
   * Eric Betts
   * Ernesto Martinez
   * Franziska Kunsmann
   * GadgetAngel
   * George Robles
+  * Greg Holloway
+  * Hugh Blemings
   * jean-claude migneault
   * Jeff Renfer
   * Jeremiah Avery
@@ -33,10 +33,10 @@ thanks to everyone who contributed!
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
+  * Kenneth Jiang
   * Kyle Menigoz
   * LA 3D Printer Repair
   * Lee Dohm
-  * LulzBot®
   * Makespace Madrid
   * Mark Walker
   * Martin Majewski
@@ -50,13 +50,14 @@ thanks to everyone who contributed!
   * Randy C. Will
   * Ranjib Dey
   * Robert Gusek
-  * Samer Najia
+  * Ronald Griehsler
   * Shawn Lewis
   * Simon Hallam
   * Stefan Krister
   * Sven Mueller
+  * The3DprintingMagic.com
   * Trent Shumay
   * Ulrich Kempken
   * Vladislav Kuzemchik
 
-and 1653 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1678 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
