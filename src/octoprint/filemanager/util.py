@@ -179,11 +179,11 @@ class LineProcessorStream(io.RawIOBase):
 			bytes_left = (n - len(result)) if n != -1 else -1
 			if self.leftover is not None:
 				if bytes_left != -1 and bytes_left < len(self.leftover):
-					result += self.leftover[:bytes_left]
+					result += self.leftover[:bytes_left].encode()
 					self.leftover = self.leftover[bytes_left:]
 					break
 				else:
-					result += self.leftover
+					result += self.leftover.encode()
 					self.leftover = None
 
 			processed_line = None
@@ -198,11 +198,11 @@ class LineProcessorStream(io.RawIOBase):
 
 			bytes_left = (n - len(result)) if n != -1 else -1
 			if bytes_left != -1 and bytes_left < len(processed_line):
-				result += processed_line[:bytes_left]
+				result += processed_line[:bytes_left].encode()
 				self.leftover = processed_line[bytes_left:]
 				break
 			else:
-				result += processed_line
+				result += processed_line.encode()
 
 		return result
 
