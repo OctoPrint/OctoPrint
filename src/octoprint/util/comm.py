@@ -23,15 +23,13 @@ from past.builtins import basestring, unicode
 import logging
 
 import serial
+import serial.tools.list_ports
 
 import wrapt
 
 import octoprint.plugin
 
 from collections import deque
-
-from octoprint.util.avr_isp import stk500v2
-from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
@@ -160,25 +158,7 @@ regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
 def serialList():
-	baselist=[]
-	if os.name=="nt":
-		try:
-			key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
-			i=0
-			while(1):
-				baselist+=[winreg.EnumValue(key,i)[1]]
-				i+=1
-		except Exception:
-			pass
-	baselist = baselist \
-			   + glob.glob("/dev/ttyUSB*") \
-			   + glob.glob("/dev/ttyACM*") \
-			   + glob.glob("/dev/tty.usb*") \
-			   + glob.glob("/dev/cu.*") \
-			   + glob.glob("/dev/cuaU*") \
-			   + glob.glob("/dev/ttyS*") \
-			   + glob.glob("/dev/rfcomm*")
-
+	baselist=[tuple(p)[0] for p in list(serial.tools.list_ports.comports())]
 	additionalPorts = settings().get(["serial", "additionalPorts"])
 	if additionalPorts:
 		for additional in additionalPorts:
@@ -2607,7 +2587,14 @@ class MachineCom(object):
 			finally:
 				self._command_queue.task_done()
 
-	def _detect_port(self):
+
+	def _detect_port(self, baudrate = 115200):
+		def _send_message(_serial_obj, message):
+			message = bytearray(message) + bytearray([0x20])
+			_serial_obj.write(message)
+			_serial_obj.flush()
+			return _serial_obj.read(7)
+
 		potentials = serialList()
 		self._log("Serial port list: %s" % (str(potentials)))
 
@@ -2616,23 +2603,29 @@ class MachineCom(object):
 			return potentials[0]
 
 		elif len(potentials) > 1:
-			programmer = stk500v2.Stk500v2()
 
 			for p in potentials:
+				self._log("Trying {}".format(p))
+
 				serial_obj = None
-
 				try:
-					self._log("Trying {}".format(p))
-					programmer.connect(p)
-					serial_obj = programmer.leaveISP()
+				        serial_obj = serial.Serial(str(p), baudrate, timeout=1, writeTimeout=10000)
+				except Exception:
+					self._logger.info("Could not connect to {} ({}).".format(p, baudrate))
+					continue
+				try:
+					if _send_message(serial_obj, [0x30]) != b'\x00\n':
+						self._logger.info("Unexpected reply to GET_SYNC from {} ({}).".format(p, baudrate))
+						continue
+					if _send_message(serial_obj, [0x31]) != b'\x14\x10':
+						self._logger.info("Unexpected reply to GET_SIGN_ON from {} ({}).".format(p, baudrate))
+						continue
 				except Exception as e:
-					self._log("Could not connect to or enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
-					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
+					self._logger.info("Failed to talk to {} ({}): {}".format(p, baudrate, e))
+					serial_obj = None
 
-				found = serial_obj is not None
-				programmer.close()
-
-				if found:
+				if serial_obj is not None:
+					serial_obj.close()
 					return p
 
 		return None
