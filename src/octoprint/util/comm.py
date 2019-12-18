@@ -2614,7 +2614,10 @@ class MachineCom(object):
 					self._logger.info("Could not connect to {} ({}).".format(p, baudrate))
 					continue
 				try:
-					if _send_message(serial_obj, [0x30]) != b'\x00\n':
+					for _ in range(0,5):
+						if _send_message(serial_obj, [0x30]) == b'\x00\n':
+							break
+					else:
 						self._logger.info("Unexpected reply to GET_SYNC from {} ({}).".format(p, baudrate))
 						continue
 					if _send_message(serial_obj, [0x31]) != b'\x14\x10':
