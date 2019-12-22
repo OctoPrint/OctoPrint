@@ -283,6 +283,7 @@ class TemperatureRecord(object):
 		self._tools = dict()
 		self._bed = (None, None)
 		self._chamber = (None, None)
+		self._custom = dict()
 
 	def copy_from(self, other):
 		self._tools = other.tools
@@ -300,6 +301,10 @@ class TemperatureRecord(object):
 		current = self._chamber
 		self._chamber = self._to_new_tuple(current, actual, target)
 
+	def set_custom(self, identifier, actual=None, target=None):
+		current = self._custom.get(identifier, (None, None))
+		self._custom[identifier] = self._to_new_tuple(current, actual, target)
+
 	@property
 	def tools(self):
 		return dict(self._tools)
@@ -311,6 +316,10 @@ class TemperatureRecord(object):
 	@property
 	def chamber(self):
 		return self._chamber
+
+	@property
+	def custom(self):
+		return dict(self._custom)
 
 	def as_script_dict(self):
 		result = dict()
@@ -327,6 +336,11 @@ class TemperatureRecord(object):
 		chamber = self.chamber
 		result["c"] = dict(actual=chamber[0],
 		                   target=chamber[1])
+
+		custom = self.custom
+		for identifier, data in custom.items():
+			result[identifier] = dict(actual=data[0],
+			                    target=data[1])
 
 		return result
 
@@ -1581,21 +1595,30 @@ class MachineCom(object):
 				if not tool in parsedTemps:
 					if shared_nozzle:
 						actual, target = parsedTemps[current_tool_key]
+						del parsedTemps[current_tool_key]
 					else:
 						continue
 				else:
 					actual, target = parsedTemps[tool]
+					del parsedTemps[tool]
 				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
 		if "B" in parsedTemps:
 			actual, target = parsedTemps["B"]
+			del parsedTemps["B"]
 			self.last_temperature.set_bed(actual=actual, target=target)
 
 		# chamber temperature
 		if "C" in parsedTemps and (self._capability_supported(self.CAPABILITY_CHAMBER_TEMP) or self._printerProfileManager.get_current_or_default()["heatedChamber"]):
 			actual, target = parsedTemps["C"]
+			del parsedTemps["C"]
 			self.last_temperature.set_chamber(actual=actual, target=target)
+
+		# all other injected temperatures
+		for key in parsedTemps.keys():
+			actual, target = parsedTemps[key]
+			self.last_temperature.set_custom(key, actual=actual, target=target)
 
 	##~~ Serial monitor processing received messages
 
@@ -1867,7 +1890,7 @@ class MachineCom(object):
 						self._heatupWaitStartTime = monotonic_time()
 
 					self._processTemperatures(line)
-					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = regex_repetierTempExtr.match(line)
@@ -1878,14 +1901,14 @@ class MachineCom(object):
 						try:
 							target = float(matchExtr.group(2))
 							self.last_temperature.set_tool(toolNum, target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 						except ValueError:
 							pass
 					elif matchBed is not None:
 						try:
 							target = float(matchBed.group(1))
 							self.last_temperature.set_bed(target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 						except ValueError:
 							pass
 
@@ -3661,7 +3684,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_tool(toolNum, target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3674,7 +3697,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_bed(target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3687,7 +3710,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_chamber(target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3875,7 +3898,7 @@ class MachineComPrintCallback(object):
 	def on_comm_log(self, message):
 		pass
 
-	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
+	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp, customTemp):
 		pass
 
 	def on_comm_position_update(self, position, reason=None):
