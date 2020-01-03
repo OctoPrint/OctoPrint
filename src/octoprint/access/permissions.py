@@ -79,6 +79,22 @@ class OctoPrintPermission(Permission):
 	def get_description(self):
 		return self._description
 
+	def allows(self, identity):
+		"""Whether the identity can access this permission.
+		Overridden from Permission.allows to make sure the Identity provides ALL
+		required needs instead of ANY required need.
+
+		:param identity: The identity
+		"""
+		if self.needs and len(self.needs.intersection(identity.provides)) != len(self.needs):
+			return False
+
+		if self.excludes and self.excludes.intersection(identity.provides):
+			return False
+
+		return True
+
+
 	def union(self, other):
 		"""Create a new OctoPrintPermission with the requirements of the union of this
 		and other.
