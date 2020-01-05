@@ -108,6 +108,7 @@ date of first contribution):
   * [Piotr Usewicz](https://github.com/pusewicz)
   * [Aliaksei Pilko](https://github.com/aliaksei135)
   * [Ben Yarmis](https://github.com/byarmis)
+  * [Dustin Kerber](https://github.com/kerber)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
