@@ -1,4 +1,6 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 This module contains printer profile related code.
 
@@ -140,13 +142,12 @@ A printer profile is a ``dict`` of the following structure:
 .. autoclass:: InvalidProfileError
 """
 
-from __future__ import absolute_import, division, print_function
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import io
 import os
 import copy
 import re
@@ -255,7 +256,7 @@ class PrinterProfileManager(object):
 			return
 
 		if not isinstance(default_overrides, dict):
-			self._logger.warn("Existing default profile from settings is not a valid profile, refusing to migrate: {!r}".format(default_overrides))
+			self._logger.warning("Existing default profile from settings is not a valid profile, refusing to migrate: {!r}".format(default_overrides))
 			return
 
 		default_overrides["id"] = "_default"
@@ -389,12 +390,12 @@ class PrinterProfileManager(object):
 			if profile is not None:
 				return profile
 			else:
-				self._logger.warn("Default profile {} is invalid, falling back to built-in defaults".format(default))
+				self._logger.warning("Default profile {} is invalid, falling back to built-in defaults".format(default))
 
 		return copy.deepcopy(self.__class__.default)
 
 	def set_default(self, identifier):
-		all_identifiers = self._load_all_identifiers().keys()
+		all_identifiers = self._load_all_identifiers()
 		if identifier is not None and not identifier in all_identifiers:
 			return
 
@@ -424,7 +425,7 @@ class PrinterProfileManager(object):
 			try:
 				profile = self._load_from_path(path)
 			except InvalidProfileError:
-				self._logger.warn("Profile {} is invalid, skipping".format(identifier))
+				self._logger.warning("Profile {} is invalid, skipping".format(identifier))
 				continue
 
 			if profile is None:
@@ -451,7 +452,7 @@ class PrinterProfileManager(object):
 			return None
 
 		import yaml
-		with open(path) as f:
+		with io.open(path, 'rt', encoding='utf-8') as f:
 			profile = yaml.safe_load(f)
 
 		if profile is None or not isinstance(profile, dict):
@@ -460,13 +461,13 @@ class PrinterProfileManager(object):
 		if self._migrate_profile(profile):
 			try:
 				self._save_to_path(path, profile, allow_overwrite=True)
-			except:
+			except Exception:
 				self._logger.exception("Tried to save profile to {path} after migrating it while loading, ran into exception".format(path=path))
 
 		profile = self._ensure_valid_profile(profile)
 
 		if not profile:
-			self._logger.warn("Invalid profile: %s" % path)
+			self._logger.warning("Invalid profile: %s" % path)
 			raise InvalidProfileError()
 		return profile
 
@@ -481,8 +482,8 @@ class PrinterProfileManager(object):
 		from octoprint.util import atomic_write
 		import yaml
 		try:
-			with atomic_write(path, "wb", max_permissions=0o666) as f:
-				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
+			with atomic_write(path, mode='wt', max_permissions=0o666) as f:
+				yaml.safe_dump(profile, f, default_flow_style=False, indent=2, allow_unicode=True)
 		except Exception as e:
 			self._logger.exception("Error while trying to save profile %s" % profile["id"])
 			raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
@@ -491,7 +492,7 @@ class PrinterProfileManager(object):
 		try:
 			os.remove(path)
 			return True
-		except:
+		except Exception:
 			return False
 
 	def _get_profile_path(self, identifier):
@@ -539,7 +540,7 @@ class PrinterProfileManager(object):
 	def _ensure_valid_profile(self, profile):
 		# ensure all keys are present
 		if not dict_contains_keys(self.default, profile):
-			self._logger.warn("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=self.default.keys(), actual=profile.keys()))
+			self._logger.warning("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=list(self.default.keys()), actual=list(profile.keys())))
 			return False
 
 		# conversion helper
@@ -560,7 +561,7 @@ class PrinterProfileManager(object):
 			try:
 				convert_value(profile, path, int)
 			except Exception as e:
-				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
+				self._logger.warning("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# convert floats
@@ -568,7 +569,7 @@ class PrinterProfileManager(object):
 			try:
 				convert_value(profile, path, float)
 			except Exception as e:
-				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
+				self._logger.warning("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# convert booleans
@@ -576,17 +577,17 @@ class PrinterProfileManager(object):
 			try:
 				convert_value(profile, path, bool)
 			except Exception as e:
-				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
+				self._logger.warning("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# validate form factor
 		if not profile["volume"]["formFactor"] in BedFormFactor.values():
-			self._logger.warn("Profile has invalid value volume.formFactor: {formFactor}".format(formFactor=profile["volume"]["formFactor"]))
+			self._logger.warning("Profile has invalid value volume.formFactor: {formFactor}".format(formFactor=profile["volume"]["formFactor"]))
 			return False
 
 		# validate origin type
 		if not profile["volume"]["origin"] in BedOrigin.values():
-			self._logger.warn("Profile has invalid value in volume.origin: {origin}".format(origin=profile["volume"]["origin"]))
+			self._logger.warning("Profile has invalid value in volume.origin: {origin}".format(origin=profile["volume"]["origin"]))
 			return False
 
 		# ensure origin and form factor combination is legal
@@ -613,8 +614,8 @@ class PrinterProfileManager(object):
 						try:
 							value = limiter(float(value), default_box[prop])
 							profile["volume"]["custom_box"][prop] = value
-						except:
-							self._logger.warn("Profile has invalid value in volume.custom_box.{}: {!r}".format(prop, value))
+						except Exception:
+							self._logger.warning("Profile has invalid value in volume.custom_box.{}: {!r}".format(prop, value))
 							return False
 
 				# make sure we actually do have a custom box and not just the same values as the
@@ -630,13 +631,13 @@ class PrinterProfileManager(object):
 		offsets = []
 		for offset in profile["extruder"]["offsets"]:
 			if not len(offset) == 2:
-				self._logger.warn("Profile has an invalid extruder.offsets entry: {entry!r}".format(entry=offset))
+				self._logger.warning("Profile has an invalid extruder.offsets entry: {entry!r}".format(entry=offset))
 				return False
 			x_offset, y_offset = offset
 			try:
 				offsets.append((float(x_offset), float(y_offset)))
-			except:
-				self._logger.warn("Profile has an extruder.offsets entry with non-float values: {entry!r}".format(entry=offset))
+			except Exception:
+				self._logger.warning("Profile has an extruder.offsets entry with non-float values: {entry!r}".format(entry=offset))
 				return False
 		profile["extruder"]["offsets"] = offsets
 

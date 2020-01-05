@@ -1,4 +1,6 @@
 <form class="form-horizontal">
+    {% include "snippets/settings/server/serverAllowFraming.jinja2" %}
+
     <h3>{{ _('Commands') }}</h3>
 
     {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}

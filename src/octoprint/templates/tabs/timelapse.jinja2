@@ -1,4 +1,4 @@
-<div style="display: none;" data-bind="visible: loginState.isUser">
+<div data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)">
     <div style="display: none;" data-bind="visible: settings.webcam_snapshotUrl() && settings.webcam_ffmpegPath()">
         <div class="alert" data-bind="visible: isPrinting()">
             {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
@@ -10,7 +10,7 @@
             <div class="control-group">
                 <label class="control-label" for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
                 <div class="controls">
-                    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: !isPrinting() && loginState.isUser()">
+                    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: !isPrinting()">
                         <option value="off">{{ _('Off') }}</option>
                         <option value="timed">{{ _('Timed') }}</option>
                         <option value="zchange">{{ _('On Z Change') }}</option>
@@ -23,10 +23,10 @@
                 <label class="control-label" for="webcam_timelapse_minDelay">{{ _('Minimum interval') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_minDelay" data-bind="value: timelapseMinDelay, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_minDelay" data-bind="value: timelapseMinDelay, valueUpdate: 'afterkeydown', enable: !isPrinting()">
                         <span class="add-on">{{ _('sec') }}</span>
                     </div>
-                    <span class="help-block">{{ _('OctoPrint will rate limit snapshots to this minimum interval. This it to prevent against performance issues with vase mode/continous z prints.') }}</span>
+                    <span class="help-block">{{ _('OctoPrint will rate limit snapshots to this minimum interval. This it to prevent against performance issues with vase mode/continuous z prints.') }}</span>
                 </div>
             </div>
 
@@ -34,7 +34,7 @@
                 <label class="control-label" for="webcam_timelapse_interval">{{ _('Snapshot interval') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting()">
                         <span class="add-on">{{ _('sec') }}</span>
                     </div>
                 </div>
@@ -44,7 +44,7 @@
                 <label class="control-label" for="webcam_timelapse_fps">{{ _('Timelapse frame rate') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                        <input type="number" min="1" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && timelapseTypeSelected()">
                         <span class="add-on">{{ _('fps') }}</span>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                 <label class="control-label" for="webcam_timelapse_postRoll">{{ _('Timelapse post roll') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" min="0" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                        <input type="number" min="0" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && timelapseTypeSelected()">
                         <span class="add-on">{{ _('sec') }}</span>
                     </div>
                     <span class="help-block">{{ _('OctoPrint will use the final picture to add this many seconds to the end of your rendered timelapse.') }}</span>
@@ -65,17 +65,17 @@
                 <label class="control-label" for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" min="0.0" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+                        <input type="number" min="0.0" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting()">
                         <span class="add-on">{{ _('mm') }}</span>
                     </div>
                     <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
                 </div>
             </div>
 
-            <div class="control-group" data-bind="visible: loginState.isAdmin">
+            <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: persist, enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Save as default') }}
+                        <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
                         <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
                     </label>
                 </div>
@@ -101,6 +101,15 @@
     </div>
 </div>
 
+<h1 data-bind="visible: renderProgressBarString">{{ _('Timelapse Render Progress') }}</h1>
+
+<div id="render_progress" class="progress progress-text-centered" data-bind="visible: renderProgressBarString, css: { 'progress-striped' : renderAnimation, active : renderAnimation }">
+    <span class="progress-text-back" data-bind="text: renderProgressBarString"></span>
+    <div class="bar" data-bind="style: {width: renderProgressString() + '%'}">
+        <span class="progress-text-front" data-bind="copyWidth: ':parent :parent', text: renderProgressBarString"></span>
+    </div>
+</div>
+
 <h1>{{ _('Finished Timelapses') }}</h1>
 
 <div class="pull-right">
@@ -113,7 +122,7 @@
         </ul>
     </div>
 </div>
-<div class="pull-left">
+<div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
     <div class="btn-group">
         <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu">
@@ -136,10 +145,10 @@
     </thead>
     <tbody data-bind="foreach: listHelper.paginatedItems">
     <tr data-bind="attr: {title: name}">
-        <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion"></td>
+        <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { $parent.removeFile($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)() }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)()}, attr: { href: ($root.loginState.hasPermission($root.access.permissions.TIMELAPSE_DOWNLOAD)) ? $data.url : 'javascript:void(0)' }"></a></td>
     </tr>
     </tbody>
 </table>
@@ -155,10 +164,11 @@
     </ul>
 </div>
 
+
 <div data-bind="visible: unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
-        <div class="pull-left">
+        <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
             <div class="btn-group">
                 <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
                 <ul class="dropdown-menu">
@@ -182,13 +192,13 @@
             </thead>
             <tbody data-bind="foreach: unrenderedListHelper.paginatedItems">
             <tr data-bind="attr: {title: name}">
-                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion"></td>
+                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
                 <td class="timelapse_unrendered_name" data-bind="text: name"></td>
                 <td class="timelapse_unrendered_count" data-bind="text: count"></td>
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="fa fa-refresh fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fa fa-video-camera" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
                 </td>
             </tr>
             </tbody>

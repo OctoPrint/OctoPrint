@@ -1,11 +1,11 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from . import commandline, git_commit, github_commit, github_release, bitbucket_commit, python_checker, never_current, always_current
+from . import commandline, git_commit, github_commit, github_release, bitbucket_commit, python_checker, never_current, always_current, pypi_release
 
 def log_github_ratelimit(logger, r):
 	ratelimit = r.headers["X-RateLimit-Limit"] if "X-RateLimit-Limit" in r.headers else "?"
@@ -14,7 +14,7 @@ def log_github_ratelimit(logger, r):
 	try:
 		import time
 		reset = time.strftime("%Y-%m-%d %H:%M", time.gmtime(int(reset)))
-	except:
+	except Exception:
 		reset = "?"
 
 	logger.debug("Github rate limit: %s/%s, reset at %s" % (remaining, ratelimit, reset))

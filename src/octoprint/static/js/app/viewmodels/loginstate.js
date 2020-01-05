@@ -1,13 +1,14 @@
 $(function() {
-    function LoginStateViewModel() {
+    function LoginStateViewModel(parameters) {
         var self = this;
 
         self.loginUser = ko.observable("");
         self.loginPass = ko.observable("");
         self.loginRemember = ko.observable(false);
 
-        self.loggedIn = ko.observable(false);
+        self.loggedIn = ko.observable(undefined);
         self.username = ko.observable(undefined);
+        self.userneeds = ko.observable(undefined);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
@@ -32,7 +33,7 @@ $(function() {
 
         self.userMenuTitle = ko.pureComputed(function() {
             if (self.loggedIn()) {
-                return _.sprintf(gettext("Logged in as %(name)s"), {name: self.username()});
+                return _.sprintf(gettext("Logged in as %(name)s"), {name: _.escape(self.username())});
             } else {
                 return gettext("Login");
             }
@@ -43,24 +44,32 @@ $(function() {
                 return;
             }
 
-            return OctoPrint.users.get(self.currentUser().name)
+            return OctoPrint.access.users.get(self.currentUser().name)
                 .done(self.updateCurrentUserData);
         };
 
         self.requestData = function() {
             return OctoPrint.browser.passiveLogin()
-                .done(self.fromResponse);
+                .done(self.fromResponse)
+                .fail(function() {
+                    // something went very wrong, still, proceed
+                    self.fromResponse();
+                });
         };
 
         self.fromResponse = function(response) {
             var process = function() {
                 var currentLoggedIn = self.loggedIn();
+                var currentNeeds = self.userneeds();
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.updateCurrentUserData(response);
-                    if (!currentLoggedIn) {
+                    if (!currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
-                        log.info("User " + response.name + " logged in")
+                        log.info("User " + response.name + " logged in");
+                    } else if (!_.isEqual(currentNeeds, self.userneeds())) {
+                        callViewModels(self.allViewModels, "onUserPermissionsChanged");
+                        log.info("User needs for " + response.name + " changed");
                     }
 
                     if (response.session) {
@@ -120,12 +129,16 @@ $(function() {
                     }
                 } else {
                     self.loggedIn(false);
-                    self.resetCurrentUserData();
-                    if (currentLoggedIn) {
+                    self.updateCurrentUserData(response);
+                    if (currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedOut");
                         log.info("User logged out");
+                    } else if (!_.isEqual(currentNeeds, self.userneeds())) {
+                        callViewModels(self.allViewModels, "onUserPermissionsChanged");
+                        log.info("User needs for guest changed");
                     }
                 }
+                OctoPrint.coreui.updateTab();
             };
 
             if (self.startupDeferred !== undefined) {
@@ -138,29 +151,44 @@ $(function() {
         };
 
         self.updateCurrentUserData = function(data) {
-            self.username(data.name);
-            self.isUser(data.user);
-            self.isAdmin(data.admin);
+            if (data) {
+                self.userneeds(data.needs);
+            } else {
+                self.userneeds({});
+            }
 
-            self.currentUser(data);
+            if (data && data.name) {
+                self.username(data.name);
+                self.currentUser(data);
+
+                // TODO: deprecated, remove in 1.5.0
+                self.isUser(data.user);
+                self.isAdmin(data.admin);
+            } else {
+                self.username(undefined);
+                self.currentUser(undefined);
+
+                // TODO: deprecated, remove in 1.5.0
+                self.isUser(false);
+                self.isAdmin(false);
+            }
         };
 
-        self.resetCurrentUserData = function() {
-            self.username(undefined);
-            self.isUser(false);
-            self.isAdmin(false);
-
-            self.currentUser(undefined);
-        };
-
-        self.login = function(u, p, r) {
+        self.login = function(u, p, r, notifications) {
             var username = u || self.loginUser();
             var password = p || self.loginPass();
-            var remember = (r != undefined ? r : self.loginRemember());
+            var remember = (r !== undefined ? r : self.loginRemember());
+            notifications = notifications !== false;
 
             return OctoPrint.browser.login(username, password, remember)
                 .done(function(response) {
-                    new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
+                    if (notifications) {
+                        new PNotify({
+                            title: gettext("Login successful"),
+                            text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: _.escape(response.name)}),
+                            type: "success"
+                        });
+                    }
                     self.fromResponse(response);
 
                     self.loginUser("");
@@ -172,19 +200,15 @@ $(function() {
                     }
                 })
                 .fail(function(response) {
+                    if (!notifications) {
+                        return;
+                    }
+
                     switch(response.status) {
-                        case 401: {
-                            new PNotify({
-                                title: gettext("Login failed"),
-                                text: gettext("User unknown or wrong password"),
-                                type: "error"
-                            });
-                            break;
-                        }
                         case 403: {
                             new PNotify({
                                 title: gettext("Login failed"),
-                                text: gettext("Your account is deactivated"),
+                                text: gettext("User unknown, wrong password or account deactivated"),
                                 type: "error"
                             });
                             break;
@@ -193,16 +217,22 @@ $(function() {
                 });
         };
 
+        var _logoutInProgress = false;
         self.logout = function() {
+            if (_logoutInProgress) return;
+            _logoutInProgress = true;
             return OctoPrint.browser.logout()
                 .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
                 })
                 .fail(function(error) {
-                    if (error && error.status === 401) {
+                    if (error && error.status === 403) {
                          self.fromResponse(false);
                     }
+                })
+                .always(function() {
+                    _logoutInProgress = false;
                 });
         };
 
@@ -263,6 +293,105 @@ $(function() {
                     self.elementUsernameInput.focus();
                 })
             }
+        };
+
+
+        self.hasPermission = function(permission) {
+            /**
+             * Checks if the currently logged in user has a specific permission.
+             *
+             * This check is performed by testing if the necessary needs set is available.
+             *
+             * Example:
+             *
+             *     loginState.hasPermission(access.permissions.SETTINGS)
+             *
+             * @param permission the permission to check for
+             * @returns true if the user has the specified permission, false otherwise
+             * @type {boolean}
+             */
+            var userneeds = self.userneeds();
+            if (userneeds === undefined || permission === undefined)
+                return false;
+
+            if ($.isEmptyObject(userneeds)) {
+                return false;
+            }
+
+            return _.any(permission, function(need) {
+                return _.has(userneeds, need.method) && _.all(need.value, function(value) {
+                    return _.contains(userneeds[need.method], value);
+                });
+            });
+        };
+
+        self.hasAnyPermission = function() {
+            /**
+             * Checks if the currently logged in user has any of the specified permissions.
+             *
+             * Uses hasPermission for that.
+             *
+             * Example:
+             *
+             *   loginState.hasAnyPermission(access.permission.CONTROL, access.permission.MONITOR_TERMINAL)
+             *
+             * @returns true if the user has any of the specified permissions, false otherwise
+             * @type {boolean}
+             */
+            var result = false;
+            _.each(arguments, function(permission) {
+                result = result || self.hasPermission(permission);
+            });
+            return result;
+        };
+
+        self.hasAllPermissions = function() {
+            /**
+             * Checks if the currently logged in user has all of the specified permissions.
+             *
+             * Uses hasPermission for that.
+             *
+             * Example:
+             *
+             *   loginState.hasAnyPermission(access.permission.CONTROL, access.permission.MONITOR_TERMINAL)
+             *
+             * @returns true if the user has all of the specified permissions, false otherwise
+             * @type {boolean}
+             */
+            var result = true;
+            _.each(arguments, function(permission) {
+                result = result && self.hasPermission(permission);
+            });
+            return result;
+        };
+
+        self.hasPermissionKo = function(permission) {
+            /**
+             * Knockout wrapper for hasPermission
+             */
+            return ko.pureComputed(function() {
+                return self.hasPermission(permission);
+            }).extend({ notify: "always" });
+        };
+
+        self.hasAnyPermissionKo = function() {
+            /**
+              Knockout wrapper for hasAnyPermission
+             */
+            var permissions = arguments;
+            return ko.pureComputed(function() {
+                return self.hasAnyPermission.apply(null, permissions);
+            }).extend({ notify: "always" });
+        };
+
+        self.hasAllPermissionsKo = function() {
+            /**
+             * Knockout wrapper for hasAllPermissions
+             */
+            var permissions = arguments;
+            return ko.pureComputed(function() {
+                return self.hasAllPermissions.apply(null, permissions);
+            });
         };
     }
 

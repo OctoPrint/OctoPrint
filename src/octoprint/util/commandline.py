@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -11,17 +11,19 @@ import logging
 import re
 import time
 
-from . import to_unicode
+from . import to_unicode, to_bytes
+from .platform import get_os
 
+from past.builtins import unicode
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
-_ANSI_CSI_PATTERN = "\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
-_ANSI_OSC_PATTERN = "\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
-_ANSI_REGEX = re.compile("|".join([_ANSI_CSI_PATTERN,
-                                   _ANSI_OSC_PATTERN]))
+_ANSI_CSI_PATTERN = b"\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+_ANSI_OSC_PATTERN = b"\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
+_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN,
+                                    _ANSI_OSC_PATTERN]))
 
 
 def clean_ansi(line):
@@ -29,21 +31,23 @@ def clean_ansi(line):
 	Removes ANSI control codes from ``line``.
 
 	Parameters:
-	    line (str or unicode): the line to process
+	    line (bytes or unicode): the line to process
 
 	Returns:
-	    (str or unicode) The line without any ANSI control codes
+	    (bytes or unicode) The line without any ANSI control codes
 
 	Example::
 
-	    >>> text = "Some text with some \x1b[31mred words\x1b[39m in it"
-	    >>> clean_ansi(text)
+	    >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
+	    >>> clean_ansi(text) # doctest: +ALLOW_BYTES
 	    'Some text with some red words in it'
-	    >>> text = "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-	    >>> clean_ansi(text)
+	    >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
+	    >>> clean_ansi(text) # doctest: +ALLOW_BYTES
 	    'We hide the cursor here and then show it again here'
 	"""
-	return _ANSI_REGEX.sub("", line)
+	if isinstance(line, unicode):
+		return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
+	return _ANSI_REGEX.sub(b"", line)
 
 
 class CommandlineError(Exception):
@@ -83,16 +87,16 @@ class CommandlineCaller(object):
 
 	   def log(prefix, *lines):
 	       for line in lines:
-	           print(u"{} {}".format(prefix, line))
+	           print("{} {}".format(prefix, line))
 
 	   def log_stdout(*lines):
-	       log(u">>>", *lines)
+	       log(">>>", *lines)
 
 	   def log_stderr(*lines):
-	       log(u"!!!", *lines)
+	       log("!!!", *lines)
 
 	   def log_call(*lines)
-	       log(u"---", *lines)
+	       log("---", *lines)
 
 	   caller = CommandLineCaller()
 	   caller.on_log_call = log_call
@@ -102,9 +106,9 @@ class CommandlineCaller(object):
 	   try:
 	       caller.checked_call(["some", "command", "with", "parameters"])
 	   except CommandLineError as err:
-	       print(u"Command returned {}".format(err.returncode))
+	       print("Command returned {}".format(err.returncode))
 	   else:
-	       print(u"Command finished successfully")
+	       print("Command finished successfully")
 	"""
 
 	def __init__(self):
@@ -158,8 +162,12 @@ class CommandlineCaller(object):
 			joined_command = " ".join(command)
 		else:
 			joined_command = command
-		self._logger.debug(u"Calling: {}".format(joined_command))
+		self._logger.debug("Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
+
+		# if we are running under windows, make sure there are no unicode strings in the env
+		if get_os() == "windows" and "env" in kwargs:
+			kwargs["env"] = dict((k, to_bytes(v)) for k, v in kwargs["env"].items())
 
 		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
@@ -177,7 +185,7 @@ class CommandlineCaller(object):
 
 		if not p.commands[0].process:
 			# the process might have been set to None in case of any exception
-			self._logger.error(u"Error while trying to run command {}".format(joined_command))
+			self._logger.error("Error while trying to run command {}".format(joined_command))
 			return None, [], []
 
 		all_stdout = []

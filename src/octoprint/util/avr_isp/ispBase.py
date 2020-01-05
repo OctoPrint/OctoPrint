@@ -1,4 +1,6 @@
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os, struct, sys, time
 
 from serial import Serial
@@ -9,7 +11,7 @@ class IspBase():
 	def programChip(self, flashData):
 		self.curExtAddr = -1
 		self.chip = chipDB.getChipFromDB(self.getSignature())
-		if self.chip == False:
+		if not self.chip:
 			raise IspError("Chip with signature: " + str(self.getSignature()) + "not found")
 		self.chipErase()
 		
@@ -29,7 +31,7 @@ class IspBase():
 	def chipErase(self):
 		self.sendISP([0xAC, 0x80, 0x00, 0x00])
 
-class IspError():
+class IspError(Exception):
 	def __init__(self, value):
 		self.value = value
 	def __str__(self):

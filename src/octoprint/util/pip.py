@@ -1,11 +1,12 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import io
 import sarge
 import sys
 import logging
@@ -16,7 +17,7 @@ import os
 import pkg_resources
 
 from .commandline import CommandlineCaller, clean_ansi
-from octoprint.util import to_unicode
+from octoprint.util import to_unicode, to_native_str
 
 _cache = dict(version=dict(), setup=dict())
 _cache_mutex = threading.RLock()
@@ -152,7 +153,7 @@ class PipCaller(CommandlineCaller):
 		self._reset()
 		try:
 			self._setup_pip()
-		except:
+		except Exception:
 			self._logger.exception("Error while discovering pip command")
 			self._command = None
 			self._version = None
@@ -291,7 +292,7 @@ class PipCaller(CommandlineCaller):
 			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
-				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
+				self._logger.warning("Error while trying to run pip --version: {}".format(p.stderr.text))
 				return None, None
 
 			output = PipCaller._preprocess(p.stdout.text)
@@ -302,17 +303,17 @@ class PipCaller(CommandlineCaller):
 			# we'll just split on whitespace and then try to use the second entry
 
 			if not output.startswith("pip"):
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
-			split_output = map(lambda x: x.strip(), output.split())
+			split_output = list(map(lambda x: x.strip(), output.split()))
 			if len(split_output) < 2:
-				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+				self._logger.warning("pip command returned unparseable output, can't determine version: {}".format(output))
 
 			version_segment = split_output[1]
 
 			try:
 				pip_version = pkg_resources.parse_version(version_segment)
-			except:
+			except Exception:
 				self._logger.exception("Error while trying to parse version string from pip command")
 				return None, None
 
@@ -369,13 +370,13 @@ class PipCaller(CommandlineCaller):
 					          stdout=sarge.Capture(),
 					          stderr=sarge.Capture(),
 					          cwd=testballoon,
-					          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
-				except:
+					          env=dict(TESTBALLOON_OUTPUT=to_native_str(testballoon_output_file)))
+				except Exception:
 					self._logger.exception("Error while trying to install testballoon to figure out pip setup")
 					return False, False, False, None
 
 				data = dict()
-				with open(testballoon_output_file) as f:
+				with io.open(testballoon_output_file, 'rt', encoding='utf-8') as f:
 					for line in f:
 						key, value = line.split("=", 2)
 						data[key] = value
@@ -410,7 +411,7 @@ class PipCaller(CommandlineCaller):
 				return False, False, False, None
 
 	def _preprocess_lines(self, *lines):
-		return map(self._preprocess, lines)
+		return list(map(self._preprocess, lines))
 
 	@staticmethod
 	def _preprocess(text):
@@ -426,8 +427,8 @@ class PipCaller(CommandlineCaller):
 		Example::
 
 		    >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
-		    >>> PipCaller._preprocess(text)
-		    u'some text with some ANSI codes for red words and also some cursor control codes'
+		    >>> PipCaller._preprocess(text) # doctest: +ALLOW_UNICODE
+		    'some text with some ANSI codes for red words and also some cursor control codes'
 		"""
 		return to_unicode(clean_ansi(text))
 

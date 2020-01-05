@@ -112,6 +112,30 @@ $(function() {
             else
                 return gettext("OctoPrint");
         });
+
+        self.theme_color = ko.pureComputed(function() {
+            switch (self.color()) {
+                case "red":
+                    return "#bb645f";
+                case "orange":
+                    return "#e39665";
+                case "yellow":
+                    return "#e3d765;";
+                case "green":
+                    return "#98f064";
+                case "blue":
+                    return "#2e63cc";
+                case "violet":
+                    return "#9864f0";
+                case "black":
+                    return "#4f4f4f";
+                case "white":
+                    return "#e9e9e9";
+                case "default":
+                default:
+                    return "#ebebeb";
+            }
+        });
     }
 
     OCTOPRINT_VIEWMODELS.push({

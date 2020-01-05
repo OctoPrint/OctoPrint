@@ -9,7 +9,6 @@ REST API
 
    general.rst
    version.rst
-   apps.rst
    connection.rst
    files.rst
    job.rst

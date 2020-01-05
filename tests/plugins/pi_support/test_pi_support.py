@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
 import ddt
 import mock
+
+import _fixups
 
 OCTOPI_VERSION = "0.14.0"
 
@@ -13,22 +17,24 @@ class PiSupportTestCase(unittest.TestCase):
 
 	def test_get_octopi_version(self):
 		from octoprint.plugins.pi_support import get_octopi_version
+		#import _fixups
 
-		with mock.patch("__builtin__.open", mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			m.return_value.readline.return_value = OCTOPI_VERSION
 			version = get_octopi_version()
 
-		m.assert_called_once_with("/etc/octopi_version", "r")
+		m.assert_called_once_with('/etc/octopi_version', 'rt', encoding='utf-8')
 		self.assertEqual(version, OCTOPI_VERSION)
 
 	def test_get_proc_dt_model(self):
 		from octoprint.plugins.pi_support import get_proc_dt_model
+		#import _fixups
 
-		with mock.patch("__builtin__.open", mock.mock_open(), create=True) as m:
+		with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
 			m.return_value.readline.return_value = DT_MODEL
 			model = get_proc_dt_model()
 
-		m.assert_called_once_with("/proc/device-tree/model", "r")
+		m.assert_called_once_with('/proc/device-tree/model', 'rt', encoding='utf-8')
 		self.assertEqual(model, DT_MODEL)
 
 	def test_get_vcgencmd_throttle_state(self):

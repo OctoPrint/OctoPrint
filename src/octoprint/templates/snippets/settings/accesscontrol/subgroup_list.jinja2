@@ -1,0 +1,12 @@
+<table class="table table-condensed table-hover settings_accesscontrol_groups_list">
+    <tbody data-bind="foreach: groupsList()">
+    <tr>
+        <td class="settings_accesscontrol_subgroups_list_checkbox"><input type="checkbox" data-bind="checkedValue: key, checked: $parents[1].editor.subgroups, enable: toggleable"></td>
+        <td class="settings_accesscontrol_subgroups_list_name" style="cursor: pointer" data-bind="click: function() { if ($data.toggleable) { $parents[1].editor.toggleSubgroup($data.key) } }, attr: {title: description}">
+            <span class="name" data-bind="text: name, style: { fontWeight: ($parents[1].editor.subgroupSelected($data.name)) ? 'bold' : 'normal' }"></span> <small class="label label-info" data-bind="visible: !$data.toggleable" title="{{ _('Fixed groups can\'t be added or removed to other groups.')|edq }}">{{ _('Fixed') }}</small><br>
+            <small class="description" data-bind="text: description"></small><br>
+            <small class="permissions muted" data-bind="text: $parents[1].editor.joinedGroupPermissions($data)"></small>
+        </td>
+    </tr>
+    </tbody>
+</table>

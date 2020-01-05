@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
+        self.access = parameters[2];
 
         self._createToolEntry = function() {
             var entry = {
@@ -58,14 +59,17 @@ $(function() {
             item: undefined,
 
             title: ko.pureComputed(function() {
-                return _.sprintf(gettext("Changing Offset of %(name)s"), {name: self.changingOffset.name()});
+                return _.sprintf(gettext("Changing Offset of %(name)s"), {name: _.escape(self.changingOffset.name())});
             }),
             description: ko.pureComputed(function() {
                 return _.sprintf(gettext("Use the form below to specify a new offset to apply to all temperature commands sent from printed files for \"%(name)s\""),
-                    {name: self.changingOffset.name()});
+                    {name: _.escape(self.changingOffset.name())});
             })
         };
         self.changeOffsetDialog = undefined;
+
+        // TODO: find some nicer way to update plot AFTER graph becomes visible
+        self.loginStateSubscription = undefined;
 
         self.tools = ko.observableArray([]);
         self.hasTools = ko.pureComputed(function() {
@@ -348,7 +352,7 @@ $(function() {
                 value = "" + value + "°C";
             }
 
-            return _.sprintf(text, {name: profile.name, value: value});
+            return _.sprintf(text, {name: _.escape(profile.name), value: _.escape(value)});
         };
 
         self.updatePlot = function() {
@@ -871,14 +875,15 @@ $(function() {
             self._printerProfileUpdated();
         };
 
-        self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.initOrUpdate();
         };
+
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });

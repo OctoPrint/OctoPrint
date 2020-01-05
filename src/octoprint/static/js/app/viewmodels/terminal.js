@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self.tabActive = false;
         self.previousScroll = undefined;
@@ -432,7 +433,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TerminalViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#term"]
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#term", "#term_link"]
     });
 });

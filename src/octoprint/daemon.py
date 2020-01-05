@@ -1,12 +1,13 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 """
 Generic linux daemon base class
 
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-from __future__ import absolute_import, division, print_function
-import sys, os, time, signal
+import io, sys, os, time, signal
 
 class Daemon:
 	"""
@@ -60,9 +61,9 @@ class Daemon:
 		# redirect standard file descriptors
 		sys.stdout.flush()
 		sys.stderr.flush()
-		si = open(os.devnull, 'r')
-		so = open(os.devnull, 'a+')
-		se = open(os.devnull, 'a+')
+		si = io.open(os.devnull, 'rt', encoding='utf-8')
+		so = io.open(os.devnull, 'at+', encoding='utf-8')
+		se = io.open(os.devnull, 'at+', encoding='utf-8')
 
 		os.dup2(si.fileno(), sys.stdin.fileno())
 		os.dup2(so.fileno(), sys.stdout.fileno())
@@ -133,7 +134,7 @@ class Daemon:
 		except OSError:
 			try:
 				self.remove_pidfile()
-			except:
+			except Exception:
 				self.error("Daemon found not running, but could not remove stale pidfile")
 			return False
 		else:
@@ -142,7 +143,7 @@ class Daemon:
 	def get_pid(self):
 		"""Get the pid from the pidfile."""
 		try:
-			with open(self.pidfile,'r') as pf:
+			with io.open(self.pidfile,'rt', encoding='utf-8') as pf:
 				pid = int(pf.read().strip())
 		except (IOError, ValueError):
 			pid = None
@@ -150,7 +151,7 @@ class Daemon:
 
 	def set_pid(self, pid):
 		"""Write the pid to the pidfile."""
-		with open(self.pidfile,'w+') as f:
+		with io.open(self.pidfile,'wt+', encoding='utf-8') as f:
 			f.write(str(pid) + '\n')
 
 	def remove_pidfile(self):

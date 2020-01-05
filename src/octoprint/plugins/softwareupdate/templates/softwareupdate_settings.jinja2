@@ -12,7 +12,7 @@
         If you have a local OctoPrint checkout folder switched to another branch,
         <strong>simply switching over to "Commit" tracking</strong> will already
         take care of that. Otherwise please take a look at the
-        <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+        <a href="http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
     </p>
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: !environmentSupported()">{% trans %}
@@ -101,8 +101,11 @@
     <div class="modal-body">
         <form class="form-horizontal">
             {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/trackedBranch.jinja2" %}
             {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/pipTarget.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/pipEnableCheck.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">

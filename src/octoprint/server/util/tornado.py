@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,6 +9,7 @@ import logging
 import os
 import mimetypes
 import re
+import sys
 
 import tornado
 import tornado.web
@@ -24,7 +25,9 @@ import tornado.util
 
 import octoprint.util
 
+from past.builtins import unicode
 
+from . import PY3
 
 def fix_json_encode():
 	"""
@@ -71,7 +74,7 @@ class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
 class CorsSupportMixin(tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ mixin that
-	makes sure to set CORS headers similarily to the Flask backed API endpoints.
+	makes sure to set CORS headers similarly to the Flask backed API endpoints.
 	"""
 
 	ENABLE_CORS = False
@@ -236,7 +239,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 				for field in fields:
 					k, sep, v = field.strip().partition("=")
 					if k == "boundary" and v:
-						if v.startswith(b'"') and v.endswith(b'"'):
+						if v.startswith('"') and v.endswith('"'):
 							self._multipart_boundary = tornado.escape.utf8(v[1:-1])
 						else:
 							self._multipart_boundary = tornado.escape.utf8(v)
@@ -284,12 +287,12 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 		delimiter = b"--%s" % self._multipart_boundary
 		delimiter_loc = data.find(delimiter)
 		delimiter_len = len(delimiter)
-		end_of_header = None
+		end_of_header = -1
 		if delimiter_loc != -1:
 			# found the delimiter in the currently available data
 			delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
 			data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
-			end_of_header = self._buffer.find("\r\n\r\n")
+			end_of_header = self._buffer.find(b"\r\n\r\n")
 		else:
 			# make sure any boundary (with single or double ==) contained at the end of chunk does not get
 			# truncated by this processing round => save it to the buffer for next round
@@ -304,7 +307,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 			self._on_part_header(self._buffer[delimiter_len+2:end_of_header])
 			self._buffer = self._buffer[end_of_header + 4:]
 
-		if delimiter_loc != -1 and self._buffer.strip() == delimiter + "--":
+		if delimiter_loc != -1 and self._buffer.strip() == delimiter + b"--":
 			# we saw the last boundary and are at the end of our request
 			if self._current_part:
 				self._on_part_finish(self._current_part)
@@ -327,7 +330,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 
 		header_check = header.find(self._multipart_boundary)
 		if header_check != -1:
-			self._logger.warn("Header still contained multipart boundary, stripping it...")
+			self._logger.warning("Header still contained multipart boundary, stripping it...")
 			header = header[header_check:]
 
 		# convert to dict
@@ -336,9 +339,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 		except UnicodeDecodeError:
 			try:
 				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
-			except:
+			except Exception:
 				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
-				self._logger.warn("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
+				self._logger.warning("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
 				self.send_error(400)
 				return
 
@@ -346,19 +349,19 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 		disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
 		if disposition != "form-data":
-			self._logger.warn("Got a multipart header without form-data content disposition, ignoring that one")
+			self._logger.warning("Got a multipart header without form-data content disposition, ignoring that one")
 			return
 		if not disp_params.get("name"):
-			self._logger.warn("Got a multipart header without name, ignoring that one")
+			self._logger.warning("Got a multipart header without name, ignoring that one")
 			return
 
 		filename = disp_params.get("filename*", None) # RFC 5987 header present?
 		if filename is not None:
 			try:
 				filename = _extended_header_value(filename)
-			except:
+			except Exception:
 				# parse error, this is not RFC 5987 compliant after all
-				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
+				self._logger.warning("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
 				self.send_error(400)
 				return
 		else:
@@ -457,12 +460,14 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 
 				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
 				for n, p in fields.items():
-					key = name + "." + n
+					if n is None or p is None:
+						continue
+					key = name + b"." + octoprint.util.to_bytes(n)
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
 					self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
 					self._new_body += b"\r\n"
-					self._new_body += b"%s\r\n" % p
+					self._new_body += octoprint.util.to_bytes(p) + b'\r\n'
 			elif "data" in part:
 				self._new_body += b"--%s\r\n" % self._multipart_boundary
 				value = part["data"]
@@ -547,10 +552,15 @@ def _extended_header_value(value):
 
 	if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
 		# RFC 5987 section 3.2
-		from urllib import unquote
+		try:
+			from urllib import unquote
+		except ImportError:
+			from urllib.parse import unquote
 		encoding, _, value = value.split("'", 2)
-		return unquote(octoprint.util.to_bytes(value, encoding="iso-8859-1")).decode(encoding)
-
+		if PY3:
+			return unquote(value, encoding=encoding)
+		else:
+			return unquote(octoprint.util.to_bytes(value, encoding="iso-8859-1")).decode(encoding)
 	else:
 		# no encoding provided, strip potentially present quotes and call it a day
 		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
@@ -655,7 +665,6 @@ class WsgiInputContainer(object):
 		:param body: an optional body  to use as ``wsgi.input`` instead of ``request.body``, can be a string or a stream
 		"""
 		from tornado.wsgi import to_wsgi_str
-		import sys
 		import io
 
 		# determine the request_body to supply as wsgi.input
@@ -804,7 +813,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re
-		self._max_body_sizes = map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or list())
+		self._max_body_sizes = list(map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or list()))
 		self._default_max_body_size = self.params.default_max_body_size or self.stream.max_buffer_size
 
 	def _read_body(self, code, headers, delegate):
@@ -1090,7 +1099,7 @@ class UrlProxyHandler(RequestlessExceptionLoggingMixin,
 		if not self._basename:
 			return None
 
-		typeValue = map(str.strip, content_type.split(";"))
+		typeValue = list(x.strip() for x in content_type.split(";"))
 		if len(typeValue) == 0:
 			return None
 
@@ -1169,9 +1178,10 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 		if removed_headers is None:
 			removed_headers = []
 
-		return type(name, (GlobalHeaderTransform,), dict(HEADERS=headers,
-		                                                 FORCED_HEADERS=forced_headers,
-		                                                 REMOVED_HEADERS=removed_headers))
+		return type(octoprint.util.to_native_str(name), (GlobalHeaderTransform,),
+				    dict(HEADERS=headers,
+						 FORCED_HEADERS=forced_headers,
+						 REMOVED_HEADERS=removed_headers))
 
 	def __init__(self, request):
 		tornado.web.OutputTransform.__init__(self, request)
@@ -1197,12 +1207,6 @@ def access_validation_factory(app, validator, *args):
 	:param validator: the access validator to use inside the validation wrapper
 	:return: an access validator taking a request as parameter and performing the request validation
 	"""
-
-	# TODO remove in 1.4.0
-	if len(args):
-		# old parameters incl. login_manager
-		validator = args[0]
-
 	def f(request):
 		"""
 		Creates a custom wsgi and Flask request context in order to be able to process user information
@@ -1216,7 +1220,7 @@ def access_validation_factory(app, validator, *args):
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
 			app.login_manager.reload_user()
-			validator(flask.request)
+			validator(flask.request, *args)
 	return f
 
 def path_validation_factory(path_filter, status_code=404):

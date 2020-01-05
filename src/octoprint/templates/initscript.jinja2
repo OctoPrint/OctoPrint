@@ -5,11 +5,13 @@
     var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
 
     var CONFIG_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+    var CONFIG_LOADINGANIMATION = {% if enableLoadingAnimation -%} true; {% else %} false; {%- endif %}
 
     var CONFIG_GCODEFILESPERPAGE = 5000;
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
     var CONFIG_LOGFILESPERPAGE = 10;
     var CONFIG_USERSPERPAGE = 10;
+    var CONFIG_GROUPSPERPAGE = 10;
     var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
     var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
     var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
@@ -33,6 +35,8 @@
     var AVAILABLE_LOCALES = {{ locales|tojson }};
     var SUPPORTED_FILETYPES = {{ supportedFiletypes|tojson }};
     var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
+
+    var PERMISSIONS = {{ permissions|tojson }};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -36,7 +36,7 @@ class PrintTimeEstimator(object):
 				interval = settings().getFloat(["serial", "timeout", "sdStatus"])
 				if interval <= 0:
 					interval = 1.0
-				rolling_window = 15 / interval
+				rolling_window = int(15 // interval)
 				if rolling_window < 1:
 					rolling_window = 1
 
@@ -69,7 +69,7 @@ class PrintTimeEstimator(object):
 		     but no intelligent estimate yet, we'll use that for the next step. Otherwise, up to a certain percentage
 		     in the print we do a percentage based weighing of the statistical data and the intelligent
 		     estimate - the closer to the beginning of the print, the more precedence for the statistical
-		     data, the closer to the cut off point, the more precendence for the intelligent estimate. This
+		     data, the closer to the cut off point, the more precedence for the intelligent estimate. This
 		     is our preliminary total print time.
 		  3. If the total print time is set, we do a sanity check for it. Based on the total print time
 		     estimate and the time we already spent printing, we calculate at what percentage we SHOULD be
@@ -128,7 +128,7 @@ class PrintTimeEstimator(object):
 					printTimeLeftOrigin = "estimate"
 
 				# combine
-				totalPrintTime = (1.0 - sub_progress) * statisticalTotalPrintTime \
+				totalPrintTime = - sub_progress * statisticalTotalPrintTime \
 				                 + sub_progress * estimatedTotalPrintTime
 
 		printTimeLeft = None
@@ -191,10 +191,10 @@ class TimeEstimationHelper(object):
 		self._totals = collections.deque([], self._rolling_window)
 		self._sum_total = 0
 		self._count = 0
-		self._stable_counter = None
+		self._stable_counter = -1
 
 	def is_stable(self):
-		return self._stable_counter is not None and self._stable_counter >= self._countdown
+		return self._stable_counter >= self._countdown
 
 	def update(self, new_estimate):
 		old_average_total = self.average_total
@@ -206,13 +206,10 @@ class TimeEstimationHelper(object):
 		if old_average_total:
 			self._distances.append(abs(self.average_total - old_average_total))
 
-		if -1.0 * self._threshold < self.average_distance < self._threshold:
-			if self._stable_counter is None:
-				self._stable_counter = 0
-			else:
-				self._stable_counter += 1
+		if -self._threshold < self.average_distance < self._threshold:
+			self._stable_counter += 1
 		else:
-			self._stable_counter = None
+			self._stable_counter = -1
 
 		if self.is_stable():
 			return self.average_total_rolling
@@ -222,20 +219,20 @@ class TimeEstimationHelper(object):
 	@property
 	def average_total(self):
 		if not self._count:
-			return None
+			return 0
 		else:
 			return self._sum_total / self._count
 
 	@property
 	def average_total_rolling(self):
 		if not self._count or self._count < self._rolling_window or not len(self._totals):
-			return None
+			return -1
 		else:
 			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):
 		if not self._count or self._count < self._rolling_window + 1 or not len(self._distances):
-			return None
+			return -1
 		else:
 			return sum(self._distances) / len(self._distances)

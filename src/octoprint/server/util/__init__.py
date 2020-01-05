@@ -1,23 +1,24 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import sys
+PY3 = sys.version_info[0] == 3
 
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
-from octoprint.users import ApiUser
 
-from octoprint.util import deprecated
+from octoprint.util import deprecated, to_unicode
 from octoprint.plugin import plugin_manager
 
 import flask as _flask
 import flask_login
-import flask_principal
+import octoprint.vendor.flask_principal as flask_principal
 import logging
 
 from . import flask
@@ -94,7 +95,7 @@ def loginUser(user, remember=False):
 	Returns: (bool) True if the login succeeded, False otherwise
 
 	"""
-	if user is not None and user.is_active() and flask_login.login_user(user, remember=remember):
+	if user is not None and user.is_active and flask_login.login_user(user, remember=remember):
 		flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                      identity=flask_principal.Identity(user.get_id()))
 		return True
@@ -176,12 +177,12 @@ def optionsAllowOrigin(request):
 
 def get_user_for_apikey(apikey):
 	if apikey is not None:
-		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
-			# master key or an app session key was used
-			return ApiUser()
+		if apikey == settings().get(["api", "key"]):
+			# master key was used
+			return octoprint.server.userManager.api_user_factory()
 
 		if octoprint.server.userManager.enabled:
-			user = octoprint.server.userManager.findUser(apikey=apikey)
+			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:
 				# user key was used
 				return user
@@ -192,7 +193,7 @@ def get_user_for_apikey(apikey):
 				user = hook(apikey)
 				if user is not None:
 					return user
-			except:
+			except Exception:
 				logging.getLogger(__name__).exception("Error running api key validator "
 				                                      "for plugin {} and key {}".format(name, apikey),
 				                                      extra=dict(plugin=name))
@@ -232,7 +233,7 @@ def get_user_for_authorization_header(header):
 
 	header = header.replace('Basic ', '', 1)
 	try:
-		header = base64.b64decode(header)
+		header = to_unicode(base64.b64decode(header))
 	except TypeError:
 		return None
 
@@ -260,7 +261,7 @@ def get_api_key(request):
 		return request.arguments["apikey"]
 
 	# Check Tornado and Flask headers
-	if "X-Api-Key" in request.headers.keys():
+	if "X-Api-Key" in request.headers:
 		return request.headers.get("X-Api-Key")
 
 	return None
@@ -275,11 +276,11 @@ def get_plugin_hash():
 	from octoprint.plugin import plugin_manager
 
 	plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
-	template_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin))
-	asset_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin))
+	template_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin)))
+	asset_plugins = list(map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)))
 	ui_plugins = sorted(set(template_plugins + asset_plugins))
 
 	import hashlib
 	plugin_hash = hashlib.sha1()
-	plugin_hash.update(",".join(ui_plugins))
+	plugin_hash.update(",".join(ui_plugins).encode('utf-8'))
 	return plugin_hash.hexdigest()

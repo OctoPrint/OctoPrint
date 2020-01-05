@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'The MIT License <http://opensource.org/licenses/MIT>'
@@ -11,7 +11,7 @@ import requests
 from contextlib import closing
 
 from sphinx.directives.code import LiteralIncludeReader, LiteralInclude, dedent_lines, \
-	nodes, set_source_info, parselinenos, logger, container_wrapper
+	nodes, parselinenos, logger, container_wrapper
 
 if False:
 	# For type annotation
@@ -39,11 +39,10 @@ class OnlineIncludeReader(LiteralIncludeReader):
 
 			return lines
 		except (IOError, OSError):
-			raise IOError(_('Include file %r not found or reading it failed') % filename)
+			raise IOError('Include file %r not found or reading it failed' % filename)
 		except UnicodeError:
-			raise UnicodeError(_('Encoding %r used for reading included file %r seems to '
-			                     'be wrong, try giving an :encoding: option') %
-			                   (self.encoding, filename))
+			raise UnicodeError('Encoding %r used for reading included file %r seems to '
+			                   'be wrong, try giving an :encoding: option' % (self.encoding, filename))
 
 
 class OnlineIncludeDirective(LiteralInclude):
@@ -69,7 +68,7 @@ class OnlineIncludeDirective(LiteralInclude):
 			text, lines = reader.read(location=location)
 
 			retnode = nodes.literal_block(text, text, source=url)
-			set_source_info(self, retnode)
+			self.set_source_info(retnode)
 			if self.options.get('diff'):  # if diff is set, set udiff
 				retnode['language'] = 'udiff'
 			elif 'language' in self.options:

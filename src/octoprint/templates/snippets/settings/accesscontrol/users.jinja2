@@ -1,0 +1,174 @@
+<table class="table table-condensed table-hover" id="system_users">
+    <thead>
+    <tr>
+        <th class="settings_users_name">{{ _('Name') }}</th>
+        <th class="settings_users_groups">{{ _('Details') }}</th>
+        <th class="settings_users_active">{{ _('Active') }}</th>
+        <th class="settings_users_actions">{{ _('Action') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: $root.access.users.listHelper.paginatedItems">
+    <tr>
+        <td class="settings_users_name"><span data-bind="text: name"></span></td>
+        <td class="settings_users_details">
+            <table class="table settings_users_details_table">
+                <tr>
+                    <th class="settings_users_details_key">{{ _('Groups') }}</th>
+                    <td class="settings_users_details_value" data-bind="text: $root.access.groupList($data)"></td>
+                </tr>
+                <tr>
+                    <th class="settings_users_details_key">{{ _('Permissions') }}</th>
+                    <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
+                </tr>
+                <tr data-bind="visible: apikey">
+                    <th class="settings_users_details_key">{{ _('API Key') }}</th>
+                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></td>
+                </tr>
+            </table>
+        </td>
+        <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'fa-square-o': !active }"></i></td>
+        <td class="settings_users_actions">
+            <a href="#" class="fa fa-pencil" title="{{ _('Update User')|edq }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: $root.access.users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.users.listHelper.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: access.users.listHelper.pages">
+        <li data-bind="css: { active: $data.number === $root.access.users.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.users.listHelper.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: $root.access.users.listHelper.currentPage() === access.users.listHelper.lastPage()}"><a href="#" data-bind="click: access.users.listHelper.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button title="{{ _('Add user')|edq }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user...') }}</button>
+
+<!-- Modals for user management -->
+
+<script type="text/html" id="users-group-template">
+    <!-- ko foreach: $root.access.groups.groupsList() -->
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checkedValue: name, checked: $root.access.users.editor.groups"><span data-bind="text: name"></span><br>
+            <span class="description" data-bind="text: description"></span>
+        </label>
+    <!-- /ko -->
+</script>
+
+<div id="settings-usersEditorDialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: $root.access.users.editor.header"></h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box">
+            <ul class="nav nav-pills">
+                <li id="settings_accesscontrol_users_add_general_link" class="active">
+                    <a href="#settings_accesscontrol_users_add_general" data-toggle="tab">{{ _('General') }}</a>
+                </li>
+                <li id="settings_accesscontrol_users_add_groups_link">
+                    <a href="#settings_accesscontrol_users_add_groups" data-toggle="tab">{{ _('Groups') }}</a>
+                </li>
+                <li id="settings_accesscontrol_users_add_permissions_link">
+                    <a href="#settings_accesscontrol_users_add_permissions" data-toggle="tab">{{ _('Additional permissions') }}</a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div id="settings_accesscontrol_users_add_general" class="tab-pane active">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-usersDialogAddUserName">{{ _('Username') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="disable: !$root.access.users.editor.new(), value: $root.access.users.editor.name" required>
+                            </div>
+                        </div>
+                        <div class="control-group" data-bind="visible: $root.access.users.editor.new()">
+                            <label class="control-label" for="settings-usersDialogAddUserPassword1">{{ _('Password') }}</label>
+                            <div class="controls">
+                                <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.access.users.editor.password" required>
+                            </div>
+                        </div>
+                        <div class="control-group" data-bind="css: {error: $root.access.users.editor.passwordMismatch()}, visible: $root.access.users.editor.new()">
+                            <label class="control-label" for="settings-usersDialogAddUserPassword2">{{ _('Repeat Password') }}</label>
+                            <div class="controls">
+                                <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.access.users.editor.repeatedPassword, valueUpdate: 'afterkeydown'" required>
+                                <span class="help-inline" data-bind="visible: $root.access.users.editor.passwordMismatch()">{{ _('Passwords do not match') }}</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.access.users.editor.active"> {{ _('Active') }}
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="settings_accesscontrol_users_add_groups" class="tab-pane">
+                    <!-- ko with: $root.access.users -->
+                    <!-- ko with: $root.access.groups -->
+                    {% include 'snippets/settings/accesscontrol/group_list.jinja2' %}
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+                <div id="settings_accesscontrol_users_add_permissions" class="tab-pane">
+                    <!-- ko with: $root.access.users -->
+                    <!-- ko with: $root.access.permissions -->
+                    {% include 'snippets/settings/accesscontrol/permission_list.jinja2' %}
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.editor.confirm(); }, enable: $root.access.users.editor.valid">{{ _('Confirm') }}</button>
+    </div>
+</div>
+
+<div id="settings-usersDialogChangePassword" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editor.name"></span>') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label" for="settings-usersDialogChangePasswordPassword1">{{ _('New Password') }}</label>
+                <div class="controls">
+                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword1" data-bind="value: $root.access.users.editor.password" required>
+                </div>
+            </div>
+            <div class="control-group" data-bind="css: {error: $root.access.users.editor.passwordMismatch()}">
+                <label class="control-label" for="settings-usersDialogChangePasswordPassword2">{{ _('Repeat Password') }}</label>
+                <div class="controls">
+                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword2" data-bind="value: $root.access.users.editor.repeatedPassword, valueUpdate: 'afterkeydown'" required>
+                    <span class="help-inline" data-bind="visible: $root.access.users.editor.passwordMismatch()">{{ _('Passwords do not match') }}</span>
+                </div>
+            </div>
+            <fieldset>
+                <legend>API Key</legend>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Current API Key') }}</label>
+                    <div class="controls">
+                        <div class="input-append input-block-level ">
+                            <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A')|esq }}'}">
+                            <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-copy"></i></a>
+                            <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="fa fa-refresh"></i></a>
+                            <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fa fa-trash-o"></i></a>
+                        </div>
+
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmChangePassword(); }, enable: !$root.access.users.editor.passwordMismatch()">{{ _('Confirm') }}</button>
+    </div>
+</div>

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places within
@@ -9,8 +9,10 @@ OctoPrint's source code.
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import io
 import os
 import traceback
+import past.builtins
 import sys
 import re
 import tempfile
@@ -31,6 +33,7 @@ try:
 except ImportError:
 	import Queue as queue
 
+# noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
 logger = logging.getLogger(__name__)
@@ -39,6 +42,12 @@ logger = logging.getLogger(__name__)
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> bytes
 	"""Make sure ``s_or_u`` is a bytestring."""
+	if s_or_u is None:
+		return s_or_u
+
+	if not isinstance(s_or_u, basestring):
+		s_or_u = str(s_or_u)
+
 	if isinstance(s_or_u, unicode):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
@@ -48,6 +57,12 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> unicode
 	"""Make sure ``s_or_u`` is a unicode string."""
+	if s_or_u is None:
+		return s_or_u
+
+	if not isinstance(s_or_u, basestring):
+		s_or_u = str(s_or_u)
+
 	if isinstance(s_or_u, bytes):
 		return s_or_u.decode(encoding, errors=errors)
 	else:
@@ -61,6 +76,57 @@ def to_native_str(s_or_u):
 		return to_bytes(s_or_u)
 	else:
 		return to_unicode(s_or_u)
+
+
+def sortable_value(value, default_value=""):
+	if value is None:
+		return default_value
+	return value
+sv = sortable_value
+
+
+def pp(value):
+	"""
+	>>> pp(dict()) # doctest: +ALLOW_UNICODE
+	'dict()'
+	>>> pp(dict(a=1, b=2, c=3)) # doctest: +ALLOW_UNICODE
+	'dict(a=1, b=2, c=3)'
+	>>> pp(set()) # doctest: +ALLOW_UNICODE
+	'set()'
+	>>> pp({"a", "b"}) # doctest: +ALLOW_UNICODE
+	"{'a', 'b'}"
+	>>> pp(["a", "b", "d", "c"]) # doctest: +ALLOW_UNICODE
+	"['a', 'b', 'd', 'c']"
+	>>> pp(("a", "b", "d", "c")) # doctest: +ALLOW_UNICODE
+	"('a', 'b', 'd', 'c')"
+	>>> pp("foo") # doctest: +ALLOW_UNICODE
+	"'foo'"
+	>>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"]) # doctest: +ALLOW_UNICODE
+	"[dict(a=1, b=2), {'a', 'b', 'c'}, (1, 2), None, 1, True, 'foo']"
+	"""
+
+	if isinstance(value, dict):
+		# sort by keys
+		r = "dict("
+		r += ", ".join(map(lambda i: i[0] + "=" + pp(i[1]), sorted(value.items())))
+		r += ")"
+		return r
+	elif isinstance(value, set):
+		if len(value):
+			# filled set: sort
+			r = "{"
+			r += ", ".join(map(pp, sorted(value)))
+			r += "}"
+			return r
+		else:
+			# empty set
+			return "set()"
+	elif isinstance(value, list):
+		return "[" + ", ".join(map(pp, value)) + "]"
+	elif isinstance(value, tuple):
+		return "(" + ", ".join(map(pp, value)) + ")"
+	else:
+		return repr(value)
 
 
 def warning_decorator_factory(warning_type):
@@ -84,6 +150,35 @@ def warning_decorator_factory(warning_type):
 		return decorator
 	return specific_warning
 
+
+def warning_factory(warning_type):
+	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
+		def decorator(o):
+			def wrapper(f):
+				def new(*args, **kwargs):
+					warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
+					return f(*args, **kwargs)
+				return new
+
+			output = o.__class__.__new__(o.__class__, o)
+
+			unwrappable_names = ("__weakref__", "__class__", "__dict__", "__doc__", "__str__", "__unicode__", "__repr__", "__getattribute__", "__setattr__")
+			for method_name in dir(o):
+				if method_name in unwrappable_names: continue
+
+				setattr(output, method_name, wrapper(getattr(o, method_name)))
+
+			if includedoc is not None and since is not None:
+				docstring = "\n.. deprecated:: {since}\n   {message}\n\n".format(since=since, message=includedoc)
+				if extenddoc and hasattr(wrapper, "__doc__") and wrapper.__doc__ is not None:
+					docstring = wrapper.__doc__ + "\n" + docstring
+					wrapper.__doc__ = docstring
+
+			return output
+		return decorator
+	return specific_warning
+
+
 deprecated = warning_decorator_factory(DeprecationWarning)
 """
 A decorator for deprecated methods. Logs a deprecation warning via Python's `:mod:`warnings` module including the
@@ -105,6 +200,24 @@ Arguments:
 
 Returns:
     function: The wrapped function with the deprecation warnings in place.
+"""
+
+variable_deprecated = warning_factory(DeprecationWarning)
+"""
+A function for deprecated variables. Logs a deprecation warning via Python's `:mod:`warnings` module including the
+supplied ``message``. The call stack level used (for adding the source location of the offending call to the
+warning) can be overridden using the optional ``stacklevel`` parameter.
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
 """
 
 pending_deprecation = warning_decorator_factory(PendingDeprecationWarning)
@@ -130,7 +243,27 @@ Returns:
     function: The wrapped function with the deprecation warnings in place.
 """
 
+variable_pending_deprecation = warning_factory(PendingDeprecationWarning)
+"""
+A decorator for variables pending deprecation. Logs a pending deprecation warning via Python's `:mod:`warnings` module
+including the supplied ``message``. The call stack level used (for adding the source location of the offending call to
+the warning) can be overridden using the optional ``stacklevel`` parameter.
+
+Arguments:
+    message (string): The message to include in the deprecation warning.
+    stacklevel (int): Stack level for including the caller of the offending method in the logged warning. Defaults to 1,
+        meaning the direct caller of the method. It might make sense to increase this in case of the function call
+        happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
+        ``getattr`` methods).
+    since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
+
+Returns:
+    value: The value of the variable with the deprecation warnings in place.
+"""
+
+
 to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
+
 
 def get_formatted_size(num):
 	"""
@@ -165,7 +298,7 @@ def is_allowed_file(filename, extensions):
 	    boolean: True if the file name's extension matches one of the allowed extensions, False otherwise.
 	"""
 
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in map(str.lower, extensions)
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in (x.lower() for x in extensions)
 
 
 def get_formatted_timedelta(d):
@@ -295,21 +428,21 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 	Examples:
 
-	    >>> get_dos_filename("test1234.gco")
-	    u'test1234.gco'
-	    >>> get_dos_filename("test1234.gcode")
-	    u'test1234.gco'
-	    >>> get_dos_filename("test12345.gco")
-	    u'test12~1.gco'
-	    >>> get_dos_filename("test1234.fnord", extension="gco")
-	    u'test1234.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco")
-	    u'auto0.gco'
-	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
-	    u'auto0.g'
+	    >>> get_dos_filename("test1234.gco") # doctest: +ALLOW_UNICODE
+	    'test1234.gco'
+	    >>> get_dos_filename("test1234.gcode") # doctest: +ALLOW_UNICODE
+	    'test1234.gco'
+	    >>> get_dos_filename("test12345.gco") # doctest: +ALLOW_UNICODE
+	    'test12~1.gco'
+	    >>> get_dos_filename("test1234.fnord", extension="gco") # doctest: +ALLOW_UNICODE
+	    'test1234.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco") # doctest: +ALLOW_UNICODE
+	    'auto0.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"]) # doctest: +ALLOW_UNICODE
+	    'auto0.g'
 	    >>> get_dos_filename(None)
-	    >>> get_dos_filename("foo")
-	    u'foo'
+	    >>> get_dos_filename("foo") # doctest: +ALLOW_UNICODE
+	    'foo'
 	"""
 
 	if input is None:
@@ -380,49 +513,49 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Examples:
 
-	    >>> find_collision_free_name("test1234", "gco", [])
-	    u'test1234.gco'
-	    >>> find_collision_free_name("test1234", "gcode", [])
-	    u'test1234.gco'
-	    >>> find_collision_free_name("test12345", "gco", [])
-	    u'test12~1.gco'
-	    >>> find_collision_free_name("test 123", "gco", [])
-	    u'test_123.gco'
-	    >>> find_collision_free_name("test1234", "g o", [])
-	    u'test1234.g_o'
-	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"])
-	    u'test12~2.gco'
+	    >>> find_collision_free_name("test1234", "gco", []) # doctest: +ALLOW_UNICODE
+	    'test1234.gco'
+	    >>> find_collision_free_name("test1234", "gcode", []) # doctest: +ALLOW_UNICODE
+	    'test1234.gco'
+	    >>> find_collision_free_name("test12345", "gco", []) # doctest: +ALLOW_UNICODE
+	    'test12~1.gco'
+	    >>> find_collision_free_name("test 123", "gco", []) # doctest: +ALLOW_UNICODE
+	    'test_123.gco'
+	    >>> find_collision_free_name("test1234", "g o", []) # doctest: +ALLOW_UNICODE
+	    'test1234.g_o'
+	    >>> find_collision_free_name("test12345", "gco", ["/test12~1.gco"]) # doctest: +ALLOW_UNICODE
+	    'test12~2.gco'
 	    >>> many_files = ["/test12~{}.gco".format(x) for x in range(10)[1:]]
-	    >>> find_collision_free_name("test12345", "gco", many_files)
-	    u'test1~10.gco'
+	    >>> find_collision_free_name("test12345", "gco", many_files) # doctest: +ALLOW_UNICODE
+	    'test1~10.gco'
 	    >>> many_more_files = many_files + ["/test1~{}.gco".format(x) for x in range(10, 99)]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files)
-	    u'test1~99.gco'
+	    >>> find_collision_free_name("test12345", "gco", many_more_files) # doctest: +ALLOW_UNICODE
+	    'test1~99.gco'
 	    >>> many_more_files_plus_one = many_more_files + ["/test1~99.gco"]
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one) # doctest: +ALLOW_UNICODE
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
-	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
-	    u'test~100.gco'
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3) # doctest: +ALLOW_UNICODE
+	    'test~100.gco'
 
 	"""
 
 	filename = to_unicode(filename)
 	extension = to_unicode(extension)
 
-	if filename.startswith(u"/"):
+	if filename.startswith("/"):
 		filename = filename[1:]
 	existing_filenames = [to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames]
 
 	def make_valid(text):
-		return re.sub(u"\s+", u"_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in r".\"/\[]:;=,"})).lower()
 
 	filename = make_valid(filename)
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+	full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
 	result = full_name_format.format(filename=filename,
 	                                 extension=extension)
@@ -432,7 +565,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	counter = 1
 	power = 1
-	prefix_format = u"{segment}~{counter}"
+	prefix_format = "{segment}~{counter}"
 	while counter < (10 ** max_power):
 		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
 		result = full_name_format.format(filename=prefix,
@@ -643,7 +776,7 @@ def dict_minimal_mergediff(source, target):
 
 	from copy import deepcopy
 
-	all_keys = set(source.keys() + target.keys())
+	all_keys = set(list(source.keys()) + list(target.keys()))
 	result = dict()
 	for k in all_keys:
 		if k not in target:
@@ -721,19 +854,46 @@ class fallback_dict(dict):
 		self.custom[key] = value
 
 	def __delitem__(self, key):
+		# TODO: mark as deleted and leave fallbacks alone?
 		for dictionary in self._all():
 			if key in dictionary:
 				del dictionary[key]
 
+	def __contains__(self, key):
+		return any((key in dictionary)
+				   for dictionary in self._all())
+
 	def keys(self):
 		result = set()
 		for dictionary in self._all():
-			result += dictionary.keys()
-		return result
+			for k in dictionary.keys():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def values(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k
+
+	def items(self):
+		result = set()
+		for dictionary in self._all():
+			for k, v in dictionary.items():
+				if k in result:
+					continue
+				result.add(k)
+				yield k, v
 
 	def _all(self):
-		return [self.custom] + list(self.fallbacks)
-
+		yield self.custom
+		for d in self.fallbacks:
+			yield d
 
 
 def dict_filter(dictionary, filter_function):
@@ -803,7 +963,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 			args = tuple()
 		else:
 			args = self.default_factory,
-		return type(self), args, None, None, self.items()
+		return type(self), args, None, None, list(self.items())
 
 	def copy(self):
 		return self.__copy__()
@@ -814,7 +974,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 	def __deepcopy__(self, memo):
 		import copy
 		return type(self)(self.default_factory,
-		                  copy.deepcopy(self.items()))
+		                  copy.deepcopy(list(self.items())))
 
 	# noinspection PyMethodOverriding
 	def __repr__(self):
@@ -837,7 +997,7 @@ def interface_addresses(family=None):
 	for interface in netifaces.interfaces():
 		try:
 			ifaddresses = netifaces.ifaddresses(interface)
-		except:
+		except Exception:
 			continue
 		if family in ifaddresses:
 			for ifaddress in ifaddresses[family]:
@@ -853,7 +1013,7 @@ def address_for_client(host, port, timeout=3.05):
 		try:
 			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
 				return address
-		except:
+		except Exception:
 			continue
 
 def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
@@ -883,7 +1043,7 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 			sock.bind((source, 0))
 		sock.connect((host, port))
 		return True
-	except:
+	except Exception:
 		return False
 
 def guess_mime_type(data):
@@ -923,12 +1083,20 @@ def mime_type_matches(mime, other):
 	return type_matches and subtype_matches
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
+def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
 
-	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
+	# NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
+	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+	os.close(fd)
+
+	if "b" in mode:
+		temp_config = io.open(path, mode=mode)
+	else:
+		temp_config = io.open(path, mode=mode, encoding=encoding)
+
 	try:
 		yield temp_config
 	finally:
@@ -966,6 +1134,8 @@ def temppath(prefix=None, suffix=""):
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
 
+	assert "b" not in mode, "binary mode not support by bom_aware_open"
+
 	codec = codecs.lookup(encoding)
 	encoding = codec.name
 
@@ -977,13 +1147,13 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		# these encodings might have a BOM, so let's see if there is one
 		bom = getattr(codecs, potential_bom_attribute)
 
-		with open(filename, "rb") as f:
+		with io.open(filename, mode='rb') as f:
 			header = f.read(4)
 
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
+	return io.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 def is_hidden_path(path):
@@ -994,7 +1164,7 @@ def is_hidden_path(path):
 	path = to_unicode(path)
 
 	filename = os.path.basename(path)
-	if filename.startswith(u"."):
+	if filename.startswith("."):
 		# filenames starting with a . are hidden
 		return True
 
@@ -1035,14 +1205,17 @@ except ImportError:
 			pathname = _glob_escape_check.sub(r"[\1]", pathname)
 		return drive + pathname
 
-
 try:
-	import monotonic
-	monotonic_time = monotonic.monotonic
-except RuntimeError:
-	# no source of monotonic time available, nothing left but using time.time *cringe*
-	import time
-	monotonic_time = time.time
+	# py3
+	from time import monotonic as monotonic_time
+except ImportError:
+	try:
+		# py2 w/ suitable source for monotonic time
+		from monotonic import monotonic as monotonic_time
+	except RuntimeError:
+		# no source of monotonic time available, nothing left but using time.time *cringe*
+		import time
+		monotonic_time = time.time
 
 
 def thaw_frozendict(obj):
@@ -1367,7 +1540,11 @@ class CountedEvent(object):
 
 class InvariantContainer(object):
 	def __init__(self, initial_data=None, guarantee_invariant=None):
-		from collections import Iterable
+		try:
+			from collections import Iterable
+		except ImportError:
+			# Python >= 3.8
+			from collections.abc import Iterable
 		from threading import RLock
 
 		if guarantee_invariant is None:
@@ -1619,10 +1796,10 @@ class CaseInsensitiveSet(collections.Set):
 	"""
 
 	def __init__(self, *args):
-		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+		self.data = set(x.lower() if isinstance(x, past.builtins.basestring) else x for x in args)
 
 	def __contains__(self, item):
-		if isinstance(item, (str, unicode)):
+		if isinstance(item, past.builtins.basestring):
 			return item.lower() in self.data
 		else:
 			return item in self.data
@@ -1636,7 +1813,15 @@ class CaseInsensitiveSet(collections.Set):
 
 # originally from https://stackoverflow.com/a/5967539
 def natural_key(text):
-	return [ int(c) if c.isdigit() else c for c in re.split("(\d+)", text) ]
+	return [ int(c) if c.isdigit() else c for c in re.split(r"(\d+)", text) ]
+
+
+def count(gen):
+	"""Used instead of len(generator), which doesn't work"""
+	n = 0
+	for _ in gen:
+		n += 1
+	return n
 
 
 def timing(f):
@@ -1650,3 +1835,11 @@ def timing(f):
 			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
 			                                                                                end - start))
 	return decorator
+
+
+def generate_api_key():
+	# noinspection PyCompatibility
+	from builtins import bytes
+	import uuid
+
+	return ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))

@@ -104,7 +104,8 @@ ClientOpened
 
    Payload:
 
-     * ``remoteAddress``: the remote address (IP) of the client that connected
+     * ``remoteAddress``: the remote address (IP) of the client that connected. On the push socket only available with
+       a valid login session.
 
    **Note:** Name changed in version 1.1.0
 
@@ -114,6 +115,19 @@ ClientClosed
    Payload:
 
      * ``remoteAddress``: the remote address (IP) of the client that disconnected
+
+UserLoggedIn
+   A user logged in. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+
+     * ``username``: the name of the user who logged in
+
+UserLoggedOut
+   A user logged out. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+     * ``username``: the name of the user who logged out
 
 ConnectivityChanged
    The server's internet connectivity changed
@@ -150,6 +164,9 @@ Disconnected
 Error
    An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
    on the connection.
+
+   Note that this event will not fire for error messages from the firmware that are handled (and as such recovered from)
+   either by OctoPrint or a plugin.
 
    Payload:
 
@@ -669,7 +686,7 @@ SettingsUpdated
 .. _sec-events-available_events-printer_profile:
 
 Printer Profile
---------
+---------------
 
 PrinterProfileModified
    A printer profile was modified.

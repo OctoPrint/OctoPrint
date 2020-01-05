@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -61,7 +61,7 @@ class TestCommHelpers(unittest.TestCase):
 			self.assertEqual(input, actual)
 		else:
 			import re
-			match = re.search("S(\d+(\.\d+)?)", actual)
+			match = re.search(r"S(\d+(\.\d+)?)", actual)
 			if not match:
 				self.fail("No temperature found")
 			temperature = float(match.group(1))
@@ -103,15 +103,16 @@ class TestCommHelpers(unittest.TestCase):
 			m.update(input)
 			return m.hexdigest()
 
-		temp_regex = "T:((\d*\.)\d+)"
-		temp_template = "Temp: {}"
-		temp2_template = "Temperature: {}"
+		# rb'' doesn't exist in Python2
+		temp_regex = r'T:((\d*\.)\d+)'.encode('utf-8')
+		temp_template = b"Temp: {}"
+		temp2_template = b"Temperature: {}"
 		temp_key = md5sum(temp_regex)
 		temp_template_key = md5sum(temp_template)
 		temp2_template_key = md5sum(temp2_template)
 
-		x_regex = "X:(?P<x>\d+)"
-		x_template = "X: {x}"
+		x_regex = r"X:(?P<x>\d+)".encode('utf-8')
+		x_template = b"X: {x}"
 		x_key = md5sum(x_regex)
 		x_template_key = md5sum(x_template)
 

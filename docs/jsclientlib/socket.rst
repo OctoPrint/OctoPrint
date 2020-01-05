@@ -42,7 +42,7 @@
    To register for all message types, provide ``*`` as the type to register for.
 
    ``handler`` is expected to be a function accepting one object parameter ``eventObj``, consisting
-   of the received message as property ``key`` and the received payload (if any) as property ``data``.
+   of the received message as property ``event`` and the received payload (if any) as property ``data``.
 
    .. code-block:: javascript
 

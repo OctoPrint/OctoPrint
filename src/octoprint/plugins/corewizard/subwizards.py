@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,7 +9,8 @@ import octoprint.plugin
 import sys
 import inspect
 from flask_babel import gettext
-
+from octoprint.access import ADMIN_GROUP, USER_GROUP
+from octoprint.util import to_native_str
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class ServerCommandsSubwizard(object):
@@ -55,7 +56,7 @@ class AclSubwizard(object):
 		return True
 
 	def _is_acl_wizard_required(self):
-		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
+		return self._user_manager.enabled and not self._user_manager.has_been_customized()
 
 	def _get_acl_wizard_details(self):
 		return dict(required=self._is_acl_wizard_required())
@@ -71,27 +72,24 @@ class AclSubwizard(object):
 		from flask import request, abort
 		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.hasBeenCustomized():
+		if not self._settings.global_get(["server", "firstRun"]) or self._user_manager.has_been_customized():
 			abort(404)
 
-		data = request.values
-		if hasattr(request, "json") and request.json:
-			data = request.json
+		data = request.get_json()
+		if data is None:
+			data = request.values
 
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
-						"user" in data.keys() and "pass1" in data.keys() and \
-						"pass2" in data.keys() and data["pass1"] == data["pass2"]:
+						"user" in data and "pass1" in data and \
+						"pass2" in data and data["pass1"] == data["pass2"]:
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
-		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
+
+			self._user_manager.add_user(data["user"], data["pass1"], True, [], [USER_GROUP, ADMIN_GROUP], overwrite=True)
+		elif "ac" in data and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
-
-			octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-			octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
-
 			self._user_manager.disable()
 		self._settings.save()
 		return NO_CONTENT
@@ -148,7 +146,7 @@ class PrinterProfileSubwizard(object):
 		return gettext("Default Printer Profile")
 
 
-Subwizards = type("Subwizwards",
+Subwizards = type(to_native_str("Subwizards"),
                   tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
                         if clsname.endswith("Subwizard")),
                   dict())

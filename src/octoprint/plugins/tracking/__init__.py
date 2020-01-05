@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -78,11 +78,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            never=[["server"], ["ping"]])
 
 	def on_settings_save(self, data):
-		enabled = self._settings.get([b"enabled"])
+		enabled = self._settings.get(["enabled"])
 
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
-		if enabled is None and self._settings.get([b"enabled"]):
+		if enabled is None and self._settings.get(["enabled"]):
 			# tracking was just enabled, let's start up tracking
 			self._start_tracking()
 
@@ -99,7 +99,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ ShutdownPlugin
 
 	def on_shutdown(self):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 		self._track_shutdown()
 
@@ -107,7 +107,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	# noinspection PyUnresolvedReferences
 	def on_event(self, event, payload):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		if event in (Events.PRINT_STARTED, Events.PRINT_DONE, Events.PRINT_FAILED, Events.PRINT_CANCELLED):
@@ -160,18 +160,18 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ WizardPlugin
 
 	def is_wizard_required(self):
-		return self._settings.get([b"enabled"]) is None
+		return self._settings.get(["enabled"]) is None
 
 	##~~ helpers
 
 	def _init_id(self):
-		if not self._settings.get([b"unique_id"]):
+		if not self._settings.get(["unique_id"]):
 			import uuid
-			self._settings.set([b"unique_id"], str(uuid.uuid4()))
+			self._settings.set(["unique_id"], str(uuid.uuid4()))
 			self._settings.save()
 
 	def _start_tracking(self):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		if self._ping_worker is None:
@@ -196,7 +196,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		self._track_startup()
 
 	def _track_ping(self):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		uptime = int(monotonic_time() - self._startup_time)
@@ -219,23 +219,23 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		payload = dict(version=get_octoprint_version_string(),
-		               os=self._environment[b"os"][b"id"],
-		               python=self._environment[b"python"][b"version"],
-		               pip=self._environment[b"python"][b"pip"],
-		               cores=self._environment[b"hardware"][b"cores"],
-		               freq=self._environment[b"hardware"][b"freq"],
-		               ram=self._environment[b"hardware"][b"ram"])
+		               os=self._environment["os"]["id"],
+		               python=self._environment["python"]["version"],
+		               pip=self._environment["python"]["pip"],
+		               cores=self._environment["hardware"]["cores"],
+		               freq=self._environment["hardware"]["freq"],
+		               ram=self._environment["hardware"]["ram"])
 
-		if b"plugins" in self._environment and b"pi_support" in self._environment[b"plugins"]:
-			payload[b"pi_model"] = self._environment[b"plugins"][b"pi_support"][b"model"]
+		if "plugins" in self._environment and "pi_support" in self._environment["plugins"]:
+			payload["pi_model"] = self._environment["plugins"]["pi_support"]["model"]
 
-			if b"octopi_version" in self._environment[b"plugins"][b"pi_support"]:
-				payload[b"octopi_version"] = self._environment[b"plugins"][b"pi_support"][b"octopi_version"]
+			if "octopi_version" in self._environment["plugins"]["pi_support"]:
+				payload["octopi_version"] = self._environment["plugins"]["pi_support"]["octopi_version"]
 
 		self._track("startup", **payload)
 
 	def _track_shutdown(self):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		if not self._settings.get_boolean(["events", "startup"]):
@@ -248,13 +248,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if event.endswith("_install_plugin"):
-			self._track("install_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
+			self._track("install_plugin", plugin=payload.get("id"), plugin_version=payload.get("version"))
 		elif event.endswith("_uninstall_plugin"):
-			self._track("uninstall_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
+			self._track("uninstall_plugin", plugin=payload.get("id"), plugin_version=payload.get("version"))
 		elif event.endswith("_enable_plugin"):
-			self._track("enable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
+			self._track("enable_plugin", plugin=payload.get("id"), plugin_version=payload.get("version"))
 		elif event.endswith("_disable_plugin"):
-			self._track("disable_plugin", plugin=payload.get(b"id"), plugin_version=payload.get(b"version"))
+			self._track("disable_plugin", plugin=payload.get("id"), plugin_version=payload.get("version"))
 
 	def _track_update_event(self, event, payload):
 		if not self._settings.get_boolean(["events", "update"]):
@@ -269,15 +269,15 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "throttled"]):
 			return
 
-		args = dict(throttled_now=payload[b"current_issue"],
-		            throttled_past=payload[b"past_issue"],
-		            throttled_mask=payload[b"raw_value"],
-		            throttled_voltage_now=payload[b"current_undervoltage"],
-		            throttled_voltage_past=payload[b"past_undervoltage"],
-		            throttled_overheat_now=payload[b"current_overheat"],
-		            throttled_overheat_past=payload[b"past_overheat"])
+		args = dict(throttled_now=payload["current_issue"],
+		            throttled_past=payload["past_issue"],
+		            throttled_mask=payload["raw_value"],
+		            throttled_voltage_now=payload["current_undervoltage"],
+		            throttled_voltage_past=payload["past_undervoltage"],
+		            throttled_overheat_now=payload["current_overheat"],
+		            throttled_overheat_past=payload["past_overheat"])
 
-		if payload[b"current_issue"]:
+		if payload["current_issue"]:
 			track_event = "system_throttled"
 		else:
 			track_event = "system_unthrottled"
@@ -289,20 +289,20 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "commerror"]):
 			return
 
-		if not b"reason" in payload or not b"error" in payload:
+		if not "reason" in payload or not "error" in payload:
 			return
 
-		track_event = "commerror_{}".format(payload[b"reason"])
-		args = dict(commerror_text=payload[b"error"])
+		track_event = "commerror_{}".format(payload["reason"])
+		args = dict(commerror_text=payload["error"])
 
 		if callable(self._helpers_get_throttle_state):
 			try:
 				throttle_state = self._helpers_get_throttle_state(run_now=True)
-				if throttle_state and (throttle_state.get(b"current_issue", False) or throttle_state.get(b"past_issue", False)):
-					args[b"throttled_now"] = throttle_state[b"current_issue"]
-					args[b"throttled_past"] = throttle_state[b"past_issue"]
-					args[b"throttled_mask"] = throttle_state[b"raw_value"]
-			except:
+				if throttle_state and (throttle_state.get("current_issue", False) or throttle_state.get("past_issue", False)):
+					args["throttled_now"] = throttle_state["current_issue"]
+					args["throttled_past"] = throttle_state["past_issue"]
+					args["throttled_mask"] = throttle_state["raw_value"]
+			except Exception:
 				# ignored
 				pass
 
@@ -312,45 +312,45 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "printjob"]):
 			return
 
-		unique_id = self._settings.get([b"unique_id"])
+		unique_id = self._settings.get(["unique_id"])
 		if not unique_id:
 			return
 
 		sha = hashlib.sha1()
-		sha.update(payload.get("path"))
-		sha.update(unique_id)
+		sha.update(payload.get("path").encode("utf-8"))
+		sha.update(unique_id.encode("utf-8"))
 
 		track_event = None
-		args = dict(origin=payload.get(b"origin"), file=sha.hexdigest())
+		args = dict(origin=payload.get("origin"), file=sha.hexdigest())
 
 		if event == Events.PRINT_STARTED:
 			track_event = "print_started"
 		elif event == Events.PRINT_DONE:
 			try:
-				elapsed = int(payload.get(b"time", 0))
+				elapsed = int(payload.get("time", 0))
 				if elapsed:
-					args[b"elapsed"] = elapsed
+					args["elapsed"] = elapsed
 			except (ValueError, TypeError):
 				pass
 			track_event = "print_done"
 		elif event == Events.PRINT_FAILED:
 			try:
-				elapsed = int(payload.get(b"time", 0))
+				elapsed = int(payload.get("time", 0))
 				if elapsed:
-					args[b"elapsed"] = elapsed
+					args["elapsed"] = elapsed
 			except (ValueError, TypeError):
 				pass
-			args[b"reason"] = payload.get(b"reason", "unknown")
+			args["reason"] = payload.get("reason", "unknown")
 
-			if b"error" in payload and self._settings.get_boolean(["events", "commerror"]):
-				args[b"commerror_text"] = payload[b"error"]
+			if "error" in payload and self._settings.get_boolean(["events", "commerror"]):
+				args["commerror_text"] = payload["error"]
 
 			track_event = "print_failed"
 		elif event == Events.PRINT_CANCELLED:
 			try:
-				elapsed = int(payload.get(b"time", 0))
+				elapsed = int(payload.get("time", 0))
 				if elapsed:
-					args[b"elapsed"] = elapsed
+					args["elapsed"] = elapsed
 			except (ValueError, TypeError):
 				pass
 			track_event = "print_cancelled"
@@ -358,11 +358,11 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if callable(self._helpers_get_throttle_state):
 			try:
 				throttle_state = self._helpers_get_throttle_state(run_now=True)
-				if throttle_state and (throttle_state.get(b"current_issue", False) or throttle_state.get(b"past_issue", False)):
-					args[b"throttled_now"] = throttle_state[b"current_issue"]
-					args[b"throttled_past"] = throttle_state[b"past_issue"]
-					args[b"throttled_mask"] = throttle_state[b"raw_value"]
-			except:
+				if throttle_state and (throttle_state.get("current_issue", False) or throttle_state.get("past_issue", False)):
+					args["throttled_now"] = throttle_state["current_issue"]
+					args["throttled_past"] = throttle_state["past_issue"]
+					args["throttled_mask"] = throttle_state["raw_value"]
+			except Exception:
 				# ignored
 				pass
 
@@ -385,8 +385,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		self._track("printer_safety_warning",
-		            printer_safety_warning_type=payload.get(b"warning_type", "unknown"),
-		            printer_safety_check_name=payload.get(b"check_name", "unknown"))
+		            printer_safety_warning_type=payload.get("warning_type", "unknown"),
+		            printer_safety_check_name=payload.get("check_name", "unknown"))
 
 	def _track_slicing_event(self, event, payload):
 		if not self._settings.get_boolean(["events", "slicing"]):
@@ -396,7 +396,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		            slicer=payload.get(b"slicer", "unknown"))
 
 	def _track(self, event, **kwargs):
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
 		self._executor.submit(self._do_track, event, **kwargs)
@@ -405,14 +405,14 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._connectivity_checker.online:
 			return
 
-		if not self._settings.get_boolean([b"enabled"]):
+		if not self._settings.get_boolean(["enabled"]):
 			return
 
-		unique_id = self._settings.get([b"unique_id"])
+		unique_id = self._settings.get(["unique_id"])
 		if not unique_id:
 			return
 
-		server = self._settings.get([b"server"])
+		server = self._settings.get(["server"])
 		url = server.format(id=unique_id, event=event)
 		# Don't print the URL or UUID! That would expose the UUID in forums/tickets
 		# if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
@@ -433,7 +433,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				             headers=headers)
 
 			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
-		except:
+		except Exception:
 			if self._logger.isEnabledFor(logging.DEBUG):
 				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
 			else:

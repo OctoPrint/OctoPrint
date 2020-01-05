@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -20,7 +20,7 @@ def check_v6():
 
 		try:
 			socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-		except:
+		except Exception:
 			# "[Errno 97] Address family not supported by protocol" or anything else really...
 			return False
 		return True
@@ -60,7 +60,7 @@ def is_lan_address(address, additional_private=None):
 		for additional in additional_private:
 			try:
 				subnets.add(netaddr.IPNetwork(additional))
-			except:
+			except Exception:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 					logging.getLogger(__name__).exception("Error while trying to add additional private network to local subnets: {}".format(additional))
 
@@ -78,7 +78,7 @@ def is_lan_address(address, additional_private=None):
 			for v4 in addrs.get(socket.AF_INET, ()):
 				try:
 					subnets.add(to_ipnetwork(v4))
-				except:
+				except Exception:
 					if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 						logging.getLogger(__name__).exception("Error while trying to add v4 network to local subnets: {!r}".format(v4))
 
@@ -86,7 +86,7 @@ def is_lan_address(address, additional_private=None):
 				for v6 in addrs.get(socket.AF_INET6, ()):
 					try:
 						subnets.add(to_ipnetwork(v6))
-					except:
+					except Exception:
 						if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
 							logging.getLogger(__name__).exception("Error while trying to add v6 network to local subnets: {!r}".format(v6))
 
@@ -95,7 +95,7 @@ def is_lan_address(address, additional_private=None):
 
 		return False
 
-	except:
+	except Exception:
 		# we are extra careful here since an unhandled exception in this method will effectively nuke the whole UI
 		logging.getLogger(__name__).exception("Error while trying to determine whether {} is a local address".format(address))
 		return True

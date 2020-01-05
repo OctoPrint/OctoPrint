@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,6 +14,7 @@ from ddt import ddt, unpack, data
 
 import octoprint.plugin
 import octoprint.settings
+from octoprint.util import to_native_str
 
 @ddt
 class SettingsTestCase(unittest.TestCase):
@@ -104,7 +105,11 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_getter(self, deprecated, current, forwarded):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+
+			# further mock out our mocked function so things work as they should
+			called_method.__name__ = to_native_str(forwarded)
+			called_method.__qualname__ = to_native_str(forwarded)
+			called_method.__annotations__ = dict()
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -114,29 +119,7 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
-
-	@data(
-		("globalGet", "global_get", "get"),
-		("globalGetInt", "global_get_int", "getInt"),
-		("globalGetFloat", "global_get_float", "getFloat"),
-		("globalGetBoolean", "global_get_boolean", "getBoolean")
-	)
-	@unpack
-	def test_deprecated_global_getter(self, deprecated, current, forwarded):
-		with warnings.catch_warnings(record=True) as w:
-			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
-
-			method = getattr(self.plugin_settings, deprecated)
-			self.assertTrue(callable(method))
-			method(["some_raw_key"])
-
-			called_method.assert_called_once_with(["some_raw_key",])
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	@data(
 		("set", (["some_raw_key",], "some_value"), dict(), "set"),
@@ -190,7 +173,11 @@ class SettingsTestCase(unittest.TestCase):
 	def test_deprecated_forwarded_setter(self, deprecated, current, forwarded, value):
 		with warnings.catch_warnings(record=True) as w:
 			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
+
+			# further mock out our mocked function so things work as they should
+			called_method.__name__ = to_native_str(forwarded)
+			called_method.__qualname__ = to_native_str(forwarded)
+			called_method.__annotations__ = dict()
 
 			method = getattr(self.plugin_settings, deprecated)
 			self.assertTrue(callable(method))
@@ -200,42 +187,11 @@ class SettingsTestCase(unittest.TestCase):
 
 			self.assertEqual(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
-
-	@data(
-		("globalSet", "global_set", "set", "some_value"),
-		("globalSetInt", "global_set_int", "setInt", 1),
-		("globalSetFloat", "global_set_float", "setFloat", 2.5),
-		("globalSetBoolean", "global_set_boolean", "setBoolean", True)
-	)
-	@unpack
-	def test_deprecated_global_setter(self, deprecated, current, forwarded, value):
-		with warnings.catch_warnings(record=True) as w:
-			called_method = getattr(self.settings, forwarded)
-			called_method.__name__ = forwarded
-
-			method = getattr(self.plugin_settings, deprecated)
-			self.assertTrue(callable(method))
-			method(["some_raw_key"], value)
-
-			called_method.assert_called_once_with(["some_raw_key"], value)
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in (w[-1].message))
+			self.assertTrue("{old} has been renamed to {new}".format(old=deprecated, new=current) in str(w[-1].message))
 
 	def test_global_get_basefolder(self):
 		self.plugin_settings.global_get_basefolder("some_folder")
 		self.settings.getBaseFolder.assert_called_once_with("some_folder")
-
-	def test_deprecated_global_get_basefolder(self):
-		with warnings.catch_warnings(record=True) as w:
-			self.plugin_settings.globalGetBaseFolder("some_folder")
-			self.settings.getBaseFolder.assert_called_once_with("some_folder")
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("globalGetBaseFolder has been renamed to global_get_basefolder" in (w[-1].message))
 
 	def test_logfile_path(self):
 		import os
@@ -256,20 +212,6 @@ class SettingsTestCase(unittest.TestCase):
 
 		self.settings.getBaseFolder.assert_called_once_with("logs")
 		self.assertEqual("/some/folder/plugin_{key}_mypostfix.log".format(key=self.plugin_key), path.replace(os.sep, "/"))
-
-	def test_deprecated_logfile_path(self):
-		import os
-
-		with warnings.catch_warnings(record=True) as w:
-			self.settings.getBaseFolder.return_value = "/some/folder"
-			path = self.plugin_settings.getPluginLogfilePath()
-
-			self.settings.getBaseFolder.assert_called_once_with("logs")
-			self.assertEqual("/some/folder/plugin_{key}.log".format(key=self.plugin_key), path.replace(os.sep, "/"))
-
-			self.assertEqual(1, len(w))
-			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-			self.assertTrue("getPluginLogfilePath has been renamed to get_plugin_logfile_path" in (w[-1].message))
 
 	def test_unhandled_method(self):
 		try:

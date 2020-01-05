@@ -1,5 +1,6 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 __author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
@@ -7,6 +8,7 @@ __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under 
 
 import math
 import os
+import io
 import base64
 import zlib
 import logging
@@ -62,36 +64,55 @@ class Vector3D(object):
 		return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
 	def __add__(self, other):
-		if isinstance(other, Vector3D):
+		try:
+			if len(other) == 3:
+				return Vector3D(self.x + other[0],
+				                self.y + other[1],
+				                self.z + other[2])
+		except TypeError:
+			# doesn't look like a 3-tuple
+			pass
+
+		try:
 			return Vector3D(self.x + other.x,
 			                self.y + other.y,
 			                self.z + other.z)
-		elif isinstance(other, (tuple, list)) and len(other) == 3:
-			return Vector3D(self.x + other[0],
-			                self.y + other[1],
-			                self.z + other[2])
-		else:
-			raise ValueError("other must be a Vector3D instance or a list or tuple of length 3")
+		except AttributeError:
+			# also doesn't look like a Vector3D
+			pass
+
+		raise TypeError("other must be a Vector3D instance or a list or tuple of length 3")
 
 	def __sub__(self, other):
-		if isinstance(other, Vector3D):
+		try:
+			if len(other) == 3:
+				return Vector3D(self.x - other[0],
+				                self.y - other[1],
+				                self.z - other[2])
+		except TypeError:
+			# doesn't look like a 3-tuple
+			pass
+
+		try:
 			return Vector3D(self.x - other.x,
 			                self.y - other.y,
 			                self.z - other.z)
-		elif isinstance(other, (tuple, list)) and len(other) == 3:
-			return Vector3D(self.x - other[0],
-			                self.y - other[1],
-			                self.z - other[2])
-		else:
-			raise ValueError("other must be a Vector3D instance or a list or tuple")
+		except AttributeError:
+			# also doesn't look like a Vector3D
+			pass
+
+		raise TypeError("other must be a Vector3D instance or a list or tuple of length 3")
 
 	def __mul__(self, other):
-		if isinstance(other, (int, float)):
+		try:
 			return Vector3D(self.x * other,
 			                self.y * other,
 			                self.z * other)
-		else:
-			raise ValueError("other must be a float or int value")
+		except TypeError:
+			# doesn't look like a scalar
+			pass
+
+		raise ValueError("other must be a float or int value")
 
 	def __rmul__(self, other):
 		return self.__mul__(other)
@@ -239,7 +260,7 @@ class gcode(object):
 			lineNo += 1
 			readBytes += len(line.encode("utf-8"))
 
-			if isinstance(gcodeFile, (file, codecs.StreamReaderWriter)):
+			if isinstance(gcodeFile, (io.IOBase, codecs.StreamReaderWriter)):
 				percentage = float(readBytes) / float(self._fileSize)
 			elif isinstance(gcodeFile, (list)):
 				percentage = float(lineNo) / float(len(gcodeFile))
@@ -249,8 +270,8 @@ class gcode(object):
 			try:
 				if self._progress_callback is not None and (lineNo % 1000 == 0) and percentage is not None:
 					self._progress_callback(percentage)
-			except:
-				pass
+			except Exception as exc:
+				self._logger.debug("Progress callback %r error: %s", self._progress_callback, exc)
 
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
@@ -275,7 +296,7 @@ class gcode(object):
 					if "filament_diameter" in curaOptions:
 						try:
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
-						except:
+						except ValueError:
 							self._filamentDiameter = 0.0
 				elif comment.startswith("filamentDiameter,"):
 					# Simplify3D
@@ -342,12 +363,11 @@ class gcode(object):
 						                                    totalExtrusion[currentExtruder])
 
 						if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
- 							# Copy first extruder length to other extruders
- 							for i in range(1, len(currentE)):
- 								totalExtrusion[i] += e
- 								currentE[i] += e
- 								maxExtrusion[i] = max(maxExtrusion[i],
- 						                          totalExtrusion[i])
+							# Copy first extruder length to other extruders
+							for i in range(1, len(currentE)):
+								totalExtrusion[i] += e
+								currentE[i] += e
+								maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
 					else:
 						e = 0.0
 
@@ -436,17 +456,17 @@ class gcode(object):
 						else:
 							fwrecoverTime = (fwretractDist + s) / f
 				elif M == 605:	#Duplication/Mirroring mode
- 					s = getCodeInt(line, 'S')
- 					if s in [2, 4, 5, 6]:
- 						# Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
+					s = getCodeInt(line, 'S')
+					if s in [2, 4, 5, 6]:
+						# Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
  						# from first extruder to all other extruders
  						duplicationMode = True
- 					else:
- 						duplicationMode = False
+					else:
+						duplicationMode = False
 
 			elif T is not None:
 				if T > max_extruders:
-					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
+					self._logger.warning("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
 				elif T == currentExtruder:
 					pass
 				else:
@@ -508,7 +528,7 @@ def getCode(line, code, c):
 			result = c(line[n:])
 		else:
 			result = c(line[n:m])
-	except:
+	except ValueError:
 		return None
 
 	if math.isnan(result) or math.isinf(result):

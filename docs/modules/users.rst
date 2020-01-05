@@ -1,9 +1,9 @@
 .. _sec-modules-users:
 
-octoprint.users
----------------
+octoprint.access.users
+----------------------
 
-.. automodule:: octoprint.users
+.. automodule:: octoprint.access.users
    :members:
 
 

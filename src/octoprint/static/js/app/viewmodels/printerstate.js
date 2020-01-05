@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self.stateString = ko.observable(undefined);
         self.isErrorOrClosed = ko.observable(undefined);
@@ -17,14 +18,32 @@ $(function() {
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
 
+        self.isBusy = ko.pureComputed(function() {
+            return self.isPrinting() || self.isCancelling() || self.isPausing() || self.isPaused();
+        });
+
         self.enablePrint = ko.pureComputed(function() {
-            return self.isOperational() && self.isReady() && !self.isPrinting() && !self.isCancelling() && !self.isPausing() && self.loginState.isUser() && self.filename();
+            return self.isOperational() &&
+                self.isReady() &&
+                !self.isPrinting() &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.hasPermission(self.access.permissions.PRINT) &&
+                self.filename();
         });
         self.enablePause = ko.pureComputed(function() {
-            return self.isOperational() && (self.isPrinting() || self.isPaused()) && !self.isCancelling() && !self.isPausing() && self.loginState.isUser();
+            return self.isOperational() &&
+                (self.isPrinting() || self.isPaused()) &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.hasPermission(self.access.permissions.PRINT);
         });
         self.enableCancel = ko.pureComputed(function() {
-            return self.isOperational() && (self.isPrinting() || self.isPaused()) && !self.isCancelling() && !self.isPausing() && self.loginState.isUser();
+            return self.isOperational() &&
+                (self.isPrinting() || self.isPaused()) &&
+                !self.isCancelling() &&
+                !self.isPausing() &&
+                self.loginState.loggedIn();
         });
 
         self.filename = ko.observable(undefined);
@@ -172,9 +191,9 @@ $(function() {
                 return "-";
 
             var type = timelapse["type"];
-            if (type == "zchange") {
+            if (type === "zchange") {
                 return gettext("On Z Change");
-            } else if (type == "timed") {
+            } else if (type === "timed") {
                 return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
             } else {
                 return "-";
@@ -371,7 +390,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PrinterStateViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         elements: ["#state_wrapper", "#drop_overlay"]
     });
 });

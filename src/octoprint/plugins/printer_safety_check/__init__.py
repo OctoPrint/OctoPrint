@@ -7,7 +7,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 from octoprint.events import Events
-from octoprint.server import user_permission
+from octoprint.access import USER_GROUP
+from octoprint.access.permissions import Permissions
 from octoprint.util import to_unicode
 
 from .checks.firmware_unsafe import FirmwareUnsafeChecks
@@ -70,7 +71,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	##~~ SimpleApiPlugin API
 
 	def on_api_get(self, request):
-		if not user_permission.can():
+		if not Permissions.PLUGIN_PRINTER_SAFETY_CHECK_DISPLAY.can():
 			return flask.make_response("Insufficient rights", 403)
 		return flask.jsonify(self._warnings)
 
@@ -97,6 +98,17 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		                 to_unicode(cap, errors="replace"),
 		                 enabled)
 
+	##~~ Additional permissions hook handler
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="DISPLAY",
+			     name="Display printer safety warnings",
+			     description=gettext("Allows to see printer safety warnings"),
+			     roles=["display"],
+			     default_groups=[USER_GROUP])
+		]
+
 	##~~ Helpers
 
 	def _run_checks(self, check_type, *args, **kwargs):
@@ -121,7 +133,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 				# execute method
 				try:
 					method(*args, **kwargs)
-				except:
+				except Exception:
 					self._logger.exception("There was an error running method {} on check {!r}".format(check_type, check))
 					continue
 
@@ -185,6 +197,7 @@ __plugin_hooks__ = {
 	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
 	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
 	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
-	"octoprint.events.register_custom_events": register_custom_events
+	"octoprint.events.register_custom_events": register_custom_events,
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
 

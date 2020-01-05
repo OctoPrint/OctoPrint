@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -46,6 +46,10 @@ class Events(object):
 	# connect/disconnect by client
 	CLIENT_OPENED = "ClientOpened"
 	CLIENT_CLOSED = "ClientClosed"
+
+	# user login/logout
+	USER_LOGGED_IN = "UserLoggedIn"
+	USER_LOGGED_OUT = "UserLoggedOut"
 
 	# File management
 	UPLOAD = "Upload"
@@ -181,14 +185,14 @@ class EventManager(object):
 					self._logger.debug("Sending action to {!r}".format(listener))
 					try:
 						listener(event, payload)
-					except:
+					except Exception:
 						self._logger.exception("Got an exception while sending event {} (Payload: {!r}) to {}".format(event, payload, listener))
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
 				                             args=(event, payload))
 			self._logger.info("Event loop shut down")
-		except:
+		except Exception:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
 	def fire(self, event, payload=None):
@@ -227,14 +231,6 @@ class EventManager(object):
 
 		q.put((event, payload))
 
-		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
-			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
-			# TODO v1.4.0 Remove again
-			import copy
-			legacy_payload = copy.deepcopy(payload)
-			legacy_payload["type"] = "gcode"
-			q.put((event, legacy_payload))
-
 	def subscribe(self, event, callback):
 		"""
 		Subscribe a listener to an event -- pass in the event name (as a string) and the callback object
@@ -252,12 +248,11 @@ class EventManager(object):
 		Unsubscribe a listener from an event -- pass in the event name (as string) and the callback object
 		"""
 
-		if not callback in self._registeredListeners[event]:
-			# callback not subscribed to event, just return
-			return
-
-		self._registeredListeners[event].remove(callback)
-		self._logger.debug("Unsubscribed listener {!r} for event {}".format(callback, event))
+		try:
+			self._registeredListeners[event].remove(callback)
+		except ValueError:
+			# not registered
+			pass
 
 	def join(self, timeout=None):
 		self._worker.join(timeout)
@@ -300,7 +295,7 @@ class DebugEventListener(GenericEventListener):
 	def __init__(self):
 		GenericEventListener.__init__(self)
 
-		events = filter(lambda x: not x.startswith("__"), dir(Events))
+		events = list(filter(lambda x: not x.startswith("__"), dir(Events)))
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):
@@ -334,12 +329,12 @@ class CommandTrigger(GenericEventListener):
 				self._logger.info("Invalid subscription definition, not a dictionary: {!r}".format(subscription))
 				continue
 
-			if not "event" in subscription.keys() or not "command" in subscription.keys() \
-					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
+			if not "event" in subscription or not "command" in subscription \
+					or not "type" in subscription or not subscription["type"] in ["system", "gcode"]:
 				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(subscription))
 				continue
 
-			if "enabled" in subscription.keys() and not subscription["enabled"]:
+			if "enabled" in subscription and not subscription["enabled"]:
 				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
@@ -355,11 +350,11 @@ class CommandTrigger(GenericEventListener):
 				events = [events]
 
 			for event in events:
-				if not event in self._subscriptions.keys():
+				if event not in self._subscriptions:
 					self._subscriptions[event] = []
 				self._subscriptions[event].append((command, commandType, debug))
 
-				if not event in eventsToSubscribe:
+				if event not in eventsToSubscribe:
 					eventsToSubscribe.append(event)
 
 		self.subscribe(eventsToSubscribe)
@@ -384,8 +379,8 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, event, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError as e:
-				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
+			except KeyError:
+				self._logger.warning("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
 		if commandType == "system":
@@ -413,10 +408,10 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(command)
 			except subprocess.CalledProcessError as e:
 				if debug:
-					self._logger.warn("Command failed with return code {}: {}".format(e.returncode, str(e)))
+					self._logger.warning("Command failed with return code {}: {}".format(e.returncode, str(e)))
 				else:
-					self._logger.warn("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
-			except:
+					self._logger.warning("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
+			except Exception:
 				self._logger.exception("Command failed")
 
 		t = threading.Thread(target=process)
@@ -455,7 +450,8 @@ class CommandTrigger(GenericEventListener):
 			import json
 			try:
 				json_string = json.dumps(payload)
-			except:
+			except Exception:
+				self._logger.exception("JSON: Cannot dump %r", payload)
 				json_string = ""
 
 		params = {

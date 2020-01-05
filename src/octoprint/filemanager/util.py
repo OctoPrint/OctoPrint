@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -64,7 +64,7 @@ class DiskFileWrapper(AbstractFileWrapper):
 			shutil.copy2(self.path, path)
 
 	def stream(self):
-		return io.open(self.path, "rb")
+		return io.open(self.path, 'rb')
 
 class StreamWrapper(AbstractFileWrapper):
 	"""
@@ -87,7 +87,7 @@ class StreamWrapper(AbstractFileWrapper):
 		"""
 		import shutil
 
-		with atomic_write(path, "wb") as dest:
+		with atomic_write(path, mode='wb') as dest:
 			with self.stream() as source:
 				shutil.copyfileobj(source, dest)
 
@@ -142,7 +142,7 @@ class MultiStream(io.RawIOBase):
 		for stream in self.streams:
 			try:
 				stream.close()
-			except:
+			except Exception:
 				pass
 
 	def readable(self, *args, **kwargs):

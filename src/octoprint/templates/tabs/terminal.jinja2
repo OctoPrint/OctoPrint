@@ -1,7 +1,7 @@
 <div class="terminal">
     <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
-    <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
+    <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <div class="input-block-level input-append">
             <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()" autocomplete="off">
             <a class="btn add-on" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</a>
@@ -32,10 +32,10 @@
 </div>
 
 <div>
-    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <p class="row-fluid">
-            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational() && loginState.isUser()">{{ _("Fake Acknowledgement") }}</button>
+            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>
             <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurrences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
         </p>
         <p class="row-fluid">

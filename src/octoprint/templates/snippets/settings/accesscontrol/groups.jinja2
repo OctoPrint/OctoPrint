@@ -1,0 +1,115 @@
+<table class="table table-condensed table-hover" id="system_groups">
+    <thead>
+    <tr>
+        <th class="settings_groups_default"></th>
+        <th class="settings_groups_name">{{ _('Name') }}</th>
+        <th class="settings_groups_details">{{ _('Details') }}</th>
+        <th class="settings_groups_actions">{{ _('Action') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: $root.access.groups.listHelper.paginatedItems">
+    <tr>
+        <td class="settings_groups_default"><span class="fa fa-star" data-bind="invisible: !$data.default" title="{{ _('Default group')|edq }}"></span></td>
+        <td class="settings_groups_name">
+            <span data-bind="text: name"></span><br>
+            <small class="muted" data-bind="text: description"></small>
+        </td>
+        <td class="settings_groups_details">
+            <table class="table settings_groups_details_table">
+                <tr>
+                    <th class="settings_groups_details_key">{{ _('Permissions') }}</th>
+                    <td class="settings_groups_details_value" data-bind="text: $root.access.permissionList($data)"></td>
+                </tr>
+                <tr>
+                    <th class="settings_groups_details_key">{{ _('Subgroups') }}</th>
+                    <td class="settings_groups_details_value" data-bind="text: $root.access.subgroupList($data)"></td>
+                </tr>
+            </table>
+        </td>
+        <td class="settings_groups_actions">
+            <a href="#" class="fa fa-pencil" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.removeGroup($data); }"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: $root.access.groups.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.groups.listHelper.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: $root.access.groups.listHelper.pages">
+        <li data-bind="css: { active: $data.number === $root.access.groups.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.groups.listHelper.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: $root.access.groups.listHelper.currentPage() === access.groups.listHelper.lastPage()}"><a href="#" data-bind="click: access.groups.listHelper.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button title="{{ _('Add group')|edq }}" class="btn pull-right" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="fa fa-plus"></i> {{ _('Add group...') }}</button>
+
+<!-- Modals for group management -->
+
+<div id="settings-groupsEditorDialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: $root.access.groups.editor.header"></h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box">
+            <ul class="nav nav-pills">
+                <li id="settings_accesscontrol_groups_add_general_link" class="active">
+                    <a href="#settings_accesscontrol_groups_add_general" data-toggle="tab">{{ _('General') }}</a>
+                </li>
+                <li id="settings_accesscontrol_groups_add_permissions_link">
+                    <a href="#settings_accesscontrol_groups_add_permissions" data-toggle="tab">{{ _('Permissions') }}</a>
+                </li>
+                <li id="settings_accesscontrol_groups_add_subgroups_link">
+                    <a href="#settings_accesscontrol_groups_add_subgroups" data-toggle="tab">{{ _('Subgroups') }}</a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div id="settings_accesscontrol_groups_add_general" class="tab-pane active">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Name') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="disable: !$root.access.groups.editor.new(), textInput: $root.access.groups.editor.name" required>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Description') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editor.description">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" id="settings-groupsDialogEditDefault" data-bind="checked: $root.access.groups.editor.default"> {{ _('Default') }}
+                                </label>
+                                <span class="help-block">{{ _('Marking a group as default will make it get pre selected when creating new users.') }}</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="settings_accesscontrol_groups_add_permissions" class="tab-pane">
+                    <!-- ko with: $root.access.groups -->
+                    <!-- ko with: $root.access.permissions -->
+                    {% include 'snippets/settings/accesscontrol/permission_list.jinja2' %}
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+                <div id="settings_accesscontrol_groups_add_subgroups" class="tab-pane">
+                    <!-- ko with: $root.access.groups -->
+                    <!-- ko with: $root.access.groups -->
+                    {% include 'snippets/settings/accesscontrol/subgroup_list.jinja2' %}
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="enable: $root.access.groups.editor.valid, click: function() { $root.access.groups.editor.confirm(); }">{{ _('Confirm') }}</button>
+    </div>
+</div>

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -11,16 +11,19 @@ import octoprint.plugin
 import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
+from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
+from octoprint.util import to_bytes
 from octoprint.util.pip import LocalPipCaller
-from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.events import Events
 
 from flask import jsonify, make_response
 from flask_babel import gettext
 
+import io
 import logging
 import sarge
 import sys
@@ -33,7 +36,12 @@ import threading
 
 from datetime import datetime
 
-_DATA_FORMAT_VERSION = "v2"
+try:
+	from os import scandir
+except:
+	from scandir import scandir
+
+_DATA_FORMAT_VERSION = "v3"
 
 
 def map_repository_entry(entry):
@@ -47,7 +55,8 @@ def map_repository_entry(entry):
 
 	result["is_compatible"] = dict(
 		octoprint=True,
-		os=True
+		os=True,
+		python=True
 	)
 
 	if "compatibility" in entry:
@@ -58,6 +67,12 @@ def map_repository_entry(entry):
 		if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(
 			entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
 			result["is_compatible"]["os"] = is_os_compatible(entry["compatibility"]["os"])
+
+		if "python" in entry["compatibility"] and entry["compatibility"]["python"] is not None and isinstance(entry["compatibility"]["python"], basestring):
+			result["is_compatible"]["python"] = is_python_compatible(entry["compatibility"]["python"])
+		else:
+			# we default to only assume py2 compatiblity for now
+			result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
 
 	return result
 
@@ -114,6 +129,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._notices_cache_ttl = 0
 		self._notices_mtime = None
 
+		self._orphans = None
+
 		self._console_logger = None
 
 		self._get_throttled = lambda: False
@@ -124,7 +141,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 		self._notices_cache_path = os.path.join(self.get_plugin_data_folder(), "notices.json")
 		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
-		self._confirm_uninstall = self._settings.global_get_boolean(["confirm_uninstall"])
 		self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
 		self._pip_caller = LocalPipCaller(force_user=self._settings.get_boolean(["pip_force_user"]))
@@ -137,6 +153,24 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def increase_upload_bodysize(self, current_max_body_sizes, *args, **kwargs):
 		# set a maximum body size of 50 MB for plugin archive uploads
 		return [("POST", r"/upload_archive", 50 * 1024 * 1024)]
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="MANAGE",
+			     name="Manage plugins",
+			     description=gettext("Allows to enable, disable and uninstall installed plugins."),
+			     default_groups=[ADMIN_GROUP],
+			     roles=["manage"]),
+			dict(key="INSTALL",
+			     name="Install new plugins",
+			     description=gettext("Allows to install new plugins. Includes the \"Manage plugins\" permission."),
+			     default_groups=[ADMIN_GROUP],
+			     roles=["install"],
+			     permissions=["PLUGIN_PLUGINMANAGER_MANAGE"],
+			     dangerous=True)
+		]
 
 	##~~ StartupPlugin
 
@@ -153,6 +187,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
+			if self._settings.get_boolean(["ignore_throttled"]):
+				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
@@ -167,10 +203,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,
-			confirm_uninstall=True,
 			confirm_disable=False,
 			dependency_links=False,
-			hidden=[]
+			hidden=[],
+			ignore_throttled=False
 		)
 
 	def on_settings_save(self, data):
@@ -179,7 +215,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
 		self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
-		self._confirm_uninstall = self._settings.global_get_boolean(["confirm_uninstall"])
 		self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
 	##~~ AssetPlugin
@@ -204,7 +239,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		plugins = sorted(self._get_plugins(), key=lambda x: x["name"].lower())
 		return dict(
 			all=plugins,
-			thirdparty=filter(lambda p: not p["bundled"], plugins),
+			thirdparty=list(filter(lambda p: not p["bundled"], plugins)),
 			archive_extensions=self.__class__.ARCHIVE_EXTENSIONS
 		)
 
@@ -216,8 +251,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	##~~ BlueprintPlugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
-	@restricted_access
-	@admin_permission.require(403)
+	@no_firstrun_access
+	@Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
 	def upload_archive(self):
 		import flask
 
@@ -230,7 +265,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
-		exts = filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS)
+		exts = list(filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS))
 		if not len(exts):
 			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
 
@@ -249,7 +284,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			try:
 				os.remove(archive.name)
 			except Exception as e:
-				self._logger.warn("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
+				self._logger.warning("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
 
 	##~~ EventHandlerPlugin
 
@@ -267,11 +302,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			"uninstall": ["plugin"],
 			"enable": ["plugin"],
 			"disable": ["plugin"],
+			"cleanup": ["plugin"],
+			"cleanup_all": [],
 			"refresh_repository": []
 		}
 
 	def on_api_get(self, request):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		from octoprint.server import safe_mode
@@ -284,12 +321,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if refresh_notices or not self._is_notices_cache_valid():
 			self._notices_available = self._refresh_notices()
 
+		refresh_orphan = request.values.get("refresh_orphans", "false") in valid_boolean_trues
+
 		def view():
 			return jsonify(plugins=self._get_plugins(),
 			               repository=dict(
 			                   available=self._repository_available,
 			                   plugins=self._repository_plugins
 			               ),
+			               orphan_data=self._get_orphans(refresh=refresh_orphan),
 			               os=get_os(),
 			               octoprint=get_octoprint_version_string(),
 			               pip=dict(
@@ -307,14 +347,19 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def etag():
 			import hashlib
 			hash = hashlib.sha1()
-			hash.update(repr(self._get_plugins()))
-			hash.update(str(self._repository_available))
-			hash.update(repr(self._repository_plugins))
-			hash.update(str(self._notices_available))
-			hash.update(repr(self._notices))
-			hash.update(repr(safe_mode))
-			hash.update(repr(self._connectivity_checker.online))
-			hash.update(repr(_DATA_FORMAT_VERSION))
+			def hash_update(value):
+				value = value.encode('utf-8')
+				hash.update(value)
+
+			hash_update(repr(self._get_plugins()))
+			hash_update(str(self._repository_available))
+			hash_update(repr(self._repository_plugins))
+			hash_update(str(self._notices_available))
+			hash_update(repr(self._notices))
+			hash_update(repr(self._get_orphans()))
+			hash_update(repr(safe_mode))
+			hash_update(repr(self._connectivity_checker.online))
+			hash_update(repr(_DATA_FORMAT_VERSION))
 			return hash.hexdigest()
 
 		def condition():
@@ -322,10 +367,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
 		                                  condition=lambda *args, **kwargs: condition(),
-		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
+		                                  unless=lambda: refresh_repository or refresh_notices or refresh_orphan)(view)()
 
 	def on_api_command(self, command, data):
-		if not admin_permission.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
 			return make_response("Insufficient rights", 403)
 
 		if self._printer.is_printing() or self._printer.is_paused():
@@ -333,6 +378,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("Printer is currently printing or paused", 409)
 
 		if command == "install":
+			if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
+				return make_response("Insufficient rights", 403)
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
@@ -347,7 +394,20 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return make_response("Unknown plugin: %s" % plugin_name, 404)
 
 			plugin = self._plugin_manager.plugins[plugin_name]
-			return self.command_uninstall(plugin)
+			return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
+
+		elif command == "cleanup":
+			plugin = data["plugin"]
+			try:
+				plugin = self._plugin_manager.plugins[plugin]
+			except KeyError:
+				# not installed, we are cleaning up left overs, that's ok
+				pass
+
+			return self.command_cleanup(plugin, include_disabled=True)
+
+		elif command == "cleanup_all":
+			return self.command_cleanup_all()
 
 		elif command == "enable" or command == "disable":
 			plugin_name = data["plugin"]
@@ -359,7 +419,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		throttled = self._get_throttled()
-		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False):
+		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False) and not self._settings.get_boolean(["ignore_throttled"]):
 			# currently throttled, we refuse to run
 			return make_response("System is currently throttled, refusing to install "
 			                     "anything due to possible stability issues", 409)
@@ -416,7 +476,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				self._logger.info("Plugin to be installed from {} was already installed, forcing a reinstall".format(source))
 				self._log_message("Looks like the plugin was already installed. Forcing a reinstall.")
 				force = True
-		except:
+		except Exception:
 			self._logger.exception("Could not install plugin from %s" % url)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
 		else:
@@ -426,14 +486,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 				try:
 					returncode, stdout, stderr = self._call_pip(pip_args)
-				except:
+				except Exception:
 					self._logger.exception("Could not install plugin from {}".format(source))
 					return make_response("Could not install plugin from source {}, see the log for more details"
 					                     .format(source), 500)
 
 		try:
-			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
-			                     stdout)[-1]
+			result_line = list(filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
+			                     stdout))[-1]
 		except IndexError:
 			self._logger.error("Installing the plugin from {} failed, could not parse output from pip. "
 			                   "See plugin_pluginmanager_console.log for generated output".format(source))
@@ -476,12 +536,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		installed = map(lambda x: x.strip(), result_line[len(success_string):].split(" "))
+		installed = list(map(lambda x: x.strip(), result_line[len(success_string):].split(" ")))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 
 		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
 		if new_plugin is None:
-			self._logger.warn("The plugin was installed successfully, but couldn't be found afterwards to "
+			self._logger.warning("The plugin was installed successfully, but couldn't be found afterwards to "
 			                  "initialize properly during runtime. Please restart OctoPrint.")
 			result = dict(result=True,
 			              source=source,
@@ -528,7 +588,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._send_result_notification("install", result)
 		return jsonify(result)
 
-	def command_uninstall(self, plugin):
+	def command_uninstall(self, plugin, cleanup=False):
 		if plugin.key == "pluginmanager":
 			return make_response("Can't uninstall Plugin Manager", 403)
 
@@ -539,7 +599,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("Bundled plugins cannot be uninstalled", 403)
 
 		if plugin.origin is None:
-			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
+			self._logger.warning("Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
 			return make_response("Could not uninstall plugin, its origin is unknown")
 
 		if plugin.origin.type == "entry_point":
@@ -551,8 +611,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			pip_args = ["--disable-pip-version-check", "uninstall", "--yes", origin]
 			try:
 				self._call_pip(pip_args)
-			except:
-				self._logger.exception(u"Could not uninstall plugin via pip")
+			except Exception:
+				self._logger.exception("Could not uninstall plugin via pip")
 				return make_response("Could not uninstall plugin via pip, see the log for more details", 500)
 
 		elif plugin.origin.type == "folder":
@@ -562,10 +622,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			if os.path.isdir(full_path):
 				# plugin is installed via a plugin folder, need to use rmtree to get rid of it
-				self._log_stdout(u"Deleting plugin from {folder}".format(folder=plugin.location))
+				self._log_stdout("Deleting plugin from {folder}".format(folder=plugin.location))
 				shutil.rmtree(full_path)
 			elif os.path.isfile(full_path):
-				self._log_stdout(u"Deleting plugin from {file}".format(file=plugin.location))
+				self._log_stdout("Deleting plugin from {file}".format(file=plugin.location))
 				os.remove(full_path)
 
 				if full_path.endswith(".py"):
@@ -574,10 +634,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 						os.remove(pyc_file)
 
 		else:
-			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
+			self._logger.warning("Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
 			return make_response("Could not uninstall plugin, its origin is unknown")
 
-		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
+		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin) or cleanup
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 		needs_reconnect = self._plugin_manager.has_any_of_hooks(plugin, self._reconnect_hooks) and self._printer.is_operational()
 
@@ -591,7 +651,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				if plugin.enabled:
 					self._plugin_manager.disable_plugin(plugin.key, plugin=plugin)
 			except octoprint.plugin.core.PluginLifecycleException as e:
-				self._logger.exception(u"Problem disabling plugin {name}".format(name=plugin.key))
+				self._logger.exception("Problem disabling plugin {name}".format(name=plugin.key))
 				result = dict(result=False, uninstalled=True, disabled=False, unloaded=False, reason=e.reason)
 				self._send_result_notification("uninstall", result)
 				return jsonify(result)
@@ -600,7 +660,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				if plugin.loaded:
 					self._plugin_manager.unload_plugin(plugin.key)
 			except octoprint.plugin.core.PluginLifecycleException as e:
-				self._logger.exception(u"Problem unloading plugin {name}".format(name=plugin.key))
+				self._logger.exception("Problem unloading plugin {name}".format(name=plugin.key))
 				result = dict(result=False, uninstalled=True, disabled=True, unloaded=False, reason=e.reason)
 				self._send_result_notification("uninstall", result)
 				return jsonify(result)
@@ -617,7 +677,107 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              needs_reconnect=needs_reconnect,
 		              plugin=self._to_external_plugin(plugin))
 		self._send_result_notification("uninstall", result)
+		self._logger.info("Plugin {} uninstalled".format(plugin.key))
+
+		self._cleanup_disabled(plugin.key)
+		if cleanup:
+			self.command_cleanup(plugin.key, result_notifications=False)
+
 		return jsonify(result)
+
+	def command_cleanup(self, plugin, include_disabled=False, result_notifications=True, settings_save=True):
+		if isinstance(plugin, basestring):
+			key = result_value = plugin
+		else:
+			key = plugin.key
+			result_value = self._to_external_plugin(plugin)
+
+		message = "Cleaning up plugin {}...".format(key)
+		self._logger.info(message)
+		self._log_stdout(message)
+
+		# delete plugin settings
+		self._cleanup_settings(key)
+
+		# delete plugin disabled entry
+		if include_disabled:
+			self._cleanup_disabled(key)
+
+		# delete plugin data folder
+		result_data = True
+		if not self._cleanup_data(key):
+			message = "Could not delete data folder of plugin {}".format(key)
+			self._logger.exception(message)
+			self._log_stderr(message)
+			result_data = False
+
+		if settings_save:
+			self._settings.save()
+
+		result = dict(result=result_data,
+		              needs_restart=True,
+		              plugin=result_value)
+		if result_notifications:
+			self._send_result_notification("cleanup", result)
+
+		# cleaning orphan cache
+		self._orphans = None
+
+		return jsonify(result)
+
+	def command_cleanup_all(self):
+		orphans = self._get_orphans()
+		cleaned_up = set()
+
+		for orphan in sorted(orphans.keys()):
+			self.command_cleanup(orphan,
+			                     include_disabled=True,
+			                     result_notifications=False,
+			                     settings_save=False)
+			cleaned_up.add(orphan)
+
+		self._settings.save()
+
+		result = dict(result=True,
+		              needs_restart=len(cleaned_up) > 0,
+		              cleaned_up=sorted(list(cleaned_up)))
+		self._send_result_notification("cleanup_all", result)
+		self._logger.info("Cleaned up all data, {} left overs removed".format(len(cleaned_up)))
+
+		# cleaning orphan cache
+		self._orphans = None
+
+		return jsonify(result)
+
+	def _cleanup_disabled(self, plugin):
+		# delete from disabled list
+		disabled = self._settings.global_get(["plugins", "_disabled"])
+		try:
+			disabled.remove(plugin)
+		except ValueError:
+			# not in list, ok
+			pass
+		self._settings.global_set(["plugins", "_disabled"], disabled)
+
+	def _cleanup_settings(self, plugin):
+		# delete plugin settings
+		self._settings.global_set(["plugins", plugin], None)
+		return True
+
+	def _cleanup_data(self, plugin):
+		import os
+		import shutil
+
+		data_folder = os.path.join(self._settings.getBaseFolder("data"), plugin)
+		if os.path.exists(data_folder):
+			try:
+				shutil.rmtree(data_folder)
+				return True
+			except Exception:
+				self._logger.exception("Could not delete plugin data folder at {}".format(data_folder))
+				return False
+		else:
+			return True
 
 	def command_toggle(self, plugin, command):
 		if plugin.key == "pluginmanager":
@@ -640,7 +800,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif command == "enable":
 				self._mark_plugin_enabled(plugin, needs_restart=needs_restart)
 		except octoprint.plugin.core.PluginLifecycleException as e:
-			self._logger.exception(u"Problem toggling enabled state of {name}: {reason}".format(name=plugin.key, reason=e.reason))
+			self._logger.exception("Problem toggling enabled state of {name}: {reason}".format(name=plugin.key, reason=e.reason))
 			result = dict(result=False, reason=e.reason)
 		except octoprint.plugin.core.PluginNeedsRestart:
 			result = dict(result=True,
@@ -695,10 +855,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _call_pip(self, args):
 		if self._pip_caller is None or not self._pip_caller.available:
-			raise RuntimeError(u"No pip available, can't operate".format(**locals()))
+			raise RuntimeError("No pip available, can't operate".format(**locals()))
 
 		if "--process-dependency-links" in args:
-			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
+			self._log_message("Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
 
 		additional_args = self._settings.get(["pip_args"])
 
@@ -706,7 +866,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(args[0], list())
 			for inapplicable_argument in inapplicable_arguments:
-				additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
+				additional_args = re.sub(r"(^|\s)" + re.escape(inapplicable_argument) + r"\\b", "", additional_args)
 
 			if additional_args:
 				args.append(additional_args)
@@ -716,25 +876,25 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return self._pip_caller.execute(*args, **kwargs)
 
 	def _log_message(self, *lines):
-		self._log(lines, prefix=u"*", stream="message")
+		self._log(lines, prefix="*", stream="message")
 
 	def _log_call(self, *lines):
-		self._log(lines, prefix=u" ", stream="call")
+		self._log(lines, prefix=" ", stream="call")
 
 	def _log_stdout(self, *lines):
-		self._log(lines, prefix=u">", stream="stdout")
+		self._log(lines, prefix=">", stream="stdout")
 
 	def _log_stderr(self, *lines):
-		self._log(lines, prefix=u"!", stream="stderr")
+		self._log(lines, prefix="!", stream="stderr")
 
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:
-			lines = map(lambda x: x.strip(), lines)
+			lines = list(map(lambda x: x.strip(), lines))
 
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type="loglines",
 		                                                                loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
-			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
+			self._console_logger.debug("{prefix} {line}".format(**locals()))
 
 	def _mark_plugin_enabled(self, plugin, needs_restart=False):
 		disabled_list = list(self._settings.global_get(["plugins", "_disabled"],
@@ -794,6 +954,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		import time
 		if mtime is None:
 			mtime = self._repository_mtime
+		if mtime is None:
+			return False
 		return mtime + self._repository_cache_ttl >= time.time() > mtime
 
 	def _fetch_repository_from_disk(self):
@@ -804,11 +966,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if self._is_repository_cache_valid(mtime=mtime):
 				try:
 					import json
-					with open(self._repository_cache_path) as f:
+					with io.open(self._repository_cache_path, 'rt', encoding='utf-8') as f:
 						repo_data = json.load(f)
 					self._repository_mtime = mtime
 					self._logger.info("Loaded plugin repository data from disk, was still valid")
-				except:
+				except Exception:
 					self._logger.exception("Error while loading repository data from {}".format(self._repository_cache_path))
 
 		return self._refresh_repository(repo_data=repo_data)
@@ -824,13 +986,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			r.raise_for_status()
 			self._logger.info("Loaded plugin repository data from {}".format(repository_url))
 		except Exception as e:
-			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
+			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=e))
 			return None
 
 		try:
 			repo_data = r.json()
 		except Exception as e:
-			self._logger.exception("Error while reading repository data")
+			self._logger.exception("Error while reading repository data: {}".format(e))
 			return None
 
 		# validation
@@ -840,11 +1002,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._repository_cache_path, "wb") as f:
-				json.dump(repo_data, f)
+			with octoprint.util.atomic_write(self._repository_cache_path, mode='wb') as f:
+				f.write(to_bytes(json.dumps(repo_data)))
 			self._repository_mtime = os.path.getmtime(self._repository_cache_path)
 		except Exception as e:
-			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
+			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, e))
 
 		return repo_data
 
@@ -854,14 +1016,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		self._repository_plugins = filter(lambda x: x is not None,
-		                                  map(map_repository_entry, repo_data))
+		self._repository_plugins = list(filter(lambda x: x is not None,
+		                                       map(map_repository_entry, repo_data)))
 		return True
 
 	def _is_notices_cache_valid(self, mtime=None):
 		import time
 		if mtime is None:
 			mtime = self._notices_mtime
+		if mtime is None:
+			return False
 		return mtime + self._notices_cache_ttl >= time.time() > mtime
 
 	def _fetch_notices_from_disk(self):
@@ -872,11 +1036,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if self._is_notices_cache_valid(mtime=mtime):
 				try:
 					import json
-					with open(self._notices_cache_path) as f:
+					with io.open(self._notices_cache_path, 'rt', encoding='utf-8') as f:
 						notice_data = json.load(f)
 					self._notices_mtime = mtime
 					self._logger.info("Loaded notice data from disk, was still valid")
-				except:
+				except Exception:
 					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
 
 		return self._refresh_notices(notice_data=notice_data)
@@ -899,8 +1063,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with octoprint.util.atomic_write(self._notices_cache_path, "wb") as f:
-				json.dump(notice_data, f)
+			with octoprint.util.atomic_write(self._notices_cache_path, mode="wb") as f:
+				f.write(to_bytes(json.dumps(notice_data)))
 			self._notices_mtime = os.path.getmtime(self._notices_cache_path)
 		except Exception as e:
 			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))
@@ -928,7 +1092,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				parsed_date = datetime.strptime(notice["date"], "%Y-%m-%d %H:%M:%S +0000")
 				notice["timestamp"] = parsed_date.timetuple()
 			except Exception as e:
-				self._logger.warn("Error while parsing date {!r} for plugin notice "
+				self._logger.warning("Error while parsing date {!r} for plugin notice "
 				                  "of plugin {}, ignoring notice: {}".format(notice["date"], key,  str(e)))
 				continue
 
@@ -938,6 +1102,41 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._notices = notices
 		return True
+
+	def _get_orphans(self, refresh=False):
+		from collections import defaultdict
+
+		if self._orphans is not None and not refresh:
+			return self._orphans
+
+		installed_keys = self._plugin_manager.plugins.keys()
+		orphans = defaultdict(lambda: dict(settings=False, data=False, disabled=False))
+
+		# settings
+		for key in list(self._settings.global_get(["plugins"]).keys()):
+			if key.startswith("_"):
+				# internal key, like _disabled
+				continue
+
+			if key not in installed_keys:
+				orphans[key]["settings"] = True
+
+		# data
+		for entry in scandir(self._settings.getBaseFolder("data")):
+			if not entry.is_dir():
+				continue
+
+			if entry.name not in installed_keys:
+				orphans[entry.name]["data"] = True
+
+		# disabled
+		disabled = self._settings.global_get(["plugins", "_disabled"])
+		for key in disabled:
+			if key not in installed_keys:
+				orphans[key]["disabled"] = True
+
+		self._orphans = dict(**orphans)
+		return self._orphans
 
 	@property
 	def _reconnect_hooks(self):
@@ -949,7 +1148,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				result = hook()
 				if isinstance(result, (list, tuple)):
 					reconnect_hooks.extend(filter(lambda x: isinstance(x, basestring), result))
-			except:
+			except Exception:
 				self._logger.exception("Error while retrieving additional hooks for which a "
 				                       "reconnect is required from plugin {name}".format(**locals()),
 				                       extra=dict(plugin=name))
@@ -1012,10 +1211,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
-		return filter(lambda x: x is not None,
-		              map(map_notification,
-		                  filter(filter_relevant,
-		                         plugin_notifications)))
+		return list(filter(lambda x: x is not None,
+		              	   map(map_notification,
+		                  	   filter(filter_relevant,
+		                         	  plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
 		return dict(key=key,
@@ -1044,5 +1243,6 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
 		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
-		"octoprint.events.register_custom_events": _register_custom_events
+		"octoprint.events.register_custom_events": _register_custom_events,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}

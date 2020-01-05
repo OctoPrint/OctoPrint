@@ -9,34 +9,41 @@ import versioneer
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
 import octoprint_setuptools
+import setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=2.7.9,<3"
+# we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
+PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+
+# Requirements for setup.py
+SETUP_REQUIRES = [
+	"markdown>=3.1,<3.2",
+]
 
 # Requirements for our application
 INSTALL_REQUIRES = [
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
 	# changes that might affect plugins, or due to other observed problems
 
-	"flask>=0.10.1,<0.11",         # newer versions require newer Jinja versions
-	"Jinja2>=2.8.1,<2.9",          # Jinja 2.9 has breaking changes WRT template scope - we can't
-	                               # guarantee backwards compatibility for plugins and such with that
-	                               # version, hence we need to pin to a lower version for now. See #1697
-	"tornado==4.5.3",              # a memory leak was observed in tornado >= 5, see #2585
-	"Flask-Login>=0.2.11,<0.3",    # some functions changed to properties in 0.3
-	"regex!=2018.11.6",            # avoid broken 2018.11.6. See #2874
+	"flask>=0.12,<0.13",         # newer versions require newer Jinja versions
+	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                             # guarantee backwards compatibility for plugins and such with that
+	                             # version, hence we need to pin to a lower version for now. See #1697
+	"tornado==4.5.3",            # a memory leak was observed in tornado >= 5, see #2585
+	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
-	"Flask-Principal>=0.4,<0.5",
+	"Flask-Login>=0.4.1,<0.5",
 	"Flask-Babel>=0.12,<0.13",
 	"Flask-Assets>=0.12,<0.13",
-	"werkzeug>=0.15.1,<0.16",
+	"blinker>=1.4,<1.5",         # dependency of the now vendor bundled flask_principal
+	"werkzeug>=0.16,<0.17",
 	"cachelib>=0.1,<0.2",
 	"PyYAML>=5.1,<6",
-	"markdown>=3.0,<3.1",
+	"markdown>=3.1,<3.2",
 	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.19,<0.8",
 	"watchdog>=0.9.0,<0.10",
@@ -45,44 +52,54 @@ INSTALL_REQUIRES = [
 	"pylru>=1.2,<1.3",
 	"rsa>=4.0,<5",
 	"pkginfo>=1.5.0.1,<1.6",
-	"requests>=2.21.0,<3",
-	"semantic_version>=2.6,<2.7",
-	"psutil>=5.6.1,<5.7",
+	"requests>=2.22.0,<3",
+	"semantic_version>=2.8,<2.9",
+	"psutil>=5.6.5,<5.7",
 	"Click>=7,<8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
-	"chainmap>=1.0.3,<1.1",
-	"future>=0.17.1,<0.18",
-	"scandir>=1.10,<1.11",
+	"future>=0.18.2,<0.19",
 	"websocket-client>=0.56,<0.57",
-	"wrapt>=1.11.1,<1.12",
-	"futures>=3.2,<3.3",
-	"emoji>=0.5.1,<0.6",
-	"monotonic>=1.5,<1.6",
+	"wrapt>=1.11.2,<1.12",
+	"emoji>=0.5.4,<0.6",
 	"frozendict>=1.2,<1.3",
-	"sentry-sdk==0.7.7",
-	"typing>=3.6.6,<4",
+	"sentry-sdk==0.13.2",
 	"filetype>=1.0.5,<2"
 ]
 
-if sys.platform == "darwin":
-	INSTALL_REQUIRES.append("appdirs>=1.4.0")
+# Python 2 specific requirements
+INSTALL_REQUIRES_PYTHON2 = [
+	"futures>=3.3,<3.4",
+	"monotonic>=1.5,<1.6",
+	"scandir>=1.10,<1.11",
+	"chainmap>=1.0.3,<1.1",
+	"typing>=3.7.4.1,<4"
+]
+
+# OSX specific requirements
+INSTALL_REQUIRES_OSX = [
+	"appdirs>=1.4.3",
+]
 
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
-		# Testing dependencies
-		"mock>=2.0.0,<3",
-		"nose>=1.3.7,<1.4",
+		# Testing dependencies - SEE ALSO tox.ini
+		"mock>=3.0.5,<4",
+		"pytest==4.6.6",
+		"pytest-doctest-custom>=1.0.0,<1.1",
 		"ddt",
 
+		# linter
+		"flake8",
+
 		# Documentation dependencies
-		"sphinx>=1.6,<1.7",
+		"sphinx>=1.8.5,<2",
 		"sphinxcontrib-httpdomain",
-		"sphinxcontrib-mermaid>=0.3",
+		"sphinxcontrib-mermaid>=0.3.1",
 		"sphinx_rtd_theme",
-		"readthedocs-sphinx-ext==0.5.7"
+		"readthedocs-sphinx-ext==0.5.17" # Later versions require Jinja >= 2.9
 	],
 
 	# Dependencies for developing OctoPrint plugins
@@ -94,6 +111,23 @@ EXTRA_REQUIRES = dict(
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
+# adapted from https://hynek.me/articles/conditional-python-dependencies/
+if int(setuptools.__version__.split(".", 1)[0]) < 18:
+	# no bdist_wheel support for setuptools < 18 since we build universal wheels and our optional dependencies
+	# would get lost there
+	assert "bdist_wheel" not in sys.argv
+
+	# add optional dependencies for setuptools versions < 18 that don't yet support environment markers
+	if sys.version_info[0] < 3:
+		INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
+
+	if sys.platform == "darwin":
+		INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
+else:
+	# environment markers supported
+	EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
+	EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
+
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
@@ -104,14 +138,14 @@ def read_file_contents(path):
 	with codecs.open(path, encoding="utf-8") as f:
 		return f.read()
 
-def data_copy_build_py_factory(files, baseclass):
-	class data_copy_build_py(baseclass):
+def md_to_html_build_py_factory(files, baseclass):
+	class md_to_html_build_py(baseclass):
 		files = dict()
 
 		def run(self):
-			import shutil
+			print("RUNNING md_to_html_build_py")
 			if not self.dry_run:
-				for directory, files in self.__class__.files.items():
+				for directory, files in self.files.items():
 					target_dir = os.path.join(self.build_lib, directory)
 					self.mkpath(target_dir)
 
@@ -119,16 +153,22 @@ def data_copy_build_py_factory(files, baseclass):
 						if isinstance(entry, tuple):
 							if len(entry) != 2:
 								continue
-							source, dest = entry
+							source, dest = entry[0], os.path.join(target_dir, entry[1])
 						else:
-							source = dest = entry
-						shutil.copy(source, os.path.join(target_dir, dest))
+							source = entry
+							dest = os.path.join(target_dir, source + ".html")
 
+						print("Rendering markdown from {} to {}".format(source, dest))
+
+						from markdown import markdownFromFile
+						markdownFromFile(input=source,
+						                 output=dest,
+						                 encoding="utf-8")
 			baseclass.run(self)
 
-	return type(data_copy_build_py)(data_copy_build_py.__name__,
-	                                (data_copy_build_py,),
-	                                dict(files=files))
+	return type(md_to_html_build_py)(md_to_html_build_py.__name__,
+	                                 (md_to_html_build_py,),
+	                                 dict(files=files))
 
 def get_cmdclass():
 	cmdclass = versioneer.get_cmdclass()
@@ -142,10 +182,9 @@ def get_cmdclass():
 	bundled_dir = os.path.join("src", "octoprint", "translations")
 	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, pack_name_prefix="OctoPrint-i18n-", pack_path_prefix="", bundled_dir=bundled_dir))
 
-	cmdclass["build_py"] = data_copy_build_py_factory({
+	cmdclass["build_py"] = md_to_html_build_py_factory({
 		"octoprint/templates/_data": [
 			"AUTHORS.md",
-			"CHANGELOG.md",
 			"SUPPORTERS.md",
 			"THIRDPARTYLICENSES.md",
 		]
@@ -164,6 +203,7 @@ def params():
 	long_description_content_type = "text/markdown"
 
 	python_requires = PYTHON_REQUIRES
+	setup_requires = SETUP_REQUIRES
 	install_requires = INSTALL_REQUIRES
 	extras_require = EXTRA_REQUIRES
 	dependency_links = DEPENDENCY_LINKS
@@ -185,6 +225,10 @@ def params():
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 2",
 		"Programming Language :: Python :: 2.7",
+		"Programming Language :: Python :: 3",
+		"Programming Language :: Python :: 3.6",
+		"Programming Language :: Python :: 3.7",
+		"Programming Language :: Python :: 3.8",
 		"Programming Language :: Python :: Implementation :: CPython",
 		"Programming Language :: JavaScript",
 		"Topic :: Printing",

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging.handlers
 import os
@@ -18,7 +18,7 @@ class AsyncLogHandlerMixin(logging.Handler):
 	def emit(self, record):
 		try:
 			self._executor.submit(self._emit, record)
-		except:
+		except Exception:
 			self.handleError(record)
 
 	def _emit(self, record):
@@ -29,6 +29,8 @@ class AsyncLogHandlerMixin(logging.Handler):
 class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
 
 	def __init__(self, *args, **kwargs):
+		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
+
 		super(CleaningTimedRotatingFileHandler, self).__init__(*args, **kwargs)
 
 		# clean up old files on handler start
@@ -39,6 +41,10 @@ class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
 
 class OctoPrintLogHandler(AsyncLogHandlerMixin, CleaningTimedRotatingFileHandler):
 	rollover_callbacks = []
+
+	def __init__(self, *args, **kwargs):
+		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
+		super(OctoPrintLogHandler, self).__init__(*args, **kwargs)
 
 	@classmethod
 	def registerRolloverCallback(cls, callback, *args, **kwargs):
@@ -67,6 +73,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 		cls.do_rollover = True
 
 	def __init__(self, *args, **kwargs):
+		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
 		super(SerialLogHandler, self).__init__(*args, **kwargs)
 		self.cleanupFiles()
 

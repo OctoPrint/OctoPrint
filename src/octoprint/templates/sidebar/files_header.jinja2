@@ -39,7 +39,7 @@
 </div>
 
 {% if enableSdSupport %}
-    <div class="sd-trigger accordion-heading-button btn-group" data-bind="visible: $root.filesListVisible">
+    <div class="sd-trigger accordion-heading-button btn-group" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.filesListVisible()">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations')|edq }}">
             <span class="icon-sd-black-14"></span>
         </a>

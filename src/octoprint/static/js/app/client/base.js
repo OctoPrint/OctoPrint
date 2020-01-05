@@ -111,10 +111,10 @@
         additional = additional || {};
 
         var headers = $.extend({}, additional);
+
         if (this.options.apikey) {
             headers["X-Api-Key"] = this.options.apikey;
         }
-
         if (this.options.locale !== undefined) {
             headers["X-Locale"] = this.options.locale;
         }
@@ -336,6 +336,24 @@
     };
 
     OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException("InvalidArgumentError");
+
+    OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
+        return function() {
+            console.warn(deprecatedFct + " is deprecated, please use the new " + newFct + " function instead");
+            return fn.apply(this, arguments);
+        };
+    };
+
+    OctoPrintClient.deprecatedMethod = function(object, oldNamespace, oldFct, newNamespace, newFct, fn) {
+        object[oldFct] = OctoPrintClient.deprecated(oldNamespace + "." + oldFct, newNamespace + "." + newFct, fn);
+    };
+
+    OctoPrintClient.deprecatedVariable = function(object, oldNamespace, oldVar, newNamespace, newVar, getter, setter) {
+        Object.defineProperty(object, oldVar, {
+            get: function() { return OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, getter)(); },
+            set: function(val) { OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, setter)(val); }
+        });
+    };
 
     return OctoPrintClient;
 });

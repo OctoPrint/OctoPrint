@@ -372,7 +372,7 @@
                     <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
-                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M118</code> and <code>M410</code>.') }}</span>                    </div>
+                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.') }}</span>                    </div>
                 </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
@@ -396,6 +396,13 @@
                             <div class="controls">
                                 <input type="text" class="input-block-level" id="settings-checksumRequiringCommands" data-bind="value: serial_checksumRequiringCommands">
                                 <span class="help-inline">{{ _('Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.') }}</span>
+                            </div>
+                        </div>
+                        <div class="control-group" title="{{ _('ok buffer size')|edq }}">
+                            <label class="control-label" for="settings-serialAckMax">{{ _('<code>ok</code> buffer size') }}</label>
+                            <div class="controls">
+                                <input type="number" min="0" class="input-mini text-right" id="settings-serialAckMax" data-bind="value: serial_ackMax">
+                                <span class="help-block">{{ _('Only modify if told to do so') }}</span>
                             </div>
                         </div>
                     </div>

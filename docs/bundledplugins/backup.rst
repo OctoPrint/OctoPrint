@@ -27,7 +27,7 @@ Command line usage
 ------------------
 
 The Backup Plugin implements a command line interface that allows creation and restoration of backups.
-It adds two new commands, ``backup:backup`` and ``backup_restore``.
+It adds two new commands, ``backup:backup`` and ``backup:restore``.
 
 .. code-block:: none
 

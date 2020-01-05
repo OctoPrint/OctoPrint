@@ -61,7 +61,7 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 The generic steps that should basically be done regardless of operating system
 and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
-you already have Python 2.7, pip and virtualenv set up on your system:
+you already have Python 2.7, 3.6 or 3.7, pip and virtualenv set up on your system:
 
 1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
 2. Change into the OctoPrint folder: `cd OctoPrint`
@@ -84,7 +84,7 @@ OctoPrint via `pip`:
 
 You should do this every time after pulling from the repository, since the dependencies may have changed.
 
-OctoPrint currently only supports Python 2.7.
+OctoPrint currently supports Python 2.7, 3.6 and 3.7.
 
 ## Usage
 

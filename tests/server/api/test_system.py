@@ -3,7 +3,7 @@
 Unit tests for ``octoprint.server.api`` system.
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -31,5 +31,5 @@ class GetFolderUsageTest(unittest.TestCase):
                 settings_mock.return_value = settings
 
                 data = _usageForFolders()
-                self.assertEquals(data['uploads']['free'], 50)
-                self.assertEquals(data['uploads']['total'], 512)
+                self.assertEqual(data['uploads']['free'], 50)
+                self.assertEqual(data['uploads']['total'], 512)

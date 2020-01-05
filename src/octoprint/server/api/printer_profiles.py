@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,15 +14,15 @@ from werkzeug.exceptions import BadRequest
 from past.builtins import basestring
 
 from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, with_revalidation_checking
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
-from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
+from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError
+from octoprint.access.permissions import Permissions
 
 def _lastmodified():
 	return printerProfileManager.last_modified
-
 
 def _etag(lm=None):
 	if lm is None:
@@ -30,9 +30,12 @@ def _etag(lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
-	hash.update(str(lm))
-	hash.update(repr(printerProfileManager.get_default()))
-	hash.update(repr(printerProfileManager.get_current()))
+	def hash_update(value):
+		value = value.encode('utf-8')
+		hash.update(value)
+	hash_update(str(lm))
+	hash_update(repr(printerProfileManager.get_default()))
+	hash_update(repr(printerProfileManager.get_current()))
 	return hash.hexdigest()
 
 
@@ -40,19 +43,25 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerprofiles", methods=["POST"])
-@restricted_access
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -97,6 +106,8 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
 	if profile is None:
@@ -105,7 +116,8 @@ def printerProfilesGet(identifier):
 		return jsonify(_convert_profile(profile))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
-@restricted_access
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
 	current_profile = printerProfileManager.get_current()
 	if current_profile and current_profile["id"] == identifier:
@@ -119,14 +131,18 @@ def printerProfilesDelete(identifier):
 	return NO_CONTENT
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
-@restricted_access
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:

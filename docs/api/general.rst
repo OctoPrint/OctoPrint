@@ -148,8 +148,14 @@ Login
    via the ``passive`` flag.
 
    Will return a :http:statuscode:`200` with a :ref:`login response <sec-api-general-datamodel-login>` on successful
-   login, whether active or passive. The active (username/password) login may also return a :http:statuscode:`401` in
-   case of a username/password mismatch or unknown user and a :http:statuscode:`403` in case of a deactivated account.
+   login, whether active or passive. The active (username/password) login may also return a :http:statuscode:`403` in
+   case of a username/password mismatch, unknown user or a deactivated account.
+
+   .. warning::
+
+      Previous versions of this API endpoint did return a :http:statuscode:`401` in case of a username/password
+      mismatch or an unknown user. That was incompatible with basic authentication since it was a wrong use of
+      the :http:statuscode:`401` code and got therefore changed as part of a bug fix.
 
    :json passive:  If present, performs a passive login only, returning information about the current user that's
                    active either through an existing session or the used API key
@@ -157,8 +163,7 @@ Login
    :json pass:     (active login only) Password
    :json remember: (active login only) Whether to set a "remember me" cookie on the session
    :status 200:    Successful login
-   :status 401:    Username/password mismatch or unknown user
-   :status 403:    Deactivated account
+   :status 403:    Username/password mismatch, unknown user or deactivated account
 
 .. _sec-api-general-logout:
 

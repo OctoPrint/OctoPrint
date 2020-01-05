@@ -3,9 +3,12 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
+        self.access = parameters[1];
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
+
+        // TODO: remove in upcoming version, this is only for backwards compatibility
+        self.users = parameters[4];
 
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
@@ -97,6 +100,7 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
+        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
 
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
@@ -129,6 +133,7 @@ $(function() {
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
+        self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
@@ -148,6 +153,8 @@ $(function() {
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
+
+        self.gcodeAnalysis_runAt = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -200,6 +207,7 @@ $(function() {
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
         self.serial_sendM112OnError = ko.observable(undefined);
+        self.serial_ackMax = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -243,6 +251,8 @@ $(function() {
         self.server_pluginBlacklist_enabled = ko.observable();
         self.server_pluginBlacklist_url = ko.observable();
         self.server_pluginBlacklist_ttl = ko.observable();
+
+        self.server_allowFraming = ko.observable();
 
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
@@ -373,7 +383,7 @@ $(function() {
                                                 "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
                                                 "double check that the URL is returning static images, not multipart data " +
                                                 "or videos.");
-                            errorText = _.sprintf(errorText, {content_type: response.response.content_type});
+                            errorText = _.sprintf(errorText, {content_type: _.escape(response.response.content_type)});
                         }
 
                         showMessageDialog({
@@ -652,7 +662,7 @@ $(function() {
                 }
             }
 
-            // handler for any explicitely provided callbacks
+            // handler for any explicitly provided callbacks
             var callbackHandler = function() {
                 if (!callback) return;
                 try {
@@ -1100,22 +1110,16 @@ $(function() {
             self.requestData();
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             // we might have other user rights now, refresh (but only if startup has fully completed)
             if (!self._startupComplete) return;
             self.requestData();
         };
-
-        self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        }
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SettingsViewModel,
-        dependencies: ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
 });

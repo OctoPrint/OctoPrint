@@ -5,6 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.printerProfiles = parameters[1];
         self.printerState = parameters[2];
+        self.access = parameters[3];
 
         self.file = ko.observable(undefined);
         self.target = undefined;
@@ -146,7 +147,7 @@ $(function() {
             self.target = target;
             self.file(file);
             self.path = path;
-            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: display}));
+            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: _.escape(display)}));
             self.destinationFilename(destination);
             self.printerProfile(self.printerProfiles.currentProfile());
             self.afterSlicing("none");
@@ -193,6 +194,10 @@ $(function() {
         });
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.SLICE)) {
+                return;
+            }
+
             return OctoPrint.slicing.listAllSlicersAndProfiles()
                 .done(function(data) {
                     self.fromResponse(data);
@@ -300,7 +305,7 @@ $(function() {
             return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
-        self.onStartup = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
             self.requestData();
         };
 
@@ -315,7 +320,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SlicingViewModel,
-        dependencies: ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
+        dependencies: ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel", "accessViewModel"],
         elements: ["#slicing_configuration_dialog"]
     });
 });

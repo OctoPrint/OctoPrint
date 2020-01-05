@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import absolute_import, division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -94,6 +94,18 @@ class SelectedFilesLoader(BaseLoader):
 		return self.files.keys()
 
 
+class SelectedFilesWithConversionLoader(SelectedFilesLoader):
+	def __init__(self, files, encoding="utf-8", conversion=None):
+		SelectedFilesLoader.__init__(self, files, encoding=encoding)
+		self.conversion = conversion
+
+	def get_source(self, environment, template):
+		contents = SelectedFilesLoader.get_source(self, environment, template)
+		if callable(self.conversion):
+			contents = self.conversion(contents[0]), contents[1], contents[2]
+		return contents
+
+
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []
@@ -107,13 +119,13 @@ def get_all_template_paths(loader):
 	def collect_templates_for_loader(loader):
 		if isinstance(loader, SelectedFilesLoader):
 			import copy
-			return copy.copy(loader.files.values())
+			return copy.copy(list(loader.files.values()))
 
 		elif isinstance(loader, FilteredFileSystemLoader):
 			result = []
 			for folder in loader.searchpath:
 				result += walk_folder(folder)
-			return filter(loader.path_filter, result)
+			return list(filter(loader.path_filter, result))
 
 		elif isinstance(loader, FileSystemLoader):
 			result = []
@@ -207,7 +219,7 @@ class ExceptionHandlerExtension(Extension):
 
 		try:
 			return error.format(exception=exception, filename=filename, lineno=lineno)
-		except:
+		except Exception:
 			self._logger.exception("Error while compiling exception output for template {filename} at line {lineno}".format(**locals()))
 			return "Unknown error"
 
