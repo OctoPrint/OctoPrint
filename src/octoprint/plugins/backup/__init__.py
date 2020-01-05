@@ -808,10 +808,21 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					if callable(on_log_progress):
 						on_log_progress("Unpacking backup to {}...".format(temp))
 					abstemp = os.path.abspath(temp)
+					dirs = {}
 					for member in zip.infolist():
 						abspath = os.path.abspath(os.path.join(temp, member.filename))
 						if abspath.startswith(abstemp):
+							d = member.date_time
 							zip.extract(member, temp)
+							date_time = time.mktime(d + (0, 0, -1))
+							if (os.path.isdir(abspath)):
+								dirs[abspath] = date_time
+							else:
+								os.utime(abspath, (date_time, date_time))
+					# set time on folders
+					for name in dirs:
+						date_time = dirs[name]
+						os.utime(name, (date_time, date_time))
 
 					# sanity check
 					configfile = os.path.join(temp, "basedir", "config.yaml")
