@@ -20,31 +20,6 @@ from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP, READONLY_GROU
 from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.vendor.flask_principal import Need, Permission
 
-DEFAULT_ADMIN_PERMISSIONS = [Permissions.ADMIN]
-"""Default admin permissions are the legacy permissions from before 1.4.0"""
-
-DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
-                            Permissions.CONNECTION,
-                            Permissions.WEBCAM,
-                            Permissions.FILES_UPLOAD,
-                            Permissions.FILES_DOWNLOAD,
-                            Permissions.FILES_DELETE,
-                            Permissions.FILES_SELECT,
-                            Permissions.PRINT,
-                            Permissions.MONITOR_TERMINAL,
-                            Permissions.CONTROL,
-                            Permissions.SLICE,
-                            Permissions.TIMELAPSE_LIST,
-                            Permissions.TIMELAPSE_ADMIN]
-"""Default user permissions are the legacy permissions from before 1.4.0"""
-
-DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
-                             Permissions.WEBCAM,
-                             Permissions.FILES_DOWNLOAD,
-                             Permissions.TIMELAPSE_LIST,
-                             Permissions.MONITOR_TERMINAL]
-"""Default guest permissions are the legacy permissions from before 1.4.0"""
-
 
 GroupNeed = partial(Need, 'group')
 GroupNeed.__doc__ = """A need with the method preset to `"group"`."""
