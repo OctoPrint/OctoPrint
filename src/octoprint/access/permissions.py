@@ -292,27 +292,26 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	FILES_DOWNLOAD         = OctoPrintPermission("File Download",
 	                                             gettext("Allows users to download files. The GCODE viewer is "
 	                                                     "affected by this as well."),
-	                                             RoleNeed("files_download"), FILES_LIST,
+	                                             RoleNeed("files_download"),
 	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	FILES_DELETE           = OctoPrintPermission("File Delete",
 	                                             gettext("Allows users to delete files"),
-	                                             RoleNeed("files_delete"), FILES_LIST,
+	                                             RoleNeed("files_delete"),
 	                                             default_groups=[USER_GROUP])
 	FILES_SELECT           = OctoPrintPermission("File Select",
 	                                             gettext("Allows to select a file for printing"),
-	                                             RoleNeed("files_select"), FILES_LIST,
+	                                             RoleNeed("files_select"),
 	                                             default_groups=[USER_GROUP])
 
 	PRINT                  = OctoPrintPermission("Print",
-	                                             gettext("Allows to start, pause and cancel a print job. Includes the \"Select\" "
-	                                                     "permission"),
-	                                             RoleNeed("print"), FILES_SELECT,
+	                                             gettext("Allows to start, pause and cancel a print job"),
+	                                             RoleNeed("print"),
 	                                             default_groups=[USER_GROUP])
 
 	GCODE_VIEWER           = OctoPrintPermission("GCODE viewer",
-	                                             gettext("Allows access to the GCODE viewer. Includes the \"File Download\""
-	                                                     "permission."),
-	                                             RoleNeed("gcodeviewer"), FILES_DOWNLOAD,
+	                                             gettext("Allows access to the GCODE viewer if the \"File Download\""
+	                                                     "permission is also set."),
+	                                             RoleNeed("gcodeviewer"),
 	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 
 	MONITOR_TERMINAL       = OctoPrintPermission("Terminal",
