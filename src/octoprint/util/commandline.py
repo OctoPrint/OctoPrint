@@ -16,6 +16,11 @@ from .platform import get_os
 
 from past.builtins import unicode
 
+try:
+	import queue
+except ImportError:  # pragma: no cover
+	import Queue as queue
+
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
@@ -169,7 +174,21 @@ class CommandlineCaller(object):
 		if get_os() == "windows" and "env" in kwargs:
 			kwargs["env"] = dict((k, to_bytes(v)) for k, v in kwargs["env"].items())
 
-		kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+		delimiter = kwargs.get("delimiter", b'\n')
+		try:
+			kwargs.pop("delimiter")
+		except KeyError:
+			pass
+
+		buffer_size = kwargs.get("buffer_size", -1)
+		try:
+			kwargs.pop("buffer_size")
+		except KeyError:
+			pass
+
+		kwargs.update(dict(async_=True,
+		                   stdout=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+		                   stderr=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size)))
 
 		p = sarge.run(command, **kwargs)
 		while len(p.commands) == 0:
@@ -226,3 +245,36 @@ class CommandlineCaller(object):
 
 	def _preprocess_lines(self, *lines):
 		return lines
+
+
+class DelimiterCapture(sarge.Capture):
+	def __init__(self, delimiter=b'\n', *args, **kwargs):
+		self._delimiter = delimiter
+		sarge.Capture.__init__(self, *args, **kwargs)
+
+	def readline(self, size=-1, block=True, timeout=None):
+		if not self.streams_open():
+			block = False
+			timeout = None
+		else:
+			timeout = timeout or self.timeout
+		if self.current is None:
+			try:
+				self.current = self.buffer.get(block, timeout)
+			except queue.Empty:
+				self.current = b''
+		while self._delimiter not in self.current:
+			try:
+				self.current += self.buffer.get(block, timeout)
+			except queue.Empty:
+				break
+		if self._delimiter not in self.current:
+			result = self.current
+			self.current = None
+		else:
+			i = self.current.index(self._delimiter)
+			if 0 < size < i:
+				i = size - 1
+			result = self.current[:i + 1]
+			self.current = self.current[i + 1:]
+		return result
