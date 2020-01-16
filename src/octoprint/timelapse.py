@@ -859,10 +859,12 @@ class TimelapseRenderJob(object):
 		input = os.path.join(self._capture_dir,
 		                     self._capture_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
-		output = os.path.join(self._output_dir,
-		                      self._output_format.format(prefix=self._prefix,
-		                                                 postfix=self._postfix if self._postfix is not None else "",
-		                                                 extension=extension))
+
+		output_name = self._output_format.format(prefix=self._prefix,
+		                                         postfix=self._postfix if self._postfix is not None else "",
+		                                         extension=extension)
+		temporary = os.path.join(self._output_dir, ".{}".format(output_name))
+		output = os.path.join(self._output_dir, output_name)
 
 		for i in range(4):
 			if os.path.exists(input % i):
@@ -885,7 +887,7 @@ class TimelapseRenderJob(object):
 				watermark = watermark.replace("\\", "/").replace(":", "\\\\:")
 
 		# prepare ffmpeg command
-		command_str = self._create_ffmpeg_command_string(ffmpeg, self._fps, bitrate, self._threads, input, output,
+		command_str = self._create_ffmpeg_command_string(ffmpeg, self._fps, bitrate, self._threads, input, temporary,
 		                                                 self._videocodec, hflip=hflip, vflip=vflip, rotate=rotate,
 		                                                 watermark=watermark)
 		self._logger.debug("Executing command: {}".format(command_str))
@@ -903,6 +905,7 @@ class TimelapseRenderJob(object):
 				self._logger.debug("Done with parsing")
 
 				if returncode == 0:
+					shutil.move(temporary, output)
 					self._notify_callback("success", output)
 				else:
 					self._logger.warning("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
@@ -911,6 +914,11 @@ class TimelapseRenderJob(object):
 				self._logger.exception("Could not render movie due to unknown error")
 				self._notify_callback("fail", output, reason="unknown")
 			finally:
+				try:
+					if os.path.exists(temporary):
+						os.remove(temporary)
+				except Exception:
+					self._logger.warn("Could not delete temporary timelapse {}".format(temporary))
 				self._notify_callback("always", output)
 
 	def _process_ffmpeg_output(self, *lines):
