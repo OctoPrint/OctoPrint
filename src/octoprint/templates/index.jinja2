@@ -65,7 +65,7 @@
                 <input type="password" data-bind="value: login_password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
                 <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="value: login_remember"> {{ _('Remember me') }}
+                    <input type="checkbox" data-bind="checked: login_remember"> {{ _('Remember me') }}
                 </label>
                 <button class="btn btn-block btn-large btn-primary" type="submit" data-bind="click: login">{{ _('Log in') }}</button>
             </form>
