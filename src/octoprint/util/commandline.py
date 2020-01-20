@@ -11,7 +11,7 @@ import logging
 import re
 import time
 
-from . import to_unicode, to_bytes
+from . import to_unicode, to_native_str
 from .platform import get_os
 
 from past.builtins import unicode
@@ -172,7 +172,7 @@ class CommandlineCaller(object):
 
 		# if we are running under windows, make sure there are no unicode strings in the env
 		if get_os() == "windows" and "env" in kwargs:
-			kwargs["env"] = dict((k, to_bytes(v)) for k, v in kwargs["env"].items())
+			kwargs["env"] = dict((k, to_native_str(v)) for k, v in kwargs["env"].items())
 
 		delimiter = kwargs.get("delimiter", b'\n')
 		try:
