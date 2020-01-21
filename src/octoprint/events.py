@@ -46,6 +46,8 @@ class Events(object):
 	# connect/disconnect by client
 	CLIENT_OPENED = "ClientOpened"
 	CLIENT_CLOSED = "ClientClosed"
+	CLIENT_AUTHED = "ClientAuthed"
+	CLIENT_DEAUTHED = "ClientDeauthed"
 
 	# user login/logout
 	USER_LOGGED_IN = "UserLoggedIn"

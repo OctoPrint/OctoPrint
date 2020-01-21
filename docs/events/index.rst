@@ -100,7 +100,7 @@ Shutdown
    The server is shutting down.
 
 ClientOpened
-   A client has connected to the web server.
+   A client has connected to the push socket.
 
    Payload:
 
@@ -109,12 +109,22 @@ ClientOpened
 
    **Note:** Name changed in version 1.1.0
 
-ClientClosed
-   A client has disconnected from the webserver
+ClientAuthed
+   A client has authenticated a user session on the push socket.
 
    Payload:
 
-     * ``remoteAddress``: the remote address (IP) of the client that disconnected
+     * ``remoteAddress``: the remote address (IP) of the client that authed. On the push socket only available with a
+       valid login session.
+     * ``username``: the name of the user who authed. On the push socket only available with a valid login session.
+
+ClientClosed
+   A client has disconnected from the push socket.
+
+   Payload:
+
+     * ``remoteAddress``: the remote address (IP) of the client that disconnected. On the push socket only available
+       with a valid login session.
 
 UserLoggedIn
    A user logged in. On the push socket only available with a valid login session with admin rights.

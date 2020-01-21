@@ -78,6 +78,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 	                      "*": []}
 
 	_event_payload_processors = {Events.CLIENT_OPENED: [lambda user, payload: payload if user.has_permission(Permissions.ADMIN) else dict()],
+	                             Events.CLIENT_AUTHED: [lambda user, payload: payload if user.has_permission(Permissions.ADMIN) else dict()],
 	                             "*": []}
 
 	_emit_permissions = {"connected": [],
@@ -435,6 +436,10 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			except Exception:
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
 				                       extra=dict(plugin=name))
+
+		octoprint.events.eventManager().fire(octoprint.events.Events.CLIENT_AUTHED,
+		                                     payload=dict(username=user.get_name(),
+		                                                  remoteAddress=self._remoteAddress))
 
 	def _on_logout(self):
 		self._user = self._userManager.anonymous_user_factory()
