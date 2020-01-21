@@ -73,6 +73,7 @@ def _etag(lm=None):
 	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
+@Permissions.SETTINGS_READ.require(403)
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
