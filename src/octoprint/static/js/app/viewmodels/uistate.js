@@ -40,7 +40,7 @@ $(function() {
                 });
         };
 
-        self.onUserLoggedOut = function() {
+        self.onUserLoggedOut = self.onUserPermissionsChanged = function() {
             if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ)) {
                 location.reload();
             }
