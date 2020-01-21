@@ -8,7 +8,7 @@ $(function() {
         self.loading = ko.observable(CONFIG_LOADINGANIMATION);
         self.loading_error = ko.observable(false);
         self.needlogin = ko.computed(function() {
-            return !self.loading() && !self.loginState.hasPermissionKo(self.access.permissions.STATUS)();
+            return !self.loading() && !self.loginState.hasAllPermissionsKo(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ)();
         });
         self.visible = ko.pureComputed(function() {
             return !self.loading() && !self.needlogin();
@@ -38,6 +38,12 @@ $(function() {
                         }
                     }
                 });
+        };
+
+        self.onUserLoggedOut = function() {
+            if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ)) {
+                location.reload();
+            }
         };
 
         self.showLoadingError = function(error) {

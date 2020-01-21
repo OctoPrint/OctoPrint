@@ -367,7 +367,7 @@ def index():
 
 		return view(now, request, render_kwargs)
 
-	def default_view():
+	def ui_view():
 		filtered_templates = _filter_templates(_templates[locale], default_template_filter)
 
 		wizard = wizard_active(filtered_templates)
@@ -406,6 +406,15 @@ def index():
 		                                                   dict(),
 		                                                   dict())
 		return preemptively_cached()
+
+	def login_view():
+		return util.flask.add_non_caching_response_headers(make_response(render_template("forcelogin.jinja2")))
+
+	def default_view():
+		if Permissions.STATUS.can() and Permissions.SETTINGS_READ.can():
+			return ui_view()
+		else:
+			return login_view()
 
 	response = None
 
