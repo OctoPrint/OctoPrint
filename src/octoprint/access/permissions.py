@@ -279,7 +279,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                                     "printer state, temperatures, ... Mandatory for the default UI "
 	                                                     "to work"),
 	                                             RoleNeed("status"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 
 	CONNECTION             = OctoPrintPermission("Connection",
 	                                             gettext("Allows to connect to and disconnect from a printer"),
@@ -289,7 +289,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	WEBCAM                 = OctoPrintPermission("Webcam",
 	                                             gettext("Allows to watch the webcam stream"),
 	                                             RoleNeed("webcam"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 
 	SYSTEM                 = OctoPrintPermission("System",
 	                                             gettext("Allows to run system commands, e.g. restart OctoPrint, "
@@ -301,7 +301,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                             gettext("Allows to retrieve a list of all uploaded files, including"
 	                                                     "their metadata (e.g. date, file size, analysis results, ...)"),
 	                                             RoleNeed("files_list"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	FILES_UPLOAD           = OctoPrintPermission("File Upload",
 	                                             gettext("Allows users to upload new files"),
 	                                             RoleNeed("files_upload"),
@@ -310,7 +310,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                             gettext("Allows users to download files. The GCODE viewer is "
 	                                                     "affected by this as well."),
 	                                             RoleNeed("files_download"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	FILES_DELETE           = OctoPrintPermission("File Delete",
 	                                             gettext("Allows users to delete files"),
 	                                             RoleNeed("files_delete"),
@@ -329,13 +329,13 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                             gettext("Allows access to the GCODE viewer if the \"File Download\""
 	                                                     "permission is also set."),
 	                                             RoleNeed("gcodeviewer"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 
 	MONITOR_TERMINAL       = OctoPrintPermission("Terminal",
 	                                             gettext("Allows to watch the terminal tab but not to send commands "
 	                                                     "to the printer from it"),
 	                                             RoleNeed("monitor_terminal"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 
 	CONTROL                = OctoPrintPermission("Control",
 	                                             gettext("Allows to control of the printer by using the temperature controls,"
@@ -351,11 +351,11 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	TIMELAPSE_LIST         = OctoPrintPermission("Timelapse List",
 	                                             gettext("Allows to list timelapse videos"),
 	                                             RoleNeed("timelapse_list"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	TIMELAPSE_DOWNLOAD     = OctoPrintPermission("Timelapse Download",
 	                                             gettext("Allows to download timelapse videos"),
 	                                             RoleNeed("timelapse_download"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	TIMELAPSE_DELETE       = OctoPrintPermission("Timelapse Delete",
 	                                             gettext("Allows to delete timelapse videos and unrendered timelapses"),
 	                                             RoleNeed("timelapse_delete"),
@@ -371,7 +371,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                             gettext("Allows to read non sensitive settings. Mandatory for the "
 	                                                     "default UI to work."),
 	                                             RoleNeed("settings_read"),
-	                                             default_groups=[USER_GROUP])
+	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	SETTINGS               = OctoPrintPermission("Settings Admin",
 	                                             gettext("Allows to manage settings and also to read sensitive settings"),
 	                                             RoleNeed("settings"),
