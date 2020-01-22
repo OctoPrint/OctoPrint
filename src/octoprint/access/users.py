@@ -1126,6 +1126,12 @@ class User(UserMixin):
 		return list(self._groups)
 
 	@property
+	def effective_permissions(self):
+		if self._permissions is None:
+			return []
+		return list(filter(lambda p: p is not None and self.has_permission(p), Permissions.all()))
+
+	@property
 	def needs(self):
 		needs = set()
 
@@ -1143,8 +1149,6 @@ class User(UserMixin):
 		return self.has_needs(*permission.needs)
 
 	def has_needs(self, *needs):
-		if Permissions.ADMIN in self._permissions:
-			return True
 		return set(needs).issubset(self.needs)
 
 	def __repr__(self):

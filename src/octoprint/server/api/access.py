@@ -17,6 +17,26 @@ from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.access.permissions import Permissions
 
+#~~ current user
+
+@api.route("/access/user", methods=["GET"])
+def get_current_user():
+	return jsonify(name=current_user.get_name(),
+	               permissions=[permission.key for permission in current_user.effective_permissions],
+	               groups=[group.key for group in current_user.groups])
+
+@api.route("/access/user/name", methods=["GET"])
+def get_current_user_name():
+	return jsonify(name=current_user.get_name())
+
+@api.route("/access/user/permissions", methods=["GET"])
+def get_current_user_permissions():
+	return jsonify(permissions=[permission.key for permission in current_user.effective_permissions])
+
+@api.route("/access/user/groups", methods=["GET"])
+def get_current_user_groups():
+	return jsonify(groups=[group.key for group in current_user.groups])
+
 #~~ permission api
 
 @api.route("/access/permissions", methods=["GET"])
