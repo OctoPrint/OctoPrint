@@ -20,7 +20,7 @@ REST API
    slicing.rst
    system.rst
    timelapse.rst
-   users.rst
+   access.rst
    util.rst
    wizard.rst
    push.rst
