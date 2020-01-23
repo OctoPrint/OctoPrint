@@ -21,6 +21,8 @@ Retrieve all files
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example 1**:
 
    Fetch only the files and folders from the root folder.
@@ -250,6 +252,8 @@ Retrieve files from specific location
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example**:
 
    .. sourcecode:: http
@@ -327,7 +331,7 @@ Upload file or create folder
    Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
    file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
-   Requires user rights.
+   Requires the ``FILES_UPLOAD`` permission.
 
    **Example for uploading a file**
 
@@ -504,6 +508,8 @@ Retrieve a specific file's or folder's information
    On success, a :http:statuscode:`200` is returned, with a :ref:`file information item <sec-api-datamodel-files-file>`
    as the response body.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example**
 
    .. sourcecode:: http
@@ -568,6 +574,8 @@ Issue a file command
 
      Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
+     Requires the ``FILES_SELECT`` permission.
+
    slice
      Slices an STL file into GCODE. Note that this is an asynchronous operation that will take place in the background
      after the response has been sent back to the client. Additional parameters are:
@@ -598,6 +606,8 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`202` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
+     Requires the ``SLICE`` permission.
+
    copy
      Copies the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
 
@@ -608,6 +618,8 @@ Issue a file command
 
      Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
+
+     Requires the ``FILES_UPLOAD`` permission.
 
    move
      Moves the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
@@ -622,7 +634,7 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
-   Requires user rights.
+     Requires the ``FILES_UPLOAD`` permission.
 
    **Example Select Request**
 
@@ -773,7 +785,7 @@ Delete file
 
    Returns a :http:statuscode:`204` after successful deletion.
 
-   Requires user rights.
+   Requires the ``FILES_DELETE`` permission.
 
    **Example Request**
 

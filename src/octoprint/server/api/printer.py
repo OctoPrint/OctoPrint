@@ -478,7 +478,6 @@ def printerCommand():
 @no_firstrun_access
 @Permissions.CONTROL.require(403)
 def getCustomControls():
-	# TODO: document me
 	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 

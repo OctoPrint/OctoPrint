@@ -18,6 +18,8 @@ Retrieve a list of timelapses and the current config
    Returns a :ref:`timelapse list <sec-api-timelapse-datamodel-list>` in the
    response body.
 
+   Requires the ``TIMELAPSE_LIST`` permission.
+
    :param unrendered: If provided and true, also include unrendered timelapses
 
 .. _sec-api-timelapse-delete:
@@ -29,7 +31,7 @@ Delete a timelapse
 
    Delete the timelapse ``filename``.
 
-   Requires user rights.
+   Requires the ``TIMELAPSE_DELETE`` permission.
 
 .. _sec-api-timelapse-render:
 
@@ -41,7 +43,7 @@ Issue a command for an unrendered timelapse
    Current only supports to render the unrendered timelapse ``name`` via the
    ``render`` command.
 
-   Requires user rights.
+   Requires the ``TIMELAPSE_ADMIN`` permission.
 
    :json command: The command to issue, currently only ``render`` is supported
 
@@ -54,7 +56,7 @@ Delete an unrendered timelapse
 
    Delete the unrendered timelapse ``name``.
 
-   Requires user rights.
+   Requires the ``TIMELAPSE_DELETE`` permission.
 
 .. _sec-api-timelapse-saveconfig:
 
@@ -67,7 +69,7 @@ Change current timelapse config
 
    The configuration is expected as the request body.
 
-   Requires user rights.
+   Requires the ``TIMELAPSE_ADMIN`` permission.
 
 .. _sec-api-timelapse-datamodel:
 

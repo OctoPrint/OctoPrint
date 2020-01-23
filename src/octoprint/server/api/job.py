@@ -14,7 +14,6 @@ from octoprint.access.permissions import Permissions
 
 @api.route("/job", methods=["POST"])
 @no_firstrun_access
-@Permissions.PRINT.require(403)
 def controlJob():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
@@ -57,13 +56,10 @@ def controlJob():
 				printer.resume_print(tags=tags, user=user)
 			else:
 				return make_response("Unknown action '{}', allowed values for action parameter are 'pause', 'resume' and 'toggle'".format(action), 400)
-
-	# Safety first, everyone can cancel a print, but log who canceled the print
-	# to prevent fraudulent use
-	if command == "cancel":
-		if not activePrintjob:
-			return make_response("Printer is neither printing nor paused, 'cancel' command cannot be performed", 409)
-		printer.cancel_print(tags=tags, user=user)
+		elif command == "cancel":
+			if not activePrintjob:
+				return make_response("Printer is neither printing nor paused, 'cancel' command cannot be performed", 409)
+			printer.cancel_print(tags=tags, user=user)
 	return NO_CONTENT
 
 

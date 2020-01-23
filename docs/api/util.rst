@@ -99,7 +99,7 @@ Test paths or URLs
      The ``server`` command returns :http:statuscode:`200` with a :ref:`Server test result <sec-api-util-datamodel-servertestresult>`
      when the test could be performed. The status code of the response does NOT reflect the test result!
 
-   Requires admin rights.
+   Requires the ``ADMIN`` permission.
 
    **Example 1**
 

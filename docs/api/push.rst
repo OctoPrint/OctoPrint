@@ -51,9 +51,8 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
 
   * ``auth`` (since 1.3.10): With the ``auth`` message, clients may associate an
     existing user session with the socket. That is of special importance to receive
-    any kind of messages if the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` is enabled
-    (as it is by default), since it will prevent any kind of status messages to be sent to connected unauthenticated
-    clients.
+    any kind of messages, since the permission system will prevent any kind of status messages to be sent to connected
+    clients lacking the ``STATUS`` permission.
 
     The ``auth`` message expects the user id of the user to authenticate followed by ``:`` and a session key to be
     obtained from the successful payload of a :ref:`(passive or active) login via the API <sec-api-general-login>`.

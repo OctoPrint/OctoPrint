@@ -6,7 +6,7 @@ System
 
 .. note::
 
-   All system operations require admin rights.
+   All system operations require the ``SYSTEM`` permission.
 
 .. _sec-api-system-command-list:
 
@@ -19,6 +19,8 @@ List all registered system commands
 
    A :http:statuscode:`200` with a :ref:`List all response <sec-api-system-commands-listall>`
    will be returned.
+
+   Requires the ``SYSTEM`` permission.
 
    **Example**
 

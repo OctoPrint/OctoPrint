@@ -80,6 +80,8 @@ Retrieve the current printer state
    Returns a :http:statuscode:`200` with a :ref:`Full State Response <sec-api-printer-datamodel-fullstate>` in the
    body upon success.
 
+   Requires the ``STATUS`` permission.
+
    **Example 1**
 
    Include temperature history data, but limit it to two entries.
@@ -241,7 +243,7 @@ Issue a print head command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example Jog Request**
 
@@ -380,7 +382,7 @@ Issue a tool command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example Target Temperature Request**
 
@@ -555,6 +557,8 @@ Retrieve the current tool state
 
    Returns a :http:statuscode:`200` with a Temperature Response in the body upon success.
 
+   Requires the ``STATUS`` permission.
+
    .. note::
       If you want both tool and bed temperature information at the same time, take a look at
       :ref:`Retrieve the current printer state <sec-api-printer-state>`.
@@ -645,7 +649,7 @@ Issue a bed command
    If no heated bed is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example Target Temperature Request**
 
@@ -713,6 +717,8 @@ Retrieve the current bed state
 
    If no heated bed is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
+
+   Requires the ``STATUS`` permission.
 
    .. note::
       If you want tool, bed and chamber temperature information at the same time, take a look at
@@ -793,7 +799,7 @@ Issue a chamber command
    If no heated chamber is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example Target Temperature Request**
 
@@ -861,6 +867,8 @@ Retrieve the current chamber state
 
    If no heated chamber is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
+
+   Requires the ``STATUS`` permission.
 
    .. note::
       If you want tool, bed and chamber temperature information at the same time, take a look at
@@ -944,7 +952,7 @@ Issue an SD command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example Init Request**
 
@@ -1022,6 +1030,8 @@ Retrieve the current SD state
    Returns a :http:statuscode:`200` with an :ref:`SD State Response <sec-api-printer-datamodel-sdstate>` in the body
    upon success.
 
+   Requires the ``STATUS`` permission.
+
    **Example**
 
    Read the current state of the SD card.
@@ -1058,7 +1068,7 @@ Send an arbitrary command to the printer
 
    If successful returns a :http:statuscode:`204` and an empty body.
 
-   Requires user rights.
+   Requires the ``CONTROL`` permission.
 
    **Example for sending a single command**
 
@@ -1100,6 +1110,26 @@ Send an arbitrary command to the printer
    :json string command:  Single command to send to the printer, mutually exclusive with ``commands``.
    :json string commands: List of commands to send to the printer, mutually exclusive with ``command``.
    :statuscode 204:       No error
+
+.. _sec-api-printer-customcontrols:
+
+Retrieve custom controls
+========================
+
+.. http:get:: /api/printer/command/custom
+
+   Retrieves the :ref:`custom controls <sec-features-custom_controls>` as configured in
+   :ref:`config.yaml <sec-configuration-config_yaml>`.
+
+   Please refer to the documentation of :ref:`custom controls <sec-features-custom_controls>` on what
+   data structure to expect here.
+
+   Returns a :http:statuscode:`200` with an :ref:`Custom Controls Response <sec-api-printer-datamodel-customcontrols>`
+   in the body upon success.
+
+   Requires the ``CONTROL`` permission.
+
+   :statuscode 200: No error
 
 .. _sec-api-printer-datamodel:
 
@@ -1211,3 +1241,21 @@ Arbitrary Command Request
      - 0..1
      - Map of key value pairs
      - (only if ``script`` is set) additional template variables to provide to the script renderer
+
+.. _sec-api-printer-datamodel-customcontrols:
+
+Custom Controls Response
+------------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``controls``
+     - 0..n
+     - List of :ref:`custom controls <sec-features-custom_controls>`
+     - A list of custom control definitions as defined in ``config.yaml``.

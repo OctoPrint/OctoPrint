@@ -57,7 +57,7 @@ Issue a job command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
-   Requires user rights.
+   Requires the ``PRINT`` permission.
 
    **Example Start Request**
 
@@ -179,6 +179,8 @@ Retrieve information about the current job
    Retrieve information about the current job (if there is one).
 
    Returns a :http:statuscode:`200` with a :ref:`sec-api-job-datamodel-response` in the body.
+
+   Requires the ``STATUS`` permission.
 
    **Example**
 

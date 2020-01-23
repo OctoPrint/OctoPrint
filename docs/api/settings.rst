@@ -21,6 +21,8 @@ Retrieve current settings
    The :ref:`data model <sec-api-settings-datamodel>` is similar to what can be found in
    :ref:`config.yaml <sec-configuration-config_yaml>`, see below for details.
 
+   Requires the ``SETTINGS_READ`` permission.
+
 .. _sec-api-settings-save:
 
 Save settings
@@ -36,7 +38,7 @@ Save settings
 
    Returns the currently active settings on success, as part of a :http:statuscode:`200` response.
 
-   Requires admin rights.
+   Requires the ``SETTINGS`` permission.
 
    **Example**
 
