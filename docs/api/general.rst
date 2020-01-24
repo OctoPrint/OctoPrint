@@ -185,7 +185,7 @@ Logout
 Current User
 ============
 
-.. http:get:: /api/access/currentuser
+.. http:get:: /api/currentuser
 
    Retrieves information about the current user.
 
