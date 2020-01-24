@@ -180,6 +180,20 @@ Logout
 
    :status 204: No error
 
+.. _sec-api-general-currentuser:
+
+Current User
+============
+
+.. http:get:: /api/access/currentuser
+
+   Retrieves information about the current user.
+
+   Will return a :http:statuscode:`200` with a :ref:`current user object <sec-api-general-datamodel-currentuser>`
+   as body.
+
+   :status 200: No error
+
 .. _sec-api-general-datamodel:
 
 Data model
@@ -189,6 +203,30 @@ Data model
 
 Login response
 --------------
+
+The Login response is a :ref:`user record <sec-api-datamodel-access-users>` extended by the following fields:
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``session``
+     - 1
+     - string
+     - The session key, can be used to authenticate with the ``auth`` message on the :ref:`push API <sec-api-push>`.
+   * - ``_is_external_client``
+     - 1
+     - boolean
+     - Whether the client that made the request got detected as external from the local network or not.
+
+.. _sec-api-general-datamodel-currentuser:
+
+Current user
+------------
 
 .. list-table::
    :widths: 15 5 10 30
@@ -201,32 +239,12 @@ Login response
    * - ``name``
      - 1
      - string
-     - the user's name/id
-   * - ``active``
-     - 1
-     - boolean
-     - Whether the user's account is active or not
-   * - ``admin``
-     - 1
-     - boolean
-     - Whether the user has admin rights or not
-   * - ``user``
-     - 1
-     - boolean
-     - Whether the user has user rights or not (always ``true``)
-   * - ``apikey``
-     - 1
-     - string or None
-     - The user's API key, if set
-   * - ``settings``
-     - 1
-     - dict
-     - The user's settings, if any
-   * - ``session``
-     - 1
-     - string
-     - The session key, can be used to authenticate with the ``auth`` message on the :ref:`push API <sec-api-push>`.
-   * - ``_is_external_client``
-     - 1
-     - boolean
-     - Whether the client that made the request got detected as external from the local network or not.
+     - The id of the current user. Unset if guest.
+   * - ``permissions``
+     - 0..n
+     - List of :ref:`permission records <sec-api-datamodel-access-permissions>`
+     - The effective list of permissions assigned to the user
+   * - ``groups``
+     - 0..n
+     - List of :ref:`permission records <sec-api-datamodel-access-groups>`
+     - The list of groups assigned to the user

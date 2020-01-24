@@ -289,6 +289,13 @@ def _logout(user):
 	octoprint.server.userManager.logout_user(user)
 
 
+@api.route("/currentuser", methods=["GET"])
+def get_current_user():
+	return jsonify(name=current_user.get_name(),
+	               permissions=[permission.key for permission in current_user.effective_permissions],
+	               groups=[group.key for group in current_user.groups])
+
+
 #~~ Test utils
 
 

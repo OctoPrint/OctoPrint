@@ -6,67 +6,6 @@ Access control
 
 .. contents::
 
-.. _sec-api-access-user:
-
-Current user
-============
-
-.. _sec-api-access-user-info:
-
-Get current user
-----------------
-
-.. http:get:: /api/access/user
-
-   Retrieves information about the current user.
-
-   Will return a :http:statuscode:`200` with a :ref:`current user object <sec-api-access-datamodel-currentuser>`
-   as body.
-
-   :status 200: No error
-
-.. _sec-api-access-user-name:
-
-Get current user's name
------------------------
-
-.. http:get:: /api/access/user/name
-
-   Retrieves the name of the current user.
-
-   Will return a :http:statuscode:`200` with a :ref:`current user object <sec-api-access-datamodel-currentuser>`
-   with only the ``name`` field as body.
-
-   :status 200: No error
-
-.. _sec-api-access-user-permissions:
-
-List current user's permissions
--------------------------------
-
-.. http:get:: /api/access/user/permissions
-
-   Retrieves the effective permissions assigned to the current user.
-
-   Will return a :http:statuscode:`200` with a :ref:`permission list <sec-api-access-datamodel-permissions-list>`
-   as body.
-
-   :status 200: No error
-
-.. _sec-api-access-user-groups:
-
-List current user's groups
---------------------------
-
-.. http:get:: /api/access/user/groups
-
-   Retrieves the groups assigned to the current user.
-
-   Will return a :http:statuscode:`200` with a :ref:`current user object <sec-api-access-datamodel-groups-list>`
-   as body.
-
-   :status 200: No error
-
 .. _sec-api-access-permissions:
 
 Permissions
@@ -389,32 +328,6 @@ Delete a user's api key
 Data model
 ==========
 
-.. _sec-api-access-datamodel-currentuser:
-
-Current user
-------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``name``
-     - 1
-     - string
-     - The id of the current user. Unset if guest.
-   * - ``permissions``
-     - 0..n
-     - List of :ref:`permission records <sec-api-access-datamodel-permissions-permissionrecord>`
-     - The effective list of permissions assigned to the user
-   * - ``groups``
-     - 0..n
-     - List of :ref:`permission records <sec-api-access-datamodel-groups-grouprecord>`
-     - The list of groups assigned to the user
-
 .. _sec-api-access-datamodel-permissions:
 
 Permissions
@@ -435,47 +348,9 @@ Permission list response
      - Description
    * - ``permissions``
      - 0..n
-     - List of :ref:`permission records <sec-api-access-datamodel-permissions-permissionrecord>`
+     - List of :ref:`permission records <sec-api-datamodel-access-permissions>`
      - The list of permissions
 
-
-.. _sec-api-access-datamodel-permissions-permissionrecord:
-
-Permission record
-~~~~~~~~~~~~~~~~~
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``key``
-     - 1
-     - string
-     - The permission's identifier
-   * - ``name``
-     - 1
-     - string
-     - The permission's name
-   * - ``dangerous``
-     - 1
-     - boolean
-     - Whether the permission should be considered dangerous due to a high reponsibility (true) or not (false).
-   * - ``default_groups``
-     - 1
-     - List of string
-     - List of group identifiers for which this permission is enabled by default
-   * - ``description``
-     - 1
-     - string
-     - Human readable description of the permission
-   * - ``needs``
-     - 1
-     - :ref:`Needs object <sec-api-access-datamodel-general-needs>`
-     - Needs assigned to the permission
 
 .. _sec-api-access-datamodel-groups:
 
@@ -497,63 +372,8 @@ Group list response
      - Description
    * - ``groups``
      - 0..n
-     - List of :ref:`group records <sec-api-access-datamodel-groups-grouprecord>`
+     - List of :ref:`group records <sec-api-datamodel-access-groups>`
      - The list of groups
-
-.. _sec-api-access-datamodel-groups-grouprecord:
-
-Group record
-~~~~~~~~~~~~
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``key``
-     - 1
-     - string
-     - The group's identifier
-   * - ``name``
-     - 1
-     - string
-     - The group's name
-   * - ``description``
-     - 1
-     - string
-     - A human readable description of the group
-   * - ``permissions``
-     - 0..n
-     - List of :ref:`Permissions <sec-api-access-datamodel-permissions>`
-     - The list of permissions assigned to the group (note: this does not include implicit permissions inherited from
-       subgroups).
-   * - ``subgroups``
-     - 0..n
-     - List of :ref:`Groups <sec-api-access-datamodel-groups>`
-     - Subgroups assigned to the group
-   * - ``needs``
-     - 1
-     - :ref:`Needs object <sec-api-access-datamodel-general-needs>`
-     - Effective needs of the group
-   * - ``default``
-     - 1
-     - boolean
-     - Whether this is a default group (true) or not (false)
-   * - ``removable``
-     - 1
-     - boolean
-     - Whether this group can be removed (true) or not (false)
-   * - ``changeable``
-     - 1
-     - boolean
-     - Whether this group can be modified (true) or not (false)
-   * - ``toggleable``
-     - 1
-     - boolean
-     - Whether this group can be assigned to users or other groups (true) or not (false)
 
 .. _sec-api-access-datamodel-groups-addgrouprequest:
 
@@ -644,58 +464,8 @@ User list response
      - Description
    * - ``users``
      - 0..n
-     - List of :ref:`user records <sec-api-access-datamodel-users-userrecord>`
+     - List of :ref:`user records <sec-api-datamodel-access-users>`
      - The list of users
-
-.. _sec-api-access-datamodel-users-userrecord:
-
-User record
-~~~~~~~~~~~
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``name``
-     - 1
-     - string
-     - The user's name
-   * - ``active``
-     - 1
-     - bool
-     - Whether the user's account is active (true) or not (false)
-   * - ``user``
-     - 1
-     - bool
-     - Whether the user has user rights. Should always be true. Deprecated as of 1.4.0, use the ``users`` group instead.
-   * - ``admin``
-     - 1
-     - bool
-     - Whether the user has admin rights (true) or not (false). Deprecated as of 1.4.0, use the ``admins`` group instead.
-   * - ``apikey``
-     - 0..1
-     - string
-     - The user's personal API key
-   * - ``settings``
-     - 1
-     - object
-     - The user's personal settings, might be an empty object.
-   * - ``groups``
-     - 1..n
-     - List of string
-     - Groups assigned to the user
-   * - ``needs``
-     - 1
-     - :ref:`Needs object <sec-api-access-datamodel-general-needs>`
-     - Effective needs of the user
-   * - ``permissions``
-     - 0..n
-     - List of :ref:`Permissions <sec-api-access-datamodel-permissions>`
-     - The list of permissions assigned to the user (note: this does not include implicit permissions inherit from groups).
 
 .. _sec-api-access-datamodel-users-adduserrequest:
 
@@ -757,31 +527,3 @@ User update request
      - 0..n
      - List of string
      - A list of identifiers of permissions to assign to the user
-
-.. _sec-api-access-datamodel-general:
-
-General
--------
-
-.. _sec-api-access-datamodel-general-needs:
-
-Needs
-~~~~~
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``role``
-     - 0..1
-     - List of string
-     - List of ``role`` needs
-   * - ``group``
-     - 0..1
-     - List of string
-     - List of ``group`` needs
-
