@@ -45,7 +45,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
     self.connect = function() {
         if (self._connectedDeferred) {
-            self._connectedDeferred.reject();
+            self._connectedDeferred.reject("reconnect");
         }
         self._connectedDeferred = $.Deferred();
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
@@ -54,7 +54,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
     self.reconnect = function() {
         if (self._connectedDeferred) {
-            self._connectedDeferred.reject();
+            self._connectedDeferred.reject("reconnect");
         }
         self._connectedDeferred = $.Deferred();
         OctoPrint.socket.reconnect();
@@ -119,6 +119,10 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         if (self.disconnectCallback) {
             self.disconnectCallback();
         }
+    };
+
+    self._onConnectTimeout = function() {
+        self._connectedDeferred.reject("timeout");
     };
 
     self._onConnectMessage = function(event) {
@@ -399,6 +403,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
     OctoPrint.socket.onDisconnected = self._onDisconnected;
     OctoPrint.socket.onReconnectAttempt = self._onReconnectAttempt;
     OctoPrint.socket.onReconnectFailed = self._onReconnectFailed;
+    OctoPrint.socket.onConnectTimeout = self._onConnectTimeout;
     OctoPrint.socket.onRateTooHigh = self._onDecreaseRate;
     OctoPrint.socket.onRateTooLow = self._onIncreaseRate;
     OctoPrint.socket
