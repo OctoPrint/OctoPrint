@@ -156,7 +156,6 @@
             clearTimeout(self.connectTimeout);
         }
         self.connectTimeout = setTimeout(function() {
-            log.info("Connection timeout triggered");
             self.onConnectTimeout();
         }, self.options.connectTimeout);
 
