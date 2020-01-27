@@ -411,7 +411,9 @@ def index():
 		return util.flask.add_non_caching_response_headers(make_response(render_template("forcelogin.jinja2")))
 
 	def default_view():
-		if request.headers.get("X-Preemptive-Record", None) == "no" or (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()):
+		if request.headers.get("X-Preemptive-Record", None) == "no" \
+			or (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()) \
+			or settings().getBoolean(["server", "firstRun"]):
 			return ui_view()
 		else:
 			return login_view()

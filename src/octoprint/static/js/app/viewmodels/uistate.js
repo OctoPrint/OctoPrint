@@ -41,7 +41,7 @@ $(function() {
         };
 
         self.onUserLoggedOut = self.onUserPermissionsChanged = function() {
-            if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ)) {
+            if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ) && !CONFIG_FIRST_RUN) {
                 location.reload();
             }
         };

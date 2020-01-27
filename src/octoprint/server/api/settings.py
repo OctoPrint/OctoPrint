@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, abort
 from flask_login import current_user
 from werkzeug.exceptions import BadRequest
 
@@ -73,11 +73,13 @@ def _etag(lm=None):
 	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
-@Permissions.SETTINGS_READ.require(403)
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
-                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues or settings().getBoolean(["server", "firstRun"]))
 def getSettings():
+	if not Permissions.SETTINGS_READ.can() and not settings().getBoolean(["server", "firstRun"]):
+		abort(403)
+
 	s = settings()
 
 	connectionOptions = printer.__class__.get_connection_options()
