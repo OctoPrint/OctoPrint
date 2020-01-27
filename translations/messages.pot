@@ -1,14 +1,14 @@
 # Translations template for OctoPrint.
-# Copyright (C) 2019 The OctoPrint Project
+# Copyright (C) 2020 The OctoPrint Project
 # This file is distributed under the same license as the OctoPrint project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.4.0rc3.dev24+g94ae90ab8\n"
+"Project-Id-Version: OctoPrint 1.3.12rc4.dev760+g4d716647e\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2019-12-12 12:47+0100\n"
+"POT-Creation-Date: 2020-01-27 15:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,103 +17,107 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/octoprint/access/permissions.py:256
+#: src/octoprint/access/permissions.py:272
 msgid "Admin is allowed to do everything"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:262
+#: src/octoprint/access/permissions.py:278
 msgid ""
-"Allows to gather status information, e.g. job progress, printer state, "
-"temperatures, ..."
+"Allows to gather basic status information, e.g. job progress, printer "
+"state, temperatures, ... Mandatory for the default UI to work"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:268
+#: src/octoprint/access/permissions.py:285
 msgid "Allows to connect to and disconnect from a printer"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:273
+#: src/octoprint/access/permissions.py:290
 msgid "Allows to watch the webcam stream"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:278
+#: src/octoprint/access/permissions.py:295
 msgid ""
 "Allows to run system commands, e.g. restart OctoPrint, shutdown or reboot"
 " the system"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:284
+#: src/octoprint/access/permissions.py:301
 msgid ""
 "Allows to retrieve a list of all uploaded files, includingtheir metadata "
 "(e.g. date, file size, analysis results, ...)"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:289
+#: src/octoprint/access/permissions.py:306
 msgid "Allows users to upload new files"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:293
+#: src/octoprint/access/permissions.py:310
 msgid ""
 "Allows users to download files. The GCODE viewer is affected by this as "
 "well."
 msgstr ""
 
-#: src/octoprint/access/permissions.py:298
+#: src/octoprint/access/permissions.py:315
 msgid "Allows users to delete files"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:302
+#: src/octoprint/access/permissions.py:319
 msgid "Allows to select a file for printing"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:307
-msgid ""
-"Allows to start, pause and cancel a print job. Includes the \"Select\" "
-"permission"
+#: src/octoprint/access/permissions.py:324
+msgid "Allows to start, pause and cancel a print job"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:313
+#: src/octoprint/access/permissions.py:329
 msgid ""
-"Allows access to the GCODE viewer. Includes the \"File "
-"Download\"permission."
+"Allows access to the GCODE viewer if the \"File Download\"permission is "
+"also set."
 msgstr ""
 
-#: src/octoprint/access/permissions.py:319
+#: src/octoprint/access/permissions.py:335
 msgid ""
 "Allows to watch the terminal tab but not to send commands to the printer "
 "from it"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:325
+#: src/octoprint/access/permissions.py:341
 msgid ""
 "Allows to control of the printer by using the temperature controls,the "
 "control tab or sending commands through the terminal."
 msgstr ""
 
-#: src/octoprint/access/permissions.py:331
+#: src/octoprint/access/permissions.py:347
 msgid "Allows to slice files"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:336
+#: src/octoprint/access/permissions.py:352
 msgid "Allows to list timelapse videos"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:340
+#: src/octoprint/access/permissions.py:356
 msgid "Allows to download timelapse videos"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:344
+#: src/octoprint/access/permissions.py:360
 msgid "Allows to delete timelapse videos and unrendered timelapses"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:348
+#: src/octoprint/access/permissions.py:364
 msgid ""
 "Allows to change the timelapse settings and delete or render unrendered "
 "timelapses. Includes the \"Timelapse List\",\"Timelapse Delete\" and "
 "\"Timelapse Download\" permissions"
 msgstr ""
 
-#: src/octoprint/access/permissions.py:355
-msgid "Allows to manage settings"
+#: src/octoprint/access/permissions.py:371
+msgid ""
+"Allows to read non sensitive settings. Mandatory for the default UI to "
+"work."
+msgstr ""
+
+#: src/octoprint/access/permissions.py:376
+msgid "Allows to manage settings and also to read sensitive settings"
 msgstr ""
 
 #: src/octoprint/plugins/action_command_prompt/__init__.py:69
@@ -726,13 +730,13 @@ msgid "Server Commands"
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:50
-#: src/octoprint/server/views.py:615
+#: src/octoprint/server/views.py:624
 msgid "Webcam & Timelapse"
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:65
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
-#: src/octoprint/server/views.py:621
+#: src/octoprint/server/views.py:630
 msgid "Access Control"
 msgstr ""
 
@@ -1307,43 +1311,47 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/__init__.py:219
+#: src/octoprint/plugins/pi_support/__init__.py:199
+msgid "Allows to check for the Pi's throttling status and environment info"
+msgstr ""
+
+#: src/octoprint/plugins/pi_support/__init__.py:235
 #: src/octoprint/plugins/pi_support/templates/pi_support_settings.jinja2:1
 msgid "Pi Support"
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/__init__.py:317
+#: src/octoprint/plugins/pi_support/__init__.py:333
 msgid ""
 "Without this plugin OctoPrint will no longer be able to provide "
 "additional information about your Pi, which will make it more tricky to "
 "help you if you need support."
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:29
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:36
 msgid "running on"
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:29
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:36
 msgid "OctoPi"
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:67
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:74
 msgid ""
 "Undervoltage. Make sure your power supply and cabling are providing "
 "enough power to the Pi."
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:68
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:75
 msgid "Frequency capping due to overheating. Improve cooling of the CPU and GPU."
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:69
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:76
 msgid ""
 "A blinking symbol indicates a current issue, a non blinking symbol one "
 "that was observed some time since the Pi booted up."
 msgstr ""
 
-#: src/octoprint/plugins/pi_support/static/js/pi_support.js:70
+#: src/octoprint/plugins/pi_support/static/js/pi_support.js:77
 msgid "Click the symbol in the navbar for more information."
 msgstr ""
 
@@ -1781,7 +1789,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:39
-#: src/octoprint/server/views.py:527
+#: src/octoprint/server/views.py:536
 msgid "Plugins"
 msgstr ""
 
@@ -2157,7 +2165,7 @@ msgid "Software Update"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:1134
-#: src/octoprint/server/views.py:619
+#: src/octoprint/server/views.py:628
 #: src/octoprint/static/js/app/viewmodels/appearance.js:99
 #: src/octoprint/static/js/app/viewmodels/appearance.js:104
 #: src/octoprint/static/js/app/viewmodels/appearance.js:106
@@ -2790,105 +2798,105 @@ msgid ""
 "tracking.octoprint.org</a>.\n"
 msgstr ""
 
-#: src/octoprint/server/views.py:586
+#: src/octoprint/server/views.py:595
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:12
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:587
+#: src/octoprint/server/views.py:596
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:588
+#: src/octoprint/server/views.py:597
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:594
+#: src/octoprint/server/views.py:603
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:595
+#: src/octoprint/server/views.py:604
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:596
+#: src/octoprint/server/views.py:605
 msgid "GCode Viewer"
 msgstr ""
 
-#: src/octoprint/server/views.py:597
+#: src/octoprint/server/views.py:606
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:598
+#: src/octoprint/server/views.py:607
 #: src/octoprint/templates/sidebar/state.jinja2:9
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:604
+#: src/octoprint/server/views.py:613
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:606
+#: src/octoprint/server/views.py:615
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:607
+#: src/octoprint/server/views.py:616
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:608
+#: src/octoprint/server/views.py:617
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:609
+#: src/octoprint/server/views.py:618
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:610
+#: src/octoprint/server/views.py:619
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:612 src/octoprint/server/views.py:614
+#: src/octoprint/server/views.py:621 src/octoprint/server/views.py:623
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:616
+#: src/octoprint/server/views.py:625
 msgid "GCODE Visualizer"
 msgstr ""
 
-#: src/octoprint/server/views.py:617
+#: src/octoprint/server/views.py:626
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:622
+#: src/octoprint/server/views.py:631
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 #: src/octoprint/templates/sidebar/files_header.jinja2:12
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:623
+#: src/octoprint/server/views.py:632
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:624
+#: src/octoprint/server/views.py:633
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:630
+#: src/octoprint/server/views.py:639
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:631
+#: src/octoprint/server/views.py:640
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/server/views.py:647
+#: src/octoprint/server/views.py:656
 msgid "Start"
 msgstr ""
 
-#: src/octoprint/server/views.py:648
+#: src/octoprint/server/views.py:657
 #: src/octoprint/templates/dialogs/wizard.jinja2:57
 msgid "Finish"
 msgstr ""
@@ -2965,27 +2973,27 @@ msgid ""
 "may try a manual reconnect using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:162
+#: src/octoprint/static/js/app/dataupdater.js:168
 msgid "Unknown"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:165
+#: src/octoprint/static/js/app/dataupdater.js:171
 msgid "Command line flag"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:169
+#: src/octoprint/static/js/app/dataupdater.js:175
 msgid "Setting in config.yaml"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:173
+#: src/octoprint/static/js/app/dataupdater.js:179
 msgid "Problem during last startup"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:179
+#: src/octoprint/static/js/app/dataupdater.js:185
 msgid "Safe mode is active"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:180
+#: src/octoprint/static/js/app/dataupdater.js:186
 #, python-format
 msgid ""
 "<p>The server is currently running in safe mode. Third party plugins and "
@@ -2993,37 +3001,37 @@ msgid ""
 "%(reason)s</p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:229
+#: src/octoprint/static/js/app/dataupdater.js:235
 #: src/octoprint/static/js/app/viewmodels/files.js:963
 #: src/octoprint/static/js/app/viewmodels/files.js:970
 #, python-format
 msgid "Slicing ... (%(percentage)d%%)"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:265
-#: src/octoprint/static/js/app/dataupdater.js:276
+#: src/octoprint/static/js/app/dataupdater.js:271
+#: src/octoprint/static/js/app/dataupdater.js:282
 msgid "Error reported by printer"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:266
+#: src/octoprint/static/js/app/dataupdater.js:272
 #, python-format
 msgid ""
 "Your printer's firmware reported an error. Due to that the ongoing print "
 "job will be cancelled. Reported error: %(firmwareError)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:277
+#: src/octoprint/static/js/app/dataupdater.js:283
 #, python-format
 msgid ""
 "Your printer's firmware reported an error. Due to that OctoPrint will "
 "disconnect. Reported error: %(error)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:283
+#: src/octoprint/static/js/app/dataupdater.js:289
 msgid "Communication error"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:284
+#: src/octoprint/static/js/app/dataupdater.js:290
 #, python-format
 msgid ""
 "There was a communication error while talking to your printer. Please "
@@ -3031,38 +3039,38 @@ msgid ""
 "%(error)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:288
+#: src/octoprint/static/js/app/dataupdater.js:294
 msgid "Error connecting to printer"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:289
+#: src/octoprint/static/js/app/dataupdater.js:295
 #, python-format
 msgid ""
 "There was an error while trying to connect to your printer. Error: "
 "%(error)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:293
+#: src/octoprint/static/js/app/dataupdater.js:299
 msgid "Error starting a print"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:294
+#: src/octoprint/static/js/app/dataupdater.js:300
 #, python-format
 msgid "There was an error while trying to start a print job. Error: %(error)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:303
+#: src/octoprint/static/js/app/dataupdater.js:309
 msgid "Unknown error"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:304
+#: src/octoprint/static/js/app/dataupdater.js:310
 #, python-format
 msgid ""
 "There was an unknown error while talking to your printer. Please consult "
 "the terminal output and octoprint.log for details. Error: %(error)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:324
+#: src/octoprint/static/js/app/dataupdater.js:330
 msgid ""
 "It looks like your printer reset while a connection was active. If this "
 "was intentional you may safely ignore this message. Otherwise you should "
@@ -3070,7 +3078,7 @@ msgid ""
 "prints and also file transfers to your printer's SD."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:327
+#: src/octoprint/static/js/app/dataupdater.js:333
 msgid ""
 "It looks like your printer reset while a connection was active. Due to "
 "this the ongoing job was aborted. If this was intentional you may safely "
@@ -3079,7 +3087,7 @@ msgid ""
 " your printer's SD."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:335
+#: src/octoprint/static/js/app/dataupdater.js:341
 msgid "Printer reset detected"
 msgstr ""
 
@@ -3256,6 +3264,10 @@ msgstr ""
 
 #: src/octoprint/static/js/app/main.js:219
 msgid "Finishing"
+msgstr ""
+
+#: src/octoprint/static/js/app/main.js:813
+msgid "Loading OctoPrint's UI, please wait..."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/access.js:94
