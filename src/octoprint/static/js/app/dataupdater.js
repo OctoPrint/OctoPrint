@@ -122,7 +122,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
     };
 
     self._onConnectTimeout = function() {
-        self._connectedDeferred.reject("timeout");
+        if (self._connectedDeferred) {
+            self._connectedDeferred.reject("timeout");
+        }
     };
 
     self._onConnectMessage = function(event) {

@@ -9,6 +9,8 @@
     var normalClose = 1000;
 
     var OctoPrintSocketClient = function(base) {
+        var self = this;
+
         this.base = base;
 
         this.options = {
@@ -109,14 +111,14 @@
     OctoPrintSocketClient.prototype.connect = function(opts) {
         opts = opts || {};
 
-        this.disconnect();
+        var self = this;
 
-        var url = this.base.options.baseurl;
+        self.disconnect();
+
+        var url = self.base.options.baseurl;
         if (!_.endsWith(url, "/")) {
             url += "/";
         }
-
-        var self = this;
 
         var onOpen = function() {
             self.reconnecting = false;
@@ -125,7 +127,7 @@
         };
 
         var onClose = function(e) {
-            if (e.code == normalClose) {
+            if (e.code === normalClose) {
                 return;
             }
 
@@ -153,14 +155,15 @@
         if (self.connectTimeout) {
             clearTimeout(self.connectTimeout);
         }
-        this.connectTimeout = setTimeout(function() {
+        self.connectTimeout = setTimeout(function() {
+            log.info("Connection timeout triggered");
             self.onConnectTimeout();
         }, self.options.connectTimeout);
 
-        this.socket = new SockJS(url + "sockjs", undefined, opts);
-        this.socket.onopen = onOpen;
-        this.socket.onclose = onClose;
-        this.socket.onmessage = onMessage;
+        self.socket = new SockJS(url + "sockjs", undefined, opts);
+        self.socket.onopen = onOpen;
+        self.socket.onclose = onClose;
+        self.socket.onmessage = onMessage;
     };
 
     OctoPrintSocketClient.prototype.reconnect = function() {
@@ -170,7 +173,7 @@
     };
 
     OctoPrintSocketClient.prototype.disconnect = function() {
-        if (this.socket != undefined) {
+        if (this.socket !== undefined) {
             this.socket.close();
         }
     };
