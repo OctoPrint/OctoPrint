@@ -387,7 +387,7 @@ def _test_path(data):
 		try:
 			test_path = os.path.join(path, ".testballoon.txt")
 			with io.open(test_path, 'wb') as f:
-				f.write("Test")
+				f.write(b"Test")
 			os.remove(test_path)
 		except Exception:
 			logging.getLogger(__name__).exception("Error while testing if {} is really writable".format(path))
