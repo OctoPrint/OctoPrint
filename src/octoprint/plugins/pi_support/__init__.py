@@ -12,6 +12,9 @@ import sarge
 from flask_babel import gettext
 from octoprint.util import RepeatedTimer
 
+from octoprint.access.permissions import Permissions
+from octoprint.access.groups import USER_GROUP
+
 import octoprint.plugin
 import octoprint.events
 
@@ -187,6 +190,17 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		self._throttle_overheat = False
 		self._throttle_functional = True
 
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="STATUS",
+			     name="Status",
+			     description=gettext("Allows to check for the Pi's throttling status and environment info"),
+			     roles=["check"],
+			     default_groups=[USER_GROUP])
+		]
+
 	#~~ EnvironmentDetectionPlugin
 
 	def get_additional_environment(self):
@@ -200,6 +214,8 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ SimpleApiPlugin
 
 	def on_api_get(self, request):
+		if not Permissions.PLUGIN_PI_SUPPORT_STATUS.can():
+			return flask.abort(403)
 		result = dict(throttle_state=self._throttle_state.as_dict())
 		result.update(self.get_additional_environment())
 		return flask.jsonify(**result)
@@ -336,7 +352,8 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.events.register_custom_events": register_custom_events
+		"octoprint.events.register_custom_events": register_custom_events,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}
 
 	global __plugin_helpers__
