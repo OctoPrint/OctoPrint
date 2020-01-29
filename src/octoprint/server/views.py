@@ -410,7 +410,23 @@ def index():
 	def login_view():
 		return util.flask.add_non_caching_response_headers(make_response(render_template("forcelogin.jinja2")))
 
+	def evaluate_login():
+		from octoprint.server.util import loginUserFromApiKey, loginUserFromAuthorizationHeader, InvalidApiKeyException
+		from octoprint.server.util.flask import passive_login
+
+		# first try to login via api key & authorization header, just in case that's set
+		try:
+			loginUserFromApiKey()
+		except InvalidApiKeyException:
+			pass # ignored
+		loginUserFromAuthorizationHeader()
+
+		# then try a passive login
+		passive_login()
+
 	def default_view():
+		evaluate_login()
+
 		if request.headers.get("X-Preemptive-Record", None) == "no" \
 			or (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()) \
 			or settings().getBoolean(["server", "firstRun"]):
