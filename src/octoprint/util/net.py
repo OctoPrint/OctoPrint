@@ -45,6 +45,10 @@ else:
 		HAS_V6 = False
 
 def is_lan_address(address, additional_private=None):
+	if not address:
+		# no address is LAN address
+		return True
+
 	try:
 		address = unmap_v4_as_v6(address)
 		address = strip_interface_tag(address)
