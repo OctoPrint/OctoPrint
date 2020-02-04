@@ -191,15 +191,16 @@ $(function() {
             var command = self._getToggleCommand(data);
             var not_safemode_victim = !data.safe_mode_victim;
             var not_blacklisted = !data.blacklisted;
-            return self.enableManagement() && (command == "disable" || (not_safemode_victim && not_blacklisted)) && data.key != 'pluginmanager';
+            var not_incompatible = !data.incompatible;
+            return self.enableManagement() && (command === "disable" || (not_safemode_victim && not_blacklisted && not_incompatible)) && data.key != 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
             return self.enableManagement()
-                && (data.origin != "entry_point" || self.pipAvailable())
+                && (data.origin !== "entry_point" || self.pipAvailable())
                 && data.managable
                 && !data.bundled
-                && data.key != 'pluginmanager'
+                && data.key !== 'pluginmanager'
                 && !data.pending_uninstall;
         };
 
