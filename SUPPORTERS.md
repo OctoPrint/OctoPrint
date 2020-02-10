@@ -27,7 +27,6 @@ thanks to everyone who contributed!
   * jean-claude migneault
   * Jeff Renfer
   * Jeremiah Avery
-  * John Robinson
   * Joshua Wills
   * Justin Kaufman
   * Kaile Riser
@@ -45,22 +44,22 @@ thanks to everyone who contributed!
   * Miles Flavel
   * Mosaic Manufacturing
   * Neil R. Goldberg
-  * OMER MEHMET SUTAS
   * Patrick Glyré
   * Patrick McGinnis
   * Prof Yuh Wen Chen
   * Randy C. Will
   * Ranjib Dey
   * Richard Michaud
+  * Rigid3D
   * Robert Gusek
   * Ronald Griehsler
+  * Sacha Telgenhof
   * sghnsk
   * Shawn Lewis
   * Simon Hallam
   * Stefan Krister
-  * stelgenhof
   * Sven Mueller
   * Trent Shumay
   * Ulrich Kempken
 
-and 1734 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1746 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
