@@ -449,8 +449,6 @@ class MachineCom(object):
 		self._hello_sent = 0
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
-		self._hello_command = settings().get(["serial", "helloCommand"])
-
 		self._alwaysSendChecksum = settings().getBoolean(["serial", "alwaysSendChecksum"])
 		self._neverSendChecksum = settings().getBoolean(["serial", "neverSendChecksum"])
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["serial", "sendChecksumWithUnknownCommands"])

@@ -44,7 +44,8 @@ class UtilNetTest(unittest.TestCase):
 		("11.1.2.3", ["11/8"], True),
 		("12.1.1.123", [], True),
 		("2a01:4f8:1c0c:6958::1:23", [], True),
-		("fe80::89f3:31bb:ced0:2093%wlan0", [], True)
+		("fe80::89f3:31bb:ced0:2093%wlan0", [], True),
+		(None, [], True)
 	)
 	@ddt.unpack
 	@mock.patch("netifaces.interfaces", side_effect=patched_interfaces)

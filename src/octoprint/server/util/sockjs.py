@@ -85,6 +85,8 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 	                     "reauthRequired": [],
 	                     "*": [Permissions.STATUS]}
 
+	_unauthed_backlog_max = 100
+
 	def __init__(self, printer, fileManager, analysisQueue, userManager, groupManager, eventManager, pluginManager, session):
 		if isinstance(session, octoprint.vendor.sockjs.tornado.session.Session):
 			session = JsonEncodingSessionWrapper(session)
@@ -99,6 +101,9 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._logBacklogMutex = threading.Lock()
 		self._messageBacklog = []
 		self._messageBacklogMutex = threading.Lock()
+
+		self._unauthed_backlog = []
+		self._unauthed_backlog_mutex = threading.RLock()
 
 		self._printer = printer
 		self._fileManager = fileManager
@@ -120,6 +125,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._emit_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.emit")
 
 		self._registered = False
+		self._authed = False
 
 	@staticmethod
 	def _get_remote_address(info):
@@ -412,6 +418,13 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			permissions = [x() if callable(x) else x for x in permissions]
 
 		if not self._user or not all(map(lambda p: self._user.has_permission(p), permissions)):
+			if not self._authed:
+				with self._unauthed_backlog_mutex:
+					if len(self._unauthed_backlog) < self._unauthed_backlog_max:
+						self._unauthed_backlog.append((type, payload))
+						self._logger.debug("Socket message held back until permissions cleared, added to backlog: {}".format(type))
+					else:
+						self._logger.debug("Socket message held back, but backlog full. Throwing message away: {}".format(type))
 			return
 
 		self._do_emit(type, payload)
@@ -429,6 +442,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._user = user
 		self._logger.info("User {} logged in on the socket from client {}".format(user.get_name(),
 		                                                                          self._remoteAddress))
+		self._authed = True
 
 		for name, hook in self._authed_hooks.items():
 			try:
@@ -437,12 +451,24 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.exception("Error processing authed hook handler for plugin {}".format(name),
 				                       extra=dict(plugin=name))
 
+		# if we have a backlog from being unauthed, process that now
+		with self._unauthed_backlog_mutex:
+			backlog = self._unauthed_backlog
+			self._unauthed_backlog = []
+
+		if len(backlog):
+			self._logger.debug("Sending {} messages on the socket that were held back".format(len(backlog)))
+			for message, payload in backlog:
+				self._do_emit(message, payload)
+
+		# trigger ClientAuthed event
 		octoprint.events.eventManager().fire(octoprint.events.Events.CLIENT_AUTHED,
 		                                     payload=dict(username=user.get_name(),
 		                                                  remoteAddress=self._remoteAddress))
 
 	def _on_logout(self):
 		self._user = self._userManager.anonymous_user_factory()
+		self._authed = False
 
 		for name, hook in self._authed_hooks.items():
 			try:

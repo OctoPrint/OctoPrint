@@ -584,7 +584,8 @@ def passive_login():
 		elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 				and settings().get(["accessControl", "autologinAs"]) is not None \
 				and settings().get(["accessControl", "localNetworks"]) is not None \
-				and not "active_logout" in flask.request.cookies:
+				and not "active_logout" in flask.request.cookies \
+				and remote_address:
 			# attempt local autologin
 			autologin_as = settings().get(["accessControl", "autologinAs"])
 			local_networks = _local_networks()
