@@ -478,6 +478,9 @@ class Server(object):
 				class TaggedFuncsPrinter(wrapt.ObjectProxy):
 					def __getattribute__(self, attr):
 						__wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__("__wrapped__")
+						if attr == "__wrapped__":
+							return __wrapped__
+
 						item = getattr(__wrapped__, attr)
 						if callable(item) \
 								and ("tags" in item.__code__.co_varnames or "kwargs" in item.__code__.co_varnames) \
