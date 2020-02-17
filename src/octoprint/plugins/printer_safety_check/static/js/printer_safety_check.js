@@ -23,8 +23,13 @@ $(function() {
 
         self.fromResponse = function(data) {
             var warnings = [];
-            _.each(data, function(message, warning_type) {
-                warnings.push({type: warning_type, message: gettext(message)});
+            _.each(data, function(data, warning_type) {
+                warnings.push({
+                    type: warning_type,
+                    message: gettext(data.message),
+                    severity: data.severity,
+                    url: data.url
+                });
             });
             self.warnings(warnings);
         };
@@ -44,7 +49,22 @@ $(function() {
             if (data.type === "update") {
                 self.requestData();
             }
-        }
+        };
+
+        self.cssClass = function(data) {
+            if (data.severity) {
+                return "printer_safety_warning_" + data.severity;
+            } else {
+                return undefined;
+            }
+        };
+
+        self.warningText = function(data) {
+            switch (data.severity) {
+                case "critical": return gettext("Critical Warning");
+                default: return gettext("Warning");
+            }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

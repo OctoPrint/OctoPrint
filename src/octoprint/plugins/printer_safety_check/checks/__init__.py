@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 class Check(object):
 	name = None
+	url = None
 
 	def __init__(self):
 		self._active = True
@@ -53,3 +54,7 @@ class AuthorCheck(Check):
 			self._triggered = any(map(lambda x: x in lower_line, self.authors))
 			self._active = False
 
+
+class Severity(object):
+	INFO = "info"
+	CRITICAL = "critical"

@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 from flask_babel import gettext
 from octoprint.util.version import get_comparable_version
-from . import Check, AuthorCheck
+from . import Check, AuthorCheck, Severity
 
 class FirmwareUnsafeChecks(object):
 	@classmethod
@@ -15,7 +15,8 @@ class FirmwareUnsafeChecks(object):
 	                        MalyanM200Check(), Micro3DIMECheck(), Micro3DStockCheck(), RepetierBefore092Check(),
 	                        ThermalProtectionCapCheck()),
 		            message=gettext("Your printer's firmware is known to lack mandatory safety features (e.g. "
-		                            "thermal runaway protection). This is a fire risk."))
+		                            "thermal runaway protection). This is a fire risk."),
+		            severity=Severity.CRITICAL)
 
 class AnetA8Check(Check):
 	"""

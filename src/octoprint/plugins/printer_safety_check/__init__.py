@@ -11,7 +11,9 @@ from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import to_unicode
 
+from .checks import Severity
 from .checks.firmware_unsafe import FirmwareUnsafeChecks
+from .checks.firmware_broken import FirmwareBrokenChecks
 
 import flask
 from flask_babel import gettext
@@ -22,13 +24,14 @@ TERMINAL_SAFETY_WARNING = """
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {message}
 
-Learn more at https://faq.octoprint.org/warning-{warning_type}
+Learn more at {url}
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 """
 
 SAFETY_CHECKS = {
-	"firmware-unsafe": FirmwareUnsafeChecks.as_dict()
+	"firmware-unsafe": FirmwareUnsafeChecks.as_dict(),
+	"firmware-broken": FirmwareBrokenChecks.as_dict()
 }
 
 class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
@@ -46,7 +49,7 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="sidebar",
-			     name=gettext("Printer Safety Warning"),
+			     name=gettext("Attention!"),
 			     data_bind="visible: printerState.isOperational() && loginState.isAdmin() && warnings().length > 0",
 			     icon="exclamation-triangle",
 			     styles_wrapper=["display: none"])
@@ -117,6 +120,8 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 		for warning_type, check_data in SAFETY_CHECKS.items():
 			checks = check_data.get("checks")
 			message = check_data.get("message")
+			severity = check_data.get("severity", Severity.CRITICAL)
+			url = "https://faq.octoprint.org/warning-{warning_type}".format(warning_type=warning_type)
 			if not checks or not message:
 				continue
 
@@ -139,21 +144,29 @@ class PrinterSafetyCheckPlugin(octoprint.plugin.AssetPlugin,
 
 				# check if now triggered
 				if check.triggered:
-					self._register_warning(warning_type, message)
+					if check.url is not None:
+						url = check.url
+
+					self._register_warning(warning_type, message, severity, url)
 
 					# noinspection PyUnresolvedReferences
 					self._event_bus.fire(Events.PLUGIN_PRINTER_SAFETY_CHECK_WARNING, dict(check_name=check.name,
-					                                                                      warning_type=warning_type))
+					                                                                      warning_type=warning_type,
+					                                                                      severity=severity,
+					                                                                      url=url))
 					changes = True
 					break
 
 		if changes:
 			self._ping_clients()
 
-	def _register_warning(self, warning_type, message):
+	def _register_warning(self, warning_type, message, severity, url):
 		self._log_to_terminal(TERMINAL_SAFETY_WARNING.format(message="\n".join(textwrap.wrap(message, 75)),
-		                                                     warning_type=warning_type))
-		self._warnings[warning_type] = message
+		                                                     warning_type=warning_type,
+		                                                     url=url))
+		self._warnings[warning_type] = dict(message=message,
+		                                    severity=severity,
+		                                    url=url)
 
 	def _reset_warnings(self):
 		self._warnings.clear()
@@ -190,13 +203,13 @@ __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/printer_saf
 __plugin_description__ = "Checks for unsafe printers/printer firmwares"
 __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
                                            "check if the printer it is connected to has a known safety "
-                                           "issue and inform you about that fact.")
+                                           "issue or otherwise broken firmware and inform you about that fact.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = PrinterSafetyCheckPlugin()
 __plugin_hooks__ = {
-	"octoprint.comm.protocol.gcode.received": __plugin_implementation__.on_gcode_received,
-	"octoprint.comm.protocol.firmware.info": __plugin_implementation__.on_firmware_info_received,
-	"octoprint.comm.protocol.firmware.capabilities": __plugin_implementation__.on_firmware_cap_received,
+	"octoprint.comm.protocol.gcode.received": (__plugin_implementation__.on_gcode_received, 100),
+	"octoprint.comm.protocol.firmware.info": (__plugin_implementation__.on_firmware_info_received, 100),
+	"octoprint.comm.protocol.firmware.capabilities": (__plugin_implementation__.on_firmware_cap_received, 100),
 	"octoprint.events.register_custom_events": register_custom_events,
 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 }
