@@ -29,6 +29,9 @@ following message types are currently available for usage by 3rd party clients:
 
   * ``connected``: Initial connection information, sent only right after establishing the socket connection. See
     :ref:`the payload data model <sec-api-push-datamodel-connected>`.
+  * ``reauthRequired``: A reauthentication of the current login session is required. The ``reason`` parameter in the
+    payload defines whether a full active login is necessary (values ``logout`` and ``removed``) or a simple passive
+    login will suffice (all other values).
   * ``current``: Rate limited general state update, payload contains information about the printer's state, job progress,
     accumulated temperature points and log lines since last update. OctoPrint will send these updates when new information
     is available, but not more often than twice per second in order to not flood the client with messages (e.g.
