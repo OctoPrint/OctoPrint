@@ -105,11 +105,11 @@ class UserManager(GroupChangeListener, object):
 				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener),
 				                       extra=dict(callback=fqcn(listener)))
 
-		self._logger.debug("Logged in user: %r" % user)
+		self._logger.info("Logged in user: {}".format(user.get_id()))
 
 		return user
 
-	def logout_user(self, user):
+	def logout_user(self, user, stale=False):
 		if user is None or user.is_anonymous or isinstance(user, AdminUser):
 			return
 
@@ -129,23 +129,27 @@ class UserManager(GroupChangeListener, object):
 				pass
 
 		if sessionid in self._session_users_by_session:
-			del self._session_users_by_session[sessionid]
+			try:
+				del self._session_users_by_session[sessionid]
+			except KeyError:
+				pass
 
 		for listener in self._login_status_listeners:
 			try:
-				listener.on_user_logged_out(user)
+				listener.on_user_logged_out(user, stale=stale)
 			except Exception:
 				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener),
 				                       extra=dict(callback=fqcn(listener)))
 
-		self._logger.debug("Logged out user: %r" % user)
+		self._logger.info("Logged out user: {}".format(user.get_id()))
 
 	def _cleanup_sessions(self):
 		for session, user in list(self._session_users_by_session.items()):
 			if not isinstance(user, SessionUser):
 				continue
 			if user.created + (24 * 60 * 60) < monotonic_time():
-				self.logout_user(user)
+				self._logger.info("Cleaning up user session {} for user {}".format(session, user.get_id()))
+				self.logout_user(user, stale=True)
 
 	@staticmethod
 	def create_password_hash(password, salt=None, settings=None):
@@ -436,7 +440,7 @@ class LoginStatusListener(object):
 	def on_user_logged_in(self, user):
 		pass
 
-	def on_user_logged_out(self, user):
+	def on_user_logged_out(self, user, stale=False):
 		pass
 
 	def on_user_modified(self, user):
