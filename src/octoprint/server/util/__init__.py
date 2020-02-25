@@ -106,6 +106,9 @@ def requireLoginRequestHandler():
 	if _flask.request.endpoint.endswith(".static"):
 		return
 
+	if not (octoprint.server.userManager.enabled and octoprint.server.userManager.has_been_customized()):
+		return
+
 	user = flask_login.current_user
 	if user is None or user.is_anonymous or not user.is_active:
 		return flask.make_response("Forbidden", 403)
