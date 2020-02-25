@@ -100,7 +100,7 @@ import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util import loginFromApiKeyRequestHandler, corsRequestHandler, \
-	corsResponseHandler
+	corsResponseHandler, requireLoginRequestHandler
 from octoprint.server.util.flask import PreemptiveCache
 
 VERSION = __version__
@@ -1328,6 +1328,9 @@ class Server(object):
 		blueprint.before_request(corsRequestHandler)
 		blueprint.before_request(loginFromApiKeyRequestHandler)
 		blueprint.after_request(corsResponseHandler)
+
+		if plugin.is_blueprint_protected():
+			blueprint.before_request(requireLoginRequestHandler)
 
 		url_prefix = "/plugin/{name}".format(name=name)
 		app.register_blueprint(blueprint, url_prefix=url_prefix)

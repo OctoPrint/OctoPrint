@@ -1391,9 +1391,12 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 	# noinspection PyMethodMayBeStatic
 	def is_blueprint_protected(self):
 		"""
-		Whether a login session is needed to access the blueprint if the forcelogin plugin is enabled or not. Requiring
+		Whether a login session by a registered user is needed to access the blueprint's endpoints. Requiring
 		a session is the default. Note that this only restricts access to the blueprint's dynamic methods, static files
 		are always accessible.
+
+		If you want your blueprint's endpoints to have specific permissions, return ``False`` for this and do your
+		permissions checks explicitly.
 		"""
 
 		return True

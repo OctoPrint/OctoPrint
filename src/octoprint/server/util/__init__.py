@@ -102,6 +102,15 @@ def loginUser(user, remember=False):
 	return False
 
 
+def requireLoginRequestHandler():
+	if _flask.request.endpoint.endswith(".static"):
+		return
+
+	user = flask_login.current_user
+	if user is None or user.is_anonymous() or not user.is_active():
+		return flask.make_response("Forbidden", 403)
+
+
 def corsRequestHandler():
 	"""
 	``before_request`` handler for blueprints which sets CORS headers for OPTIONS requests if enabled
