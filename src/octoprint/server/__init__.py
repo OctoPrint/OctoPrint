@@ -1353,7 +1353,8 @@ class Server(object):
 		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
 		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
 
-		for plugin, hook in before_hooks.items():
+		for name, hook in before_hooks.items():
+			plugin = octoprint.plugin.plugin_manager().get_plugin(name)
 			for blueprint in blueprints:
 				try:
 					result = hook(plugin=plugin)
@@ -1362,9 +1363,10 @@ class Server(object):
 							blueprint.before_request(h)
 				except Exception:
 					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=plugin))
+					                       extra=dict(plugin=name))
 
-		for plugin, hook in after_hooks.items():
+		for name, hook in after_hooks.items():
+			plugin = octoprint.plugin.plugin_manager().get_plugin(name)
 			for blueprint in blueprints:
 				try:
 					result = hook(plugin=plugin)
@@ -1373,7 +1375,7 @@ class Server(object):
 							blueprint.after_request(h)
 				except Exception:
 					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=plugin))
+					                       extra=dict(plugin=name))
 
 	def _setup_mimetypes(self):
 		# Safety measures for Windows... apparently the mimetypes module takes its translation from the windows
