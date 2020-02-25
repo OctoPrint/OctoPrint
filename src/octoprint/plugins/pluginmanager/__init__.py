@@ -286,6 +286,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			except Exception as e:
 				self._logger.warning("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
 
+	def is_blueprint_protected(self):
+		return False
+
 	##~~ EventHandlerPlugin
 
 	def on_event(self, event, payload):

@@ -322,6 +322,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 		return flask.jsonify(started=True)
 
+	def is_blueprint_protected(self):
+		return False
+
 	##~~ tornado hook
 
 	def route_hook(self, *args, **kwargs):
