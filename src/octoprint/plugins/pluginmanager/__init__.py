@@ -780,7 +780,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return True
 
 	def command_toggle(self, plugin, command):
-		if plugin.key == "pluginmanager":
+		if plugin.key == "pluginmanager" or (plugin.hidden and plugin.bundled):
 			return make_response("Can't enable/disable Plugin Manager", 400)
 
 		pending = ((command == "disable" and plugin.key in self._pending_enable) or (command == "enable" and plugin.key in self._pending_disable))
@@ -1161,7 +1161,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		hidden = self._settings.get(["hidden"])
 		result = []
 		for key, plugin in plugins.items():
-			if key in hidden:
+			if key in hidden or (plugin.bundled and plugin.hidden):
 				continue
 			result.append(self._to_external_plugin(plugin))
 
@@ -1235,6 +1235,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
+__plugin_hidden__ = True
 
 def __plugin_load__():
 	global __plugin_implementation__

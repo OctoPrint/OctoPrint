@@ -12,7 +12,7 @@ import io
 from past.builtins import basestring
 
 from collections import defaultdict
-from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
+from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort, Response
 
 import octoprint.plugin
 
@@ -367,7 +367,7 @@ def index():
 
 		return view(now, request, render_kwargs)
 
-	def ui_view():
+	def default_view():
 		filtered_templates = _filter_templates(_templates[locale], default_template_filter)
 
 		wizard = wizard_active(filtered_templates)
@@ -407,33 +407,6 @@ def index():
 		                                                   dict())
 		return preemptively_cached()
 
-	def login_view():
-		return util.flask.add_non_caching_response_headers(make_response(render_template("forcelogin.jinja2")))
-
-	def evaluate_login():
-		from octoprint.server.util import loginUserFromApiKey, loginUserFromAuthorizationHeader, InvalidApiKeyException
-		from octoprint.server.util.flask import passive_login
-
-		# first try to login via api key & authorization header, just in case that's set
-		try:
-			loginUserFromApiKey()
-		except InvalidApiKeyException:
-			pass # ignored
-		loginUserFromAuthorizationHeader()
-
-		# then try a passive login
-		passive_login()
-
-	def default_view():
-		evaluate_login()
-
-		if request.headers.get("X-Preemptive-Record", None) == "no" \
-			or (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()) \
-			or settings().getBoolean(["server", "firstRun"]):
-			return ui_view()
-		else:
-			return login_view()
-
 	response = None
 
 	forced_view = request.headers.get("X-Force-View", None)
@@ -445,8 +418,12 @@ def index():
 			plugin = pluginManager.get_plugin_info(forced_view, require_enabled=True)
 			if plugin is not None and isinstance(plugin.implementation, octoprint.plugin.UiPlugin):
 				response = plugin_view(plugin.implementation)
+				if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+					response.headers["X-Ui-Plugin"] = plugin._identifier
 		else:
 			response = default_view()
+			if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+				response.headers["X-Ui-Plugin"] = "_default"
 
 	else:
 		# select view from plugins and fall back on default view if no plugin will handle it
@@ -457,6 +434,8 @@ def index():
 					# plugin claims responsibility, let it render the UI
 					response = plugin_view(plugin)
 					if response is not None:
+						if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+							response.headers["X-Ui-Plugin"] = plugin._identifier
 						break
 					else:
 						_logger.warning("UiPlugin {} returned an empty response".format(plugin._identifier))
@@ -465,6 +444,8 @@ def index():
 				                  extra=dict(plugin=plugin._identifier))
 		else:
 			response = default_view()
+			if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+				response.headers["X-Ui-Plugin"] = "_default"
 
 	if response is None:
 		return abort(404)
