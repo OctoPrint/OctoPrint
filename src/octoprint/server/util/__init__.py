@@ -107,7 +107,7 @@ def requireLoginRequestHandler():
 		return
 
 	user = flask_login.current_user
-	if user is None or user.is_anonymous() or not user.is_active():
+	if user is None or user.is_anonymous or not user.is_active:
 		return flask.make_response("Forbidden", 403)
 
 
