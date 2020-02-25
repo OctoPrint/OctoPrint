@@ -1102,6 +1102,27 @@ octoprint.filemanager.preprocessor
    :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
    :rtype: AbstractFileWrapper or None
 
+.. _sec-plugins-hook-plugin-loginui-theming:
+
+octoprint.plugin.loginui.theming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`here <sec-bundledplugins-loginui-hooks-theming>`.
+
+.. _sec-plugins-hook-plugin-pluginmanager-reconnect:
+
+octoprint.plugin.pluginmanager.reconnect_hooks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`here <sec-bundledplugins-pluginmanager-hooks-reconnect_hooks>`.
+
+.. _sec-plugins-hook-plugin-softwareupdate-check_config:
+
+octoprint.plugin.softwareupdate.check_config
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`here <sec-bundledplugins-softwareupdate-hooks-check_config>`.
+
 .. _sec-plugins-hook-printer-factory:
 
 octoprint.printer.factory
@@ -1273,8 +1294,7 @@ octoprint.server.api.after_request
 
    Allows adding additional after-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
 
-   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
-   usage example.
+   Your plugin might need this to further restrict access to API methods.
 
    .. important::
 
@@ -1289,8 +1309,7 @@ octoprint.server.api.before_request
 
    Allows adding additional before-request-handlers to API endpoints defined by OctoPrint itself and installed plugins.
 
-   Your plugin might need this to further restrict access to API methods. See the bundled "Force Login" plugin for a
-   usage example.
+   Your plugin might need this to further restrict access to API methods.
 
    .. important::
 
@@ -1305,8 +1324,7 @@ octoprint.server.http.access_validator
 
    Allows adding additional access validators to the default tornado routers.
 
-   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further. See the bundled
-   "Force Login" plugin for a usage example.
+   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further.
 
    .. important::
 
@@ -1429,8 +1447,6 @@ octoprint.server.sockjs.authed
 .. py:function:: socket_authed_hook(socket, user, *args, **kwargs):
 
    Allows plugins to be notified that a user got authenticated or deauthenticated on the socket (e.g. due to logout).
-
-   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
 
    :param object socket: the socket object which is about to be registered
    :param object user: the user that got authenticated on the socket, or None if the user got deauthenticated
