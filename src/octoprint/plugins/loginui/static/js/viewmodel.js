@@ -8,9 +8,15 @@ $(function() {
         var self = this;
         self.loginState = parameters[0];
         self.access = parameters[1];
+        self.coreWizardAcl = parameters[2];
 
         self.onUserLoggedOut = self.onUserPermissionsChanged = function() {
-            if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ) && !CONFIG_FIRST_RUN) {
+            // reload if user now lacks STATUS & SETTINGS_READ permissions and is not in first run setup, or is in
+            // first run setup but the ACL wizard has already run and ACL is active
+            if (!self.loginState.hasAllPermissions(self.access.permissions.STATUS, self.access.permissions.SETTINGS_READ)
+                && (!CONFIG_FIRST_RUN || (self.coreWizardAcl
+                                          && self.coreWizardAcl.setup()
+                                          && self.coreWizardAcl.decision()))) {
                 location.reload();
             }
         };
@@ -19,6 +25,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: LoginUiViewModel,
-        dependencies: ["loginStateViewModel", "accessViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel", "coreWizardAclViewModel"],
+        optional: ["coreWizardAclViewModel"]
     });
 });
