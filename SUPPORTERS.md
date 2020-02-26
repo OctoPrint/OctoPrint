@@ -23,6 +23,7 @@ thanks to everyone who contributed!
   * GadgetAngel
   * George Robles
   * Greg Holloway
+  * Hog Duske
   * Hugh Blemings
   * jean-claude migneault
   * Jeff Renfer
@@ -55,11 +56,10 @@ thanks to everyone who contributed!
   * Ronald Griehsler
   * Sacha Telgenhof
   * sghnsk
-  * Shawn Lewis
   * Simon Hallam
   * Stefan Krister
   * Sven Mueller
   * Trent Shumay
   * Ulrich Kempken
 
-and 1746 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1764 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
