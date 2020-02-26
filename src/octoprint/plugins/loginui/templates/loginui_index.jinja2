@@ -9,32 +9,9 @@
     <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-    <!-- le CSS -->
+    {% include "parts/loginui_css.jinja2" %}
 
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="forcelogin/css/forcelogin.css") }}">
-
-    {% for url in forcelogin_theming %}
-        <link rel="stylesheet" href="{{ url }}">
-    {% endfor %}
-
-    <!-- le javascript -->
-
-    <script>
-        var BASE_URL = "{{ url_for('index') }}";
-    </script>
-    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
-
-    {% assets "js_client" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
-
-    <script src="{{ url_for("static", filename="forcelogin/js/forcelogin.js") }}"></script>
+    {% include "parts/loginui_javascripts.jinja2" %}
 </head>
 <body>
     <div class="container">

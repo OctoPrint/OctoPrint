@@ -481,7 +481,7 @@ class MachineCom(object):
 		self._errorValue = ""
 
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
-		self._firmware_info_received = not self._firmware_detection
+		self._firmware_info_received = False
 		self._firmware_info = dict()
 		self._firmware_capabilities = dict()
 
@@ -1917,43 +1917,44 @@ class MachineCom(object):
 						firmware_name = firmware_name.strip()
 						self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
 
-						if "repetier" in firmware_name.lower() or "anet_a8" in firmware_name.lower():
-							self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
+						if self._firmware_detection:
+							if "repetier" in firmware_name.lower() or "anet_a8" in firmware_name.lower():
+								self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
 
-							self._alwaysSendChecksum = True
-							self._blockWhileDwelling = True
-							supportRepetierTargetTemp = True
-							disable_external_heatup_detection = True
+								self._alwaysSendChecksum = True
+								self._blockWhileDwelling = True
+								supportRepetierTargetTemp = True
+								disable_external_heatup_detection = True
 
-							sd_always_available = self._sdAlwaysAvailable
-							self._sdAlwaysAvailable = True
-							if not sd_always_available and not self._sdAvailable:
-								self.initSdCard()
+								sd_always_available = self._sdAlwaysAvailable
+								self._sdAlwaysAvailable = True
+								if not sd_always_available and not self._sdAvailable:
+									self.initSdCard()
 
-						elif "reprapfirmware" in firmware_name.lower():
-							self._logger.info("Detected RepRapFirmware, enabling relevant features for issue free communication")
-							self._sdRelativePath = True
+							elif "reprapfirmware" in firmware_name.lower():
+								self._logger.info("Detected RepRapFirmware, enabling relevant features for issue free communication")
+								self._sdRelativePath = True
 
-						elif "malyan" in firmware_name.lower():
-							self._logger.info("Detected Malyan firmware, enabling relevant features for issue free communication")
+							elif "malyan" in firmware_name.lower():
+								self._logger.info("Detected Malyan firmware, enabling relevant features for issue free communication")
 
-							self._alwaysSendChecksum = True
-							self._blockWhileDwelling = True
+								self._alwaysSendChecksum = True
+								self._blockWhileDwelling = True
 
-							sd_always_available = self._sdAlwaysAvailable
-							self._sdAlwaysAvailable = True
-							if not sd_always_available and not self._sdAvailable:
-								self.initSdCard()
+								sd_always_available = self._sdAlwaysAvailable
+								self._sdAlwaysAvailable = True
+								if not sd_always_available and not self._sdAvailable:
+									self.initSdCard()
 
-						elif "teacup" in firmware_name.lower():
-							self._logger.info("Detected Teacup firmware, enabling relevant features for issue free communication")
+							elif "teacup" in firmware_name.lower():
+								self._logger.info("Detected Teacup firmware, enabling relevant features for issue free communication")
 
-							disable_external_heatup_detection = True # see #2854
+								disable_external_heatup_detection = True # see #2854
 
-						elif "klipper" in firmware_name.lower():
-							self._logger.info("Detected Klipper firmware, enabling relevant features for issue free communication")
+							elif "klipper" in firmware_name.lower():
+								self._logger.info("Detected Klipper firmware, enabling relevant features for issue free communication")
 
-							self._unknownCommandsNeedAck = True
+								self._unknownCommandsNeedAck = True
 
 						self._firmware_info_received = True
 						self._firmware_info = data

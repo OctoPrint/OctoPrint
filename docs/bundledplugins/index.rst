@@ -14,8 +14,8 @@ Bundled Plugins
    backup.rst
    discovery.rst
    errortracking.rst
-   forcelogin.rst
    logging.rst
+   loginui.rst
    pluginmanager.rst
    printer_safety_check.rst
    softwareupdate.rst

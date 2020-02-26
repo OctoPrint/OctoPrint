@@ -114,6 +114,9 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		self._set_logging_levels(json_data)
 		return self.get_logging_levels_api()
 
+	def is_blueprint_protected(self):
+		return False
+
 	def _get_usage(self):
 		import psutil
 		usage = psutil.disk_usage(settings().getBaseFolder("logs", check_writable=False))

@@ -102,6 +102,18 @@ def loginUser(user, remember=False):
 	return False
 
 
+def requireLoginRequestHandler():
+	if _flask.request.endpoint.endswith(".static"):
+		return
+
+	if not (octoprint.server.userManager.enabled and octoprint.server.userManager.has_been_customized()):
+		return
+
+	user = flask_login.current_user
+	if user is None or user.is_anonymous or not user.is_active:
+		return flask.make_response("Forbidden", 403)
+
+
 def corsRequestHandler():
 	"""
 	``before_request`` handler for blueprints which sets CORS headers for OPTIONS requests if enabled
@@ -241,9 +253,9 @@ def get_user_for_authorization_header(header):
 	if not octoprint.server.userManager.enabled:
 		return None
 
-	user = octoprint.server.userManager.findUser(userid=name)
+	user = octoprint.server.userManager.find_user(userid=name)
 	if settings().getBoolean(["accessControl", "checkBasicAuthenticationPassword"]) \
-			and not octoprint.server.userManager.checkPassword(name, password):
+			and not octoprint.server.userManager.check_password(name, password):
 		# password check enabled and password don't match
 		return None
 

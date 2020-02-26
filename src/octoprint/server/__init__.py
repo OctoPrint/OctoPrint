@@ -100,7 +100,7 @@ import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util import loginFromApiKeyRequestHandler, corsRequestHandler, \
-	corsResponseHandler
+	corsResponseHandler, requireLoginRequestHandler
 from octoprint.server.util.flask import PreemptiveCache
 
 VERSION = __version__
@@ -478,6 +478,9 @@ class Server(object):
 				class TaggedFuncsPrinter(wrapt.ObjectProxy):
 					def __getattribute__(self, attr):
 						__wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__("__wrapped__")
+						if attr == "__wrapped__":
+							return __wrapped__
+
 						item = getattr(__wrapped__, attr)
 						if callable(item) \
 								and ("tags" in item.__code__.co_varnames or "kwargs" in item.__code__.co_varnames) \
@@ -1326,6 +1329,9 @@ class Server(object):
 		blueprint.before_request(loginFromApiKeyRequestHandler)
 		blueprint.after_request(corsResponseHandler)
 
+		if plugin.is_blueprint_protected():
+			blueprint.before_request(requireLoginRequestHandler)
+
 		url_prefix = "/plugin/{name}".format(name=name)
 		app.register_blueprint(blueprint, url_prefix=url_prefix)
 
@@ -1350,7 +1356,8 @@ class Server(object):
 		before_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.before_request")
 		after_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.server.api.after_request")
 
-		for plugin, hook in before_hooks.items():
+		for name, hook in before_hooks.items():
+			plugin = octoprint.plugin.plugin_manager().get_plugin(name)
 			for blueprint in blueprints:
 				try:
 					result = hook(plugin=plugin)
@@ -1359,9 +1366,10 @@ class Server(object):
 							blueprint.before_request(h)
 				except Exception:
 					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=plugin))
+					                       extra=dict(plugin=name))
 
-		for plugin, hook in after_hooks.items():
+		for name, hook in after_hooks.items():
+			plugin = octoprint.plugin.plugin_manager().get_plugin(name)
 			for blueprint in blueprints:
 				try:
 					result = hook(plugin=plugin)
@@ -1370,7 +1378,7 @@ class Server(object):
 							blueprint.after_request(h)
 				except Exception:
 					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=plugin))
+					                       extra=dict(plugin=name))
 
 	def _setup_mimetypes(self):
 		# Safety measures for Windows... apparently the mimetypes module takes its translation from the windows

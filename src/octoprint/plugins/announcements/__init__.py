@@ -242,6 +242,9 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		return NO_CONTENT
 
+	def is_blueprint_protected(self):
+		return False
+
 	##~~ EventHandlerPlugin
 
 	def on_event(self, event, payload):

@@ -668,6 +668,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		to_be_checked, checks = self.perform_updates(targets=targets, force=force)
 		return flask.jsonify(dict(order=to_be_checked, checks=checks))
 
+	def is_blueprint_protected(self):
+		return False
+
 	#~~ Asset API
 
 	def get_assets(self):

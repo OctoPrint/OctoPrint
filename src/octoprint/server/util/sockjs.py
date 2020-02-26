@@ -311,11 +311,15 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
 
-	def on_user_logged_out(self, user):
+	def on_user_logged_out(self, user, stale=False):
 		if user.get_id() == self._user.get_id() and hasattr(user, "session") and user.session == self._user.session:
 			self._logger.info("User {} logged out, logging out on socket".format(user.get_id()))
 			self._on_logout()
-			self._sendReauthRequired("logout")
+
+			if stale:
+				self._sendReauthRequired("stale")
+			else:
+				self._sendReauthRequired("logout")
 
 	def on_user_modified(self, user):
 		if user.get_id() == self._user.get_id():
