@@ -249,12 +249,20 @@ and in the `cheat sheet <https://python-future.org/compatible_idioms.html#divisi
 Iterators instead of list from map, filter, zip
 ...............................................
 
-The built-in functions map, filter and zip return a list with their result in Python 2. In Python 3 they have been
+The built-in functions ``map``, ``filter`` and ``zip`` return a ``list`` with their result in Python 2. In Python 3 they have been
 switched to returning iterators. That can cause trouble with code handling the result (e.g. if you try to return it as
 part of a JSON response on an API endpoint).
 
-The easiest way to solve this is to make sure to wrap any map/filter/zip calls into a list constructor if the result is
-to be used outside of the calling code.
+The easiest way to solve this is to make sure to wrap any ``map``/``filter``/``zip`` calls into a ``list`` constructor if the result is
+to be used outside of the calling code (even though that comes with a small performance penalty under Python 2):
+
+.. code-block:: python
+
+   result1 = filter(lambda x: x is not None, my_collection)
+   result2 = list(filter(lambda x: x is not None, my_collection))
+
+   assert(isinstance(result1, list)) # Python 2 passes, Python 3 fails
+   assert(isinstance(result2, list)) # Python 2 and 3 pass
 
 There also exist further options, take a look at the `cheat sheet <https://python-future.org/compatible_idioms.html#map>`__.
 
