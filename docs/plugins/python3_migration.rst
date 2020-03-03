@@ -68,6 +68,20 @@ Then create an editable install of your plugin, start the server and start testi
       pip install -e path/to/your/plugin
       octoprint serve --debug
 
+.. note::
+
+   If you want to migrate your existing OctoPrint install *on OctoPi* to Python 3, I suggest to first make a
+   :ref:`backup <sec-bundledplugins-backup>`, then move the existing venv ``/home/pi/oprint`` out of the way and
+   create a new one based on Python 3 (which should already be present on current OctoPi images):
+
+   .. code-block:: none
+
+      mv ~/oprint ~/oprint.py2
+      virtualenv --python=/usr/bin/python3 oprint
+      source ~/oprint/bin/activate
+      pip install "OctoPrint>=1.4.0rc1"
+      sudo service octoprint restart
+
 .. _sec-plugins-python3-markup:
 
 Telling OctoPrint your plugin is Python 3 ready
@@ -168,6 +182,13 @@ One of if not the most problematic change between Python 2 and 3 surely must be 
 Python 2 your basic string was a byte string, but it could also magically turn into a unicode string depending on what
 you wrote into it. That did cause some confusion, especially in APIs, and caused quite a mess, which is why the decision
 was made to go for distinct text and binary types instead, and making the string literal always be a (unicode) text.
+
+.. note::
+
+   Please note that these changes in string handling also affect several Python APIs that operate on files and streams
+   and thus might also affect parts of OctoPrint's plugin interface that inherit from these APIs. Currently only one such
+   case has been reported, as OctoPrint's :py:class:`~octoprint.filemanager.util.LineProcessorStream` will return bytes
+   instead of str on its ``process_line`` function under Python 3 - so here's a heads-up if your plugin happens to utilize that.
 
 Obviously, that will lead to issues in code using "just strings" when run under Python 2 vs 3. The first step to solve
 these problems would be to make your scripts behave the same under Python 2 and 3 by putting this right at the top of

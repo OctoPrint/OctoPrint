@@ -41,6 +41,9 @@ development environment::
 
       [...]
 
+   Setting up a local development environment will most likely be less painful than developing directly
+   on the Pi. So do yourself the favor and do that instead where possible.
+
 .. important::
 
    This tutorial assumes you are running OctoPrint 1.3.0 and up. Please make sure your version of
