@@ -6,6 +6,7 @@ thanks to everyone who contributed!
 
 ## Patreon Patrons
 
+  * Alex Krilov
   * Andrew Moorby
   * Arnljot Arntsen
   * BigTreeTech
@@ -55,11 +56,11 @@ thanks to everyone who contributed!
   * Robert Gusek
   * Ronald Griehsler
   * Sacha Telgenhof
-  * sghnsk
   * Simon Hallam
   * Stefan Krister
+  * Steve Thompson
   * Sven Mueller
   * Trent Shumay
   * Ulrich Kempken
 
-and 1764 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1741 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
