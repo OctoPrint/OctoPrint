@@ -16,3 +16,4 @@ Developing Plugins
    viewmodels.rst
    gettingstarted.rst
    distributing.rst
+   python3_migration.rst
