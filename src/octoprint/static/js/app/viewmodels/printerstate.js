@@ -377,8 +377,8 @@ $(function() {
             } else {
                 showConfirmationDialog({
                     message: gettext("This will cancel your print."),
-                    cancel: gettext("No"),
-                    proceed: gettext("Yes"),
+                    cancel: gettext("No, continue the print"),
+                    proceed: gettext("Yes, cancel the print"),
                     onproceed: function() {
                         OctoPrint.job.cancel();
                     },
