@@ -648,8 +648,7 @@ $(function() {
         };
 
         self.enableSelectAndPrint = function(data, printAfterSelect) {
-            var isLoadAndPrintActionPossible = self.isLoadAndPrintActionPossible();
-            return isLoadAndPrintActionPossible && !self.listHelper.isSelected(data);
+            return self.isLoadAndPrintActionPossible();
         };
 
 
