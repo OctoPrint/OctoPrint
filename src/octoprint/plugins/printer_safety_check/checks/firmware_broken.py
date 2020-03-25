@@ -46,3 +46,7 @@ class CbdCheck(Check):
 	def reset(self):
 		Check.reset(self)
 		self._fragment_matches = None
+
+class ZwlfCheck(CbdCheck):
+	name = "zwlf"
+	CRITICAL_FRAGMENT = "ZWLF make it".lower()
