@@ -2537,7 +2537,7 @@ class MachineCom(object):
 
 		tools = self.last_temperature.tools
 		for temp in [tools[k][1] for k in tools.keys()]:
-			if temp > self._temperatureTargetSetThreshold:
+			if temp and temp > self._temperatureTargetSetThreshold:
 				return get("temperatureTargetSet", target_default)
 
 		bed = self.last_temperature.bed
