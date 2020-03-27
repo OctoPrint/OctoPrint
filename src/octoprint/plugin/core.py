@@ -119,21 +119,21 @@ class PluginInfo(object):
 	""" Module attribute from which to retrieve the plugin's license. """
 
 	attr_pythoncompat = '__plugin_pythoncompat__'
-	""" 
-	Module attribute from which to retrieve the plugin's python compatibility string. 
-	
+	"""
+	Module attribute from which to retrieve the plugin's python compatibility string.
+
 	If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
 	Python 2 but not Python 3.
-	
+
 	To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
-	
+
 	Bundled plugins will automatically be assumed to be compatible.
 	"""
 
 	attr_hidden = '__plugin_hidden__'
 	"""
 	Module attribute from which to determine if the plugin's hidden or not.
-	
+
 	Only evaluated for bundled plugins, in order to hide them from the Plugin Manager
 	and similar places.
 	"""
@@ -649,7 +649,8 @@ class PluginManager(object):
 
 	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
 	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
-	             plugin_obsolete_hooks=None, plugin_validators=None, compatibility_ignored_list=None):
+	             plugin_obsolete_hooks=None, plugin_considered_bundled=None, plugin_validators=None,
+	             compatibility_ignored_list=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -666,6 +667,8 @@ class PluginManager(object):
 			plugin_blacklist = []
 		if compatibility_ignored_list is None:
 			compatibility_ignored_list = []
+		if plugin_considered_bundled is None:
+			plugin_considered_bundled = []
 
 		self.plugin_folders = plugin_folders
 		self.plugin_bases = plugin_bases
@@ -677,6 +680,7 @@ class PluginManager(object):
 		self.plugin_validators = plugin_validators
 		self.logging_prefix = logging_prefix
 		self.compatibility_ignored_list = compatibility_ignored_list
+		self.plugin_considered_bundled = plugin_considered_bundled
 
 		self.enabled_plugins = dict()
 		self.disabled_plugins = dict()
@@ -878,7 +882,8 @@ class PluginManager(object):
 						# plugin is already defined or marked as uninstalled, ignore it
 						continue
 
-					kwargs = dict(module_name=module_name, version=version)
+					bundled = key in self.plugin_considered_bundled
+					kwargs = dict(module_name=module_name, version=version, bundled=bundled)
 					package_name = entry_point.dist.project_name
 					try:
 						entry_point_metadata = EntryPointMetadata(entry_point)

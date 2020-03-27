@@ -24,6 +24,9 @@ SETUP_REQUIRES = [
 
 # Requirements for our application
 INSTALL_REQUIRES = [
+	# additional OctoPrint plugins that are maintained on a different release cycle
+	"OctoPrint-FirmwareCheck>=2020.03.27",
+
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
 	# changes that might affect plugins, or due to other observed problems
 
