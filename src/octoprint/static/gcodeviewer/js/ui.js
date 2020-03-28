@@ -97,14 +97,6 @@ GCODE.ui = (function(){
         var warnings = [];
         var fatal = [];
 
-        Modernizr.addTest('filereader', function () {
-            return !!(window.File && window.FileList && window.FileReader);
-        });
-
-        if(!Modernizr.canvas)fatal.push("<li>Your browser doesn't seem to support HTML5 Canvas, this application won't work without it.</li>");
-        if(!Modernizr.webworkers)fatal.push("<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>");
-        if(!Modernizr.svg)fatal.push("<li>Your browser doesn't seem to support HTML5 SVG, this application won't work without it.</li>");
-
         var errorList = document.getElementById("errorList");
         if(fatal.length>0){
             if (errorList) {
@@ -118,7 +110,6 @@ GCODE.ui = (function(){
             warnings.push("<li>Your browser doesn't seem to support HTML5 Web GL, 3d mode is not recommended, going to be SLOW!</li>");
             GCODE.renderer3d.setOption({rendererType: "canvas"});
         }
-        if(!Modernizr.draganddrop)warnings.push("<li>Your browser doesn't seem to support HTML5 Drag'n'Drop, Drop area will not work.</li>");
 
         if(warnings.length>0){
             if (errorList) {
