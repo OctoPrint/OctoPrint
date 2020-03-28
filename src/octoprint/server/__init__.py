@@ -1531,7 +1531,8 @@ class Server(object):
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.min.js",
-			"js/lib/ResizeSensor.js"
+			"js/lib/ResizeSensor.js",
+			"js/lib/less.min.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
