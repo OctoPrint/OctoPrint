@@ -1588,8 +1588,8 @@ class Server(object):
 
 		# -- JS --------------------------------------------------------------------------------------------------------
 
-		js_filters = ["sourcemap_remove", "js_delimiter_bundler", "gzip"]
-		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler", "gzip"]
+		js_filters = ["sourcemap_remove", "js_delimiter_bundler", "rjsmin", "gzip"]
+		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler", "rjsmin", "gzip"]
 
 		def js_bundles_for_plugins(collection, filters=None):
 			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
