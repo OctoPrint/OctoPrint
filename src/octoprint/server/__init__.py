@@ -1488,7 +1488,7 @@ class Server(object):
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery.js",
+			"js/lib/jquery/jquery.min.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
@@ -1530,7 +1530,7 @@ class Server(object):
 			"js/lib/md5.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs.js",
+			"js/lib/sockjs.min.js",
 			"js/lib/ResizeSensor.js"
 		]
 		js_client = [
