@@ -13,7 +13,8 @@
         <meta name="referrer" content="no-referrer">
         <meta name="theme-color" data-bind="attr: { content: theme_color }">
 
-        {% include 'stylesheets.jinja2' %}
+        {% include 'javascripts-preload.jinja2' %}
+        {% include 'stylesheets-preload.jinja2' %}
         {% include 'initscript.jinja2' %}
     </head>
     <body>
@@ -180,6 +181,7 @@
             {% include 'overlays/reloadui.jinja2' %}
             <!-- End of overlays -->
 
+            {% include 'stylesheets.jinja2' %}
             {% include 'javascripts.jinja2' %}
 
             <!-- Generic plugin template files -->

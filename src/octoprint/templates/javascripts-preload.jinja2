@@ -1,0 +1,6 @@
+<!-- must be kept in sync with javascripts.jinja2! -->
+{% assets "js_libs" %}<link rel="preload" as="script" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "js_client" %}<link rel="preload" as="script" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "js_plugins" %}<link rel="preload" as="script" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "js_core" %}<link rel="preload" as="script" href="{{ ASSET_URL }}">{% endassets %}
+{% if g.locale %}<link rel="preload" as="script" href="{{ url_for('localeJs', locale=g.locale, domain='messages') }}">{% endif %}
