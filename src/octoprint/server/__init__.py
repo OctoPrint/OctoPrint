@@ -686,7 +686,8 @@ class Server(object):
 			                                                                              as_attachment=True),
 			                                                                         camera_permission_validator)),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"),
+			                                                                    is_pre_compressed=True)),
 
 			# online indicators - text file with "online" as content and a transparent gif
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
@@ -1568,13 +1569,14 @@ class Server(object):
 
 		# a couple of custom filters
 		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, \
-			SourceMapRewrite, SourceMapRemove, JsPluginBundle
+			SourceMapRewrite, SourceMapRemove, JsPluginBundle, GzipFile
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
 		register_filter(SourceMapRewrite)
 		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
+		register_filter(GzipFile)
 
 		def all_assets_for_plugins(collection):
 			"""Gets all plugin assets for a dict of plugin->assets"""
@@ -1585,8 +1587,8 @@ class Server(object):
 
 		# -- JS --------------------------------------------------------------------------------------------------------
 
-		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
-		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		js_filters = ["sourcemap_remove", "js_delimiter_bundler", "gzip"]
+		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler", "gzip"]
 
 		def js_bundles_for_plugins(collection, filters=None):
 			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
@@ -1645,7 +1647,7 @@ class Server(object):
 
 		# -- CSS -------------------------------------------------------------------------------------------------------
 
-		css_filters = ["cssrewrite"]
+		css_filters = ["cssrewrite", "gzip"]
 
 		css_core = list(dynamic_core_assets["css"]) \
 		           + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["css"])
@@ -1675,7 +1677,7 @@ class Server(object):
 
 		# -- LESS ------------------------------------------------------------------------------------------------------
 
-		less_filters = ["cssrewrite", "less_importrewrite"]
+		less_filters = ["cssrewrite", "less_importrewrite", "gzip"]
 
 		less_core = list(dynamic_core_assets["less"]) \
 		            + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["less"])

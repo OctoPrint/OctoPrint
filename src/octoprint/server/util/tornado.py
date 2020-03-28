@@ -949,11 +949,13 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 	       called with the response handler as parameter. May return ``None`` to prevent the ETag response header
 	       from being set. If not provided the last modified time of the file in question will be used as returned
 	       by ``get_content_version``.
+	    is_pre_compressed (bool): if the file is expected to be pre-compressed, i.e, if there is a file in the same
+	    	directory with the same name, but with '.gz' appended and gzip-encoded
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
 	               access_validation=None, path_validation=None, etag_generator=None, name_generator=None,
-	               mime_type_guesser=None):
+	               mime_type_guesser=None, is_pre_compressed=False):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._allow_client_caching = allow_client_caching
@@ -962,6 +964,11 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		self._etag_generator = etag_generator
 		self._name_generator = name_generator
 		self._mime_type_guesser = mime_type_guesser
+		self._is_pre_compressed = is_pre_compressed
+
+	def should_use_precompressed(self):
+		return (self._is_pre_compressed and
+					"gzip" in self.request.headers.get("Accept-Encoding"))
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
@@ -972,8 +979,11 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		if "cookie" in self.request.arguments:
 			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
 
-		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
-		return result
+		if self.should_use_precompressed():
+			self.set_header("Content-Encoding", "gzip")
+			path = path + ".gz"
+
+		return tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
@@ -991,6 +1001,12 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
 			self.set_header("Expires", "-1")
 
+	def original_absolute_path(self):
+		"""The path of the uncompressed file corresponding to the compressed file"""
+		if self._is_pre_compressed:
+			return self.absolute_path.rstrip('.gz')
+		return self.absolute_path
+
 	def compute_etag(self):
 		if self._etag_generator is not None:
 			return self._etag_generator(self)
@@ -999,11 +1015,19 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 
 	def get_content_type(self):
 		if self._mime_type_guesser is not None:
-			type = self._mime_type_guesser(self.absolute_path)
+			type = self._mime_type_guesser(self.original_absolute_path)
 			if type is not None:
 				return type
 
-		return tornado.web.StaticFileHandler.get_content_type(self)
+		correct_absolute_path = None
+		try:
+			if self.should_use_precompressed():
+				correct_absolute_path = self.absolute_path
+				self.absolute_path = self.original_absolute_path()
+			return tornado.web.StaticFileHandler.get_content_type(self)
+		finally:
+			if self.should_use_precompressed() and correct_absolute_path is not None:
+				self.absolute_path = correct_absolute_path
 
 	@classmethod
 	def get_content_version(cls, abspath):
