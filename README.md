@@ -1,8 +1,8 @@
 #  OctoPrint
 
 
-![GitHub release](https://img.shields.io/github/release/foosel/OctoPrint.svg?colorB=brightgreen)
-[![Travis build status](https://img.shields.io/travis/foosel/OctoPrint.svg)](https://travis-ci.org/foosel/OctoPrint)
+![GitHub release](https://img.shields.io/github/release/OctoPrint/OctoPrint.svg?colorB=brightgreen)
+[![Travis build status](https://img.shields.io/travis/OctoPrint/OctoPrint.svg)](https://travis-ci.org/OctoPrint/OctoPrint)
 [![Discourse topics](https://img.shields.io/discourse/https/community.octoprint.org/users.svg)](https://community.octoprint.org)
 [![IRC](https://img.shields.io/badge/chat-on%20irc-brightgreen.svg)](https://chat.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
@@ -30,7 +30,7 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
-want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
+want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/OctoPrint/OctoPrint/wiki)
 might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
@@ -38,8 +38,8 @@ able to help you with any questions you might have.
 ## Contributing
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
-[official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), debugging help
-in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on
+[official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/OctoPrint/OctoPrint/wiki), debugging help
+in the [bug tracker](https://github.com/OctoPrint/OctoPrint/issues), support of other users on
 [the community forum at community.octoprint.org](https://community.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
@@ -48,12 +48,12 @@ in any way to make it better instead of just complaining about it -- this is an 
 after all :)
 
 For information about how to go about submitting bug reports or pull requests, please see the project's
-[Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
+[Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
 Installation instructions for installing from source for different operating
-systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+systems can be found [on the wiki](https://github.com/OctoPrint/OctoPrint/wiki#assorted-guides).
 
 If you want to run OctoPrint on a Raspberry Pi, you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
@@ -63,7 +63,7 @@ and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
 you already have Python 2.7, 3.6 or 3.7, pip and virtualenv set up on your system:
 
-1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
+1. Checkout OctoPrint: `git clone https://github.com/OctoPrint/OctoPrint.git`
 2. Change into the OctoPrint folder: `cd OctoPrint`
 3. Create a user-owned virtual environment therein: `virtualenv venv` if your system default python version is
    python 2.7, otherwise you need to specify the version explicitly, e.g. `virtualenv --python=python2.7 venv`.
