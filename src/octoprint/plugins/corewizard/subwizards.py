@@ -146,6 +146,20 @@ class PrinterProfileSubwizard(object):
 		return gettext("Default Printer Profile")
 
 
+# noinspection PyUnresolvedReferences,PyMethodMayBeStatic
+class BackupRestoreSubwizard(object):
+	def _is_backuprestore_wizard_firstrunonly(self):
+		return True
+
+	def _is_backuprestore_wizard_required(self):
+		return True
+
+	def _get_backuprestore_wizard_details(self):
+		return dict(required=self._is_backuprestore_wizard_required())
+
+	def _get_backuprestore_wizard_name(self):
+		return gettext("Restore Backup")
+
 Subwizards = type(to_native_str("Subwizards"),
                   tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
                         if clsname.endswith("Subwizard")),
