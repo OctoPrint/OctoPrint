@@ -80,7 +80,7 @@
 
     <!-- Feed rate -->
     <div id="control-jog-feedrate" class="jog-panel">
-        <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
+        <input type="number" style="width: 153px" data-bind="slider: {min: 25, max: 300, step: 1, value: feedRate, tooltip: 'hide'}">
         <button class="btn btn-block" style="width: 169px" data-bind="enable: isOperational(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
     </div>
 </div>
