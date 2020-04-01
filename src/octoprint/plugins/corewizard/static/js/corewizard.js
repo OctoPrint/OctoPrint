@@ -313,30 +313,6 @@ $(function() {
         };
     }
 
-    function CoreWizardBackupRestoreViewModel(parameters) {
-        var self = this;
-
-        self.required = false;
-
-        self.onWizardDetails = function(response) {
-            if (!self.required) return;
-        };
-
-        self.onWizardFinish = function() {
-            if (!self.required) return;
-        };
-
-        self.showRestoreFromBackup = function() {
-            $showRestorePluginDialogCallback = function () {
-                OctoPrint.coreui.viewmodels.wizardViewModel.closeDialog();
-                $("#settings_dialog_menu").hide()
-                OctoPrint.coreui.viewmodels.settingsViewModel.show("settings_plugin_backup");
-            }
-            
-            OctoPrint.coreui.viewmodels.coreWizardAclViewModel._sendData({"ac": false}, $showRestorePluginDialogCallback);
-        };
-    }
-
     OCTOPRINT_VIEWMODELS.push({
         construct: CoreWizardAclViewModel,
         dependencies: ["loginStateViewModel"],
@@ -361,9 +337,5 @@ $(function() {
         construct: CoreWizardPrinterProfileViewModel,
         dependencies: ["printerProfilesViewModel"],
         elements: ["#wizard_plugin_corewizard_printerprofile"]
-    }, {
-        construct: CoreWizardBackupRestoreViewModel,
-        dependencies: ["settingsViewModel"],
-        elements: ["#wizard_plugin_corewizard_backuprestore"]
     });
 });

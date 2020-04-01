@@ -325,7 +325,7 @@ default_settings = {
 					"plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
-				"wizard": ["access"],
+				"wizard": ["plugin_backup", "plugin_corewizard_acl"],
 				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
