@@ -325,7 +325,7 @@
 
    Sets the feedrate multiplier to use.
 
-   ``factor`` is expected to be a integer value between 0 and 200 representing the new feedrate percentage.
+   ``factor`` is expected to be a integer value between 0 and 300 representing the new feedrate percentage.
 
    See the ``feedrate`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
 
