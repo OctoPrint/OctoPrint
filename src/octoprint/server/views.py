@@ -23,6 +23,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
 from octoprint.filemanager import full_extension_tree, get_all_extensions
 from octoprint.util import to_unicode, to_bytes, sv
+from octoprint.util.version import get_python_version_string
 
 import re
 import base64
@@ -317,6 +318,7 @@ def index():
 			def hash_update(value):
 				hash.update(to_bytes(value, encoding="utf-8", errors="replace"))
 			hash_update(octoprint.__version__)
+			hash_update(get_python_version_string())
 			hash_update(",".join(sorted(files)))
 			if lastmodified:
 				hash_update(lastmodified)
@@ -476,6 +478,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		debug=debug,
 		firstRun=first_run,
 		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
+		python_version=get_python_version_string(),
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
