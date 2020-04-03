@@ -1957,6 +1957,11 @@ class MachineCom(object):
 
 								self._unknownCommandsNeedAck = True
 
+							elif "ultimaker2" in firmware_name.lower():
+								self._logger.info("Detected Ultimaker2 firmware, enabling relevant features for issue free communication")
+
+								self._disable_sd_printing_detection = True
+
 						self._firmware_info_received = True
 						self._firmware_info = data
 						self._firmware_name = firmware_name
