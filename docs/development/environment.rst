@@ -19,7 +19,7 @@ below.
 
   * Checkout the OctoPrint sources from their Git repository:
 
-      * ``git clone -b devel https://github.com/foosel/OctoPrint.git``
+      * ``git clone -b devel https://github.com/OctoPrint/OctoPrint.git``
 
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
@@ -86,7 +86,7 @@ installed:
 .. todo::
 
    Using a Linux distribution that doesn't use ``apt`` or ``zypper``? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 Then:
@@ -94,7 +94,7 @@ Then:
 .. code-block:: none
 
    cd ~/devel
-   git clone -b devel https://github.com/foosel/OctoPrint.git
+   git clone -b devel https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
    virtualenv venv
    source ./venv/bin/activate
@@ -131,7 +131,7 @@ Open the Git Bash you just installed and in that:
 
    pip install virtualenv
    cd /c/Devel
-   git clone https://github.com/foosel/OctoPrint.git
+   git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
    virtualenv venv
    source ./venv/Scripts/activate
@@ -145,7 +145,7 @@ Mac OS X
 
 .. note::
 
-   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac/>`_.
+   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's Community Forum <https://community.octoprint.org/t/setting-up-octoprint-on-macos/13425>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
 .. todo::
@@ -178,7 +178,7 @@ You'll need a user account with administrator privileges.
     .. code-block:: none
 
        cd ~/devel
-       git clone https://github.com/foosel/OctoPrint.git
+       git clone https://github.com/OctoPrint/OctoPrint.git
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
@@ -197,7 +197,7 @@ IDE Setup
 .. todo::
 
    Using another IDE than the ones below? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 .. _sec-development-environment-ides-pycharm:

@@ -65,7 +65,7 @@ the general type of script for which to look for additions ("gcode") and the scr
 return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
 care to add prefix and suffix as necessary after a small round of preprocessing.
 
-Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/foosel/OctoPrint/tree/master/src/octoprint/plugins/softwareupdate>`_
+Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html>`_
 declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
 to register themselves with the Software Update Plugin by returning their own update check configuration.
 
@@ -215,7 +215,7 @@ octoprint.access.permissions
    fields are as follows:
 
      * ``key``: A key for the permission to be used for referring to it from source code. This will turned uppercase
-       and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``, 
+       and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``,
        e.g. ``my_permission`` on the plugin with identifier ``example`` turns into ``PLUGIN_EXAMPLE_MY_PERMISSION`` and
        can be accessed as ``octoprint.access.permissions.Permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the server and
        ``permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the ``AccessViewModel`` on the client. Must only contain a-z, A-Z, 0-9 and _.

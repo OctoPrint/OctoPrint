@@ -2698,7 +2698,7 @@ class MachineCom(object):
 				self._logger.exception(error_message)
 
 				if "failed to set custom baud rate" in exception_string.lower():
-					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/foosel/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
+					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/OctoPrint/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
 
 				return False
 
