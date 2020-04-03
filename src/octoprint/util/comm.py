@@ -457,6 +457,7 @@ class MachineCom(object):
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
+		self._disable_sd_printing_detection = settings().getBoolean(["serial", "disableSdPrintingDetection"])
 		self._current_line = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -2444,7 +2445,7 @@ class MachineCom(object):
 		if self.isOperational() \
 			and not self._sdstatus_autoreporting \
 			and not self._connection_closing \
-			and self.isSdFileSelected() \
+			and (self.isSdFileSelected() and not self._disable_sd_printing_detection or self.isSdPrinting()) \
 			and not self._long_running_command \
 			and not self._dwelling_until \
 			and not self._heating:

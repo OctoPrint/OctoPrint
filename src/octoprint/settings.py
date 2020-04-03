@@ -153,6 +153,7 @@ default_settings = {
 		"useParityWorkaround": "detect",
 		"maxConsecutiveResends": 10,
 		"sendM112OnError": True,
+		"disableSdPrintingDetection": False,
 		"ackMax": 1,
 
 		"capabilities": {

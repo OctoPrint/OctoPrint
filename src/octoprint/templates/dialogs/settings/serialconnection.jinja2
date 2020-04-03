@@ -247,6 +247,13 @@
                     <div class="control-group">
                         <div class="controls">
                             <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: serial_disableSdPrintingDetection" id="settings-disableSdPrintingDetection"> {{ _('Disable SD printing detection') }} <span class="label">{{ _('Ultimaker 2/2+') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
                                 <input type="checkbox" data-bind="checked: serial_ignoreIdenticalResends" id="settings-serialIgnoreIdenticalResends"> {{ _('Ignore consecutive resend requests for the same line') }} <span class="label">{{ _('Repetier') }}</span>
                             </label>
                         </div>
