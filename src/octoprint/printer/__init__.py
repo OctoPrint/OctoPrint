@@ -624,6 +624,9 @@ class PrinterCallback(object):
 		    bed:
 		        actual: <temperature of the bed, in degC>
 		        target: <target temperature of the bed, in degC>
+		    chamber:
+		        actual: <temperature of the chamber, in degC>
+		        target: <target temperature of the chamber, in degC>
 
 		Arguments:
 		    data (dict): A dict of all current temperatures in the format as specified above
