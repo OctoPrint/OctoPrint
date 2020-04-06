@@ -279,6 +279,8 @@ class PositionRecord(object):
 		return dict((attr, getattr(self, attr)) for attr in attrs)
 
 class TemperatureRecord(object):
+	RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
+
 	def __init__(self):
 		self._tools = dict()
 		self._bed = (None, None)
@@ -302,6 +304,8 @@ class TemperatureRecord(object):
 		self._chamber = self._to_new_tuple(current, actual, target)
 
 	def set_custom(self, identifier, actual=None, target=None):
+		if self.RESERVED_IDENTIFIER_REGEX.match(identifier):
+			raise ValueError("{} is a reserved identifier".format(identifier))
 		current = self._custom.get(identifier, (None, None))
 		self._custom[identifier] = self._to_new_tuple(current, actual, target)
 
@@ -340,7 +344,7 @@ class TemperatureRecord(object):
 		custom = self.custom
 		for identifier, data in custom.items():
 			result[identifier] = dict(actual=data[0],
-			                    target=data[1])
+			                          target=data[1])
 
 		return result
 
