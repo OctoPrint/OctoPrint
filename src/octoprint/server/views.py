@@ -199,6 +199,12 @@ def index():
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
 	enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
+	enable_sd_support = settings().get(["feature", "sdSupport"])
+	enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"]))
+	enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
+	gcode_mobile_threshold = settings().get(["gcodeViewer", "mobileSizeThreshold"])
+	gcode_threshold = settings().get(["gcodeViewer", "sizeThreshold"])
+	sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
@@ -217,6 +223,12 @@ def index():
 	                           enable_gcodeviewer,
 	                           enable_timelapse,
 	                           enable_loading_animation,
+	                           enable_sd_support,
+	                           enable_webcam,
+	                           enable_temperature_graph,
+	                           gcode_mobile_threshold,
+	                           gcode_threshold,
+	                           sockjs_connect_timeout,
 	                           wizard_active(_templates.get(locale))] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
 	                                                                                           to_unicode(v, errors="replace"))
 	                                                                           for k, v in _plugin_vars.items()])
@@ -372,14 +384,15 @@ def index():
 		                                   _plugin_vars,
 		                                   now)
 		render_kwargs.update(dict(
-			enableWebcam=settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"])),
-			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
+			enableWebcam=enable_webcam,
+			enableTemperatureGraph=enable_temperature_graph,
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
 			enableLoadingAnimation=enable_loading_animation,
-			enableSdSupport=settings().get(["feature", "sdSupport"]),
-			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+			enableSdSupport=enable_sd_support,
+			gcodeMobileThreshold=gcode_mobile_threshold,
+			gcodeThreshold=gcode_threshold,
+			sockJsConnectTimeout=sockjs_connect_timeout * 1000,
 			wizard=wizard,
 			now=now,
 		))

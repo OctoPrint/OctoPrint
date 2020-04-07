@@ -414,6 +414,7 @@ default_settings = {
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
+		"sockJsConnectTimeout": 10,
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,

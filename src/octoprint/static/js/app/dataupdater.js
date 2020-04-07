@@ -48,7 +48,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             self._connectedDeferred.reject("reconnect");
         }
         self._connectedDeferred = $.Deferred();
-        OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
+        OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG, connectTimeout: SOCKJS_CONNECT_TIMEOUT});
         return self._connectedDeferred.promise();
     };
 
