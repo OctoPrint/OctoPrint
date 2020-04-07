@@ -456,25 +456,27 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._comm.setTemperatureOffset(offsets)
 		self._setOffsets(self._comm.getOffsets())
 
-	def _convert_rate_value(self, factor, min=0, max=200):
+	def _convert_rate_value(self, factor, min_val=None, max_val=None):
 		if not isinstance(factor, (int, float, long)):
 			raise ValueError("factor is not a number")
 
 		if isinstance(factor, float):
 			factor = int(factor * 100.0)
 
-		if factor < min or factor > max:
-			raise ValueError("factor must be a value between {} and {}".format(min, max))
+		if min_val and factor < min_val:
+			raise ValueError("factor must be a value >={}".format(min_val))
+		elif max_val and factor > max_val:
+			raise ValueError("factor must be a value <={}".format(max_val))
 
 		return factor
 
 	def feed_rate(self, factor, *args, **kwargs):
-		factor = self._convert_rate_value(factor, min=50, max=200)
+		factor = self._convert_rate_value(factor, min_val=1)
 		self.commands("M220 S%d" % factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
 
 	def flow_rate(self, factor, *args, **kwargs):
-		factor = self._convert_rate_value(factor, min=75, max=125)
+		factor = self._convert_rate_value(factor, min_val=1)
 		self.commands("M221 S%d" % factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
