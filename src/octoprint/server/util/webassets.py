@@ -5,8 +5,8 @@ __author__ = "Gina Häußge <gina@octoprint.org>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import logging
 import gzip
-import os
 import re
 
 try:
@@ -118,12 +118,17 @@ class GzipFile(Filter):
 		# webassets requires us to output a "str", but we can't do that since gzip
 		# provides binary outputs.
 		#
-		# We work around that by outputting the gziped file to another path
-		if kwargs.get("output_path", None):
-			output_path = kwargs["output_path"]
-			gziped_output_path = output_path + ".gz"
-			with open(gziped_output_path, "wb") as gziped_output:
-				gziped_output.write(gzip.compress(data.encode("utf8"), compresslevel=9))
+		# We work around that by outputting the gzipped file to another path
+		output_path = kwargs.get("output_path", None)
+		if output_path:
+			gzipped_output_path = output_path + ".gz"
+			try:
+				with open(gzipped_output_path, "wb") as gzipped_output:
+					gzipped_output.write(gzip.compress(data.encode("utf8"), compresslevel=9))
+			except Exception:
+				logging.getLogger(__name__).exception("Error writing gzipped "
+				                                      "output of {} to {}".format(output_path,
+				                                                                  gzipped_output_path))
 
 
 class ChainedHunk(BaseHunk):

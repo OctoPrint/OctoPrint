@@ -949,8 +949,12 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 	       called with the response handler as parameter. May return ``None`` to prevent the ETag response header
 	       from being set. If not provided the last modified time of the file in question will be used as returned
 	       by ``get_content_version``.
-	    is_pre_compressed (bool): if the file is expected to be pre-compressed, i.e, if there is a file in the same
-	    	directory with the same name, but with '.gz' appended and gzip-encoded
+	   name_generator (function): Callback to call for generating the value of the attachment file name header. Will be
+	       called with the requested path as parameter.
+	   mime_type_guesser (function): Callback to guess the mime type to use for the content type encoding of the
+	       response. Will be called with the requested path on disk as parameter.
+	   is_pre_compressed (bool): if the file is expected to be pre-compressed, i.e, if there is a file in the same
+	       directory with the same name, but with '.gz' appended and gzip-encoded
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
@@ -967,8 +971,8 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		self._is_pre_compressed = is_pre_compressed
 
 	def should_use_precompressed(self):
-		return (self._is_pre_compressed and
-					"gzip" in self.request.headers.get("Accept-Encoding"))
+		return (self._is_pre_compressed
+		        and "gzip" in self.request.headers.get("Accept-Encoding"))
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
@@ -979,7 +983,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		if "cookie" in self.request.arguments:
 			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
 
-		if self.should_use_precompressed():
+		if self.should_use_precompressed() and os.path.exists(os.path.join(self.root, path + ".gz")):
 			self.set_header("Content-Encoding", "gzip")
 			path = path + ".gz"
 
@@ -1001,6 +1005,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
 			self.set_header("Expires", "-1")
 
+	@property
 	def original_absolute_path(self):
 		"""The path of the uncompressed file corresponding to the compressed file"""
 		if self._is_pre_compressed:
@@ -1013,6 +1018,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		else:
 			return self.get_content_version(self.absolute_path)
 
+	# noinspection PyAttributeOutsideInit
 	def get_content_type(self):
 		if self._mime_type_guesser is not None:
 			type = self._mime_type_guesser(self.original_absolute_path)
@@ -1021,11 +1027,13 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 
 		correct_absolute_path = None
 		try:
+			# reset self.absolute_path temporarily
 			if self.should_use_precompressed():
 				correct_absolute_path = self.absolute_path
-				self.absolute_path = self.original_absolute_path()
+				self.absolute_path = self.original_absolute_path
 			return tornado.web.StaticFileHandler.get_content_type(self)
 		finally:
+			# restore self.absolute_path
 			if self.should_use_precompressed() and correct_absolute_path is not None:
 				self.absolute_path = correct_absolute_path
 
