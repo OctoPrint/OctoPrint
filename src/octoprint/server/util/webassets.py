@@ -124,8 +124,8 @@ class GzipFile(Filter):
 		if output_path:
 			gzipped_output_path = output_path + ".gz"
 			try:
-				with open(gzipped_output_path, "wb") as gzipped_output:
-					gzipped_output.write(gzip.compress(data.encode("utf8"), compresslevel=9))
+				with gzip.open(gzipped_output_path, "wb", 9) as f:
+					f.write(data.encode("utf8"))
 			except Exception:
 				logging.getLogger(__name__).exception("Error writing gzipped "
 				                                      "output of {} to {}".format(output_path,
