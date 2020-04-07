@@ -81,7 +81,7 @@ $(function() {
                             "<code>octoprint.log</code>.");
                     new PNotify({
                         title: gettext("Something went wrong"),
-                        text: _.sprintf(message, {bugreport: "https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report", jsconsole: "https://webmasters.stackexchange.com/a/77337"}),
+                        text: _.sprintf(message, {bugreport: "https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report", jsconsole: "https://webmasters.stackexchange.com/a/77337"}),
                         type: "error",
                         hide: false
                     });

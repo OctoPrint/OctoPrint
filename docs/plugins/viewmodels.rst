@@ -438,7 +438,7 @@ Web interface reconnect
 
 .. seealso::
 
-   `OctoPrint's core viewmodels <https://github.com/foosel/OctoPrint/tree/devel/src/octoprint/static/js/app/viewmodels>`_
+   `OctoPrint's core viewmodels <https://github.com/OctoPrint/OctoPrint/tree/master/src/octoprint/static/js/app/viewmodels>`_
       OctoPrint's own view models use the same mechanisms for interacting with each other and the web application as
       plugins. Their source code is therefore a good point of reference on how to achieve certain things.
    `KnockoutJS documentation <http://knockoutjs.com/documentation/introduction.html>`_

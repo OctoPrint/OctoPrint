@@ -153,6 +153,7 @@ default_settings = {
 		"useParityWorkaround": "detect",
 		"maxConsecutiveResends": 10,
 		"sendM112OnError": True,
+		"disableSdPrintingDetection": False,
 		"ackMax": 1,
 
 		"capabilities": {
@@ -315,7 +316,7 @@ default_settings = {
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
-				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
+				"sidebar": ["plugin_firmware_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
@@ -325,7 +326,7 @@ default_settings = {
 					"plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
-				"wizard": ["access"],
+				"wizard": ["plugin_backup", "plugin_corewizard_acl"],
 				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
@@ -413,6 +414,7 @@ default_settings = {
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
+		"sockJsConnectTimeout": 10,
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
@@ -645,6 +647,8 @@ class Settings(object):
 		self._config = None
 		self._dirty = False
 		self._dirty_time = 0
+		self._last_config_hash = None
+		self._last_effective_hash = None
 		self._mtime = None
 
 		self._get_preprocessors = dict(
@@ -842,6 +846,15 @@ class Settings(object):
 
 		return list(map(process_control, controls))
 
+	def _forget_hashes(self):
+		self._last_config_hash = None
+		self._last_effective_hash = None
+
+	def _mark_dirty(self):
+		self._dirty = True
+		self._dirty_time = time.time()
+		self._forget_hashes()
+
 	@property
 	def effective(self):
 		return self._map.deep_dict()
@@ -853,10 +866,14 @@ class Settings(object):
 
 	@property
 	def effective_hash(self):
+		if self._last_effective_hash is not None:
+			return self._last_effective_hash
+
 		import hashlib
 		hash = hashlib.md5()
 		hash.update(self.effective_yaml.encode('utf-8'))
-		return hash.hexdigest()
+		self._last_effective_hash = hash.hexdigest()
+		return self._last_effective_hash
 
 	@property
 	def config_yaml(self):
@@ -865,10 +882,14 @@ class Settings(object):
 
 	@property
 	def config_hash(self):
+		if self._last_config_hash:
+			return self._last_config_hash
+
 		import hashlib
 		hash = hashlib.md5()
 		hash.update(self.config_yaml.encode('utf-8'))
-		return hash.hexdigest()
+		self._last_config_hash = hash.hexdigest()
+		return self._last_config_hash
 
 	@property
 	def _config(self):
@@ -932,6 +953,8 @@ class Settings(object):
 
 		if migrate:
 			self._migrate_config()
+
+		self._forget_hashes()
 
 	def load_overlay(self, overlay, migrate=True):
 		config = None
@@ -1603,8 +1626,7 @@ class Settings(object):
 					del self._config["folder"][type]
 					if not len(self._config["folder"]):
 						del self._config["folder"]
-					self._dirty = True
-					self._dirty_time = time.time()
+					self._mark_dirty()
 					self.save()
 				except KeyError:
 					pass
@@ -1652,8 +1674,7 @@ class Settings(object):
 
 		try:
 			chain.del_by_path(path)
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
@@ -1711,8 +1732,7 @@ class Settings(object):
 		if not force and in_defaults and in_local and default_value == value:
 			try:
 				chain.del_by_path(path)
-				self._dirty = True
-				self._dirty_time = time.time()
+				self._mark_dirty()
 			except KeyError:
 				if error_on_path:
 					raise NoSuchSettingsPath()
@@ -1722,8 +1742,7 @@ class Settings(object):
 				chain.del_by_path(path)
 			else:
 				chain.set_by_path(path, value)
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 
 	def setInt(self, path, value, **kwargs):
 		if value is None:
@@ -1785,8 +1804,7 @@ class Settings(object):
 			del self._config["folder"][type]
 			if not self._config["folder"]:
 				del self._config["folder"]
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 		elif (path != currentPath and path != defaultPath) or force:
 			if validate:
 				_validate_folder(path, check_writable=True, deep_check_writable=True)
@@ -1794,8 +1812,7 @@ class Settings(object):
 			if "folder" not in self._config:
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 
 	def saveScript(self, script_type, name, script):
 		script_folder = self.getBaseFolder("scripts")

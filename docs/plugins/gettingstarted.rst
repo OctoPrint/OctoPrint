@@ -14,7 +14,7 @@ First of all let use make sure that you have OctoPrint checked out and set up fo
 development environment::
 
   $ cd ~/devel
-  $ git clone https://github.com/foosel/OctoPrint
+  $ git clone https://github.com/OctoPrint/OctoPrint
   [...]
   $ cd OctoPrint
   $ virtualenv venv
@@ -143,7 +143,7 @@ as a simple python file following the naming convention ``<plugin identifier>.py
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
 so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
 best way possible, meaning we want to make our plugin a fully installable Python module that your users will be able to
-install directly via `OctoPrint's built-in Plugin Manager <https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager>`_
+install directly via `OctoPrint's built-in Plugin Manager <https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html>`_
 or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
 So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins
@@ -1091,7 +1091,7 @@ you haven't seen yet, :ref:`take a look at the available plugin mixins <sec-plug
 
 For some insight on how to create plugins that react to various events within OctoPrint,
 `the Growl Plugin <https://github.com/OctoPrint/OctoPrint-Growl>`_ might be a good example to learn from. For how to
-add support for a slicer, OctoPrint's own bundled `CuraEngine plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura>`_
+add support for a slicer, the `CuraEngine Legacy plugin <https://github.com/OctoPrint/OctoPrint-CuraEngineLegacy>`_
 might give some hints. For extending OctoPrint's interface, the `NavbarTemp plugin <https://github.com/imrahil/OctoPrint-NavbarTemp>`_
 might show what's possible with a few lines of code already. Finally, just take a look at the
 `official Plugin Repository <http://plugins.octoprint.org>`_ if you are looking for examples.

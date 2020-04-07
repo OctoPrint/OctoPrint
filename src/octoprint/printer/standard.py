@@ -888,9 +888,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None,
 		                  printTimeLeftOrigin=printTimeLeftOrigin)
 
-	def _addTemperatureData(self, tools=None, bed=None, chamber=None):
+	def _addTemperatureData(self, tools=None, bed=None, chamber=None, custom=None):
 		if tools is None:
 			tools = dict()
+		if custom is None:
+			custom = dict()
 
 		data = dict(time=int(time.time()))
 		for tool in tools.keys():
@@ -899,12 +901,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			data["bed"] = self._dict(actual=bed[0], target=bed[1])
 		if chamber is not None and isinstance(chamber, tuple):
 			data["chamber"] = self._dict(actual=chamber[0], target=chamber[1])
+		for identifier, values in custom.items():
+			data[identifier] = self._dict(actual=values[0], target=values[1])
 
 		self._temps.append(data)
 
 		self._temp = tools
 		self._bedTemp = bed
 		self._chamberTemp = chamber
+		self._custom = custom
 
 		self._stateMonitor.add_temperature(self._dict(**data))
 
@@ -1055,8 +1060,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
-	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
-		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp), chamber=copy.deepcopy(chamberTemp))
+	def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
+		if custom is None:
+			custom = dict()
+		self._addTemperatureData(tools=copy.deepcopy(tools),
+		                         bed=copy.deepcopy(bed),
+		                         chamber=copy.deepcopy(chamber),
+		                         custom=copy.deepcopy(custom))
 
 	def on_comm_position_update(self, position, reason=None):
 		payload = dict(reason=reason)

@@ -36,7 +36,7 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin):
 
 __plugin_name__ = "Virtual Printer"
 __plugin_author__ = "Gina Häußge, based on work by Daid Braam"
-__plugin_homepage__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Virtual-Printer"
+__plugin_homepage__ = "https://docs.octoprint.org/en/master/development/virtual_printer.html"
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = "Provides a virtual printer via a virtual serial port for development and testing purposes"
 

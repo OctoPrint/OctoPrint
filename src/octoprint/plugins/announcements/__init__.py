@@ -149,7 +149,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="settings", name=gettext("Announcements"), template="announcements_settings.jinja2", custom_bindings=True),
-			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)")
+			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_READ)")
 		]
 
 	# Blueprint Plugin

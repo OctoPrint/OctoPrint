@@ -279,10 +279,13 @@ class PositionRecord(object):
 		return dict((attr, getattr(self, attr)) for attr in attrs)
 
 class TemperatureRecord(object):
+	RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
+
 	def __init__(self):
 		self._tools = dict()
 		self._bed = (None, None)
 		self._chamber = (None, None)
+		self._custom = dict()
 
 	def copy_from(self, other):
 		self._tools = other.tools
@@ -300,6 +303,12 @@ class TemperatureRecord(object):
 		current = self._chamber
 		self._chamber = self._to_new_tuple(current, actual, target)
 
+	def set_custom(self, identifier, actual=None, target=None):
+		if self.RESERVED_IDENTIFIER_REGEX.match(identifier):
+			raise ValueError("{} is a reserved identifier".format(identifier))
+		current = self._custom.get(identifier, (None, None))
+		self._custom[identifier] = self._to_new_tuple(current, actual, target)
+
 	@property
 	def tools(self):
 		return dict(self._tools)
@@ -311,6 +320,10 @@ class TemperatureRecord(object):
 	@property
 	def chamber(self):
 		return self._chamber
+
+	@property
+	def custom(self):
+		return dict(self._custom)
 
 	def as_script_dict(self):
 		result = dict()
@@ -327,6 +340,11 @@ class TemperatureRecord(object):
 		chamber = self.chamber
 		result["c"] = dict(actual=chamber[0],
 		                   target=chamber[1])
+
+		custom = self.custom
+		for identifier, data in custom.items():
+			result[identifier] = dict(actual=data[0],
+			                          target=data[1])
 
 		return result
 
@@ -457,6 +475,7 @@ class MachineCom(object):
 		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
 		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
+		self._disable_sd_printing_detection = settings().getBoolean(["serial", "disableSdPrintingDetection"])
 		self._current_line = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -1579,21 +1598,30 @@ class MachineCom(object):
 				if not tool in parsedTemps:
 					if shared_nozzle:
 						actual, target = parsedTemps[current_tool_key]
+						del parsedTemps[current_tool_key]
 					else:
 						continue
 				else:
 					actual, target = parsedTemps[tool]
+					del parsedTemps[tool]
 				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
 		if "B" in parsedTemps:
 			actual, target = parsedTemps["B"]
+			del parsedTemps["B"]
 			self.last_temperature.set_bed(actual=actual, target=target)
 
 		# chamber temperature
 		if "C" in parsedTemps and (self._capability_supported(self.CAPABILITY_CHAMBER_TEMP) or self._printerProfileManager.get_current_or_default()["heatedChamber"]):
 			actual, target = parsedTemps["C"]
+			del parsedTemps["C"]
 			self.last_temperature.set_chamber(actual=actual, target=target)
+
+		# all other injected temperatures
+		for key in parsedTemps.keys():
+			actual, target = parsedTemps[key]
+			self.last_temperature.set_custom(key, actual=actual, target=target)
 
 	##~~ Serial monitor processing received messages
 
@@ -1865,7 +1893,7 @@ class MachineCom(object):
 						self._heatupWaitStartTime = monotonic_time()
 
 					self._processTemperatures(line)
-					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = regex_repetierTempExtr.match(line)
@@ -1876,14 +1904,14 @@ class MachineCom(object):
 						try:
 							target = float(matchExtr.group(2))
 							self.last_temperature.set_tool(toolNum, target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 						except ValueError:
 							pass
 					elif matchBed is not None:
 						try:
 							target = float(matchBed.group(1))
 							self.last_temperature.set_bed(target=target)
-							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 						except ValueError:
 							pass
 
@@ -1955,6 +1983,11 @@ class MachineCom(object):
 								self._logger.info("Detected Klipper firmware, enabling relevant features for issue free communication")
 
 								self._unknownCommandsNeedAck = True
+
+							elif "ultimaker2" in firmware_name.lower():
+								self._logger.info("Detected Ultimaker2 firmware, enabling relevant features for issue free communication")
+
+								self._disable_sd_printing_detection = True
 
 						self._firmware_info_received = True
 						self._firmware_info = data
@@ -2444,7 +2477,7 @@ class MachineCom(object):
 		if self.isOperational() \
 			and not self._sdstatus_autoreporting \
 			and not self._connection_closing \
-			and self.isSdFileSelected() \
+			and (self.isSdFileSelected() and not self._disable_sd_printing_detection or self.isSdPrinting()) \
 			and not self._long_running_command \
 			and not self._dwelling_until \
 			and not self._heating:
@@ -2537,7 +2570,7 @@ class MachineCom(object):
 
 		tools = self.last_temperature.tools
 		for temp in [tools[k][1] for k in tools.keys()]:
-			if temp > self._temperatureTargetSetThreshold:
+			if temp and temp > self._temperatureTargetSetThreshold:
 				return get("temperatureTargetSet", target_default)
 
 		bed = self.last_temperature.bed
@@ -2698,7 +2731,7 @@ class MachineCom(object):
 				self._logger.exception(error_message)
 
 				if "failed to set custom baud rate" in exception_string.lower():
-					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/foosel/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
+					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/OctoPrint/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
 
 				return False
 
@@ -3660,7 +3693,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_tool(toolNum, target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3673,7 +3706,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_bed(target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3686,7 +3719,7 @@ class MachineCom(object):
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_chamber(target=target)
-				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed, self.last_temperature.chamber, self.last_temperature.custom)
 			except ValueError:
 				pass
 
@@ -3874,7 +3907,7 @@ class MachineComPrintCallback(object):
 	def on_comm_log(self, message):
 		pass
 
-	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
+	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp, customTemp):
 		pass
 
 	def on_comm_position_update(self, position, reason=None):
@@ -4078,7 +4111,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		PrintingFileInformation.start(self)
 		with self._handle_mutex:
-			self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
+			self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace", newline="")
 			self._pos = self._handle.tell()
 			if self._handle.encoding.endswith("-sig"):
 				# Apparently we found an utf-8 bom in the file.

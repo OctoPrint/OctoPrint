@@ -1,7 +1,7 @@
 <div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
     Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
     this plugin won't be able to update it. Click on the <i class="fa fa-wrench"></i> button
-    to do this. Also refer to the <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+    to do this. Also refer to the <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
     <p>

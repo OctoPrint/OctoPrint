@@ -187,6 +187,7 @@ def getSettings():
 			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
 			"useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
 			"sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
+			"disableSdPrintingDetection": s.getBoolean(["serial", "disableSdPrintingDetection"]),
 			"ackMax": s.getInt(["serial", "ackMax"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
@@ -484,6 +485,7 @@ def _saveSettings(data):
 			if value in ("always", "detect", "never"):
 				s.set(["serial", "useParityWorkaround"], value)
 		if "sendM112OnError" in data["serial"]: s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
+		if "disableSdPrintingDetection" in data["serial"]: s.setBoolean(["serial", "disableSdPrintingDetection"], data["serial"]["disableSdPrintingDetection"])
 		if "ackMax" in data["serial"]: s.setInt(["serial", "ackMax"], data["serial"]["ackMax"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])

@@ -37,9 +37,9 @@ There you can adjust the following settings:
   * **OctoPrint Release Channel** (if tracking releases): The release channel of OctoPrint to track for updates. If you only want stable versions,
     select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
     candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
-    "Stable". `Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`_.
+    "Stable". `Read more about Release Channels here <https://community.octoprint.org/t/how-to-use-the-release-channels-to-help-test-release-candidates/402>`_.
   * **OctoPrint checkout folder** (if tracking git commits): This must be the path to OctoPrint's git checkout folder
-    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_).
+    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspbian/2337/>`_).
     Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
     want to be able to update against some bleeding edge git branch.
   * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
@@ -133,7 +133,7 @@ Configuring the Plugin
            user: foosel
            repo: OctoPrint
            method: pip
-           pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+           pip: 'https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip'
 
          # further checks may be defined here
 
@@ -273,7 +273,7 @@ Update methods
               user: foosel
               repo: OctoPrint
               method: pip
-              pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+              pip: 'https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip'
               update_script: '{python} "/path/to/octoprint-update.py" --python="{python}" "{folder}" "{target}"'
               checkout_folder: /path/to/octoprint/checkout/folder
 

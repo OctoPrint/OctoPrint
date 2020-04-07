@@ -61,7 +61,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
                    octoprint.plugin.BlueprintPlugin,
-                   octoprint.plugin.StartupPlugin):
+                   octoprint.plugin.StartupPlugin,
+                   octoprint.plugin.WizardPlugin):
 
 	_pip_caller = None
 
@@ -99,7 +100,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="settings", name=gettext("Backup & Restore"))]
+		return [dict(type="settings", name=gettext("Backup & Restore")),
+		        dict(type="wizard", name=gettext("Restore Backup?"))]
 
 	##~~ BlueprintPlugin
 
@@ -210,9 +212,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		return NO_CONTENT
 
 	@octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
-	@no_firstrun_access
-	@Permissions.PLUGIN_BACKUP_ACCESS.require(403)
 	def perform_restore(self):
+		if not Permissions.PLUGIN_BACKUP_ACCESS.can() and not self._settings.global_get(["server", "firstRun"]):
+			return flask.abort(403)
+
 		if not is_os_compatible(["!windows"]):
 			return flask.make_response("Invalid request, the restores are not supported on the underlying operating system", 400)
 
@@ -324,6 +327,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 	def is_blueprint_protected(self):
 		return False
+
+	##~~ WizardPlugin
+
+	def is_wizard_required(self):
+		return self._settings.global_get(["server", "firstRun"])
+
+	def get_wizard_details(self):
+		return dict(required=self.is_wizard_required())
 
 	##~~ tornado hook
 
@@ -796,11 +807,24 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				try:
 					if callable(on_log_progress):
 						on_log_progress("Unpacking backup to {}...".format(temp))
+
 					abstemp = os.path.abspath(temp)
+					dirs = {}
 					for member in zip.infolist():
 						abspath = os.path.abspath(os.path.join(temp, member.filename))
 						if abspath.startswith(abstemp):
+							date_time = time.mktime(member.date_time + (0, 0, -1))
+
 							zip.extract(member, temp)
+
+							if os.path.isdir(abspath):
+								dirs[abspath] = date_time
+							else:
+								os.utime(abspath, (date_time, date_time))
+
+					# set time on folders
+					for abspath, date_time in dirs.items():
+						os.utime(abspath, (date_time, date_time))
 
 					# sanity check
 					configfile = os.path.join(temp, "basedir", "config.yaml")
@@ -929,6 +953,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			os.remove(path)
 
 		# restart server
+		if not restart_command:
+			restart_command = configdata.get("server", dict()).get("commands", dict()).get("serverRestartCommand")
+
 		if restart_command:
 			import sarge
 
@@ -949,6 +976,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			if callable(on_restore_done):
 				on_restore_done(path)
+			if callable(on_log_error):
+				on_log_error("No restart command configured. Please restart OctoPrint manually.")
 
 		return True
 

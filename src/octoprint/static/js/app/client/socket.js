@@ -120,6 +120,12 @@
             url += "/";
         }
 
+        var timeout = self.options.connectTimeout;
+        if (opts.hasOwnProperty("connectTimeout")) {
+            timeout = opts.connectTimeout;
+            delete opts.connectTimeout;
+        }
+
         var onOpen = function() {
             self.reconnecting = false;
             self.reconnectTrial = 0;
@@ -155,9 +161,11 @@
         if (self.connectTimeout) {
             clearTimeout(self.connectTimeout);
         }
-        self.connectTimeout = setTimeout(function() {
-            self.onConnectTimeout();
-        }, self.options.connectTimeout);
+        if (timeout > 0) {
+            self.connectTimeout = setTimeout(function() {
+                self.onConnectTimeout();
+            }, timeout);
+        }
 
         self.socket = new SockJS(url + "sockjs", undefined, opts);
         self.socket.onopen = onOpen;

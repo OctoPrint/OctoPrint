@@ -23,6 +23,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.settings import settings
 from octoprint.filemanager import full_extension_tree, get_all_extensions
 from octoprint.util import to_unicode, to_bytes, sv
+from octoprint.util.version import get_python_version_string
 
 import re
 import base64
@@ -198,6 +199,12 @@ def index():
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
 	enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
+	enable_sd_support = settings().get(["feature", "sdSupport"])
+	enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"]))
+	enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
+	gcode_mobile_threshold = settings().get(["gcodeViewer", "mobileSizeThreshold"])
+	gcode_threshold = settings().get(["gcodeViewer", "sizeThreshold"])
+	sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
@@ -216,6 +223,12 @@ def index():
 	                           enable_gcodeviewer,
 	                           enable_timelapse,
 	                           enable_loading_animation,
+	                           enable_sd_support,
+	                           enable_webcam,
+	                           enable_temperature_graph,
+	                           gcode_mobile_threshold,
+	                           gcode_threshold,
+	                           sockjs_connect_timeout,
 	                           wizard_active(_templates.get(locale))] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
 	                                                                                           to_unicode(v, errors="replace"))
 	                                                                           for k, v in _plugin_vars.items()])
@@ -241,19 +254,6 @@ def index():
 		def cache_key():
 			return _cache_key(key, additional_key_data=additional_key_data)
 
-		def check_etag_and_lastmodified():
-			files = collect_files()
-			lastmodified = compute_lastmodified(files)
-			lastmodified_ok = util.flask.check_lastmodified(lastmodified)
-			etag_ok = util.flask.check_etag(compute_etag(files=files,
-			                                             lastmodified=lastmodified,
-			                                             additional=[cache_key()] + additional_etag))
-			return lastmodified_ok and etag_ok
-
-		def validate_cache(cached):
-			etag_different = compute_etag(additional=[cache_key()] + additional_etag) != cached.get_etag()[0]
-			return force_refresh or etag_different
-
 		def collect_files():
 			if callable(custom_files):
 				try:
@@ -263,12 +263,10 @@ def index():
 				except Exception:
 					_logger.exception("Error while trying to retrieve tracked files for plugin {}".format(key))
 
-			templates = _get_all_templates()
-			assets = _get_all_assets()
-			translations = _get_all_translationfiles(g.locale.language if g.locale else "en",
+			files = _get_all_templates()
+			files += _get_all_assets()
+			files += _get_all_translationfiles(g.locale.language if g.locale else "en",
 			                                         "messages")
-
-			files = templates + assets + translations
 
 			if callable(additional_files):
 				try:
@@ -280,7 +278,7 @@ def index():
 
 			return sorted(set(files))
 
-		def compute_lastmodified(files=None):
+		def compute_lastmodified(files):
 			if callable(custom_lastmodified):
 				try:
 					lastmodified = custom_lastmodified()
@@ -289,11 +287,9 @@ def index():
 				except Exception:
 					_logger.exception("Error while trying to retrieve custom LastModified value for plugin {}".format(key))
 
-			if files is None:
-				files = collect_files()
 			return _compute_date(files)
 
-		def compute_etag(files=None, lastmodified=None, additional=None):
+		def compute_etag(files, lastmodified, additional=None):
 			if callable(custom_etag):
 				try:
 					etag = custom_etag()
@@ -302,10 +298,6 @@ def index():
 				except Exception:
 					_logger.exception("Error while trying to retrieve custom ETag value for plugin {}".format(key))
 
-			if files is None:
-				files = collect_files()
-			if lastmodified is None:
-				lastmodified = compute_lastmodified(files)
 			if lastmodified and not isinstance(lastmodified, basestring):
 				from werkzeug.http import http_date
 				lastmodified = http_date(lastmodified)
@@ -317,6 +309,7 @@ def index():
 			def hash_update(value):
 				hash.update(to_bytes(value, encoding="utf-8", errors="replace"))
 			hash_update(octoprint.__version__)
+			hash_update(get_python_version_string())
 			hash_update(",".join(sorted(files)))
 			if lastmodified:
 				hash_update(lastmodified)
@@ -324,9 +317,22 @@ def index():
 				hash_update(add)
 			return hash.hexdigest()
 
+		current_files = collect_files()
+		current_lastmodified = compute_lastmodified(current_files)
+		current_etag = compute_etag(files=current_files, lastmodified=current_lastmodified,
+			                        additional=[cache_key()] + additional_etag)
+
+		def check_etag_and_lastmodified():
+			lastmodified_ok = util.flask.check_lastmodified(current_lastmodified)
+			etag_ok = util.flask.check_etag(current_etag)
+			return lastmodified_ok and etag_ok
+
+		def validate_cache(cached):
+			return force_refresh or (current_etag != cached.get_etag()[0])
+
 		decorated_view = view
-		decorated_view = util.flask.lastmodified(lambda _: compute_lastmodified())(decorated_view)
-		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=[cache_key()] + additional_etag))(decorated_view)
+		decorated_view = util.flask.lastmodified(lambda _: current_lastmodified)(decorated_view)
+		decorated_view = util.flask.etagged(lambda _: current_etag)(decorated_view)
 		decorated_view = util.flask.cached(timeout=-1,
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
@@ -378,14 +384,15 @@ def index():
 		                                   _plugin_vars,
 		                                   now)
 		render_kwargs.update(dict(
-			enableWebcam=settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"])),
-			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
+			enableWebcam=enable_webcam,
+			enableTemperatureGraph=enable_temperature_graph,
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
 			enableLoadingAnimation=enable_loading_animation,
-			enableSdSupport=settings().get(["feature", "sdSupport"]),
-			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+			enableSdSupport=enable_sd_support,
+			gcodeMobileThreshold=gcode_mobile_threshold,
+			gcodeThreshold=gcode_threshold,
+			sockJsConnectTimeout=sockjs_connect_timeout * 1000,
 			wizard=wizard,
 			now=now,
 		))
@@ -476,6 +483,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		debug=debug,
 		firstRun=first_run,
 		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
+		python_version=get_python_version_string(),
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
@@ -963,9 +971,21 @@ def _compute_date_for_i18n(locale, domain):
 
 
 def _compute_date(files):
+	# Note, we do not expect everything in 'files' to exist.
 	from datetime import datetime
-	timestamps = list(map(lambda path: os.stat(path).st_mtime, files)) + [0] if files else []
-	max_timestamp = max(*timestamps) if timestamps else None
+	import stat
+	max_timestamp = 0
+	for path in files:
+		try:
+			# try to stat file. If an exception is thrown, its because it does not exist.
+			s = os.stat(path)
+			if stat.S_ISREG(s.st_mode) and s.st_mtime > max_timestamp:
+				# is a regular file and has a newer timestamp
+				max_timestamp = s.st_mtime
+		except Exception:
+			# path does not exist.
+			continue
+
 	if max_timestamp:
 		# we set the micros to 0 since microseconds are not speced for HTTP
 		max_timestamp = datetime.fromtimestamp(max_timestamp).replace(microsecond=0)
@@ -991,22 +1011,14 @@ def _get_all_templates():
 
 def _get_all_assets():
 	from octoprint.util.jinja import get_all_asset_paths
-	return get_all_asset_paths(app.jinja_env.assets_environment)
+	return get_all_asset_paths(app.jinja_env.assets_environment, verifyExist=False)
 
 
 def _get_all_translationfiles(locale, domain):
 	from flask import _request_ctx_stack
 
 	def get_po_path(basedir, locale, domain):
-		path = os.path.join(basedir, locale)
-		if not os.path.isdir(path):
-			return None
-
-		path = os.path.join(path, "LC_MESSAGES", "{domain}.po".format(**locals()))
-		if not os.path.isfile(path):
-			return None
-
-		return path
+		return os.path.join(basedir, locale, "LC_MESSAGES", "{domain}.po".format(**locals()))
 
 	po_files = []
 
@@ -1018,13 +1030,7 @@ def _get_all_translationfiles(locale, domain):
 	for name, plugin in plugins.items():
 		dirs = [os.path.join(user_plugin_path, name), os.path.join(plugin.location, 'translations')]
 		for dirname in dirs:
-			if not os.path.isdir(dirname):
-				continue
-
-			po_file = get_po_path(dirname, locale, domain)
-			if po_file:
-				po_files.append(po_file)
-				break
+			po_files.append(get_po_path(dirname, locale, domain))
 
 	# core translations
 	ctx = _request_ctx_stack.top
@@ -1032,10 +1038,7 @@ def _get_all_translationfiles(locale, domain):
 
 	dirs = [user_base_path, base_path]
 	for dirname in dirs:
-		po_file = get_po_path(dirname, locale, domain)
-		if po_file:
-			po_files.append(po_file)
-			break
+		po_files.append(get_po_path(dirname, locale, domain))
 
 	return po_files
 

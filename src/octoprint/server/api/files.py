@@ -41,7 +41,11 @@ def _clear_file_cache():
 		_file_cache.clear()
 
 def _create_lastmodified(path, recursive):
-	if path.endswith("/files"):
+	path = path[len("/api/files"):]
+	if path.startswith("/"):
+		path = path[1:]
+
+	if path == "":
 		# all storages involved
 		lms = [0]
 		for storage in fileManager.registered_storages:
@@ -58,16 +62,13 @@ def _create_lastmodified(path, recursive):
 		# if we reach this point, we return the maximum of all dates
 		return max(lms)
 
-	elif path.endswith("/files/local"):
-		# only local storage involved
-		try:
-			return fileManager.last_modified(FileDestinations.LOCAL, recursive=recursive)
-		except Exception:
-			logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(FileDestinations.LOCAL))
-			return None
-
 	else:
-		return None
+		storage, path_in_storage = path.split("/", 1)
+		try:
+			return fileManager.last_modified(storage, path=path_in_storage, recursive=recursive)
+		except Exception:
+			logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {} and path {}".format(storage, path_in_storage))
+			return None
 
 
 def _create_etag(path, filter, recursive, lm=None):
@@ -85,7 +86,16 @@ def _create_etag(path, filter, recursive, lm=None):
 	hash_update(str(filter))
 	hash_update(str(recursive))
 
-	if path.endswith("/files") or path.endswith("/files/sdcard"):
+	path = path[len("/api/files"):]
+	if path.startswith("/"):
+		path = path[1:]
+
+	if "/" in path:
+		storage, _ = path.split("/", 1)
+	else:
+		storage = path
+
+	if path == "" or storage == FileDestinations.SDCARD:
 		# include sd data in etag
 		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x[0]))))
 
@@ -141,6 +151,30 @@ def readGcodeFilesForOrigin(origin):
 		return jsonify(files=files)
 
 
+@api.route("/files/<string:target>/<path:filename>", methods=["GET"])
+@Permissions.FILES_LIST.require(403)
+@with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("filter", False),
+                                                                      request.values.get("recursive", False),
+                                                                      lm=lm),
+                            lastmodified_factory=lambda: _create_lastmodified(request.path,
+                                                                              request.values.get("recursive", False)),
+                            unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
+def readGcodeFile(target, filename):
+	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+		return make_response("Unknown target: %s" % target, 404)
+
+	recursive = False
+	if "recursive" in request.values:
+		recursive = request.values["recursive"] in valid_boolean_trues
+
+	file = _getFileDetails(target, filename, recursive=recursive)
+	if not file:
+		return make_response("File not found on '%s': %s" % (target, filename), 404)
+
+	return jsonify(file)
+
+
 def _getFileDetails(origin, path, recursive=True):
 	parent, path = os.path.split(path)
 	files = _getFileList(origin, path=parent, recursive=recursive)
@@ -188,9 +222,10 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 		with _file_cache_mutex:
 			cache_key = "{}:{}:{}:{}".format(origin, path, recursive, filter)
 			files, lastmodified = _file_cache.get(cache_key, ([], None))
-			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
+			# recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
+			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=True):
 				files = list(fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values())
-				lastmodified = fileManager.last_modified(origin, path=path, recursive=recursive)
+				lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
 				_file_cache[cache_key] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
@@ -468,23 +503,6 @@ def uploadGcodeFile(target):
 
 	else:
 		return make_response("No file to upload and no folder to create", 400)
-
-
-@api.route("/files/<string:target>/<path:filename>", methods=["GET"])
-@Permissions.FILES_LIST.require(403)
-def readGcodeFile(target, filename):
-	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-		return make_response("Unknown target: %s" % target, 404)
-
-	recursive = False
-	if "recursive" in request.values:
-		recursive = request.values["recursive"] in valid_boolean_trues
-
-	file = _getFileDetails(target, filename, recursive=recursive)
-	if not file:
-		return make_response("File not found on '%s': %s" % (target, filename), 404)
-
-	return jsonify(file)
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
