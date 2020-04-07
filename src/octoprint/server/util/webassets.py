@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import logging
 import gzip
+import os
 import re
 
 try:
@@ -129,6 +130,11 @@ class GzipFile(Filter):
 				logging.getLogger(__name__).exception("Error writing gzipped "
 				                                      "output of {} to {}".format(output_path,
 				                                                                  gzipped_output_path))
+				try:
+					os.remove(gzipped_output_path)
+				except Exception:
+					logging.getLogger(__name__).exception("Error removing broken "
+					                                      ".gz from {}".format(gzipped_output_path))
 
 
 class ChainedHunk(BaseHunk):
