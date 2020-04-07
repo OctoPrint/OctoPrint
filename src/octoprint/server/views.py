@@ -680,6 +680,7 @@ def fetch_template_data(refresh=False):
 
 	plugin_vars = dict()
 	plugin_names = set()
+	plugin_aliases = dict()
 	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else dict()
 	for implementation in template_plugins:
 		name = implementation._identifier
@@ -712,6 +713,7 @@ def fetch_template_data(refresh=False):
 			includes["wizard"] = list()
 
 		for t in template_types:
+			plugin_aliases[t] = dict()
 			for include in includes[t]:
 				if t == "navbar" or t == "generic":
 					data = include
@@ -721,6 +723,7 @@ def fetch_template_data(refresh=False):
 				key = data["_key"]
 				if "replaces" in data:
 					key = data["replaces"]
+					plugin_aliases[t][data["_key"]] = data["replaces"]
 				templates[t]["entries"][key] = include
 
 	#~~ order internal templates and plugins
@@ -735,7 +738,13 @@ def fetch_template_data(refresh=False):
 		configured_disabled = settings().get(["appearance", "components", "disabled", t]) or []
 
 		# first create the ordered list of all component ids according to the configured order
-		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
+		result = []
+		for x in configured_order:
+			if x in plugin_aliases[t]:
+				x = plugin_aliases[t][x]
+			if x in templates[t]["entries"] and not x in configured_disabled and not x in result:
+				result.append(x)
+		templates[t]["order"] = result
 
 		# now append the entries from the default order that are not already in there
 		templates[t]["order"] += [x for x in default_order if not x in templates[t]["order"] and x in templates[t]["entries"] and not x in configured_disabled]
