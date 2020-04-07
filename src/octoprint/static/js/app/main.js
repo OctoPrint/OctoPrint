@@ -1,6 +1,9 @@
 $(function() {
         OctoPrint = window.OctoPrint;
 
+        // show page loading overlay (if enabled)
+        $("#page-container-loading").show();
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
