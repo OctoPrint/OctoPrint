@@ -242,6 +242,30 @@ future import:
 
    from __future__ import absolute_imports
 
+Explicit imports
+................
+
+Sometimes it is necessary to use an import statement that is explicitly related to a specific python version.
+You can do this in differnt ways:
+
+.. code-block:: python
+
+   try:
+      import queue
+   except ImportError:
+      import Queue as queue
+
+or 
+
+.. code-block:: python
+
+   import sys
+   is_py2 = sys.version[0] == '2'
+   if is_py2:
+      import Queue as queue
+   else:
+      import queue as queue
+
 You can read more about this specific issue in the
 `cheat sheet <https://python-future.org/compatible_idioms.html#imports-relative-to-a-package>`__ and also in
 `the book <http://python3porting.com/problems.html#relative-import-problems>`__.
