@@ -49,8 +49,8 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	    encoding (string): default 'utf-8'
 	    errors (string): The errors argument is the same as the argument of the decode() method but supports a few more possible handlers. 
 	        As well as 'strict', 'ignore', and 'replace' (which in this case inserts a question mark instead of the unencodable character), 
-	        there is also 'xmlcharrefreplace' (inserts an XML character reference), backslashreplace (inserts a \uNNNN escape sequence) 
-	        and namereplace (inserts a \N{...} escape sequence). 	
+	        there is also 'xmlcharrefreplace' (inserts an XML character reference), backslashreplace (inserts a \\uNNNN escape sequence) 
+	        and namereplace (inserts a \\N{...} escape sequence). 	
 	Returns:
 	    bytes: converted bytes.
 	"""
@@ -76,7 +76,7 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	    encoding (string): default 'utf-8'
 	    errors (string): The errors argument specifies the response when the input string can’t be converted according to the encoding’s rules. 
 	        Legal values for this argument are 'strict' (raise a UnicodeDecodeError exception), 'replace' (use U+FFFD, REPLACEMENT CHARACTER), 
-	        'ignore' (just leave the character out of the Unicode result), or 'backslashreplace' (inserts a \xNN escape sequence). 	
+	        'ignore' (just leave the character out of the Unicode result), or 'backslashreplace' (inserts a \\xNN escape sequence). 	
 	Returns:
 	    string: converted string.
 	"""
