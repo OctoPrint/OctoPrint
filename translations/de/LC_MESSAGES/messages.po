@@ -3564,7 +3564,7 @@ msgstr "Violett"
 #: src/octoprint/static/js/app/viewmodels/settings.js:74
 #: src/octoprint/static/js/app/viewmodels/settings.js:94
 msgid "white"
-msgstr "weiß"
+msgstr "Weiß"
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:105
 msgid "Autodetect from browser"
