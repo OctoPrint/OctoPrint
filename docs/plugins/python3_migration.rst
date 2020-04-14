@@ -218,7 +218,7 @@ You can read more about this specific issue in the corresponding section of the
 `Python porting guide <https://docs.python.org/3/howto/pyporting.html#text-versus-binary-data>`__ and also in the
 `cheat sheet <https://python-future.org/compatible_idioms.html#strings-and-bytes>`__.
 
-.. _sec-plugins-python3-pitfalls-imports:
+.. _sec-plugins-python3-pitfalls-absolute-imports:
 
 Absolute imports
 ................
@@ -242,11 +242,18 @@ future import:
 
    from __future__ import absolute_imports
 
-Explicit imports
-................
+You can read more about this specific issue in the
+`cheat sheet <https://python-future.org/compatible_idioms.html#imports-relative-to-a-package>`__ and also in
+`the book <http://python3porting.com/problems.html#relative-import-problems>`__.
 
-Sometimes it is necessary to use an import statement that is explicitly related to a specific python version.
-You can do this in differnt ways:
+.. _sec-plugins-python3-pitfalls-version-specific-imports:
+
+Version specific imports
+........................
+
+Sometimes it is necessary to use an import statement that is explicitly related to a specific Python version, e.g. due to
+a package change between Python 2 and 3. You can do this by first trying the Python 3 import and if that doesn't work
+out trying the Python 2 import instead:
 
 .. code-block:: python
 
@@ -255,20 +262,16 @@ You can do this in differnt ways:
    except ImportError:
       import Queue as queue
 
-or 
+This should be the preferred method of handling situations like this. If you actually do need to do explicit version
+specific imports that cannot be handled this way, you can check for the Python version like this:
 
 .. code-block:: python
 
    import sys
-   is_py2 = sys.version[0] == '2'
-   if is_py2:
-      import Queue as queue
+   if sys.version[0] == '2':
+      # Python 2 specific imports
    else:
-      import queue as queue
-
-You can read more about this specific issue in the
-`cheat sheet <https://python-future.org/compatible_idioms.html#imports-relative-to-a-package>`__ and also in
-`the book <http://python3porting.com/problems.html#relative-import-problems>`__.
+      # Python 3 specific imports
 
 .. _sec-plugins-python3-pitfalls-intdiv:
 
