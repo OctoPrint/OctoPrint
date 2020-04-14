@@ -983,9 +983,13 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		if "cookie" in self.request.arguments:
 			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
 
-		if self.should_use_precompressed() and os.path.exists(os.path.join(self.root, path + ".gz")):
-			self.set_header("Content-Encoding", "gzip")
-			path = path + ".gz"
+		if self.should_use_precompressed():
+			if os.path.exists(os.path.join(self.root, path + ".gz")):
+				self.set_header("Content-Encoding", "gzip")
+				path = path + ".gz"
+			else:
+				logging.getLogger(__name__).warn("Precompressed assets expected but {}.gz does not exist "
+				                                 "in {}, using plain file instead.".format(path, self.root))
 
 		return tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 
