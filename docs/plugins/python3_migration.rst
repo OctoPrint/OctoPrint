@@ -70,7 +70,7 @@ Then create an editable install of your plugin, start the server and start testi
 
 .. note::
 
-   If you want to migrate your existing OctoPrint install *on OctoPi* to Python 3, I suggest to first make a
+   If you want to migrate your existing OctoPrint install *on OctoPi 0.17.0* to Python 3, I suggest to first make a
    :ref:`backup <sec-bundledplugins-backup>`, then move the existing venv ``/home/pi/oprint`` out of the way and
    create a new one based on Python 3 (which should already be present on current OctoPi images):
 
@@ -79,7 +79,7 @@ Then create an editable install of your plugin, start the server and start testi
       mv ~/oprint ~/oprint.py2
       virtualenv --python=/usr/bin/python3 oprint
       source ~/oprint/bin/activate
-      pip install "OctoPrint>=1.4.0rc1"
+      pip install "OctoPrint>=1.4.0"
       sudo service octoprint restart
 
 .. _sec-plugins-python3-markup:
