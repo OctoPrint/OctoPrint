@@ -19,7 +19,7 @@ below.
 
   * Checkout the OctoPrint sources from their Git repository:
 
-      * ``git clone -b devel https://github.com/OctoPrint/OctoPrint.git``
+      * ``git clone https://github.com/OctoPrint/OctoPrint.git``
 
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
@@ -28,6 +28,12 @@ below.
 
     * PY2: ``virtualenv --python=python2 venv2``
     * PY3: ``virtualenv --python=python3 venv3``
+
+    .. note::
+
+       This assumes that `python2` and `python3` are binaries available directly on your ``PATH``. If your Python 2 and 3
+       binaries cannot be found on your ``PATH`` like this you'll need to specify the full paths to them here,
+       e.g. ``virtualenv --python=/path/to/python2/bin/python venv2``
 
   * Activate one of the virtual environments:
 
@@ -214,27 +220,41 @@ PyCharm
   - Add Run/Debug Configuration, select "Python":
 
     * Name: OctoPrint server
-    * Script: path to ``run`` in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/run`` or ``C:\Devel\OctoPrint\run``)
-    * Script parameters: ``serve --debug``
+    * Module name: ``octoprint``
+    * Module parameters: ``serve --debug``
     * Project: ``OctoPrint``
     * Python interpreter: the ``venv`` local virtual environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-    * If you want dependencies to auto-update on run if necessary: "Before Launch" > "+" > "Run external tool" > "+"
+    * If you want build artifacts to be cleaned up on run (recommended): "Before Launch" > "+" > "Run external tool" > "+"
 
-      * Name: Update OctoPrint dependencies
-      * Program: ``$PyInterpreterDirectory$/pip`` (or ``$PyInterpreterDirectory$/pip.exe`` on Windows)
-      * Parameters: ``install -e .[develop,plugins]``
+      * Name: Clean build directory
+      * Program: ``$ModuleSdkPath$``
+      * Parameters: ``setup.py clean``
       * Working directory: ``$ProjectFileDir$``
 
-  - Add Run/Debug Configuration, select "Python tests" and therein "Nosetests":
+    * If you want dependencies to auto-update on run if necessary (recommended): "Before Launch" > "+" > "Run external tool" > "+"
 
-    * Name: OctoPrint nosetests
-    * Target: Path, ``.``
+      * Name: Update OctoPrint dependencies
+      * Program: ``$ModuleSdkPath$``
+      * Parameters: ``-m pip install -e .[develop,plugins]``
+      * Working directory: ``$ProjectFileDir$``
+
+  - Add Run/Debug Configuration, select "Python tests" and therein "pytest":
+
+    * Name: OctoPrint pytest
+    * Target: Custom
     * Project: ``OctoPrint``
     * Python interpreter: the ``venv`` local virtual environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * Just like with the run configuration for the server you can also have the dependencies auto-update on run of
       the tests, see above on how to set this up.
+
+  - Add Run/Debug Configuration, select "tox":
+
+    * Name: OctoPrint tox
+    * Target: Custom
+    * Project: ``OctoPrint``
+    * Python interpreter: the ``venv`` local virtual environment
 
   - Add Run/Debug Configuration, select "Python docs" and therein "Sphinx task"
 

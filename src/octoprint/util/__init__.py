@@ -41,7 +41,16 @@ logger = logging.getLogger(__name__)
 
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> bytes
-	"""Make sure ``s_or_u`` is a bytestring."""
+	"""
+	Make sure ``s_or_u`` is a byte string.
+
+	Arguments:
+	    s_or_u (string or unicode): The value to convert
+	    encoding (string): encoding to use if necessary, see :meth:`python:str.encode`
+	    errors (string): error handling to use if necessary, see :meth:`python:str.encode`
+	Returns:
+	    bytes: converted bytes.
+	"""
 	if s_or_u is None:
 		return s_or_u
 
@@ -56,7 +65,16 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> unicode
-	"""Make sure ``s_or_u`` is a unicode string."""
+	"""
+	Make sure ``s_or_u`` is a unicode string.
+
+	Arguments:
+	    s_or_u (string or unicode): The value to convert
+	    encoding (string): encoding to use if necessary, see :meth:`python:bytes.decode`
+	    errors (string): error handling to use if necessary, see :meth:`python:bytes.decode`
+	Returns:
+	    string: converted string.
+	"""
 	if s_or_u is None:
 		return s_or_u
 
@@ -71,7 +89,10 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_native_str(s_or_u):
 	# type: (Union[unicode, bytes]) -> str
-	"""Make sure ``s_or_u`` is a 'str'."""
+	"""
+	Make sure ``s_or_u`` is a native 'str' for the current Python version
+
+	Will ensure a byte string under Python 2 and a unicode string under Python 3."""
 	if sys.version_info[0] == 2:
 		return to_bytes(s_or_u)
 	else:
@@ -262,7 +283,9 @@ Returns:
 """
 
 
-to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
+to_str = deprecated("to_str has been renamed to to_bytes",
+                    includedoc="to_str has been renamed to to_bytes",
+                    since="1.3.11")(to_bytes)
 
 
 def get_formatted_size(num):
