@@ -35,8 +35,10 @@ needs_sphinx = '1.3'
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['codeblockext', 'onlineinclude', 'sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain',
-              'sphinx.ext.napoleon', 'sphinxcontrib.mermaid']
+              'sphinx.ext.napoleon', 'sphinxcontrib.mermaid', 'sphinx.ext.intersphinx']
 todo_include_todos = True
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'python2': ('https://docs.python.org/2', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
