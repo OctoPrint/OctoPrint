@@ -511,8 +511,9 @@ class OctoPrintFlaskResponse(flask.Response):
 			samesite = samesite.lower()
 		if samesite == "none":
 			samesite = None
-		if samesite in (None, "strict", "lax"):
-			kwargs["samesite"] = samesite
+		if samesite not in (None, "strict", "lax"):
+			samesite = None
+		kwargs["samesite"] = samesite
 
 		# set secure if necessary
 		kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
