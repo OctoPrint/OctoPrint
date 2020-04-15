@@ -1025,6 +1025,25 @@ Use the following settings to configure the server:
        - 192.168.1.254
        - 192.168.23.42
 
+     # Whether to allow OctoPrint to be embedded in a frame or not. Note that depending on your setup you might
+     # have to set SameSite to None, Secure to true and serve OctoPrint through a reverse proxy that enables https
+     # for cookies and thus logging in to work
+     allowFraming: true
+
+     # Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)
+     cookies:
+       # SameSite setting to use on the cookies. Possible values are None, Lax and Strict. Defaults to None but
+       # be advised that browsers will soon force this to Lax unless also being set as Secure and served over
+       # https, which will cause issues with embedding OctoPrint in frames.
+       #
+       # See also https://www.chromestatus.com/feature/5088147346030592,
+       # https://www.chromestatus.com/feature/5633521622188032 and issue #3482
+       samesite: lax
+
+       # Whether to set the Secure flag to true on cookies. Defaults to false. Only set to true if you are running
+       # OctoPrint behind a reverse proxy taking care of SSL termination.
+       secure: false
+
      # Settings for file uploads to OctoPrint, such as maximum allowed file size and
      # header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in
      # order to allow streaming of large file uploads to the application rather than just storing
@@ -1128,6 +1147,21 @@ Use the following settings to configure the server:
    If you use these headers OctoPrint will work both via the reverse proxy as well as when called directly. Take a look
    `into OctoPrint's wiki <https://community.octoprint.org/t/reverse-proxy-configuration-examples/1107>`_ for some
    examples on how to configure this.
+
+.. note::
+
+   If you want to embed OctoPrint in a frame, you'll need to set ``allowFraming`` to ``true`` or your browser will
+   prevent this.
+
+   In future browser builds you will also have to make sure you frame is on the same domain as OctoPrint or that
+   OctoPrint is served via https through a reverse proxy and has set ``cookies.secure`` to ``true`` or your browser
+   will refuse to persist cookies and logging in will not work.
+
+   See also `Cookies default to SameSite=Lax <https://www.chromestatus.com/feature/5088147346030592>`_ and
+   `Reject insecure SameSite=None cookies  <https://www.chromestatus.com/feature/5633521622188032>`_ as well as
+   `this ticket <https://github.com/OctoPrint/OctoPrint/issues/3482>`_,
+   and `this twitter thread <https://twitter.com/foosel/status/1022030752349913088>`_ on why OctoPrint cannot
+   solve this on its own/ship with https that doesn't cause scary warnings in your browser.
 
 .. _sec-configuration-config_yaml-slicing:
 

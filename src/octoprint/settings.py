@@ -223,7 +223,11 @@ default_settings = {
 			"enabled": True,
 			"trustedSubnets": []
 		},
-		"allowFraming": False
+		"allowFraming": False,
+		"cookies": {
+			"secure": False,
+			"samesite": None
+		},
 	},
 	"webcam": {
 		"webcamEnabled": True,
@@ -410,7 +414,8 @@ default_settings = {
 		},
 		"webassets": {
 			"bundle": True,
-			"clean_on_startup": True
+			"clean_on_startup": True,
+			"minify": True
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,

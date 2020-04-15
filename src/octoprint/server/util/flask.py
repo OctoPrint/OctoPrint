@@ -505,6 +505,18 @@ class OctoPrintFlaskResponse(flask.Response):
 		# restrict cookie path to script root
 		kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
 
+		# set same-site header
+		samesite = settings().get(["server", "cookies", "samesite"])
+		if samesite is not None:
+			samesite = samesite.lower()
+		if samesite == "none":
+			samesite = None
+		if samesite in (None, "strict", "lax"):
+			kwargs["samesite"] = samesite
+
+		# set secure if necessary
+		kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
+
 		# add request specific cookie suffix to name
 		flask.Response.set_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
 
