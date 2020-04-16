@@ -27,6 +27,11 @@ import octoprint.util
 
 from past.builtins import unicode
 
+try:
+	from urllib.parse import urlparse # py3
+except ImportError:
+	from urlparse import urlparse # py2
+
 from . import PY3
 
 def fix_json_encode():
@@ -43,6 +48,28 @@ def fix_json_encode():
 
 	import tornado.escape
 	tornado.escape.json_encode = fixed_json_encode
+
+
+def fix_websocket_check_origin():
+	"""
+	This fixes tornado.websocket.WebSocketHandler.check_origin to do the same origin check against the Host
+	header case-insensitively, as defined in RFC6454, Section 4, item 5.
+	"""
+
+	def patched_check_origin(self, origin):
+		def get_check_tuple(urlstring):
+			parsed = urlparse(urlstring)
+			return (parsed.scheme,
+			        parsed.hostname,
+			        parsed.port if parsed.port
+			        else 80 if parsed.scheme in ("http", "ws")
+			        else 443 if parsed.scheme in ("https", "wss")
+			        else None)
+
+		return get_check_tuple(origin) == get_check_tuple(self.request.full_url())
+
+	import tornado.websocket
+	tornado.websocket.WebSocketHandler.check_origin = patched_check_origin
 
 
 #~~ More sensible logging

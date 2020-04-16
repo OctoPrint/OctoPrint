@@ -282,6 +282,7 @@ class Server(object):
 
 		# monkey patch/fix some stuff
 		util.tornado.fix_json_encode()
+		util.tornado.fix_websocket_check_origin()
 		util.flask.fix_flask_jsonify()
 
 		self._setup_mimetypes()
