@@ -204,7 +204,8 @@ default_settings = {
 			"enabled": None,
 			"interval": 15 * 60, # 15 min
 			"host": "8.8.8.8",
-			"port": 53
+			"port": 53,
+			"name": "octoprint.org"
 		},
 		"pluginBlacklist": {
 			"enabled": None,

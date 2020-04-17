@@ -248,6 +248,7 @@ $(function() {
         self.server_onlineCheck_interval = ko.observable();
         self.server_onlineCheck_host = ko.observable();
         self.server_onlineCheck_port = ko.observable();
+        self.server_onlineCheck_name = ko.observable();
 
         self.server_pluginBlacklist_enabled = ko.observable();
         self.server_pluginBlacklist_url = ko.observable();
@@ -274,6 +275,14 @@ $(function() {
             self.server_onlineCheckText("");
             self.server_onlineCheckOk(false);
             self.server_onlineCheckBroken(false);
+        };
+        self.server_onlineCheckResolutionText = ko.observable();
+        self.server_onlineCheckResolutionOk = ko.observable(false);
+        self.server_onlineCheckResolutionBroken = ko.observable(false);
+        self.server_onlineCheckResolutionReset = function() {
+            self.server_onlineResolutionCheckText("");
+            self.server_onlineResolutionCheckOk(false);
+            self.server_onlineResolutionCheckBroken(false);
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
@@ -479,6 +488,27 @@ $(function() {
                 });
         };
 
+        self.testOnlineConnectivityResolutionConfigBusy = ko.observable(false);
+        self.testOnlineConnectivityResolutionConfig = function() {
+            if (!self.server_onlineCheck_name()) return;
+            if (self.testOnlineConnectivityResolutionConfigBusy()) return;
+
+            self.testOnlineConnectivityResolutionConfigBusy(true);
+            OctoPrint.util.testResolution(self.server_onlineCheck_name())
+                .done(function(response) {
+                    if (!response.result) {
+                        self.server_onlineCheckResolutionText(gettext("Name cannot be resolved"));
+                    } else {
+                        self.server_onlineCheckResolutionText(gettext("Name can be resolved"));
+                    }
+                    self.server_onlineCheckResolutionOk(response.result);
+                    self.server_onlineCheckResolutionBroken(!response.result);
+                })
+                .always(function() {
+                    self.testOnlineConnectivityResolutionConfigBusy(false);
+                });
+        };
+
         self.testFolderConfigBusy = ko.observable(false);
         self.testFolderConfig = function(folder) {
             var observable = "folder_" + folder;
@@ -520,6 +550,7 @@ $(function() {
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
             self.server_onlineCheckReset();
+            self.server_onlineCheckResolutionReset();
             self.testFolderConfigReset();
         };
 

@@ -559,15 +559,22 @@ def init_connectivity_checker(settings, event_manager):
 	connectivityInterval = settings.getInt(["server", "onlineCheck", "interval"])
 	connectivityHost = settings.get(["server", "onlineCheck", "host"])
 	connectivityPort = settings.getInt(["server", "onlineCheck", "port"])
+	connectivityName = settings.get(["server", "onlineCheck", "name"])
 
-	def on_connectivity_change(old_value, new_value):
-		event_manager.fire(Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
+	def on_connectivity_change(old_value, new_value, connection_working=None, resolution_working=None):
+		event_manager.fire(Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value,
+		                                                             new=new_value,
+		                                                             connection=connection_working,
+		                                                             resolution=resolution_working))
 
 	connectivityChecker = ConnectivityChecker(connectivityInterval,
 	                                          connectivityHost,
 	                                          port=connectivityPort,
+	                                          name=connectivityName,
 	                                          enabled=connectivityEnabled,
 	                                          on_change=on_connectivity_change)
+	connectivityChecker.check_immediately()
+	connectivityChecker.log_full_report()
 
 	return connectivityChecker
 

@@ -243,7 +243,8 @@ def getSettings():
 				"enabled": s.getBoolean(["server", "onlineCheck", "enabled"]),
 				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
 				"host": s.get(["server", "onlineCheck", "host"]),
-				"port": s.getInt(["server", "onlineCheck", "port"])
+				"port": s.getInt(["server", "onlineCheck", "port"]),
+				"name": s.get(["server", "onlineCheck", "name"])
 			},
 			"pluginBlacklist": {
 				"enabled": s.getBoolean(["server", "pluginBlacklist", "enabled"]),
@@ -562,6 +563,7 @@ def _saveSettings(data):
 					pass
 			if "host" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "host"], data["server"]["onlineCheck"]["host"])
 			if "port" in data["server"]["onlineCheck"]: s.setInt(["server", "onlineCheck", "port"], data["server"]["onlineCheck"]["port"])
+			if "name" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "name"], data["server"]["onlineCheck"]["name"])
 		if "pluginBlacklist" in data["server"]:
 			if "enabled" in data["server"]["pluginBlacklist"]: s.setBoolean(["server", "pluginBlacklist", "enabled"], data["server"]["pluginBlacklist"]["enabled"])
 			if "url" in data["server"]["pluginBlacklist"]: s.set(["server", "pluginBlacklist", "url"], data["server"]["pluginBlacklist"]["url"])

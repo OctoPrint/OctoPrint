@@ -187,7 +187,7 @@
 
    .. code-block:: javascript
 
-      OctoPrint.util.testUrl("127.0.0.1", 1234, {"protocol": "udp"})
+      OctoPrint.util.testServer("127.0.0.1", 1234, {"protocol": "udp"})
           .done(function(response) {
               if (response.result) {
                   // check passed
@@ -199,6 +199,30 @@
 
    :param string url: Host to test
    :param int port: Port to test
+   :param object additional: Additional parameters for the test command
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.util.testResolution(name, additional, opts)
+
+   Test if a host name can be resolved.
+
+   **Example**
+
+   Test if ``octoprint.org`` can be resolved.
+
+   .. code-block:: javascript
+
+      OctoPrint.util.testResolution("octoprint.org")
+          .done(function(response) {
+              if (response.result) {
+                  // check passed
+              } else {
+                  // check failed
+              }
+          });
+
+   :param string name: Host name to test
    :param object additional: Additional parameters for the test command
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response

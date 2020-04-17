@@ -346,11 +346,6 @@ class Server(object):
 		JsonEncoding.add_encoder(permissions.OctoPrintPermission, lambda obj: obj.as_dict())
 
 		# start regular check if we are connected to the internet
-		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
-		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
-		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
-		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
-
 		def on_connectivity_change(old_value, new_value):
 			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
 
@@ -362,15 +357,18 @@ class Server(object):
 			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
 			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
 			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+			connectivityName = self._settings.get(["server", "onlineCheck", "name"])
 
 			if connectivityChecker.enabled != connectivityEnabled \
 					or connectivityChecker.interval != connectivityInterval \
 					or connectivityChecker.host != connectivityHost \
-					or connectivityChecker.port != connectivityPort:
+					or connectivityChecker.port != connectivityPort \
+					or connectivityChecker.name != connectivityName:
 				connectivityChecker.enabled = connectivityEnabled
 				connectivityChecker.interval = connectivityInterval
 				connectivityChecker.host = connectivityHost
 				connectivityChecker.port = connectivityPort
+				connectivityChecker.name = connectivityName
 				connectivityChecker.check_immediately()
 
 		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)

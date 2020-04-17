@@ -55,6 +55,15 @@
         return this.test("server", data, opts);
     };
 
+    OctoPrintUtilClient.prototype.testResolution = function(name, additional, opts) {
+        additional = additional || {};
+
+        var data = $.extend({}, additional);
+        data.name = name;
+
+        return this.test("resolution", data, opts);
+    };
+
     OctoPrintClient.registerComponent("util", OctoPrintUtilClient);
     return OctoPrintUtilClient;
 });

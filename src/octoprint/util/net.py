@@ -9,6 +9,7 @@ import sys
 import netaddr
 import netifaces
 import logging
+import threading
 
 _cached_check_v6 = None
 def check_v6():
@@ -117,3 +118,76 @@ def unmap_v4_as_v6(address):
 		# ipv6 mapped ipv4 address, unmap
 		address = address[len("::ffff:"):]
 	return address
+
+
+def interface_addresses(family=None):
+	"""
+	Retrieves all of the host's network interface addresses.
+	"""
+
+	import netifaces
+	if not family:
+		family = netifaces.AF_INET
+
+	for interface in netifaces.interfaces():
+		try:
+			ifaddresses = netifaces.ifaddresses(interface)
+		except Exception:
+			continue
+		if family in ifaddresses:
+			for ifaddress in ifaddresses[family]:
+				if not ifaddress["addr"].startswith("169.254."):
+					yield ifaddress["addr"]
+
+
+def address_for_client(host, port, timeout=3.05):
+	"""
+	Determines the address of the network interface on this host needed to connect to the indicated client host and port.
+	"""
+
+	for address in interface_addresses():
+		try:
+			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
+				return address
+		except Exception:
+			continue
+
+
+def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
+	"""
+	Checks if a server is reachable
+
+	Args:
+		host (str): host to check against
+		port (int): port to check against
+		timeout (float): timeout for check
+		proto (str): ``tcp`` or ``udp``
+		source (str): optional, socket used for check will be bound against this address if provided
+
+	Returns:
+		boolean: True if a connection to the server could be opened, False otherwise
+	"""
+
+	import socket
+
+	if proto not in ("tcp", "udp"):
+		raise ValueError("proto must be either 'tcp' or 'udp'")
+
+	try:
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM)
+		sock.settimeout(timeout)
+		if source is not None:
+			sock.bind((source, 0))
+		sock.connect((host, port))
+		return True
+	except Exception:
+		return False
+
+def resolve_host(host):
+	import socket
+	from octoprint.util import to_unicode
+
+	try:
+		return [to_unicode(x[4][0]) for x in socket.getaddrinfo(host, 80)]
+	except Exception:
+		return []
