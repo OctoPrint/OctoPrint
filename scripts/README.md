@@ -4,14 +4,36 @@ Assumes OctoPrint is installed under user pi at /home/pi/OctoPrint/venv/bin/octo
 setup you'll need to adjust octoprint.default (init) or octoprint.service (systemd) accordingly.
 
 ## init
+Download the init.d files to the locations shown:
 
 ```
 octoprint.default   => /etc/default/octoprint
 octoprint.init      => /etc/init.d/octoprint
 ```
 
+Next, enable and start the `octoprint` service:
+
+```sh
+# Enable octoprint service
+sudo update-rc.d octoprint defaults
+
+# and start it
+sudo service octoprint start
+```
+
 ## systemd
+Download the systemd files to the locations shown:
 
 ```
 octoprint.service   => /etc/systemd/system/octoprint.service
+```
+
+Next, enable and start the `octoprint` service:
+
+```sh
+# Enable octoprint service
+sudo systemctl enable octoprint
+
+# and start it
+sudo systemctl start octoprint
 ```

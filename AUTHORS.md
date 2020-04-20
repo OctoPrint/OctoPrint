@@ -118,6 +118,7 @@ date of first contribution):
   * [Jim Neill](https://github.com/jneilliii)
   * [Dustin Kerber](https://github.com/kerber)
   * [Tobias Schürg](https://github.com/tobiasschuerg)
+  * [Josh Friend](https://github.com/joshfriend)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
