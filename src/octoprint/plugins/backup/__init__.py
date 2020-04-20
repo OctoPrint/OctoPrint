@@ -965,7 +965,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				on_restore_done(path)
 
 			try:
-				sarge.run(restart_command, async_=True)
+				sarge.run(restart_command, close_fds=True, async_=True)
 			except Exception:
 				if callable(on_log_error):
 					on_log_error("Error while restarting via command {}".format(restart_command),

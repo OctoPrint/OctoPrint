@@ -18,6 +18,7 @@ import pkg_resources
 
 from .commandline import CommandlineCaller, clean_ansi
 from octoprint.util import to_unicode, to_native_str
+from octoprint.util.platform import CLOSE_FDS
 
 _cache = dict(version=dict(), setup=dict())
 _cache_mutex = threading.RLock()
@@ -258,7 +259,7 @@ class PipCaller(CommandlineCaller):
 		            [sys.executable, "-c", "import sys; sys.argv = ['pip'] + sys.argv[1:]; import pip; pip.main()"]]
 
 		for command in commands:
-			p = sarge.run(command + ["--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
+			p = sarge.run(command + ["--version"], close_fds=CLOSE_FDS, stdout=sarge.Capture(), stderr=sarge.Capture())
 			if p.returncode == 0:
 				logging.getLogger(__name__).info("Using \"{}\" as command to invoke pip".format(" ".join(command)))
 				return command
@@ -289,7 +290,7 @@ class PipCaller(CommandlineCaller):
 				return _cache["version"][pip_command_str]
 
 			sarge_command = self.to_sarge_command(pip_command, "--version")
-			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
+			p = sarge.run(sarge_command, close_fds=CLOSE_FDS, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
 				self._logger.warning("Error while trying to run pip --version: {}".format(p.stderr.text))
@@ -367,6 +368,7 @@ class PipCaller(CommandlineCaller):
 					# our testballoon is no real package, so this command will fail - that's ok though,
 					# we only need the output produced within the pip environment
 					sarge.run(sarge_command,
+					          close_fds=CLOSE_FDS,
 					          stdout=sarge.Capture(),
 					          stderr=sarge.Capture(),
 					          cwd=testballoon,

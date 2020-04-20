@@ -21,6 +21,7 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, get_remote_address
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
+from octoprint.util.platform import CLOSE_FDS
 
 @api.route("/system/usage", methods=["GET"])
 @no_firstrun_access
@@ -115,6 +116,7 @@ def executeSystemCommand(source, command):
 			# our admin configured as command and since we want to allow
 			# shell-alike handling here...
 			p = sarge.run(command_spec["command"],
+			              close_fds=CLOSE_FDS,
 			              stdout=sarge.Capture(),
 			              stderr=sarge.Capture(),
 			              shell=True)

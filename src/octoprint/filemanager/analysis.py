@@ -20,6 +20,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import monotonic_time
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util.platform import CLOSE_FDS
 
 
 class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile, analysis")):
@@ -370,7 +371,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
 
 			self._aborted = False
-			p = sarge.run(command, async_=True, stdout=sarge.Capture())
+			p = sarge.run(command, close_fds=CLOSE_FDS, async_=True, stdout=sarge.Capture())
 
 			while len(p.commands) == 0:
 				# somewhat ugly... we can't use wait_events because
