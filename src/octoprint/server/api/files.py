@@ -535,6 +535,9 @@ def gcodeFileCommand(filename, target):
 			if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
 				return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
 
+			if not printer.is_ready():
+				return make_response("Printer is already printing, cannot select a new file", 409)
+
 			printAfterLoading = False
 			if "print" in data and data["print"] in valid_boolean_trues:
 				with Permissions.PRINT.require(403):

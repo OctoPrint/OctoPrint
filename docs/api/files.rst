@@ -572,7 +572,8 @@ Issue a file command
        is not operational when this parameter is present and set to ``true``, the request will fail with a response
        of ``409 Conflict``.
 
-     Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+     Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If there already is an
+     active print job, a :http:statuscode:`409` is returned.
 
      Requires the ``FILES_SELECT`` permission.
 
@@ -768,7 +769,8 @@ Issue a file command
    :statuscode 400:             If the ``command`` is unknown or the request is otherwise invalid
    :statuscode 415:             If a ``slice`` command was issued against something other than an STL file.
    :statuscode 404:             If ``location`` is neither ``local`` nor ``sdcard`` or the requested file was not found
-   :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational or
+   :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational
+                                or if a file is to be selected but the printer is already printing or
                                 if a file to be sliced is supposed to be selected or start printing directly but the printer
                                 is not operational or already printing.
 
