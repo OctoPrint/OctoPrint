@@ -5,6 +5,8 @@ import unittest
 import ddt
 import mock
 
+from octoprint.util.platform import CLOSE_FDS
+
 import _fixups
 
 OCTOPI_VERSION = "0.14.0"
@@ -44,7 +46,7 @@ class PiSupportTestCase(unittest.TestCase):
 			m.return_value = "throttled=0x70005"
 			state = get_vcgencmd_throttled_state(VCGENCMD)
 
-		m.assert_called_once_with(VCGENCMD)
+		m.assert_called_once_with(VCGENCMD, close_fds=CLOSE_FDS)
 		self.assertTrue(state.current_undervoltage)
 		self.assertFalse(state.current_overheat)
 		self.assertTrue(state.current_issue)
