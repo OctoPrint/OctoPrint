@@ -155,6 +155,7 @@ default_settings = {
 		"sendM112OnError": True,
 		"disableSdPrintingDetection": False,
 		"ackMax": 1,
+		"sanityCheckTools": True,
 
 		"capabilities": {
 			"autoreport_temp": True,

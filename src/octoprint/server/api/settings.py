@@ -186,6 +186,7 @@ def getSettings():
 			"firmwareDetection": s.getBoolean(["serial", "firmwareDetection"]),
 			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
 			"useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
+			"sanityCheckTools": s.getBoolean(["serial", "sanityCheckTools"]),
 			"sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
 			"disableSdPrintingDetection": s.getBoolean(["serial", "disableSdPrintingDetection"]),
 			"ackMax": s.getInt(["serial", "ackMax"]),
@@ -485,6 +486,7 @@ def _saveSettings(data):
 			value = data["serial"]["useParityWorkaround"]
 			if value in ("always", "detect", "never"):
 				s.set(["serial", "useParityWorkaround"], value)
+		if "sanityCheckTools" in data["serial"]: s.setBoolean(["serial", "sanityCheckTools"], data["serial"]["sanityCheckTools"])
 		if "sendM112OnError" in data["serial"]: s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
 		if "disableSdPrintingDetection" in data["serial"]: s.setBoolean(["serial", "disableSdPrintingDetection"], data["serial"]["disableSdPrintingDetection"])
 		if "ackMax" in data["serial"]: s.setInt(["serial", "ackMax"], data["serial"]["ackMax"])

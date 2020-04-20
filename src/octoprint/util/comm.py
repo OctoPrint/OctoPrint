@@ -533,6 +533,7 @@ class MachineCom(object):
 		self._blocked_commands = settings().get(["serial", "blockedCommands"])
 		self._pausing_commands = settings().get(["serial", "pausingCommands"])
 		self._emergency_commands = settings().get(["serial", "emergencyCommands"])
+		self._sanity_check_tools = settings().getBoolean(["serial", "sanityCheckTools"])
 
 		self._ack_max = settings().getInt(["serial", "ackMax"])
 		self._clear_to_send = CountedEvent(name="comm.clear_to_send", minimum=None, maximum=self._ack_max)
@@ -2045,13 +2046,18 @@ class MachineCom(object):
 
 						invalid_tool = self._currentTool
 
-						# log to terminal and remember as invalid
-						self._log("T{} reported as invalid, reverting to T{}".format(invalid_tool, fallback_tool))
-						self._knownInvalidTools.add(invalid_tool)
+						if self._sanity_check_tools:
+							# log to terminal and remember as invalid
+							self._log("T{} reported as invalid, reverting to T{}".format(invalid_tool, fallback_tool))
+							self._knownInvalidTools.add(invalid_tool)
 
-						# we actually do send a T command here instead of just settings self._currentTool just in case
-						# we had any scripts or plugins modify stuff due to the prior tool change
-						self.sendCommand("T{}".format(fallback_tool), tags={"trigger:revert_invalid_tool",})
+							# we actually do send a T command here instead of just settings self._currentTool just in case
+							# we had any scripts or plugins modify stuff due to the prior tool change
+							self.sendCommand("T{}".format(fallback_tool), tags={"trigger:revert_invalid_tool",})
+						else:
+							# just log to terminal, user disabled sanity check
+							self._log("T{} reported as invalid by the firmware, but you've "
+							          "disabled tool sanity checking, ignoring".format(invalid_tool))
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -3847,7 +3853,9 @@ class MachineCom(object):
 		return None,
 
 	def _validate_tool(self, tool):
-		return tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"] and not tool in self._knownInvalidTools
+		return not self._sanity_check_tools \
+		       or (tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"]
+		           and not tool in self._knownInvalidTools)
 
 	def _reset_position_timers(self):
 		if self._cancel_position_timer:
