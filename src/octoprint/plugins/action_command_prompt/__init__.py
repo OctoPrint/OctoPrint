@@ -130,7 +130,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="settings", name=gettext("Action Command Prompt"), custom_bindings=False)]
+		return [dict(type="settings", name=gettext("Printer Dialogs"), custom_bindings=False)]
 
 	#~ action command handler
 
