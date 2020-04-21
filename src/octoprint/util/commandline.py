@@ -27,9 +27,9 @@ except ImportError:  # pragma: no cover
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
-_ANSI_CSI_PATTERN = r"\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
-_ANSI_OSC_PATTERN = r"\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
-_ANSI_REGEX = re.compile(r"|".join([_ANSI_CSI_PATTERN,
+_ANSI_CSI_PATTERN = b"\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+_ANSI_OSC_PATTERN = b"\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
+_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN,
                                     _ANSI_OSC_PATTERN]))
 
 
