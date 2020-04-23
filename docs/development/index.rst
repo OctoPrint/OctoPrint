@@ -9,3 +9,4 @@ Development
 
    environment.rst
    virtual_printer.rst
+   profiling.rst

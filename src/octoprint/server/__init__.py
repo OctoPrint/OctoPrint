@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from octoprint.vendor.sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
+from flask import Flask, g, request, session, Blueprint, Request, Response, current_app, make_response
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
 from octoprint.vendor.flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
@@ -1030,13 +1030,25 @@ class Server(object):
 		@app.before_request
 		def before_request():
 			g.locale = self._get_locale()
+			if self._debug and "perfprofile" in request.args:
+				from pyinstrument import Profiler
+				g.perfprofiler = Profiler()
+				g.perfprofiler.start()
+
 
 		@app.after_request
 		def after_request(response):
 			# send no-cache headers with all POST responses
 			if request.method == "POST":
 				response.cache_control.no_cache = True
+
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
+
+			if hasattr(g, "perfprofiler"):
+				g.perfprofiler.stop()
+				output_html = g.perfprofiler.output_html()
+				return make_response(output_html)
+
 			return response
 
 		from octoprint.util.jinja import MarkdownFilter

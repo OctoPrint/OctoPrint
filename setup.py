@@ -97,6 +97,9 @@ EXTRA_REQUIRES = dict(
 		# linter
 		"flake8",
 
+		# profiler
+		"pyinstrument",
+
 		# Documentation dependencies
 		"sphinx>=1.8.5,<2",
 		"sphinxcontrib-httpdomain",
