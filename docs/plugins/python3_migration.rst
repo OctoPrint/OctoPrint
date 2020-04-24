@@ -318,7 +318,7 @@ As a summary, follow this checklist to migrate your plugin to be compatible to b
     .. code-block:: yaml
 
        compatibility:
-         python: ">=2.7,<3"
+         python: ">=2.7,<4"
 
 .. _sec-plugins-python3-furtherreading:
 
