@@ -19,7 +19,7 @@ import time
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import monotonic_time
-from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import get_fully_qualified_classname as fqcn, dict_merge
 from octoprint.util.platform import CLOSE_FDS
 
 
@@ -346,8 +346,12 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 		import sys
 		import yaml
 
-		if self._current.analysis:
+		if self._current.analysis and all(map(lambda x: x in self._current.analysis, ("printingArea",
+		                                                                              "dimensions",
+		                                                                              "estimatedPrintTime",
+		                                                                              "filament"))):
 			return self._current.analysis
+
 		try:
 			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority \
 				else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
@@ -422,7 +426,11 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 						"length": analysis["extrusion_length"][i],
 						"volume": analysis["extrusion_volume"][i]
 					}
-			return result
+
+			if self._current.analysis and isinstance(self._current.analysis, dict):
+				return dict_merge(result, self._current.analysis)
+			else:
+				return result
 		finally:
 			self._gcode = None
 
