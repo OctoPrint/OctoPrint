@@ -2,6 +2,7 @@ src/octoprint/templates/_data/AUTHORS.md
 src/octoprint/templates/_data/CHANGELOG.md
 src/octoprint/templates/_data/SUPPORTERS.md
 src/octoprint/templates/_data/THIRDPARTYLICENSES.md
+docs/_build
 
 devtools
 
@@ -40,3 +41,4 @@ venv34
 venv35
 venv36
 venv37
+venv38
