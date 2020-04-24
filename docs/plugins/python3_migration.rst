@@ -339,13 +339,14 @@ As a summary, follow this checklist to migrate your plugin to be compatible to b
   * Thorougly test your plugin under Python 3. Pay special attention to any kind of string handling issues, integer
     division, relative imports from your plugin package and how the results of ``map``, ``filter`` and ``zip`` are
     used in your code, as those have proven to be the biggest issues during past migrations.
-  * Once everything works under both Python versions and you've prepared a new release of your plugin, update your
-    registration file in the Official Plugin Repository to include the correct Python compatibility information as well:
+  * Once everything works under both Python versions and you've prepared a new release of your plugin (don't forget to
+    increment the version!), update your registration file in the Official Plugin Repository to include the correct
+    Python compatibility information as well:
 
     .. code-block:: yaml
 
        compatibility:
-         python: ">=2.7,<3"
+         python: ">=2.7,<4"
 
 .. _sec-plugins-python3-furtherreading:
 
