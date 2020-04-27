@@ -8,28 +8,28 @@ jobs:
     steps:
       - name: add-potential-bugs-to-to-analyse-column
         uses: docker://takanabe/github-actions-automate-projects:v0.0.1
-        if: github.event.label == 'type:potential bug' || github.event.label == 'type:confirmed bug'
+        if: github.event.label.name == 'type:potential bug' || github.event.label.name == 'type:confirmed bug'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PROJECT_URL: https://github.com/OctoPrint/OctoPrint/projects/1
           GITHUB_PROJECT_COLUMN: To Analyse
       - name: add-unreproduced-to-unreproduced-column
         uses: docker://takanabe/github-actions-automate-projects:v0.0.1
-        if: github.event.label == 'status:unreproduced'
+        if: github.event.label.name == 'status:unreproduced'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PROJECT_URL: https://github.com/OctoPrint/OctoPrint/projects/1
           GITHUB_PROJECT_COLUMN: Unreproduced
       - name: add-awaiting-information-to-insufficien-information-column
         uses: docker://takanabe/github-actions-automate-projects:v0.0.1
-        if: github.event.label == 'status:awaiting information'
+        if: github.event.label.name == 'status:awaiting information'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PROJECT_URL: https://github.com/OctoPrint/OctoPrint/projects/1
           GITHUB_PROJECT_COLUMN: Insufficient information
       - name: add-solved-to-solved-column
         uses: docker://takanabe/github-actions-automate-projects:v0.0.1
-        if: github.event.label == 'status:solved'
+        if: github.event.label.name == 'status:solved'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PROJECT_URL: https://github.com/OctoPrint/OctoPrint/projects/1
