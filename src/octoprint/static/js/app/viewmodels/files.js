@@ -82,9 +82,36 @@ $(function() {
         });
 
         self.allItems = ko.observable(undefined);
-        self.listStyle = ko.observable("folders_files");
         self.currentPath = ko.observable("");
         self.uploadProgressText = ko.observable();
+
+        // list style incl. persistence
+        var listStyleStorageKey = "gcodeFiles.currentListStyle";
+        var defaultListStyle = "folders_files";
+        var saveListStyleToLocalStorage = function() {
+            if (initListStyleLocalStorage()) {
+                localStorage[listStyleStorageKey] = self.listStyle();
+            }
+        };
+        var loadListStyleFromLocalStorage = function() {
+            if (initListStyleLocalStorage()) {
+                self.listStyle(localStorage[listStyleStorageKey]);
+            }
+        };
+        var initListStyleLocalStorage = function() {
+            if (!Modernizr.localstorage)
+                return false;
+
+            if (localStorage[listStyleStorageKey] !== undefined)
+                return true;
+
+            localStorage[listStyleStorageKey] = defaultListStyle;
+            return true;
+        };
+
+        self.listStyle = ko.observable(defaultListStyle);
+        self.listStyle.subscribe(saveListStyleToLocalStorage);
+        loadListStyleFromLocalStorage();
 
         // initialize list helper
         var listHelperFilters = {
