@@ -21,6 +21,10 @@
         return this.base.simpleApiCommand("appkeys", "generate", {"app": app}, opts);
     };
 
+    OctoPrintAppKeysClient.prototype.generateKeyForUser = function(user, app, opts) {
+        return this.base.simpleApiCommand("appkeys", "generate", {"app": app, "user": user}, opts);
+    };
+
     OctoPrintAppKeysClient.prototype.revokeKey = function(key, opts) {
         return this.base.simpleApiCommand("appkeys", "revoke", {"key": key}, opts);
     };

@@ -256,7 +256,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			if not app_name:
 				return flask.abort(400)
 
-			self._add_api_key(user_id, app_name.strip())
+			selected_user_id = data.get("user", user_id)
+			if selected_user_id != user_id and not Permissions.PLUGIN_APPKEYS_ADMIN.can():
+				return flask.abort(403)
+
+			key = self._add_api_key(selected_user_id, app_name.strip())
+			return flask.jsonify(user_id=selected_user_id, app_id=app_name, api_key=key)
 
 		return NO_CONTENT
 

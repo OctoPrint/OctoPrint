@@ -1,7 +1,49 @@
 $(function() {
+    function AppKeysDialogViewModel(parameters) {
+        var self = this;
+
+        self.dialog = undefined;
+
+        self.onStartup = function() {
+            self.dialog = $("#plugin_appkeys_keygenerated");
+        };
+
+        self.showDialog = function(title, data) {
+            if (self.dialog === undefined) return;
+
+            var qrcode = {
+                text: data.api_key,
+                size: 180,
+                fill: "#000",
+                background: null,
+                label: "",
+                fontname: "sans",
+                fontcolor: "#000",
+                radius: 0,
+                ecLevel: "L"
+            };
+
+            self.dialog.find("#plugin_appkeys_keygenerated_title").text(title);
+            self.dialog.find("#plugin_appkeys_keygenerated_user").text(data.user_id);
+            self.dialog.find("#plugin_appkeys_keygenerated_app").text(data.app_id);
+            self.dialog.find("#plugin_appkeys_keygenerated_key_text").text(data.api_key);
+            self.dialog.find("#plugin_appkeys_keygenerated_key_copy")
+                .off()
+                .click(function() {
+                    copyToClipboard(data.api_key);
+                });
+            self.dialog.find("#plugin_appkeys_keygenerated_key_qrcode")
+                .empty()
+                .qrcode(qrcode);
+
+            self.dialog.modal("show");
+        }
+    }
+
     function UserAppKeysViewModel(parameters) {
         var self = this;
-        self.loginState = parameters[0];
+        self.dialog = parameters[0];
+        self.loginState = parameters[1];
 
         self.keys = new ItemListHelper(
             "plugin.appkeys.userkeys",
@@ -144,7 +186,9 @@ $(function() {
 
     function AllAppKeysViewModel(parameters) {
         var self = this;
-        self.loginState = parameters[0];
+        self.dialog = parameters[0];
+        self.loginState = parameters[1];
+        self.access = parameters[2];
 
         self.keys = new ItemListHelper(
             "plugin.appkeys.allkeys",
@@ -170,14 +214,21 @@ $(function() {
         self.users = ko.observableArray([]);
         self.apps = ko.observableArray([]);
 
+        self.editorApp = ko.observable();
+        self.editorUser = ko.observable();
+
         self.markedForDeletion = ko.observableArray([]);
 
         self.onSettingsShown = function() {
             self.requestData();
+            self.editorUser(self.loginState.username());
+            self.editorApp("");
         };
 
         self.onUserLoggedIn = function() {
             self.requestData();
+            self.editorUser(self.loginState.username());
+            self.editorApp("");
         };
 
         self.requestData = function() {
@@ -203,6 +254,18 @@ $(function() {
             apps.sort();
             self.apps(apps);
         };
+
+        self.generateKey = function() {
+            return OctoPrint.plugins.appkeys.generateKeyForUser(self.editorUser(), self.editorApp())
+                .done(self.requestData)
+                .done(function() {
+                    self.editorUser(self.loginState.username());
+                    self.editorApp("");
+                })
+                .done(function(data) {
+                    self.dialog.showDialog(gettext("New key generated!"), data);
+                });
+        }
 
         self.revokeKey = function(key) {
             var perform = function() {
@@ -295,14 +358,20 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push([
+        AppKeysDialogViewModel,
+        [],
+        []
+    ]);
+
+    OCTOPRINT_VIEWMODELS.push([
         UserAppKeysViewModel,
-        ["loginStateViewModel"],
+        ["appKeysDialogViewModel", "loginStateViewModel"],
         ["#usersettings_plugin_appkeys"]
     ]);
 
     OCTOPRINT_VIEWMODELS.push([
         AllAppKeysViewModel,
-        ["loginStateViewModel"],
+        ["appKeysDialogViewModel", "loginStateViewModel", "accessViewModel"],
         ["#settings_plugin_appkeys"]
     ])
 });
