@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     HtmlFile transport implementation.
 """
 
-from tornado.web import asynchronous
+from tornado.gen import coroutine
 
 from octoprint.vendor.sockjs.tornado import proto
 from octoprint.vendor.sockjs.tornado.transports import streamingbase
@@ -38,7 +38,7 @@ class HtmlFileTransport(streamingbase.StreamingTransportBase):
     def initialize(self, server):
         super(HtmlFileTransport, self).initialize(server)
 
-    @asynchronous
+    @coroutine
     def get(self, session_id):
         # Start response
         self.preflight()

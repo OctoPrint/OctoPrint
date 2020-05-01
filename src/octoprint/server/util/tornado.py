@@ -111,7 +111,7 @@ class CorsSupportMixin(tornado.web.RequestHandler):
 		if self.request.method != "OPTIONS" and origin and self.ENABLE_CORS:
 			self.set_header("Access-Control-Allow-Origin", origin)
 
-	@tornado.web.asynchronous
+	@tornado.gen.coroutine
 	def options(self, *args, **kwargs):
 		if self.ENABLE_CORS:
 			origin = self.request.headers.get("Origin")
@@ -1114,7 +1114,7 @@ class UrlProxyHandler(RequestlessExceptionLoggingMixin,
 		self._basename = basename
 		self._access_validation = access_validation
 
-	@tornado.web.asynchronous
+	@tornado.gen.coroutine
 	def get(self, *args, **kwargs):
 		if self._access_validation is not None:
 			self._access_validation(self.request)

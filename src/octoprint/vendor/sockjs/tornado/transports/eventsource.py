@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     EventSource transport implementation.
 """
 
-from tornado.web import asynchronous
+from tornado.gen import coroutine
 
 from octoprint.vendor.sockjs.tornado.transports import streamingbase
 
@@ -16,7 +16,7 @@ from octoprint.vendor.sockjs.tornado.transports import streamingbase
 class EventSourceTransport(streamingbase.StreamingTransportBase):
     name = 'eventsource'
 
-    @asynchronous
+    @coroutine
     def get(self, session_id):
         # Start response
         self.preflight()

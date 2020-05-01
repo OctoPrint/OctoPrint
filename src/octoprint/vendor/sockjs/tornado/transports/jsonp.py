@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 """
 import logging
 
-from tornado.web import asynchronous
+from tornado.gen import coroutine
 
 from octoprint.vendor.sockjs.tornado import proto
 from octoprint.vendor.sockjs.tornado.transports import pollingbase
@@ -20,7 +20,7 @@ LOG = logging.getLogger("tornado.general")
 class JSONPTransport(pollingbase.PollingTransportBase):
     name = 'jsonp'
 
-    @asynchronous
+    @coroutine
     def get(self, session_id):
         # Start response
         self.handle_session_cookie()

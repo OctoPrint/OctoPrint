@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     Xhr-Streaming transport implementation
 """
 
-from tornado.web import asynchronous
+from tornado.gen import coroutine
 
 from octoprint.vendor.sockjs.tornado.transports import streamingbase
 
@@ -16,7 +16,7 @@ from octoprint.vendor.sockjs.tornado.transports import streamingbase
 class XhrStreamingTransport(streamingbase.StreamingTransportBase):
     name = 'xhr_streaming'
 
-    @asynchronous
+    @coroutine
     def post(self, session_id):
         # Handle cookie
         self.preflight()
