@@ -777,7 +777,7 @@ class FilebasedUserManager(UserManager):
 	def find_user(self, userid=None, apikey=None, session=None):
 		user = UserManager.find_user(self, userid=userid, session=session)
 
-		if user is not None:
+		if user is not None or session is not None:
 			return user
 
 		if userid is not None:
