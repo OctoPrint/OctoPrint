@@ -177,6 +177,8 @@ class GroupChangeListener(object):
 
 
 class FilebasedGroupManager(GroupManager):
+	FILE_VERSION = 2
+
 	def __init__(self, path=None):
 		if path is None:
 			path = settings().get(["accessControl", "groupfile"])
@@ -201,6 +203,13 @@ class FilebasedGroupManager(GroupManager):
 					groups = data
 					data = dict(groups=groups)
 
+				file_version = data.get("_version", 1)
+				if file_version < self.FILE_VERSION:
+					# make sure we migrate the file on disk after loading
+					self._logger.info("Detected file version {} on group "
+					                  "storage, migrating to version {}".format(file_version, self.FILE_VERSION))
+					self._dirty = True
+
 				groups = data.get("groups", dict())
 				tracked_permissions = data.get("tracked", list())
 
@@ -216,12 +225,19 @@ class FilebasedGroupManager(GroupManager):
 						removable = self._default_groups[key].get("removable", True)
 						changeable = self._default_groups[key].get("changeable", True)
 						toggleable = self._default_groups[key].get("toggleable", True)
+
+						if file_version == 1:
+							# 1.4.0/file version 1 has a bug that resets default to True for users group on modification
+							set_default = self._default_groups[key].get("default", False)
+						else:
+							set_default = attributes.get("default", False)
 					else:
 						name = attributes.get("name", "")
 						description = attributes.get("description", "")
 						removable = True
 						changeable = True
 						toggleable = True
+						set_default = attributes.get("default", False)
 
 					permissions = self._to_permissions(*attributes.get("permissions", []))
 					default_permissions = self.default_permissions_for_group(key)
@@ -235,7 +251,7 @@ class FilebasedGroupManager(GroupManager):
 					              description=description,
 					              permissions=permissions,
 					              subgroups=subgroups,
-					              default=attributes.get("default", False),
+					              default=set_default,
 					              removable=removable,
 					              changeable=changeable,
 					              toggleable=toggleable)
@@ -243,6 +259,9 @@ class FilebasedGroupManager(GroupManager):
 
 				for group in self._groups.values():
 					group._subgroups = self._to_groups(*group._subgroups)
+
+				if self._dirty:
+					self._save()
 
 			except Exception:
 				self._logger.exception("Error while loading groups from file {}".format(self._groupfile))
@@ -263,7 +282,8 @@ class FilebasedGroupManager(GroupManager):
 				groups[key]["name"] = group.get_name()
 				groups[key]["description"] = group.get_description()
 
-		data = dict(groups=groups,
+		data = dict(_version=self.FILE_VERSION,
+		            groups=groups,
 		            tracked=[x.key for x in Permissions.all()])
 
 		with atomic_write(self._groupfile, mode='wt', permissions=0o600, max_permissions=0o666) as f:
