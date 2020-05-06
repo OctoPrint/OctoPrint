@@ -1422,9 +1422,13 @@ class VirtualPrinter(object):
 		self.lastTempAt = monotonic_time()
 
 		def simulate(actual, target, ambient):
-			if target > 0 and abs(actual - target) > delta:
+			if target > 0:
 				goal = target
-				factor = 10
+				remaining = abs(actual - target)
+				if remaining > delta:
+					factor = 10
+				elif remaining < delta:
+					factor = remaining
 			elif not target and abs(actual - ambient) > delta:
 				goal = ambient
 				factor = 2
