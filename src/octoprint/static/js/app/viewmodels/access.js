@@ -521,25 +521,14 @@ $(function() {
             self.confirmEditGroup = function() {
                 var group = self.currentGroup();
 
-                var data = { key: group.key, name: group.name };
-
-                if (group.description !== self.editor.description()) {
-                    data.description = self.editor.description();
-                }
-
-                var editorPermissions = self.editor.permissions();
-                if (!_.isEqual(group.permissions.sort(), editorPermissions.sort())) {
-                    data.permissions = editorPermissions;
-                }
-
-                var editorSubgroups = self.editor.subgroups();
-                if (!_.isEqual(group.subgroups.sort(), editorSubgroups.sort())) {
-                    data.subgroups = editorSubgroups;
-                }
-
-                if (group.default !== self.editor.default()) {
-                    data.default = self.editor.default();
-                }
+                var data = {
+                    key: group.key,
+                    name: group.name,
+                    description: self.editor.description(),
+                    permissions: self.editor.permissions(),
+                    subgroups: self.editor.subgroups(),
+                    default: self.editor.default()
+                };
 
                 self.updateGroup(data)
                     .done(function() {

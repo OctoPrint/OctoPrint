@@ -81,7 +81,7 @@
         }
 
         var data = {
-            description: group.description,
+            description: group.hasOwnProperty("description") ? group.description : "",
             permissions: group.permissions,
             subgroups: group.subgroups,
             default: group.default
@@ -122,14 +122,14 @@
             throw new OctoPrintClient.InvalidArgumentError("Both user's name and password need to be set");
         }
 
-            var data = {
-                name: user.name,
-                password: user.password,
-                groups: user.hasOwnProperty("groups") ? user.groups : [],
-                permissions: user.hasOwnProperty("permissions") ? user.permissions : [],
-                active: user.hasOwnProperty("active") ? !!user.active : true,
-                admin: user.hasOwnProperty("admin") ? !!user.admin : false
-            };
+        var data = {
+            name: user.name,
+            password: user.password,
+            groups: user.hasOwnProperty("groups") ? user.groups : [],
+            permissions: user.hasOwnProperty("permissions") ? user.permissions : [],
+            active: user.hasOwnProperty("active") ? !!user.active : true,
+            admin: user.hasOwnProperty("admin") ? !!user.admin : false
+        };
 
         return this.base.postJson(this.url(), data, opts);
     };
