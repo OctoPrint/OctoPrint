@@ -22,19 +22,19 @@ jobs:
       - name: 👷 Build and install checkout
         run: |
           pip install .
-    - name: 📧 Discord success notification
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
-      uses: Ilshidur/action-discord@master
-      with:
-        args: '☑️ Test install on Python 2 for `master` was successful'
-    - name: 📧 Discord failure notification
-      if: failure()
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
-      uses: Ilshidur/action-discord@master
-      with:
-        args: '🚫 Test install on Python 2 for `master` failed'
+      - name: 📧 Discord success notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '☑️ Test install on Python 2 for `master` was successful'
+      - name: 📧 Discord failure notification
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '🚫 Test install on Python 2 for `master` failed'
 
   install-latest:
     runs-on: ubuntu-latest
@@ -46,16 +46,16 @@ jobs:
       - name: 👷 Build and install latest from PyPI
         run: |
           pip install OctoPrint
-    - name: 📧 Discord success notification
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
-      uses: Ilshidur/action-discord@master
-      with:
-        args: '☑️ Test install on Python 2 for latest release was successful'
-    - name: 📧 Discord failure notification
-      if: failure()
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
-      uses: Ilshidur/action-discord@master
-      with:
-        args: '🚫 Test install on Python 2 for latest release failed'
+      - name: 📧 Discord success notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '☑️ Test install on Python 2 for latest release was successful'
+      - name: 📧 Discord failure notification
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '🚫 Test install on Python 2 for latest release failed'
