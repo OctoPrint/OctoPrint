@@ -240,6 +240,13 @@ class UserManager(GroupChangeListener, object):
 					del self._session_users_by_session[session]
 			del self._sessionids_by_userid[username]
 
+	def validate_user_session(self, userid, session):
+		if session in self._session_users_by_session:
+			user = self._session_users_by_session[session]
+			return userid == user.get_id()
+
+		return False
+
 	def find_user(self, userid=None, session=None):
 		if session is not None and session in self._session_users_by_session:
 			user = self._session_users_by_session[session]
@@ -787,7 +794,7 @@ class FilebasedUserManager(UserManager):
 	def find_user(self, userid=None, apikey=None, session=None):
 		user = UserManager.find_user(self, userid=userid, session=session)
 
-		if user is not None or session is not None:
+		if user is not None:
 			return user
 
 		if userid is not None:

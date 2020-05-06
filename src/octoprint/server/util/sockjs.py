@@ -204,9 +204,9 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.warning("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
 			else:
 				user_id, user_session = parts
-				user = self._userManager.find_user(userid=user_id, session=user_session)
 
-				if user is not None:
+				if self._userManager.validate_user_session(user_id, user_session):
+					user = self._userManager.find_user(userid=user_id)
 					self._on_login(user)
 				else:
 					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
