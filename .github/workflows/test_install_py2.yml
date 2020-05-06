@@ -2,6 +2,8 @@ name: Test install on Python 2
 
 on:
   push:
+    branches:
+      - master
   repository_dispatch:
     types: [test_install_py2]
   schedule:
