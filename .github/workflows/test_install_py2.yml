@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v2
       - name: 👷 Build and install checkout
         run: |
-          pip install .[develop, plugins]
+          pip install .
 
   install-latest:
     runs-on: ubuntu-latest
