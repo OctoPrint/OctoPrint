@@ -460,8 +460,6 @@ class LoginStatusListener(object):
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	FILE_VERSION = 2
-
 	def __init__(self, group_manager, path=None, settings=None):
 		UserManager.__init__(self, group_manager, settings=settings)
 
@@ -484,13 +482,10 @@ class FilebasedUserManager(UserManager):
 			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 
-				file_version = data.pop("_version", 1)
-				if file_version < self.FILE_VERSION:
-					self._logger.info("Detected file version {} on user "
-					                  "storage, migrating to version {}".format(file_version, self.FILE_VERSION))
-					self._dirty = True
-
 				for name, attributes in data.items():
+					if not isinstance(attributes, dict):
+						continue
+
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
@@ -535,7 +530,7 @@ class FilebasedUserManager(UserManager):
 		if not self._dirty and not force:
 			return
 
-		data = {"_version": self.FILE_VERSION}
+		data = {}
 		for name, user in self._users.items():
 			if not user or not isinstance(user, User):
 				continue
