@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
 	"Jinja2>=2.8.1,<2.9",        # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                             # guarantee backwards compatibility for plugins and such with that
 	                             # version, hence we need to pin to a lower version for now. See #1697
-	"tornado==5.1.1",            # a memory leak was observed in tornado >= 5, see #2585
+	"tornado==5.1.1",            # newer versions require Python 3
 	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
