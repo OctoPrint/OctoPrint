@@ -115,6 +115,7 @@ date of first contribution):
   * [Ludovico de Nittis](https://github.com/RyuzakiKK)
   * [Dominik Paľo](https://github.com/DominikPalo)
   * [Kelly Anderson](https://github.com/cbxbiker61)
+  * [Lachlan Cresswell](https://github.com/lachyc)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
