@@ -1,0 +1,33 @@
+name: Test install on Python 2
+
+on:
+  push:
+  repository_dispatch:
+    types: [test_install_py2]
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  install-master:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐍 Set up Python 2.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 2.7
+      - name: ⬇ Checkout code
+        uses: actions/checkout@v2
+      - name: 👷 Build and install checkout
+        run: |
+          pip install .[develop, plugins]
+
+  install-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐍 Set up Python 2.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 2.7
+      - name: 👷 Build and install latest from PyPI
+        run: |
+          pip install OctoPrint
