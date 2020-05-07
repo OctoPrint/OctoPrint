@@ -830,7 +830,7 @@ class Server(object):
 		else:
 			# use os default
 			observer = Observer()
-		observer.schedule(watchdog_handler, watched)
+		observer.schedule(watchdog_handler, watched, recursive=True)
 		observer.start()
 
 		# run our startup plugins
