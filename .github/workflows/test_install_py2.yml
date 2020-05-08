@@ -24,17 +24,17 @@ jobs:
           pip install .
       - name: 📧 Discord success notification
         env:
-          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '☑️ Test install on Python 2 for `master` was successful'
+          args: '☑️ Test install on Python 2 for `OctoPrint/OctoPrint:master` was successful'
       - name: 📧 Discord failure notification
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '🚫 Test install on Python 2 for `master` failed'
+          args: '🚫 Test install on Python 2 for `OctoPrint/OctoPrint:master` failed'
 
   install-latest:
     runs-on: ubuntu-latest
@@ -48,14 +48,14 @@ jobs:
           pip install OctoPrint
       - name: 📧 Discord success notification
         env:
-          DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '☑️ Test install on Python 2 for latest release was successful'
+          args: '☑️ Test install on Python 2 for latest OctoPrint release was successful'
       - name: 📧 Discord failure notification
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook_foosel }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '🚫 Test install on Python 2 for latest release failed'
+          args: '🚫 Test install on Python 2 for latest OctoPrint release failed'
