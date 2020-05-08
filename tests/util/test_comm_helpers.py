@@ -22,8 +22,8 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_strip_comment(self, input, expected):
-		from octoprint.util import comm
-		self.assertEqual(expected, comm.strip_comment(input))
+		from octoprint.util.gcode import strip_comment
+		self.assertEqual(expected, strip_comment(input))
 
 	@data(
 		("M117 Test", None, None, "M117 Test"),
@@ -54,8 +54,8 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_apply_temperature_offsets(self, input, offsets, current_tool, expected):
-		from octoprint.util import comm
-		actual = comm.apply_temperature_offsets(input, offsets, current_tool=current_tool)
+		from octoprint.util.gcode import apply_temperature_offsets
+		actual = apply_temperature_offsets(input, offsets, current_tool=current_tool)
 
 		if expected is None:
 			self.assertEqual(input, actual)
