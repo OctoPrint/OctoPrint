@@ -31,15 +31,28 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		self._file_manager = file_manager
 		self._printer = printer
 
-	def initial_scan(self, folder):
-		def run_scan():
-			try:
-				from os import scandir
-			except ImportError:
-				from scandir import scandir
+		self._watched_folder = None
 
+	def initial_scan(self, folder):
+		try:
+			from os import scandir
+		except ImportError:
+			from scandir import scandir
+
+		def _recursive_scandir(path):
+			"""Recursively yield DirEntry objects for given directory."""
+			for entry in scandir(path):
+				if entry.is_dir(follow_symlinks=False):
+					for entry in _recursive_scandir(entry.path):
+						yield entry
+				else:
+					yield entry
+
+		def run_scan():
 			self._logger.info("Running initial scan on watched folder...")
-			for entry in scandir(folder):
+			self._watched_folder = folder
+
+			for entry in _recursive_scandir(folder):
 				path = entry.path
 
 				if not self._valid_path(path):
@@ -66,10 +79,11 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		# noinspection PyBroadException
 		try:
 			file_wrapper = octoprint.filemanager.util.DiskFileWrapper(os.path.basename(path), path)
+			relative_path = os.path.relpath(path, self._watched_folder)
 
 			# determine future filename of file to be uploaded, abort if it can't be uploaded
 			try:
-				futurePath, futureFilename = self._file_manager.sanitize(octoprint.filemanager.FileDestinations.LOCAL, file_wrapper.filename)
+				futurePath, futureFilename = self._file_manager.sanitize(octoprint.filemanager.FileDestinations.LOCAL, relative_path)
 			except Exception:
 				self._logger.exception("Could not wrap %s", path)
 				futurePath = None
@@ -88,7 +102,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			reselect = self._printer.is_current_file(futureFullPathInStorage, False)
 
 			added_file = self._file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL,
-			                                         file_wrapper.filename,
+			                                         relative_path,
 			                                         file_wrapper,
 			                                         allow_overwrite=True)
 			if os.path.exists(path):
