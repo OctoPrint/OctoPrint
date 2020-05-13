@@ -233,6 +233,7 @@
                                 <small data-bind="visible: homepage"><i class="fa fa-home"></i> <a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
                                 <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
                                 <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
+                                <small data-bind="visible: $data.stats !== undefined"><i class="fa fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.installations) : 0"></span></small>
                                 <small>&nbsp;</small>
                             </div>
                         </div>
