@@ -680,7 +680,7 @@ GCODE.renderer = (function(){
                 // neither extrusion nor move
                 if (cmd.retract == -1) {
                     // retract => draw dot if configured to do so
-                    if (renderOptions["showRetracts"]) {
+                    if (renderOptions["showRetracts"] && !isNotCurrentLayer) {
                         strokePathIfNeeded("fill");
                         ctx.fillStyle = getColorRetractForTool(tool);
                         ctx.strokeStyle = ctx.fillStyle;
@@ -689,7 +689,7 @@ GCODE.renderer = (function(){
                 }
 
                 strokePathIfNeeded("move", getColorMoveForTool(tool));
-                if(renderOptions["showMoves"]){
+                if(renderOptions["showMoves"] && !isNotCurrentLayer) {
                     // move => draw line from (prevX, prevY) to (x, y) in move color
                     ctx.lineWidth = lineWidthFactor;
                     ctx.lineTo(x,y);
@@ -713,7 +713,7 @@ GCODE.renderer = (function(){
                     }
                 } else {
                     // we were previously retracting, now we are restarting => draw dot if configured to do so
-                    if (renderOptions["showRetracts"]) {
+                    if (renderOptions["showRetracts"] && !isNotCurrentLayer) {
                         strokePathIfNeeded("fill");
                         ctx.fillStyle = getColorRestartForTool(tool);
                         ctx.strokeStyle = ctx.fillStyle;
@@ -731,7 +731,7 @@ GCODE.renderer = (function(){
             ctx.stroke();
         }
 
-        if (renderOptions["showHead"]) {
+        if (renderOptions["showHead"] && !isNotCurrentLayer) {
             var sizeHeadSpot = renderOptions["sizeHeadSpot"] * lineWidthFactor + lineWidthFactor / 2;
             var shade = tool * 0.15;
             ctx.fillStyle = pusher.color(renderOptions["colorHead"]).shade(shade).alpha(alpha).html();
