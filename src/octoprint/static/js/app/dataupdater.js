@@ -157,6 +157,14 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         var oldConfigHash = self._configHash;
         self._configHash = data["config_hash"];
 
+        log.info("Connected to the server");
+
+        // if we have a connected promise, resolve it now
+        if (self._connectedDeferred) {
+            self._connectedDeferred.resolve();
+            self._connectedDeferred = undefined;
+        }
+
         self._ifInitialized(function() {
             // process safe mode
             if (self._safeModePopup) self._safeModePopup.remove();
@@ -192,9 +200,11 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             // hide it, plus reload the camera feed if it's currently displayed
             if ($("#offline_overlay").is(":visible")) {
                 hideOfflineOverlay();
+                log.info("Triggering reconnect on all view models");
                 callViewModels(self.allViewModels, "onServerReconnect");
                 callViewModels(self.allViewModels, "onDataUpdaterReconnect");
             } else {
+                log.info("Triggering connect on all view models");
                 callViewModels(self.allViewModels, "onServerConnect");
             }
 
@@ -207,15 +217,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 showReloadOverlay();
             }
 
+            log.info("Server (re)connect processed");
         });
-
-        log.info("Connected to the server");
-
-        // if we have a connected promise, resolve it now
-        if (self._connectedDeferred) {
-            self._connectedDeferred.resolve();
-            self._connectedDeferred = undefined;
-        }
     };
 
     self._onHistoryData = function(event) {
