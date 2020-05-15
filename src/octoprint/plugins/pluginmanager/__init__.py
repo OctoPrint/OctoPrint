@@ -764,7 +764,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _cleanup_settings(self, plugin):
 		# delete plugin settings
-		self._settings.global_set(["plugins", plugin], None)
+		self._settings.global_remove(["plugins", plugin])
+		self._settings.global_remove(["server", "seenWizards", plugin])
 		return True
 
 	def _cleanup_data(self, plugin):

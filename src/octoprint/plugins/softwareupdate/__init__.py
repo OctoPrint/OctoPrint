@@ -444,7 +444,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._version_cache_dirty = True
 
 	def get_settings_version(self):
-		return 7
+		return 8
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -529,9 +529,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
 
-		if current is None or current < 7:
+		if current is None or current < 8:
 			# remove check_providers again
-			self._settings.set(["check_providers"], None, defaults=dict(check_providers=dict()))
+			self._settings.remove(["check_providers"])
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if not data:
