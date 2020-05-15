@@ -282,13 +282,19 @@ $(function() {
             OctoPrint.printer.home(axis);
         };
 
+        self.feedRateBusy = ko.observable(false);
+        self.feedRateResetter = ko.observable();
         self.sendFeedRateCommand = function () {
             var rate = _.parseInt(self.feedRate());
-            OctoPrint.printer.setFeedrate(rate);
-            self.feedRate(undefined);
+            self.feedRateBusy(true);
+            OctoPrint.printer.setFeedrate(rate)
+                .done(function() {
+                    self.feedRate(undefined);
+                })
+                .always(function() {
+                    self.feedRateBusy(false);
+                });
         };
-
-        self.feedRateResetter = ko.observable();
         self.resetFeedRateDisplay = function() {
             self.cancelFeedRateDisplayReset();
             self.feedRateResetter(setTimeout(function() {
@@ -312,13 +318,19 @@ $(function() {
             self._sendECommand(-1);
         };
 
+        self.flowRateBusy = ko.observable(false);
+        self.flowRateResetter = ko.observable();
         self.sendFlowRateCommand = function () {
             var rate = _.parseInt(self.flowRate());
-            OctoPrint.printer.setFlowrate(rate);
-            self.flowRate(undefined);
+            self.flowRateBusy(true);
+            OctoPrint.printer.setFlowrate(rate)
+                .done(function() {
+                    self.flowRate(undefined);
+                })
+                .always(function() {
+                    self.flowRateBusy(false);
+                });
         };
-
-        self.flowRateResetter = ko.observable();
         self.resetFlowRateDisplay = function() {
             self.cancelFlowRateDisplayReset();
             self.flowRateResetter(setTimeout(function() {
