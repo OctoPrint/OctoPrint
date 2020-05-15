@@ -867,6 +867,17 @@ ul.dropdown-menu li a {
       margin-bottom: 2px;
     }
   }
+
+  .pulsate_text_opacity {
+    animation: pulsate_input 1s ease-out;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes pulsate_input {
+    0% { color: @gray }
+    50% { color: fade(@gray, 20%) }
+    100% { color: @gray }
+  }
 }
 
 /** GCODE viewer */
