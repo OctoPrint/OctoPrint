@@ -41,7 +41,7 @@ below.
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
     including its regular *and* development and plugin development dependencies:
 
-      * ``pip install -e .[develop,plugins]``
+      * ``pip install -e '.[develop,plugins]'``
 
 When the virtual environment is activated you can then:
 
