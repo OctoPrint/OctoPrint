@@ -34,6 +34,13 @@
 {% endtrans %}</div>
 {% endmacro %}
 
+{% macro pluginmanager_requesterror() %}
+<div class="alert" data-bind="visible: requestError()">{% trans %}
+    There appears to have been an error retrieving the plugin data from the backend. Please report this
+    in the bug tracker & be sure to include all requested logs.
+{% endtrans %}</div>
+{% endmacro %}
+
 <ul class="nav nav-pills">
     <li class="active">
         <a href="#settings_plugin_pluginmanager_plugins" data-toggle="tab">{{ _('Plugins') }}</a>
@@ -49,6 +56,7 @@
         {{ pluginmanager_nopip() }}
         {{ pluginmanager_safemode() }}
         {{ pluginmanager_throttled() }}
+        {{ pluginmanager_requesterror() }}
 
         <div class="pull-right">
             <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>

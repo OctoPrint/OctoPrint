@@ -131,7 +131,7 @@ $(function() {
 
         self.followDependencyLinks = ko.observable(false);
 
-        self.pipAvailable = ko.observable(false);
+        self.pipAvailable = ko.observable(true);
         self.pipVersion = ko.observable();
         self.pipInstallDir = ko.observable();
         self.pipUseUser = ko.observable();
@@ -141,6 +141,8 @@ $(function() {
 
         self.safeMode = ko.observable();
         self.online = ko.observable();
+
+        self.requestError = ko.observable(false);
 
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
@@ -444,7 +446,11 @@ $(function() {
             options.eval_notices = options.eval_notices || false;
 
             OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices, orphans: options.refresh_orphans})
+                .fail(function() {
+                    self.requestError(true);
+                })
                 .done(function(data) {
+                    self.requestError(false);
                     self.fromResponse(data, options);
                 });
         };
