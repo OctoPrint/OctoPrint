@@ -226,22 +226,23 @@
             <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                 <div class="entry">
                     <div class="row-fluid">
-                        <div class="span9">
+                        <div class="span12">
+                            <div class="span3 pull-right">
+                                <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fa fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                                <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
+                            </div>
                             <div><span data-bind="text: title"></span></div>
                             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
                             <div>
-                                <small data-bind="visible: page"><i class="fa fa-info"></i> <a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
-                                <small data-bind="visible: homepage"><i class="fa fa-home"></i> <a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
-                                <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
-                                <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
-                                <small data-bind="visible: $data.stats !== undefined"><i class="fa fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.installations) : 0"></span></small>
+                                <small data-bind="visible: page"><i class="fa fa-info"></i>&nbsp;<a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
+                                <small data-bind="visible: homepage"><i class="fa fa-home"></i>&nbsp;<a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
+                                <small data-bind="visible: license"><i class="fa fa-gavel"></i>&nbsp;<span data-bind="text: license"></span></small>
+                                <small data-bind="visible: author"><i class="fa fa-user"></i>&nbsp;<span data-bind="text: author"></span></small>
+                                <small data-bind="visible: $data.stats !== undefined"><i class="fa fa-server"></i>&nbsp;<span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.installations) : 0"></span></small>
                                 <small>&nbsp;</small>
                             </div>
                         </div>
-                        <div class="span3">
-                            <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fa fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
-                            <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
-                        </div>
+
                     </div>
                 </div>
             </div>
