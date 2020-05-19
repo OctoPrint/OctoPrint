@@ -66,6 +66,15 @@ $(function() {
                     if (a["published"].toLocaleLowerCase() > b["published"].toLocaleLowerCase()) return -1;
                     if (a["published"].toLocaleLowerCase() < b["published"].toLocaleLowerCase()) return 1;
                     return 0;
+                },
+                "popularity": function (a, b) {
+                    // sorts descending
+                    var installationsA = (a.stats && a.stats.installations) ? a.stats.installations : 0;
+                    var installationsB = (b.stats && b.stats.installations) ? b.stats.installations : 0;
+
+                    if (installationsA > installationsB) return -1;
+                    if (installationsA < installationsB) return 1;
+                    return 0;
                 }
             },
             {
