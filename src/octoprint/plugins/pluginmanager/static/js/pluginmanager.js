@@ -69,14 +69,22 @@ $(function() {
                 },
                 "popularity": function (a, b) {
                     // sorts descending
-                    var installationsA = (a.stats && a.stats.installations) ? a.stats.installations : 0;
-                    var installationsB = (b.stats && b.stats.installations) ? b.stats.installations : 0;
+                    var countA = (a.stats && a.stats.instances_month) ? a.stats.instances_month : 0;
+                    var countB = (b.stats && b.stats.instances_month) ? b.stats.instances_month : 0;
 
-                    if (installationsA > installationsB) return -1;
-                    if (installationsA < installationsB) return 1;
+                    if (countA > countB) return -1;
+                    if (countA < countB) return 1;
                     return 0;
-                }
-            },
+                },
+                "hotness": function (a, b) {
+                    // sorts descending
+                    var countA = (a.stats && a.stats.install_events_week) ? a.stats.install_events_week : 0;
+                    var countB = (b.stats && b.stats.install_events_week) ? b.stats.install_events_week : 0;
+
+                    if (countA > countB) return -1;
+                    if (countA < countB) return 1;
+                    return 0;                }
+                },
             {
                 "filter_installed": function(plugin) {
                     return !self.installed(plugin);

@@ -216,7 +216,8 @@
                 <ul class="dropdown-menu pull-right">
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('popularity'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'popularity' ? 'visible' : 'hidden'}"></i> {{ _('Sort by popularity') }} ({{ _('descending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('popularity'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'popularity' ? 'visible' : 'hidden'}"></i> {{ _('Sort by active instance count') }} ({{ _('descending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('hotness'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'hotness' ? 'visible' : 'hidden'}"></i> {{ _('Sort by recent new installations count') }} ({{ _('descending') }})</a></li>
                     <li class="divider"></li>
                     <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
                     <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
@@ -242,11 +243,12 @@
                             <div><span data-bind="text: title"></span></div>
                             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
                             <div>
-                                <small data-bind="visible: page"><i class="fa fa-info"></i>&nbsp;<a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
-                                <small data-bind="visible: homepage"><i class="fa fa-home"></i>&nbsp;<a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
-                                <small data-bind="visible: license"><i class="fa fa-gavel"></i>&nbsp;<span data-bind="text: license"></span></small>
-                                <small data-bind="visible: author"><i class="fa fa-user"></i>&nbsp;<span data-bind="text: author"></span></small>
-                                <small data-bind="visible: $data.stats !== undefined"><i class="fa fa-server"></i>&nbsp;<span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.installations) : 0"></span></small>
+                                <small data-bind="visible: page" title="{{ _('Details') }}"><i class="fa fa-info"></i>&nbsp;<a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
+                                <small data-bind="visible: homepage" title="{{ _('Homepage') }}"><i class="fa fa-home"></i>&nbsp;<a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
+                                <small data-bind="visible: license" title="{{ _('License') }}"><i class="fa fa-gavel"></i>&nbsp;<span data-bind="text: license"></span></small>
+                                <small data-bind="visible: author" title="{{ _('Author') }}"><i class="fa fa-user"></i>&nbsp;<span data-bind="text: author"></span></small>
+                                <small data-bind="visible: $data.stats !== undefined" title="{{ _('Active instances past month') }}"><i class="fa fa-server"></i>&nbsp;<span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.instances_month) : 0"></span></small>
+                                <small data-bind="visible: $data.stats !== undefined" title="{{ _('New installations past week') }}"><i class="fa fa-download"></i>&nbsp;<span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.install_events_week) : 0"></span></small>
                                 <small>&nbsp;</small>
                             </div>
                         </div>
