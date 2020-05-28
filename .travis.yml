@@ -16,7 +16,7 @@ install:
 - pip install -e .[develop]
 script:
 - test -n "$RUN_FLAKE8" || pytest
-- test -z "$RUN_FLAKE8" || flake8 --ignore=D,E,W,F401 src/ tests setup.py
+- test -z "$RUN_FLAKE8" || flake8 --ignore=D,E,W,F401,F523 src/ tests setup.py
 sudo: false
 git:
   depth: 250
