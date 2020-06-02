@@ -48,7 +48,6 @@ NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
-swagger = Swagger(app)
 
 assets = None
 babel = None
@@ -594,6 +593,8 @@ class Server(object):
 
 		# register API blueprint
 		self._setup_blueprints()
+
+		swagger = Swagger(app)
 
 		## Tornado initialization starts here
 

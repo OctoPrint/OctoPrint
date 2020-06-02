@@ -192,12 +192,43 @@ def wizardFinish():
 @api.route("/state", methods=["GET"])
 @no_firstrun_access
 def apiPrinterState():
+	"""
+	/api/state has been deprecated, use /api/printer instead
+	---
+	responses:
+		405:
+			description: The endpoint will always return
+				"/api/state has been deprecated, use /api/printer instead"
+	"""
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
 
 @api.route("/version", methods=["GET"])
 @Permissions.STATUS.require(403)
 def apiVersion():
+	"""
+	Retrieve information regarding server and API version.
+	Returns a JSON object with two keys,
+	api containing the API version, server containing the server version,
+	text containing the server version including the
+	prefix ``OctoPrint `` (to determine that this is indeed a genuine OctoPrint instance).
+	---
+	definitions:
+		version_struct:
+			type: object
+			properties:
+				api:
+					type: string
+				server:
+					type: string
+				text:
+					type: string
+	responses:
+		200:
+			description: The version information of the instance
+			schema:
+				$ref: '#/definitions/version_struct'
+	"""
 	return jsonify({
 		"server": octoprint.server.VERSION,
 		"api": VERSION,
