@@ -16,6 +16,7 @@ from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict, OrderedDict
+from flasgger import Swagger
 
 from builtins import bytes, range
 from past.builtins import basestring, unicode
@@ -47,6 +48,7 @@ NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
+swagger = Swagger(app)
 
 assets = None
 babel = None

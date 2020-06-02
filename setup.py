@@ -106,7 +106,8 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid>=0.3.1",
 		"sphinx_rtd_theme",
-		"readthedocs-sphinx-ext==0.5.17" # Later versions require Jinja >= 2.9
+		"readthedocs-sphinx-ext==0.5.17", # Later versions require Jinja >= 2.9
+		"flasgger"
 	],
 
 	# Dependencies for developing OctoPrint plugins
