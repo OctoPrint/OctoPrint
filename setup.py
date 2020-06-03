@@ -19,7 +19,7 @@ PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*
 
 # Requirements for setup.py
 SETUP_REQUIRES = [
-	"markdown>=3.1,<4",
+	"markdown>=3.1,<3.2"         # newer versions require Python 3
 ]
 
 # Requirements for our application
@@ -32,6 +32,7 @@ INSTALL_REQUIRES = [
 
 	"markupsafe>=1.1,<2.0",      # Jinja dependency, newer versions require Python 3
 	"tornado==5.1.1",            # newer versions require Python 3
+	"markdown>=3.1,<3.2",        # newer versions require Python 3
 	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
@@ -45,7 +46,6 @@ INSTALL_REQUIRES = [
 	"werkzeug>=1.0.1,<2",
 	"cachelib>=0.1,<1",
 	"PyYAML>=5.3.1,<6",
-	"markdown>=3.1,<4",
 	"pyserial>=3.4,<4",
 	"netaddr>=0.7.19,<1",
 	"watchdog>=0.10.2,<1",
