@@ -249,13 +249,6 @@ PyCharm
     * Just like with the run configuration for the server you can also have the dependencies auto-update on run of
       the tests, see above on how to set this up.
 
-  - Add Run/Debug Configuration, select "tox":
-
-    * Name: OctoPrint tox
-    * Target: Custom
-    * Project: ``OctoPrint``
-    * Python interpreter: the ``venv`` local virtual environment
-
   - Add Run/Debug Configuration, select "Python docs" and therein "Sphinx task"
 
     * Name: OctoPrint docs
