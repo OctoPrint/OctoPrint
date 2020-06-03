@@ -42,9 +42,9 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
 
-		from slugify import slugify
-		pattern = re.compile(r"^[-_.a-zA-Z0-9]+")
-		self._slugify = lambda x: slugify(x, regex_pattern=pattern)
+		from slugify import Slugify
+		self._slugify = Slugify()
+		self._slugify.safe_chars = "-_."
 
 	# Additional permissions hook
 

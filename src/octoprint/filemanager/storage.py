@@ -24,7 +24,7 @@ from contextlib import contextmanager
 from past.builtins import basestring
 
 from emoji import demojize
-import slugify
+from slugify import Slugify
 
 import octoprint.filemanager
 
@@ -456,17 +456,15 @@ class LocalFileStorage(StorageInterface):
 	def _no_unicode_variations(cls, text):
 		return cls._UNICODE_VARIATIONS.sub("", text)
 
-	_SLUGIFY_ALLOWED_REGEX = re.compile(r"[^-_.()[]a-zA-Z0-9]+")
+	_SLUGIFY = Slugify()
+	_SLUGIFY.safe_chars = "-_.()[] "
 
 	@classmethod
 	def _slugify(cls, text):
 		text = to_unicode(text)
 		text = cls._no_unicode_variations(text)
 		text = demojize(text, delimiters=("", ""))
-		return slugify.slugify(text,
-		                       regex_pattern=cls._SLUGIFY_ALLOWED_REGEX,
-		                       separator="_",
-		                       lowercase=False)
+		return cls._SLUGIFY(text)
 
 	def __init__(self, basefolder, create=False):
 		"""
