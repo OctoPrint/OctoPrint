@@ -55,7 +55,7 @@ class LocalStorageTest(unittest.TestCase):
 		def get_file_type(name):
 			if name.lower().endswith(".stl"):
 				return ["model", "stl"]
-			elif name.lower().endswith(".gco") or name.lower().endswith(".gcode") or name.lower.endswith(".g"):
+			elif name.lower().endswith(".gco") or name.lower().endswith(".gcode") or name.lower().endswith(".g"):
 				return ["machinecode", "gcode"]
 			else:
 				return None
@@ -628,12 +628,13 @@ class LocalStorageTest(unittest.TestCase):
 	@data(
 		("test", "test"),
 		("\u2764", "red_heart"),
-		("\u2764\ufe00", "red_heart")
+		("\u2764\ufe00", "red_heart"),
+		("Häußge", "Haussge")
 	)
 	@unpack
 	def test_slugify(self, input, expected):
 		output = LocalFileStorage._slugify(input)
-		self.assertEqual(output, expected)
+		self.assertEqual(expected, output)
 
 	def _add_and_verify_file(self, path, expected_path, file_object, links=None, overwrite=False, display=None):
 		"""Adds a file to the storage and verifies the sanitized path."""
