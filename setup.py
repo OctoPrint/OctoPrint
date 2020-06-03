@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 # coding=utf-8
 
-from setuptools import setup, find_packages
 from distutils.command.build_py import build_py as _build_py
 import os
 import versioneer
@@ -176,6 +175,9 @@ def md_to_html_build_py_factory(files, baseclass):
 	                                 dict(files=files))
 
 def get_cmdclass():
+	# make sure these are always available, even when run by dependabot
+	global versioneer, octoprint_setuptools, md_to_html_build_py_factory
+
 	cmdclass = versioneer.get_cmdclass()
 
 	# add clean command
@@ -199,6 +201,10 @@ def get_cmdclass():
 
 
 def params():
+	# make sure these are always available, even when run by dependabot
+	global versioneer, get_cmdclass, read_file_contents, here, \
+		PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES, DEPENDENCY_LINKS
+
 	name = "OctoPrint"
 	version = versioneer.get_version()
 	cmdclass = get_cmdclass()
@@ -252,7 +258,7 @@ def params():
 		"Funding": "https://donate.octoprint.org"
 	}
 
-	packages = find_packages(where="src")
+	packages = setuptools.find_packages(where="src")
 	package_dir = {
 		"": "src",
 	}
@@ -279,4 +285,4 @@ def params():
 
 	return locals()
 
-setup(**params())
+setuptools.setup(**params())
