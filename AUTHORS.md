@@ -120,6 +120,7 @@ date of first contribution):
   * [Tobias Schürg](https://github.com/tobiasschuerg)
   * [Josh Friend](https://github.com/joshfriend)
   * [Lachlan Cresswell](https://github.com/lachyc)
+  * [Khoi Pham](https://github.com/osubuu)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

@@ -396,7 +396,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			# Make sure that specified value is not greater than maximum as defined in printer profile
 			extrusion_speed = min([speed, max_e_speed])
 
-		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
+		self.commands(["G91", "M83", "G1 E%s F%d" % (amount, extrusion_speed), "M82", "G90"],
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
 
 	def change_tool(self, tool, *args, **kwargs):
