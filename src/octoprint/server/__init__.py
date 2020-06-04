@@ -143,7 +143,6 @@ def on_user_logged_out(sender, user=None):
 	# user was logged out, clear identity
 	_clear_identity(sender)
 
-
 def load_user(id):
 	if id is None or not userManager.enabled:
 		return None
@@ -1750,10 +1749,10 @@ class Server(object):
 		# at least observed on a Win10 client targeting "localhost", resolved as both "127.0.0.1" and "::1"
 		loginManager.session_protection = "basic"
 
-		loginManager.user_callback = load_user
-		loginManager.unauthorized_callback = unauthorized_user
+		loginManager.user_loader(load_user)
+		loginManager.unauthorized_handler(unauthorized_user)
 		loginManager.anonymous_user = userManager.anonymous_user_factory
-		loginManager.request_callback = load_user_from_request
+		loginManager.request_loader(load_user_from_request)
 
 		loginManager.init_app(app, add_context_processor=False)
 
