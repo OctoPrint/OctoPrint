@@ -161,6 +161,8 @@ def getSettings():
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
+			"blacklistedPorts": s.get(["serial", "blacklistedPorts"]),
+			"blacklistedBaudrates": s.get(["serial", "blacklistedBaudrates"]),
 			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
 			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
 			"blockedCommands": s.get(["serial", "blockedCommands"]),
@@ -458,6 +460,8 @@ def _saveSettings(data):
 		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"], min=1.0)
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
+		if "blacklistedPorts" in data["serial"] and isinstance(data["serial"]["blacklistedPorts"], (list, tuple)): s.set(["serial", "blacklistedPorts"], data["serial"]["blacklistedPorts"])
+		if "blacklistedBaudrates" in data["serial"] and isinstance(data["serial"]["blacklistedBaudrates"], (list, tuple)): s.set(["serial", "blacklistedBaudrates"], data["serial"]["blacklistedBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
 		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
 		if "blockedCommands" in data["serial"] and isinstance(data["serial"]["blockedCommands"], (list, tuple)): s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])

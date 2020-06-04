@@ -12,6 +12,7 @@ The code in this file is based on Cura.util.machineCom from the Cura project fro
 
 import os
 import glob
+import fnmatch
 import time
 import re
 import threading
@@ -161,37 +162,51 @@ regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
 def serialList():
-	baselist=[]
 	if os.name=="nt":
+		candidates = []
 		try:
 			key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
-			i=0
-			while(1):
-				baselist+=[winreg.EnumValue(key,i)[1]]
-				i+=1
+			i = 0
+			while True:
+				candidates += [winreg.EnumValue(key,i)[1]]
+				i += 1
 		except Exception:
 			pass
-	baselist = baselist \
-			   + glob.glob("/dev/ttyUSB*") \
-			   + glob.glob("/dev/ttyACM*") \
-			   + glob.glob("/dev/tty.usb*") \
-			   + glob.glob("/dev/cu.*") \
-			   + glob.glob("/dev/cuaU*") \
-			   + glob.glob("/dev/ttyS*") \
-			   + glob.glob("/dev/rfcomm*")
 
+	else:
+		candidates = glob.glob("/dev/ttyUSB*") \
+		             + glob.glob("/dev/ttyACM*") \
+		             + glob.glob("/dev/tty.usb*") \
+		             + glob.glob("/dev/cu.*") \
+		             + glob.glob("/dev/cuaU*") \
+		             + glob.glob("/dev/ttyS*") \
+		             + glob.glob("/dev/rfcomm*")
+
+	# additional ports
 	additionalPorts = settings().get(["serial", "additionalPorts"])
 	if additionalPorts:
 		for additional in additionalPorts:
-			baselist += glob.glob(additional)
+			candidates += glob.glob(additional)
 
-	prev = settings().get(["serial", "port"])
-	if prev in baselist:
-		baselist.remove(prev)
-		baselist.insert(0, prev)
+
+	# special treatment for virtual printer
+	# TODO: Move that exclusively into the plugin
 	if settings().getBoolean(["devel", "virtualPrinter", "enabled"]):
-		baselist.append("VIRTUAL")
-	return baselist
+		candidates.append("VIRTUAL")
+
+	# blacklisted ports
+	blacklistedPorts = settings().get(["serial", "blacklistedPorts"])
+	if blacklistedPorts:
+		for pattern in settings().get(["serial", "blacklistedPorts"]):
+			candidates = list(filter(lambda x: not fnmatch.fnmatch(x, pattern), candidates))
+
+	# last used port = first to try, move to start
+	prev = settings().get(["serial", "port"])
+	if prev in candidates:
+		candidates.remove(prev)
+		candidates.insert(0, prev)
+
+	return candidates
 
 def baudrateList(candidates=None):
 	if candidates is None:
@@ -205,6 +220,12 @@ def baudrateList(candidates=None):
 			candidates.insert(0, int(additional))
 		except Exception:
 			_logger.warning("{} is not a valid additional baudrate, ignoring it".format(additional))
+
+	# blacklisted baudrates
+	blacklistedBaudrates = settings().get(["serial", "blacklistedBaudrates"])
+	if blacklistedBaudrates:
+		for baudrate in blacklistedBaudrates:
+			candidates.remove(baudrate)
 
 	# last used baudrate = first to try, move to start
 	prev = settings().getInt(["serial", "baudrate"])

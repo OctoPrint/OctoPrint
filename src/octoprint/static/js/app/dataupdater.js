@@ -303,8 +303,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         text = _.sprintf(gettext("There was an error while trying to start a print job. Error: %(error)s"), {error: _.escape(payload.error)});
                         break;
                     }
-                    case "autodetect_port":
-                    case "autodetect_baudrate": {
+                    case "autodetect": {
                         // ignore
                         break;
                     }

@@ -176,6 +176,8 @@ $(function() {
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
+        self.serial_blacklistedPorts = ko.observable(undefined);
+        self.serial_blacklistedBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
@@ -826,6 +828,8 @@ $(function() {
                 serial: {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
+                    blacklistedPorts : function() { return commentableLinesToArray(self.serial_blacklistedPorts()) },
+                    blacklistedBaudrates: function() { return _.map(splitTextToArray(self.serial_blacklistedBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
@@ -966,6 +970,8 @@ $(function() {
                 serial: {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
+                    blacklistedPorts : function(value) { self.serial_blacklistedPorts(value.join("\n"))},
+                    blacklistedBaudrates: function(value) { self.serial_blacklistedBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
