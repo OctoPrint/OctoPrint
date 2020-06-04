@@ -196,11 +196,6 @@ def serialList():
 			logging.getLogger(__name__).exception("Error while retrieving additional "
 			                                      "serial port names from hook {}".format(name))
 
-	# special treatment for virtual printer
-	# TODO: Move that exclusively into the plugin
-	if settings().getBoolean(["devel", "virtualPrinter", "enabled"]):
-		candidates.append("VIRTUAL")
-
 	# blacklisted ports
 	blacklistedPorts = settings().get(["serial", "blacklistedPorts"])
 	if blacklistedPorts:

@@ -423,59 +423,7 @@ default_settings = {
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
-		"sockJsConnectTimeout": 10,
-		"virtualPrinter": {
-			"enabled": False,
-			"okAfterResend": False,
-			"forceChecksum": False,
-			"numExtruders": 1,
-			"pinnedExtruders": None,
-			"includeCurrentToolInTemps": True,
-			"includeFilenameInOpened": True,
-			"hasBed": True,
-			"hasChamber": False,
-			"repetierStyleTargetTemperature": False,
-			"okBeforeCommandOutput": False,
-			"smoothieTemperatureReporting": False,
-			"reprapfwM114": False,
-			"extendedSdFileList": False,
-			"throttle": 0.01,
-			"sendWait": True,
-			"waitInterval": 1.0,
-			"rxBuffer": 64,
-			"commandBuffer": 4,
-			"supportM112": True,
-			"echoOnM117": True,
-			"brokenM29": True,
-			"brokenResend": False,
-			"supportF": False,
-			"firmwareName": "Virtual Marlin 1.0",
-			"sharedNozzle": False,
-			"sendBusy": False,
-			"busyInterval": 2.0,
-			"simulateReset": True,
-			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
-			"preparedOks": [],
-			"okFormatString": "ok",
-			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
-			"m115ReportCapabilities": True,
-			"capabilities": {
-				"AUTOREPORT_TEMP": True,
-				"AUTOREPORT_SD_STATUS": True,
-				"EMERGENCY_PARSER": True
-			},
-			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
-			"ambientTemperature": 21.3,
-			"errors": {
-				"checksum_mismatch": "Checksum mismatch",
-				"checksum_missing": "Missing checksum",
-				"lineno_mismatch": "expected line {} got {}",
-				"lineno_missing": "No Line Number with checksum, Last Line: {}",
-				"maxtemp": "MAXTEMP triggered!",
-				"mintemp": "MINTEMP triggered!",
-				"command_unknown": "Unknown command {}"
-			}
-		}
+		"sockJsConnectTimeout": 10
 	}
 }
 """The default settings of the core application."""
