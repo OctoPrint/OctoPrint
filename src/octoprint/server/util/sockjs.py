@@ -206,7 +206,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				user_id, user_session = parts
 
 				if self._userManager.validate_user_session(user_id, user_session):
-					user = self._userManager.find_user(userid=user_id)
+					user = self._userManager.find_user(userid=user_id, session=user_session)
 					self._on_login(user)
 				else:
 					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
