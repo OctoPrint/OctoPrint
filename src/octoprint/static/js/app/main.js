@@ -203,9 +203,8 @@ $(function() {
         [
             // printer states
             gettext("Offline"),
-            gettext("Opening serial port"),
-            gettext("Detecting serial port"),
-            gettext("Detecting baudrate"),
+            gettext("Opening serial connection"),
+            gettext("Detecting serial connection"),
             gettext("Connecting"),
             gettext("Operational"),
             gettext("Starting"),
