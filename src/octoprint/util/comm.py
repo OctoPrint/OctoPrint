@@ -188,6 +188,13 @@ def serialList():
 		for additional in additionalPorts:
 			candidates += glob.glob(additional)
 
+	hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.comm.transport.serial.additional_port_names")
+	for name, hook in hooks.items():
+		try:
+			candidates += hook(candidates)
+		except Exception:
+			logging.getLogger(__name__).exception("Error while retrieving additional "
+			                                      "serial port names from hook {}".format(name))
 
 	# special treatment for virtual printer
 	# TODO: Move that exclusively into the plugin
