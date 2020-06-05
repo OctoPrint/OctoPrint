@@ -2371,6 +2371,10 @@ class MachineCom(object):
 			self._clear_to_send.set()
 
 	def _perform_detection_step(self, init=False):
+		def log(message):
+			self._log(message)
+			self._logger.info("Serial detection: {}".format(message))
+
 		if init:
 			timeout = settings().getFloat(["serial", "timeout", "connection"])
 			port = self._port
@@ -2392,6 +2396,11 @@ class MachineCom(object):
 
 			self._detection_candidates = [(p, b) for p in port_candidates for b in baudrate_candidates]
 
+			log("Performing autodetection with {} " \
+			    "port/baudrate candidates: {}".format(len(self._detection_candidates),
+			                                          ", ".join(map(lambda x: "{}@{}".format(x[0], x[1]),
+			                                                    self._detection_candidates))))
+
 		else:
 			timeout = settings().getFloat(["serial", "timeout", "detection"])
 
@@ -2401,9 +2410,7 @@ class MachineCom(object):
 					self._serial.timeout = timeout
 				self._timeout = monotonic_time() + timeout
 
-				message = "Handshake attempt #{}".format(self._detection_retry + 1)
-				self._log(message)
-				self._logger.info("Serial detection: {}".format(message))
+				log("Handshake attempt #{}".format(self._detection_retry + 1))
 
 				self._detection_retry += 1
 				self._do_send_without_checksum(b"", log=False) # new line to reset things
@@ -2416,9 +2423,7 @@ class MachineCom(object):
 				try:
 					if self._serial is None or self._serial.port != p:
 						if not self._open_serial(p, b, trigger_errors=False):
-							message = "Could not open port {}, baudrate {}, skipping".format(p, b)
-							self._log(message)
-							self._logger.info("Serial detection: {}".format(message))
+							log("Could not open port {}, baudrate {}, skipping".format(p, b))
 							continue
 					else:
 						self._serial.baudrate = b
@@ -2427,9 +2432,7 @@ class MachineCom(object):
 						self._serial.timeout = timeout
 					self._timeout = monotonic_time() + timeout
 
-					message = "Trying port {}, baudrate {}".format(p, b)
-					self._log(message)
-					self._logger.info("Serial detection: {}".format(message))
+					log("Trying port {}, baudrate {}".format(p, b))
 					self._detection_retry = 0
 
 				except Exception:
@@ -2704,7 +2707,7 @@ class MachineCom(object):
 	def _open_serial(self, port, baudrate, trigger_errors=True):
 		def default(_, p, b, timeout):
 			# connect to regular serial port
-			self._log("Connecting to port {}, baudrate {}".format(port, baudrate))
+			self._dual_log("Connecting to port {}, baudrate {}".format(port, baudrate), level=logging.INFO)
 
 			serial_port_args = {
 				"baudrate": baudrate,
