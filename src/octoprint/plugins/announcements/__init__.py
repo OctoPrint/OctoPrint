@@ -42,7 +42,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
 
-		from slugify import Slugify
+		from octoprint.vendor.awesome_slugify import Slugify
 		self._slugify = Slugify()
 		self._slugify.safe_chars = "-_."
 

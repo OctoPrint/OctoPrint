@@ -24,7 +24,7 @@ from contextlib import contextmanager
 from past.builtins import basestring
 
 from emoji import demojize
-from slugify import Slugify
+from octoprint.vendor.awesome_slugify import Slugify
 
 import octoprint.filemanager
 

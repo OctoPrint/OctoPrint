@@ -41,7 +41,6 @@ INSTALL_REQUIRES = [
 	"Flask-Login>=0.5,<1",
 	"Flask-Babel>=1.0,<2",
 	"Flask-Assets>=2.0,<3",
-	"blinker>=1.4,<2",           # dependency of the now vendor bundled flask_principal
 	"werkzeug>=1.0.1,<2",
 	"cachelib>=0.1,<1",
 	"PyYAML>=5.3.1,<6",
@@ -57,7 +56,6 @@ INSTALL_REQUIRES = [
 	"semantic_version>=2.8.5,<3",
 	"psutil>=5.7,<6",
 	"Click>=7.1.2,<8",
-	"awesome-slugify>=1.6.5,<2",
 	"feedparser>=5.2.1,<6",
 	"future>=0.18.2,<1",
 	"websocket-client>=0.57,<1",
@@ -65,7 +63,11 @@ INSTALL_REQUIRES = [
 	"emoji>=0.5.4,<1",
 	"frozendict>=1.2,<2",
 	"sentry-sdk>=0.14.4,<1",
-	"filetype>=1.0.7,<2"
+	"filetype>=1.0.7,<2",
+
+	# vendor bundle dependencies
+	"unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
+	"blinker>=1.4,<2"            # dependency of flask_principal
 ]
 
 # Python 2 specific requirements
