@@ -40,11 +40,12 @@ class VirtualPrinter(object):
 	start_sd_regex = re.compile(r"start_sd (.*)")
 	select_sd_regex = re.compile(r"select_sd (.*)")
 
-	def __init__(self, settings, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
+	def __init__(self, settings, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0, faked_baudrate=115200):
 		import logging
 		self._logger = logging.getLogger("octoprint.plugins.virtual_printer.VirtualPrinter")
 
 		self._settings = settings
+		self._faked_baudrate = faked_baudrate
 
 		self._seriallog = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter.serial")
 		self._seriallog.setLevel(logging.CRITICAL)
@@ -267,6 +268,14 @@ class VirtualPrinter(object):
 	def write_timeout(self, value):
 		self._logger.debug("Setting write timeout to {}s".format(value))
 		self._write_timeout = value
+
+	@property
+	def port(self):
+		return "VIRTUAL"
+
+	@property
+	def baudrate(self):
+		return self._faked_baudrate
 
 	# noinspection PyMethodMayBeStatic
 	def _clearQueue(self, q):

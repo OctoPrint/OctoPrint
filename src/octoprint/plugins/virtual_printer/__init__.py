@@ -100,7 +100,8 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.Tem
 
 		serial_obj = virtual.VirtualPrinter(self._settings,
 		                                    seriallog_handler=seriallog_handler,
-		                                    read_timeout=float(read_timeout))
+		                                    read_timeout=float(read_timeout),
+		                                    faked_baudrate=baudrate)
 		return serial_obj
 
 	def get_additional_port_names(self, *args, **kwargs):
