@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import sys
+import functools
 
 PY3 = sys.version_info[0] == 3
 
@@ -53,3 +54,10 @@ else:
 
     import urllib
     unquote_plus = urllib.unquote_plus
+
+def no_auto_finish(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        self._auto_finish = False
+        return method(self, *args, **kwargs)
+    return wrapper

@@ -33,7 +33,7 @@ class StreamingTransportBase(pollingbase.PollingTransportBase):
 
         return False
 
-    def send_complete(self):
+    def send_complete(self, f=None):
         """
             Verify if connection should be closed based on amount of data that was sent.
         """
