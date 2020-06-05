@@ -3,11 +3,16 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 __author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge & others - Released under terms of the AGPLv3 License"
 
+"""
+The code in this file is based on Cura.util.machineCom from the Cura project from late 2012
+(https://github.com/daid/Cura).
+"""
 
 import os
 import glob
+import fnmatch
 import time
 import re
 import threading
@@ -29,9 +34,6 @@ import wrapt
 import octoprint.plugin
 
 from collections import deque
-
-from octoprint.util.avr_isp import stk500v2
-from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
@@ -160,41 +162,58 @@ regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
 def serialList():
-	baselist=[]
 	if os.name=="nt":
+		candidates = []
 		try:
 			key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
-			i=0
-			while(1):
-				baselist+=[winreg.EnumValue(key,i)[1]]
-				i+=1
+			i = 0
+			while True:
+				candidates += [winreg.EnumValue(key,i)[1]]
+				i += 1
 		except Exception:
 			pass
-	baselist = baselist \
-			   + glob.glob("/dev/ttyUSB*") \
-			   + glob.glob("/dev/ttyACM*") \
-			   + glob.glob("/dev/tty.usb*") \
-			   + glob.glob("/dev/cu.*") \
-			   + glob.glob("/dev/cuaU*") \
-			   + glob.glob("/dev/ttyS*") \
-			   + glob.glob("/dev/rfcomm*")
 
+	else:
+		candidates = glob.glob("/dev/ttyUSB*") \
+		             + glob.glob("/dev/ttyACM*") \
+		             + glob.glob("/dev/tty.usb*") \
+		             + glob.glob("/dev/cu.*") \
+		             + glob.glob("/dev/cuaU*") \
+		             + glob.glob("/dev/ttyS*") \
+		             + glob.glob("/dev/rfcomm*")
+
+	# additional ports
 	additionalPorts = settings().get(["serial", "additionalPorts"])
 	if additionalPorts:
 		for additional in additionalPorts:
-			baselist += glob.glob(additional)
+			candidates += glob.glob(additional)
 
+	hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.comm.transport.serial.additional_port_names")
+	for name, hook in hooks.items():
+		try:
+			candidates += hook(candidates)
+		except Exception:
+			logging.getLogger(__name__).exception("Error while retrieving additional "
+			                                      "serial port names from hook {}".format(name))
+
+	# blacklisted ports
+	blacklistedPorts = settings().get(["serial", "blacklistedPorts"])
+	if blacklistedPorts:
+		for pattern in settings().get(["serial", "blacklistedPorts"]):
+			candidates = list(filter(lambda x: not fnmatch.fnmatch(x, pattern), candidates))
+
+	# last used port = first to try, move to start
 	prev = settings().get(["serial", "port"])
-	if prev in baselist:
-		baselist.remove(prev)
-		baselist.insert(0, prev)
-	if settings().getBoolean(["devel", "virtualPrinter", "enabled"]):
-		baselist.append("VIRTUAL")
-	return baselist
+	if prev in candidates:
+		candidates.remove(prev)
+		candidates.insert(0, prev)
 
-def baudrateList():
-	# sorted by likelihood
-	candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+	return candidates
+
+def baudrateList(candidates=None):
+	if candidates is None:
+		# sorted by likelihood
+		candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
 
 	# additional baudrates prepended, sorted descending
 	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
@@ -203,6 +222,12 @@ def baudrateList():
 			candidates.insert(0, int(additional))
 		except Exception:
 			_logger.warning("{} is not a valid additional baudrate, ignoring it".format(additional))
+
+	# blacklisted baudrates
+	blacklistedBaudrates = settings().get(["serial", "blacklistedBaudrates"])
+	if blacklistedBaudrates:
+		for baudrate in blacklistedBaudrates:
+			candidates.remove(baudrate)
 
 	# last used baudrate = first to try, move to start
 	prev = settings().getInt(["serial", "baudrate"])
@@ -369,20 +394,19 @@ class MachineCom(object):
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
 	STATE_DETECT_SERIAL = 2
-	STATE_DETECT_BAUDRATE = 3
-	STATE_CONNECTING = 4
-	STATE_OPERATIONAL = 5
-	STATE_STARTING = 6
-	STATE_PRINTING = 7
-	STATE_PAUSED = 8
-	STATE_PAUSING = 9
-	STATE_RESUMING = 10
-	STATE_FINISHING = 11
-	STATE_CLOSED = 12
-	STATE_ERROR = 13
-	STATE_CLOSED_WITH_ERROR = 14
-	STATE_TRANSFERING_FILE = 15
-	STATE_CANCELLING = 16
+	STATE_CONNECTING = 3
+	STATE_OPERATIONAL = 4
+	STATE_STARTING = 5
+	STATE_PRINTING = 6
+	STATE_PAUSED = 7
+	STATE_PAUSING = 8
+	STATE_RESUMING = 9
+	STATE_FINISHING = 10
+	STATE_CLOSED = 11
+	STATE_ERROR = 12
+	STATE_CLOSED_WITH_ERROR = 13
+	STATE_TRANSFERING_FILE = 14
+	STATE_CANCELLING = 15
 
 	# be sure to add anything here that signifies an operational state
 	OPERATIONAL_STATES = (STATE_PRINTING, STATE_STARTING, STATE_OPERATIONAL, STATE_PAUSED, STATE_CANCELLING,
@@ -400,6 +424,8 @@ class MachineCom(object):
 	CAPABILITY_SUPPORT_ENABLED = "enabled"
 	CAPABILITY_SUPPORT_DETECTED = "detected"
 	CAPABILITY_SUPPORT_DISABLED = "disabled"
+
+	DETECTION_RETRIES = 3
 
 	def __init__(self, port=None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
@@ -423,8 +449,10 @@ class MachineCom(object):
 		self._printerProfileManager = printerProfileManager
 		self._state = self.STATE_NONE
 		self._serial = None
-		self._baudrateDetectList = []
-		self._baudrateDetectRetry = 0
+
+		self._detection_candidates = []
+		self._detection_retry = self.DETECTION_RETRIES
+
 		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
 		self._command_queue = CommandQueue()
@@ -706,11 +734,9 @@ class MachineCom(object):
 		if state == self.STATE_NONE:
 			return "Offline"
 		elif state == self.STATE_OPEN_SERIAL:
-			return "Opening serial port"
+			return "Opening serial connection"
 		elif state == self.STATE_DETECT_SERIAL:
-			return "Detecting serial port"
-		elif state == self.STATE_DETECT_BAUDRATE:
-			return "Detecting baudrate"
+			return "Detecting serial connection"
 		elif state == self.STATE_CONNECTING:
 			return "Connecting"
 		elif state == self.STATE_OPERATIONAL:
@@ -1635,25 +1661,21 @@ class MachineCom(object):
 
 		self._consecutive_timeouts = 0
 
-		#Open the serial port.
-		if not self._openSerial():
-			return
+		# Open the serial port
+		needs_detection = not (self._port and self._port != 'AUTO' and self._baudrate)
+		try_hello = False
 
-		try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
+		if not needs_detection:
+			self._changeState(self.STATE_OPEN_SERIAL)
+			if not self._open_serial(self._port, self._baudrate):
+				return
+			try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
+			self._changeState(self.STATE_CONNECTING)
+		else:
+			self._changeState(self.STATE_DETECT_SERIAL)
+			self._perform_detection_step(init=True)
 
 		self._log("Connected to: %s, starting monitor" % self._serial)
-		if self._baudrate == 0:
-			try_hello = False
-			self._log("Starting baud rate detection...")
-			self._changeState(self.STATE_DETECT_BAUDRATE)
-
-			# Some controllers (e.g. Original Prusa) don't appear to like too fast serial interaction after
-			# open, so let's wait a bit before the first baudrate detection step
-			time.sleep(settings().getFloat(["serial", "timeout", "baudrateDetectionPause"]))
-
-			self._perform_baudrate_detection_step(init=True)
-		else:
-			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
 		self._timeout = self._ok_timeout = self._get_new_communication_timeout()
@@ -1715,7 +1737,7 @@ class MachineCom(object):
 
 						self._set_busy_protocol_interval(interval=busy_interval, callback=busyIntervalSet)
 
-					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
+					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
 						continue
 
 				##~~ debugging output handling
@@ -1752,7 +1774,7 @@ class MachineCom(object):
 									                       extra=dict(plugin=name))
 									continue
 
-					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
+					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
 						continue
 
 				def convert_line(line):
@@ -1836,7 +1858,7 @@ class MachineCom(object):
 					handled = self.isPrinting() and line == ""
 
 				# we don't have to process the rest if the line has already been handled fully
-				if handled and self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
+				if handled and self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
 					continue
 
 				##~~ position report processing
@@ -2193,10 +2215,10 @@ class MachineCom(object):
 					elif "toggle" in pause_triggers and pause_triggers["toggle"].search(line) is not None:
 						self.setPause(not self.isPaused())
 
-				### Baudrate detection
-				if self._state == self.STATE_DETECT_BAUDRATE:
+				### Serial detection
+				if self._state == self.STATE_DETECT_SERIAL:
 					if line == '' or monotonic_time() > self._timeout:
-						self._perform_baudrate_detection_step()
+						self._perform_detection_step()
 					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
 						if 'start' in line:
@@ -2348,42 +2370,77 @@ class MachineCom(object):
 			self._log(message + " " + general_message)
 			self._clear_to_send.set()
 
-	def _perform_baudrate_detection_step(self, init=False):
+	def _perform_detection_step(self, init=False):
+		def log(message):
+			self._log(message)
+			self._logger.info("Serial detection: {}".format(message))
+
 		if init:
 			timeout = settings().getFloat(["serial", "timeout", "connection"])
-			self._baudrateDetectList = baudrateList()
+			port = self._port
+			baudrate = self._baudrate
+
+			if port and port != "AUTO":
+				port_candidates = [port]
+			else:
+				port_candidates = serialList()
+
+			if baudrate:
+				baudrate_candidates = [baudrate]
+			elif len(port_candidates) == 1:
+				baudrate_candidates = baudrateList()
+			else:
+				# if we have no baudrate and more than one port we limit tested baudrates to
+				# the two most common plus any additionally configured ones
+				baudrate_candidates = baudrateList([115200, 250000])
+
+			self._detection_candidates = [(p, b) for p in port_candidates for b in baudrate_candidates]
+
+			log("Performing autodetection with {} " \
+			    "port/baudrate candidates: {}".format(len(self._detection_candidates),
+			                                          ", ".join(map(lambda x: "{}@{}".format(x[0], x[1]),
+			                                                    self._detection_candidates))))
+
 		else:
 			timeout = settings().getFloat(["serial", "timeout", "detection"])
 
-		if self._baudrateDetectRetry > 0:
-			if self._serial.timeout != timeout:
-				self._serial.timeout = timeout
-			self._timeout = monotonic_time() + timeout
-
-			self._log("Baudrate test retry #{}".format(5 - self._baudrateDetectRetry))
-			self._baudrateDetectRetry -= 1
-			self._do_send_without_checksum(b"", log=False) # new line to reset things
-			self.sayHello(tags={"trigger:baudrate_detection", })
-
-		elif len(self._baudrateDetectList) > 0:
-			baudrate = self._baudrateDetectList.pop(0)
-			try:
-				self._serial.baudrate = baudrate
+		while len(self._detection_candidates) > 0:
+			if self._detection_retry < self.DETECTION_RETRIES:
 				if self._serial.timeout != timeout:
 					self._serial.timeout = timeout
 				self._timeout = monotonic_time() + timeout
 
-				self._log("Trying baudrate: {}".format(baudrate))
-				self._baudrateDetectRetry = 4
-				self._do_send_without_checksum(b"", log=False) # new line to reset things
-				self.sayHello(tags={"trigger:baudrate_detection", })
-			except Exception:
-				self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
-				self._logger.exception("Unexpected error while setting baudrate {}".format(baudrate))
+				log("Handshake attempt #{}".format(self._detection_retry + 1))
 
-		else:
-			error_text = "No more baudrates to test, and no suitable baudrate found."
-			self._trigger_error(error_text, "autodetect_baudrate")
+				self._detection_retry += 1
+				self._do_send_without_checksum(b"", log=False) # new line to reset things
+				self.sayHello(tags={"trigger:detection", })
+				return
+
+			else:
+				(p, b) = self._detection_candidates.pop(0)
+
+				try:
+					if self._serial is None or self._serial.port != p:
+						if not self._open_serial(p, b, trigger_errors=False):
+							log("Could not open port {}, baudrate {}, skipping".format(p, b))
+							continue
+					else:
+						self._serial.baudrate = b
+
+					if self._serial.timeout != timeout:
+						self._serial.timeout = timeout
+					self._timeout = monotonic_time() + timeout
+
+					log("Trying port {}, baudrate {}".format(p, b))
+					self._detection_retry = 0
+
+				except Exception:
+					self._log("Unexpected error while setting baudrate {}: {}".format(b, get_exception_string()))
+					self._logger.exception("Unexpected error while setting baudrate {}".format(b))
+
+		error_text = "No more candidates to test, and no working port/baudrate combination detected."
+		self._trigger_error(error_text, "autodetect")
 
 	def _finish_heatup(self):
 		if self._heating:
@@ -2444,7 +2501,9 @@ class MachineCom(object):
 					except KeyError:
 						output = template.format(**match.groupdict())
 					except Exception:
-						self._logger.debug("Could not proces template %s: %s", template_key, template, exc_info=1)
+						self._logger.debug("Could not process template {}: {}".format(template_key,
+						                                                              template),
+						                   exc_info=1)
 						output = None
 
 					if output is not None:
@@ -2645,54 +2704,14 @@ class MachineCom(object):
 			finally:
 				self._command_queue.task_done()
 
-	def _detect_port(self):
-		potentials = serialList()
-		self._log("Serial port list: %s" % (str(potentials)))
-
-		if len(potentials) == 1:
-			# short cut: only one port, let's try that
-			return potentials[0]
-
-		elif len(potentials) > 1:
-			programmer = stk500v2.Stk500v2()
-
-			for p in potentials:
-				serial_obj = None
-
-				try:
-					self._log("Trying {}".format(p))
-					programmer.connect(p)
-					serial_obj = programmer.leaveISP()
-				except Exception as e:
-					self._log("Could not connect to or enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
-					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
-
-				found = serial_obj is not None
-				programmer.close()
-
-				if found:
-					return p
-
-		return None
-
-	def _openSerial(self):
-		def default(_, port, baudrate, read_timeout):
-			if port is None or port == 'AUTO':
-				# no known port, try auto detection
-				self._changeState(self.STATE_DETECT_SERIAL)
-				port = self._detect_port()
-				if port is None:
-					error_text = "Failed to autodetect serial port, please set it manually."
-					self._trigger_error(error_text, "autodetect_port")
-					self._log(error_text)
-					return None
-
+	def _open_serial(self, port, baudrate, trigger_errors=True):
+		def default(_, p, b, timeout):
 			# connect to regular serial port
-			self._log("Connecting to: %s" % port)
+			self._dual_log("Connecting to port {}, baudrate {}".format(port, baudrate), level=logging.INFO)
 
 			serial_port_args = {
-				"baudrate": baudrateList()[0] if baudrate == 0 else baudrate,
-				"timeout": read_timeout,
+				"baudrate": baudrate,
+				"timeout": timeout,
 				"write_timeout": 0,
 			}
 
@@ -2700,7 +2719,7 @@ class MachineCom(object):
 				serial_port_args["exclusive"] = True
 
 			serial_obj = serial.Serial(**serial_port_args)
-			serial_obj.port = str(port)
+			serial_obj.port = str(p)
 
 			use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
 			needs_parity_workaround = get_os() == "linux" and os.path.exists("/etc/debian_version") # See #673
@@ -2727,23 +2746,27 @@ class MachineCom(object):
 		serial_factories = list(self._serial_factory_hooks.items()) + [("default", default)]
 		for name, factory in serial_factories:
 			try:
-				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
+				serial_obj = factory(self,
+				                     port,
+				                     baudrate,
+				                     settings().getFloat(["serial", "timeout", "connection"]))
 			except Exception:
 				exception_string = get_exception_string()
-				self._trigger_error("Connection error, see Terminal tab", "connection")
 
-				error_message = "Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name)
+				if trigger_errors:
+					self._trigger_error("Connection error, see Terminal tab", "connection")
+
+				error_message = "Unexpected error while connecting to " \
+				                "serial port {}, baudrate {} from hook {}: {}".format(port,
+				                                                                      baudrate,
+				                                                                      name,
+				                                                                      exception_string)
 				self._log(error_message)
 				self._logger.exception(error_message)
-
-				if "failed to set custom baud rate" in exception_string.lower():
-					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/OctoPrint/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
-
 				return False
 
 			if serial_obj is not None:
 				# first hook to succeed wins, but any can pass on to the next
-				self._changeState(self.STATE_OPEN_SERIAL)
 				self._serial = serial_obj
 				self._clear_to_send.reset()
 				return True

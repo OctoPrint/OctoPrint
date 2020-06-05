@@ -890,6 +890,25 @@ octoprint.comm.protocol.temperatures.received
       :tab-width: 4
       :caption: `sanitize_temperatures.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/sanitize_temperatures.py>`_
 
+.. _sec-plugins-hook-comm-transport-serial-additonal-port-names:
+
+octoprint.comm.transport.serial.additional_port_names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_port_names_hook(candidates, *args, **kwargs)
+
+   Return additional port names (not glob patterns!) to use as a serial connection to the printer. Expected to be
+   ``list`` of ``string``s.
+
+   Useful in combination with :ref:`octoprint.comm.transport.serial.factory <sec-plugins-hook-comm-transport-serial-factory>`
+   to implement custom serial-like ports through plugins.
+
+   For an example of use see the bundled ``virtual_printer`` plugin.
+
+   :param list candidates: The port names already found on the system available for connection.
+   :return: Additional port names to offer up for connection.
+   :rtype: list
+
 .. _sec-plugins-hook-comm-transport-serial-factory:
 
 octoprint.comm.transport.serial.factory

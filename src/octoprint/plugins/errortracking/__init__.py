@@ -25,15 +25,11 @@ SETTINGS_DEFAULTS = dict(enabled=False,
 import serial
 import requests.exceptions
 import errno
-import octoprint.util.avr_isp.ispBase
 import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
 	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
-
-	# isp errors during port auto detection in octoprint.util.comm
-	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
 
 	# IOErrors of any kind due to a full file system
 	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
