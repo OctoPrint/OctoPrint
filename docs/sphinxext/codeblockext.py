@@ -12,7 +12,7 @@ from sphinx.highlighting import PygmentsBridge
 from sphinx.ext import doctest
 from sphinx.util.texescape import tex_hl_escape_map_new
 
-from docutils.nodes import General, FixedTextElement, literal_block, container
+from docutils import nodes
 from docutils.parsers.rst import directives
 
 from six import text_type
@@ -22,6 +22,10 @@ from pygments.filters import VisibleWhitespaceFilter, ErrorToken
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
 
+if False:
+	# For type annotation
+	from typing import Any, Dict, List, Tuple  # NOQA
+
 def _merge_dict(a, b):
 	"""
 	Little helper to merge two dicts a and b on the fly.
@@ -30,7 +34,7 @@ def _merge_dict(a, b):
 	result.update(b)
 	return result
 
-class literal_block_ext(General, FixedTextElement):
+class literal_block_ext(nodes.General, nodes.FixedTextElement):
 	"""
 	Custom node which is basically the same as a :class:`literal_block`, just with whitespace support and introduced
 	in order to be able to have a custom visitor.
@@ -59,6 +63,7 @@ class CodeBlockExt(CodeBlock):
 	option_spec = _merge_dict(CodeBlock.option_spec, dict(whitespace=directives.flag))
 
 	def run(self):
+		# type: () -> List[nodes.Node]
 		# get result from parent implementation
 		code_block = CodeBlock.run(self)
 
@@ -67,7 +72,7 @@ class CodeBlockExt(CodeBlock):
 			Recursive method to turn all literal blocks located within a node into :class:`literal_block_ext`.
 			"""
 
-			if isinstance(node, container):
+			if isinstance(node, nodes.container):
 				# container node => handle all children
 				children = []
 				for child in node.children:
@@ -75,7 +80,7 @@ class CodeBlockExt(CodeBlock):
 				node.children = children
 				return node
 
-			elif isinstance(node, literal_block):
+			elif isinstance(node, nodes.literal_block):
 				# literal block => replace it
 				return self._wrap_literal_block(node)
 

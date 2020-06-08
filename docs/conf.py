@@ -146,7 +146,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 html_static_path = ['_static']
 
 def setup(app):
-    app.add_stylesheet("theme_overrides.css")
+    app.add_css_file("theme_overrides.css")
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -190,7 +190,7 @@ def setup(app):
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'OctoPrintdoc'
+htmlhelp_basename = 'OctoPrintDoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
