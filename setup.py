@@ -106,7 +106,7 @@ EXTRA_REQUIRES = dict(
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid",
 		"sphinx_rtd_theme",
-		"readthedocs-sphinx-ext"
+		"readthedocs-sphinx-ext==0.5.17" # Later versions require Jinja >= 2.9
 	],
 )
 
