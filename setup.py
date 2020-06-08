@@ -99,19 +99,21 @@ EXTRA_REQUIRES = dict(
 
 		# profiler
 		"pyinstrument",
-
-		# Documentation dependencies
-		"sphinx>=1.8.5,<2",
-		"sphinxcontrib-httpdomain",
-		"sphinxcontrib-mermaid>=0.4.0",
-		"sphinx_rtd_theme>=0.4.3",
-		"readthedocs-sphinx-ext>=1.0.4"
 	],
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
 		"cookiecutter>=1.7.2,<1.8"
-	]
+	],
+
+	# Dependencies for building the documentation - Python 3 required!
+	docs=[
+		"sphinx>=3,<4",
+		"sphinxcontrib-httpdomain",
+		"sphinxcontrib-mermaid",
+		"sphinx_rtd_theme",
+		"readthedocs-sphinx-ext"
+	],
 )
 
 # Dependency links for any of the aforementioned dependencies
@@ -274,10 +276,10 @@ def params():
 	zip_safe = False
 
 	if os.environ.get('READTHEDOCS', None) == 'True':
-		# we can't tell read the docs to please perform a pip install -e .[develop], so we help
+		# we can't tell read the docs to please perform a pip install -e .[docs], so we help
 		# it a bit here by explicitly adding the development dependencies, which include our
 		# documentation dependencies
-		install_requires = install_requires + extras_require['develop']
+		install_requires = install_requires + extras_require['docs']
 
 	entry_points = {
 		"console_scripts": [

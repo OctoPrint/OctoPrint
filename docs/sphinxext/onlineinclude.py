@@ -12,6 +12,7 @@ from contextlib import closing
 
 from sphinx.directives.code import LiteralIncludeReader, LiteralInclude, dedent_lines, \
 	nodes, parselinenos, logger, container_wrapper
+from sphinx.util.nodes import set_source_info
 
 if False:
 	# For type annotation
@@ -53,22 +54,20 @@ class OnlineIncludeDirective(LiteralInclude):
 		if not document.settings.file_insertion_enabled:
 			return [document.reporter.warning('File insertion disabled',
 			                                  line=self.lineno)]
-		env = document.settings.env
-
 		# convert options['diff'] to absolute path
 		if 'diff' in self.options:
-			_, path = env.relfn2path(self.options['diff'])
+			_, path = self.env.relfn2path(self.options['diff'])
 			self.options['diff'] = path
 
 		try:
 			location = self.state_machine.get_source_and_line(self.lineno)
 			url = self.arguments[0]
 
-			reader = OnlineIncludeReader(url, self.options, env.config)
+			reader = OnlineIncludeReader(url, self.options, self.config)
 			text, lines = reader.read(location=location)
 
 			retnode = nodes.literal_block(text, text, source=url)
-			self.set_source_info(retnode)
+			set_source_info(self, retnode)
 			if self.options.get('diff'):  # if diff is set, set udiff
 				retnode['language'] = 'udiff'
 			elif 'language' in self.options:
