@@ -268,8 +268,8 @@ $(function() {
                 && !self.invalidUrl();
         });
 
-        self.invalidArchive = ko.pureComputed(function() {
-            var allowedArchiveExtensions = [".zip", ".tar.gz", ".tgz", ".tar"];
+        self.invalidFile = ko.pureComputed(function() {
+            var allowedFileExtensions = [".zip", ".tar.gz", ".tgz", ".tar"];
 
             var name = self.uploadFilename();
             var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
@@ -279,10 +279,10 @@ $(function() {
             };
 
             return name !== undefined
-                && !(_.any(allowedArchiveExtensions, lowerNameHasExtension));
+                && !(_.any(allowedFileExtensions, lowerNameHasExtension));
         });
 
-        self.enableArchiveInstall = ko.pureComputed(function() {
+        self.enableFileInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return self.enableManagement()
                 && self.pipAvailable()
@@ -290,7 +290,7 @@ $(function() {
                 && !self.throttled()
                 && name !== undefined
                 && name.trim() !== ""
-                && !self.invalidArchive();
+                && !self.invalidFile();
         });
 
         self.uploadElement.fileupload({
