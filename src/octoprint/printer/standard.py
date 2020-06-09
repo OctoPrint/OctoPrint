@@ -255,7 +255,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 will be attempted.
 		"""
 		if self._comm is not None:
-			self.disconnect()
+			return
 
 		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
