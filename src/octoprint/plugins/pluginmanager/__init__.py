@@ -655,7 +655,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._logger.exception("Could not install plugin from %s" % source)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
 
-		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
+		self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 		new_plugin = self._plugin_manager.plugins.get(plugin_id)
 		if new_plugin is None:
 			self._logger.warning("The plugin was installed successfully, but couldn't be found afterwards to "
