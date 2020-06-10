@@ -193,9 +193,9 @@ $(function() {
 
         self.noticeCountText = ko.pureComputed(function() {
             var count = self.noticeCount();
-            if (count == 0) {
+            if (count === 0) {
                 return gettext("There are no plugin notices. Great!");
-            } else if (count == 1) {
+            } else if (count === 1) {
                 return gettext("There is a plugin notice for one of your installed plugins.");
             } else {
                 return _.sprintf(gettext("There are %(count)d plugin notices for one or more of your installed plugins."), {count: count});
@@ -269,7 +269,7 @@ $(function() {
         });
 
         self.invalidFile = ko.pureComputed(function() {
-            var allowedFileExtensions = [".zip", ".tar.gz", ".tgz", ".tar"];
+            var allowedFileExtensions = [".zip", ".tar.gz", ".tgz", ".tar", ".py"];
 
             var name = self.uploadFilename();
             var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
@@ -298,7 +298,7 @@ $(function() {
             maxNumberOfFiles: 1,
             autoUpload: false,
             add: function(e, data) {
-                if (data.files.length == 0) {
+                if (data.files.length === 0) {
                     return false;
                 }
 
@@ -472,7 +472,7 @@ $(function() {
                 return;
             }
 
-            if (data.key == "pluginmanager") return;
+            if (data.key === "pluginmanager") return;
 
             var onSuccess = function() {
                     self.requestData();
@@ -486,7 +486,7 @@ $(function() {
                     })
                 };
 
-            if (self._getToggleCommand(data) == "enable") {
+            if (self._getToggleCommand(data) === "enable") {
                 if (data.safe_mode_victim) return;
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
@@ -768,7 +768,7 @@ $(function() {
 
         self.savePluginSettings = function() {
             var repository = self.config_repositoryUrl();
-            if (repository != undefined && repository.trim() == "") {
+            if (repository !== undefined && repository.trim() === "") {
                 repository = null;
             }
 
@@ -780,7 +780,7 @@ $(function() {
             }
 
             var notices = self.config_noticesUrl();
-            if (notices != undefined && notices.trim() == "") {
+            if (notices !== undefined && notices.trim() === "") {
                 notices = null;
             }
 
@@ -792,7 +792,7 @@ $(function() {
             }
 
             var pipArgs = self.config_pipAdditionalArgs();
-            if (pipArgs != undefined && pipArgs.trim() == "") {
+            if (pipArgs !== undefined && pipArgs.trim() === "") {
                 pipArgs = null;
             }
 
@@ -1013,7 +1013,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
+            var icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -1021,7 +1021,7 @@ $(function() {
 
         self.toggleButtonTitle = function(data) {
             var command = self._getToggleCommand(data);
-            if (command == "enable") {
+            if (command === "enable") {
                 if (data.blacklisted) {
                     return gettext("Blacklisted");
                 } else if (data.safe_mode_victim) {
@@ -1035,7 +1035,7 @@ $(function() {
         };
 
         self.showPluginNotifications = function(plugin) {
-            if (!plugin.notifications || plugin.notifications.length == 0) return;
+            if (!plugin.notifications || plugin.notifications.length === 0) return;
 
             self._removeAllNoticeNotificationsForPlugin(plugin.key);
             _.each(plugin.notifications, function(notification) {
@@ -1044,7 +1044,7 @@ $(function() {
         };
 
         self.showPluginNotificationsLinkText = function(plugins) {
-            if (!plugins.notifications || plugins.notifications.length == 0) return;
+            if (!plugins.notifications || plugins.notifications.length === 0) return;
 
             var count = plugins.notifications.length;
             var importantCount = _.filter(plugins.notifications, function(notification) { return notification.important }).length;
@@ -1080,7 +1080,7 @@ $(function() {
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
-                var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
+                var versions = _.map(notification.versions, function(v) { return (v === version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
                 text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: _.escape(versions)}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
@@ -1190,7 +1190,7 @@ $(function() {
             if (!Modernizr.localstorage)
                 return false;
 
-            if (localStorage[noticeLocalStorageKey] == undefined)
+            if (localStorage[noticeLocalStorageKey] === undefined)
                 return false;
 
             var knownData = JSON.parse(localStorage[noticeLocalStorageKey]);

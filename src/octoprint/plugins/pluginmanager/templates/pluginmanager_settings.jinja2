@@ -287,7 +287,7 @@
             <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid URL. Expected http, https or any of the <a href="%(url)s" target="_blank">supported VCS URLs</a>.', url='https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support') }}</span>
         </form>
 
-        <h4>{{ _('... from an uploaded archive') }}</h4>
+        <h4>{{ _('... from an uploaded file') }}</h4>
 
         <form class="form-inline">
             <div class="control-group row-fluid" data-bind="css: {error: invalidFile}">
@@ -300,7 +300,7 @@
                 </div>
                 <button id="settings_plugin_pluginmanager_repositorydialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableFileInstall, css: {disabled: !enableFileInstall()}, click: function(){}">{{ _('Install') }}</button>
             </div>
-            <span class="help-block" data-bind="visible: invalidFile">{{ _('This does not look like a valid plugin archive. Valid plugin archives should be either zip files or tarballs and have the extension ".zip", ".tar.gz", ".tgz" or ".tar"') }}</span>
+            <span class="help-block" data-bind="visible: invalidFile">{{ _('This does not look like a valid plugin. Valid plugins should be either zip files or tarballs installable via <code>pip</code> that have the extension ".zip", ".tar.gz", ".tgz" or ".tar", or single file python plugins with the extension ".py"') }}</span>
         </form>
 
         <div>
