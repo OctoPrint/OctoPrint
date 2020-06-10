@@ -1378,6 +1378,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_hidden__ = True
 
 def __plugin_load__():

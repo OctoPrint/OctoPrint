@@ -205,4 +205,6 @@ def __plugin_enable__():
 
 __plugin_name__ = "Error Tracking"
 __plugin_author__ = "Gina Häußge"
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = ErrorTrackingPlugin()

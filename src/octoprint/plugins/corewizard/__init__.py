@@ -123,4 +123,5 @@ __plugin_description__ = "Provides wizard dialogs for core components and functi
 __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to perform "
                                            "setup steps that might be required after an update.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = CoreWizardPlugin()

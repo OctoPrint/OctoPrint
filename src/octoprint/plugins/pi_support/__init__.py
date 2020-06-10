@@ -336,6 +336,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
                                            "provide additional information about your Pi, "
                                            "which will make it more tricky to help you if you need support.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 def __plugin_check__():
 	try:

@@ -442,6 +442,8 @@ __plugin_description__ = "Implements a workflow for third party clients to obtai
 __plugin_author__ = "Gina Häußge, Aldo Hoeben"
 __plugin_disabling_discouraged__ = gettext("Without this plugin third party clients will no longer be able to "
                                            "obtain an API key without you manually copy-pasting it.")
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
 	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,

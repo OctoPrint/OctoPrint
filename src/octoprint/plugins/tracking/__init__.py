@@ -450,5 +450,7 @@ __plugin_name__ = "Anonymous Usage Tracking"
 __plugin_description__ = "Anonymous version and usage tracking, see homepage for details on what gets tracked"
 __plugin_url__ = "https://tracking.octoprint.org"
 __plugin_author__ = "Gina Häußge"
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 __plugin_implementation__ = TrackingPlugin()

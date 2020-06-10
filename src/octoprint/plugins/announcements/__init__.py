@@ -536,6 +536,7 @@ __plugin_description__ = "Announcements all around OctoPrint"
 __plugin_disabling_discouraged__ = gettext("Without this plugin you might miss important announcements "
                                            "regarding security or other critical issues concerning OctoPrint.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = AnnouncementPlugin()
 
 __plugin_hooks__ = {

@@ -120,6 +120,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_disabling_discouraged__ = gettext("Without this plugin your printer will no longer be able to trigger"
                                            " notifications in OctoPrint")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = ActionCommandNotificationPlugin()
 __plugin_hooks__ = {
 	"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,

@@ -1338,6 +1338,8 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
                                            "update itself or any of your installed plugins which might put "
                                            "your system at risk.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
+
 def __plugin_load__():
 	global __plugin_implementation__
 	__plugin_implementation__ = SoftwareUpdatePlugin()
