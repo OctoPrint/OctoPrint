@@ -52,6 +52,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.EventHandlerPlugin):
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+	CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
+
+	OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
 
 	DATA_FORMAT_VERSION = "v4"
 
@@ -172,7 +175,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# This used to be part of the settings migration (version 2) due to a bug - it can't
 								# stay there though since it interferes with manual entries to the checks not
 								# originating from within a plugin. Hence we do that step now here.
-								if "type" not in effective_config or effective_config["type"] not in self.COMMIT_TRACKING_TYPES:
+								if "type" not in effective_config or effective_config["type"] not in self.CURRENT_TRACKING_TYPES:
 									deletables = ["current", "displayVersion"]
 								else:
 									deletables = []
@@ -507,7 +510,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				if "type" not in octoprint_check or octoprint_check["type"] not in self.COMMIT_TRACKING_TYPES:
+				if "type" not in octoprint_check or octoprint_check["type"] not in self.CURRENT_TRACKING_TYPES:
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
@@ -860,8 +863,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		try:
 			version_checker = self._get_version_checker(target, check)
 			information, is_current = version_checker.get_latest(target, check, online=online)
-			if information is not None and not is_current:
-				update_available = True
+			if information is not None:
+				if is_current and check["type"] in self.CURRENT_TRACKING_TYPES and check["current"] is None:
+					self._persist_check_current(target, check, information["remote"]["value"])
+					del self._version_cache[target]
+					self._version_cache_dirty = True
+				elif not is_current:
+					update_available = True
 		except exceptions.CannotCheckOffline:
 			update_possible = False
 			information["needs_online"] = True
@@ -882,6 +890,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				updater = self._get_updater(target, check)
 				update_possible = updater.can_perform_update(target, check, online=online)
 			except Exception:
+				self._logger.exception("Error while checking if {} can be updated".format(target))
 				update_possible = False
 
 		self._version_cache[target] = dict(timestamp=time.time(),
@@ -966,7 +975,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 					if "restart" in check:
 						target_restart_type = check["restart"]
-					elif "pip" in check:
+					elif "pip" in check or check.get("method") in self.OCTOPRINT_RESTART_TYPES:
 						target_restart_type = "octoprint"
 					else:
 						target_restart_type = None
@@ -1090,20 +1099,29 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.load()
 
 			# persist the new version if necessary for check type
-			if check["type"] in self.COMMIT_TRACKING_TYPES:
-				dummy_default = dict(plugins=dict())
-				dummy_default["plugins"][self._identifier] = dict(checks=dict())
-				dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
-				self._settings.set(["checks", target, "current"], target_version, defaults=dummy_default)
-
-				# we have to save here (even though that makes us save quite often) since otherwise the next
-				# load will overwrite our changes we just made
-				self._settings.save()
+			self._persist_check_current(target, check, target_version)
 
 			del self._version_cache[target]
 			self._version_cache_dirty = True
 
 		return target_error, target_result
+
+	def _persist_check_current(self, target, check, current):
+		if check["type"] not in self.CURRENT_TRACKING_TYPES:
+			return
+
+		self._settings.load()
+
+		dummy_default = dict(plugins=dict())
+		dummy_default["plugins"][self._identifier] = dict(checks=dict())
+		dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
+		self._settings.set(["checks", target, "current"], current, defaults=dummy_default)
+
+		# we have to save here (even though that makes us save quite often) since otherwise the next
+		# load will overwrite our changes we just made
+		self._settings.save()
+
+		check["current"] = current
 
 	def _perform_restart(self, restart_command):
 		"""
@@ -1214,7 +1232,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# displayVersion AND current missing or None
 				result["displayVersion"] = "unknown"
 
-			if check["type"] in self.COMMIT_TRACKING_TYPES:
+			if check["type"] in self.CURRENT_TRACKING_TYPES:
 				result["current"] = check.get("current", None)
 			else:
 				result["current"] = check.get("current", check.get("displayVersion", None))
@@ -1285,13 +1303,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		cannot be determined.
 		"""
 
-		mapping = dict(update_script=updaters.update_script,
-		               pip=updaters.pip,
-		               python_updater=updaters.python_updater,
-		               sleep_a_bit=updaters.sleep_a_bit)
+		method = self._get_update_method(target, check)
+		if method is None:
+			raise exceptions.UnknownUpdateType()
 
-		method = self._get_update_method(target, check, valid_methods=list(mapping.keys()))
-		return mapping[method]
+		updater = getattr(updaters, method)
+		if updater is None:
+			raise exceptions.UnknownUpdateType()
+
+		return updater
 
 	def _get_octoprint_checkout_folder(self, checks=None):
 		if checks is None:
