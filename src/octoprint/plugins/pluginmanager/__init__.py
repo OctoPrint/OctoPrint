@@ -18,6 +18,7 @@ from octoprint.util import to_bytes
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
+from octoprint.util.net import download_file
 from octoprint.events import Events
 
 from flask import jsonify, make_response
@@ -422,25 +423,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
 
-	@staticmethod
-	def _download_file(url, folder):
-		with requests.get(url, stream=True) as r:
-			r.raise_for_status()
-			if "Content-Disposition" in r.headers.keys():
-				filename = re.findall("filename=(.+)", r.headers["Content-Disposition"])[0]
-			else:
-				filename = url.split("/")[-1]
-
-			assert len(filename) > 0
-
-			# TODO check content-length against safety limit
-
-			path = os.path.join(folder, filename)
-			with io.open(path, 'wb') as f:
-				for chunk in r.iter_content(chunk_size=8192):
-					f.write(chunk)
-		return path
-
 	# noinspection PyMethodMayBeStatic
 	def _is_archive(self, path):
 		_, ext = os.path.splitext(path)
@@ -475,7 +457,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if url is not None:
 				# fetch URL
 				folder = tempfile.TemporaryDirectory()
-				path = self._download_file(url, folder.name)
+				path = download_file(url, folder.name)
 				source = url
 				source_type = "url"
 

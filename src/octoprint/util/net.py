@@ -7,9 +7,14 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import socket
 import sys
 import netaddr
-import netifaces
 import logging
 import threading
+import io
+import os
+import re
+
+import netifaces
+import requests
 
 _cached_check_v6 = None
 def check_v6():
@@ -191,3 +196,22 @@ def resolve_host(host):
 		return [to_unicode(x[4][0]) for x in socket.getaddrinfo(host, 80)]
 	except Exception:
 		return []
+
+
+def download_file(url, folder, max_length=None):
+	with requests.get(url, stream=True) as r:
+		r.raise_for_status()
+		if "Content-Disposition" in r.headers.keys():
+			filename = re.findall("filename=(.+)", r.headers["Content-Disposition"])[0]
+		else:
+			filename = url.split("/")[-1]
+
+		assert len(filename) > 0
+
+		# TODO check content-length against safety limit
+
+		path = os.path.join(folder, filename)
+		with io.open(path, 'wb') as f:
+			for chunk in r.iter_content(chunk_size=8192):
+				f.write(chunk)
+	return path
