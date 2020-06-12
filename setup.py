@@ -38,7 +38,7 @@ INSTALL_REQUIRES = [
 
 	"flask>=1.1.2,<2",
 	"Jinja2>=2.11.2,<3",
-	"Flask-Login>=0.5,<1",
+	"Flask-Login>=0.5,<0.6",     # flask-login doesn't use semver & breaks stuff on minor version increases
 	"Flask-Babel>=1.0,<2",
 	"Flask-Assets>=2.0,<3",
 	"werkzeug>=1.0.1,<2",
