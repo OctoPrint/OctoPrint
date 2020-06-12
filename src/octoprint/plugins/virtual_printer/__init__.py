@@ -28,6 +28,7 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.Tem
 			"repetierStyleTargetTemperature": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
+			"klipperTemperatureReporting": False,
 			"reprapfwM114": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,

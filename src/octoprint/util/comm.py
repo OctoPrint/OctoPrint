@@ -1618,14 +1618,15 @@ class MachineCom(object):
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name),
 				                       extra=dict(plugin=name))
 
-		if current_tool_key in parsedTemps:
+		if current_tool_key in parsedTemps or "T0" in parsedTemps:
 			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
+			shared_temp = parsedTemps[current_tool_key] if current_tool_key in parsedTemps else parsedTemps["T0"]
+
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
 				if not tool in parsedTemps:
 					if shared_nozzle:
-						actual, target = parsedTemps[current_tool_key]
-						del parsedTemps[current_tool_key]
+						actual, target = shared_temp
 					else:
 						continue
 				else:

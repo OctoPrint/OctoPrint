@@ -1057,10 +1057,14 @@ class VirtualPrinter(object):
 			else:
 				output = allTempsString
 		else:
+			prefix = "T"
+			if self._settings.get_boolean(["klipperTemperatureReporting"]):
+				prefix = "T0"
+
 			if includeTarget:
-				t = "T:%.2f /%.2f" % (self.temp[0], self.targetTemp[0])
+				t = "%s:%.2f /%.2f" % (prefix, self.temp[0], self.targetTemp[0])
 			else:
-				t = "T:%.2f" % self.temp[0]
+				t = "%s:%.2f" % (prefix, self.temp[0])
 
 			if self._settings.get_boolean(["hasBed"]):
 				if includeTarget:
