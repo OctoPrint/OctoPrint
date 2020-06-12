@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from . import commandline, git_commit, github_commit, github_release, bitbucket_commit, \
-	python_checker, never_current, always_current, pypi_release, etag, lastmodified, jsondata
+	python_checker, never_current, always_current, pypi_release, httpheader, jsondata
 
 def log_github_ratelimit(logger, r):
 	ratelimit = r.headers["X-RateLimit-Limit"] if "X-RateLimit-Limit" in r.headers else "?"

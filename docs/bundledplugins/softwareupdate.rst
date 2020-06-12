@@ -204,11 +204,16 @@ types are currently recognized:
 
     * ``package``: (mandatory) Name of the package which to check.
 
-  * ``etag``: Checks the ``ETag`` header on a defined URL for changes. Additional
+  * ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
+    against things like ``ETag`` or ``Last-Modified`` headers. Additional
     config parameters:
 
-    * ``etag_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
+    * ``header_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
       methods such as ``single_file_plugin``.
+    * ``header_name``: (mandatory) HTTP header to check, case-insensitive, e.g. ``ETag`` or ``Last-Modified``.
+    * ``header_method``: HTTP request method to use for the check, defaults to ``HEAD``.
+    * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
+      will be used. If set to an empty string, no prefix will be added.
 
   * ``lastmodified``: Checks the ``Last-Modified`` header on a defined URL for changes. Additional
     config parameters:
@@ -381,7 +386,8 @@ Single file plugin hosted in a gist ``https://gist.github.com/someUser/somegist`
      softwareupdate:
        checks:
          some_plugin:
-           type: etag
+           type: httpheader
+           header_name: ETag
            url: 'https://gist.github.com/someUser/somegist/raw/some_plugin.py'
            method: single_file_plugin
 
@@ -401,7 +407,7 @@ The same but updated when a ``version.json`` hosted alongside gets updated with 
 Note that for gist hosted single file plugins, you need to use the "Raw" install link but should remove the
 commit identifier. E.g. ``https://gist.githubusercontent.com/<user>/<gistid>/raw/my_plugin.py`` instead of
 ``https://gist.githubusercontent.com/<user>/<gistid>/raw/<commit>/my_plugin.py``. Note that these URLs will
-be cached by Github for a bit, so update will not be immediately picked up.
+be cached by Github for a bit, so an update will not be immediately picked up.
 
 .. _sec-bundledplugins-softwareupdate-events:
 

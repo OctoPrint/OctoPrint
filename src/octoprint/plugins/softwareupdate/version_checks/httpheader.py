@@ -15,20 +15,26 @@ def get_latest(target, check, online=True):
 	if not online:
 		raise CannotCheckOffline()
 
-	url = check.get("etag_url", check.get("url"))
-	current = check.get("current")
+	url = check.get("header_url", check.get("url"))
+	header = check.get("header_name")
 
-	if url is None:
-		raise ConfigurationInvalid("ETag version check needs etag_url or url set")
+	if url is None or header is None:
+		raise ConfigurationInvalid("HTTP header version check needs header_url or url and header_name set")
+
+	current = check.get("current")
+	method = check.get("header_method", "head")
+	prefix = check.get("header_prefix", header)
+	if prefix:
+		prefix = "{} ".format(prefix)
 
 	try:
-		with requests.head(url) as r:
-			latest = r.headers.get("Etag")
+		with requests.request(method, url) as r:
+			latest = r.headers.get(header)
 	except Exception as exc:
 		raise NetworkError(cause=exc)
 
-	information = dict(local=dict(name="ETag {}".format(current if current else "-"), value=current),
-	                   remote=dict(name="ETag {}".format(latest if latest else "-"), value=latest))
+	information = dict(local=dict(name="{}{}".format(prefix, current if current else "-"), value=current),
+	                   remote=dict(name="{}{}".format(prefix, latest if latest else "-"), value=latest))
 
 	logger.debug("Target: {}, local: {}, remote: {}".format(target, information["local"]["name"], information["remote"]["name"]))
 
