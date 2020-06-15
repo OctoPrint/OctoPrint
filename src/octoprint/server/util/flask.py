@@ -205,7 +205,7 @@ def fix_webassets_cache():
 
 		unpickled = webassets.cache.safe_unpickle(result)
 		if unpickled is None:
-			warnings.warning('Ignoring corrupted cache file %s' % filename)
+			warnings.warn('Ignoring corrupted cache file %s' % filename)
 		return unpickled
 
 	cache.FilesystemCache.set = fixed_set
