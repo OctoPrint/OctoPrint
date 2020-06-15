@@ -1080,8 +1080,8 @@ $(function() {
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
-                var versions = _.map(notification.versions, function(v) { return (v === version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
-                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: _.escape(versions)}) + "</small>";
+                var versions = _.map(notification.versions, function(v) { return (v === version) ? "<strong>" + _.escape(v) + "</strong>" : _.escape(v); }).join(", ");
+                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
             }
