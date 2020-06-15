@@ -488,7 +488,7 @@ class LocalFileStorage(StorageInterface):
 		self._persisted_metadata_lock_mutex = threading.RLock()
 		self._persisted_metadata_locks = dict()
 
-		self._metadata_cache = pylru.lrucache(10)
+		self._metadata_cache = pylru.lrucache(100)
 
 		self._old_metadata = None
 		self._initialize_metadata()
