@@ -22,7 +22,7 @@ An overview of these properties follows.
   data files etc). Plugins should not access this property directly but instead utilize :func:`~octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`
   which will make sure the path actually does exist and if not create it before returning it.
 ``self._logger``
-  A `python logger instance <https://docs.python.org/2/library/logging.html>`_ logging to the log target
+  A :py:class:`logging.Logger` instance logging to the log target
   ``octoprint.plugin.<plugin identifier>``.
 ``self._settings``
   The plugin's personalized settings manager, injected only into plugins that include the :class:`~octoprint.plugin.SettingsPlugin` mixin.

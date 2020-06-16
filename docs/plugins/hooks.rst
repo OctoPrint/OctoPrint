@@ -926,21 +926,21 @@ octoprint.comm.transport.serial.factory
    closely if directly utilizing :class:`~octoprint.util.comm.MachineCom` functionality.
 
    A valid serial instance is expected to provide the following methods, analogue to PySerial's
-   `serial.Serial <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial>`_:
+   :py:class:`serial.Serial`:
 
    readline(size=None, eol='\n')
-       Reads a line from the serial connection, compare `serial.Filelike.readline <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.readline>`_.
+       Reads a line from the serial connection, compare :py:meth:`serial.Serial.readline`.
    write(data)
-       Writes data to the serial connection, compare `serial.Filelike.write <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.write>`_.
+       Writes data to the serial connection, compare :py:meth:`serial.Serial.write`.
    close()
-       Closes the serial connection, compare `serial.Serial.close <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.close>`_.
+       Closes the serial connection, compare :py:meth:`serial.Serial.close`.
 
    Additionally setting the following attributes need to be supported if baudrate detection is supposed to work:
 
    baudrate
-       An integer describing the baudrate to use for the serial connection, compare `serial.Serial.baudrate <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.baudrate>`_.
+       An integer describing the baudrate to use for the serial connection, compare :py:attr:`serial.Serial.baudrate`.
    timeout
-       An integer describing the read timeout on the serial connection, compare `serial.Serial.timeout <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.timeout>`_.
+       An integer describing the read timeout on the serial connection, compare :py:attr:`serial.Serial.timeout`.
 
    **Example:**
 

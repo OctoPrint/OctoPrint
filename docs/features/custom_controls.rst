@@ -210,12 +210,12 @@ Controls
    * - ``input.slider.step``
      - (Optional) Step size per slider "tick", defaults to 1.
    * - ``regex``
-     - (Optional) A `regular expression <https://docs.python.org/2/library/re.html#regular-expression-syntax>`_ to
+     - (Optional) A :ref:`regular expression <re-syntax>` to
        match against lines received from the printer to retrieve information from it (e.g. specific output). Together
        with ``template`` this allows rendition of received data from the printer within the UI.
    * - ``template``
      - (Optional) A template to use for rendering the match of ``regex``. May contain placeholders in
-       `Python Format String Syntax <https://docs.python.org/2/library/string.html#format-string-syntax>`_ for either named
+       :ref:`Python Format String Syntax <formatstrings>` for either named
        groups within the regex (e.g. ``Temperature: {temperature}`` for a regex ``T:\s*(?P<temperature>\d+(\.\d*)``)
        or positional groups within the regex (e.g. ``Position: X={0}, Y={1}, Z={2}, E={3}`` for a regex
        ``X:([0-9.]+) Y:([0-9.]+) Z:([0-9.]+) E:([0-9.]+)``).

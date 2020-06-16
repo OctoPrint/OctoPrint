@@ -38,7 +38,8 @@ extensions = ['codeblockext', 'onlineinclude', 'sphinx.ext.todo', 'sphinx.ext.au
               'sphinx.ext.napoleon', 'sphinxcontrib.mermaid', 'sphinx.ext.intersphinx']
 todo_include_todos = True
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'python2': ('https://docs.python.org/2', None)}
+                       'python2': ('https://docs.python.org/2', None),
+                       'pyserial': ('https://pythonhosted.org/pyserial', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

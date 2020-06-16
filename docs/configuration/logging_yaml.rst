@@ -81,8 +81,8 @@ used for the ``serial.log`` and the ``console`` handler used for the output to s
        maxBytes: 2097152 # 2 * 1024 * 1024 = 2 MB in bytes
        filename: /path/to/octoprints/logs/serial.log
 
-You can find more information on the used logging handlers in the
-`Python documentation on logging handlers <https://docs.python.org/2/library/logging.handlers.html>`_.
+You can find more information on the used logging handlers in the Python documentation on
+:py:mod:`logging.handlers`.
 
 Changing logging formatters
 ---------------------------
@@ -97,4 +97,4 @@ expressed in YAML as follows:
        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 The possible keys for the logging format can be found in the
-`Python documentation on LogRecord attributes <https://docs.python.org/2/library/logging.html#logrecord-attributes>`_.
+:ref:`Python documentation on LogRecord attributes <logrecord-attributes>`.
