@@ -32,5 +32,5 @@ regressionfix/.* 1.4.0rc7 d99af420acb9d5b18a4f60f9cae8abb458e131d4 pep440-dev
 # staging/devel is currently inactive (but has the 1.4.0rc7 namespace)
 staging/devel 1.4.0rc7 d99af420acb9d5b18a4f60f9cae8abb458e131d4 pep440-dev
 
-# every other branch is a development branch and thus gets resolved to 1.5.0-dev for now
-.* 1.5.0 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev
+# every other branch is a development branch and thus gets resolved to 2.0.0-dev for now
+.* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev

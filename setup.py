@@ -13,8 +13,7 @@ import setuptools
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Supported python versions
-# we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
-PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+PYTHON_REQUIRES = ">=3.6,<4"
 
 # Requirements for setup.py
 SETUP_REQUIRES = [
@@ -29,13 +28,12 @@ INSTALL_REQUIRES = [
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
 	# changes that might affect plugins, or due to other observed problems
 
-	"markupsafe>=1.1,<2.0",      # Jinja dependency, newer versions require Python 3
-	"tornado==5.1.1",            # newer versions require Python 3
-	"markdown>=3.1,<3.2",        # newer versions require Python 3
 	"regex!=2018.11.6",          # avoid broken 2018.11.6. See #2874
 
 	# anything below this should be checked on releases for new versions
 
+	"tornado>=6.0.4,<7",
+	"markdown>=3.2.2,<4",
 	"flask>=1.1.2,<2",
 	"Jinja2>=2.11.2,<3",
 	"Flask-Login>=0.5,<0.6",     # flask-login doesn't use semver & breaks stuff on minor version increases
@@ -70,15 +68,6 @@ INSTALL_REQUIRES = [
 	"blinker>=1.4,<2"            # dependency of flask_principal
 ]
 
-# Python 2 specific requirements
-INSTALL_REQUIRES_PYTHON2 = [
-	"futures>=3.3,<4",
-	"monotonic>=1.5,<2",
-	"scandir>=1.10,<2",
-	"chainmap>=1.0.3,<2",
-	"typing>=3.7.4.1,<4"
-]
-
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
 	"appdirs>=1.4.4",
@@ -88,9 +77,8 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
-		# Testing dependencies - SEE ALSO tox.ini
-		"mock>=3.0.5,<4",
-		"pytest==4.6.10",
+		# Testing dependencies
+		"pytest>=5.4.3,<6",
 		"pytest-doctest-custom>=1.0.0,<2",
 		"ddt",
 
@@ -119,22 +107,7 @@ EXTRA_REQUIRES = dict(
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
-# adapted from https://hynek.me/articles/conditional-python-dependencies/
-if int(setuptools.__version__.split(".", 1)[0]) < 18:
-	# no bdist_wheel support for setuptools < 18 since we build universal wheels and our optional dependencies
-	# would get lost there
-	assert "bdist_wheel" not in sys.argv
-
-	# add optional dependencies for setuptools versions < 18 that don't yet support environment markers
-	if sys.version_info[0] < 3:
-		INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
-
-	if sys.platform == "darwin":
-		INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
-else:
-	# environment markers supported
-	EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
-	EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
+EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
@@ -238,8 +211,6 @@ def params():
 		"Natural Language :: German",
 		"Operating System :: OS Independent",
 		"Programming Language :: Python",
-		"Programming Language :: Python :: 2",
-		"Programming Language :: Python :: 2.7",
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3.6",
 		"Programming Language :: Python :: 3.7",

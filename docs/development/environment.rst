@@ -13,8 +13,7 @@ below.
 
   * Prerequisites:
 
-    * `Python 2.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
-    * `Python 3.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
+    * `Python 3.8 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository:
@@ -26,19 +25,17 @@ below.
     installing and running OctoPrint and its dependencies (this avoids potential versioning issues for the dependencies
     with system wide installed instances):
 
-    * PY2: ``virtualenv --python=python2 venv2``
-    * PY3: ``virtualenv --python=python3 venv3``
+    * ``virtualenv --python=python3 venv``
 
     .. note::
 
-       This assumes that `python2` and `python3` are binaries available directly on your ``PATH``. If your Python 2 and 3
-       binaries cannot be found on your ``PATH`` like this you'll need to specify the full paths to them here,
-       e.g. ``virtualenv --python=/path/to/python2/bin/python venv2``
+       This assumes that `python3` is a binary available directly on your ``PATH``. If your Python 3
+       binary cannot be found on your ``PATH`` like this you'll need to specify the full path to it here,
+       e.g. ``virtualenv --python=/path/to/python3/bin/python venv``
 
   * Activate one of the virtual environments:
 
-    * PY2: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
-    * PY3: ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+    * ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
 
   * Update ``pip`` in the virtual environment:
 
@@ -47,7 +44,7 @@ below.
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
     including its regular *and* development and plugin development dependencies:
 
-      * ``pip install -e '.[develop,plugins]'``
+      * ``pip install -e '.[develop,plugins,docs]'``
 
 When the virtual environment is activated you can then:
 
@@ -78,20 +75,11 @@ installed:
 
     .. code-block:: none
 
-       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv git libyaml-dev build-essential
-
-  * On zypper based distributions (example below for SLES 12 SP2):
-
-    .. code-block:: none
-
-       sudo zypper ar https://download.opensuse.org/repositories/devel:/languages:/python/SLE_12_SP2/ python_devel
-       sudo zypper ref
-       sudo zypper in python python-pip python-devel python-setuptools python-virtualenv git libyaml-devel
-       sudo zypper in -t pattern Basis-Devel
+       sudo apt-get install python3 python3-pip python3-dev python3-setuptools python3-virtualenv git libyaml-dev build-essential
 
 .. todo::
 
-   Using a Linux distribution that doesn't use ``apt`` or ``zypper``? Please send a
+   Using a Linux distribution that doesn't use ``apt``? Please send a
    `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
@@ -124,12 +112,12 @@ location, please substitute accordingly.
 
 First download & install:
 
-  * `Python 2.7.15 Windows x86 MSI installer <https://www.python.org/downloads/release/python-2715/>`_
+  * `The current Python 3.8 Windows x86 executable installer <https://www.python.org/downloads/windows/>`_
 
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
 
-  * `Microsoft Visual C++ Compiler for Python 2.7 <http://www.microsoft.com/en-us/download/details.aspx?id=44266>`_
-  * `Git for Windows <https://git-for-windows.github.io/>`_
+  * `Build Tools for Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
+  * `Git for Windows <https://git-scm.com/downloads>`_
 
 Open the Git Bash you just installed and in that:
 
@@ -195,10 +183,6 @@ You'll need a user account with administrator privileges.
 
 IDE Setup
 ---------
-
-.. todo::
-
-   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
 
 .. todo::
 

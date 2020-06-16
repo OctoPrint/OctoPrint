@@ -5,13 +5,13 @@ dist: xenial
 
 matrix:
   include:
-  - python: '3.7'
+  - python: '3.8'
     env: RUN_FLAKE8=true
 
 python:
+- "3.8"
 - "3.7"
 - "3.6"
-- "2.7"
 install:
 - pip install -e .[develop]
 script:

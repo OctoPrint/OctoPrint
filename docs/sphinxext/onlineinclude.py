@@ -109,4 +109,4 @@ def setup(app):
 	app.add_directive("onlineinclude", OnlineIncludeDirective)
 
 	handler = (visit_onlineinclude, depart_onlineinclude)
-	app.add_node(OnlineIncludeDirective, html=handler, latex=handler, text=handler)
+	app.add_node(OnlineIncludeDirective, html=handler)
