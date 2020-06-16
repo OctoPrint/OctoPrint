@@ -14,7 +14,7 @@ from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import to_bytes
+from octoprint.util import to_bytes, TemporaryDirectory
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
@@ -456,7 +456,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			if url is not None:
 				# fetch URL
-				folder = tempfile.TemporaryDirectory()
+				folder = TemporaryDirectory()
 				path = download_file(url, folder.name)
 				source = url
 				source_type = "url"

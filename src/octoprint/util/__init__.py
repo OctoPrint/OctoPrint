@@ -1100,6 +1100,33 @@ def temppath(prefix=None, suffix=""):
 		os.remove(temp.name)
 
 
+if hasattr(tempfile, "TemporaryDirectory"):
+	# Python 3
+	TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+	# Python 2
+	class TemporaryDirectory(object):
+		def __init__(self, suffix='', prefix="tmp", dir=None):
+			self._path = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+
+		@property
+		def name(self):
+			return self._path
+
+		def cleanup(self):
+			try:
+				os.remove(self._path)
+			except Exception as exc:
+				logging.getLogger(__name__).warning("Could not delete temporary directory {}: {}".format(self.name,
+				                                                                                         exc))
+
+		def __enter__(self):
+			return self.name
+
+		def __exit__(self):
+			self.cleanup()
+
+
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
 

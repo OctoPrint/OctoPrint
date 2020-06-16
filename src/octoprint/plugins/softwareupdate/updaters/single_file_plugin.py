@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import tempfile
 import logging
 import shutil
 import os
 import ast
 import io
 
+from octoprint.util import TemporaryDirectory
 from octoprint.util.net import download_file
 from octoprint.settings import settings
 from .. import exceptions
@@ -43,7 +43,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 	try:
 		try:
 			_log_message("Download file from {}".format(url))
-			folder = tempfile.TemporaryDirectory()
+			folder = TemporaryDirectory()
 			path = download_file(url, folder.name)
 		except Exception as exc:
 			raise exceptions.NetworkError(cause=exc)
