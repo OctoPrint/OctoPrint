@@ -378,7 +378,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if not os.path.isdir(datafolder):
 				os.makedirs(datafolder)
 
-			click.echo("Creating backup at {}, please wait...".format(backup_file))
+			click.echo("Creating backup at {}{}, please wait...".format(datafolder, backup_file))
 			self._create_backup(backup_file,
 			                    exclude=exclude,
 			                    settings=settings,
