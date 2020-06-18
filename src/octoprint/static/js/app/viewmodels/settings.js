@@ -283,9 +283,9 @@ $(function() {
         self.server_onlineCheckResolutionOk = ko.observable(false);
         self.server_onlineCheckResolutionBroken = ko.observable(false);
         self.server_onlineCheckResolutionReset = function() {
-            self.server_onlineResolutionCheckText("");
-            self.server_onlineResolutionCheckOk(false);
-            self.server_onlineResolutionCheckBroken(false);
+            self.server_onlineCheckResolutionText("");
+            self.server_onlineCheckResolutionOk(false);
+            self.server_onlineCheckResolutionBroken(false);
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
