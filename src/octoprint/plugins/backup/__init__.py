@@ -391,7 +391,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
 			click.echo("Done.")
-			click.echo("Backup: {}".format(os.path.join(datafolder, backup_file)))
+			click.echo("Backup located at {}".format(os.path.join(datafolder, backup_file)))
 
 		@click.command("restore")
 		@click.argument("path")
