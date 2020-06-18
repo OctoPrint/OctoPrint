@@ -30,17 +30,17 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
-want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/OctoPrint/OctoPrint/wiki)
-might be of more interest for you. You might also want to subscribe to join
+want to find out how to use it, [the documentation](http://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
 ## Contributing
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
-[official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/OctoPrint/OctoPrint/wiki), debugging help
+[official documentation](http://docs.octoprint.org/), debugging help
 in the [bug tracker](https://github.com/OctoPrint/OctoPrint/issues), support of other users on
-[the community forum at community.octoprint.org](https://community.octoprint.org)
+[the community forum at community.octoprint.org](https://community.octoprint.org) or 
+[the official discord at discord.octoprint.org](https://discord.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
 If you think something is bad about OctoPrint or its documentation the way it is, please help
@@ -53,7 +53,7 @@ For information about how to go about submitting bug reports or pull requests, p
 ## Installation
 
 Installation instructions for installing from source for different operating
-systems can be found [on the wiki](https://github.com/OctoPrint/OctoPrint/wiki#assorted-guides).
+systems can be found [on the forum](https://community.octoprint.org/tags/c/support/guides/15/setup).
 
 If you want to run OctoPrint on a Raspberry Pi, you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
@@ -61,9 +61,11 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 The generic steps that should basically be done regardless of operating system
 and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
-you already have Python 2.7, 3.6 or 3.7, pip and virtualenv set up on your system:
+you already have Python 2.7, 3.6 or 3.7, pip and virtualenv and their dependencies set up on your system:
 
-1. Create a user-owned virtual environment therein: `virtualenv venv`.
+1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python 
+   to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python` 
+   parameter, e.g. `virtualenv --python=python3 venv`.
 2. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install OctoPrint`
 
 Or alternatively, for an install from source:
