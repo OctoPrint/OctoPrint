@@ -41,6 +41,9 @@ $(function() {
         self.environmentSupported = ko.observable(true);
         self.environmentVersions = ko.observableArray([]);
 
+        self.storageSufficient = ko.observable(true);
+        self.storageFree = ko.observableArray([]);
+
         self.cacheTimestamp = ko.observable();
         self.cacheTimestampText = ko.pureComputed(function() {
             return formatDate(self.cacheTimestamp());
@@ -54,6 +57,7 @@ $(function() {
         self.config_checkType = ko.observable();
         self.config_releaseChannel = ko.observable();
         self.config_pipEnableCheck = ko.observable();
+        self.config_minimumFreeStorage = ko.observable();
 
         self.error_checkoutFolder = ko.pureComputed(function() {
             return self.config_checkType() === "git_commit"
@@ -61,7 +65,7 @@ $(function() {
         });
 
         self.enableUpdate = ko.pureComputed(function() {
-            return !self.updateInProgress && self.environmentSupported() && !self.printerState.isPrinting() && !self.throttled();
+            return !self.updateInProgress && self.environmentSupported() && self.storageSufficient() && !self.printerState.isPrinting() && !self.throttled();
         });
 
         self.enable_configSave = ko.pureComputed(function() {
@@ -166,7 +170,8 @@ $(function() {
                         octoprint_checkout_folder: self.config_checkoutFolder(),
                         octoprint_tracked_branch: self.config_trackedBranch(),
                         octoprint_pip_target: self.config_pipTarget(),
-                        pip_enable_check: self.config_pipEnableCheck()
+                        pip_enable_check: self.config_pipEnableCheck(),
+                        minimum_free_storage: self.config_minimumFreeStorage()
                     }
                 }
             };
@@ -205,6 +210,8 @@ $(function() {
             self.config_pipTarget(self.settings.settings.plugins.softwareupdate.octoprint_pip_target());
 
             self.config_pipEnableCheck(self.settings.settings.plugins.softwareupdate.pip_enable_check());
+
+            self.config_minimumFreeStorage(self.settings.settings.plugins.softwareupdate.minimum_free_storage());
         };
 
         self._copyConfigBack = function() {
@@ -248,6 +255,9 @@ $(function() {
             self.environmentSupported(data.environment.supported);
             self.environmentVersions(data.environment.versions);
 
+            self.storageSufficient(data.storage.sufficient);
+            self.storageFree(data.storage.free);
+
             if (data.status === "inProgress") {
                 self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
                 return;
@@ -262,7 +272,7 @@ $(function() {
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() ? "fa-check" : "fa-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() && self.storageSufficient() ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -272,6 +282,8 @@ $(function() {
 
                 if (!self.environmentSupported()) {
                     text += "<p><small>" + gettext("This version of the Python environment is not supported for direct updates.") + "</small></p>";
+                } else if (!self.storageSufficient()) {
+                    text += "<p><small>" + gettext("There's currently not enough free disk space available for a direct update.") + "</small></p>";
                 } else {
                     text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
                 }

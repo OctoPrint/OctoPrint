@@ -29,7 +29,7 @@ from octoprint.server.util.flask import no_firstrun_access, with_revalidation_ch
 from octoprint.server import VERSION, REVISION, BRANCH
 from octoprint.access import USER_GROUP, ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import dict_merge, to_unicode
+from octoprint.util import dict_merge, to_unicode, get_formatted_size
 from octoprint.util.version import get_comparable_version, get_python_version_string
 from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
@@ -78,6 +78,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._environment_supported = True
 		self._environment_versions = dict()
 		self._environment_ready = threading.Event()
+
+		self._storage_sufficient = True
+		self.storage_info = dict()
 
 		self._console_logger = None
 
@@ -133,6 +136,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_after_startup(self):
 		self._check_environment()
+		self._check_storage()
 		self.get_current_versions()
 
 	def _get_configured_checks(self):
@@ -220,6 +224,45 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._environment_versions = versions
 		self._environment_ready.set()
 
+	def _check_storage(self):
+		import distutils.sysconfig
+		import tempfile
+		import psutil
+
+		storage_info = dict()
+		paths = dict(python=distutils.sysconfig.get_python_lib(),
+		             plugins=self._settings.global_get_basefolder("plugins"),
+		             temp=tempfile.gettempdir())
+
+		for key, path in paths.items():
+			info = dict(path=path,
+			            free=None)
+
+			try:
+				data = psutil.disk_usage(path)
+				info["free"] = data.free
+			except:
+				self._logger.exception("Error while determining disk usage of {}".format(path))
+				continue
+
+			storage_info[key] = info
+
+		if len(storage_info):
+			free_storage = min(*list(map(lambda x: x["free"], storage_info.values())))
+		else:
+			free_storage = None
+
+		self._storage_sufficient = free_storage is None or free_storage >= self._settings.get_int(["minimum_free_storage"]) * 1024 * 1024
+		self._storage_info = storage_info
+
+		self._logger.info("Minimum free storage across all update relevant locations is {}. "
+		                  "That is considered {} for updating.".format(get_formatted_size(free_storage)
+		                                                                   if free_storage is not None
+		                                                                   else "unknown",
+		                                                               "sufficient"
+		                                                                   if self._storage_sufficient
+		                                                                   else "insufficient"))
+
 	def _load_version_cache(self):
 		if not os.path.isfile(self._version_cache_path):
 			return
@@ -303,7 +346,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"notify_users": True,
 
-			"ignore_throttled": False
+			"ignore_throttled": False,
+
+			"minimum_free_storage": 150
 		}
 
 	def on_settings_load(self):
@@ -352,7 +397,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "notify_user", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
+			if key in ("checks", "cache_ttl", "notify_user", "minimum_free_storage",
+			           "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
 				self._settings.set([key], data[key])
@@ -363,6 +409,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if "notify_users" in data:
 			self._settings.set_boolean(["notify_users"], data["notify_users"])
+
+		if "minimum_free_storage" in data:
+			self._settings.set_int(["minimum_free_storage"], data["minimum_free_storage"])
+			self._check_storage()
 
 		defaults = dict(
 			plugins=dict(softwareupdate=dict(
@@ -583,13 +633,42 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible and self._environment_supported else "updateAvailable" if update_available else "current",
+
+				storage = list()
+				for key, name in (("python", gettext("Python package installation folder")),
+				                  ("plugins", gettext("Plugin folder")),
+				                  ("temp", gettext("System temporary files"))):
+					data = self._storage_info.get(key)
+					if not data:
+						continue
+
+					s = dict(name=name)
+					s.update(**data)
+					storage.append(s)
+
+				status = "current"
+				if self._update_in_progress:
+					status = "inProgress"
+				elif update_available and update_possible and self._environment_supported and self._storage_sufficient:
+					status = "updatePossible"
+				elif update_available:
+					status = "updateAvailable"
+
+				return flask.jsonify(dict(status=status,
 				                          information=information,
 				                          timestamp=self._version_cache_timestamp,
 				                          environment=dict(supported=self._environment_supported,
-				                                           versions=[dict(name=gettext("Python"), current=self._environment_versions.get("python", "unknown"), minimum=MINIMUM_PYTHON),
-				                                                     dict(name=gettext("pip"), current=self._environment_versions.get("pip", "unknown"), minimum=MINIMUM_PIP),
-				                                                     dict(name=gettext("setuptools"), current=self._environment_versions.get("setuptools", "unknown"), minimum=MINIMUM_SETUPTOOLS)])))
+				                                           versions=[dict(name=gettext("Python"),
+				                                                          current=self._environment_versions.get("python", "unknown"),
+				                                                          minimum=MINIMUM_PYTHON),
+				                                                     dict(name=gettext("pip"),
+				                                                          current=self._environment_versions.get("pip", "unknown"),
+				                                                          minimum=MINIMUM_PIP),
+				                                                     dict(name=gettext("setuptools"),
+				                                                          current=self._environment_versions.get("setuptools", "unknown"),
+				                                                          minimum=MINIMUM_SETUPTOOLS)]),
+				                          storage=dict(sufficient=self._storage_sufficient,
+				                                       free=storage)))
 			except exceptions.ConfigurationInvalid as e:
 				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -650,6 +729,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if not self._environment_supported:
 			return flask.make_response("Direct updates are not supported in this Python environment", 409)
+
+		if not self._storage_sufficient:
+			return flask.make_response("Not enough free disk space for updating", 409)
 
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
@@ -912,6 +994,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if not self._environment_supported:
 			self._logger.error("Direct updates are unsupported in this environment")
+			return [], dict()
+
+		if not self._storage_sufficient:
+			self._logger.error("Not enough free disk space for updating")
 			return [], dict()
 
 		targets = kwargs.get("targets", kwargs.get("check_targets", None))
