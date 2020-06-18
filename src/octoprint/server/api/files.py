@@ -425,9 +425,14 @@ def uploadGcodeFile(target):
 		if isinstance(filename, tuple):
 			filename, sdFilename = filename
 
-		eventManager.fire(Events.UPLOAD, {"name": futureFilename,
-		                                  "path": filename,
-		                                  "target": target})
+		payload = dict(name=futureFilename,
+		               path=filename,
+		               target=target,
+		               select=selectAfterUpload,
+		               print=printAfterSelect)
+		if userdata is not None:
+			payload["userdata"] = userdata
+		eventManager.fire(Events.UPLOAD, payload)
 
 		files = {}
 		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)

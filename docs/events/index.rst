@@ -197,12 +197,15 @@ File handling
 -------------
 
 Upload
-   A file has been uploaded through the web interface.
+   A file has been uploaded through the :ref:`REST API <sec-api-fileops-uploadfile>`.
 
    Payload:
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
+     * ``select``: whether the file will immediately be selected, as requested on the API by the corresponding parameter
+     * ``print``: whether the file will immediately start printing, as requested on the API by the corresponding parameter
+     * ``userdata``: optional ``userdata`` if provided on the API, will only be present if supplied in the upload request
 
    .. deprecated:: 1.3.0
 
