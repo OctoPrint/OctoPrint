@@ -8,8 +8,34 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 click.disable_unicode_literals_warning = True
 import logging
+import logging.config
 
 from octoprint.cli import pass_octoprint_ctx, OctoPrintContext, get_ctx_obj_option
+from octoprint.util import dict_merge
+
+LOGGING_CONFIG = {
+	"version": 1,
+	"formatters": {
+		"brief": {
+			"format": "%(message)s"
+		}
+	},
+	"handlers": {
+		"console": {
+			"class": "logging.StreamHandler",
+			"formatter": "brief",
+			"stream": "ext://sys.stdout"
+		}
+	},
+	"loggers": {
+		"octoprint.plugin.core": {
+			"level": logging.ERROR
+		}
+	},
+	"root": {
+		"level": logging.WARNING
+	}
+}
 
 #~~ "octoprint plugin:command" commands
 
@@ -48,6 +74,9 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		if ctx.obj is None:
 			ctx.obj = OctoPrintContext()
 
+		logging_config = dict_merge(LOGGING_CONFIG, dict(root=dict(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARNING)))
+		logging.config.dictConfig(logging_config)
+
 		# initialize settings and plugin manager based on provided
 		# context (basedir and configfile)
 		from octoprint import init_settings, init_pluginsystem, FatalStartupError
@@ -62,8 +91,6 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		# fetch registered hooks
 		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
-
-		logging.basicConfig(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARN)
 
 		self._initialized = True
 
