@@ -366,25 +366,32 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		@click.option("--exclude", multiple=True,
 		              help="Identifiers of data folders to exclude, e.g. 'uploads' to exclude uploads or "
 		                   "'timelapse' to exclude timelapses.")
-		def backup_command(exclude):
+		@click.option("--path", type=click.Path(), default=None,
+		              help="Specify full path to backup file to be created")
+		def backup_command(exclude, path):
 			"""
 			Creates a new backup.
 			"""
 
-			backup_file = build_backup_filename()
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 
-			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+			if path is not None:
+				datafolder, backup_file = os.path.split(os.path.abspath(path))
+			else:
+				backup_file = build_backup_filename()
+				datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+
 			if not os.path.isdir(datafolder):
 				os.makedirs(datafolder)
 
-			click.echo("Creating backup at {}{}, please wait...".format(datafolder, backup_file))
+			click.echo("Creating backup at {}, please wait...".format(backup_file))
 			self._create_backup(backup_file,
 			                    exclude=exclude,
 			                    settings=settings,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
 			click.echo("Done.")
+			click.echo("Backup: {}".format(os.path.join(datafolder, backup_file)))
 
 		@click.command("restore")
 		@click.argument("path")
