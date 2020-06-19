@@ -26,10 +26,15 @@ Cura/preferences.ini
 build
 dist
 pypy
-OctoPrint.egg-info
-*.orig
 
+*.orig
 *.codekit
+
+*.egg-info
+.eggs
+.mypy_cache
+.pytest_cache
+.tox
 
 venv
 venv2
@@ -42,3 +47,4 @@ venv35
 venv36
 venv37
 venv38
+venv39
