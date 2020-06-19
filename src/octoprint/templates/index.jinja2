@@ -3,6 +3,7 @@
     <head>
         <title data-bind="text: title">OctoPrint</title>
 
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
         <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
