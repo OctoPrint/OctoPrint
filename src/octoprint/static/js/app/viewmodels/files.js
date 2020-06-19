@@ -152,6 +152,19 @@ $(function() {
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
+                "last_printed": function(a, b) {
+                    // sorts descending
+                    var valA = (a.prints && a.prints.last && a.prints.last.date) ? a.prints.last.date : "";
+                    var valB = (b.prints && b.prints.last && b.prints.last.date) ? b.prints.last.date : "";
+
+                    if (valA > valB) {
+                        return -1;
+                    } else if (valA < valB) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                },
                 "size": function(a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
