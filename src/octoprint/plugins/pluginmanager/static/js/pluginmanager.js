@@ -559,7 +559,10 @@ $(function() {
         };
 
         self.showRepository = function() {
-            self.repositoryDialog.modal("show");
+            self.repositoryDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); },
+                show: true
+            });
         };
 
         self.pluginDetails = function(data) {
