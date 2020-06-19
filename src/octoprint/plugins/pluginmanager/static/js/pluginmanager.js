@@ -57,14 +57,14 @@ $(function() {
             {
                 "title": function (a, b) {
                     // sorts ascending
-                    if (a["title"].toLocaleLowerCase() < b["title"].toLocaleLowerCase()) return -1;
-                    if (a["title"].toLocaleLowerCase() > b["title"].toLocaleLowerCase()) return 1;
+                    if (a.title.toLocaleLowerCase() < b.title.toLocaleLowerCase()) return -1;
+                    if (a.title.toLocaleLowerCase() > b.title.toLocaleLowerCase()) return 1;
                     return 0;
                 },
                 "published": function (a, b) {
                     // sorts descending
-                    if (a["published"].toLocaleLowerCase() > b["published"].toLocaleLowerCase()) return -1;
-                    if (a["published"].toLocaleLowerCase() < b["published"].toLocaleLowerCase()) return 1;
+                    if (a.published.toLocaleLowerCase() > b.published.toLocaleLowerCase()) return -1;
+                    if (a.published.toLocaleLowerCase() < b.published.toLocaleLowerCase()) return 1;
                     return 0;
                 },
                 "popularity": function (a, b) {
@@ -83,14 +83,45 @@ $(function() {
 
                     if (countA > countB) return -1;
                     if (countA < countB) return 1;
-                    return 0;                }
+                    return 0;
                 },
+                "release_date": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github && a.github.latest_release) ? a.github.latest_release.date.toLocaleLowerCase() : "";
+                    var valB = (b.github && b.github.latest_release) ? b.github.latest_release.date.toLocaleLowerCase() : "";
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
+                    return 0;
+                },
+                "push_date": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github) ? a.github.last_push.toLocaleLowerCase() : "";
+                    var valB = (b.github) ? b.github.last_push.toLocaleLowerCase() : "";
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
+                    return 0;
+                },
+                "stars": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github) ? a.github.stars : 0;
+                    var valB = (b.github) ? b.github.stars : 0;
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
+                    return 0;
+                }
+            },
             {
                 "filter_installed": function(plugin) {
                     return !self.installed(plugin);
                 },
                 "filter_incompatible": function(plugin) {
                     return plugin.is_compatible.octoprint && plugin.is_compatible.os && plugin.is_compatible.python;
+                },
+                "filter_abandoned": function(plugin) {
+                    return !plugin.abandoned;
                 }
             },
             "title",
