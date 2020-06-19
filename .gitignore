@@ -36,15 +36,5 @@ pypy
 .pytest_cache
 .tox
 
-venv
-venv2
-venv3
-venv26
-venv27
-venv33
-venv34
-venv35
-venv36
-venv37
-venv38
-venv39
+venv*
+testconf*
