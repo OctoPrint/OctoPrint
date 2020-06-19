@@ -20,6 +20,7 @@ linux-Cura-*
 Printrun
 =======
 .idea
+.vscode
 .DS_Store
 Cura/current_profile.ini
 Cura/preferences.ini
