@@ -76,15 +76,6 @@ $(function() {
                     if (countA < countB) return 1;
                     return 0;
                 },
-                "hotness": function (a, b) {
-                    // sorts descending
-                    var countA = (a.stats && a.stats.install_events_week) ? a.stats.install_events_week : 0;
-                    var countB = (b.stats && b.stats.install_events_week) ? b.stats.install_events_week : 0;
-
-                    if (countA > countB) return -1;
-                    if (countA < countB) return 1;
-                    return 0;
-                },
                 "release_date": function (a, b) {
                     // sorts descending
                     var valA = (a.github && a.github.latest_release) ? a.github.latest_release.date.toLocaleLowerCase() : "";
