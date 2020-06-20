@@ -75,6 +75,11 @@ $(function() {
         self.addingFolder = ko.observable(false);
         self.activeRemovals = ko.observableArray([]);
 
+        self.movingFile = ko.observable(false);
+        self.moveSource = ko.observable({name:"",display:"",path:""}); // is there a better way to do this?
+        self.moveDestination = ko.observable(undefined);
+        self.moveError = ko.observable("");
+        self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
@@ -197,6 +202,13 @@ $(function() {
             return result;
         });
 
+        self.folderDestinations = ko.pureComputed(function() {
+            if (self.allItems()) {
+                return ko.utils.arrayFilter(self.allItems(), function(item) {
+                    return item.type === "folder";
+                });
+            }
+        });
         self.foldersOnlyList = ko.dependentObservable(function() {
             var filter = function(data) { return data["type"] && data["type"] === "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
@@ -533,6 +545,78 @@ $(function() {
             }
         };
 
+        self.recursiveFolderList = function(entry) {
+            if (entry.type === "folder") {
+                var _folderPath = (entry.path !== "") ? "/" + entry.path : "/" + entry.name;
+                if(!_.contains(self.folderList(), _folderPath)){
+                     self.folderList.push(_folderPath);
+                }
+            }
+            if (entry.children) {
+                _.each(entry.children, function (item) {
+                    self.recursiveFolderList(item);
+                })
+            }
+        }
+
+        self.showMoveFileDialog = function(file, event) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_MOVE)) return;
+
+            if (!file) {
+                return;
+            }
+
+            if (file.type === "folder") {
+                return;
+            }
+
+            if (file.origin !== "local") {
+                return;
+            }
+
+            if (self.moveFileDialog) {
+                var activateSpinner = function(){},
+                finishSpinner = function(){};
+                if (event) {
+                    var element = $(event.currentTarget);
+                    if (element.length) {
+                        var icon = $("i.fa-arrow-right", element);
+                        if (icon.length) {
+                            activateSpinner = function() {
+                                icon.removeClass("fa-arrow-right").addClass("fa-spinner fa-spin");
+                            };
+                            finishSpinner = function() {
+                                icon.removeClass("fa-spinner fa-spin").addClass("fa-arrow-right");
+                            };
+                        }
+                    }
+                }
+
+                activateSpinner();
+                self.moveSource(file);
+                self.moveError("");
+
+                OctoPrint.files.list(true)
+                    .done(function(response) {
+                        if(response.files && response.files.length > 0){
+                            self.folderList(["/"]);
+                            _.each(response.files, self.recursiveFolderList);
+                        }
+                        if(self.folderList().length > 0){
+                            self.moveDestination("");
+                            self.moveFileDialog.modal("show");
+                        }
+                    })
+                    .fail(function() {
+                        console.log("error getting folder list")
+                    })
+                    .always(function() {
+                        finishSpinner();
+                    });
+            }
+
+
+        };
         self.removeFile = function(file, event) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
 
@@ -572,6 +656,18 @@ $(function() {
             OctoPrint.printer.refreshSd();
         };
 
+        self.moveFile = function(entry, event) {
+            self.movingFile(true);
+            self.movingFile(false);
+            // start spinner here
+            OctoPrint.files.move("local", self.moveSource().path, self.moveDestination())
+                .done(function() {
+                    self.moveFileDialog.modal("hide");
+                })
+                .fail(function() {
+                    self.moveError(gettext("Unable to move file") + " " + self.moveSource().display + " " + gettext("to") + " " + self.moveDestination());
+                });
+        };
         self._removeEntry = function(entry, event) {
             self.activeRemovals.push(entry.origin + ":" + entry.path);
             var finishActiveRemoval = function() {
@@ -679,6 +775,9 @@ $(function() {
             return self.loginState.hasPermission(self.access.permissions.FILES_DELETE) && !busy;
         };
 
+        self.enableMove = function(data) {
+            return self.loginState.hasPermission(self.access.permissions.FILES_MOVE) // && some way to figure out if there are subfolders;
+        };
         self.enableSelect = function(data) {
             return self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data);
         };
@@ -928,6 +1027,7 @@ $(function() {
 
             self.listElement = $("#files").find(".scroll-wrapper");
 
+            self.moveFileDialog = $("#move_file_dialog");
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {
                 $("input", self.addFolderDialog).focus();
@@ -1275,6 +1375,6 @@ $(function() {
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
         dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "accessViewModel"],
-        elements: ["#files_wrapper", "#add_folder_dialog"]
+        elements: ["#files_wrapper", "#add_folder_dialog", "#move_file_dialog"]
     });
 });

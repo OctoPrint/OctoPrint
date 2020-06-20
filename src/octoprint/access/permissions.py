@@ -311,6 +311,10 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                                     "affected by this as well."),
 	                                             RoleNeed("files_download"),
 	                                             default_groups=[USER_GROUP, READONLY_GROUP])
+	FILES_MOVE           = OctoPrintPermission("File Move",
+	                                             gettext("Allows users to move files"),
+	                                             RoleNeed("files_move"),
+	                                             default_groups=[USER_GROUP])
 	FILES_DELETE           = OctoPrintPermission("File Delete",
 	                                             gettext("Allows users to delete files"),
 	                                             RoleNeed("files_delete"),
