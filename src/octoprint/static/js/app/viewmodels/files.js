@@ -601,6 +601,11 @@ $(function() {
                         if(response.files && response.files.length > 0){
                             self.folderList(["/"]);
                             _.each(response.files, self.recursiveFolderList);
+                            if(self.moveSource().name === self.moveSource().path){
+                                self.folderList.remove("/" );
+                            } else {
+                                self.folderList.remove("/" + self.moveSource().path.replace("/" + self.moveSource().name,""));
+                            }
                         }
                         if(self.folderList().length > 0){
                             self.moveDestination("");
