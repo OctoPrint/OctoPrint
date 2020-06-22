@@ -1075,6 +1075,8 @@ def _get_translations(locale, domain):
 
 	po_files = _get_all_translationfiles(locale, domain)
 	for po_file in po_files:
+		if not os.path.exists(po_file):
+			continue
 		po_messages, plural_expr = messages_from_po(po_file, locale, domain)
 		if po_messages is not None:
 			messages = dict_merge(messages, po_messages)
