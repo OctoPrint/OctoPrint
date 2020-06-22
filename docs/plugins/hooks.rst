@@ -472,12 +472,12 @@ octoprint.comm.protocol.firmware.info
       This includes I/O of any kind.
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
-   :param str firmware_name: The name of the parsed capability
+   :param str firmware_name: The parsed name of the firmware
    :param dict firmware_data: All data contained in the ``M115`` report
 
 .. _sec-plugins-hook-comm-protocol-firmware-capabilities:
 
-octoprint.comm.firmware.protocol.capabilities
+octoprint.comm.protocol.firmware.capabilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: firmware_capability_hook(comm_instance, capability, enabled, already_defined, *args, **kwargs)
