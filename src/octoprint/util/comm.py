@@ -3927,9 +3927,10 @@ class MachineCom(object):
 				tags = set()
 
 			if gcode in self._emergency_commands and gcode != "M112":
-				msg = "Force-sending {} to the printer".format(gcode)
-				self._logger.info(msg)
-				return self._emergency_force_send(cmd, msg, gcode=gcode, *args, **kwargs)
+				return self._emergency_force_send(cmd,
+				                                  "Force-sending {} to the printer".format(gcode),
+				                                  gcode=gcode,
+				                                  *args, **kwargs)
 
 			if self.isPrinting() and gcode in self._pausing_commands and not "trigger:cancel" in tags and not "trigger:pause" in tags:
 				self._logger.info("Pausing print job due to command {}".format(gcode))
