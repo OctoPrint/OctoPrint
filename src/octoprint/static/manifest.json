@@ -1,7 +1,7 @@
 {
   "name": "OctoPrint",
   "icons": [{
-    "src": "static/img/apple-touch-icon-144x144.png",
+    "src": "./img/apple-touch-icon-144x144.png",
     "type": "image/png",
     "sizes": "144x144"
   }],
