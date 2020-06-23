@@ -298,12 +298,14 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                             dangerous=True)
 
 	FILES_LIST             = OctoPrintPermission("File List",
-	                                             gettext("Allows to retrieve a list of all uploaded files, including"
+	                                             gettext("Allows to retrieve a list of all uploaded files and folders, including"
 	                                                     "their metadata (e.g. date, file size, analysis results, ...)"),
 	                                             RoleNeed("files_list"),
 	                                             default_groups=[USER_GROUP, READONLY_GROUP])
 	FILES_UPLOAD           = OctoPrintPermission("File Upload",
-	                                             gettext("Allows users to upload new files"),
+	                                             gettext("Allows users to upload new files, create new folders and copy existing ones. If "
+	                                                     "the File Delete permission is also set, File Upload also allows "
+	                                                     "moving files and folders."),
 	                                             RoleNeed("files_upload"),
 	                                             default_groups=[USER_GROUP])
 	FILES_DOWNLOAD         = OctoPrintPermission("File Download",
@@ -311,12 +313,9 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
 	                                                     "affected by this as well."),
 	                                             RoleNeed("files_download"),
 	                                             default_groups=[USER_GROUP, READONLY_GROUP])
-	FILES_MOVE           = OctoPrintPermission("File Move",
-	                                             gettext("Allows users to move files"),
-	                                             RoleNeed("files_move"),
-	                                             default_groups=[USER_GROUP])
 	FILES_DELETE           = OctoPrintPermission("File Delete",
-	                                             gettext("Allows users to delete files"),
+	                                             gettext("Allows users to delete files and folders. If the File Upload permission is "
+	                                                     "also set, File Delete also allows moving files and folders."),
 	                                             RoleNeed("files_delete"),
 	                                             default_groups=[USER_GROUP])
 	FILES_SELECT           = OctoPrintPermission("File Select",
