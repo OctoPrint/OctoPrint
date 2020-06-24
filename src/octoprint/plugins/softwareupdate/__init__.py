@@ -132,7 +132,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
 			if self._settings.get_boolean(["ignore_throttled"]):
-				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
+				self._logger.warning("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 	def on_after_startup(self):
 		self._check_environment()

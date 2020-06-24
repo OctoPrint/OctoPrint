@@ -182,9 +182,9 @@ def index():
 	request_refresh = "_refresh" in request.values
 	printing = printer.is_printing()
 	if client_refresh and printing:
-		logging.getLogger(__name__).warn("Client requested cache refresh via cache-control headers but we are printing. "
-		                                 "Not invalidating caches due to resource limitation. Append ?_refresh=true to "
-		                                 "the URL if you absolutely require a refresh now")
+		logging.getLogger(__name__).warning("Client requested cache refresh via cache-control headers but we are printing. "
+		                                    "Not invalidating caches due to resource limitation. Append ?_refresh=true to "
+		                                    "the URL if you absolutely require a refresh now")
 	client_refresh = client_refresh and not printing
 	force_refresh = client_refresh \
 	                or request_refresh \

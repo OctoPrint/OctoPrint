@@ -3043,7 +3043,7 @@ class MachineCom(object):
 					# printer keeps requesting the same line again and again, something is severely broken here
 					error_text = "Printer keeps requesting line {} again and again, communication stuck".format(lineToResend)
 					self._log(error_text)
-					self._logger.warn(error_text)
+					self._logger.warning(error_text)
 					self._trigger_error(error_text, "resend_loop")
 			else:
 				self._currentConsecutiveResendNumber = lineToResend
@@ -4531,7 +4531,7 @@ def convert_feedback_controls(configured_controls):
 					result[key]["matcher"] = re.compile(control["regex"])
 					result[key]["pattern"] = control["regex"]
 				except Exception as exc:
-					_logger.warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+					_logger.warning("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
 
 			result[key]["templates"][control["template_key"]] = control["template"]
 

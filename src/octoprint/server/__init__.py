@@ -1987,7 +1987,7 @@ class Server(object):
 						continue
 
 					if not key_whitelist.match(p["key"]):
-						self._logger.warn("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
+						self._logger.warning("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
 						continue
 
 					if not process_regular_permission(plugin_info, p):

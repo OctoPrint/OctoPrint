@@ -891,7 +891,7 @@ class PreemptiveCache(object):
 			cache_data = dict()
 
 		if not self._validate_data(cache_data):
-			self._logger.warn("Preemptive cache data was invalid, ignoring it")
+			self._logger.warning("Preemptive cache data was invalid, ignoring it")
 			cache_data = dict()
 
 		return cache_data

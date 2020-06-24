@@ -1015,8 +1015,8 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 				self.set_header("Content-Encoding", "gzip")
 				path = path + ".gz"
 			else:
-				logging.getLogger(__name__).warn("Precompressed assets expected but {}.gz does not exist "
-				                                 "in {}, using plain file instead.".format(path, self.root))
+				logging.getLogger(__name__).warning("Precompressed assets expected but {}.gz does not exist "
+				                                    "in {}, using plain file instead.".format(path, self.root))
 
 		return tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 
