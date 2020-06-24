@@ -924,7 +924,6 @@ def _filter_templates(templates, template_filter):
 
 
 @app.route("/robots.txt")
-@util.flask.cached(timeout=-1)
 def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
 

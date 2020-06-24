@@ -1029,9 +1029,13 @@ class Server(object):
 		def before_request():
 			g.locale = self._get_locale()
 			if self._debug and "perfprofile" in request.args:
-				from pyinstrument import Profiler
-				g.perfprofiler = Profiler()
-				g.perfprofiler.start()
+				try:
+					from pyinstrument import Profiler
+					g.perfprofiler = Profiler()
+					g.perfprofiler.start()
+				except ImportError:
+					# profiler dependency not installed, ignore
+					pass
 
 
 		@app.after_request
