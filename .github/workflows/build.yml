@@ -44,7 +44,7 @@ jobs:
           python-version: 2.7
       - name: 🚀 Install wheel
         run: |
-          pip install dist/OctoPrint-*-py2.py2-none-any.whl
+          pip install dist/OctoPrint-*-py2.py3-none-any.whl
 
   test-install-py3:
     name: 🧪 Test install on Python 3
@@ -62,7 +62,7 @@ jobs:
           python-version: 3.7
       - name: 🚀 Install wheel
         run: |
-          pip install dist/OctoPrint-*-py2.py2-none-any.whl
+          pip install dist/OctoPrint-*-py2.py3-none-any.whl
 
   publish-on-testpypi:
     name: 📦 Publish on TestPyPI
