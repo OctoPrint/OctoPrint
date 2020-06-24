@@ -1,0 +1,79 @@
+name: Test install of branches and latest release
+
+on:
+  push:
+    branches:
+      - master
+  repository_dispatch:
+    types: [test_install]
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  install-branch:
+    name: Install branch
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python: ["2.7", "3.7", "3.8"]
+        branch: ["master"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 🐍 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: ⬇ Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ matrix.branch }}
+      - name: 👷 Build and install checkout
+        run: |
+          pip install .
+      - name: 📧 Discord success notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful'
+      - name: 📧 Discord failure notification
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed'
+
+  install-latest:
+    name: Install latest release
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python: ["2.7", "3.7", "3.8"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 👀 Determine latest release
+        id: latest
+        uses: foosel/github-action-get-latest-release@master
+        with:
+          repository: "OctoPrint/OctoPrint"
+      - name: 🐍 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 👷 Build and install latest release
+        run: |
+          pip install https://github.com/OctoPrint/OctoPrint/archive/${{ steps.latest.outputs.release }}.zip
+      - name: 📧 Discord success notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` was successful'
+      - name: 📧 Discord failure notification
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` failed'
