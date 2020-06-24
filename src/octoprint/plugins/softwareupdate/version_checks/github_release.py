@@ -288,8 +288,8 @@ def get_latest(target, check, custom_compare=None, online=True):
 	                                                             commitish=commitish,
 	                                                             force_base=force_base)
 
-	if remote_name is None:
-		if remote_tag is not None:
+	if not remote_name:
+		if remote_tag:
 			remote_name = remote_tag
 		else:
 			remote_name = "-"
