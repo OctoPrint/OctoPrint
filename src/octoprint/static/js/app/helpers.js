@@ -1259,6 +1259,9 @@ function setOnViewModelIf(viewModel, key, value, condition) {
 
         viewModel[key] = value;
     } catch (exc) {
+        if (Sentry) {
+            Sentry.captureException(exc);
+        }
         log.error("Error while setting", key, "to", value, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
     }
 }
@@ -1274,6 +1277,9 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         try {
             callViewModelIf(viewModel, method, condition, callback);
         } catch (exc) {
+            if (Sentry) {
+                Sentry.captureException(exc);
+            }
             log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
         }
     });
@@ -1333,6 +1339,9 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
             callback(viewModel[method], viewModel);
         }
     } catch (exc) {
+        if (Sentry) {
+            Sentry.captureException(exc);
+        }
         if (raiseErrors) {
             throw exc;
         } else {
