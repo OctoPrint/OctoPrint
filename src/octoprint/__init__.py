@@ -47,6 +47,13 @@ if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 
 	except ImportError:
 		pass
 
+elif version_info.major == 3 and version_info.minor >= 8 and sys.platform == "win32":
+	# Python 3.8 makes proactor event loop the default on Windows, Tornado doesn't like that
+	#
+	# see https://github.com/tornadoweb/tornado/issues/2608
+	import asyncio
+	asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 del version_info
 
 #~~ custom exceptions
