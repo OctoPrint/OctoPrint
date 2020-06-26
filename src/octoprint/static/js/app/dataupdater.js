@@ -170,8 +170,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             if (self._safeModePopup) self._safeModePopup.remove();
             if (data["safe_mode"]) {
                 // safe mode is active, let's inform the user
-                log.info("Safe mode is active. Third party plugins and language packs are disabled and cannot be enabled.");
-                log.info("Reason for safe mode: " + data["safe_mode"]);
+                log.info("❗ Safe mode is active. Third party plugins and language packs are disabled and cannot be enabled.");
+                log.info("❗ Reason for safe mode: " + data["safe_mode"]);
 
                 var reason = gettext("Unknown");
                 switch (data["safe_mode"]) {
