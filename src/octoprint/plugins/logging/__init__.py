@@ -51,8 +51,10 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		free, total = self._get_usage()
 		loggers = self._get_available_loggers()
 		levels = self._get_logging_levels()
+		serial_log_enabled = self._settings.global_get_boolean(["serial", "log"])
 		return jsonify(logs=dict(files=files, free=free, total=total),
-		               setup=dict(loggers=loggers, levels=levels))
+		               setup=dict(loggers=loggers, levels=levels),
+		               serial_log=dict(enabled=serial_log_enabled))
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
 	@no_firstrun_access
@@ -228,12 +230,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin you will no long
                                            "the web interface.")
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=2.7,<4"
-
-def __plugin_load__():
-	global __plugin_implementation__
-	__plugin_implementation__ = LoggingPlugin()
-
-	global __plugin_hooks__
-	__plugin_hooks__ = {
-		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
-	}
+__plugin_implementation__ = LoggingPlugin()
+__plugin_hooks__ = {
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+}

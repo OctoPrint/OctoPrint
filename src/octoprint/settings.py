@@ -323,7 +323,7 @@ default_settings = {
 		"closeModalsWithClick": True,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_logging", "plugin_pi_support", "login"],
 				"sidebar": ["plugin_firmware_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
