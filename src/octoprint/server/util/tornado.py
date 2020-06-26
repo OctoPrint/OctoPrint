@@ -1284,7 +1284,7 @@ def access_validation_factory(app, validator, *args):
 		wsgi_environ = WsgiInputContainer.environ(request)
 		with app.request_context(wsgi_environ):
 			session = app.session_interface.open_session(app, flask.request)
-			user_id = session.get("user_id")
+			user_id = session.get("_user_id")
 			user = None
 
 			# Yes, using protected methods is ugly. But these used to be publicly available in former versions
