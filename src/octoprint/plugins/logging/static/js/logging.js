@@ -3,6 +3,8 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
+
         self.availableLoggers = ko.observableArray();
         self.availableLoggersName = ko.observable();
         self.availableLoggersLevel = ko.observable();
@@ -57,6 +59,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             OctoPrint.plugins.logging.get()
                 .done(self.fromResponse);
         };
@@ -135,6 +140,10 @@ $(function() {
         };
 
         self.addLogger = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
+
             var component = self.availableLoggersName();
             var level = self.availableLoggersLevel();
 
@@ -145,6 +154,10 @@ $(function() {
         };
 
         self.removeLogger = function(logger) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
+
             self.configuredLoggers.remove(logger);
             self.availableLoggers.push(logger.component);
 
@@ -152,6 +165,9 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var perform = function() {
                 OctoPrint.plugins.logging.deleteLog(filename)
                     .done(self.requestData);
@@ -170,10 +186,16 @@ $(function() {
         };
 
         self.clearMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             self.markedForDeletion.removeAll();
         };
 
         self.removeMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var perform = function() {
                 self._bulkRemove(self.markedForDeletion(), "files")
                     .done(function() {
@@ -185,11 +207,17 @@ $(function() {
                                    perform);
         };
 
-        self.onStartup = self.onServerReconnect = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             self.requestData();
         };
 
         self.onSettingsBeforeSave = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             if ( self.configuredLoggersChanged ) {
                 console.log("ConfiguredLoggers has changed. Saving!");
                 var levels = {};
@@ -203,6 +231,9 @@ $(function() {
         };
 
         self._bulkRemove = function(files) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var title = gettext("Deleting log files");
             var message = _.sprintf(gettext("Deleting %(count)d log files..."), {count: files.length});
             var handler = function(filename) {
@@ -247,7 +278,7 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: LoggingViewModel,
         additionalNames: ["logsViewModel"],
-        dependencies: ["loginStateViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel"],
         elements: ["#settings_plugin_logging", "#navbar_plugin_logging"]
     });
 });
