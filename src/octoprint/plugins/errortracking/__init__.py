@@ -31,6 +31,9 @@ IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
 	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
 
+	# KeyboardInterrupts
+	KeyboardInterrupt,
+
 	# IOErrors of any kind due to a full file system
 	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
 
