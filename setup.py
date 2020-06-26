@@ -63,7 +63,7 @@ INSTALL_REQUIRES = [
 	"wrapt>=1.12.1,<2",
 	"emoji>=0.5.4,<1",
 	"frozendict>=1.2,<2",
-	"sentry-sdk>=0.14.4,<1",
+	"sentry-sdk>=0.15.1,<1",
 	"filetype>=1.0.7,<2",
 
 	# vendor bundle dependencies
