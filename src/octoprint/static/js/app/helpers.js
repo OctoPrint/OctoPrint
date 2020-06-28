@@ -621,6 +621,23 @@ function formatTemperature(temp, showF, offThreshold) {
     }
 }
 
+// Return the temperatures string from the given temperature profile
+function formatTemperatureProfileDescription(temperatureProfile, hasBed, hasChamber) {
+    if(temperatureProfile === undefined) return "-";
+
+    var temperatureProfileDescription = gettext("Extruder") + ": " + formatTemperature(temperatureProfile.extruder);
+
+    if(hasBed) {
+        temperatureProfileDescription += " - " + gettext("Bed") + ": " + formatTemperature(temperatureProfile.bed);
+    }
+
+    if(hasChamber) {
+        temperatureProfileDescription += " - " + gettext("Chamber") + ": " + formatTemperature(temperatureProfile.chamber);
+    }
+
+    return temperatureProfileDescription;
+}
+
 function formatNumberK(num) {
     if (num > 1000) {
         num = num / 1000.0;

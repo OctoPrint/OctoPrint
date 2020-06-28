@@ -616,6 +616,26 @@ $(function() {
             return self.setTargetToValue(item, value);
         };
 
+        // Wrapper of self.setTargetFromProfile() to apply all the temperature from a temperature profile
+        self.setTargetsFromProfile = function(temperatureProfile) {
+            if(temperatureProfile === undefined) {
+                console.log("temperatureProfile is undefined!");
+                return;
+            }
+
+            if(self.hasBed()) {
+                self.setTargetFromProfile(self.bedTemp, temperatureProfile);
+            }
+
+            if(self.hasChamber()) {
+                self.setTargetFromProfile(self.chamberTemp, temperatureProfile);
+            }
+
+            self.tools().forEach(function(element) {
+                self.setTargetFromProfile(element, temperatureProfile);
+            });
+        };
+
         self.setTargetFromProfile = function(item, profile) {
             if (!profile) return OctoPrintClient.createRejectedDeferred();
 
@@ -632,6 +652,21 @@ $(function() {
 
             if (target === undefined) target = 0;
             return self.setTargetToValue(item, target);
+        };
+
+        // Wrapper of self.setTargetToZero() to set off all the temperatures
+        self.setTargetsToZero = function() {
+            if(self.hasBed()) {
+                self.setTargetToZero(self.bedTemp);
+            }
+
+            if(self.hasChamber()) {
+                self.setTargetToZero(self.chamberTemp);
+            }
+
+            self.tools().forEach(function(element) {
+                self.setTargetToZero(element);
+            });
         };
 
         self.setTargetToZero = function(item) {
