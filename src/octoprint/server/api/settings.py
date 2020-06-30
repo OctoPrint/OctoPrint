@@ -41,7 +41,7 @@ def _etag(lm=None):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
 	if current_user is not None and not current_user.is_anonymous:
-		roles = sorted(current_user.permissions)
+		roles = sorted(current_user.permissions, key=lambda x: x.key)
 	else:
 		roles = []
 
