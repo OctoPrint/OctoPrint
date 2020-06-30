@@ -337,19 +337,30 @@ $(function() {
         self.profileText = function(heater, profile) {
             var text = gettext("Set %(name)s (%(value)s)");
 
-            var value;
-            if (heater.key() === "bed") {
-                value = profile.bed;
-            } else if (heater.key() === "chamber") {
-                value = profile.chamber;
-            } else {
-                value = profile.extruder;
-            }
+            var format = function(temp) {
+                if (temp === 0 || temp === undefined || temp === null) {
+                    return gettext("Off");
+                } else {
+                    return "" + temp + "°C";
+                }
+            };
 
-            if (value === 0 || value === undefined) {
-                value = gettext("Off");
+            var value;
+            if (heater === "all") {
+                value = gettext("Tool") + ": %(extruder)s";
+                if (self.hasBed()) {
+                    value += "/" + gettext("Bed") + ": %(bed)s";
+                }
+                if (self.hasChamber()) {
+                    value += "/" + gettext("Chamber") + ": %(chamber)s";
+                }
+                value = _.sprintf(value, {extruder: format(profile.extruder), bed: format(profile.bed), chamber: format(profile.chamber)});
+            } else if (heater.key() === "bed") {
+                value = format(profile.bed);
+            } else if (heater.key() === "chamber") {
+                value = format(profile.chamber);
             } else {
-                value = "" + value + "°C";
+                value = format(profile.extruder);
             }
 
             return _.sprintf(text, {name: _.escape(profile.name), value: _.escape(value)});
