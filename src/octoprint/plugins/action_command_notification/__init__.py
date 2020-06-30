@@ -85,9 +85,10 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 			     custom_bindings=False),
 			dict(type="sidebar",
 			     name=gettext("Printer Notifications"),
-			     icon="bell-o", styles=["display: none"],
-			     data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW) "
-			               "&& settings.settings.plugins.action_command_notification.enable")
+			     icon="bell-o",
+			     styles_wrapper=["display: none"],
+			     data_bind="visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
+			               " && settings.settings.plugins.action_command_notification.enable()")
 		]
 
 	#~ action command handler
@@ -110,9 +111,12 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 		self._notifications.append((time.time(), message))
 		self._plugin_manager.send_plugin_message(self._identifier, dict(message=message))
 
+		self._logger.info("Got a notification: {}".format(message))
+
 	def _clear_notifications(self):
 		self._notifications = []
 		self._plugin_manager.send_plugin_message(self._identifier, dict())
+		self._logger.info("Notifications cleared")
 
 __plugin_name__ = "Action Command Notification Support"
 __plugin_description__ = "Allows your printer to trigger notifications via action commands on the connection"
