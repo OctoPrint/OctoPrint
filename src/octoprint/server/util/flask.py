@@ -1419,7 +1419,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 		ctx.cache.set(cache_key, settings().effective_hash)
 
 ##~~ core assets collector
-def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+def collect_core_assets(preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
 		clientjs=[],
@@ -1458,13 +1458,6 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/wizard.js',
 		'js/app/viewmodels/about.js'
 	]
-	if enable_gcodeviewer:
-		assets["js"] += [
-			'js/app/viewmodels/gcode.js',
-			'gcodeviewer/js/ui.js',
-			'gcodeviewer/js/gCodeReader.js',
-			'gcodeviewer/js/renderer.js'
-		]
 
 	assets["clientjs"] = [
 		"js/app/client/base.js",
@@ -1496,7 +1489,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 ##~~ plugin assets collector
 
-def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+def collect_plugin_assets(preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
