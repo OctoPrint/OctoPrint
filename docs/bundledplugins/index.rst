@@ -15,6 +15,8 @@ Bundled Plugins
    backup.rst
    discovery.rst
    errortracking.rst
+   file_check.rst
+   firmware_check.rst
    logging.rst
    loginui.rst
    pluginmanager.rst
