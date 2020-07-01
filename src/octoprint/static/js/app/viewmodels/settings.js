@@ -139,11 +139,6 @@ $(function() {
         self.webcam_flipV = ko.observable(undefined);
         self.webcam_rotate90 = ko.observable(undefined);
 
-        self.feature_gcodeViewer = ko.observable(undefined);
-        self.feature_sizeThreshold = ko.observable();
-        self.feature_mobileSizeThreshold = ko.observable();
-        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
-        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);

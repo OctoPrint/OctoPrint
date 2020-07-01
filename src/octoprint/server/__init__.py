@@ -1492,14 +1492,10 @@ class Server(object):
 		                                                    dict(updater=assets.updater))
 		assets.updater = UpdaterType
 
-		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
 
-		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
-		dynamic_plugin_assets = util.flask.collect_plugin_assets(
-			enable_gcodeviewer=enable_gcodeviewer,
-			preferred_stylesheet=preferred_stylesheet
-		)
+		dynamic_core_assets = util.flask.collect_core_assets()
+		dynamic_plugin_assets = util.flask.collect_plugin_assets(preferred_stylesheet=preferred_stylesheet)
 
 		js_libs = [
 			"js/lib/jquery/jquery.min.js",
