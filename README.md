@@ -1,10 +1,11 @@
 #  OctoPrint
 
 
-![GitHub release](https://img.shields.io/github/release/OctoPrint/OctoPrint.svg?colorB=brightgreen)
-[![Travis build status](https://img.shields.io/travis/OctoPrint/OctoPrint.svg)](https://travis-ci.org/OctoPrint/OctoPrint)
-[![Forum](https://img.shields.io/discourse/https/community.octoprint.org/users.svg)](https://community.octoprint.org)
-[![Discord](https://img.shields.io/discord/704958479194128507?label=discord)](https://discord.octoprint.org)
+![GitHub release](https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white)
+![PyPI](https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white)
+![Build status](https://img.shields.io/github/workflow/status/OctoPrint/OctoPrint/Build)
+[![Community Forum](https://img.shields.io/discourse/users?logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org)](https://community.octoprint.org)
+[![Discord](https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white)](https://discord.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
 
 
@@ -39,7 +40,7 @@ able to help you with any questions you might have.
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
 [official documentation](http://docs.octoprint.org/), debugging help
 in the [bug tracker](https://github.com/OctoPrint/OctoPrint/issues), support of other users on
-[the community forum at community.octoprint.org](https://community.octoprint.org) or 
+[the community forum at community.octoprint.org](https://community.octoprint.org) or
 [the official discord at discord.octoprint.org](https://discord.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
@@ -63,8 +64,8 @@ and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
 you already have Python 2.7, 3.6 or 3.7, pip and virtualenv and their dependencies set up on your system:
 
-1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python 
-   to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python` 
+1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python
+   to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python`
    parameter, e.g. `virtualenv --python=python3 venv`.
 2. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install OctoPrint`
 
