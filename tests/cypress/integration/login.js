@@ -13,9 +13,7 @@ describe('Login tests', () => {
             cy.get('#login-button')
                 .click();
 
-            cy.wait(5000); // wait 5s for the page load before continuing
-
-            cy.get('#navbar')
+            cy.get('#navbar', {timeout: 10000})
                 .should('be.visible');
             cy.get('#navbar_login a.dropdown-toggle span')
                 .should('contain', username);
@@ -39,7 +37,7 @@ describe('Login tests', () => {
             cy.get('#login-button')
                 .click();
 
-            cy.get('#navbar')
+            cy.get('#navbar', {timeout: 10000})
                 .should('be.visible');
             cy.get('#navbar_login a.dropdown-toggle span')
                 .should('contain', username);
@@ -64,7 +62,7 @@ describe('Login tests', () => {
             cy.get('#login-button')
                 .click();
 
-            cy.get('#navbar')
+            cy.get('#navbar', {timeout: 10000})
                 .should('be.visible');
 
             cy.get('#navbar_login a.dropdown-toggle')
