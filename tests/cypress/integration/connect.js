@@ -32,8 +32,12 @@ describe('Connection test against virtual printer', () => {
         cy.get('#state .accordion-inner strong:first')
             .should('contain', 'Offline');
 
+        cy.get('#connection_printers')
+            .should('have.length.greaterThan', 0);
         cy.get('#connection_ports')
-            .select('VIRTUAL');
+            .select('AUTO');
+        cy.get('#connection_baudrates')
+            .select('AUTO');
         cy.get('#printer_connect')
             .should('contain', 'Connect')
             .click();
