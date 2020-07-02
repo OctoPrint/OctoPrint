@@ -35,7 +35,7 @@ describe('Connection test against virtual printer', () => {
         cy.get('#connection_printers')
             .should('have.length.greaterThan', 0);
         cy.get('#connection_ports')
-            .select('AUTO');
+            .select('VIRTUAL');
         cy.get('#connection_baudrates')
             .select('AUTO');
         cy.get('#printer_connect')
