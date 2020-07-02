@@ -28,8 +28,43 @@ jobs:
           name: dist
           path: dist
 
+  test-unit:
+    name: 🧪 Unit tests
+    strategy:
+      matrix:
+        python: ["2.7", "3.7", "3.8"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 🏗 Set up test dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run test suite
+        run: |
+          pytest
+
+  test-flake8:
+    name: 🧪 Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up test dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run test suite
+        run: |
+          flake8 src/ tests setup.py
+
   test-install:
-    name: 🧪 Test install
+    name: 🧪 Installation tests
     needs: build
     strategy:
       matrix:
@@ -56,7 +91,7 @@ jobs:
           pip install dist/OctoPrint-*.tar.gz
 
   test-e2e:
-    name: 🧪 Test E2E
+    name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-16.04
     steps:
@@ -106,6 +141,7 @@ jobs:
     name: 📦 Publish on TestPyPI
     if: github.event_name == 'release'
     needs:
+      - test-unit
       - test-install
       - test-e2e
     runs-on: ubuntu-latest
