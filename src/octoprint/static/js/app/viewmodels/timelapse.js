@@ -270,6 +270,19 @@ $(function() {
             self.markedForFileDeletion.removeAll();
         };
 
+        self.isTimelapseViewable = function(url){
+            return (!self.loginState.hasPermissionKo(self.access.permissions.TIMELAPSE_DOWNLOAD)() && url.indexOf('.mp4') < 0)
+        }
+        self.showTimelapsePreview = function(url) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DOWNLOAD) || url.indexOf(".mp4") < 0)
+                return;
+
+            var previewModal = $("#timelapsePreviewModal");
+            previewModal.children("div.modal-body").children("video").attr("src", url);
+            previewModal.off("hidden.bs.modal").on("hidden.bs.modal", function(){$(this).attr("src", "")})
+            previewModal.modal("show");
+        }
+
         self.removeFile = function(filename) {
             if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
                 return;
@@ -602,6 +615,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: TimelapseViewModel,
         dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
-        elements: ["#timelapse", "#timelapse_link"]
+        elements: ["#timelapse", "#timelapse_link", "#timelapsePreviewModal"]
     });
 });
