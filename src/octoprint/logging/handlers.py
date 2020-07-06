@@ -16,6 +16,9 @@ class AsyncLogHandlerMixin(logging.Handler):
 		super(AsyncLogHandlerMixin, self).__init__(*args, **kwargs)
 
 	def emit(self, record):
+		if getattr(self._executor, "_shutdown", False):
+			return
+
 		try:
 			self._executor.submit(self._emit, record)
 		except Exception:
@@ -24,6 +27,10 @@ class AsyncLogHandlerMixin(logging.Handler):
 	def _emit(self, record):
 		# noinspection PyUnresolvedReferences
 		super(AsyncLogHandlerMixin, self).emit(record)
+
+	def close(self):
+		self._executor.shutdown(wait=True)
+		super(AsyncLogHandlerMixin, self).close()
 
 
 class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):

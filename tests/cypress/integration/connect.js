@@ -42,7 +42,7 @@ describe('Connection test against virtual printer', () => {
             .should('contain', 'Connect')
             .click();
 
-        cy.get('#connection .accordion-inner')
+        cy.get('#connection .accordion-inner', {timeout: 10000})
             .should('not.be.visible');
         cy.get('#state .accordion-inner strong:first')
             .should('contain', 'Operational');
