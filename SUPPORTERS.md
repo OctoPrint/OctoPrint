@@ -1,14 +1,14 @@
-# Supporters 
+# Supporters
 
 Development of this version of OctoPrint wouldn't have been possible without
-[the financial support by the community](https://octoprint.org/support-octoprint/) -
+[the financial support by the community](https://support.octoprint.org) -
 thanks to everyone who contributed!
 
-## Patreon Patrons
+## Patrons & Sponsors
 
-  * Alex Krilov
   * Andrew Moorby
   * Arnljot Arntsen
+  * Ash King
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
@@ -27,13 +27,15 @@ thanks to everyone who contributed!
   * Hog Duske
   * Hugh Blemings
   * jean-claude migneault
-  * Jeff Renfer
-  * Jeremiah Avery
+  * Jeremy Cole
+  * Joe Pasqua
+  * John Robinson
   * Joshua Wills
   * Justin Kaufman
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
+  * Kelly C McNiece
   * Kenneth Jiang
   * Kurt Wubbels
   * Kyle Menigoz
@@ -41,7 +43,7 @@ thanks to everyone who contributed!
   * Lee Dohm
   * Makespace Madrid
   * Mark Walker
-  * Martin Majewski
+  * Marvin Nahmias
   * Michael Aumock
   * Miles Flavel
   * Mosaic Manufacturing
@@ -49,6 +51,7 @@ thanks to everyone who contributed!
   * Patrick Glyré
   * Patrick McGinnis
   * Prof Yuh Wen Chen
+  * Raise3D
   * Randy C. Will
   * Ranjib Dey
   * Richard Michaud
@@ -56,11 +59,11 @@ thanks to everyone who contributed!
   * Robert Gusek
   * Ronald Griehsler
   * Sacha Telgenhof
-  * Simon Hallam
+  * Sebastien Andrivet
   * Stefan Krister
   * Steve Thompson
+  * Stewart Danos
   * Sven Mueller
-  * Trent Shumay
   * Ulrich Kempken
 
-and 1741 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1886 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
