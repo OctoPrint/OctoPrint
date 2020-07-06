@@ -493,7 +493,7 @@ class FilebasedUserManager(UserManager):
 					if "groups" in attributes:
 						groups = set(attributes["groups"])
 					else:
-						groups = set(self._group_manager.user_group)
+						groups = {self._group_manager.user_group}
 
 					# migrate from roles to permissions
 					if "roles" in attributes and not "permissions" in attributes:
