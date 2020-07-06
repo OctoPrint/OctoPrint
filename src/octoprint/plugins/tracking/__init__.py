@@ -102,6 +102,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["enabled"]):
 			return
 		self._track_shutdown()
+		self._executor.shutdown(wait=True)
 
 	##~~ EventHandlerPlugin
 
