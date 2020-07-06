@@ -14,7 +14,7 @@ from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import to_bytes, TemporaryDirectory
+from octoprint.util import to_bytes, to_native_str, TemporaryDirectory
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
@@ -429,7 +429,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if ext in PluginManagerPlugin.ARCHIVE_EXTENSIONS:
 			return True
 
-		kind = filetype.guess(path)
+		kind = filetype.guess(to_native_str(path))
 		if kind:
 			return ".{}".format(kind.extension) in PluginManagerPlugin.ARCHIVE_EXTENSIONS
 		return False
