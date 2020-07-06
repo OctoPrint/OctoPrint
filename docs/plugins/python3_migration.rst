@@ -70,7 +70,7 @@ Then create an editable install of your plugin, start the server and start testi
 
 .. note::
 
-   If you want to migrate your existing OctoPrint install *on OctoPi* to Python 3, I suggest to first make a
+   If you want to migrate your existing OctoPrint install *on OctoPi 0.17.0* to Python 3, I suggest to first make a
    :ref:`backup <sec-bundledplugins-backup>`, then move the existing venv ``/home/pi/oprint`` out of the way and
    create a new one based on Python 3 (which should already be present on current OctoPi images):
 
@@ -79,7 +79,7 @@ Then create an editable install of your plugin, start the server and start testi
       mv ~/oprint ~/oprint.py2
       virtualenv --python=/usr/bin/python3 oprint
       source ~/oprint/bin/activate
-      pip install "OctoPrint>=1.4.0rc1"
+      pip install "OctoPrint>=1.4.0"
       sudo service octoprint restart
 
 .. _sec-plugins-python3-markup:
@@ -218,7 +218,7 @@ You can read more about this specific issue in the corresponding section of the
 `Python porting guide <https://docs.python.org/3/howto/pyporting.html#text-versus-binary-data>`__ and also in the
 `cheat sheet <https://python-future.org/compatible_idioms.html#strings-and-bytes>`__.
 
-.. _sec-plugins-python3-pitfalls-imports:
+.. _sec-plugins-python3-pitfalls-absolute-imports:
 
 Absolute imports
 ................
@@ -245,6 +245,33 @@ future import:
 You can read more about this specific issue in the
 `cheat sheet <https://python-future.org/compatible_idioms.html#imports-relative-to-a-package>`__ and also in
 `the book <http://python3porting.com/problems.html#relative-import-problems>`__.
+
+.. _sec-plugins-python3-pitfalls-version-specific-imports:
+
+Version specific imports
+........................
+
+Sometimes it is necessary to use an import statement that is explicitly related to a specific Python version, e.g. due to
+a package change between Python 2 and 3. You can do this by first trying the Python 3 import and if that doesn't work
+out trying the Python 2 import instead:
+
+.. code-block:: python
+
+   try:
+      import queue
+   except ImportError:
+      import Queue as queue
+
+This should be the preferred method of handling situations like this. If you actually do need to do explicit version
+specific imports that cannot be handled this way, you can check for the Python version like this:
+
+.. code-block:: python
+
+   import sys
+   if sys.version[0] == '2':
+      # Python 2 specific imports
+   else:
+      # Python 3 specific imports
 
 .. _sec-plugins-python3-pitfalls-intdiv:
 
@@ -312,13 +339,14 @@ As a summary, follow this checklist to migrate your plugin to be compatible to b
   * Thorougly test your plugin under Python 3. Pay special attention to any kind of string handling issues, integer
     division, relative imports from your plugin package and how the results of ``map``, ``filter`` and ``zip`` are
     used in your code, as those have proven to be the biggest issues during past migrations.
-  * Once everything works under both Python versions and you've prepared a new release of your plugin, update your
-    registration file in the Official Plugin Repository to include the correct Python compatibility information as well:
+  * Once everything works under both Python versions and you've prepared a new release of your plugin (don't forget to
+    increment the version!), update your registration file in the Official Plugin Repository to include the correct
+    Python compatibility information as well:
 
     .. code-block:: yaml
 
        compatibility:
-         python: ">=2.7,<3"
+         python: ">=2.7,<4"
 
 .. _sec-plugins-python3-furtherreading:
 

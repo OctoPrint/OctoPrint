@@ -41,7 +41,7 @@ def _etag(lm=None):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
 	if current_user is not None and not current_user.is_anonymous:
-		roles = sorted(current_user.permissions)
+		roles = sorted(current_user.permissions, key=lambda x: x.key)
 	else:
 		roles = []
 
@@ -124,9 +124,6 @@ def getSettings():
 			"rotate90": s.getBoolean(["webcam", "rotate90"])
 		},
 		"feature": {
-			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
-			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
-			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
@@ -161,6 +158,8 @@ def getSettings():
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
+			"blacklistedPorts": s.get(["serial", "blacklistedPorts"]),
+			"blacklistedBaudrates": s.get(["serial", "blacklistedBaudrates"]),
 			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
 			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
 			"blockedCommands": s.get(["serial", "blockedCommands"]),
@@ -186,7 +185,9 @@ def getSettings():
 			"firmwareDetection": s.getBoolean(["serial", "firmwareDetection"]),
 			"blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
 			"useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
+			"sanityCheckTools": s.getBoolean(["serial", "sanityCheckTools"]),
 			"sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
+			"disableSdPrintingDetection": s.getBoolean(["serial", "disableSdPrintingDetection"]),
 			"ackMax": s.getInt(["serial", "ackMax"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
@@ -242,7 +243,8 @@ def getSettings():
 				"enabled": s.getBoolean(["server", "onlineCheck", "enabled"]),
 				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
 				"host": s.get(["server", "onlineCheck", "host"]),
-				"port": s.getInt(["server", "onlineCheck", "port"])
+				"port": s.getInt(["server", "onlineCheck", "port"]),
+				"name": s.get(["server", "onlineCheck", "name"])
 			},
 			"pluginBlacklist": {
 				"enabled": s.getBoolean(["server", "pluginBlacklist", "enabled"]),
@@ -421,9 +423,6 @@ def _saveSettings(data):
 		if "rotate90" in data["webcam"]: s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
 
 	if "feature" in data:
-		if "gcodeViewer" in data["feature"]: s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
-		if "sizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
-		if "mobileSizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"]: s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "sdSupport" in data["feature"]: s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 		if "keyboardControl" in data["feature"]: s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
@@ -455,6 +454,8 @@ def _saveSettings(data):
 		if "timeoutPositionLogWait" in data["serial"]: s.setFloat(["serial", "timeout", "positionLogWait"], data["serial"]["timeoutPositionLogWait"], min=1.0)
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
+		if "blacklistedPorts" in data["serial"] and isinstance(data["serial"]["blacklistedPorts"], (list, tuple)): s.set(["serial", "blacklistedPorts"], data["serial"]["blacklistedPorts"])
+		if "blacklistedBaudrates" in data["serial"] and isinstance(data["serial"]["blacklistedBaudrates"], (list, tuple)): s.set(["serial", "blacklistedBaudrates"], data["serial"]["blacklistedBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
 		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
 		if "blockedCommands" in data["serial"] and isinstance(data["serial"]["blockedCommands"], (list, tuple)): s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
@@ -483,7 +484,9 @@ def _saveSettings(data):
 			value = data["serial"]["useParityWorkaround"]
 			if value in ("always", "detect", "never"):
 				s.set(["serial", "useParityWorkaround"], value)
+		if "sanityCheckTools" in data["serial"]: s.setBoolean(["serial", "sanityCheckTools"], data["serial"]["sanityCheckTools"])
 		if "sendM112OnError" in data["serial"]: s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
+		if "disableSdPrintingDetection" in data["serial"]: s.setBoolean(["serial", "disableSdPrintingDetection"], data["serial"]["disableSdPrintingDetection"])
 		if "ackMax" in data["serial"]: s.setInt(["serial", "ackMax"], data["serial"]["ackMax"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
 		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
@@ -560,6 +563,7 @@ def _saveSettings(data):
 					pass
 			if "host" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "host"], data["server"]["onlineCheck"]["host"])
 			if "port" in data["server"]["onlineCheck"]: s.setInt(["server", "onlineCheck", "port"], data["server"]["onlineCheck"]["port"])
+			if "name" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "name"], data["server"]["onlineCheck"]["name"])
 		if "pluginBlacklist" in data["server"]:
 			if "enabled" in data["server"]["pluginBlacklist"]: s.setBoolean(["server", "pluginBlacklist", "enabled"], data["server"]["pluginBlacklist"]["enabled"])
 			if "url" in data["server"]["pluginBlacklist"]: s.set(["server", "pluginBlacklist", "url"], data["server"]["pluginBlacklist"]["url"])

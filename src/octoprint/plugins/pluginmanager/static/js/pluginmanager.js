@@ -57,14 +57,50 @@ $(function() {
             {
                 "title": function (a, b) {
                     // sorts ascending
-                    if (a["title"].toLocaleLowerCase() < b["title"].toLocaleLowerCase()) return -1;
-                    if (a["title"].toLocaleLowerCase() > b["title"].toLocaleLowerCase()) return 1;
+                    if (a.title.toLocaleLowerCase() < b.title.toLocaleLowerCase()) return -1;
+                    if (a.title.toLocaleLowerCase() > b.title.toLocaleLowerCase()) return 1;
                     return 0;
                 },
                 "published": function (a, b) {
                     // sorts descending
-                    if (a["published"].toLocaleLowerCase() > b["published"].toLocaleLowerCase()) return -1;
-                    if (a["published"].toLocaleLowerCase() < b["published"].toLocaleLowerCase()) return 1;
+                    if (a.published.toLocaleLowerCase() > b.published.toLocaleLowerCase()) return -1;
+                    if (a.published.toLocaleLowerCase() < b.published.toLocaleLowerCase()) return 1;
+                    return 0;
+                },
+                "popularity": function (a, b) {
+                    // sorts descending
+                    var countA = (a.stats && a.stats.instances_month) ? a.stats.instances_month : 0;
+                    var countB = (b.stats && b.stats.instances_month) ? b.stats.instances_month : 0;
+
+                    if (countA > countB) return -1;
+                    if (countA < countB) return 1;
+                    return 0;
+                },
+                "release_date": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github && a.github.latest_release) ? a.github.latest_release.date.toLocaleLowerCase() : "";
+                    var valB = (b.github && b.github.latest_release) ? b.github.latest_release.date.toLocaleLowerCase() : "";
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
+                    return 0;
+                },
+                "push_date": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github) ? a.github.last_push.toLocaleLowerCase() : "";
+                    var valB = (b.github) ? b.github.last_push.toLocaleLowerCase() : "";
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
+                    return 0;
+                },
+                "stars": function (a, b) {
+                    // sorts descending
+                    var valA = (a.github) ? a.github.stars : 0;
+                    var valB = (b.github) ? b.github.stars : 0;
+
+                    if (valA > valB) return -1;
+                    if (valA < valB) return 1;
                     return 0;
                 }
             },
@@ -74,6 +110,9 @@ $(function() {
                 },
                 "filter_incompatible": function(plugin) {
                     return plugin.is_compatible.octoprint && plugin.is_compatible.os && plugin.is_compatible.python;
+                },
+                "filter_abandoned": function(plugin) {
+                    return !plugin.abandoned;
                 }
             },
             "title",
@@ -122,7 +161,7 @@ $(function() {
 
         self.followDependencyLinks = ko.observable(false);
 
-        self.pipAvailable = ko.observable(false);
+        self.pipAvailable = ko.observable(true);
         self.pipVersion = ko.observable();
         self.pipInstallDir = ko.observable();
         self.pipUseUser = ko.observable();
@@ -132,6 +171,8 @@ $(function() {
 
         self.safeMode = ko.observable();
         self.online = ko.observable();
+
+        self.requestError = ko.observable(false);
 
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
@@ -174,9 +215,9 @@ $(function() {
 
         self.noticeCountText = ko.pureComputed(function() {
             var count = self.noticeCount();
-            if (count == 0) {
+            if (count === 0) {
                 return gettext("There are no plugin notices. Great!");
-            } else if (count == 1) {
+            } else if (count === 1) {
                 return gettext("There is a plugin notice for one of your installed plugins.");
             } else {
                 return _.sprintf(gettext("There are %(count)d plugin notices for one or more of your installed plugins."), {count: count});
@@ -249,8 +290,8 @@ $(function() {
                 && !self.invalidUrl();
         });
 
-        self.invalidArchive = ko.pureComputed(function() {
-            var allowedArchiveExtensions = [".zip", ".tar.gz", ".tgz", ".tar"];
+        self.invalidFile = ko.pureComputed(function() {
+            var allowedFileExtensions = [".zip", ".tar.gz", ".tgz", ".tar", ".py"];
 
             var name = self.uploadFilename();
             var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
@@ -260,10 +301,10 @@ $(function() {
             };
 
             return name !== undefined
-                && !(_.any(allowedArchiveExtensions, lowerNameHasExtension));
+                && !(_.any(allowedFileExtensions, lowerNameHasExtension));
         });
 
-        self.enableArchiveInstall = ko.pureComputed(function() {
+        self.enableFileInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return self.enableManagement()
                 && self.pipAvailable()
@@ -271,7 +312,7 @@ $(function() {
                 && !self.throttled()
                 && name !== undefined
                 && name.trim() !== ""
-                && !self.invalidArchive();
+                && !self.invalidFile();
         });
 
         self.uploadElement.fileupload({
@@ -279,7 +320,7 @@ $(function() {
             maxNumberOfFiles: 1,
             autoUpload: false,
             add: function(e, data) {
-                if (data.files.length == 0) {
+                if (data.files.length === 0) {
                     return false;
                 }
 
@@ -435,7 +476,11 @@ $(function() {
             options.eval_notices = options.eval_notices || false;
 
             OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices, orphans: options.refresh_orphans})
+                .fail(function() {
+                    self.requestError(true);
+                })
                 .done(function(data) {
+                    self.requestError(false);
                     self.fromResponse(data, options);
                 });
         };
@@ -449,7 +494,7 @@ $(function() {
                 return;
             }
 
-            if (data.key == "pluginmanager") return;
+            if (data.key === "pluginmanager") return;
 
             var onSuccess = function() {
                     self.requestData();
@@ -463,7 +508,7 @@ $(function() {
                     })
                 };
 
-            if (self._getToggleCommand(data) == "enable") {
+            if (self._getToggleCommand(data) === "enable") {
                 if (data.safe_mode_victim) return;
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
@@ -505,7 +550,10 @@ $(function() {
         };
 
         self.showRepository = function() {
-            self.repositoryDialog.modal("show");
+            self.repositoryDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); },
+                show: true
+            });
         };
 
         self.pluginDetails = function(data) {
@@ -745,7 +793,7 @@ $(function() {
 
         self.savePluginSettings = function() {
             var repository = self.config_repositoryUrl();
-            if (repository != undefined && repository.trim() == "") {
+            if (repository !== undefined && repository.trim() === "") {
                 repository = null;
             }
 
@@ -757,7 +805,7 @@ $(function() {
             }
 
             var notices = self.config_noticesUrl();
-            if (notices != undefined && notices.trim() == "") {
+            if (notices !== undefined && notices.trim() === "") {
                 notices = null;
             }
 
@@ -769,7 +817,7 @@ $(function() {
             }
 
             var pipArgs = self.config_pipAdditionalArgs();
-            if (pipArgs != undefined && pipArgs.trim() == "") {
+            if (pipArgs !== undefined && pipArgs.trim() === "") {
                 pipArgs = null;
             }
 
@@ -990,7 +1038,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
+            var icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -998,7 +1046,7 @@ $(function() {
 
         self.toggleButtonTitle = function(data) {
             var command = self._getToggleCommand(data);
-            if (command == "enable") {
+            if (command === "enable") {
                 if (data.blacklisted) {
                     return gettext("Blacklisted");
                 } else if (data.safe_mode_victim) {
@@ -1012,7 +1060,7 @@ $(function() {
         };
 
         self.showPluginNotifications = function(plugin) {
-            if (!plugin.notifications || plugin.notifications.length == 0) return;
+            if (!plugin.notifications || plugin.notifications.length === 0) return;
 
             self._removeAllNoticeNotificationsForPlugin(plugin.key);
             _.each(plugin.notifications, function(notification) {
@@ -1021,7 +1069,7 @@ $(function() {
         };
 
         self.showPluginNotificationsLinkText = function(plugins) {
-            if (!plugins.notifications || plugins.notifications.length == 0) return;
+            if (!plugins.notifications || plugins.notifications.length === 0) return;
 
             var count = plugins.notifications.length;
             var importantCount = _.filter(plugins.notifications, function(notification) { return notification.important }).length;
@@ -1057,8 +1105,8 @@ $(function() {
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
-                var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
-                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: _.escape(versions)}) + "</small>";
+                var versions = _.map(notification.versions, function(v) { return (v === version) ? "<strong>" + _.escape(v) + "</strong>" : _.escape(v); }).join(", ");
+                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
             }
@@ -1167,7 +1215,7 @@ $(function() {
             if (!Modernizr.localstorage)
                 return false;
 
-            if (localStorage[noticeLocalStorageKey] == undefined)
+            if (localStorage[noticeLocalStorageKey] === undefined)
                 return false;
 
             var knownData = JSON.parse(localStorage[noticeLocalStorageKey]);

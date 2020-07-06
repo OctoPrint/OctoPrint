@@ -206,11 +206,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "pong"]):
 			return
 
+		payload = self._get_environment_payload()
+
 		plugins = self._plugin_manager.enabled_plugins
 		plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
-		payload = dict(plugins=",".join(map(lambda x: "{}:{}".format(x.key.lower(),
-		                                                             x.version.lower() if x.version else "?"),
-		                                    plugins_thirdparty)))
+		payload["plugins"] = ",".join(map(lambda x: "{}:{}".format(x.key.lower(),
+		                                                           x.version.lower() if x.version else "?"),
+		                                  plugins_thirdparty))
 
 		self._track("pong", body=True, **payload)
 
@@ -218,19 +220,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "startup"]):
 			return
 
-		payload = dict(version=get_octoprint_version_string(),
-		               os=self._environment["os"]["id"],
-		               python=self._environment["python"]["version"],
-		               pip=self._environment["python"]["pip"],
-		               cores=self._environment["hardware"]["cores"],
-		               freq=self._environment["hardware"]["freq"],
-		               ram=self._environment["hardware"]["ram"])
-
-		if "plugins" in self._environment and "pi_support" in self._environment["plugins"]:
-			payload["pi_model"] = self._environment["plugins"]["pi_support"]["model"]
-
-			if "octopi_version" in self._environment["plugins"]["pi_support"]:
-				payload["octopi_version"] = self._environment["plugins"]["pi_support"]["octopi_version"]
+		payload = self._get_environment_payload()
 
 		self._track("startup", **payload)
 
@@ -435,13 +425,32 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info("Sent tracking event {}, payload: {!r}".format(event, kwargs))
 		except Exception:
 			if self._logger.isEnabledFor(logging.DEBUG):
-				self._logger.exception("Error while sending event to anonymous usage tracking".format(url))
+				self._logger.exception("Error while sending event to anonymous usage tracking")
 			else:
 				pass
+
+	def _get_environment_payload(self):
+		payload = dict(version=get_octoprint_version_string(),
+		               os=self._environment["os"]["id"],
+		               python=self._environment["python"]["version"],
+		               pip=self._environment["python"]["pip"],
+		               cores=self._environment["hardware"]["cores"],
+		               freq=self._environment["hardware"]["freq"],
+		               ram=self._environment["hardware"]["ram"])
+
+		if "plugins" in self._environment and "pi_support" in self._environment["plugins"]:
+			payload["pi_model"] = self._environment["plugins"]["pi_support"]["model"]
+
+			if "octopi_version" in self._environment["plugins"]["pi_support"]:
+				payload["octopi_version"] = self._environment["plugins"]["pi_support"]["octopi_version"]
+
+		return payload
 
 __plugin_name__ = "Anonymous Usage Tracking"
 __plugin_description__ = "Anonymous version and usage tracking, see homepage for details on what gets tracked"
 __plugin_url__ = "https://tracking.octoprint.org"
 __plugin_author__ = "Gina Häußge"
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 __plugin_implementation__ = TrackingPlugin()

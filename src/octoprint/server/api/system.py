@@ -21,6 +21,7 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, get_remote_address
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
+from octoprint.util.platform import CLOSE_FDS
 
 @api.route("/system/usage", methods=["GET"])
 @no_firstrun_access
@@ -41,7 +42,7 @@ def _usageForFolders():
 @no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def performSystemAction():
-	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
+	logging.getLogger(__name__).warning("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
 
 	data = request.get_json(silent=True)
 	if data is None:
@@ -115,6 +116,7 @@ def executeSystemCommand(source, command):
 			# our admin configured as command and since we want to allow
 			# shell-alike handling here...
 			p = sarge.run(command_spec["command"],
+			              close_fds=CLOSE_FDS,
 			              stdout=sarge.Capture(),
 			              stderr=sarge.Capture(),
 			              shell=True)
@@ -211,7 +213,7 @@ def _get_core_command_specs():
 def _get_core_command_spec(action):
 	available_actions = _get_core_command_specs()
 	if not action in available_actions:
-		logging.getLogger(__name__).warn(u"Command for core action {} is not configured, you need to configure the command before it can be used".format(action))
+		logging.getLogger(__name__).warning(u"Command for core action {} is not configured, you need to configure the command before it can be used".format(action))
 		return None
 
 	return available_actions[action]

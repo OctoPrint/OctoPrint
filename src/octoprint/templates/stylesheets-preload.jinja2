@@ -1,0 +1,10 @@
+<!-- must be kept in sync with stylesheets-preload.jinja2! -->
+{% assets "css_libs" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "css_core" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "css_plugins" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "less_core" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
+{% assets "less_plugins" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
+
+<link rel="preload" as="font" href="{{ url_for('static', filename='vendor/font-awesome-4.7.0/fonts/fontawesome-webfont.woff2') }}?v=4.7.0" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" as="font" href="{{ url_for('static', filename='vendor/font-awesome-4.7.0/fonts/fontawesome-webfont.woff') }}?v=4.7.0" type="font/woff" crossorigin="anonymous">
+<link rel="preload" as="font" href="{{ url_for('static', filename='vendor/font-awesome-3.2.1/fonts/fontawesome-webfont.woff') }}?v=3.2.1" type="font/woff" crossorigin="anonymous">

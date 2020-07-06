@@ -1,7 +1,7 @@
 <div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
     Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
     this plugin won't be able to update it. Click on the <i class="fa fa-wrench"></i> button
-    to do this. Also refer to the <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+    to do this. Also refer to the <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
     <p>
@@ -30,6 +30,23 @@
 {% trans %}
     <p>
         Please take a look at <a href="https://faq.octoprint.org/unsupported-python-environment" target="_blank">this FAQ entry on how to proceed</a>.
+    </p>
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: !storageSufficient()">{% trans min_free_storage='<strong data-bind="text: formatSize(settings.settings.plugins.softwareupdate.minimum_free_storage() * 1024 * 1024)"></strong>' %}
+    <p>
+        <strong>There is not enough free disk space available to run an update.</strong>
+    </p>
+    <p>
+        To reduce the likelihood of running into update problems due to insuffient disk space, OctoPrint requires
+        a minimum of {{ min_free_storage }} free disk space in various locations:
+    </p>
+{% endtrans %}
+    <ul data-bind="foreach: storageFree">
+        <li><span data-bind="text: name"></span> (<span data-bind="text: path"></span>): <span data-bind="text: formatSize($data.free)"></span> free</li>
+    </ul>
+{% trans %}
+    <p>
+        Please take a look at <a href="https://faq.octoprint.org/insuffienct-disk-space" target="_blank">this FAQ entry on how to proceed</a>.
     </p>
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: throttled()">{% trans %}
@@ -110,7 +127,7 @@
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" class="input-mini" data-bind="value: config_cacheTtl">
+                        <input type="number" class="input-small" data-bind="value: config_cacheTtl">
                         <span class="add-on">min</span>
                     </div>
                 </div>
@@ -121,6 +138,16 @@
                         <input type="checkbox" data-bind="checked: config_notifyUsers"> {{ _('Show update notifications to users') }}
                         <span class="help-block">{{ _('If you uncheck this, only logged in admins will see update notifications. Update notifications shown to users do not include the "Update now" button.') }}</span>
                     </label>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Minimum free disk space') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" class="input-small" data-bind="value: config_minimumFreeStorage">
+                        <span class="add-on">MB</span>
+                        <span class="help-block">{{ _('The minimum amount of free disk space that has to be available on various locations for OctoPrint to allow updates. Should not be set to 0.') }}</span>
+                    </div>
                 </div>
             </div>
         </form>

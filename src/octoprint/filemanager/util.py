@@ -71,7 +71,7 @@ class StreamWrapper(AbstractFileWrapper):
 	A wrapper allowing processing of one or more consecutive streams.
 
 	Arguments:
-	    *streams (io.IOBase): One or more streams to process one after another to save to storage.
+	    *streams: One or more :py:`io.IOBase` streams to process one after another to save to storage.
 	"""
 	def __init__(self, filename, *streams):
 		if not len(streams) > 0:
@@ -88,7 +88,7 @@ class StreamWrapper(AbstractFileWrapper):
 		import shutil
 
 		with atomic_write(path, mode='wb') as dest:
-			with self.stream() as source:
+			for source in self.streams:
 				shutil.copyfileobj(source, dest)
 
 	def stream(self):
@@ -107,7 +107,7 @@ class MultiStream(io.RawIOBase):
 	their contents in the order they are provided to the constructor.
 
 	Arguments:
-	    *streams (io.RawIOBase): One or more streams to concatenate.
+	    *streams: One or more :py:`io.IOBase` streams to concatenate.
 	"""
 	def __init__(self, *streams):
 		io.RawIOBase.__init__(self)
@@ -170,31 +170,32 @@ class LineProcessorStream(io.RawIOBase):
 	def __init__(self, input_stream):
 		io.RawIOBase.__init__(self)
 		self.input_stream = io.BufferedReader(input_stream)
-		self.leftover = None
+		self.leftover = bytearray()
 
 	def read(self, n=-1):
 		if n == 0:
 			return b''
 
-		result = b''
+		result = bytearray()
 		while len(result) < n or n == -1:
+			# add left over from previous loop
 			bytes_left = (n - len(result)) if n != -1 else -1
-			if self.leftover is not None:
-				if bytes_left != -1 and bytes_left < len(self.leftover):
-					result += self.leftover[:bytes_left]
-					self.leftover = self.leftover[bytes_left:]
-					break
-				else:
-					result += self.leftover
-					self.leftover = None
+			if bytes_left != -1 and bytes_left < len(self.leftover):
+				# only s
+				result += self.leftover[:bytes_left]
+				self.leftover = self.leftover[bytes_left:]
+				break
+			else:
+				result += self.leftover
+				self.leftover = bytearray()
 
+			# read one line from the underlying stream
 			processed_line = None
 			while processed_line is None:
 				line = self.input_stream.readline()
 				if not line:
 					break
 				processed_line = self.process_line(line)
-
 			if processed_line is None:
 				break
 
@@ -206,7 +207,7 @@ class LineProcessorStream(io.RawIOBase):
 			else:
 				result += processed_line
 
-		return result
+		return bytes(result)
 
 	def readinto(self, b):
 		n = len(b)

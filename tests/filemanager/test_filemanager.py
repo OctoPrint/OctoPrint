@@ -483,12 +483,8 @@ class FileManagerTest(unittest.TestCase):
 		#mocked_open.return_value.write.assert_called_once_with(";Generated from source.file aabbccddeeff\r")
 
 		# assert that shutil was asked to copy the concatenated multistream
-		self.assertEqual(1, len(mocked_shutil.call_args_list))
-		shutil_call_args = mocked_shutil.call_args_list[0]
-		self.assertTrue(isinstance(shutil_call_args[0][0], octoprint.filemanager.util.MultiStream))
-		multi_stream = shutil_call_args[0][0]
-		self.assertEqual(2, len(multi_stream.streams))
-		self.assertTrue(isinstance(multi_stream.streams[0], io.BytesIO))
+		self.assertEqual(2, len(mocked_shutil.call_args_list))
+		self.assertTrue(isinstance(mocked_shutil.call_args_list[0].args[0], io.BytesIO))
 
 		# assert that the temporary file was deleted
 		mocked_os.assert_called_once_with("tmp.file")

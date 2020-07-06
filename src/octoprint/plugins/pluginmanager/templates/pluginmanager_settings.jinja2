@@ -34,6 +34,13 @@
 {% endtrans %}</div>
 {% endmacro %}
 
+{% macro pluginmanager_requesterror() %}
+<div class="alert" data-bind="visible: requestError()">{% trans %}
+    There appears to have been an error retrieving the plugin data from the backend. Please report this
+    in the bug tracker & be sure to include all requested logs.
+{% endtrans %}</div>
+{% endmacro %}
+
 <ul class="nav nav-pills">
     <li class="active">
         <a href="#settings_plugin_pluginmanager_plugins" data-toggle="tab">{{ _('Plugins') }}</a>
@@ -49,6 +56,7 @@
         {{ pluginmanager_nopip() }}
         {{ pluginmanager_safemode() }}
         {{ pluginmanager_throttled() }}
+        {{ pluginmanager_requesterror() }}
 
         <div class="pull-right">
             <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fa fa-wrench"></i></button>
@@ -85,13 +93,16 @@
                 <tr>
                     <td class="settings_plugin_plugin_manager_plugins_name">
                         <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i class="fa fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fa fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
+                        <div data-bind="css: {muted: !enabled}">
+                            <small class="prop" data-bind="visible: url"><i class="fa fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
+                            <small class="prop" data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
+                        </div>
                         <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
                         <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
                         <div data-bind="css: {muted: !enabled}">
-                            <small data-bind="visible: url"><i class="fa fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
-                            <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
-                            <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
-                            <small>&nbsp;</small>
+                            <small class="prop" data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
+                            <small class="prop" data-bind="visible: python"><i class="fa fa-cog"></i> Python <span data-bind="text: python"></span></small>
+                            <small class="prop">&nbsp;</small>
                         </div>
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_actions">
@@ -193,114 +204,138 @@
         <h3>{{ _('Install new Plugins...') }}</h3>
     </div>
     <div class="modal-body">
-        {{ pluginmanager_printing() }}
-        {{ pluginmanager_nopip() }}
-        {{ pluginmanager_safemode() }}
-        {{ pluginmanager_throttled() }}
-        {{ pluginmanager_offline() }}
-        <h4 style="position: relative">
-            {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='https://plugins.octoprint.org') }}
-            <div class="dropdown pull-right">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                    <span class="fa fa-wrench"></span>
-                </a>
-                <ul class="dropdown-menu pull-right">
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
-                    <li class="divider"></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
-                    <li class="divider"></li>
-                    <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="fa fa-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
-                </ul>
+        <div class="full-sized-box">
+            {{ pluginmanager_printing() }}
+            {{ pluginmanager_nopip() }}
+            {{ pluginmanager_safemode() }}
+            {{ pluginmanager_throttled() }}
+            {{ pluginmanager_offline() }}
+            <h4 style="position: relative">
+                {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='https://plugins.octoprint.org') }}
+            </h4>
+
+            <div style="margin-bottom: 1em" class="clearfix">
+                <form class="form-search" data-bind="submit: performRepositorySearch">
+                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+                </form>
+                <div class="dropdown pull-right">
+                    <div class="btn-group">
+                        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="javascript:void(0)">
+                            <i class="fa fa-wrench"></i> <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu pull-right">
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('release_date'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'release_date' ? 'visible' : 'hidden'}"></i> {{ _('Sort by last release date') }} ({{ _('descending') }})</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('push_date'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'push_date' ? 'visible' : 'hidden'}"></i> {{ _('Sort by last push date') }} ({{ _('descending') }})</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('popularity'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'popularity' ? 'visible' : 'hidden'}"></i> {{ _('Sort by active instance count') }} ({{ _('descending') }})</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.changeSorting('stars'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'stars' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Github stars') }} ({{ _('descending') }})</a></li>
+                            <li class="divider"></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { repositoryplugins.toggleFilter('filter_abandoned'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_abandoned') ? 'visible' : 'hidden'}"></i> {{ _('Only show unabandoned plugins') }}</a></li>
+                            <li class="divider"></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { refreshRepository(); }"><i class="fa fa-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-        </h4>
 
-        <form class="form-search" data-bind="submit: performRepositorySearch">
-            <input type="text" class="input-block search-query" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
-        </form>
+            <div data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length > 0">
+                <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
+                    <div class="entry">
+                        <div class="row-fluid">
+                            <div class="span12">
+                                <div class="span3 pull-right">
+                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fa fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                                    <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
+                                </div>
+                                <div>
+                                    <span data-bind="text: title"></span>
+                                    <i class="fa fa-heartbeat" title="{{ _('Abandoned by its maintainer')|edq }}" data-bind="visible: abandoned"></i>
+                                    <i class="fa fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: !$root.isCompatible($data)"></i>
+                                    <i class="fa fa-ban" title="{{ _('Disabled')|edq }}" data-bind="visible: $data.disabled !== undefined"></i>
+                                </div>
+                                <div class="meta">
+                                    <small class="prop" data-bind="visible: page"><i class="fa fa-info"></i>&nbsp;<a data-bind="attr: {href: page, title: page}" target="_blank">{{ _('Details') }}</a></small>
+                                    <small class="prop" data-bind="visible: homepage"><i class="fa fa-home"></i>&nbsp;<a data-bind="attr: {href: homepage, title: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
+                                    <small class="prop" data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author, attr: {title: author}"></span></small>
+                                </div>
+                                <div class="muted"><small data-bind="text: description">&nbsp;</small></div>
+                                <div class="stats">
+                                    <small class="prop" data-bind="visible: license" title="{{ _('License')|edq }}"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
+                                    <small class="prop" data-bind="visible: published" title="{{ _('Publication date')|edq }}"><i class="fa fa-birthday-cake"></i> <span data-bind="text: published.substring(0, 10)"></span></small>
+                                    <small class="prop" data-bind="visible: $data.stats !== undefined" title="{{ _('Active instances past month')|edq }}"><i class="fa fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.instances_month) : 0"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.stars !== undefined" title="{{ _('Github stars')|edq }}"><i class="fa fa-star"></i> <span data-bind="text: ($data.github !== undefined && $data.github.stars !== undefined) ? formatNumberK($data.github.stars) : 0"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.last_push !== undefined" title="{{ _('Last push to main branch')|edq }}"><i class="fa fa-refresh"></i> <span data-bind="text: ($data.github !== undefined && $data.github.last_push !== undefined) ? $data.github.last_push.substring(0, 10) : ''"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.latest_release != undefined" title="{{ _('Latest release & date')|edq }}"><i class="fa fa-tag"></i> <span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined ? $data.github.latest_release.tag : ''"></span> (<span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined ? $data.github.latest_release.date.substring(0, 10) : ''"></span>)</small>
+                                </div>
+                            </div>
 
-        <div data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length > 0">
-            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
-                <div class="entry">
-                    <div class="row-fluid">
-                        <div class="span9">
-                            <div><span data-bind="text: title"></span></div>
-                            <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
-                            <div>
-                                <small data-bind="visible: page"><i class="fa fa-info"></i> <a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
-                                <small data-bind="visible: homepage"><i class="fa fa-home"></i> <a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
-                                <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
-                                <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
-                                <small>&nbsp;</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="pull-right"><small><span data-bind="text: repositoryplugins.paginatedItems().length"></span> / <span data-bind="text: repositoryplugins.allSize()"></span> {{ _('plugins displayed') }}</small></div>
+            </div>
+            <div id="settings_plugin_pluginmanager_repositorydialog_unavailable" data-bind="visible: !repositoryAvailable()">
+                <div>
+                    <p>
+                        <strong>{{ _('Sadly the repository is currently not available') }}</strong>
+                    </p>
+                    <p>
+                        <small>{{ _('Is your OctoPrint installation connected to the internet?') }}</small>
+                    </p>
+                </div>
+            </div>
+            <div id="settings_plugin_pluginmanager_repositorydialog_empty" data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length === 0">
+                <div>
+                    <p>
+                        <strong>{{ _('It looks like there are no plugins that match your search criteria') }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <h4>{{ _('... from URL') }}</h4>
+
+            <form class="form-inline">
+                <div class="control-group row-fluid" data-bind="css: {error: invalidUrl}">
+                    <div class="span9">
+                        <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...')|edq }}" >
+                    </div>
+                    <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
+                </div>
+                <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid URL. Expected http, https or any of the <a href="%(url)s" target="_blank">supported VCS URLs</a>.', url='https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support') }}</span>
+            </form>
+
+            <h4>{{ _('... from an uploaded file') }}</h4>
+
+            <form class="form-inline">
+                <div class="control-group row-fluid" data-bind="css: {error: invalidFile}">
+                    <div class="input-prepend span9">
+                        <span class="btn fileinput-button">
+                            <span>{{ _('Browse...') }}</span>
+                            <input id="settings_plugin_pluginmanager_repositorydialog_upload" type="file" name="file" accept="{{ ",".join(plugin_pluginmanager_file_extensions) }}" data-url="{{ url_for("plugin.pluginmanager.upload_file") }}">
+                        </span>
+                        <span class="add-on add-on-limited text-left" data-bind="text: uploadFilename, attr: {title: uploadFilename}"></span>
+                    </div>
+                    <button id="settings_plugin_pluginmanager_repositorydialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableFileInstall, css: {disabled: !enableFileInstall()}, click: function(){}">{{ _('Install') }}</button>
+                </div>
+                <span class="help-block" data-bind="visible: invalidFile">{{ _('This does not look like a valid plugin. Valid plugins should be either zip files or tarballs installable via <code>pip</code> that have the extension ".zip", ".tar.gz", ".tgz" or ".tar", or single file python plugins with the extension ".py"') }}</span>
+            </form>
+
+            <div>
+                <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                <div class="hide">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: followDependencyLinks"> {{ _('Use <code>--process-dependency-links</code> with <code>pip install</code>') }}
+                                </label>
                             </div>
                         </div>
-                        <div class="span3">
-                            <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fa fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
-                            <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
-                        </div>
-                    </div>
+                    </form>
                 </div>
-            </div>
-        </div>
-        <div id="settings_plugin_pluginmanager_repositorydialog_unavailable" data-bind="visible: !repositoryAvailable()">
-            <div>
-                <p>
-                    <strong>{{ _('Sadly the repository is currently not available') }}</strong>
-                </p>
-                <p>
-                    <small>{{ _('Is your OctoPrint installation connected to the internet?') }}</small>
-                </p>
-            </div>
-        </div>
-        <div id="settings_plugin_pluginmanager_repositorydialog_empty" data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length === 0">
-            <div>
-                <p>
-                    <strong>{{ _('It looks like there are no compatible plugins available') }}</strong>
-                </p>
-            </div>
-        </div>
-
-        <h4>{{ _('... from URL') }}</h4>
-
-        <form class="form-inline">
-            <div class="control-group row-fluid" data-bind="css: {error: invalidUrl}">
-                <div class="span9">
-                    <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...')|edq }}" >
-                </div>
-                <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
-            </div>
-            <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid URL. Expected http, https or any of the <a href="%(url)s" target="_blank">supported VCS URLs</a>.', url='https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support') }}</span>
-        </form>
-
-        <h4>{{ _('... from an uploaded archive') }}</h4>
-
-        <form class="form-inline">
-            <div class="control-group row-fluid" data-bind="css: {error: invalidArchive}">
-                <div class="input-prepend span9">
-                    <span class="btn fileinput-button">
-                        <span>{{ _('Browse...') }}</span>
-                        <input id="settings_plugin_pluginmanager_repositorydialog_upload" type="file" name="file" accept="{{ ",".join(plugin_pluginmanager_archive_extensions) }}" data-url="{{ url_for("plugin.pluginmanager.upload_archive") }}">
-                    </span>
-                    <span class="add-on add-on-limited text-left" data-bind="text: uploadFilename, attr: {title: uploadFilename}"></span>
-                </div>
-                <button id="settings_plugin_pluginmanager_repositorydialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableArchiveInstall, css: {disabled: !enableArchiveInstall()}, click: function(){}">{{ _('Install') }}</button>
-            </div>
-            <span class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid plugin archive. Valid plugin archives should be either zip files or tarballs and have the extension ".zip", ".tar.gz", ".tgz" or ".tar"') }}</span>
-        </form>
-
-        <div>
-            <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
-            <div class="hide">
-                <form class="form-horizontal">
-                    <div class="control-group">
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: followDependencyLinks"> {{ _('Use <code>--process-dependency-links</code> with <code>pip install</code>') }}
-                            </label>
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

@@ -501,7 +501,7 @@ class gcode(object):
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
 	def _parseCuraProfileString(self, comment, prefix):
-		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
+		return {key: value for (key, value) in map(lambda x: x.split(b"=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split(b"\b"))}
 
 	def get_result(self):
 		return dict(total_time=self.totalMoveTimeMinute,

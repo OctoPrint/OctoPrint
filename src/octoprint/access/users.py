@@ -240,6 +240,13 @@ class UserManager(GroupChangeListener, object):
 					del self._session_users_by_session[session]
 			del self._sessionids_by_userid[username]
 
+	def validate_user_session(self, userid, session):
+		if session in self._session_users_by_session:
+			user = self._session_users_by_session[session]
+			return userid == user.get_id()
+
+		return False
+
 	def find_user(self, userid=None, session=None):
 		if session is not None and session in self._session_users_by_session:
 			user = self._session_users_by_session[session]
@@ -474,14 +481,19 @@ class FilebasedUserManager(UserManager):
 			self._customized = True
 			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
+
 				for name, attributes in data.items():
+					if not isinstance(attributes, dict):
+						continue
+
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
 
-					groups = {self._group_manager.user_group}  # the user group is mandatory for all logged in users
 					if "groups" in attributes:
-						groups |= set(attributes["groups"])
+						groups = set(attributes["groups"])
+					else:
+						groups = {self._group_manager.user_group}
 
 					# migrate from roles to permissions
 					if "roles" in attributes and not "permissions" in attributes:

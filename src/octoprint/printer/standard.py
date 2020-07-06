@@ -255,7 +255,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 will be attempted.
 		"""
 		if self._comm is not None:
-			self.disconnect()
+			return
 
 		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
@@ -396,7 +396,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			# Make sure that specified value is not greater than maximum as defined in printer profile
 			extrusion_speed = min([speed, max_e_speed])
 
-		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
+		self.commands(["G91", "M83", "G1 E%s F%d" % (amount, extrusion_speed), "M82", "G90"],
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
 
 	def change_tool(self, tool, *args, **kwargs):
@@ -456,25 +456,27 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._comm.setTemperatureOffset(offsets)
 		self._setOffsets(self._comm.getOffsets())
 
-	def _convert_rate_value(self, factor, min=0, max=200):
+	def _convert_rate_value(self, factor, min_val=None, max_val=None):
 		if not isinstance(factor, (int, float, long)):
 			raise ValueError("factor is not a number")
 
 		if isinstance(factor, float):
 			factor = int(factor * 100.0)
 
-		if factor < min or factor > max:
-			raise ValueError("factor must be a value between {} and {}".format(min, max))
+		if min_val and factor < min_val:
+			raise ValueError("factor must be a value >={}".format(min_val))
+		elif max_val and factor > max_val:
+			raise ValueError("factor must be a value <={}".format(max_val))
 
 		return factor
 
 	def feed_rate(self, factor, *args, **kwargs):
-		factor = self._convert_rate_value(factor, min=50, max=200)
+		factor = self._convert_rate_value(factor, min_val=1)
 		self.commands("M220 S%d" % factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
 
 	def flow_rate(self, factor, *args, **kwargs):
-		factor = self._convert_rate_value(factor, min=75, max=125)
+		factor = self._convert_rate_value(factor, min_val=1)
 		self.commands("M221 S%d" % factor,
 		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
@@ -888,9 +890,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		                  printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None,
 		                  printTimeLeftOrigin=printTimeLeftOrigin)
 
-	def _addTemperatureData(self, tools=None, bed=None, chamber=None):
+	def _addTemperatureData(self, tools=None, bed=None, chamber=None, custom=None):
 		if tools is None:
 			tools = dict()
+		if custom is None:
+			custom = dict()
 
 		data = dict(time=int(time.time()))
 		for tool in tools.keys():
@@ -899,12 +903,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			data["bed"] = self._dict(actual=bed[0], target=bed[1])
 		if chamber is not None and isinstance(chamber, tuple):
 			data["chamber"] = self._dict(actual=chamber[0], target=chamber[1])
+		for identifier, values in custom.items():
+			data[identifier] = self._dict(actual=values[0], target=values[1])
 
 		self._temps.append(data)
 
 		self._temp = tools
 		self._bedTemp = bed
 		self._chamberTemp = chamber
+		self._custom = custom
 
 		self._stateMonitor.add_temperature(self._dict(**data))
 
@@ -1055,8 +1062,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
-	def on_comm_temperature_update(self, temp, bedTemp, chamberTemp):
-		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp), chamber=copy.deepcopy(chamberTemp))
+	def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
+		if custom is None:
+			custom = dict()
+		self._addTemperatureData(tools=copy.deepcopy(tools),
+		                         bed=copy.deepcopy(bed),
+		                         chamber=copy.deepcopy(chamber),
+		                         custom=copy.deepcopy(custom))
 
 	def on_comm_position_update(self, position, reason=None):
 		payload = dict(reason=reason)

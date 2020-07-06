@@ -29,9 +29,10 @@ $(function() {
         self.backupInProgress = ko.observable(false);
         self.restoreSupported = ko.observable(true);
 
-        self.backupUploadButton = $("#settings-backup-upload");
         self.backupUploadData = undefined;
-        self.backupUploadButton.fileupload({
+        self.backupUploadName = ko.observable();
+
+        var backupFileuploadOptions = {
             dataType: "json",
             maxNumberOfFiles: 1,
             autoUpload: false,
@@ -49,8 +50,11 @@ $(function() {
                 self.backupUploadName(undefined);
                 self.backupUploadData = undefined;
             }
-        });
-        self.backupUploadName = ko.observable();
+        };
+
+        $("#settings-backup-upload").fileupload(backupFileuploadOptions);
+        $("#wizard-backup-upload").fileupload(backupFileuploadOptions);
+
         self.restoreInProgress = ko.observable(false);
         self.restoreTitle = ko.observable();
         self.restoreDialog = undefined;
@@ -284,6 +288,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: BackupViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#settings_plugin_backup"]
+        elements: ["#settings_plugin_backup", "#wizard_plugin_backup"]
     });
 });

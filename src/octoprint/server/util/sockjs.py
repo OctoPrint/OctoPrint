@@ -83,6 +83,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 
 	_emit_permissions = {"connected": [],
 	                     "reauthRequired": [],
+	                     "plugin": lambda payload: [] if payload.get("plugin") == "backup" and settings().getBoolean(["server", "firstRun"]) else [Permissions.STATUS],
 	                     "*": [Permissions.STATUS]}
 
 	_unauthed_backlog_max = 100
@@ -203,12 +204,12 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 				self._logger.warning("Got invalid auth message from client {}, ignoring: {!r}".format(self._remoteAddress, message["auth"]))
 			else:
 				user_id, user_session = parts
-				user = self._userManager.find_user(userid=user_id, session=user_session)
 
-				if user is not None:
+				if self._userManager.validate_user_session(user_id, user_session):
+					user = self._userManager.find_user(userid=user_id, session=user_session)
 					self._on_login(user)
 				else:
-					self._logger.warn("Unknown user/session combo: {}:{}".format(user_id, user_session))
+					self._logger.warning("Unknown user/session combo: {}:{}".format(user_id, user_session))
 					self._on_logout()
 
 			self._register()
@@ -419,7 +420,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 
 		if permissions is None:
 			permissions = self._emit_permissions.get(type, self._emit_permissions["*"])
-			permissions = [x() if callable(x) else x for x in permissions]
+			permissions = permissions(payload) if callable(permissions) else [x for x in permissions]
 
 		if not self._user or not all(map(lambda p: self._user.has_permission(p), permissions)):
 			if not self._authed:

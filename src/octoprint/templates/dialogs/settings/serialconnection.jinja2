@@ -44,6 +44,20 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label" for="settings-serialBlacklistedPorts">{{ _('Blacklisted serial ports') }}</label>
+                    <div class="controls">
+                        <textarea rows="4" class="block" id="settings-serialBlacklistedPorts" data-bind="value: serial_blacklistedPorts"></textarea>
+                        <span class="help-inline">{{ _('Use this to define <a href="%%(glob_url)s">glob patterns</a> matching serial ports to blacklist for connecting against, e.g. <code>/dev/ttyS*</code>. One entry per line.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialBlacklistedBaudrates">{{ _('Blacklisted baud rates') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialBlacklistedBaudrates" data-bind="value: serial_blacklistedBaudrates">
+                        <span class="help-inline">{{ _('Use this to define serial port baud rates to blacklist for connecting with, e.g. <code>123456</code>. Comma separated.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: serial_exclusive" id="settings-serialExclusive"> {{ _('Request exclusive access to the serial port') }}
@@ -241,6 +255,13 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox" data-bind="checked: serial_sdAlwaysAvailable" id="settings-serialSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: serial_disableSdPrintingDetection" id="settings-disableSdPrintingDetection"> {{ _('Disable SD printing detection') }} <span class="label">{{ _('Ultimaker 2/2+') }}</span>
                             </label>
                         </div>
                     </div>
@@ -456,6 +477,15 @@
                     <label class="checkbox">
                         <input type="checkbox" data-bind="checked: serial_abortHeatupOnCancel" id="settings-serialAbortHeatupOnCancel"> {{ _('Attempt to abort any blocking heatups on cancel via <code>M108</code>.') }}
                         <span class="help-block">{{ _('Uncheck this if your firmware doesn\'t support <code>M108</code> for aborting blocking heatups!') }}</span>
+                    </label>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Sanity Checking') }}</legend>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_sanityCheckTools" id="settings-sanityCheckTools"> {{ _('Sanity check tool commands') }}  <span class="label label-important">{{ _('Warning') }}</span>
+                        <span class="help-block">{{ _('If enabled, OctoPrint will not send tool commands to your printer that exceed the number of extruders configured in the active printer profile, or for which the firmware has reported an "invalid extruder" error. Only uncheck this if OctoPrint or your firmware mistakingly mark valid tools as invalid and be sure to investigate the reason for that, it might be a misconfiguration you need to correct for proper operation.') }}</span>
                     </label>
                 </div>
             </fieldset>

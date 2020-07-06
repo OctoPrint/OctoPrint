@@ -9,7 +9,23 @@
         <tr>
             <th class="temperature_tool"></th>
             <th class="temperature_actual" title="{{ _('Current actual temperature as reported by your printer')|edq }}">{{ _('Actual') }}</th>
-            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer')|edq }}">{{ _('Target') }}</th>
+            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer')|edq }}">
+                {{ _('Target') }}
+                <div class="btn-group pull-right">
+                    <button class="btn btn-small dropdown-toggle" title="{{ _('Set temperature profile')|edq }}" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:void(0)" data-bind="click: $root.setTargetsToZero">{{ _('Off') }}</a>
+                        </li>
+                        <li class="divider"></li>
+                        <!-- ko foreach: $root.temperature_profiles -->
+                        <li>
+                            <a href="javascript:void(0)" data-bind="click: function() { $root.setTargetsFromProfile($data);}, text: $root.profileText('all', $data)"></a>
+                        </li>
+                        <!-- /ko -->
+                    </ul>
+                </div>
+            </th>
             <th class="temperature_offset" title="{{ _('Offset to apply to temperature commands sent from files')|edq }}">{{ _('Offset') }}</th>
         </tr>
         <!-- ko foreach: tools -->

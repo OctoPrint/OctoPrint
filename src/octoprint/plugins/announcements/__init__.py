@@ -42,7 +42,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
 
-		from slugify import Slugify
+		from octoprint.vendor.awesome_slugify import Slugify
 		self._slugify = Slugify()
 		self._slugify.safe_chars = "-_."
 
@@ -149,7 +149,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="settings", name=gettext("Announcements"), template="announcements_settings.jinja2", custom_bindings=True),
-			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)")
+			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_READ)")
 		]
 
 	# Blueprint Plugin
@@ -536,6 +536,7 @@ __plugin_description__ = "Announcements all around OctoPrint"
 __plugin_disabling_discouraged__ = gettext("Without this plugin you might miss important announcements "
                                            "regarding security or other critical issues concerning OctoPrint.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = AnnouncementPlugin()
 
 __plugin_hooks__ = {

@@ -18,6 +18,8 @@ from octoprint.access.groups import USER_GROUP
 import octoprint.plugin
 import octoprint.events
 
+from octoprint.util.platform import CLOSE_FDS
+
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
 _VCGENCMD_THROTTLE = "/usr/bin/vcgencmd get_throttled"
@@ -150,7 +152,7 @@ def get_vcgencmd_throttled_state(command):
 	if __LOCAL_DEBUG:
 		output = "throttled={}".format(next(_VCGENCMD_OUTPUT))  # mock for local debugging
 	else:
-		output = sarge.get_stdout(command)
+		output = sarge.get_stdout(command, close_fds=CLOSE_FDS)
 
 	if not "throttled=0x" in output:
 		raise ValueError("cannot parse \"{}\" output: {}".format(command, output))
@@ -334,6 +336,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
                                            "provide additional information about your Pi, "
                                            "which will make it more tricky to help you if you need support.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 def __plugin_check__():
 	try:

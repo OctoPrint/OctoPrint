@@ -9,18 +9,17 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 """
 import logging
 
-from tornado.web import asynchronous
-
 from octoprint.vendor.sockjs.tornado import proto
 from octoprint.vendor.sockjs.tornado.transports import pollingbase
 from octoprint.vendor.sockjs.tornado.util import bytes_to_str, unquote_plus
+from octoprint.vendor.sockjs.tornado.util import no_auto_finish
 
 LOG = logging.getLogger("tornado.general")
 
 class JSONPTransport(pollingbase.PollingTransportBase):
     name = 'jsonp'
 
-    @asynchronous
+    @no_auto_finish
     def get(self, session_id):
         # Start response
         self.handle_session_cookie()
@@ -64,7 +63,7 @@ class JSONPTransport(pollingbase.PollingTransportBase):
             self.set_header('Etag', 'dummy')
 
             self.write(msg)
-            self.flush(callback=self.send_complete)
+            self.flush().add_done_callback(self.send_complete)
         except IOError:
             # If connection dropped, make sure we close offending session instead
             # of propagating error all way up.

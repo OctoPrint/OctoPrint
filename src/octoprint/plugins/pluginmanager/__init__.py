@@ -14,10 +14,11 @@ from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import to_bytes
+from octoprint.util import to_bytes, TemporaryDirectory
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible, is_python_compatible
 from octoprint.util.platform import get_os, is_os_compatible
+from octoprint.util.net import download_file
 from octoprint.events import Events
 
 from flask import jsonify, make_response
@@ -33,6 +34,9 @@ import os
 import copy
 import time
 import threading
+import tempfile
+import shutil
+import filetype
 
 from datetime import datetime
 
@@ -91,6 +95,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.EventHandlerPlugin):
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+	PYTHON_EXTENSIONS = (".py",)
 
 	# valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
 	URL_SCHEMES = ("http", "https", "git",
@@ -188,7 +193,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
 			if self._settings.get_boolean(["ignore_throttled"]):
-				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
+				self._logger.warning("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
@@ -240,7 +245,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return dict(
 			all=plugins,
 			thirdparty=list(filter(lambda p: not p["bundled"], plugins)),
-			archive_extensions=self.__class__.ARCHIVE_EXTENSIONS
+			file_extensions=self.ARCHIVE_EXTENSIONS + self.PYTHON_EXTENSIONS
 		)
 
 	def get_template_types(self, template_sorting, template_rules, *args, **kwargs):
@@ -250,10 +255,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	##~~ BlueprintPlugin
 
-	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
+	@octoprint.plugin.BlueprintPlugin.route("/upload_file", methods=["POST"])
 	@no_firstrun_access
 	@Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
-	def upload_archive(self):
+	def upload_file(self):
 		import flask
 
 		input_name = "file"
@@ -265,21 +270,19 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
-		exts = list(filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS))
+		exts = list(filter(lambda x: upload_name.lower().endswith(x), self.ARCHIVE_EXTENSIONS + self.PYTHON_EXTENSIONS))
 		if not len(exts):
-			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
+			return flask.make_response("File doesn't have a valid extension for a plugin archive or a single file plugin", 400)
 
 		ext = exts[0]
-
-		import tempfile
-		import shutil
-		import os
 
 		archive = tempfile.NamedTemporaryFile(delete=False, suffix="{ext}".format(**locals()))
 		try:
 			archive.close()
 			shutil.copy(upload_path, archive.name)
-			return self.command_install(path=archive.name, force="force" in flask.request.values and flask.request.values["force"] in valid_boolean_trues)
+			return self.command_install(path=archive.name,
+			                            name=upload_name,
+			                            force="force" in flask.request.values and flask.request.values["force"] in valid_boolean_trues)
 		finally:
 			try:
 				os.remove(archive.name)
@@ -420,38 +423,92 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
 
-	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
+	# noinspection PyMethodMayBeStatic
+	def _is_archive(self, path):
+		_, ext = os.path.splitext(path)
+		if ext in PluginManagerPlugin.ARCHIVE_EXTENSIONS:
+			return True
+
+		kind = filetype.guess(path)
+		if kind:
+			return ".{}".format(kind.extension) in PluginManagerPlugin.ARCHIVE_EXTENSIONS
+		return False
+
+	def _is_pythonfile(self, path):
+		_, ext = os.path.splitext(path)
+		if ext in PluginManagerPlugin.PYTHON_EXTENSIONS:
+			import ast
+			try:
+				with io.open(path, 'rb') as f:
+					ast.parse(f.read(), filename=path)
+				return True
+			except Exception as exc:
+				self._logger.exception("Could not parse {} as python file: {}".format(path, exc))
+
+		return False
+
+	def command_install(self, url=None, path=None, name=None, force=False, reinstall=None, dependency_links=False):
+		folder = None
+
+		try:
+			source = path
+			source_type = "path"
+
+			if url is not None:
+				# fetch URL
+				folder = TemporaryDirectory()
+				path = download_file(url, folder.name)
+				source = url
+				source_type = "url"
+
+			# determine type of path
+			if self._is_archive(path):
+				return self._command_install_archive(path,
+				                                     source=source,
+				                                     source_type=source_type,
+				                                     force=force,
+				                                     reinstall=reinstall,
+				                                     dependency_links=dependency_links)
+
+			elif self._is_pythonfile(path):
+				return self._command_install_pythonfile(path,
+				                                        source=source,
+				                                        source_type=source_type,
+				                                        name=name)
+
+			else:
+				self._logger.error("{} is neither an archive nor a python file, can't install that.".format(source))
+				result = dict(result=False,
+				              source=source,
+				              source_type=source_type,
+				              reason="Could not install plugin from {}, was neither "
+				                     "a plugin archive nor a single file plugin".format(source))
+				self._send_result_notification("install", result)
+				return jsonify(result)
+
+		finally:
+			if folder is not None:
+				folder.cleanup()
+
+	# noinspection DuplicatedCode
+	def _command_install_archive(self, path, source=None, source_type=None, force=False, reinstall=None, dependency_links=False):
 		throttled = self._get_throttled()
 		if throttled and isinstance(throttled, dict) and throttled.get("current_issue", False) and not self._settings.get_boolean(["ignore_throttled"]):
 			# currently throttled, we refuse to run
 			return make_response("System is currently throttled, refusing to install "
 			                     "anything due to possible stability issues", 409)
 
-		if url is not None:
-			if not any(map(lambda scheme: url.startswith(scheme + "://"), self.URL_SCHEMES)):
-				raise ValueError("Invalid URL to pip install from")
+		path = os.path.abspath(path)
+		path_url = "file://" + path
+		if os.sep != "/":
+			# windows gets special handling
+			path = path.replace(os.sep, "/").lower()
+			path_url = "file:///" + path
 
-			source = url
-			source_type = "url"
-			already_installed_check = lambda line: url in line
-
-		elif path is not None:
-			path = os.path.abspath(path)
-			path_url = "file://" + path
-			if os.sep != "/":
-				# windows gets special handling
-				path = path.replace(os.sep, "/").lower()
-				path_url = "file:///" + path
-
-			source = path
-			source_type = "path"
-			already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
-
-		else:
-			raise ValueError("Either URL or path must be provided")
+		already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
 
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(source), "--no-cache-dir"]
+		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(path_url), "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
@@ -480,7 +537,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				self._log_message("Looks like the plugin was already installed. Forcing a reinstall.")
 				force = True
 		except Exception:
-			self._logger.exception("Could not install plugin from %s" % url)
+			self._logger.exception("Could not install plugin from %s" % source)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
 		else:
 			if force:
@@ -543,9 +600,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 
 		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
+
 		if new_plugin is None:
 			self._logger.warning("The plugin was installed successfully, but couldn't be found afterwards to "
-			                  "initialize properly during runtime. Please restart OctoPrint.")
+			                     "initialize properly during runtime. Please restart OctoPrint.")
 			result = dict(result=True,
 			              source=source,
 			              source_type=source_type,
@@ -587,6 +645,68 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              needs_refresh=needs_refresh,
 		              needs_reconnect=needs_reconnect,
 		              was_reinstalled=new_plugin.key in all_plugins_before or reinstall is not None,
+		              plugin=self._to_external_plugin(new_plugin))
+		self._send_result_notification("install", result)
+		return jsonify(result)
+
+	# noinspection DuplicatedCode
+	def _command_install_pythonfile(self, path, source=None, source_type=None, name=None):
+		if name is None:
+			name = os.path.basename(path)
+
+		self._logger.info("Installing single file plugin {} from {}".format(name, source))
+
+		all_plugins_before = self._plugin_manager.find_plugins(existing=dict())
+
+		destination = os.path.join(self._settings.global_get_basefolder("plugins"), name)
+		plugin_id, _ = os.path.splitext(name)
+
+		try:
+			self._log_call("cp {} {}".format(path, destination))
+			shutil.copy(path, destination)
+		except:
+			self._logger.exception("Could not install plugin from {}".format(source))
+			return make_response("Could not install plugin from URL, see the log for more details", 500)
+
+		plugins = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
+		new_plugin = plugins.get(plugin_id)
+		if new_plugin is None:
+			self._logger.warning("The plugin was installed successfully, but couldn't be found afterwards to "
+			                     "initialize properly during runtime. Please restart OctoPrint.")
+			result = dict(result=True,
+			              source=source,
+			              source_type=source_type,
+			              needs_restart=True,
+			              needs_refresh=True,
+			              needs_reconnect=True,
+			              was_reinstalled=False,
+			              plugin="unknown")
+			self._send_result_notification("install", result)
+			return jsonify(result)
+
+		self._plugin_manager.reload_plugins()
+		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
+		                or new_plugin.key in all_plugins_before
+		needs_refresh = new_plugin.implementation \
+		                and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		needs_reconnect = self._plugin_manager.has_any_of_hooks(new_plugin, self._reconnect_hooks) and self._printer.is_operational()
+
+		self._logger.info("The plugin was installed successfully: {}, version {}".format(new_plugin.name, new_plugin.version))
+		self._plugin_manager.log_all_plugins()
+
+		# noinspection PyUnresolvedReferences
+		self._event_bus.fire(Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN, dict(id=new_plugin.key,
+		                                                                      version=new_plugin.version,
+		                                                                      source=source,
+		                                                                      source_type=source_type))
+
+		result = dict(result=True,
+		              source=source,
+		              source_type=source_type,
+		              needs_restart=needs_restart,
+		              needs_refresh=needs_refresh,
+		              needs_reconnect=needs_reconnect,
+		              was_reinstalled=new_plugin.key in all_plugins_before,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
 		return jsonify(result)
@@ -764,7 +884,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _cleanup_settings(self, plugin):
 		# delete plugin settings
-		self._settings.global_set(["plugins", plugin], None)
+		self._settings.global_remove(["plugins", plugin])
+		self._settings.global_remove(["server", "seenWizards", plugin])
 		return True
 
 	def _cleanup_data(self, plugin):
@@ -1000,7 +1121,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		# validation
 		if not isinstance(repo_data, (list, tuple)):
-			self._logger.warn("Invalid repository data: expected a list, got {!r}".format(repo_data))
+			self._logger.warning("Invalid repository data: expected a list, got {!r}".format(repo_data))
 			return None
 
 		try:
@@ -1180,6 +1301,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			version=plugin.version,
 			url=plugin.url,
 			license=plugin.license,
+			python=plugin.pythoncompat,
 			bundled=plugin.bundled,
 			managable=plugin.managable,
 			enabled=plugin.enabled,
@@ -1238,6 +1360,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_hidden__ = True
 
 def __plugin_load__():

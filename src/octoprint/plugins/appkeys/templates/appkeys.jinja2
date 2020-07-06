@@ -1,0 +1,39 @@
+<div id="plugin_appkeys_keygenerated" class="modal hide fade">
+    <div class="modal-header">
+        <a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 id="plugin_appkeys_keygenerated_title"></h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label">{{ _('User') }}</label>
+                <div class="controls">
+                    <strong id="plugin_appkeys_keygenerated_user" class="control-text"></strong>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Application identifier') }}</label>
+                <div class="controls">
+                    <strong id="plugin_appkeys_keygenerated_app" class="control-text"></strong>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('API Key') }}</label>
+                <div class="controls">
+                    <strong id="plugin_appkeys_keygenerated_key_text" class="control-text"></strong>
+                    <a href="javascript:void(0)" id="plugin_appkeys_keygenerated_key_copy" title="{{ _('Copy API Key to clipboard')|edq }}" class="control-text"><i class="fa fa-copy"></i></a>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('QR Code') }}</label>
+                <div class="controls">
+                    <div id="plugin_appkeys_keygenerated_key_qrcode"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+</div>
+

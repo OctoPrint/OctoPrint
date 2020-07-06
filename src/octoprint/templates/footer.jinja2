@@ -1,0 +1,14 @@
+<div class="footer">
+    <ul id="footer_version" class="pull-left muted">
+        <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version|e }}</span></small></li>
+        <li><small>{{ _('Python') }} <span class="python_version">{{ python_version|e }}</span></small></li>
+    </ul>
+    <ul id="footer_links" class="pull-right">
+        <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
+        <li><a href="https://community.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-users"></i> {{ _('Forum') }}</a></li>
+        <li><a href="https://discord.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-comments-o"></i> {{ _('Discord') }}</a></li>
+        <li><a href="https://faq.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
+        <li><a href="https://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Docs') }}</a></li>
+        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
+    </ul>
+</div>

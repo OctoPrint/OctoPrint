@@ -115,6 +115,8 @@ __plugin_description__ = "Displays a standalone login UI if needed"
 __plugin_disabling_discouraged__ = gettext("Without this plugin there will be no dedicated login page for users in "
                                            "case anonymous read only access is disabled - instead your non logged in "
                                            "visitors will get a broken UI.")
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_hidden__ = True
 
 __plugin_implementation__ = LoginUiPlugin()

@@ -293,174 +293,6 @@ The following settings are only relevant to you if you want to do OctoPrint deve
      # enable or disable the loading animation
      showLoadingAnimation: true
 
-     # Settings for the virtual printer
-     virtualPrinter:
-
-       # Whether to enable the virtual printer and include it in the list of available serial connections.
-       # Defaults to false.
-       enabled: true
-
-       # Whether to send an additional "ok" after a resend request (like Repetier)
-       okAfterResend: false
-
-       # Whether to force checksums and line number in the communication (like Repetier), if set to true
-       # printer will only accept commands that come with linenumber and checksum and throw an error for
-       # lines that don't. Defaults to false
-       forceChecksum: false
-
-       # Whether to send "ok" responses with the line number that gets acknowledged by the "ok". Defaults
-       # to false.
-       okWithLinenumber: false
-
-       # Number of extruders to simulate on the virtual printer. Map from tool id (0, 1, ...) to temperature
-       # in °C
-       numExtruders: 1
-
-       # Allows pinning certain hotends to a fixed temperature
-       pinnedExtruders: null
-
-       # Whether to include the current tool temperature in the M105 output as separate T segment or not.
-       #
-       # True:  > M105
-       #        < ok T:23.5/0.0 T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
-       # False: > M105
-       #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
-       includeCurrentToolInTemps: true
-
-       # Whether to include the selected filename in the M23 File opened response.
-       #
-       # True:  > M23 filename.gcode
-       #        < File opened: filename.gcode  Size: 27
-       # False: > M23 filename.gcode
-       #        > File opened
-       includeFilenameInOpened: true
-
-       # Whether the simulated printer should also simulate a heated bed or not
-       hasBed: true
-
-       # Whether the simulated printer should also simulate a heated chamber or not
-       hasChamber: false
-
-       # If enabled, reports the set target temperatures as separate messages from the firmware
-       #
-       # True:  > M109 S220.0
-       #        < TargetExtr0:220.0
-       #        < ok
-       #        > M105
-       #        < ok T0:34.3 T1:23.5 B:43.2
-       # False: > M109 S220.0
-       #        < ok
-       #        > M105
-       #        < ok T0:34.3/220.0 T1:23.5/0.0 B:43.2/0.0
-       repetierStyleTargetTemperature: false
-
-       # If enabled, uses repetier style resends, sending multiple resends for the same line
-       # to make sure nothing gets lost on the line
-       repetierStyleResends: false
-
-       # If enabled, ok will be sent before a commands output, otherwise after or inline (M105)
-       #
-       # True:  > M20
-       #        < ok
-       #        < Begin file list
-       #        < End file list
-       # False: > M20
-       #        < Begin file list
-       #        < End file list
-       #        < ok
-       okBeforeCommandOutput: false
-
-       # If enabled, reports the first extruder in M105 responses as T instead of T0
-       #
-       # True:  > M105
-       #        < ok T:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
-       # False: > M105
-       #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
-       smoothieTemperatureReporting: false
-
-       # Whether M20 responses will include filesize or not
-       #
-       # True:  <filename> <filesize in bytes>
-       # False: <filename>
-       extendedSdFileList: false
-
-       # Forced pause for retrieving from the outgoing buffer
-       throttle: 0.01
-
-       # Whether to send "wait" responses every "waitInterval" seconds when serial rx buffer is empty
-       sendWait: false
-
-       # Interval in which to send "wait" lines when rx buffer is empty
-       waitInterval: 1
-
-       # Size of the simulated RX buffer in bytes, when it's full a send from OctoPrint's
-       # side will block
-       rxBuffer: 64
-
-       # Size of simulated command buffer, number of commands. If full, buffered commands will block
-       # until a slot frees up
-       commandBuffer: 4
-
-       # Whether to support the M112 command with simulated kill
-       supportM112: true
-
-       # Whether to send messages received via M117 back as "echo:" lines
-       echoOnM117: true
-
-       # Whether to simulate broken M29 behaviour (missing ok after response)
-       brokenM29: true
-
-       # Whether F is supported as individual command
-       supportF: false
-
-       # Firmware name to report (useful for testing firmware detection)
-       firmwareName: Virtual Marlin 1.0
-
-       # Simulate a shared nozzle
-       sharedNozzle: false
-
-       # Send "busy" messages if busy processing something
-       sendBusy: false
-
-       # Simulate a reset on connect
-       simulateReset: true
-
-       # Lines to send on simulated reset
-       resetLines:
-       - start
-       - "Marlin: Virtual Marlin!"
-       - "SD card ok"
-
-       # Initial set of prepared oks to use instead of regular ok (e.g. to simulate
-       # mis-sent oks). Can also be filled at runtime via the debug command prepare_ok
-       preparedOks: []
-
-       # Format string for ok response.
-       #
-       # Placeholders:
-       # - lastN: last acknowledged line number
-       # - buffer: empty slots in internal command buffer
-       #
-       # Example format string for "extended" ok format:
-       #   ok N{lastN} P{buffer}
-       okFormatString: ok
-
-       # Format string for M115 output.
-       #
-       # Placeholders:
-       # - firmare_name: The firmware name as defined in firmwareName
-       m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
-
-       # Whether to include capability report in M115 output
-       m115ReportCapabilites: false
-
-       # Capabilities to report if capability report is enabled
-       capabilities:
-         AUTOREPORT_TEMP: true
-
-       # Simulated ambient temperature in °C
-       ambientTemperature: 21.3
-
 .. _sec-configuration-config_yaml-estimation:
 
 Estimation
@@ -1025,6 +857,25 @@ Use the following settings to configure the server:
        - 192.168.1.254
        - 192.168.23.42
 
+     # Whether to allow OctoPrint to be embedded in a frame or not. Note that depending on your setup you might
+     # have to set SameSite to None, Secure to true and serve OctoPrint through a reverse proxy that enables https
+     # for cookies and thus logging in to work
+     allowFraming: true
+
+     # Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)
+     cookies:
+       # SameSite setting to use on the cookies. Possible values are None, Lax and Strict. Defaults to None but
+       # be advised that browsers will soon force this to Lax unless also being set as Secure and served over
+       # https, which will cause issues with embedding OctoPrint in frames.
+       #
+       # See also https://www.chromestatus.com/feature/5088147346030592,
+       # https://www.chromestatus.com/feature/5633521622188032 and issue #3482
+       samesite: lax
+
+       # Whether to set the Secure flag to true on cookies. Defaults to false. Only set to true if you are running
+       # OctoPrint behind a reverse proxy taking care of SSL termination.
+       secure: false
+
      # Settings for file uploads to OctoPrint, such as maximum allowed file size and
      # header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in
      # order to allow streaming of large file uploads to the application rather than just storing
@@ -1126,8 +977,23 @@ Use the following settings to configure the server:
      * ``X-Scheme``: should contain your custom URL scheme to use (if different from ``http``), e.g. ``https``
 
    If you use these headers OctoPrint will work both via the reverse proxy as well as when called directly. Take a look
-   `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for some
+   `into OctoPrint's wiki <https://community.octoprint.org/t/reverse-proxy-configuration-examples/1107>`_ for some
    examples on how to configure this.
+
+.. note::
+
+   If you want to embed OctoPrint in a frame, you'll need to set ``allowFraming`` to ``true`` or your browser will
+   prevent this.
+
+   In future browser builds you will also have to make sure you frame is on the same domain as OctoPrint or that
+   OctoPrint is served via https through a reverse proxy and has set ``cookies.secure`` to ``true`` or your browser
+   will refuse to persist cookies and logging in will not work.
+
+   See also `Cookies default to SameSite=Lax <https://www.chromestatus.com/feature/5088147346030592>`_ and
+   `Reject insecure SameSite=None cookies  <https://www.chromestatus.com/feature/5633521622188032>`_ as well as
+   `this ticket <https://github.com/OctoPrint/OctoPrint/issues/3482>`_,
+   and `this twitter thread <https://twitter.com/foosel/status/1022030752349913088>`_ on why OctoPrint cannot
+   solve this on its own/ship with https that doesn't cause scary warnings in your browser.
 
 .. _sec-configuration-config_yaml-slicing:
 

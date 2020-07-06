@@ -107,7 +107,7 @@ class OnlineCheckSubwizard(object):
 		return dict(required=self._is_onlinecheck_wizard_required())
 
 	def _get_onlinecheck_wizard_name(self):
-		return gettext("Online connectivity check")
+		return gettext("Online Connectivity Check")
 
 	def _get_onlinecheck_additional_wizard_template_data(self):
 		return dict(mandatory=self._is_onlinecheck_wizard_required())
@@ -125,7 +125,7 @@ class PluginBlacklistSubwizard(object):
 		return dict(required=self._is_pluginblacklist_wizard_required())
 
 	def _get_pluginblacklist_wizard_name(self):
-		return gettext("Plugin blacklist")
+		return gettext("Plugin Blacklist")
 
 	def _get_pluginblacklist_additional_wizard_template_data(self):
 		return dict(mandatory=self._is_pluginblacklist_wizard_required())

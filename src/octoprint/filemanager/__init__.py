@@ -675,6 +675,9 @@ class FileManager(object):
 			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
 			self.delete_recovery_data()
 
+	def get_additional_metadata(self, destination, path, key):
+		self._storage(destination).get_additional_metadata(path, key)
+
 	def set_additional_metadata(self, destination, path, key, data, overwrite=False, merge=False):
 		self._storage(destination).set_additional_metadata(path, key, data, overwrite=overwrite, merge=merge)
 

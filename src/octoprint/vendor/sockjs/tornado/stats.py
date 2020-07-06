@@ -54,7 +54,7 @@ class MovingAverage(object):
 
 
 class StatsCollector(object):
-    def __init__(self, io_loop):
+    def __init__(self):
         # Sessions
         self.sess_active = 0
 
@@ -70,8 +70,7 @@ class StatsCollector(object):
         self.pack_recv_ps = MovingAverage()
 
         self._callback = ioloop.PeriodicCallback(self._update,
-                                                 1000,
-                                                 io_loop)
+                                                 1000)
         self._callback.start()
 
     def _update(self):

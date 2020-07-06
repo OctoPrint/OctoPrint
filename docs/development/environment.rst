@@ -19,7 +19,7 @@ below.
 
   * Checkout the OctoPrint sources from their Git repository:
 
-      * ``git clone -b devel https://github.com/foosel/OctoPrint.git``
+      * ``git clone https://github.com/OctoPrint/OctoPrint.git``
 
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
@@ -28,6 +28,12 @@ below.
 
     * PY2: ``virtualenv --python=python2 venv2``
     * PY3: ``virtualenv --python=python3 venv3``
+
+    .. note::
+
+       This assumes that `python2` and `python3` are binaries available directly on your ``PATH``. If your Python 2 and 3
+       binaries cannot be found on your ``PATH`` like this you'll need to specify the full paths to them here,
+       e.g. ``virtualenv --python=/path/to/python2/bin/python venv2``
 
   * Activate one of the virtual environments:
 
@@ -41,7 +47,7 @@ below.
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
     including its regular *and* development and plugin development dependencies:
 
-      * ``pip install -e .[develop,plugins]``
+      * ``pip install -e '.[develop,plugins]'``
 
 When the virtual environment is activated you can then:
 
@@ -86,7 +92,7 @@ installed:
 .. todo::
 
    Using a Linux distribution that doesn't use ``apt`` or ``zypper``? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 Then:
@@ -94,7 +100,7 @@ Then:
 .. code-block:: none
 
    cd ~/devel
-   git clone -b devel https://github.com/foosel/OctoPrint.git
+   git clone -b devel https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
    virtualenv venv
    source ./venv/bin/activate
@@ -131,7 +137,7 @@ Open the Git Bash you just installed and in that:
 
    pip install virtualenv
    cd /c/Devel
-   git clone https://github.com/foosel/OctoPrint.git
+   git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
    virtualenv venv
    source ./venv/Scripts/activate
@@ -145,7 +151,7 @@ Mac OS X
 
 .. note::
 
-   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac/>`_.
+   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's Community Forum <https://community.octoprint.org/t/setting-up-octoprint-on-macos/13425>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
 .. todo::
@@ -178,7 +184,7 @@ You'll need a user account with administrator privileges.
     .. code-block:: none
 
        cd ~/devel
-       git clone https://github.com/foosel/OctoPrint.git
+       git clone https://github.com/OctoPrint/OctoPrint.git
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
@@ -197,7 +203,7 @@ IDE Setup
 .. todo::
 
    Using another IDE than the ones below? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 .. _sec-development-environment-ides-pycharm:
@@ -214,22 +220,29 @@ PyCharm
   - Add Run/Debug Configuration, select "Python":
 
     * Name: OctoPrint server
-    * Script: path to ``run`` in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/run`` or ``C:\Devel\OctoPrint\run``)
-    * Script parameters: ``serve --debug``
+    * Module name: ``octoprint``
+    * Module parameters: ``serve --debug``
     * Project: ``OctoPrint``
     * Python interpreter: the ``venv`` local virtual environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-    * If you want dependencies to auto-update on run if necessary: "Before Launch" > "+" > "Run external tool" > "+"
+    * If you want build artifacts to be cleaned up on run (recommended): "Before Launch" > "+" > "Run external tool" > "+"
 
-      * Name: Update OctoPrint dependencies
-      * Program: ``$PyInterpreterDirectory$/pip`` (or ``$PyInterpreterDirectory$/pip.exe`` on Windows)
-      * Parameters: ``install -e .[develop,plugins]``
+      * Name: Clean build directory
+      * Program: ``$ModuleSdkPath$``
+      * Parameters: ``setup.py clean``
       * Working directory: ``$ProjectFileDir$``
 
-  - Add Run/Debug Configuration, select "Python tests" and therein "Nosetests":
+    * If you want dependencies to auto-update on run if necessary (recommended): "Before Launch" > "+" > "Run external tool" > "+"
 
-    * Name: OctoPrint nosetests
-    * Target: Path, ``.``
+      * Name: Update OctoPrint dependencies
+      * Program: ``$ModuleSdkPath$``
+      * Parameters: ``-m pip install -e .[develop,plugins]``
+      * Working directory: ``$ProjectFileDir$``
+
+  - Add Run/Debug Configuration, select "Python tests" and therein "pytest":
+
+    * Name: OctoPrint pytest
+    * Target: Custom
     * Project: ``OctoPrint``
     * Python interpreter: the ``venv`` local virtual environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)

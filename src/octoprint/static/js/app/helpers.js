@@ -621,6 +621,15 @@ function formatTemperature(temp, showF, offThreshold) {
     }
 }
 
+function formatNumberK(num) {
+    if (num > 1000) {
+        num = num / 1000.0;
+        return _.sprintf("%.2fk", num);
+    } else {
+        return _.sprintf("%i", num);
+    }
+}
+
 function pnotifyAdditionalInfo(inner) {
     return '<div class="pnotify_additional_info">'
         + '<div class="pnotify_more"><a href="#" onclick="$(this).children().toggleClass(\'icon-caret-right icon-caret-down\').parent().parent().next().slideToggle(\'fast\')">More <i class="icon-caret-right"></i></a></div>'
@@ -1250,6 +1259,9 @@ function setOnViewModelIf(viewModel, key, value, condition) {
 
         viewModel[key] = value;
     } catch (exc) {
+        if (Sentry) {
+            Sentry.captureException(exc);
+        }
         log.error("Error while setting", key, "to", value, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
     }
 }
@@ -1265,6 +1277,9 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         try {
             callViewModelIf(viewModel, method, condition, callback);
         } catch (exc) {
+            if (Sentry) {
+                Sentry.captureException(exc);
+            }
             log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
         }
     });
@@ -1324,6 +1339,9 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
             callback(viewModel[method], viewModel);
         }
     } catch (exc) {
+        if (Sentry) {
+            Sentry.captureException(exc);
+        }
         if (raiseErrors) {
             throw exc;
         } else {

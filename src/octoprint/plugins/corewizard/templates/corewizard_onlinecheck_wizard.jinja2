@@ -24,7 +24,21 @@
 <form class="form-horizontal" data-bind="with: settingsViewModel, enable: !setup(), css {disabled: setup()}">
     {% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
     {% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
-    {% include "snippets/settings/server/serverOnlineCheckTest.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheckTestConnectivity.jinja2" %}
+</form>
+
+<p>{% trans %}
+    If you also want to check if name resolution works (strongly recommended), define a host name
+    to check name resolution against. If you don't know what to set here, the default value
+    (OctoPrint's domain) should work. If you don't want to perform regular resolution checks along
+    side with the general connectivity check, leave the field empty.
+{% endtrans %}</p>
+
+<form class="form-horizontal" data-bind="with: settingsViewModel, enable: !setup(), css {disabled: setup()}">
+    <div class="control-group">
+        {% include "snippets/settings/server/serverOnlineCheckName.jinja2" %}
+        {% include "snippets/settings/server/serverOnlineCheckTestResolution.jinja2" %}
+    </div>
 </form>
 
 <p>{% trans %}

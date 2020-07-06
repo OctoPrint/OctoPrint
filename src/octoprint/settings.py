@@ -119,6 +119,8 @@ default_settings = {
 		"maxWritePasses": 5,
 		"additionalPorts": [],
 		"additionalBaudrates": [],
+		"blacklistedPorts": [],
+		"blacklistedBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
 		"blockedCommands": ["M0", "M1"],
 		"pausingCommands": ["M0", "M1", "M25"],
@@ -153,7 +155,9 @@ default_settings = {
 		"useParityWorkaround": "detect",
 		"maxConsecutiveResends": 10,
 		"sendM112OnError": True,
+		"disableSdPrintingDetection": False,
 		"ackMax": 1,
+		"sanityCheckTools": True,
 
 		"capabilities": {
 			"autoreport_temp": True,
@@ -203,7 +207,8 @@ default_settings = {
 			"enabled": None,
 			"interval": 15 * 60, # 15 min
 			"host": "8.8.8.8",
-			"port": 53
+			"port": 53,
+			"name": "octoprint.org"
 		},
 		"pluginBlacklist": {
 			"enabled": None,
@@ -222,7 +227,11 @@ default_settings = {
 			"enabled": True,
 			"trustedSubnets": []
 		},
-		"allowFraming": False
+		"allowFraming": False,
+		"cookies": {
+			"secure": False,
+			"samesite": None
+		},
 	},
 	"webcam": {
 		"webcamEnabled": True,
@@ -248,11 +257,6 @@ default_settings = {
 			"fps": 25,
 		},
 		"cleanTmpAfterDays": 7
-	},
-	"gcodeViewer": {
-		"enabled": True,
-		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
-		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
 	"gcodeAnalysis": {
 		"maxExtruders": 10,
@@ -314,18 +318,18 @@ default_settings = {
 		"closeModalsWithClick": True,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
-				"sidebar": ["plugin_printer_safety_check", "connection", "state", "files"],
-				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_logging", "plugin_pi_support", "login"],
+				"sidebar": ["plugin_firmware_check", "connection", "state", "files"],
+				"tab": ["temperature", "control", "plugin_gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
+					"section_features", "features", "webcam", "accesscontrol", "plugin_gcodeviewer", "api", "plugin_appkeys",
 					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
 					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_errortracking",
 					"plugin_pi_support"
 				],
 				"usersettings": ["access", "interface"],
-				"wizard": ["access"],
+				"wizard": ["plugin_backup", "plugin_corewizard_acl"],
 				"about": ["about", "plugin_pi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
@@ -409,62 +413,12 @@ default_settings = {
 		},
 		"webassets": {
 			"bundle": True,
-			"clean_on_startup": True
+			"clean_on_startup": True,
+			"minify": True
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
-		"virtualPrinter": {
-			"enabled": False,
-			"okAfterResend": False,
-			"forceChecksum": False,
-			"numExtruders": 1,
-			"pinnedExtruders": None,
-			"includeCurrentToolInTemps": True,
-			"includeFilenameInOpened": True,
-			"hasBed": True,
-			"hasChamber": False,
-			"repetierStyleTargetTemperature": False,
-			"okBeforeCommandOutput": False,
-			"smoothieTemperatureReporting": False,
-			"reprapfwM114": False,
-			"extendedSdFileList": False,
-			"throttle": 0.01,
-			"sendWait": True,
-			"waitInterval": 1.0,
-			"rxBuffer": 64,
-			"commandBuffer": 4,
-			"supportM112": True,
-			"echoOnM117": True,
-			"brokenM29": True,
-			"brokenResend": False,
-			"supportF": False,
-			"firmwareName": "Virtual Marlin 1.0",
-			"sharedNozzle": False,
-			"sendBusy": False,
-			"busyInterval": 2.0,
-			"simulateReset": True,
-			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
-			"preparedOks": [],
-			"okFormatString": "ok",
-			"m115FormatString": "FIRMWARE_NAME:{firmware_name} PROTOCOL_VERSION:1.0",
-			"m115ReportCapabilities": True,
-			"capabilities": {
-				"AUTOREPORT_TEMP": True,
-				"AUTOREPORT_SD_STATUS": True,
-				"EMERGENCY_PARSER": True
-			},
-			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
-			"ambientTemperature": 21.3,
-			"errors": {
-				"checksum_mismatch": "Checksum mismatch",
-				"checksum_missing": "Missing checksum",
-				"lineno_mismatch": "expected line {} got {}",
-				"lineno_missing": "No Line Number with checksum, Last Line: {}",
-				"maxtemp": "MAXTEMP triggered!",
-				"mintemp": "MINTEMP triggered!",
-				"command_unknown": "Unknown command {}"
-			}
-		}
+		"sockJsConnectTimeout": 10
 	}
 }
 """The default settings of the core application."""
@@ -645,6 +599,8 @@ class Settings(object):
 		self._config = None
 		self._dirty = False
 		self._dirty_time = 0
+		self._last_config_hash = None
+		self._last_effective_hash = None
 		self._mtime = None
 
 		self._get_preprocessors = dict(
@@ -842,6 +798,15 @@ class Settings(object):
 
 		return list(map(process_control, controls))
 
+	def _forget_hashes(self):
+		self._last_config_hash = None
+		self._last_effective_hash = None
+
+	def _mark_dirty(self):
+		self._dirty = True
+		self._dirty_time = time.time()
+		self._forget_hashes()
+
 	@property
 	def effective(self):
 		return self._map.deep_dict()
@@ -853,10 +818,14 @@ class Settings(object):
 
 	@property
 	def effective_hash(self):
+		if self._last_effective_hash is not None:
+			return self._last_effective_hash
+
 		import hashlib
 		hash = hashlib.md5()
 		hash.update(self.effective_yaml.encode('utf-8'))
-		return hash.hexdigest()
+		self._last_effective_hash = hash.hexdigest()
+		return self._last_effective_hash
 
 	@property
 	def config_yaml(self):
@@ -865,10 +834,14 @@ class Settings(object):
 
 	@property
 	def config_hash(self):
+		if self._last_config_hash:
+			return self._last_config_hash
+
 		import hashlib
 		hash = hashlib.md5()
 		hash.update(self.config_yaml.encode('utf-8'))
-		return hash.hexdigest()
+		self._last_config_hash = hash.hexdigest()
+		return self._last_config_hash
 
 	@property
 	def _config(self):
@@ -933,6 +906,8 @@ class Settings(object):
 		if migrate:
 			self._migrate_config()
 
+		self._forget_hashes()
+
 	def load_overlay(self, overlay, migrate=True):
 		config = None
 
@@ -982,7 +957,8 @@ class Settings(object):
 			self._migrate_serial_features,
 			self._migrate_resend_without_ok,
 			self._migrate_string_temperature_profile_values,
-			self._migrate_blocked_commands
+			self._migrate_blocked_commands,
+			self._migrate_gcodeviewer_enabled
 		)
 
 		for migrate in migrators:
@@ -1356,6 +1332,17 @@ class Settings(object):
 			return True
 		return False
 
+	def _migrate_gcodeviewer_enabled(self, config):
+		if "gcodeViewer" in config and "enabled" in config["gcodeViewer"] and not config["gcodeViewer"]["enabled"]:
+			if not "plugins" in config:
+				config["plugins"] = dict()
+			if not "_disabled" in config["plugins"]:
+				config["plugins"]["_disabled"] = []
+			config["plugins"]["_disabled"].append("gcodeviewer")
+			del config["gcodeViewer"]["enabled"]
+			return True
+		return False
+
 	def backup(self, suffix=None, path=None, ext=None, hidden=False):
 		import shutil
 
@@ -1603,8 +1590,7 @@ class Settings(object):
 					del self._config["folder"][type]
 					if not len(self._config["folder"]):
 						del self._config["folder"]
-					self._dirty = True
-					self._dirty_time = time.time()
+					self._mark_dirty()
 					self.save()
 				except KeyError:
 					pass
@@ -1652,8 +1638,7 @@ class Settings(object):
 
 		try:
 			chain.del_by_path(path)
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
@@ -1711,8 +1696,7 @@ class Settings(object):
 		if not force and in_defaults and in_local and default_value == value:
 			try:
 				chain.del_by_path(path)
-				self._dirty = True
-				self._dirty_time = time.time()
+				self._mark_dirty()
 			except KeyError:
 				if error_on_path:
 					raise NoSuchSettingsPath()
@@ -1722,8 +1706,7 @@ class Settings(object):
 				chain.del_by_path(path)
 			else:
 				chain.set_by_path(path, value)
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 
 	def setInt(self, path, value, **kwargs):
 		if value is None:
@@ -1785,8 +1768,7 @@ class Settings(object):
 			del self._config["folder"][type]
 			if not self._config["folder"]:
 				del self._config["folder"]
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 		elif (path != currentPath and path != defaultPath) or force:
 			if validate:
 				_validate_folder(path, check_writable=True, deep_check_writable=True)
@@ -1794,8 +1776,7 @@ class Settings(object):
 			if "folder" not in self._config:
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
-			self._dirty = True
-			self._dirty_time = time.time()
+			self._mark_dirty()
 
 	def saveScript(self, script_type, name, script):
 		script_folder = self.getBaseFolder("scripts")

@@ -560,12 +560,28 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 @ddt
 class OctoPrintFlaskResponseTest(unittest.TestCase):
 
-	@data([None, None],
-	      ["/subfolder/", None],
-	      [None, "/some/other/script/root"],
-	      ["/subfolder/", "/some/other/script/root"])
+	def setUp(self):
+		# mock settings
+		self.settings_patcher = mock.patch("octoprint.settings.settings")
+		self.settings_getter = self.settings_patcher.start()
+
+		self.settings = mock.MagicMock()
+		self.settings_getter.return_value = self.settings
+
+	def tearDown(self):
+		self.settings_patcher.stop()
+
+	@data([None, None, False, None, None],
+	      [None, None, False, "none", None],
+	      [None, None, False, "lax", "lax"],
+	      [None, None, False, "StRiCt", "strict"],
+	      [None, None, False, "INVALID", None],
+	      [None, None, True, None, None],
+	      ["/subfolder/", None, False, None, None],
+	      [None, "/some/other/script/root", False, None, None],
+	      ["/subfolder/", "/some/other/script/root", False, None, None])
 	@unpack
-	def test_cookie_set_and_delete(self, path, scriptroot):
+	def test_cookie_set_and_delete(self, path, scriptroot, secure, samesite, expected_samesite):
 		environ = dict(standard_environ)
 
 		expected_suffix = "_P5000"
@@ -588,25 +604,36 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 			kwargs = dict()
 
 		with mock.patch("flask.request", new=request):
-			response = OctoPrintFlaskResponse()
+			with mock.patch("octoprint.server.util.flask.settings") as settings_mock:
+				settings = mock.MagicMock()
+				settings.getBoolean.return_value = secure
+				settings.get.return_value = samesite
+				settings_mock.return_value = settings
 
-			# test set_cookie
-			with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
-				response.set_cookie("some_key", "some_value", **kwargs)
+				response = OctoPrintFlaskResponse()
 
-				# set_cookie should have key and path values adjusted
-				set_cookie_mock.assert_called_once_with(response, "some_key" + expected_suffix, "some_value", path=expected_path_set)
+				# test set_cookie
+				with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
+					response.set_cookie("some_key", "some_value", **kwargs)
 
-			# test delete_cookie
-			with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
-				with mock.patch("flask.Response.delete_cookie") as delete_cookie_mock:
-					response.delete_cookie("some_key", **kwargs)
+					# set_cookie should have key and path values adjusted
+					set_cookie_mock.assert_called_once_with(response,
+					                                        "some_key" + expected_suffix,
+					                                        "some_value",
+					                                        path=expected_path_set,
+					                                        secure=secure,
+					                                        samesite=expected_samesite)
 
-					# delete_cookie internally calls set_cookie - so our delete_cookie call still uses the non modified
-					# key and path values, set_cookie will translate those (as tested above)
-					delete_cookie_mock.assert_called_once_with(response, "some_key", path=expected_path_delete, domain=None)
+				# test delete_cookie
+				with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
+					with mock.patch("flask.Response.delete_cookie") as delete_cookie_mock:
+						response.delete_cookie("some_key", **kwargs)
 
-					# we also test if an additional set_cookie call for the non modified versions happens, as
-					# implemented to ensure any old cookies from before introduction of the suffixes and path handling
-					# are deleted as well
-					set_cookie_mock.assert_called_once_with(response, "some_key", expires=0, max_age=0, path=expected_path_delete, domain=None)
+						# delete_cookie internally calls set_cookie - so our delete_cookie call still uses the non modified
+						# key and path values, set_cookie will translate those (as tested above)
+						delete_cookie_mock.assert_called_once_with(response, "some_key", path=expected_path_delete, domain=None)
+
+						# we also test if an additional set_cookie call for the non modified versions happens, as
+						# implemented to ensure any old cookies from before introduction of the suffixes and path handling
+						# are deleted as well
+						set_cookie_mock.assert_called_once_with(response, "some_key", expires=0, max_age=0, path=expected_path_delete, domain=None)

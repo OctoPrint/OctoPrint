@@ -8,15 +8,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     EventSource transport implementation.
 """
 
-from tornado.web import asynchronous
-
 from octoprint.vendor.sockjs.tornado.transports import streamingbase
+from octoprint.vendor.sockjs.tornado.util import no_auto_finish
 
 
 class EventSourceTransport(streamingbase.StreamingTransportBase):
     name = 'eventsource'
 
-    @asynchronous
+    @no_auto_finish
     def get(self, session_id):
         # Start response
         self.preflight()
@@ -46,7 +45,7 @@ class EventSourceTransport(streamingbase.StreamingTransportBase):
             self.notify_sent(len(msg))
 
             self.write(msg)
-            self.flush(callback=self.send_complete)
+            self.flush().add_done_callback(self.send_complete)
         except IOError:
             # If connection dropped, make sure we close offending session instead
             # of propagating error all way up.

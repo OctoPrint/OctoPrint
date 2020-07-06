@@ -96,26 +96,8 @@
 
     <p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
 
-    <form class="form-horizontal">
-        <div class="control-group">
-            <label class="control-label">{{ _('Backup file') }}</label>
-            <div class="controls">
-                <div class="input-prepend">
-                    <span class="btn fileinput-button">
-                        <span>{{ _('Browse...') }}</span>
-                        <input id="settings-backup-upload" type="file" name="file" data-url="{{ url_for("plugin.backup.perform_restore") }}" accept=".zip">
-                    </span>
-                    <span class="add-on" data-bind="text: backupUploadName"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <div class="controls">
-                <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: performRestoreFromUpload"><i class="fa fa-spinner fa-spin" data-bind="visible: restoreInProgress"></i> {{ _('Upload & restore') }}</button>
-            </div>
-        </div>
-    </form>
+    {% set plugin_backup_upload_form_id='settings-backup-upload' %}
+    {% include "snippets/plugin/backup/backup_plugin_upload_form.jinja2" %}
 </div>
 
 <div data-bind="visible: !restoreSupported()">

@@ -196,6 +196,7 @@ def apiPrinterState():
 
 
 @api.route("/version", methods=["GET"])
+@Permissions.STATUS.require(403)
 def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
@@ -306,7 +307,8 @@ def utilTest():
 	valid_commands = dict(
 		path=["path"],
 		url=["url"],
-		server=["host", "port"]
+		server=["host", "port"],
+		resolution=["name"]
 	)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -319,6 +321,8 @@ def utilTest():
 		return _test_url(data)
 	elif command == "server":
 		return _test_server(data)
+	elif command == "resolution":
+		return _test_resolution(data)
 
 def _test_path(data):
 	import os
@@ -562,5 +566,16 @@ def _test_server(data):
 	              port=port,
 	              protocol=protocol,
 	              result=reachable)
+
+	return jsonify(**result)
+
+def _test_resolution(data):
+	name = data["name"]
+
+	from octoprint.util.net import resolve_host
+	resolvable = len(resolve_host(name)) > 0
+
+	result = dict(name=name,
+	              result=resolvable)
 
 	return jsonify(**result)

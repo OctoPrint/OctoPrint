@@ -21,7 +21,6 @@ from past.builtins import basestring
 
 from serial import SerialTimeoutException
 
-from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
 from octoprint.util import RepeatedTimer, monotonic_time, to_bytes, to_unicode
 
@@ -41,9 +40,12 @@ class VirtualPrinter(object):
 	start_sd_regex = re.compile(r"start_sd (.*)")
 	select_sd_regex = re.compile(r"select_sd (.*)")
 
-	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
+	def __init__(self, settings, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0, faked_baudrate=115200):
 		import logging
 		self._logger = logging.getLogger("octoprint.plugins.virtual_printer.VirtualPrinter")
+
+		self._settings = settings
+		self._faked_baudrate = faked_baudrate
 
 		self._seriallog = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter.serial")
 		self._seriallog.setLevel(logging.CRITICAL)
@@ -59,35 +61,35 @@ class VirtualPrinter(object):
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
 
-		self._rx_buffer_size = settings().getInt(["devel", "virtualPrinter", "rxBuffer"])
+		self._rx_buffer_size = self._settings.get_int(["rxBuffer"])
 
 		self.incoming = CharCountingQueue(self._rx_buffer_size, name="RxBuffer")
 		self.outgoing = queue.Queue()
-		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
+		self.buffered = queue.Queue(maxsize=self._settings.get_int(["commandBuffer"]))
 
-		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
-			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+		if self._settings.get_boolean(["simulateReset"]):
+			for item in self._settings.get(["resetLines"]):
 				self._send(item + "\n")
 
 		self._prepared_oks = []
-		prepared = settings().get(["devel", "virtualPrinter", "preparedOks"])
+		prepared = self._settings.get(["preparedOks"])
 		if prepared and isinstance(prepared, list):
 			for prep in prepared:
 				self._prepared_oks.append(prep)
 
 		self._prepared_errors = []
 
-		self._errors = settings().get(["devel", "virtualPrinter", "errors"], merged=True)
+		self._errors = self._settings.get(["errors"], merged=True)
 
 		self.currentExtruder = 0
-		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
-		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
+		self.extruderCount = self._settings.get_int(["numExtruders"])
+		self.pinnedExtruders = self._settings.get(["pinnedExtruders"])
 		if self.pinnedExtruders is None:
 			self.pinnedExtruders = dict()
-		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
+		self.sharedNozzle = self._settings.get_boolean(["sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
-		self._ambient_temperature = settings().getFloat(["devel", "virtualPrinter", "ambientTemperature"])
+		self._ambient_temperature = self._settings.get_float(["ambientTemperature"])
 
 		self.temp = [self._ambient_temperature] * self.temperatureCount
 		self.targetTemp = [0.0] * self.temperatureCount
@@ -108,7 +110,7 @@ class VirtualPrinter(object):
 		self._feedrate_multiplier = 100
 		self._flowrate_multiplier = 100
 
-		self._virtualSd = settings().getBaseFolder("virtualSd")
+		self._virtualSd = self._settings.global_get_basefolder("virtualSd")
 		self._sdCardReady = True
 		self._sdPrinter = None
 		self._sdPrintingSemaphore = threading.Event()
@@ -122,26 +124,26 @@ class VirtualPrinter(object):
 
 		self._heatingUp = False
 
-		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
-		self._supportM112 = settings().getBoolean(["devel", "virtualPrinter", "supportM112"])
-		self._supportF = settings().getBoolean(["devel", "virtualPrinter", "supportF"])
+		self._okBeforeCommandOutput = self._settings.get_boolean(["okBeforeCommandOutput"])
+		self._supportM112 = self._settings.get_boolean(["supportM112"])
+		self._supportF = self._settings.get_boolean(["supportF"])
 
-		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
-		self._sendBusy = settings().getBoolean(["devel", "virtualPrinter", "sendBusy"])
-		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
-		self._busyInterval = settings().getFloat(["devel", "virtualPrinter", "busyInterval"])
+		self._sendWait = self._settings.get_boolean(["sendWait"])
+		self._sendBusy = self._settings.get_boolean(["sendBusy"])
+		self._waitInterval = self._settings.get_float(["waitInterval"])
+		self._busyInterval = self._settings.get_float(["busyInterval"])
 
-		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
+		self._echoOnM117 = self._settings.get_boolean(["echoOnM117"])
 
-		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
-		self._brokenResend = settings().getBoolean(["devel", "virtualPrinter", "brokenResend"])
+		self._brokenM29 = self._settings.get_boolean(["brokenM29"])
+		self._brokenResend = self._settings.get_boolean(["brokenResend"])
 
-		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
-		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
+		self._m115FormatString = self._settings.get(["m115FormatString"])
+		self._firmwareName = self._settings.get(["firmwareName"])
 
-		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
+		self._okFormatString = self._settings.get(["okFormatString"])
 
-		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"], merged=True)
+		self._capabilities = self._settings.get(["capabilities"], merged=True)
 
 		self._temperature_reporter = None
 		self._sdstatus_reporter = None
@@ -178,7 +180,7 @@ class VirtualPrinter(object):
 
 	def __str__(self):
 		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
-			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
+			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=self._settings.get([]))
 
 	def _reset(self):
 		with self._incoming_lock:
@@ -245,8 +247,8 @@ class VirtualPrinter(object):
 			self._clearQueue(self.outgoing)
 			self._clearQueue(self.buffered)
 
-			if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
-				for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+			if self._settings.get_boolean(["simulateReset"]):
+				for item in self._settings.get(["resetLines"]):
 					self._send(item + "\n")
 
 	@property
@@ -266,6 +268,14 @@ class VirtualPrinter(object):
 	def write_timeout(self, value):
 		self._logger.debug("Setting write timeout to {}s".format(value))
 		self._write_timeout = value
+
+	@property
+	def port(self):
+		return "VIRTUAL"
+
+	@property
+	def baudrate(self):
+		return self._faked_baudrate
 
 	# noinspection PyMethodMayBeStatic
 	def _clearQueue(self, q):
@@ -327,7 +337,7 @@ class VirtualPrinter(object):
 					continue
 
 				self.current_line += 1
-			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
+			elif self._settings.get_boolean(["forceChecksum"]):
 				self._send(self._error("checksum_missing"))
 				continue
 
@@ -593,7 +603,7 @@ class VirtualPrinter(object):
 	# noinspection PyUnusedLocal
 	def _gcode_M114(self, data):
 		# type: (str) -> bool
-		m114FormatString = settings().get(["devel", "virtualPrinter", "m114FormatString"])
+		m114FormatString = self._settings.get(["m114FormatString"])
 		e = dict((index, value) for index, value in enumerate(self._lastE))
 		e["current"] = self._lastE[self.currentExtruder]
 		e["all"] = " ".join(["E{}:{}".format(num, self._lastE[self.currentExtruder]) for num in range(self.extruderCount)])
@@ -619,7 +629,7 @@ class VirtualPrinter(object):
 		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
-		if settings().getBoolean(["devel", "virtualPrinter", "m115ReportCapabilities"]):
+		if self._settings.get_boolean(["m115ReportCapabilities"]):
 			for cap, enabled in self._capabilities.items():
 				self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
 
@@ -959,7 +969,7 @@ class VirtualPrinter(object):
 
 	def _listSd(self):
 		self._send("Begin file list")
-		if settings().getBoolean(["devel", "virtualPrinter", "extendedSdFileList"]):
+		if self._settings.get_boolean(["extendedSdFileList"]):
 			items = map(
 				lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
 				os.listdir(self._virtualSd)
@@ -987,7 +997,7 @@ class VirtualPrinter(object):
 		else:
 			self._selectedSdFile = file
 			self._selectedSdFileSize = os.stat(file).st_size
-			if settings().getBoolean(["devel", "virtualPrinter", "includeFilenameInOpened"]):
+			if self._settings.get_boolean(["includeFilenameInOpened"]):
 				self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
 			else:
 				self._send("File opened")
@@ -1015,7 +1025,7 @@ class VirtualPrinter(object):
 
 	def _generateTemperatureOutput(self):
 		# type: () -> str
-		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
+		includeTarget = not self._settings.get_boolean(["repetierStyleTargetTemperature"])
 
 		# send simulated temperature data
 		if self.temperatureCount > 1:
@@ -1024,22 +1034,22 @@ class VirtualPrinter(object):
 				allTemps.append((i, self.temp[i], self.targetTemp[i]))
 			allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x if includeTarget else "T%d:%.2f" % (x[0], x[1]), allTemps))
 
-			if settings().getBoolean(["devel", "virtualPrinter", "smoothieTemperatureReporting"]):
+			if self._settings.get_boolean(["smoothieTemperatureReporting"]):
 				allTempsString = allTempsString.replace("T0:", "T:")
 
-			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+			if self._settings.get_boolean(["hasBed"]):
 				if includeTarget:
 					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
 				else:
 					allTempsString = "B:%.2f %s" % (self.bedTemp, allTempsString)
 
-			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+			if self._settings.get_boolean(["hasChamber"]):
 				if includeTarget:
 					allTempsString = "C:%.2f /%.2f %s" % (self.chamberTemp, self.chamberTargetTemp, allTempsString)
 				else:
 					allTempsString = "C:%.2f %s" % (self.chamberTemp, allTempsString)
 
-			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
+			if self._settings.get_boolean(["includeCurrentToolInTemps"]):
 				if includeTarget:
 					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
 				else:
@@ -1047,12 +1057,16 @@ class VirtualPrinter(object):
 			else:
 				output = allTempsString
 		else:
-			if includeTarget:
-				t = "T:%.2f /%.2f" % (self.temp[0], self.targetTemp[0])
-			else:
-				t = "T:%.2f" % self.temp[0]
+			prefix = "T"
+			if self._settings.get_boolean(["klipperTemperatureReporting"]):
+				prefix = "T0"
 
-			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+			if includeTarget:
+				t = "%s:%.2f /%.2f" % (prefix, self.temp[0], self.targetTemp[0])
+			else:
+				t = "%s:%.2f" % (prefix, self.temp[0])
+
+			if self._settings.get_boolean(["hasBed"]):
 				if includeTarget:
 					b = "B:%.2f /%.2f" % (self.bedTemp, self.bedTargetTemp)
 				else:
@@ -1060,7 +1074,7 @@ class VirtualPrinter(object):
 			else:
 				b = ""
 
-			if settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+			if self._settings.get_boolean(["hasChamber"]):
 				if includeTarget:
 					c = "C:%.2f /%.2f" % (self.chamberTemp, self.chamberTargetTemp)
 				else:
@@ -1107,12 +1121,12 @@ class VirtualPrinter(object):
 
 		if wait:
 			self._waitForHeatup("tool%d" % tool, only_wait_if_higher)
-		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+		if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
 			self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
 	def _parseBedCommand(self, line, wait=False, support_r=False):
 		# type: (str, bool, bool) -> None
-		if not settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+		if not self._settings.get_boolean(["hasBed"]):
 			return
 
 		only_wait_if_higher = True
@@ -1128,11 +1142,11 @@ class VirtualPrinter(object):
 
 		if wait:
 			self._waitForHeatup("bed", only_wait_if_higher)
-		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+		if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
 			self._send("TargetBed:%d" % self.bedTargetTemp)
 
 	def _parseChamberCommand(self, line, wait=False, support_r=False):
-		if not settings().getBoolean(["devel", "virtualPrinter", "hasChamber"]):
+		if not self._settings.get_boolean(["hasChamber"]):
 			return
 
 		only_wait_if_higher = True
@@ -1422,9 +1436,13 @@ class VirtualPrinter(object):
 		self.lastTempAt = monotonic_time()
 
 		def simulate(actual, target, ambient):
-			if target > 0 and abs(actual - target) > delta:
+			if target > 0:
 				goal = target
-				factor = 10
+				remaining = abs(actual - target)
+				if remaining > delta:
+					factor = 10
+				elif remaining < delta:
+					factor = remaining
 			elif not target and abs(actual - ambient) > delta:
 				goal = ambient
 				factor = 2

@@ -139,11 +139,6 @@ $(function() {
         self.webcam_flipV = ko.observable(undefined);
         self.webcam_rotate90 = ko.observable(undefined);
 
-        self.feature_gcodeViewer = ko.observable(undefined);
-        self.feature_sizeThreshold = ko.observable();
-        self.feature_mobileSizeThreshold = ko.observable();
-        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
-        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
@@ -176,6 +171,8 @@ $(function() {
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
+        self.serial_blacklistedPorts = ko.observable(undefined);
+        self.serial_blacklistedBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
@@ -195,6 +192,7 @@ $(function() {
         self.serial_firmwareDetection =  ko.observable(undefined);
         self.serial_blockWhileDwelling =  ko.observable(undefined);
         self.serial_useParityWorkaround = ko.observable(undefined);
+        self.serial_sanityCheckTools = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
@@ -207,6 +205,7 @@ $(function() {
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
         self.serial_sendM112OnError = ko.observable(undefined);
+        self.serial_disableSdPrintingDetection = ko.observable(undefined);
         self.serial_ackMax = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -247,6 +246,7 @@ $(function() {
         self.server_onlineCheck_interval = ko.observable();
         self.server_onlineCheck_host = ko.observable();
         self.server_onlineCheck_port = ko.observable();
+        self.server_onlineCheck_name = ko.observable();
 
         self.server_pluginBlacklist_enabled = ko.observable();
         self.server_pluginBlacklist_url = ko.observable();
@@ -273,6 +273,14 @@ $(function() {
             self.server_onlineCheckText("");
             self.server_onlineCheckOk(false);
             self.server_onlineCheckBroken(false);
+        };
+        self.server_onlineCheckResolutionText = ko.observable();
+        self.server_onlineCheckResolutionOk = ko.observable(false);
+        self.server_onlineCheckResolutionBroken = ko.observable(false);
+        self.server_onlineCheckResolutionReset = function() {
+            self.server_onlineCheckResolutionText("");
+            self.server_onlineCheckResolutionOk(false);
+            self.server_onlineCheckResolutionBroken(false);
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
@@ -478,6 +486,27 @@ $(function() {
                 });
         };
 
+        self.testOnlineConnectivityResolutionConfigBusy = ko.observable(false);
+        self.testOnlineConnectivityResolutionConfig = function() {
+            if (!self.server_onlineCheck_name()) return;
+            if (self.testOnlineConnectivityResolutionConfigBusy()) return;
+
+            self.testOnlineConnectivityResolutionConfigBusy(true);
+            OctoPrint.util.testResolution(self.server_onlineCheck_name())
+                .done(function(response) {
+                    if (!response.result) {
+                        self.server_onlineCheckResolutionText(gettext("Name cannot be resolved"));
+                    } else {
+                        self.server_onlineCheckResolutionText(gettext("Name can be resolved"));
+                    }
+                    self.server_onlineCheckResolutionOk(response.result);
+                    self.server_onlineCheckResolutionBroken(!response.result);
+                })
+                .always(function() {
+                    self.testOnlineConnectivityResolutionConfigBusy(false);
+                });
+        };
+
         self.testFolderConfigBusy = ko.observable(false);
         self.testFolderConfig = function(folder) {
             var observable = "folder_" + folder;
@@ -519,6 +548,7 @@ $(function() {
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
             self.server_onlineCheckReset();
+            self.server_onlineCheckResolutionReset();
             self.testFolderConfigReset();
         };
 
@@ -793,6 +823,8 @@ $(function() {
                 serial: {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
+                    blacklistedPorts : function() { return commentableLinesToArray(self.serial_blacklistedPorts()) },
+                    blacklistedBaudrates: function() { return _.map(splitTextToArray(self.serial_blacklistedBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
@@ -933,6 +965,8 @@ $(function() {
                 serial: {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
+                    blacklistedPorts : function(value) { self.serial_blacklistedPorts(value.join("\n"))},
+                    blacklistedBaudrates: function(value) { self.serial_blacklistedBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},

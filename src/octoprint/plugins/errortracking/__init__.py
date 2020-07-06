@@ -13,8 +13,8 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
-SENTRY_URL_SERVER = "https://2e668ba966024cfc962ba97eef89dc15@sentry.io/1373987"
-SENTRY_URL_COREUI = "https://dccc2e2f3c6b4adda72f376bbb7fe561@sentry.io/1374096"
+SENTRY_URL_SERVER = "https://a928e3eb40864ed086f765d6976bf792@o118517.ingest.sentry.io/1373987"
+SENTRY_URL_COREUI = "https://26fe846c0ff34995a39bbb67a04b3f42@o118517.ingest.sentry.io/1374096"
 
 SETTINGS_DEFAULTS = dict(enabled=False,
                          enabled_unreleased=False,
@@ -25,15 +25,14 @@ SETTINGS_DEFAULTS = dict(enabled=False,
 import serial
 import requests.exceptions
 import errno
-import octoprint.util.avr_isp.ispBase
 import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
 	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
 
-	# isp errors during port auto detection in octoprint.util.comm
-	(octoprint.util.avr_isp.ispBase.IspError, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
+	# KeyboardInterrupts
+	KeyboardInterrupt,
 
 	# IOErrors of any kind due to a full file system
 	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
@@ -209,4 +208,6 @@ def __plugin_enable__():
 
 __plugin_name__ = "Error Tracking"
 __plugin_author__ = "Gina Häußge"
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = ErrorTrackingPlugin()

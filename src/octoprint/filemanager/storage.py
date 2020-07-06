@@ -24,7 +24,7 @@ from contextlib import contextmanager
 from past.builtins import basestring
 
 from emoji import demojize
-from slugify import Slugify
+from octoprint.vendor.awesome_slugify import Slugify
 
 import octoprint.filemanager
 
@@ -307,6 +307,15 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def get_additional_metadata(self, path, key):
+		"""
+		Fetches additional metadata at ``key`` from the metadata of ``path``.
+
+		:param path: the virtual path to the file for which to fetch additional metadata
+		:param key: key of metadata to fetch
+		"""
+		raise NotImplementedError()
+
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
 		"""
 		Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.
@@ -488,7 +497,7 @@ class LocalFileStorage(StorageInterface):
 		self._persisted_metadata_lock_mutex = threading.RLock()
 		self._persisted_metadata_locks = dict()
 
-		self._metadata_cache = pylru.lrucache(10)
+		self._metadata_cache = pylru.lrucache(100)
 
 		self._old_metadata = None
 		self._initialize_metadata()
@@ -876,6 +885,15 @@ class LocalFileStorage(StorageInterface):
 	def remove_history(self, path, index):
 		path, name = self.sanitize(path)
 		self._delete_history(name, path, index)
+
+	def get_additional_metadata(self, path, key):
+		path, name = self.sanitize(path)
+		metadata = self._get_metadata(path)
+
+		if not name in metadata:
+			return
+
+		return metadata[name].get(key)
 
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
 		path, name = self.sanitize(path)

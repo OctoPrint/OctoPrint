@@ -29,8 +29,8 @@ $(function() {
 
         self.tools = ko.observableArray([]);
 
-        self.feedRate = ko.observable(100);
-        self.flowRate = ko.observable(100);
+        self.feedRate = ko.observable();
+        self.flowRate = ko.observable();
 
         self.feedbackControlLookup = {};
 
@@ -282,8 +282,32 @@ $(function() {
             OctoPrint.printer.home(axis);
         };
 
+        self.feedRateBusy = ko.observable(false);
+        self.feedRateResetter = ko.observable();
         self.sendFeedRateCommand = function () {
-            OctoPrint.printer.setFeedrate(self.feedRate());
+            var rate = _.parseInt(self.feedRate());
+            self.feedRateBusy(true);
+            OctoPrint.printer.setFeedrate(rate)
+                .done(function() {
+                    self.feedRate(undefined);
+                })
+                .always(function() {
+                    self.feedRateBusy(false);
+                });
+        };
+        self.resetFeedRateDisplay = function() {
+            self.cancelFeedRateDisplayReset();
+            self.feedRateResetter(setTimeout(function() {
+                self.feedRate(undefined);
+                self.feedRateResetter(undefined);
+            }, 5000));
+        };
+        self.cancelFeedRateDisplayReset = function() {
+            var resetter = self.feedRateResetter();
+            if (resetter) {
+                clearTimeout(resetter);
+                self.feedRateResetter(undefined);
+            }
         };
 
         self.sendExtrudeCommand = function () {
@@ -294,8 +318,32 @@ $(function() {
             self._sendECommand(-1);
         };
 
+        self.flowRateBusy = ko.observable(false);
+        self.flowRateResetter = ko.observable();
         self.sendFlowRateCommand = function () {
-            OctoPrint.printer.setFlowrate(self.flowRate());
+            var rate = _.parseInt(self.flowRate());
+            self.flowRateBusy(true);
+            OctoPrint.printer.setFlowrate(rate)
+                .done(function() {
+                    self.flowRate(undefined);
+                })
+                .always(function() {
+                    self.flowRateBusy(false);
+                });
+        };
+        self.resetFlowRateDisplay = function() {
+            self.cancelFlowRateDisplayReset();
+            self.flowRateResetter(setTimeout(function() {
+                self.flowRate(undefined);
+                self.flowRateResetter(undefined);
+            }, 5000));
+        };
+        self.cancelFlowRateDisplayReset = function() {
+            var resetter = self.flowRateResetter();
+            if (resetter) {
+                clearTimeout(resetter);
+                self.flowRateResetter(undefined);
+            }
         };
 
         self._sendECommand = function (dir) {

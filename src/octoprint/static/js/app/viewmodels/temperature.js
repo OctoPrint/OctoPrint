@@ -337,19 +337,30 @@ $(function() {
         self.profileText = function(heater, profile) {
             var text = gettext("Set %(name)s (%(value)s)");
 
-            var value;
-            if (heater.key() === "bed") {
-                value = profile.bed;
-            } else if (heater.key() === "chamber") {
-                value = profile.chamber;
-            } else {
-                value = profile.extruder;
-            }
+            var format = function(temp) {
+                if (temp === 0 || temp === undefined || temp === null) {
+                    return gettext("Off");
+                } else {
+                    return "" + temp + "°C";
+                }
+            };
 
-            if (value === 0 || value === undefined) {
-                value = gettext("Off");
+            var value;
+            if (heater === "all") {
+                value = gettext("Tool") + ": %(extruder)s";
+                if (self.hasBed()) {
+                    value += "/" + gettext("Bed") + ": %(bed)s";
+                }
+                if (self.hasChamber()) {
+                    value += "/" + gettext("Chamber") + ": %(chamber)s";
+                }
+                value = _.sprintf(value, {extruder: format(profile.extruder), bed: format(profile.bed), chamber: format(profile.chamber)});
+            } else if (heater.key() === "bed") {
+                value = format(profile.bed);
+            } else if (heater.key() === "chamber") {
+                value = format(profile.chamber);
             } else {
-                value = "" + value + "°C";
+                value = format(profile.extruder);
             }
 
             return _.sprintf(text, {name: _.escape(profile.name), value: _.escape(value)});
@@ -616,6 +627,26 @@ $(function() {
             return self.setTargetToValue(item, value);
         };
 
+        // Wrapper of self.setTargetFromProfile() to apply all the temperature from a temperature profile
+        self.setTargetsFromProfile = function(temperatureProfile) {
+            if(temperatureProfile === undefined) {
+                console.log("temperatureProfile is undefined!");
+                return;
+            }
+
+            if(self.hasBed()) {
+                self.setTargetFromProfile(self.bedTemp, temperatureProfile);
+            }
+
+            if(self.hasChamber()) {
+                self.setTargetFromProfile(self.chamberTemp, temperatureProfile);
+            }
+
+            self.tools().forEach(function(element) {
+                self.setTargetFromProfile(element, temperatureProfile);
+            });
+        };
+
         self.setTargetFromProfile = function(item, profile) {
             if (!profile) return OctoPrintClient.createRejectedDeferred();
 
@@ -632,6 +663,21 @@ $(function() {
 
             if (target === undefined) target = 0;
             return self.setTargetToValue(item, target);
+        };
+
+        // Wrapper of self.setTargetToZero() to set off all the temperatures
+        self.setTargetsToZero = function() {
+            if(self.hasBed()) {
+                self.setTargetToZero(self.bedTemp);
+            }
+
+            if(self.hasChamber()) {
+                self.setTargetToZero(self.chamberTemp);
+            }
+
+            self.tools().forEach(function(element) {
+                self.setTargetToZero(element);
+            });
         };
 
         self.setTargetToZero = function(item) {

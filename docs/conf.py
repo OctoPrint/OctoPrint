@@ -35,8 +35,11 @@ needs_sphinx = '1.3'
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['codeblockext', 'onlineinclude', 'sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain',
-              'sphinx.ext.napoleon', 'sphinxcontrib.mermaid']
+              'sphinx.ext.napoleon', 'sphinxcontrib.mermaid', 'sphinx.ext.intersphinx']
 todo_include_todos = True
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'python2': ('https://docs.python.org/2', None),
+                       'pyserial': ('https://pythonhosted.org/pyserial', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -104,13 +107,9 @@ numfig = True
 
 # -- Options for HTML output ---------------------------------------------------
 
-# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of built-in themes.
@@ -146,7 +145,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 html_static_path = ['_static']
 
 def setup(app):
-    app.add_stylesheet("theme_overrides.css")
+    app.add_css_file("theme_overrides.css")
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -190,7 +189,7 @@ def setup(app):
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'OctoPrintdoc'
+htmlhelp_basename = 'OctoPrintDoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------

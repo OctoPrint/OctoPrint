@@ -256,7 +256,12 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			if not app_name:
 				return flask.abort(400)
 
-			self._add_api_key(user_id, app_name.strip())
+			selected_user_id = data.get("user", user_id)
+			if selected_user_id != user_id and not Permissions.PLUGIN_APPKEYS_ADMIN.can():
+				return flask.abort(403)
+
+			key = self._add_api_key(selected_user_id, app_name.strip())
+			return flask.jsonify(user_id=selected_user_id, app_id=app_name, api_key=key)
 
 		return NO_CONTENT
 
@@ -437,6 +442,8 @@ __plugin_description__ = "Implements a workflow for third party clients to obtai
 __plugin_author__ = "Gina Häußge, Aldo Hoeben"
 __plugin_disabling_discouraged__ = gettext("Without this plugin third party clients will no longer be able to "
                                            "obtain an API key without you manually copy-pasting it.")
+__plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
 	"octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,

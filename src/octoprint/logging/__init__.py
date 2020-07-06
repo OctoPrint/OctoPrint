@@ -20,8 +20,11 @@ def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args
 		extra: optional extra data
 		*args: log args
 	"""
-	from logging import _srcfile
 	import sys
+	try:
+		from logging import _srcfile
+	except ImportError:
+		_srcfile = None
 
 	# this is just the same as logging.Logger._log
 

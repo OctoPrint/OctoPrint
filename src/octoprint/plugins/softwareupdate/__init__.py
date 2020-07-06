@@ -29,7 +29,7 @@ from octoprint.server.util.flask import no_firstrun_access, with_revalidation_ch
 from octoprint.server import VERSION, REVISION, BRANCH
 from octoprint.access import USER_GROUP, ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import dict_merge, to_unicode
+from octoprint.util import dict_merge, to_unicode, get_formatted_size
 from octoprint.util.version import get_comparable_version, get_python_version_string
 from octoprint.util.pip import LocalPipCaller
 import octoprint.settings
@@ -52,6 +52,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.EventHandlerPlugin):
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+	CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
+
+	OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
 
 	DATA_FORMAT_VERSION = "v4"
 
@@ -75,6 +78,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._environment_supported = True
 		self._environment_versions = dict()
 		self._environment_ready = threading.Event()
+
+		self._storage_sufficient = True
+		self.storage_info = dict()
 
 		self._console_logger = None
 
@@ -126,10 +132,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
 			if self._settings.get_boolean(["ignore_throttled"]):
-				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
+				self._logger.warning("!!! THROTTLE STATE IGNORED !!! You have configured the Software Update plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 	def on_after_startup(self):
 		self._check_environment()
+		self._check_storage()
 		self.get_current_versions()
 
 	def _get_configured_checks(self):
@@ -172,7 +179,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# This used to be part of the settings migration (version 2) due to a bug - it can't
 								# stay there though since it interferes with manual entries to the checks not
 								# originating from within a plugin. Hence we do that step now here.
-								if "type" not in effective_config or effective_config["type"] not in self.COMMIT_TRACKING_TYPES:
+								if "type" not in effective_config or effective_config["type"] not in self.CURRENT_TRACKING_TYPES:
 									deletables = ["current", "displayVersion"]
 								else:
 									deletables = []
@@ -216,6 +223,45 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._environment_supported = supported
 		self._environment_versions = versions
 		self._environment_ready.set()
+
+	def _check_storage(self):
+		import distutils.sysconfig
+		import tempfile
+		import psutil
+
+		storage_info = dict()
+		paths = dict(python=distutils.sysconfig.get_python_lib(),
+		             plugins=self._settings.global_get_basefolder("plugins"),
+		             temp=tempfile.gettempdir())
+
+		for key, path in paths.items():
+			info = dict(path=path,
+			            free=None)
+
+			try:
+				data = psutil.disk_usage(path)
+				info["free"] = data.free
+			except:
+				self._logger.exception("Error while determining disk usage of {}".format(path))
+				continue
+
+			storage_info[key] = info
+
+		if len(storage_info):
+			free_storage = min(*list(map(lambda x: x["free"], storage_info.values())))
+		else:
+			free_storage = None
+
+		self._storage_sufficient = free_storage is None or free_storage >= self._settings.get_int(["minimum_free_storage"]) * 1024 * 1024
+		self._storage_info = storage_info
+
+		self._logger.info("Minimum free storage across all update relevant locations is {}. "
+		                  "That is considered {} for updating.".format(get_formatted_size(free_storage)
+		                                                                   if free_storage is not None
+		                                                                   else "unknown",
+		                                                               "sufficient"
+		                                                                   if self._storage_sufficient
+		                                                                   else "insufficient"))
 
 	def _load_version_cache(self):
 		if not os.path.isfile(self._version_cache_path):
@@ -282,7 +328,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"user": "foosel",
 					"repo": "OctoPrint",
 					"method": "pip",
-					"pip": "https://github.com/foosel/OctoPrint/archive/{target_version}.zip",
+					"pip": "https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip",
 					"update_script": default_update_script,
 					"restart": "octoprint",
 					"stable_branch": dict(branch="master", commitish=["master"], name="Stable"),
@@ -300,7 +346,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"notify_users": True,
 
-			"ignore_throttled": False
+			"ignore_throttled": False,
+
+			"minimum_free_storage": 150
 		}
 
 	def on_settings_load(self):
@@ -349,7 +397,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "notify_user", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
+			if key in ("checks", "cache_ttl", "notify_user", "minimum_free_storage",
+			           "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
 				self._settings.set([key], data[key])
@@ -360,6 +409,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if "notify_users" in data:
 			self._settings.set_boolean(["notify_users"], data["notify_users"])
+
+		if "minimum_free_storage" in data:
+			self._settings.set_int(["minimum_free_storage"], data["minimum_free_storage"])
+			self._check_storage()
 
 		defaults = dict(
 			plugins=dict(softwareupdate=dict(
@@ -444,7 +497,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._version_cache_dirty = True
 
 	def get_settings_version(self):
-		return 7
+		return 8
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -507,7 +560,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				if "type" not in octoprint_check or octoprint_check["type"] not in self.COMMIT_TRACKING_TYPES:
+				if "type" not in octoprint_check or octoprint_check["type"] not in self.CURRENT_TRACKING_TYPES:
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
@@ -529,9 +582,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
 
-		if current is None or current < 7:
+		if current is None or current < 8:
 			# remove check_providers again
-			self._settings.set(["check_providers"], None, defaults=dict(check_providers=dict()))
+			self._settings.remove(["check_providers"])
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if not data:
@@ -580,13 +633,42 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible and self._environment_supported else "updateAvailable" if update_available else "current",
+
+				storage = list()
+				for key, name in (("python", gettext("Python package installation folder")),
+				                  ("plugins", gettext("Plugin folder")),
+				                  ("temp", gettext("System temporary files"))):
+					data = self._storage_info.get(key)
+					if not data:
+						continue
+
+					s = dict(name=name)
+					s.update(**data)
+					storage.append(s)
+
+				status = "current"
+				if self._update_in_progress:
+					status = "inProgress"
+				elif update_available and update_possible and self._environment_supported and self._storage_sufficient:
+					status = "updatePossible"
+				elif update_available:
+					status = "updateAvailable"
+
+				return flask.jsonify(dict(status=status,
 				                          information=information,
 				                          timestamp=self._version_cache_timestamp,
 				                          environment=dict(supported=self._environment_supported,
-				                                           versions=[dict(name=gettext("Python"), current=self._environment_versions.get("python", "unknown"), minimum=MINIMUM_PYTHON),
-				                                                     dict(name=gettext("pip"), current=self._environment_versions.get("pip", "unknown"), minimum=MINIMUM_PIP),
-				                                                     dict(name=gettext("setuptools"), current=self._environment_versions.get("setuptools", "unknown"), minimum=MINIMUM_SETUPTOOLS)])))
+				                                           versions=[dict(name=gettext("Python"),
+				                                                          current=self._environment_versions.get("python", "unknown"),
+				                                                          minimum=MINIMUM_PYTHON),
+				                                                     dict(name=gettext("pip"),
+				                                                          current=self._environment_versions.get("pip", "unknown"),
+				                                                          minimum=MINIMUM_PIP),
+				                                                     dict(name=gettext("setuptools"),
+				                                                          current=self._environment_versions.get("setuptools", "unknown"),
+				                                                          minimum=MINIMUM_SETUPTOOLS)]),
+				                          storage=dict(sufficient=self._storage_sufficient,
+				                                       free=storage)))
 			except exceptions.ConfigurationInvalid as e:
 				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -647,6 +729,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if not self._environment_supported:
 			return flask.make_response("Direct updates are not supported in this Python environment", 409)
+
+		if not self._storage_sufficient:
+			return flask.make_response("Not enough free disk space for updating", 409)
 
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
@@ -860,8 +945,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		try:
 			version_checker = self._get_version_checker(target, check)
 			information, is_current = version_checker.get_latest(target, check, online=online)
-			if information is not None and not is_current:
-				update_available = True
+			if information is not None:
+				if is_current and check["type"] in self.CURRENT_TRACKING_TYPES and check["current"] is None:
+					self._persist_check_current(target, check, information["remote"]["value"])
+					del self._version_cache[target]
+					self._version_cache_dirty = True
+				elif not is_current:
+					update_available = True
 		except exceptions.CannotCheckOffline:
 			update_possible = False
 			information["needs_online"] = True
@@ -882,6 +972,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				updater = self._get_updater(target, check)
 				update_possible = updater.can_perform_update(target, check, online=online)
 			except Exception:
+				self._logger.exception("Error while checking if {} can be updated".format(target))
 				update_possible = False
 
 		self._version_cache[target] = dict(timestamp=time.time(),
@@ -903,6 +994,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if not self._environment_supported:
 			self._logger.error("Direct updates are unsupported in this environment")
+			return [], dict()
+
+		if not self._storage_sufficient:
+			self._logger.error("Not enough free disk space for updating")
 			return [], dict()
 
 		targets = kwargs.get("targets", kwargs.get("check_targets", None))
@@ -966,7 +1061,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 					if "restart" in check:
 						target_restart_type = check["restart"]
-					elif "pip" in check:
+					elif "pip" in check or check.get("method") in self.OCTOPRINT_RESTART_TYPES:
 						target_restart_type = "octoprint"
 					else:
 						target_restart_type = None
@@ -1090,20 +1185,29 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.load()
 
 			# persist the new version if necessary for check type
-			if check["type"] in self.COMMIT_TRACKING_TYPES:
-				dummy_default = dict(plugins=dict())
-				dummy_default["plugins"][self._identifier] = dict(checks=dict())
-				dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
-				self._settings.set(["checks", target, "current"], target_version, defaults=dummy_default)
-
-				# we have to save here (even though that makes us save quite often) since otherwise the next
-				# load will overwrite our changes we just made
-				self._settings.save()
+			self._persist_check_current(target, check, target_version)
 
 			del self._version_cache[target]
 			self._version_cache_dirty = True
 
 		return target_error, target_result
+
+	def _persist_check_current(self, target, check, current):
+		if check["type"] not in self.CURRENT_TRACKING_TYPES:
+			return
+
+		self._settings.load()
+
+		dummy_default = dict(plugins=dict())
+		dummy_default["plugins"][self._identifier] = dict(checks=dict())
+		dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
+		self._settings.set(["checks", target, "current"], current, defaults=dummy_default)
+
+		# we have to save here (even though that makes us save quite often) since otherwise the next
+		# load will overwrite our changes we just made
+		self._settings.save()
+
+		check["current"] = current
 
 	def _perform_restart(self, restart_command):
 		"""
@@ -1214,7 +1318,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# displayVersion AND current missing or None
 				result["displayVersion"] = "unknown"
 
-			if check["type"] in self.COMMIT_TRACKING_TYPES:
+			if check["type"] in self.CURRENT_TRACKING_TYPES:
 				result["current"] = check.get("current", None)
 			else:
 				result["current"] = check.get("current", check.get("displayVersion", None))
@@ -1285,13 +1389,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		cannot be determined.
 		"""
 
-		mapping = dict(update_script=updaters.update_script,
-		               pip=updaters.pip,
-		               python_updater=updaters.python_updater,
-		               sleep_a_bit=updaters.sleep_a_bit)
+		method = self._get_update_method(target, check)
+		if method is None:
+			raise exceptions.UnknownUpdateType()
 
-		method = self._get_update_method(target, check, valid_methods=list(mapping.keys()))
-		return mapping[method]
+		updater = getattr(updaters, method)
+		if updater is None:
+			raise exceptions.UnknownUpdateType()
+
+		return updater
 
 	def _get_octoprint_checkout_folder(self, checks=None):
 		if checks is None:
@@ -1338,6 +1444,8 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will n
                                            "update itself or any of your installed plugins which might put "
                                            "your system at risk.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
+
 def __plugin_load__():
 	global __plugin_implementation__
 	__plugin_implementation__ = SoftwareUpdatePlugin()

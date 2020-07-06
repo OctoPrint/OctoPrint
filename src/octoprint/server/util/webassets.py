@@ -5,6 +5,9 @@ __author__ = "Gina Häußge <gina@octoprint.org>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import logging
+import gzip
+import os
 import re
 
 try:
@@ -103,6 +106,35 @@ class JsDelimiterBundler(Filter):
 		out.write("// source: " + source + "\n")
 		out.write(_in.read())
 		out.write("\n;\n")
+
+
+class GzipFile(Filter):
+	name = "gzip"
+	options = {}
+
+	def output(self, _in, out, **kwargs):
+		data = _in.read()
+		out.write(data)
+
+		# webassets requires us to output a "str", but we can't do that since gzip
+		# provides binary outputs.
+		#
+		# We work around that by outputting the gzipped file to another path
+		output_path = kwargs.get("output_path", None)
+		if output_path:
+			gzipped_output_path = output_path + ".gz"
+			try:
+				with gzip.open(gzipped_output_path, "wb", 9) as f:
+					f.write(data.encode("utf8"))
+			except Exception:
+				logging.getLogger(__name__).exception("Error writing gzipped "
+				                                      "output of {} to {}".format(output_path,
+				                                                                  gzipped_output_path))
+				try:
+					os.remove(gzipped_output_path)
+				except Exception:
+					logging.getLogger(__name__).exception("Error removing broken "
+					                                      ".gz from {}".format(gzipped_output_path))
 
 
 class ChainedHunk(BaseHunk):

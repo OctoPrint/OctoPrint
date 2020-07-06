@@ -456,6 +456,8 @@ table {
   margin-top: 20px;
 
   th, td {
+    line-height: 25px;
+
     &.temperature_tool,
     &.temperature_actual,
     &.temperature_target,
@@ -728,6 +730,10 @@ ul.dropdown-menu li a {
         word-break: break-all;
       }
 
+      .toggleAdditionalData {
+        margin-left: 5px;
+      }
+
       .internal, .uploaded, .size, .additionalInfo {
         font-size: 85%;
         color: #999;
@@ -867,53 +873,16 @@ ul.dropdown-menu li a {
       margin-bottom: 2px;
     }
   }
-}
 
-/** GCODE viewer */
-
-#gcode {
-  .progress {
-    width: 588px;
-
-    .bar {
-      .transition(width 0s linear);
-    }
+  .pulsate_text_opacity {
+    animation: pulsate_input 1s ease-out;
+    animation-iteration-count: infinite;
   }
 
-  .canvas_container {
-    position: relative;
-    &:hover, &:active {
-      outline: 0;
-    }
-  }
-
-  .layer-buttons {
-    padding-top: 5px;
-    padding-bottom: 7px;
-  }
-
-  #gcode_layer_slider {
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 568px;
-    float: right;
-
-    .slider-handle {
-      width: 14px;
-      height: 14px;
-      margin-left: -3px;
-      margin-top: -7px;
-    }
-  }
-
-  #gcode_command_slider {
-    .slider-handle {
-      width: 14px;
-      height: 14px;
-      margin-left: -7px;
-      margin-top: -3px;
-    }
+  @keyframes pulsate_input {
+    0% { color: @gray }
+    50% { color: fade(@gray, 20%) }
+    100% { color: @gray }
   }
 }
 
@@ -973,6 +942,24 @@ ul.dropdown-menu li a {
   div {
     display: table-cell;
     vertical-align: middle;
+  }
+}
+
+#about_sponsors {
+  @sponsorCols: 3;
+  ul {
+    columns: @sponsorCols;
+    -webkit-columns: @sponsorCols;
+    -moz-columns: @sponsorCols;
+  }
+}
+
+#about_authors {
+  @authorCols: 3;
+  ul {
+    columns: @authorCols;
+    -webkit-columns: @authorCols;
+    -moz-columns: @authorCols;
   }
 }
 

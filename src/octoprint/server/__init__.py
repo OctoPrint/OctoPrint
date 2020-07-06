@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from octoprint.vendor.sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
+from flask import Flask, g, request, session, Blueprint, Request, Response, current_app, make_response
 from flask_login import LoginManager, current_user, session_protected, user_logged_out
 from octoprint.vendor.flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, Identity, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
@@ -142,7 +142,6 @@ def on_session_protected(sender):
 def on_user_logged_out(sender, user=None):
 	# user was logged out, clear identity
 	_clear_identity(sender)
-
 
 def load_user(id):
 	if id is None or not userManager.enabled:
@@ -282,6 +281,7 @@ class Server(object):
 
 		# monkey patch/fix some stuff
 		util.tornado.fix_json_encode()
+		util.tornado.fix_websocket_check_origin()
 		util.flask.fix_flask_jsonify()
 
 		self._setup_mimetypes()
@@ -345,11 +345,6 @@ class Server(object):
 		JsonEncoding.add_encoder(permissions.OctoPrintPermission, lambda obj: obj.as_dict())
 
 		# start regular check if we are connected to the internet
-		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
-		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
-		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
-		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
-
 		def on_connectivity_change(old_value, new_value):
 			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
 
@@ -361,15 +356,18 @@ class Server(object):
 			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
 			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
 			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+			connectivityName = self._settings.get(["server", "onlineCheck", "name"])
 
 			if connectivityChecker.enabled != connectivityEnabled \
 					or connectivityChecker.interval != connectivityInterval \
 					or connectivityChecker.host != connectivityHost \
-					or connectivityChecker.port != connectivityPort:
+					or connectivityChecker.port != connectivityPort \
+					or connectivityChecker.name != connectivityName:
 				connectivityChecker.enabled = connectivityEnabled
 				connectivityChecker.interval = connectivityInterval
 				connectivityChecker.host = connectivityHost
 				connectivityChecker.port = connectivityPort
+				connectivityChecker.name = connectivityName
 				connectivityChecker.check_immediately()
 
 		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
@@ -686,7 +684,8 @@ class Server(object):
 			                                                                              as_attachment=True),
 			                                                                         camera_permission_validator)),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"),
+			                                                                    is_pre_compressed=True)),
 
 			# online indicators - text file with "online" as content and a transparent gif
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
@@ -829,7 +828,7 @@ class Server(object):
 		else:
 			# use os default
 			observer = Observer()
-		observer.schedule(watchdog_handler, watched)
+		observer.schedule(watchdog_handler, watched, recursive=True)
 		observer.start()
 
 		# run our startup plugins
@@ -1029,13 +1028,29 @@ class Server(object):
 		@app.before_request
 		def before_request():
 			g.locale = self._get_locale()
+			if self._debug and "perfprofile" in request.args:
+				try:
+					from pyinstrument import Profiler
+					g.perfprofiler = Profiler()
+					g.perfprofiler.start()
+				except ImportError:
+					# profiler dependency not installed, ignore
+					pass
+
 
 		@app.after_request
 		def after_request(response):
 			# send no-cache headers with all POST responses
 			if request.method == "POST":
 				response.cache_control.no_cache = True
+
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
+
+			if hasattr(g, "perfprofiler"):
+				g.perfprofiler.stop()
+				output_html = g.perfprofiler.output_html()
+				return make_response(output_html)
+
 			return response
 
 		from octoprint.util.jinja import MarkdownFilter
@@ -1477,17 +1492,13 @@ class Server(object):
 		                                                    dict(updater=assets.updater))
 		assets.updater = UpdaterType
 
-		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
 
-		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
-		dynamic_plugin_assets = util.flask.collect_plugin_assets(
-			enable_gcodeviewer=enable_gcodeviewer,
-			preferred_stylesheet=preferred_stylesheet
-		)
+		dynamic_core_assets = util.flask.collect_core_assets()
+		dynamic_plugin_assets = util.flask.collect_plugin_assets(preferred_stylesheet=preferred_stylesheet)
 
 		js_libs = [
-			"js/lib/jquery/jquery.js",
+			"js/lib/jquery/jquery.min.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
@@ -1529,8 +1540,9 @@ class Server(object):
 			"js/lib/md5.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs.js",
-			"js/lib/ResizeSensor.js"
+			"js/lib/sockjs.min.js",
+			"js/lib/ResizeSensor.js",
+			"js/lib/less.min.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
@@ -1568,13 +1580,14 @@ class Server(object):
 
 		# a couple of custom filters
 		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, \
-			SourceMapRewrite, SourceMapRemove, JsPluginBundle
+			SourceMapRewrite, SourceMapRemove, JsPluginBundle, GzipFile
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
 		register_filter(SourceMapRewrite)
 		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
+		register_filter(GzipFile)
 
 		def all_assets_for_plugins(collection):
 			"""Gets all plugin assets for a dict of plugin->assets"""
@@ -1585,8 +1598,12 @@ class Server(object):
 
 		# -- JS --------------------------------------------------------------------------------------------------------
 
-		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
-		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		if self._settings.getBoolean(["devel", "webassets", "minify"]):
+			filters.append("rjsmin")
+		filters.append("gzip")
+
+		js_filters = js_plugin_filters = filters
 
 		def js_bundles_for_plugins(collection, filters=None):
 			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
@@ -1645,7 +1662,7 @@ class Server(object):
 
 		# -- CSS -------------------------------------------------------------------------------------------------------
 
-		css_filters = ["cssrewrite"]
+		css_filters = ["cssrewrite", "gzip"]
 
 		css_core = list(dynamic_core_assets["css"]) \
 		           + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["css"])
@@ -1675,7 +1692,7 @@ class Server(object):
 
 		# -- LESS ------------------------------------------------------------------------------------------------------
 
-		less_filters = ["cssrewrite", "less_importrewrite"]
+		less_filters = ["cssrewrite", "less_importrewrite", "gzip"]
 
 		less_core = list(dynamic_core_assets["less"]) \
 		            + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["less"])
@@ -1732,10 +1749,10 @@ class Server(object):
 		# at least observed on a Win10 client targeting "localhost", resolved as both "127.0.0.1" and "::1"
 		loginManager.session_protection = "basic"
 
-		loginManager.user_callback = load_user
-		loginManager.unauthorized_callback = unauthorized_user
+		loginManager.user_loader(load_user)
+		loginManager.unauthorized_handler(unauthorized_user)
 		loginManager.anonymous_user = userManager.anonymous_user_factory
-		loginManager.request_callback = load_user_from_request
+		loginManager.request_loader(load_user_from_request)
 
 		loginManager.init_app(app, add_context_processor=False)
 
@@ -1966,7 +1983,7 @@ class Server(object):
 						continue
 
 					if not key_whitelist.match(p["key"]):
-						self._logger.warn("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
+						self._logger.warning("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
 						continue
 
 					if not process_regular_permission(plugin_info, p):

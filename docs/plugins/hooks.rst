@@ -65,7 +65,7 @@ the general type of script for which to look for additions ("gcode") and the scr
 return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
 care to add prefix and suffix as necessary after a small round of preprocessing.
 
-Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/foosel/OctoPrint/tree/master/src/octoprint/plugins/softwareupdate>`_
+Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html>`_
 declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
 to register themselves with the Software Update Plugin by returning their own update check configuration.
 
@@ -215,7 +215,7 @@ octoprint.access.permissions
    fields are as follows:
 
      * ``key``: A key for the permission to be used for referring to it from source code. This will turned uppercase
-       and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``, 
+       and prefixed with ``PLUGIN_<PLUGIN IDENTIFIER>_`` before being made available on ``octoprint.access.permissions.Permissions``,
        e.g. ``my_permission`` on the plugin with identifier ``example`` turns into ``PLUGIN_EXAMPLE_MY_PERMISSION`` and
        can be accessed as ``octoprint.access.permissions.Permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the server and
        ``permissions.PLUGIN_EXAMPLE_MY_PERMISSION`` on the ``AccessViewModel`` on the client. Must only contain a-z, A-Z, 0-9 and _.
@@ -472,12 +472,12 @@ octoprint.comm.protocol.firmware.info
       This includes I/O of any kind.
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
-   :param str firmware_name: The name of the parsed capability
+   :param str firmware_name: The parsed name of the firmware
    :param dict firmware_data: All data contained in the ``M115`` report
 
 .. _sec-plugins-hook-comm-protocol-firmware-capabilities:
 
-octoprint.comm.firmware.protocol.capabilities
+octoprint.comm.protocol.firmware.capabilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: firmware_capability_hook(comm_instance, capability, enabled, already_defined, *args, **kwargs)
@@ -890,6 +890,25 @@ octoprint.comm.protocol.temperatures.received
       :tab-width: 4
       :caption: `sanitize_temperatures.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/sanitize_temperatures.py>`_
 
+.. _sec-plugins-hook-comm-transport-serial-additonal-port-names:
+
+octoprint.comm.transport.serial.additional_port_names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_port_names_hook(candidates, *args, **kwargs)
+
+   Return additional port names (not glob patterns!) to use as a serial connection to the printer. Expected to be
+   ``list`` of ``string``s.
+
+   Useful in combination with :ref:`octoprint.comm.transport.serial.factory <sec-plugins-hook-comm-transport-serial-factory>`
+   to implement custom serial-like ports through plugins.
+
+   For an example of use see the bundled ``virtual_printer`` plugin.
+
+   :param list candidates: The port names already found on the system available for connection.
+   :return: Additional port names to offer up for connection.
+   :rtype: list
+
 .. _sec-plugins-hook-comm-transport-serial-factory:
 
 octoprint.comm.transport.serial.factory
@@ -907,21 +926,21 @@ octoprint.comm.transport.serial.factory
    closely if directly utilizing :class:`~octoprint.util.comm.MachineCom` functionality.
 
    A valid serial instance is expected to provide the following methods, analogue to PySerial's
-   `serial.Serial <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial>`_:
+   :py:class:`serial.Serial`:
 
    readline(size=None, eol='\n')
-       Reads a line from the serial connection, compare `serial.Filelike.readline <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.readline>`_.
+       Reads a line from the serial connection, compare :py:meth:`serial.Serial.readline`.
    write(data)
-       Writes data to the serial connection, compare `serial.Filelike.write <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.write>`_.
+       Writes data to the serial connection, compare :py:meth:`serial.Serial.write`.
    close()
-       Closes the serial connection, compare `serial.Serial.close <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.close>`_.
+       Closes the serial connection, compare :py:meth:`serial.Serial.close`.
 
    Additionally setting the following attributes need to be supported if baudrate detection is supposed to work:
 
    baudrate
-       An integer describing the baudrate to use for the serial connection, compare `serial.Serial.baudrate <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.baudrate>`_.
+       An integer describing the baudrate to use for the serial connection, compare :py:attr:`serial.Serial.baudrate`.
    timeout
-       An integer describing the read timeout on the serial connection, compare `serial.Serial.timeout <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.timeout>`_.
+       An integer describing the read timeout on the serial connection, compare :py:attr:`serial.Serial.timeout`.
 
    **Example:**
 

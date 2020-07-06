@@ -99,6 +99,14 @@ Test paths or URLs
      The ``server`` command returns :http:statuscode:`200` with a :ref:`Server test result <sec-api-util-datamodel-servertestresult>`
      when the test could be performed. The status code of the response does NOT reflect the test result!
 
+   resolution
+     Tests whether a provided hostname can be resolved (via DNS lookup). Supported parameters are:
+
+       * ``name``: The host name to test. Mandatory.
+
+     The ``resolution`` command returns :http:statuscode:`200` with a :ref:`Resolution test result <sec-api-util-datamodel-resolutiontestresult>`
+     when the test could be performed. The status code of the response does NOT reflect the test result!
+
    Requires the ``ADMIN`` permission.
 
    **Example 1**
@@ -286,6 +294,32 @@ Test paths or URLs
         "result": true
       }
 
+   **Example 7**
+
+   Test whether a host name can be resolved successfully.
+
+   .. sourcecode:: http
+
+      POST /api/util/test HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "command": "resolution",
+        "name": "octoprint"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "name": "octoprint.org",
+        "result": true
+      }
+
    :json command:            The command to execute, currently either ``path`` or ``url``
    :json path:               ``path`` command only: the path to test
    :json check_type:         ``path`` command only: the type of path to test for, either ``file`` or ``dir``
@@ -302,6 +336,7 @@ Test paths or URLs
    :json host:               ``server`` command only: the server to test
    :json port:               ``server`` command only: the port to test
    :json protocol:           ``server`` command only: the protocol to test
+   :json name:               ``resolution`` command only: the host name to test
    :statuscode 200:          No error occurred
 
 .. _sec-api-util-datamodel:
@@ -405,6 +440,28 @@ Server test result
      - 1
      - string
      - The protocol that was tested, ``tcp`` or ``udp``
+   * - ``result``
+     - 1
+     - bool
+     - ``true`` if the check passed.
+
+.. _sec-api-util-datamodel-resolutiontestresult:
+
+Resolution test result
+----------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``name``
+     - 1
+     - string
+     - The host name that was tested.
    * - ``result``
      - 1
      - bool

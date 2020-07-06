@@ -48,7 +48,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             self._connectedDeferred.reject("reconnect");
         }
         self._connectedDeferred = $.Deferred();
-        OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
+        OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG, connectTimeout: SOCKJS_CONNECT_TIMEOUT});
         return self._connectedDeferred.promise();
     };
 
@@ -157,13 +157,21 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         var oldConfigHash = self._configHash;
         self._configHash = data["config_hash"];
 
+        log.info("Connected to the server");
+
+        // if we have a connected promise, resolve it now
+        if (self._connectedDeferred) {
+            self._connectedDeferred.resolve();
+            self._connectedDeferred = undefined;
+        }
+
         self._ifInitialized(function() {
             // process safe mode
             if (self._safeModePopup) self._safeModePopup.remove();
             if (data["safe_mode"]) {
                 // safe mode is active, let's inform the user
-                log.info("Safe mode is active. Third party plugins and language packs are disabled and cannot be enabled.");
-                log.info("Reason for safe mode: " + data["safe_mode"]);
+                log.info("❗ Safe mode is active. Third party plugins and language packs are disabled and cannot be enabled.");
+                log.info("❗ Reason for safe mode: " + data["safe_mode"]);
 
                 var reason = gettext("Unknown");
                 switch (data["safe_mode"]) {
@@ -192,9 +200,11 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             // hide it, plus reload the camera feed if it's currently displayed
             if ($("#offline_overlay").is(":visible")) {
                 hideOfflineOverlay();
+                log.info("Triggering reconnect on all view models");
                 callViewModels(self.allViewModels, "onServerReconnect");
                 callViewModels(self.allViewModels, "onDataUpdaterReconnect");
             } else {
+                log.info("Triggering connect on all view models");
                 callViewModels(self.allViewModels, "onServerConnect");
             }
 
@@ -207,15 +217,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 showReloadOverlay();
             }
 
+            log.info("Server (re)connect processed");
         });
-
-        log.info("Connected to the server");
-
-        // if we have a connected promise, resolve it now
-        if (self._connectedDeferred) {
-            self._connectedDeferred.resolve();
-            self._connectedDeferred = undefined;
-        }
     };
 
     self._onHistoryData = function(event) {
@@ -300,8 +303,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         text = _.sprintf(gettext("There was an error while trying to start a print job. Error: %(error)s"), {error: _.escape(payload.error)});
                         break;
                     }
-                    case "autodetect_port":
-                    case "autodetect_baudrate": {
+                    case "autodetect": {
                         // ignore
                         break;
                     }

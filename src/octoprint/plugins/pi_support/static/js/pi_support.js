@@ -29,13 +29,11 @@ $(function() {
                     self.fromThrottleState(response.throttle_state);
 
                     // OctoPi version
-                    $("#octopi_support_footer").remove();
+                    $("#pi_support_footer").remove();
                     if (!response.octopi_version) return;
 
-                    var octoPrintVersion = $(".footer span.version");
-                    var octoPiVersion = $("<span id='octopi_support_footer'> " + gettext("running on") + " " + gettext("OctoPi")
-                        + " <span class='octopi_version'>" + response.octopi_version + "</span></span>");
-                    $(octoPiVersion).insertAfter(octoPrintVersion);
+                    var octoPiVersion = $("<li id='pi_support_footer'><small>" + gettext("OctoPi") + " " + "<span class='octopi_version'>" + response.octopi_version + "</span></small></li>");
+                    $("#footer_version").append(octoPiVersion);
                 })
         };
 

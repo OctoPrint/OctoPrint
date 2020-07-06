@@ -9,12 +9,25 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 """
 
 import logging
+import functools
 
 from octoprint.vendor.sockjs.tornado import sessioncontainer, periodic, proto
 from octoprint.vendor.sockjs.tornado.util import bytes_to_str
 
+from tornado.ioloop import IOLoop
+
 LOG = logging.getLogger("tornado.general")
 
+def ensure_io_loop(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if IOLoop.current(False):
+            method(self, *args, **kwargs)
+        else:
+            def run():
+                method(self, *args, **kwargs)
+            self.server.io_loop.add_callback(run)
+    return wrapper
 
 class ConnectionInfo(object):
     """Connection information object.
@@ -293,6 +306,7 @@ class Session(BaseSession, sessioncontainer.SessionMixin):
 
         return True
 
+    @ensure_io_loop
     def verify_state(self):
         """Verify if session was not yet opened. If it is, open it and call connections `on_open`"""
         # If we're in CONNECTING state - send 'o' message to the client
@@ -323,6 +337,7 @@ class Session(BaseSession, sessioncontainer.SessionMixin):
         """
         self.send_jsonified(proto.json_encode(bytes_to_str(msg)), stats)
 
+    @ensure_io_loop
     def send_jsonified(self, msg, stats=True):
         """Send JSON-encoded message
 
@@ -355,6 +370,7 @@ class Session(BaseSession, sessioncontainer.SessionMixin):
         if stats:
             self.stats.on_pack_sent(1)
 
+    @ensure_io_loop
     def flush(self):
         """Flush message queue if there's an active connection running"""
         self._pending_flush = False
@@ -365,6 +381,7 @@ class Session(BaseSession, sessioncontainer.SessionMixin):
         self.handler.send_pack('a[%s]' % self.send_queue)
         self.send_queue = ''
 
+    @ensure_io_loop
     def close(self, code=3000, message='Go away!'):
         """Close session.
 
@@ -401,6 +418,7 @@ class Session(BaseSession, sessioncontainer.SessionMixin):
         if self._heartbeat_timer is not None:
             self._heartbeat_timer.delay()
 
+    @ensure_io_loop
     def _heartbeat(self):
         """Heartbeat callback"""
         if self.handler is not None:

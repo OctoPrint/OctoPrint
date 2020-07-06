@@ -36,12 +36,26 @@ except ImportError:
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
+
+from octoprint.util.net import interface_addresses, address_for_client, server_reachable
+from octoprint.util.connectivity import ConnectivityChecker
+
+
 logger = logging.getLogger(__name__)
 
 
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> bytes
-	"""Make sure ``s_or_u`` is a bytestring."""
+	"""
+	Make sure ``s_or_u`` is a byte string.
+
+	Arguments:
+	    s_or_u (string or unicode): The value to convert
+	    encoding (string): encoding to use if necessary, see :meth:`python:str.encode`
+	    errors (string): error handling to use if necessary, see :meth:`python:str.encode`
+	Returns:
+	    bytes: converted bytes.
+	"""
 	if s_or_u is None:
 		return s_or_u
 
@@ -56,7 +70,16 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 	# type: (Union[unicode, bytes], str, str) -> unicode
-	"""Make sure ``s_or_u`` is a unicode string."""
+	"""
+	Make sure ``s_or_u`` is a unicode string.
+
+	Arguments:
+	    s_or_u (string or unicode): The value to convert
+	    encoding (string): encoding to use if necessary, see :meth:`python:bytes.decode`
+	    errors (string): error handling to use if necessary, see :meth:`python:bytes.decode`
+	Returns:
+	    string: converted string.
+	"""
 	if s_or_u is None:
 		return s_or_u
 
@@ -71,7 +94,10 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 
 def to_native_str(s_or_u):
 	# type: (Union[unicode, bytes]) -> str
-	"""Make sure ``s_or_u`` is a 'str'."""
+	"""
+	Make sure ``s_or_u`` is a native 'str' for the current Python version
+
+	Will ensure a byte string under Python 2 and a unicode string under Python 3."""
 	if sys.version_info[0] == 2:
 		return to_bytes(s_or_u)
 	else:
@@ -262,7 +288,9 @@ Returns:
 """
 
 
-to_str = deprecated("to_str has been renamed to to_bytes", since="1.3.11")(to_bytes)
+to_str = deprecated("to_str has been renamed to to_bytes",
+                    includedoc="to_str has been renamed to to_bytes",
+                    since="1.3.11")(to_bytes)
 
 
 def get_formatted_size(num):
@@ -985,70 +1013,11 @@ class DefaultOrderedDict(collections.OrderedDict):
 class Object(object):
 	pass
 
-def interface_addresses(family=None):
-	"""
-	Retrieves all of the host's network interface addresses.
-	"""
-
-	import netifaces
-	if not family:
-		family = netifaces.AF_INET
-
-	for interface in netifaces.interfaces():
-		try:
-			ifaddresses = netifaces.ifaddresses(interface)
-		except Exception:
-			continue
-		if family in ifaddresses:
-			for ifaddress in ifaddresses[family]:
-				if not ifaddress["addr"].startswith("169.254."):
-					yield ifaddress["addr"]
-
-def address_for_client(host, port, timeout=3.05):
-	"""
-	Determines the address of the network interface on this host needed to connect to the indicated client host and port.
-	"""
-
-	for address in interface_addresses():
-		try:
-			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
-				return address
-		except Exception:
-			continue
-
-def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
-	"""
-	Checks if a server is reachable
-
-	Args:
-		host (str): host to check against
-		port (int): port to check against
-		timeout (float): timeout for check
-		proto (str): ``tcp`` or ``udp``
-		source (str): optional, socket used for check will be bound against this address if provided
-
-	Returns:
-		boolean: True if a connection to the server could be opened, False otherwise
-	"""
-
-	import socket
-
-	if proto not in ("tcp", "udp"):
-		raise ValueError("proto must be either 'tcp' or 'udp'")
-
-	try:
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM)
-		sock.settimeout(timeout)
-		if source is not None:
-			sock.bind((source, 0))
-		sock.connect((host, port))
-		return True
-	except Exception:
-		return False
 
 def guess_mime_type(data):
 	import filetype
 	return filetype.guess_mime(data)
+
 
 def parse_mime_type(mime):
 	import cgi
@@ -1129,6 +1098,33 @@ def temppath(prefix=None, suffix=""):
 		yield temp.name
 	finally:
 		os.remove(temp.name)
+
+
+if hasattr(tempfile, "TemporaryDirectory"):
+	# Python 3
+	TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+	# Python 2
+	class TemporaryDirectory(object):
+		def __init__(self, suffix='', prefix="tmp", dir=None):
+			self._path = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+
+		@property
+		def name(self):
+			return self._path
+
+		def cleanup(self):
+			try:
+				os.remove(self._path)
+			except Exception as exc:
+				logging.getLogger(__name__).warning("Could not delete temporary directory {}: {}".format(self.name,
+				                                                                                         exc))
+
+		def __enter__(self):
+			return self.name
+
+		def __exit__(self):
+			self.cleanup()
 
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
@@ -1662,132 +1658,6 @@ class TypeAlreadyInQueue(Exception):
 		self.type = t
 
 
-class ConnectivityChecker(object):
-	"""
-	Regularly checks for online connectivity.
-
-	Tries to open a connection to the provided ``host`` and ``port`` every ``interval``
-	seconds and sets the ``online`` status accordingly.
-	"""
-
-	def __init__(self, interval, host, port, enabled=True, on_change=None):
-		self._interval = interval
-		self._host = host
-		self._port = port
-		self._enabled = enabled
-		self._on_change = on_change
-
-		self._logger = logging.getLogger(__name__ + ".connectivity_checker")
-
-		# we initialize the online flag to True if we are not enabled (we don't know any better
-		# but these days it's probably a sane default)
-		self._online = not self._enabled
-
-		self._check_worker = None
-		self._check_mutex = threading.RLock()
-
-		self._run()
-
-	@property
-	def online(self):
-		"""Current online status, True if online, False if offline."""
-		with self._check_mutex:
-			return self._online
-
-	@property
-	def host(self):
-		"""DNS host to query."""
-		with self._check_mutex:
-			return self._host
-
-	@host.setter
-	def host(self, value):
-		with self._check_mutex:
-			self._host = value
-
-	@property
-	def port(self):
-		"""DNS port to query."""
-		with self._check_mutex:
-			return self._port
-
-	@port.setter
-	def port(self, value):
-		with self._check_mutex:
-			self._port = value
-
-	@property
-	def interval(self):
-		"""Interval between consecutive automatic checks."""
-		return self._interval
-
-	@interval.setter
-	def interval(self, value):
-		self._interval = value
-
-	@property
-	def enabled(self):
-		"""Whether the check is enabled or not."""
-		return self._enabled
-
-	@enabled.setter
-	def enabled(self, value):
-		with self._check_mutex:
-			old_enabled = self._enabled
-			self._enabled = value
-
-			if not self._enabled:
-				if self._check_worker is not None:
-					self._check_worker.cancel()
-
-				old_value = self._online
-				self._online = True
-
-				if old_value != self._online:
-					self._trigger_change(old_value, self._online)
-
-			elif self._enabled and not old_enabled:
-				self._run()
-
-	def check_immediately(self):
-		"""Check immediately and return result."""
-		with self._check_mutex:
-			self._perform_check()
-			return self.online
-
-	def _run(self):
-		from octoprint.util import RepeatedTimer
-
-		if not self._enabled:
-			return
-
-		if self._check_worker is not None:
-			self._check_worker.cancel()
-
-		self._check_worker = RepeatedTimer(self._interval, self._perform_check,
-		                                   run_first=True)
-		self._check_worker.start()
-
-	def _perform_check(self):
-		if not self._enabled:
-			return
-
-		with self._check_mutex:
-			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
-
-			old_value = self._online
-			self._online = server_reachable(self._host, port=self._port)
-
-			if old_value != self._online:
-				self._trigger_change(old_value, self._online)
-
-	def _trigger_change(self, old_value, new_value):
-		self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
-		                                                              "online" if new_value else "offline"))
-		if callable(self._on_change):
-			self._on_change(old_value, new_value)
-
-
 class CaseInsensitiveSet(collections.Set):
 	"""
 	Basic case insensitive set
@@ -1843,3 +1713,7 @@ def generate_api_key():
 	import uuid
 
 	return ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+
+
+def map_boolean(value, true_text, false_text):
+	return true_text if value else false_text

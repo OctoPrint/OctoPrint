@@ -714,3 +714,4 @@ __plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/
 __plugin_disabling_discouraged__ = gettext("Without this plugin your OctoPrint instance will no longer be "
                                            "discoverable on the network via Bonjour and uPnP.")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"

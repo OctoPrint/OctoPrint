@@ -14,6 +14,12 @@ import time
 
 from past.builtins import unicode
 
+# default close_fds settings
+if sys.platform == "win32" and sys.version_info < (3, 7):
+	CLOSE_FDS = False
+else:
+	CLOSE_FDS = True
+
 def _log_call(*lines):
 	_log(lines, prefix=">", stream="call")
 
@@ -62,7 +68,8 @@ def _execute(command, **kwargs):
 		joined_command = command
 	_log_call(joined_command)
 
-	kwargs.update(dict(async_=True,
+	kwargs.update(dict(close_fds=CLOSE_FDS,
+	                   async_=True,
 	                   stdout=sarge.Capture(),
 	                   stderr=sarge.Capture()))
 

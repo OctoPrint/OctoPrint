@@ -50,8 +50,8 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		self._prompt = None
 		self._enable = "detected"
 		self._command = None
-		self._enable_emergency_sending = False
-		self._enable_signal_support = False
+		self._enable_emergency_sending = True
+		self._enable_signal_support = True
 		self._cap_prompt_support = False
 
 	def initialize(self):
@@ -130,7 +130,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="settings", name=gettext("Action Command Prompt"), custom_bindings=False)]
+		return [dict(type="settings", name=gettext("Printer Dialogs"), custom_bindings=False)]
 
 	#~ action command handler
 
@@ -223,7 +223,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 		if "{choice}" in self._command:
 			self._printer.commands([self._command.format(choice=choice)])
 		else:
-		    self._printer.commands(["{command} S{choice}".format(command=self._command,
+			self._printer.commands(["{command} S{choice}".format(command=self._command,
 																 choice=choice)])
 
 
@@ -233,6 +233,7 @@ __plugin_author__ = "Gina Häußge"
 __plugin_disabling_discouraged__ = gettext("Without this plugin your printer will no longer be able to trigger"
                                            " confirmation or selection prompts in OctoPrint")
 __plugin_license__ = "AGPLv3"
+__plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
 	"octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,

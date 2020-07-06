@@ -24,10 +24,12 @@
   * [LESS](http://lesscss.org): Apache License 2.0
   * [lodash](https://lodash.com): MIT
   * [Loglevel](https://github.com/pimterry/loglevel): MIT
+  * [md5.js](https://blueimp.github.io/JavaScript-MD5/): MIT
   * [Modernizr](http://modernizr.com): MIT
   * [Moment.js](http://momentjs.com/): MIT
   * [PNotify](http://sciactive.com/pnotify/): GPL, LGPL, MPL (triple licensed)
   * [pusher.color.js](http://cache.preserve.io/5g18q0pw/index.html) (original link dead): MIT
+  * [ResizeSensor.js](https://github.com/procurios/ResizeSensor): MIT
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT
   * [sprintf-js](http://alexei.ro/): BSD
 
@@ -39,12 +41,14 @@
   * [Click](http://click.pocoo.org/): BSD
   * [emoji](https://github.com/carpedm20/emoji/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
+  * [filetype](https://h2non.github.io/filetype.py/): MIT
   * [Flask](http://flask.pocoo.org/): BSD
   * [Flask-Assets](http://github.com/miracle2k/flask-assets): BSD
   * [Flask-Babel](http://github.com/mitsuhiko/flask-babel): BSD
   * [Flask-Login](https://github.com/maxcountryman/flask-login): MIT
   * [Flask-Markdown](http://github.com/dcolish/flask-markdown): BSD
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
+  * [frozendict](https://github.com/slezica/python-frozendict): MIT
   * [future](https://python-future.org/): MIT
   * [futures](https://github.com/agronholm/pythonfutures): Python
   * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
@@ -58,19 +62,25 @@
   * [requests](http://python-requests.org/): Apache License 2.0
   * [rsa](http://stuvel.eu/rsa): Apache License 2.0
   * [sarge](http://sarge.readthedocs.org/): BSD
+  * [sentry-sdk](https://github.com/getsentry/sentry-python): BSD
   * [scandir](https://github.com/benhoyt/scandir): BSD
   * [semantic_version](https://github.com/rbarrois/python-semanticversion): BSD
   * [SockJS-Tornado](http://github.com/mrjoes/sockjs-tornado/): MIT
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
+  * [typing](https://pypi.org/project/typing/): Python
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
   * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
   * [wrapt](http://wrapt.readthedocs.org/): BSD
 
 ## Development (testing, documentation generation, etc)
 
+  * [cookiecutter](https://github.com/cookiecutter/cookiecutter): BSD
   * [ddt](https://github.com/txels/ddt): MIT
+  * [flake8](https://gitlab.com/pycqa/flake8): MIT
   * [mock](https://github.com/testing-cabal/mock): BSD
-  * [nose](http://pythonhosted.org/nose/): LGPL
+  * [pyinstrument](https://github.com/joerick/pyinstrument): BSD
+  * [pytest](https://docs.pytest.org/en/latest/): MIT
+  * [pytest-doctest-custom](http://github.com/danilobellini/pytest-doctest-custom): MIT
   * [Sphinx](http://sphinx-doc.org/): BSD
   * [sphinxcontrib-httpdomain](https://bitbucket.org/birkenfeld/sphinx-contrib/src/default/httpdomain/): BSD
   * [sphinxcontrib-mermad](https://github.com/mgaitan/sphinxcontrib-mermaid): BSD

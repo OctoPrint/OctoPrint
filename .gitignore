@@ -2,6 +2,7 @@ src/octoprint/templates/_data/AUTHORS.md
 src/octoprint/templates/_data/CHANGELOG.md
 src/octoprint/templates/_data/SUPPORTERS.md
 src/octoprint/templates/_data/THIRDPARTYLICENSES.md
+docs/_build
 
 devtools
 
@@ -19,24 +20,26 @@ linux-Cura-*
 Printrun
 =======
 .idea
+.vscode
 .DS_Store
 Cura/current_profile.ini
 Cura/preferences.ini
 build
 dist
 pypy
-OctoPrint.egg-info
-*.orig
 
+*.orig
 *.codekit
 
-venv
-venv2
-venv3
-venv26
-venv27
-venv33
-venv34
-venv35
-venv36
-venv37
+*.egg-info
+.eggs
+.mypy_cache
+.pytest_cache
+.tox
+
+venv*
+testconf*
+
+node_modules
+tests/cypress/screenshots
+tests/cypress/videos

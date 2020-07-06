@@ -75,6 +75,13 @@ $(function() {
         self.addingFolder = ko.observable(false);
         self.activeRemovals = ko.observableArray([]);
 
+        self.movingFileOrFolder = ko.observable(false);
+        self.moveEntry = ko.observable({name:"",display:"",path:""}); // is there a better way to do this?
+        self.moveSource = ko.observable(undefined);
+        self.moveDestination = ko.observable(undefined);
+        self.moveError = ko.observable("");
+
+        self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
@@ -82,9 +89,36 @@ $(function() {
         });
 
         self.allItems = ko.observable(undefined);
-        self.listStyle = ko.observable("folders_files");
         self.currentPath = ko.observable("");
         self.uploadProgressText = ko.observable();
+
+        // list style incl. persistence
+        var listStyleStorageKey = "gcodeFiles.currentListStyle";
+        var defaultListStyle = "folders_files";
+        var saveListStyleToLocalStorage = function() {
+            if (initListStyleLocalStorage()) {
+                localStorage[listStyleStorageKey] = self.listStyle();
+            }
+        };
+        var loadListStyleFromLocalStorage = function() {
+            if (initListStyleLocalStorage()) {
+                self.listStyle(localStorage[listStyleStorageKey]);
+            }
+        };
+        var initListStyleLocalStorage = function() {
+            if (!Modernizr.localstorage)
+                return false;
+
+            if (localStorage[listStyleStorageKey] !== undefined)
+                return true;
+
+            localStorage[listStyleStorageKey] = defaultListStyle;
+            return true;
+        };
+
+        self.listStyle = ko.observable(defaultListStyle);
+        self.listStyle.subscribe(saveListStyleToLocalStorage);
+        loadListStyleFromLocalStorage();
 
         // initialize list helper
         var listHelperFilters = {
@@ -125,6 +159,19 @@ $(function() {
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
+                "last_printed": function(a, b) {
+                    // sorts descending
+                    var valA = (a.prints && a.prints.last && a.prints.last.date) ? a.prints.last.date : "";
+                    var valB = (b.prints && b.prints.last && b.prints.last.date) ? b.prints.last.date : "";
+
+                    if (valA > valB) {
+                        return -1;
+                    } else if (valA < valB) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                },
                 "size": function(a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
@@ -157,6 +204,13 @@ $(function() {
             return result;
         });
 
+        self.folderDestinations = ko.pureComputed(function() {
+            if (self.allItems()) {
+                return ko.utils.arrayFilter(self.allItems(), function(item) {
+                    return item.type === "folder";
+                });
+            }
+        });
         self.foldersOnlyList = ko.dependentObservable(function() {
             var filter = function(data) { return data["type"] && data["type"] === "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
@@ -309,6 +363,21 @@ $(function() {
 
             self.allItems(files);
 
+            var createFolderList = function(entries) {
+                var result = [];
+                _.each(entries, function(entry) {
+                    if (entry.type !== "folder") return;
+
+                    result.push("/" + entry.path);
+
+                    if (entry.children) {
+                        result = result.concat(createFolderList(entry.children));
+                    }
+                });
+                return result;
+            }
+            self.folderList(["/"].concat(createFolderList(files)));
+
             // Sanity check file list - see #2572
             var nonrecursive = false;
             _.each(files, function(file) {
@@ -320,7 +389,7 @@ $(function() {
                 log.error("At least one folder doesn't have a 'children' element defined. That means the file list request " +
                     "wasn't actually made with 'recursive=true' in the query.\n\n" +
                     "This can happen on wrong reverse proxy configs that " +
-                    "swallow up query parameters, see https://github.com/foosel/OctoPrint/issues/2572");
+                    "swallow up query parameters, see https://github.com/OctoPrint/OctoPrint/issues/2572");
             }
 
             if (!switchToPath) {
@@ -493,6 +562,39 @@ $(function() {
             }
         };
 
+        self.showMoveDialog = function(entry, event) {
+            if (!self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
+                                                   self.access.permissions.FILES_DELETE)) {
+                return;
+            }
+
+            if (!entry) {
+                return;
+            }
+
+            if (entry.origin !== "local") {
+                return;
+            }
+
+            if (!self.moveDialog) {
+                return;
+            }
+
+            var slashPos = entry.path.lastIndexOf("/");
+            var current;
+            if (slashPos >= 0) {
+                current = "/" + entry.path.substr(0, slashPos);
+            } else {
+                current = "/";
+            }
+
+            self.moveEntry(entry);
+            self.moveError("");
+            self.moveSource(current);
+            self.moveDestination(current);
+            self.moveDialog.modal("show");
+        };
+
         self.removeFile = function(file, event) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
 
@@ -530,6 +632,24 @@ $(function() {
         self.refreshSdFiles = function() {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.refreshSd();
+        };
+
+        self.moveFileOrFolder = function(source, destination) {
+            self.movingFileOrFolder(true);
+            return OctoPrint.files.move("local", source, destination)
+                .done(function() {
+                    self.requestData()
+                        .done(function() {
+                            self.moveDialog.modal("hide");
+                        })
+                        .always(function() {
+                            self.movingFileOrFolder(false);
+                        });
+                })
+                .fail(function() {
+                    self.moveError(gettext("Unable to move file or folder") + " " + self.moveEntry().display + " " + gettext("to") + " " + self.moveDestination());
+                    self.movingFileOrFolder(false);
+                });
         };
 
         self._removeEntry = function(entry, event) {
@@ -639,6 +759,11 @@ $(function() {
             return self.loginState.hasPermission(self.access.permissions.FILES_DELETE) && !busy;
         };
 
+        self.enableMove = function(data) {
+            return self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
+                                                     self.access.permissions.FILES_DELETE)
+                && (data.origin === "local"); // && some way to figure out if there are subfolders;
+        };
         self.enableSelect = function(data) {
             return self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data);
         };
@@ -648,8 +773,7 @@ $(function() {
         };
 
         self.enableSelectAndPrint = function(data, printAfterSelect) {
-            var isLoadAndPrintActionPossible = self.isLoadAndPrintActionPossible();
-            return isLoadAndPrintActionPossible && !self.listHelper.isSelected(data);
+            return self.isLoadAndPrintActionPossible();
         };
 
 
@@ -889,6 +1013,7 @@ $(function() {
 
             self.listElement = $("#files").find(".scroll-wrapper");
 
+            self.moveDialog = $("#move_file_or_folder_dialog");
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {
                 $("input", self.addFolderDialog).focus();
@@ -1098,12 +1223,10 @@ $(function() {
             if (enable) {
                 $(document).bind("dragenter", self._handleDragEnter);
                 $(document).bind("dragleave", self._handleDragLeave);
-                $(document).bind("dragover", self._handleDragOver);
                 log.debug("Enabled drag-n-drop");
             } else {
                 $(document).unbind("dragenter", self._handleDragEnter);
                 $(document).unbind("dragleave", self._handleDragLeave);
-                $(document).unbind("dragover", self._handleDragOver);
                 log.debug("Disabled drag-n-drop");
             }
         };
@@ -1194,33 +1317,6 @@ $(function() {
             self._forceEndDragNDrop();
         };
 
-        self._handleDragOver = function(e) {
-            // Workaround for Firefox
-            //
-            // Due to a browser bug (https://bugzilla.mozilla.org/show_bug.cgi?id=656164),
-            // if you drag a file out of the window no drag leave event will be fired. So on Firefox we check if
-            // our last dragover event was within a timeout. If not, we assume that's because the mouse
-            // cursor left the browser window and force a drag stop.
-            //
-            // Since Firefox keeps on triggering dragover events even if the mouse is not moved while over the
-            // browser window, this should work without side effects (e.g. the overlay should stay even if the user
-            // keeps the mouse perfectly still).
-            //
-            // See #2166
-            if (!OctoPrint.coreui.browser.firefox) return;
-            if (e.target !== self._dragNDropTarget) return;
-
-            if (self._dragNDropFFTimeout !== undefined) {
-                window.clearTimeout(self._dragNDropFFTimeout);
-                self._dragNDropFFTimeout = undefined;
-            }
-
-            self._dragNDropFFTimeout = window.setTimeout(function() {
-                self._forceEndDragNDrop();
-                self._dragNDropFFTimeout = undefined;
-            }, self._dragNDropFFTimeoutDelay);
-        };
-
         self._handleDragEnter = function (e) {
             self.dropOverlay.addClass('in');
 
@@ -1265,6 +1361,6 @@ $(function() {
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
         dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "accessViewModel"],
-        elements: ["#files_wrapper", "#add_folder_dialog"]
+        elements: ["#files_wrapper", "#add_folder_dialog", "#move_file_or_folder_dialog"]
     });
 });

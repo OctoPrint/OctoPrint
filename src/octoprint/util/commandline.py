@@ -16,6 +16,8 @@ from .platform import get_os
 
 from past.builtins import unicode
 
+from octoprint.util.platform import CLOSE_FDS
+
 try:
 	import queue
 except ImportError:  # pragma: no cover
@@ -186,7 +188,8 @@ class CommandlineCaller(object):
 		except KeyError:
 			pass
 
-		kwargs.update(dict(async_=True,
+		kwargs.update(dict(close_fds=CLOSE_FDS,
+		                   async_=True,
 		                   stdout=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
 		                   stderr=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size)))
 

@@ -1,10 +1,11 @@
 #  OctoPrint
 
 
-![GitHub release](https://img.shields.io/github/release/foosel/OctoPrint.svg?colorB=brightgreen)
-[![Travis build status](https://img.shields.io/travis/foosel/OctoPrint.svg)](https://travis-ci.org/foosel/OctoPrint)
-[![Discourse topics](https://img.shields.io/discourse/https/community.octoprint.org/users.svg)](https://community.octoprint.org)
-[![IRC](https://img.shields.io/badge/chat-on%20irc-brightgreen.svg)](https://chat.octoprint.org)
+![GitHub release](https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white)
+![PyPI](https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white)
+![Build status](https://img.shields.io/github/workflow/status/OctoPrint/OctoPrint/Build)
+[![Community Forum](https://img.shields.io/discourse/users?logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org)](https://community.octoprint.org)
+[![Discord](https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white)](https://discord.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
 
 
@@ -13,9 +14,9 @@ and released under the [GNU Affero General Public License V3](http://www.gnu.org
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
-The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme).
+The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme). It also serves as central knowledge base.
 
-The official IRC channel is [#octoprint on freenode](https://chat.octoprint.org). Its logs can be found [here](https://freenode.logbot.info/octoprint).
+An invite to the Discord server can be found at [discord.octoprint.org](https://discord.octoprint.org).
 
 The FAQ can be accessed by following [faq.octoprint.org](https://faq.octoprint.org/?utm_source=github&utm_medium=readme).
 
@@ -30,17 +31,17 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
-want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
-might be of more interest for you. You might also want to subscribe to join
+want to find out how to use it, [the documentation](http://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
 ## Contributing
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
-[official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), debugging help
-in the [bug tracker](https://github.com/foosel/OctoPrint/issues), support of other users on
-[the community forum at community.octoprint.org](https://community.octoprint.org)
+[official documentation](http://docs.octoprint.org/), debugging help
+in the [bug tracker](https://github.com/OctoPrint/OctoPrint/issues), support of other users on
+[the community forum at community.octoprint.org](https://community.octoprint.org) or
+[the official discord at discord.octoprint.org](https://discord.octoprint.org)
 and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
 If you think something is bad about OctoPrint or its documentation the way it is, please help
@@ -48,12 +49,12 @@ in any way to make it better instead of just complaining about it -- this is an 
 after all :)
 
 For information about how to go about submitting bug reports or pull requests, please see the project's
-[Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
+[Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
 Installation instructions for installing from source for different operating
-systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+systems can be found [on the forum](https://community.octoprint.org/tags/c/support/guides/15/setup).
 
 If you want to run OctoPrint on a Raspberry Pi, you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
@@ -61,12 +62,18 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 The generic steps that should basically be done regardless of operating system
 and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
-you already have Python 2.7, 3.6 or 3.7, pip and virtualenv set up on your system:
+you already have Python 2.7, 3.6 or 3.7, pip and virtualenv and their dependencies set up on your system:
 
-1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
+1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python
+   to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python`
+   parameter, e.g. `virtualenv --python=python3 venv`.
+2. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install OctoPrint`
+
+Or alternatively, for an install from source:
+
+1. Checkout OctoPrint: `git clone https://github.com/OctoPrint/OctoPrint.git`
 2. Change into the OctoPrint folder: `cd OctoPrint`
-3. Create a user-owned virtual environment therein: `virtualenv venv` if your system default python version is
-   python 2.7, otherwise you need to specify the version explicitly, e.g. `virtualenv --python=python2.7 venv`.
+3. Create a user-owned virtual environment therein: `virtualenv venv`
 4. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install .`
 
 You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
@@ -78,11 +85,7 @@ access control as necessary.
 ## Dependencies
 
 OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
-OctoPrint via `pip`:
-
-    pip install .
-
-You should do this every time after pulling from the repository, since the dependencies may have changed.
+OctoPrint via `pip`.
 
 OctoPrint currently supports Python 2.7, 3.6 and 3.7.
 
@@ -90,7 +93,7 @@ OctoPrint currently supports Python 2.7, 3.6 and 3.7.
 
 Running the pip install via
 
-    pip install .
+    pip install OctoPrint
 
 installs the `octoprint` script in your Python installation's scripts folder
 (which, depending on whether you installed OctoPrint globally or into a virtual env, will be in your `PATH` or not). The

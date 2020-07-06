@@ -144,7 +144,7 @@
 
    Sets the current flowrate multiplier.
 
-   ``factor`` is expected to be a integer value between 75 and 125 representing the new flowrate percentage.
+   ``factor`` is expected to be a integer value >0 representing the new flowrate percentage.
 
    See the ``flowrate`` command in :ref:`Issue a tool command <sec-api-printer-toolcommand>` for more details.
 
@@ -325,7 +325,7 @@
 
    Sets the feedrate multiplier to use.
 
-   ``factor`` is expected to be a integer value between 0 and 200 representing the new feedrate percentage.
+   ``factor`` is expected to be a integer value >0 representing the new feedrate percentage.
 
    See the ``feedrate`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
 

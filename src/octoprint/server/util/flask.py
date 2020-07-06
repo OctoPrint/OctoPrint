@@ -205,7 +205,7 @@ def fix_webassets_cache():
 
 		unpickled = webassets.cache.safe_unpickle(result)
 		if unpickled is None:
-			warnings.warning('Ignoring corrupted cache file %s' % filename)
+			warnings.warn('Ignoring corrupted cache file %s' % filename)
 		return unpickled
 
 	cache.FilesystemCache.set = fixed_set
@@ -504,6 +504,19 @@ class OctoPrintFlaskResponse(flask.Response):
 	def set_cookie(self, key, *args, **kwargs):
 		# restrict cookie path to script root
 		kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
+
+		# set same-site header
+		samesite = settings().get(["server", "cookies", "samesite"])
+		if samesite is not None:
+			samesite = samesite.lower()
+		if samesite == "none":
+			samesite = None
+		if samesite not in (None, "strict", "lax"):
+			samesite = None
+		kwargs["samesite"] = samesite
+
+		# set secure if necessary
+		kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
 
 		# add request specific cookie suffix to name
 		flask.Response.set_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
@@ -878,7 +891,7 @@ class PreemptiveCache(object):
 			cache_data = dict()
 
 		if not self._validate_data(cache_data):
-			self._logger.warn("Preemptive cache data was invalid, ignoring it")
+			self._logger.warning("Preemptive cache data was invalid, ignoring it")
 			cache_data = dict()
 
 		return cache_data
@@ -1385,7 +1398,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 			return False
 
 		cache_key = ('octo', 'settings')
-		current_hash = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
+		current_hash = settings().effective_hash
 		cached_hash = ctx.cache.get(cache_key)
 		# This may seem counter-intuitive, but if no cache entry is found
 		# then we actually return "no update needed". This is because
@@ -1403,11 +1416,10 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 			return
 
 		cache_key = ('octo', 'settings')
-		cache_value = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
-		ctx.cache.set(cache_key, cache_value)
+		ctx.cache.set(cache_key, settings().effective_hash)
 
 ##~~ core assets collector
-def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+def collect_core_assets(preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
 		clientjs=[],
@@ -1446,13 +1458,6 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/wizard.js',
 		'js/app/viewmodels/about.js'
 	]
-	if enable_gcodeviewer:
-		assets["js"] += [
-			'js/app/viewmodels/gcode.js',
-			'gcodeviewer/js/ui.js',
-			'gcodeviewer/js/gCodeReader.js',
-			'gcodeviewer/js/renderer.js'
-		]
 
 	assets["clientjs"] = [
 		"js/app/client/base.js",
@@ -1484,7 +1489,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 
 ##~~ plugin assets collector
 
-def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+def collect_plugin_assets(preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
