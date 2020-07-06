@@ -5025,7 +5025,7 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 		timeout = serial.Timeout(self._timeout)
 
 		while not timeout.expired():
-			self._buffered += self.read(min(self.in_waiting, 1))
+			self._buffered += self.read(self.in_waiting)
 
 			# check for terminator, if it's there we have found our line
 			termpos = self._buffered.find(terminator)
@@ -5034,6 +5034,16 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 				line = self._buffered[:termpos + termlen]
 				del self._buffered[:termpos + termlen]
 				return bytes(line)
+
+			if timeout.expired():
+				break
+
+			c = self.read(1)
+			if not c:
+				# EOF
+				break
+
+			self._buffered += c
 
 		return b""
 
