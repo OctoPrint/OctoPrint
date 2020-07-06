@@ -32,7 +32,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["2.7", "3.7", "3.8"]
+        python: ["3.7", "3.8"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -68,7 +68,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["2.7", "3.7", "3.8"]
+        python: ["3.7", "3.8"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
