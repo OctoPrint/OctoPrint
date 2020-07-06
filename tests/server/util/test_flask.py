@@ -11,7 +11,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import unittest
-import mock
+import unittest.mock as mock
 from ddt import ddt, data, unpack
 
 from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse

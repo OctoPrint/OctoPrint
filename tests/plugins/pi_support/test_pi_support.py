@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 import ddt
-import mock
+import unittest.mock as mock
 
 from octoprint.util.platform import CLOSE_FDS
 

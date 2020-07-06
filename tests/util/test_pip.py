@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import unittest
 import ddt
-import mock
+import unittest.mock as mock
 
 import octoprint.util.pip
 

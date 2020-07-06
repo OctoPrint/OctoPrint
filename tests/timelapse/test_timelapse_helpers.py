@@ -7,10 +7,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 import unittest
 import ddt
 
-try:
-	import unittest.mock as mock
-except ImportError:
-	import mock
+import unittest.mock as mock
 
 import os
 import time

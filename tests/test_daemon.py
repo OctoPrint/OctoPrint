@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import _fixups
 
 import unittest
-import mock
+import unittest.mock as mock
 
 import octoprint.daemon
 
