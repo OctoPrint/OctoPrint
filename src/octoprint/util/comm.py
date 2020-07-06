@@ -691,9 +691,9 @@ class MachineCom(object):
 		self._logger.info(text)
 		self._callback.on_comm_state_change(newState)
 
-	def _dual_log(self, message, level=logging.ERROR):
+	def _dual_log(self, message, level=logging.ERROR, prefix=""):
 		self._logger.log(level, message)
-		self._log(message)
+		self._log(prefix + message)
 
 	def _log(self, message):
 		message = to_unicode(message)
@@ -2895,6 +2895,8 @@ class MachineCom(object):
 				self.close(is_error=True)
 			return None
 
+		null_pos = ret.find(b'\x00')
+
 		try:
 			ret = ret.decode('utf-8')
 		except UnicodeDecodeError:
@@ -2906,6 +2908,14 @@ class MachineCom(object):
 			except ValueError as e:
 				self._log("WARN: While reading last line: {}".format(e))
 				self._log("Recv: {!r}".format(ret))
+
+			if null_pos >= 0:
+				self._logger.warning("Received line:")
+				self._logger.warning("| {}".format(ret.replace('\0', '\\x00').rstrip()))
+				self._dual_log("The received line contains at least one null byte character at position {}, "
+				               "this hints at some data corruption going on".format(null_pos),
+				               level=logging.WARNING,
+				               prefix="WARN")
 
 		for name, hook in self._received_message_hooks.items():
 			try:
@@ -3033,7 +3043,7 @@ class MachineCom(object):
 					# printer keeps requesting the same line again and again, something is severely broken here
 					error_text = "Printer keeps requesting line {} again and again, communication stuck".format(lineToResend)
 					self._log(error_text)
-					self._logger.warn(error_text)
+					self._logger.warning(error_text)
 					self._trigger_error(error_text, "resend_loop")
 			else:
 				self._currentConsecutiveResendNumber = lineToResend
@@ -3917,9 +3927,10 @@ class MachineCom(object):
 				tags = set()
 
 			if gcode in self._emergency_commands and gcode != "M112":
-				msg = "Force-sending {} to the printer".format(gcode)
-				self._logger.info(msg)
-				return self._emergency_force_send(cmd, msg, gcode=gcode, *args, **kwargs)
+				return self._emergency_force_send(cmd,
+				                                  "Force-sending {} to the printer".format(gcode),
+				                                  gcode=gcode,
+				                                  *args, **kwargs)
 
 			if self.isPrinting() and gcode in self._pausing_commands and not "trigger:cancel" in tags and not "trigger:pause" in tags:
 				self._logger.info("Pausing print job due to command {}".format(gcode))
@@ -4520,7 +4531,7 @@ def convert_feedback_controls(configured_controls):
 					result[key]["matcher"] = re.compile(control["regex"])
 					result[key]["pattern"] = control["regex"]
 				except Exception as exc:
-					_logger.warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+					_logger.warning("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
 
 			result[key]["templates"][control["template_key"]] = control["template"]
 
@@ -5009,36 +5020,19 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 
 	def readline(self, terminator=serial.LF):
 		termlen = len(terminator)
-		data = self._buffered
 		timeout = serial.Timeout(self._timeout)
 
-		while True:
-			# make sure we always read everything that is waiting
-			data += bytearray(self.read(self.in_waiting))
+		while not timeout.expired():
+			self._buffered += self.read(min(self.in_waiting, 1))
 
 			# check for terminator, if it's there we have found our line
-			termpos = data.find(terminator)
+			termpos = self._buffered.find(terminator)
 			if termpos >= 0:
-				# line: everything up to and incl. the terminator
-				line = data[:termpos + termlen]
-				# buffered: everything after the terminator
-				self._buffered = data[termpos + termlen:]
+				# line: everything up to and incl. the terminator, buffered: rest
+				line = self._buffered[:termpos + termlen]
+				del self._buffered[:termpos + termlen]
 				return bytes(line)
 
-			# check if timeout expired
-			if timeout.expired():
-				break
-
-			# if we arrive here we so far couldn't read a full line, wait for more data
-			c = self.read(1)
-			if not c:
-				# EOF
-				break
-
-			# add to data and loop
-			data += bytearray(c)
-
-		self._buffered = data
 		return b""
 
 

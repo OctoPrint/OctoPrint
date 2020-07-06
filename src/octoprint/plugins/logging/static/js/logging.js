@@ -3,11 +3,16 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
+
         self.availableLoggers = ko.observableArray();
         self.availableLoggersName = ko.observable();
         self.availableLoggersLevel = ko.observable();
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
+        self.serialLogEnabled = ko.observable();
+        self.freeSpace = ko.observable(undefined);
+        self.totalSpace = ko.observable(undefined);
 
         self.markedForDeletion = ko.observableArray([]);
 
@@ -54,6 +59,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             OctoPrint.plugins.logging.get()
                 .done(self.fromResponse);
         };
@@ -61,6 +69,7 @@ $(function() {
         self.fromResponse = function(response) {
             self.fromLogsResponse(response.logs);
             self.fromSetupResponse(response.setup);
+            self.fromSerialLogResponse(response.serial_log);
         };
 
         self.fromLogsResponse = function(response) {
@@ -71,6 +80,9 @@ $(function() {
                 return;
 
             self.listHelper.updateItems(files);
+
+            self.freeSpace(response.free);
+            self.totalSpace(response.total);
         };
 
         self.fromSetupResponse = function(response) {
@@ -94,11 +106,44 @@ $(function() {
             self.availableLoggers(availableLoggers);
         };
 
+        self.fromSerialLogResponse = function(response) {
+            if (!response) return;
+
+            self.serialLogEnabled(response.enabled);
+        };
+
+        self.popoverContent = function() {
+            var free = self.freeSpace();
+            var total = self.totalSpace();
+
+            var content = "<p>"
+                + gettext("You currently have <code>serial.log</code> enabled. Please remember to turn it off " +
+                    "again once your are done debugging whatever issue prompted you to turn it on.")
+                + "</p><p>"
+                + gettext("It can negatively impact print performance and also take up a lot of storage space " +
+                    "depending on how long you stay connected to your printer and thus should only be used for " +
+                    "debugging.")
+                + "</p>";
+
+            if (free !== undefined && total !== undefined) {
+                content += "<p class='muted'><small><strong>" + gettext("Log storage:") + "</strong> "
+                    + formatSize(free) + " / "
+                    + formatSize(total)
+                    + "</small></p>";
+            }
+
+            return content;
+        };
+
         self.configuredLoggersHasChanged = function () {
             self.configuredLoggersChanged = true;
         };
 
         self.addLogger = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
+
             var component = self.availableLoggersName();
             var level = self.availableLoggersLevel();
 
@@ -109,6 +154,10 @@ $(function() {
         };
 
         self.removeLogger = function(logger) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
+
             self.configuredLoggers.remove(logger);
             self.availableLoggers.push(logger.component);
 
@@ -116,6 +165,9 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var perform = function() {
                 OctoPrint.plugins.logging.deleteLog(filename)
                     .done(self.requestData);
@@ -134,10 +186,16 @@ $(function() {
         };
 
         self.clearMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             self.markedForDeletion.removeAll();
         };
 
         self.removeMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var perform = function() {
                 self._bulkRemove(self.markedForDeletion(), "files")
                     .done(function() {
@@ -149,11 +207,17 @@ $(function() {
                                    perform);
         };
 
-        self.onSettingsShown = function() {
+        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             self.requestData();
         };
 
         self.onSettingsBeforeSave = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             if ( self.configuredLoggersChanged ) {
                 console.log("ConfiguredLoggers has changed. Saving!");
                 var levels = {};
@@ -167,6 +231,9 @@ $(function() {
         };
 
         self._bulkRemove = function(files) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_LOGGING_MANAGE)) {
+                return;
+            }
             var title = gettext("Deleting log files");
             var message = _.sprintf(gettext("Deleting %(count)d log files..."), {count: files.length});
             var handler = function(filename) {
@@ -211,7 +278,7 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: LoggingViewModel,
         additionalNames: ["logsViewModel"],
-        dependencies: ["loginStateViewModel"],
-        elements: ["#settings_plugin_logging"]
+        dependencies: ["loginStateViewModel", "accessViewModel"],
+        elements: ["#settings_plugin_logging", "#navbar_plugin_logging"]
     });
 });

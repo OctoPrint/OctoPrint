@@ -1029,9 +1029,13 @@ class Server(object):
 		def before_request():
 			g.locale = self._get_locale()
 			if self._debug and "perfprofile" in request.args:
-				from pyinstrument import Profiler
-				g.perfprofiler = Profiler()
-				g.perfprofiler.start()
+				try:
+					from pyinstrument import Profiler
+					g.perfprofiler = Profiler()
+					g.perfprofiler.start()
+				except ImportError:
+					# profiler dependency not installed, ignore
+					pass
 
 
 		@app.after_request
@@ -1488,14 +1492,10 @@ class Server(object):
 		                                                    dict(updater=assets.updater))
 		assets.updater = UpdaterType
 
-		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
 
-		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
-		dynamic_plugin_assets = util.flask.collect_plugin_assets(
-			enable_gcodeviewer=enable_gcodeviewer,
-			preferred_stylesheet=preferred_stylesheet
-		)
+		dynamic_core_assets = util.flask.collect_core_assets()
+		dynamic_plugin_assets = util.flask.collect_plugin_assets(preferred_stylesheet=preferred_stylesheet)
 
 		js_libs = [
 			"js/lib/jquery/jquery.min.js",
@@ -1983,7 +1983,7 @@ class Server(object):
 						continue
 
 					if not key_whitelist.match(p["key"]):
-						self._logger.warn("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
+						self._logger.warning("Got permission with invalid key from plugin {}: {}".format(name, p["key"]))
 						continue
 
 					if not process_regular_permission(plugin_info, p):

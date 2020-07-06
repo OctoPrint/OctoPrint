@@ -3,6 +3,7 @@
     <head>
         <title data-bind="text: title">OctoPrint</title>
 
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
         <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
@@ -151,19 +152,7 @@
                     </div>
                     {% endif %}
                 </div>
-                <div class="footer">
-                    <ul id="footer_version" class="pull-left muted">
-                        <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version|e }}</span></small></li>
-                        <li><small>{{ _('Python') }} <span class="python_version">{{ python_version|e }}</span></small></li>
-                    </ul>
-                    <ul id="footer_links" class="pull-right">
-                        <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://community.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-users"></i> {{ _('Forum') }}</a></li>
-                        <li><a href="https://faq.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
-                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Docs') }}</a></li>
-                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
-                    </ul>
-                </div>
+                {%  include 'footer.jinja2' %}
             </div>
 
             <!-- Dialogs -->

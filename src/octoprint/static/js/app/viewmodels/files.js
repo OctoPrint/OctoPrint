@@ -75,6 +75,13 @@ $(function() {
         self.addingFolder = ko.observable(false);
         self.activeRemovals = ko.observableArray([]);
 
+        self.movingFileOrFolder = ko.observable(false);
+        self.moveEntry = ko.observable({name:"",display:"",path:""}); // is there a better way to do this?
+        self.moveSource = ko.observable(undefined);
+        self.moveDestination = ko.observable(undefined);
+        self.moveError = ko.observable("");
+
+        self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
@@ -152,6 +159,19 @@ $(function() {
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
+                "last_printed": function(a, b) {
+                    // sorts descending
+                    var valA = (a.prints && a.prints.last && a.prints.last.date) ? a.prints.last.date : "";
+                    var valB = (b.prints && b.prints.last && b.prints.last.date) ? b.prints.last.date : "";
+
+                    if (valA > valB) {
+                        return -1;
+                    } else if (valA < valB) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                },
                 "size": function(a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
@@ -184,6 +204,13 @@ $(function() {
             return result;
         });
 
+        self.folderDestinations = ko.pureComputed(function() {
+            if (self.allItems()) {
+                return ko.utils.arrayFilter(self.allItems(), function(item) {
+                    return item.type === "folder";
+                });
+            }
+        });
         self.foldersOnlyList = ko.dependentObservable(function() {
             var filter = function(data) { return data["type"] && data["type"] === "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
@@ -335,6 +362,21 @@ $(function() {
             var files = response.files;
 
             self.allItems(files);
+
+            var createFolderList = function(entries) {
+                var result = [];
+                _.each(entries, function(entry) {
+                    if (entry.type !== "folder") return;
+
+                    result.push("/" + entry.path);
+
+                    if (entry.children) {
+                        result = result.concat(createFolderList(entry.children));
+                    }
+                });
+                return result;
+            }
+            self.folderList(["/"].concat(createFolderList(files)));
 
             // Sanity check file list - see #2572
             var nonrecursive = false;
@@ -520,6 +562,39 @@ $(function() {
             }
         };
 
+        self.showMoveDialog = function(entry, event) {
+            if (!self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
+                                                   self.access.permissions.FILES_DELETE)) {
+                return;
+            }
+
+            if (!entry) {
+                return;
+            }
+
+            if (entry.origin !== "local") {
+                return;
+            }
+
+            if (!self.moveDialog) {
+                return;
+            }
+
+            var slashPos = entry.path.lastIndexOf("/");
+            var current;
+            if (slashPos >= 0) {
+                current = "/" + entry.path.substr(0, slashPos);
+            } else {
+                current = "/";
+            }
+
+            self.moveEntry(entry);
+            self.moveError("");
+            self.moveSource(current);
+            self.moveDestination(current);
+            self.moveDialog.modal("show");
+        };
+
         self.removeFile = function(file, event) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
 
@@ -557,6 +632,24 @@ $(function() {
         self.refreshSdFiles = function() {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.refreshSd();
+        };
+
+        self.moveFileOrFolder = function(source, destination) {
+            self.movingFileOrFolder(true);
+            return OctoPrint.files.move("local", source, destination)
+                .done(function() {
+                    self.requestData()
+                        .done(function() {
+                            self.moveDialog.modal("hide");
+                        })
+                        .always(function() {
+                            self.movingFileOrFolder(false);
+                        });
+                })
+                .fail(function() {
+                    self.moveError(gettext("Unable to move file or folder") + " " + self.moveEntry().display + " " + gettext("to") + " " + self.moveDestination());
+                    self.movingFileOrFolder(false);
+                });
         };
 
         self._removeEntry = function(entry, event) {
@@ -666,6 +759,11 @@ $(function() {
             return self.loginState.hasPermission(self.access.permissions.FILES_DELETE) && !busy;
         };
 
+        self.enableMove = function(data) {
+            return self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
+                                                     self.access.permissions.FILES_DELETE)
+                && (data.origin === "local"); // && some way to figure out if there are subfolders;
+        };
         self.enableSelect = function(data) {
             return self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data);
         };
@@ -915,6 +1013,7 @@ $(function() {
 
             self.listElement = $("#files").find(".scroll-wrapper");
 
+            self.moveDialog = $("#move_file_or_folder_dialog");
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {
                 $("input", self.addFolderDialog).focus();
@@ -1262,6 +1361,6 @@ $(function() {
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
         dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "accessViewModel"],
-        elements: ["#files_wrapper", "#add_folder_dialog"]
+        elements: ["#files_wrapper", "#add_folder_dialog", "#move_file_or_folder_dialog"]
     });
 });

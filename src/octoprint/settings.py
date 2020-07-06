@@ -258,11 +258,6 @@ default_settings = {
 		},
 		"cleanTmpAfterDays": 7
 	},
-	"gcodeViewer": {
-		"enabled": True,
-		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
-		"sizeThreshold": 20 * 1024 * 1024, # 20MB
-	},
 	"gcodeAnalysis": {
 		"maxExtruders": 10,
 		"throttle_normalprio": 0.01,
@@ -323,12 +318,12 @@ default_settings = {
 		"closeModalsWithClick": True,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_pi_support", "login"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_logging", "plugin_pi_support", "login"],
 				"sidebar": ["plugin_firmware_check", "connection", "state", "files"],
-				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
+				"tab": ["temperature", "control", "plugin_gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api", "plugin_appkeys",
+					"section_features", "features", "webcam", "accesscontrol", "plugin_gcodeviewer", "api", "plugin_appkeys",
 					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager",
 					"plugin_softwareupdate", "plugin_announcements", "plugin_backup", "plugin_tracking", "plugin_errortracking",
 					"plugin_pi_support"
@@ -962,7 +957,8 @@ class Settings(object):
 			self._migrate_serial_features,
 			self._migrate_resend_without_ok,
 			self._migrate_string_temperature_profile_values,
-			self._migrate_blocked_commands
+			self._migrate_blocked_commands,
+			self._migrate_gcodeviewer_enabled
 		)
 
 		for migrate in migrators:
@@ -1333,6 +1329,17 @@ class Settings(object):
 			else:
 				config["serial"]["blockedCommands"] = sorted([v for v in blockedCommands if v not in ("M0", "M1")])
 			del config["serial"]["blockM0M1"]
+			return True
+		return False
+
+	def _migrate_gcodeviewer_enabled(self, config):
+		if "gcodeViewer" in config and "enabled" in config["gcodeViewer"] and not config["gcodeViewer"]["enabled"]:
+			if not "plugins" in config:
+				config["plugins"] = dict()
+			if not "_disabled" in config["plugins"]:
+				config["plugins"]["_disabled"] = []
+			config["plugins"]["_disabled"].append("gcodeviewer")
+			del config["gcodeViewer"]["enabled"]
 			return True
 		return False
 

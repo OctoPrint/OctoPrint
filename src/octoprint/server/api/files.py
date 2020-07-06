@@ -425,9 +425,14 @@ def uploadGcodeFile(target):
 		if isinstance(filename, tuple):
 			filename, sdFilename = filename
 
-		eventManager.fire(Events.UPLOAD, {"name": futureFilename,
-		                                  "path": filename,
-		                                  "target": target})
+		payload = dict(name=futureFilename,
+		               path=filename,
+		               target=target,
+		               select=selectAfterUpload,
+		               print=printAfterSelect)
+		if userdata is not None:
+			payload["userdata"] = userdata
+		eventManager.fire(Events.UPLOAD, payload)
 
 		files = {}
 		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)
@@ -739,23 +744,24 @@ def gcodeFileCommand(filename, target):
 					fileManager.copy_folder(target, filename, destination)
 
 			elif command == "move":
-				if _isBusy(target, filename):
-					return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
+				with Permissions.FILES_DELETE.require(403):
+					if _isBusy(target, filename):
+						return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
 
-				# destination already there AND not ourselves (= display rename)? error...
-				if (_verifyFileExists(target, destination) or _verifyFolderExists(target, destination)) \
-						and sanitized_destination != filename:
-					return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+					# destination already there AND not ourselves (= display rename)? error...
+					if (_verifyFileExists(target, destination) or _verifyFolderExists(target, destination)) \
+							and sanitized_destination != filename:
+						return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
 
-				# deselect the file if it's currently selected
-				currentOrigin, currentFilename = _getCurrentFile()
-				if currentFilename is not None and filename == currentFilename:
-					printer.unselect_file()
+					# deselect the file if it's currently selected
+					currentOrigin, currentFilename = _getCurrentFile()
+					if currentFilename is not None and filename == currentFilename:
+						printer.unselect_file()
 
-				if is_file:
-					fileManager.move_file(target, filename, destination)
-				else:
-					fileManager.move_folder(target, filename, destination)
+					if is_file:
+						fileManager.move_file(target, filename, destination)
+					else:
+						fileManager.move_folder(target, filename, destination)
 
 			location = url_for(".readGcodeFile", target=target, filename=destination, _external=True)
 			result = {

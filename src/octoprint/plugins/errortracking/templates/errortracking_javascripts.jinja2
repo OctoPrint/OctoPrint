@@ -8,18 +8,14 @@
         Sentry.init({
             dsn: errortracking_url_coreui,
             release: VERSION,
-            whitelistUrls: [
-                // only include static assets
-                "/static/"
-            ],
-            blacklistUrls: [
-                // exclude third party plugins
-                "/static/webassets/packed_plugins.js"
+            allowUrls: [
+                // only include errors raise in HTML, packed core & client
+                {% assets "js_client" %}"{{ ASSET_URL }}",{% endassets %}
+                {% assets "js_core" %}"{{ ASSET_URL }}",{% endassets %}
+                {% if g.locale %}"{{ url_for('localeJs', locale=g.locale, domain='messages') }}"{% endif %}
             ]
         });
-        Sentry.configureScope(function (scope) {
-            scope.setUser({"id": errortracking_unique_id});
-        });
+        Sentry.setUser({"id": errortracking_unique_id});
         ERRORTRACKING_ENABLED = true;
         log.info("Initialized error tracking");
     };

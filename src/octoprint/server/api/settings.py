@@ -41,7 +41,7 @@ def _etag(lm=None):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
 	if current_user is not None and not current_user.is_anonymous:
-		roles = sorted(current_user.permissions)
+		roles = sorted(current_user.permissions, key=lambda x: x.key)
 	else:
 		roles = []
 
@@ -124,9 +124,6 @@ def getSettings():
 			"rotate90": s.getBoolean(["webcam", "rotate90"])
 		},
 		"feature": {
-			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
-			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
-			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
@@ -426,9 +423,6 @@ def _saveSettings(data):
 		if "rotate90" in data["webcam"]: s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
 
 	if "feature" in data:
-		if "gcodeViewer" in data["feature"]: s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
-		if "sizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
-		if "mobileSizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"]: s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "sdSupport" in data["feature"]: s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 		if "keyboardControl" in data["feature"]: s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])

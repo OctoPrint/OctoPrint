@@ -182,9 +182,9 @@ def index():
 	request_refresh = "_refresh" in request.values
 	printing = printer.is_printing()
 	if client_refresh and printing:
-		logging.getLogger(__name__).warn("Client requested cache refresh via cache-control headers but we are printing. "
-		                                 "Not invalidating caches due to resource limitation. Append ?_refresh=true to "
-		                                 "the URL if you absolutely require a refresh now")
+		logging.getLogger(__name__).warning("Client requested cache refresh via cache-control headers but we are printing. "
+		                                    "Not invalidating caches due to resource limitation. Append ?_refresh=true to "
+		                                    "the URL if you absolutely require a refresh now")
 	client_refresh = client_refresh and not printing
 	force_refresh = client_refresh \
 	                or request_refresh \
@@ -196,22 +196,18 @@ def index():
 	now = datetime.datetime.utcnow()
 
 	enable_accesscontrol = userManager.enabled
-	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
 	enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
 	enable_sd_support = settings().get(["feature", "sdSupport"])
 	enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(settings().get(["webcam", "stream"]))
 	enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
-	gcode_mobile_threshold = settings().get(["gcodeViewer", "mobileSizeThreshold"])
-	gcode_threshold = settings().get(["gcodeViewer", "sizeThreshold"])
 	sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
 	def default_template_filter(template_type, template_key):
 		if template_type == "navbar":
 			return template_key != "login" or enable_accesscontrol
 		elif template_type == "tab":
-			return (template_key != "gcodeviewer" or enable_gcodeviewer) and \
-			       (template_key != "timelapse" or enable_timelapse)
+			return (template_key != "timelapse" or enable_timelapse)
 		elif template_type == "settings":
 			return template_key != "accesscontrol" or enable_accesscontrol
 		elif template_type == "usersettings":
@@ -220,14 +216,11 @@ def index():
 			return True
 
 	default_additional_etag = [enable_accesscontrol,
-	                           enable_gcodeviewer,
 	                           enable_timelapse,
 	                           enable_loading_animation,
 	                           enable_sd_support,
 	                           enable_webcam,
 	                           enable_temperature_graph,
-	                           gcode_mobile_threshold,
-	                           gcode_threshold,
 	                           sockjs_connect_timeout,
 	                           wizard_active(_templates.get(locale))] + sorted(["{}:{}".format(to_unicode(k, errors="replace"),
 	                                                                                           to_unicode(v, errors="replace"))
@@ -390,8 +383,6 @@ def index():
 			accessControlActive=accesscontrol_active,
 			enableLoadingAnimation=enable_loading_animation,
 			enableSdSupport=enable_sd_support,
-			gcodeMobileThreshold=gcode_mobile_threshold,
-			gcodeThreshold=gcode_threshold,
 			sockJsConnectTimeout=sockjs_connect_timeout * 1000,
 			wizard=wizard,
 			now=now,
@@ -609,7 +600,6 @@ def fetch_template_data(refresh=False):
 	templates["tab"]["entries"] = dict(
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL)() && visible()")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.WEBCAM, access.permissions.CONTROL)")),
-		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", styles=["display: none;"], data_bind="visible: loginState.hasAllPermissionsKo(access.permissions.GCODE_VIEWER, access.permissions.FILES_DOWNLOAD)")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.MONITOR_TERMINAL)")),
 		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_LIST)"))
 	)
@@ -629,7 +619,6 @@ def fetch_template_data(refresh=False):
 
 		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
 		webcam=(gettext("Webcam & Timelapse"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
-		gcodevisualizer=(gettext("GCODE Visualizer"), dict(template="dialogs/settings/gcodevisualizer.jinja2", _div="settings_gcodegcodevisualizer", custom_bindings=False)),
 		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
 
 		section_octoprint=(gettext("OctoPrint"), None),
@@ -924,7 +913,6 @@ def _filter_templates(templates, template_filter):
 
 
 @app.route("/robots.txt")
-@util.flask.cached(timeout=-1)
 def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
 
@@ -1075,6 +1063,8 @@ def _get_translations(locale, domain):
 
 	po_files = _get_all_translationfiles(locale, domain)
 	for po_file in po_files:
+		if not os.path.exists(po_file):
+			continue
 		po_messages, plural_expr = messages_from_po(po_file, locale, domain)
 		if po_messages is not None:
 			messages = dict_merge(messages, po_messages)

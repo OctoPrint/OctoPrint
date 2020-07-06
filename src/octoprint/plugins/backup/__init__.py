@@ -252,14 +252,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				compatible = octoprint_compatible and os_compatible
 				if not compatible:
 					if not octoprint_compatible and not os_compatible:
-						self._logger.warn("Cannot install plugin {}, it is incompatible to this version "
-						                  "of OctoPrint and the underlying operating system".format(plugin["id"]))
+						self._logger.warning("Cannot install plugin {}, it is incompatible to this version "
+						                     "of OctoPrint and the underlying operating system".format(plugin["id"]))
 					elif not octoprint_compatible:
-						self._logger.warn("Cannot install plugin {}, it is incompatible to this version "
-						                  "of OctoPrint".format(plugin["id"]))
+						self._logger.warning("Cannot install plugin {}, it is incompatible to this version "
+						                     "of OctoPrint".format(plugin["id"]))
 					elif not os_compatible:
-						self._logger.warn("Cannot install plugin {}, it is incompatible to the underlying "
-						                  "operating system".format(plugin["id"]))
+						self._logger.warning("Cannot install plugin {}, it is incompatible to the underlying "
+						                     "operating system".format(plugin["id"]))
 					self._send_client_message("plugin_incompatible", dict(plugin=plugin["id"],
 					                                                      octoprint_compatible=octoprint_compatible,
 					                                                      os_compatible=os_compatible))
@@ -366,15 +366,21 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		@click.option("--exclude", multiple=True,
 		              help="Identifiers of data folders to exclude, e.g. 'uploads' to exclude uploads or "
 		                   "'timelapse' to exclude timelapses.")
-		def backup_command(exclude):
+		@click.option("--path", type=click.Path(), default=None,
+		              help="Specify full path to backup file to be created")
+		def backup_command(exclude, path):
 			"""
 			Creates a new backup.
 			"""
 
-			backup_file = build_backup_filename()
 			settings = octoprint.plugin.plugin_settings_for_settings_plugin("backup", self, settings=cli_group.settings)
 
-			datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+			if path is not None:
+				datafolder, backup_file = os.path.split(os.path.abspath(path))
+			else:
+				backup_file = build_backup_filename()
+				datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
+
 			if not os.path.isdir(datafolder):
 				os.makedirs(datafolder)
 
@@ -385,6 +391,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
 			click.echo("Done.")
+			click.echo("Backup located at {}".format(os.path.join(datafolder, backup_file)))
 
 		@click.command("restore")
 		@click.argument("path")

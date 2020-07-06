@@ -139,11 +139,6 @@ $(function() {
         self.webcam_flipV = ko.observable(undefined);
         self.webcam_rotate90 = ko.observable(undefined);
 
-        self.feature_gcodeViewer = ko.observable(undefined);
-        self.feature_sizeThreshold = ko.observable();
-        self.feature_mobileSizeThreshold = ko.observable();
-        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
-        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
@@ -283,9 +278,9 @@ $(function() {
         self.server_onlineCheckResolutionOk = ko.observable(false);
         self.server_onlineCheckResolutionBroken = ko.observable(false);
         self.server_onlineCheckResolutionReset = function() {
-            self.server_onlineResolutionCheckText("");
-            self.server_onlineResolutionCheckOk(false);
-            self.server_onlineResolutionCheckBroken(false);
+            self.server_onlineCheckResolutionText("");
+            self.server_onlineCheckResolutionOk(false);
+            self.server_onlineCheckResolutionBroken(false);
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];

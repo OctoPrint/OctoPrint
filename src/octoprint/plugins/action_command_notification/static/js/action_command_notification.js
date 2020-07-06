@@ -60,6 +60,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: ActionCommandNotificationViewModel,
         dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
-        elements: ["#sidebar_plugin_action_command_notification"]
+        elements: ["#sidebar_plugin_action_command_notification_wrapper"]
     });
 });

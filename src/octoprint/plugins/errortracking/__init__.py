@@ -13,8 +13,8 @@ from octoprint.util.version import get_octoprint_version_string, is_released_oct
 from flask import jsonify
 from flask_babel import gettext
 
-SENTRY_URL_SERVER = "https://2e668ba966024cfc962ba97eef89dc15@sentry.io/1373987"
-SENTRY_URL_COREUI = "https://dccc2e2f3c6b4adda72f376bbb7fe561@sentry.io/1374096"
+SENTRY_URL_SERVER = "https://a928e3eb40864ed086f765d6976bf792@o118517.ingest.sentry.io/1373987"
+SENTRY_URL_COREUI = "https://26fe846c0ff34995a39bbb67a04b3f42@o118517.ingest.sentry.io/1374096"
 
 SETTINGS_DEFAULTS = dict(enabled=False,
                          enabled_unreleased=False,
@@ -30,6 +30,9 @@ import tornado.websocket
 IGNORED_EXCEPTIONS = [
 	# serial exceptions in octoprint.util.comm
 	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
+
+	# KeyboardInterrupts
+	KeyboardInterrupt,
 
 	# IOErrors of any kind due to a full file system
 	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),

@@ -193,7 +193,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if helpers and "get_throttled" in helpers:
 			self._get_throttled = helpers["get_throttled"]
 			if self._settings.get_boolean(["ignore_throttled"]):
-				self._logger.warn("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
+				self._logger.warning("!!! THROTTLE STATE IGNORED !!! You have configured the Plugin Manager plugin to ignore an active throttle state of the underlying system. You might run into stability issues or outright corrupt your install. Consider fixing the throttling issue instead of suppressing it.")
 
 		# decouple repository fetching from server startup
 		self._fetch_all_data(do_async=True)
@@ -1121,7 +1121,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		# validation
 		if not isinstance(repo_data, (list, tuple)):
-			self._logger.warn("Invalid repository data: expected a list, got {!r}".format(repo_data))
+			self._logger.warning("Invalid repository data: expected a list, got {!r}".format(repo_data))
 			return None
 
 		try:

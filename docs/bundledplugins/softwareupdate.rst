@@ -215,12 +215,6 @@ types are currently recognized:
     * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
       will be used. If set to an empty string, no prefix will be added.
 
-  * ``lastmodified``: Checks the ``Last-Modified`` header on a defined URL for changes. Additional
-    config parameters:
-
-    * ``lastmodified_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
-      methods such as ``single_file_plugin``.
-
   * ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
     property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
     config parameters:

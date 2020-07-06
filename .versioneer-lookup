@@ -18,19 +18,19 @@ prerelease
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.4.1
+# maintenance is currently the branch for preparation of maintenance release 1.4.2
 # so are any fix/... and improve/... branches
-maintenance 1.4.1 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev
-fix/.* 1.4.1 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev
-improve/.* 1.4.1 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev
+maintenance 1.4.2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
+fix/.* 1.4.2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
+improve/.* 1.4.2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.4.0rc7
 # so is regressionfix/...
-staging/maintenance 1.4.0rc7 d99af420acb9d5b18a4f60f9cae8abb458e131d4 pep440-dev
-regressionfix/.* 1.4.0rc7 d99af420acb9d5b18a4f60f9cae8abb458e131d4 pep440-dev
+staging/maintenance 1.4.1rc2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
+regressionfix/.* 1.4.1rc2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 
-# staging/devel is currently inactive (but has the 1.4.0rc7 namespace)
-staging/devel 1.4.0rc7 d99af420acb9d5b18a4f60f9cae8abb458e131d4 pep440-dev
+# staging/devel is currently inactive (but has the 1.4.1rc2 namespace)
+staging/devel 1.4.1rc2 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 
 # every other branch is a development branch and thus gets resolved to 2.0.0-dev for now
 .* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077 pep440-dev

@@ -7,6 +7,7 @@
         <li class="divider"></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('last_printed'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'last_printed' ? 'visible' : 'hidden'}"></i> {{ _('Sort by date of last print') }} ({{ _('descending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         <li class="dropdown-submenu">
             <a href="#"><i class="fa fa-check" style="visibility: hidden"></i> {{ _('Folders') }}</a>

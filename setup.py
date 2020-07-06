@@ -23,7 +23,8 @@ SETUP_REQUIRES = [
 # Requirements for our application
 INSTALL_REQUIRES = [
 	# additional OctoPrint plugins that are maintained on a different release cycle
-	"OctoPrint-FirmwareCheck>=2020.03.27",
+	"OctoPrint-FirmwareCheck>=2020.06.22",
+	"OctoPrint-FileCheck>=2020.06.22",
 
 	# the following dependencies are non trivial to update since later versions introduce backwards incompatible
 	# changes that might affect plugins, or due to other observed problems
@@ -60,7 +61,7 @@ INSTALL_REQUIRES = [
 	"wrapt>=1.12.1,<2",
 	"emoji>=0.5.4,<1",
 	"frozendict>=1.2,<2",
-	"sentry-sdk>=0.14.4,<1",
+	"sentry-sdk>=0.15.1,<1",
 	"filetype>=1.0.7,<2",
 
 	# vendor bundle dependencies

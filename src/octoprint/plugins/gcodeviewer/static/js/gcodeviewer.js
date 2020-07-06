@@ -6,6 +6,9 @@ $(function() {
         self.settings = parameters[1];
         self.access = parameters[2];
 
+        self.sizeThresholdStr = undefined;
+        self.mobileSizeThresholdStr = undefined;
+
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.pureComputed(function() {
@@ -285,6 +288,9 @@ $(function() {
         self.maxLayer = undefined;
 
         self.initialize = function() {
+            self.sizeThresholdStr = sizeObservable(self.settings.settings.plugins.gcodeviewer.sizeThreshold);
+            self.mobileSizeThresholdStr = sizeObservable(self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold);
+
             var layerSliderElement = $("#gcode_slider_layers");
             var commandSliderElement = $("#gcode_slider_commands");
             var containerElement = $("#gcode_canvas");
@@ -478,7 +484,8 @@ $(function() {
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);
 
-                    if (data.job.file.size > CONFIG_GCODE_SIZE_THRESHOLD || (OctoPrint.coreui.browser.mobile && data.job.file.size > CONFIG_GCODE_MOBILE_SIZE_THRESHOLD)) {
+                    if (data.job.file.size > self.settings.settings.plugins.gcodeviewer.sizeThreshold()
+                        || (OctoPrint.coreui.browser.mobile && data.job.file.size > self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold())) {
                         self.waitForApproval(true);
                         self.loadedFilepath = undefined;
                         self.loadedFileDate = undefined;
@@ -754,6 +761,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: GcodeViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
-        elements: ["#gcode", "#gcode_link"]
+        elements: ["#gcode", "#gcode_link", "#settings_plugin_gcodeviewer"]
     });
 });

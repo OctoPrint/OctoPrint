@@ -351,8 +351,8 @@ def configure_timelapse(config=None, persist=False):
 
 	type = config["type"]
 	if not timelapse_precondition and timelapse_precondition:
-		logging.getLogger(__name__).warn("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
-		                                 "but timelapse enabled.")
+		logging.getLogger(__name__).warning("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
+		                                    "but timelapse enabled.")
 
 	if not timelapse_enabled or not timelapse_precondition or type is None or "off" == type:
 		current = None
@@ -918,7 +918,7 @@ class TimelapseRenderJob(object):
 					if os.path.exists(temporary):
 						os.remove(temporary)
 				except Exception:
-					self._logger.warn("Could not delete temporary timelapse {}".format(temporary))
+					self._logger.warning("Could not delete temporary timelapse {}".format(temporary))
 				self._notify_callback("always", output)
 
 	def _process_ffmpeg_output(self, *lines):
