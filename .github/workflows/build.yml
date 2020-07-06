@@ -158,18 +158,18 @@ jobs:
           password: ${{ secrets.testpypi_password }}
           repository_url: https://test.pypi.org/legacy/
 
-  #publish-on-pypi:
-  #  name: 📦 Publish tagged releases to PyPI
-  #  if: github.event_name == 'release'
-  #  needs: publish-on-testpypi
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: ⬇ Download build result
-  #      uses: actions/download-artifact@v1
-  #      with:
-  #        name: dist
-  #        path: dist
-  #    - name: 📦 Publish to index
-  #      uses: pypa/gh-action-pypi-publish@master
-  #      with:
-  #        password: ${{ secrets.pypi_password }}
+  publish-on-pypi:
+    name: 📦 Publish tagged releases to PyPI
+    if: github.event_name == 'release'
+    needs: publish-on-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+          path: dist
+      - name: 📦 Publish to index
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.pypi_password }}

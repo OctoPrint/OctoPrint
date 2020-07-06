@@ -2405,17 +2405,20 @@ class MachineCom(object):
 		else:
 			timeout = settings().getFloat(["serial", "timeout", "detection"])
 
+		def attempt_handshake():
+			if self._serial.timeout != timeout:
+				self._serial.timeout = timeout
+			self._timeout = monotonic_time() + timeout
+
+			log("Handshake attempt #{}".format(self._detection_retry + 1))
+
+			self._detection_retry += 1
+			self._do_send_without_checksum(b"", log=False)  # new line to reset things
+			self.sayHello(tags={"trigger:detection", })
+
 		while len(self._detection_candidates) > 0:
 			if self._detection_retry < self.DETECTION_RETRIES:
-				if self._serial.timeout != timeout:
-					self._serial.timeout = timeout
-				self._timeout = monotonic_time() + timeout
-
-				log("Handshake attempt #{}".format(self._detection_retry + 1))
-
-				self._detection_retry += 1
-				self._do_send_without_checksum(b"", log=False) # new line to reset things
-				self.sayHello(tags={"trigger:detection", })
+				attempt_handshake()
 				return
 
 			else:
@@ -2429,12 +2432,11 @@ class MachineCom(object):
 					else:
 						self._serial.baudrate = b
 
-					if self._serial.timeout != timeout:
-						self._serial.timeout = timeout
-					self._timeout = monotonic_time() + timeout
-
 					log("Trying port {}, baudrate {}".format(p, b))
 					self._detection_retry = 0
+
+					attempt_handshake()
+					return
 
 				except Exception:
 					self._log("Unexpected error while setting baudrate {}: {}".format(b, get_exception_string()))
@@ -5023,7 +5025,7 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 		timeout = serial.Timeout(self._timeout)
 
 		while not timeout.expired():
-			self._buffered += self.read(min(self.in_waiting, 1))
+			self._buffered += self.read(self.in_waiting)
 
 			# check for terminator, if it's there we have found our line
 			termpos = self._buffered.find(terminator)
@@ -5032,6 +5034,16 @@ class BufferedReadlineWrapper(wrapt.ObjectProxy):
 				line = self._buffered[:termpos + termlen]
 				del self._buffered[:termpos + termlen]
 				return bytes(line)
+
+			if timeout.expired():
+				break
+
+			c = self.read(1)
+			if not c:
+				# EOF
+				break
+
+			self._buffered += c
 
 		return b""
 

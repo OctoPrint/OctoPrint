@@ -2,6 +2,20 @@ describe('Login tests', () => {
     const username = 'admin';
     const password = 'test';
 
+    it('ensure cache hit', () => {
+        // login
+        cy.request({
+            method: 'POST',
+            url: '/api/login',
+            body: {
+                "user": username,
+                "pass": password
+            }
+        });
+
+        cy.visit('/');
+    });
+
     context('Successful login', () => {
         it('logs in', () => {
             cy.visit('/');
