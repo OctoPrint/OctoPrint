@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - master
-  repository_dispatch:
-    types: [test_install]
+  workflow_dispatch:
   schedule:
     - cron: '0 */12 * * *'
 
