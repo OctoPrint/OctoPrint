@@ -2875,8 +2875,7 @@ class MachineCom(object):
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
 			if self._send_m112_on_error and not self.isSdPrinting() and reason not in ("connection",
-			                                                                           "autodetect_baudrate",
-			                                                                           "autodetect_port"):
+			                                                                           "autodetect"):
 				self._trigger_emergency_stop(close=False)
 			self.close(is_error=True)
 
