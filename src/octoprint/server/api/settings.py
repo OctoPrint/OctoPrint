@@ -145,7 +145,8 @@ def getSettings():
 			"baudrateOptions": connectionOptions["baudrates"],
 			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
 			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
-			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutDetectionFirst": s.getFloat(["serial", "timeout", "detectionFirst"]),
+			"timeoutDetectionConsecutive": s.getFloat(["serial", "timeout", "detectionConsecutive"]),
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
 			"timeoutCommunicationBusy": s.getFloat(["serial", "timeout", "communicationBusy"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
@@ -442,8 +443,9 @@ def _saveSettings(data):
 		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
 		if "exclusive" in data["serial"]: s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], min=1.0)
-		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"], min=1.0)
-		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], min=1.0)
+		if "timeoutDetectionFirst" in data["serial"]: s.setFloat(["serial", "timeout", "detectionFirst"], data["serial"]["timeoutDetectionFirst"], min=1.0)
+		if "timeoutDetectionConsecutive" in data["serial"]: s.setFloat(["serial", "timeout", "detectionConsecutive"], data["serial"]["timeoutDetectionConsecutive"], min=1.0)
+		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunicationFirst"], min=1.0)
 		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"], min=1.0)
 		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"], min=1.0)
 		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"], min=1.0)
