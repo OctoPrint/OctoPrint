@@ -3,7 +3,7 @@
 Setting up the virtual printer for debugging
 ============================================
 
-OctoPrint includes, by default, a virtual printer plugin. This plugin allows you to debug OctoPrint's serial
+OctoPrint includes, by default, a :ref:`virtual printer plugin <sec-bundledplugins-virtual_printer>`. This plugin allows you to debug OctoPrint's serial
 communication without connecting to an actual printer. Furthermore, it is possible to create certain edge conditions
 that may be hard to reproduce with a real printer.
 
@@ -19,9 +19,7 @@ The virtual printer can be enabled through its Settings pane.
 Virtual printer configuration options
 -------------------------------------
 
-The config.yaml file has many configuration options for the virtual printer that allow you to fine-tune its behavior.
-
-Please see the relevant :ref:`config.yaml section <sec-configuration-config_yaml-devel>` for the full details.
+There many configuration options via ``config.yaml`` for the virtual printer that allow you to fine-tune its behavior:
 
 .. code-block:: yaml
 
@@ -201,7 +199,7 @@ Log file
 --------
 
 Once activated, the virtual printer will log all serial communication in the ``plugin_virtual_printer_serial.log`` file
-that can be found in the OctoPrint settings folder.
+that can be found in the OctoPrint logs folder.
 
 .. _sec-development-virtual-printer-debug:
 

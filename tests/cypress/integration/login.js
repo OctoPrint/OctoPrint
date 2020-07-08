@@ -2,21 +2,8 @@ describe('Login tests', () => {
     const username = 'admin';
     const password = 'test';
 
-    it('ensure cache hit', () => {
-        // login
-        cy.request({
-            method: 'POST',
-            url: '/api/login',
-            body: {
-                "user": username,
-                "pass": password
-            }
-        });
+    describe.skip('Successful login', () => {
 
-        cy.visit('/');
-    });
-
-    context('Successful login', () => {
         it('logs in', () => {
             cy.visit('/');
             cy.get('#login-user')
@@ -90,7 +77,7 @@ describe('Login tests', () => {
         })
     });
 
-    context('Unauthorized', () => {
+    context('Unauthorized login attempts', () => {
         it('uses wrong user name', () => {
             cy.visit('/');
 
