@@ -959,7 +959,7 @@ class MachineCom(object):
 			self._send_queue_active = False
 
 		if self._serial is not None:
-			if not is_error:
+			if not is_error and self._state in self.OPERATIONAL_STATES:
 				self.sendGcodeScript("beforePrinterDisconnected")
 				if wait:
 					if timeout is not None:
