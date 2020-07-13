@@ -645,6 +645,14 @@ def filter_non_ascii(line):
 		return True
 
 
+def filter_non_utf8(line):
+	try:
+		to_bytes(to_unicode(line, encoding="utf-8"), encoding="utf-8")
+		return False
+	except ValueError:
+		return True
+
+
 def chunks(l, n):
 	"""
 	Yield successive n-sized chunks from l.

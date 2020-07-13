@@ -41,7 +41,7 @@ from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
 	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer, \
-	monotonic_time
+	monotonic_time, filter_non_utf8
 from octoprint.util.platform import get_os, set_close_exec
 
 try:
@@ -604,7 +604,9 @@ class MachineCom(object):
 		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
 		self._sdFileList = False
+		self._sdFileLongName = False
 		self._sdFiles = []
+		self._sdFilesMap = dict()
 		self._sdFileToSelect = None
 		self._sdFileToSelectUser = None
 		self._ignore_select = False
@@ -676,6 +678,7 @@ class MachineCom(object):
 			if settings().getBoolean(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
+				self._sdFilesMap = dict()
 				self._callback.on_comm_sd_files([])
 
 			if self._currentFile is not None:
@@ -1497,7 +1500,8 @@ class MachineCom(object):
 					                             user=user)
 
 	def getSdFiles(self):
-		return self._sdFiles
+		return list(map(lambda x: (x[0], x[1], self._sdFilesMap.get(x[0])),
+		                self._sdFiles))
 
 	def deleteSdFile(self, filename, tags=None):
 		if not self._sdEnabled:
@@ -1557,9 +1561,10 @@ class MachineCom(object):
 		self.sendCommand("M22", tags=tags | {"trigger:comm.release_sd_card",})
 		self._sdAvailable = False
 		self._sdFiles = []
+		self._sdFilesMap = dict()
 
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
-		self._callback.on_comm_sd_files(self._sdFiles)
+		self._callback.on_comm_sd_files(self.getSdFiles())
 
 	def sayHello(self, tags=None):
 		if tags is None:
@@ -1791,31 +1796,60 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = lower_line
-					fileinfo = preprocessed_line.rsplit(None, 1)
-					if len(fileinfo) > 1:
-						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
+					preprocessed_line = line
+					fileinfo = preprocessed_line.split(None, 2)
+					if len(fileinfo) == 3:
+						# name, size, long name
+						filename, size, longname = fileinfo
+					elif len(fileinfo) == 2:
+						# name, size
 						filename, size = fileinfo
+						longname = None
+					else:
+						# name
+						filename = preprocessed_line
+						size = None
+						longname = None
+
+					if size is not None:
 						try:
 							size = int(size)
 						except ValueError:
 							# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
 							filename = preprocessed_line
 							size = None
-					else:
-						# no extended file information, so only the filename is there and we set size to None
-						filename = preprocessed_line
-						size = None
 
 					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
-							self._logger.warning("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+							self._logger.warning("Got a file from printer's SD that has a non-ascii filename ({!r}), "
+							                     "that shouldn't happen according to the protocol".format(filename))
+						elif longname and filter_non_utf8(longname):
+							self._logger.warning("Got a file from printer's SD that has a non-utf8 longname ({!r}), "
+							                     "that shouldn't happen according to the protocol".format(longname))
 						else:
 							if not filename.startswith("/"):
 								# file from the root of the sd -- we'll prepend a /
 								filename = "/" + filename
-							self._sdFiles.append((filename, size))
+							self._sdFiles.append((filename.lower(), size))
+							if longname is not None:
+								self._sdFilesMap[filename] = longname
 						continue
+
+				elif self._sdFileLongName:
+					# Response to M33: just one line with the long name. Yay.
+					#
+					# As we have NO way to parse the request short name from that, and also no indicator
+					# on the line that this is in fact a reply to M33 and not just some arbitrary line injected
+					# by the firmware belonging to some other command and/or an out of band message/autoreport, we have
+					# to hope for the best here, set our requested filename as a flag and only use the potential mapping
+					# if it has a valid file extension.
+					#
+					# It would have been so much easier if M33's output was something sensible like
+					# "<short name>: <long name>" or such, but why make things easy...
+					_, ext = os.path.splitext(lower_line)
+					if ext and valid_file_type(lower_line, "machinecode"):
+						self._sdFilesMap[self._sdFileLongName] = line
+						self._sdFileLongName = False
 
 				handled = False
 
@@ -1824,6 +1858,7 @@ class MachineCom(object):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
+					self._sdFileLongName = False # reset looking for M33 response
 					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
 					                         "X:" in line or "NAME:" in line
 					handled = (line == "wait" or line == "ok" or not needs_further_handling)
@@ -2096,7 +2131,7 @@ class MachineCom(object):
 					self._sdFileList = True
 				elif 'End file list' in line:
 					self._sdFileList = False
-					self._callback.on_comm_sd_files(self._sdFiles)
+					self._callback.on_comm_sd_files(self.getSdFiles())
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
@@ -3696,7 +3731,8 @@ class MachineCom(object):
 
 	def _gcode_M28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if not self.isStreaming():
-			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
+			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. "
+			          "Do NOT attempt to print while manually streaming!")
 			self._manualStreaming = True
 
 	def _gcode_M29_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
@@ -3801,6 +3837,14 @@ class MachineCom(object):
 			interval = int(match.group("value"))
 			self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
 										   and (interval > 0)
+
+	def _gcode_M33_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		parts = cmd.split(None, 1)
+		if len(parts) > 1:
+			filename = parts[1].strip().lower()
+			if not filename.startswith("/"):
+				filename = "/" + filename
+			self._sdFileLongName = filename
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		newLineNumber = 0

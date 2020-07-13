@@ -97,7 +97,7 @@ def _create_etag(path, filter, recursive, lm=None):
 
 	if path == "" or storage == FileDestinations.SDCARD:
 		# include sd data in etag
-		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x[0]))))
+		hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x["name"]))))
 
 	hash_update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
@@ -192,8 +192,8 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 
 		files = []
 		if sdFileList is not None:
-			for sdFile, sdSize in sdFileList:
-				type_path = octoprint.filemanager.get_file_type(sdFile)
+			for f in sdFileList:
+				type_path = octoprint.filemanager.get_file_type(f["name"])
 				if not type_path:
 					# only supported extensions
 					continue
@@ -203,16 +203,19 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 				file = {
 					"type": file_type,
 					"typePath": type_path,
-					"name": sdFile,
-					"display": sdFile,
-					"path": sdFile,
+					"name": f["name"],
+					"display": f["display"] if f["display"] else f["name"],
+					"path": f["name"],
 					"origin": FileDestinations.SDCARD,
 					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
+						"resource": url_for(".readGcodeFile",
+						                    target=FileDestinations.SDCARD,
+						                    filename=f["name"],
+						                    _external=True)
 					}
 				}
-				if sdSize is not None:
-					file.update({"size": sdSize})
+				if f["size"] is not None:
+					file.update({"size": f["size"]})
 				files.append(file)
 	else:
 		filter_func = None
@@ -288,7 +291,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
-		return filename in (x[0] for x in printer.get_sd_files())
+		return filename in (x["name"] for x in printer.get_sd_files())
 	else:
 		return fileManager.file_exists(origin, filename)
 
