@@ -1606,7 +1606,10 @@ class Server(object):
 		filters.append("gzip")
 
 		js_filters = filters
-		js_plugin_filters = [x for x in js_filters if x not in ("rjsmin",)]
+		if self._settings.getBoolean(["devel", "webassets", "minify_plugins"]):
+			js_plugin_filters = js_filters
+		else:
+			js_plugin_filters = [x for x in js_filters if x not in ("rjsmin",)]
 
 		def js_bundles_for_plugins(collection, filters=None):
 			"""Produces JsPluginBundle instances that output IIFE wrapped assets"""

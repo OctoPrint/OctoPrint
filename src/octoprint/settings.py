@@ -415,7 +415,8 @@ default_settings = {
 		"webassets": {
 			"bundle": True,
 			"clean_on_startup": True,
-			"minify": True
+			"minify": True,
+			"minify_plugins": False
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
