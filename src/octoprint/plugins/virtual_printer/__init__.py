@@ -30,7 +30,10 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.Tem
 			"smoothieTemperatureReporting": False,
 			"klipperTemperatureReporting": False,
 			"reprapfwM114": False,
-			"extendedSdFileList": False,
+			"sdFiles": {
+				"size": True,
+				"longname": False
+			},
 			"throttle": 0.01,
 			"sendWait": True,
 			"waitInterval": 1.0,
