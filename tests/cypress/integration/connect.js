@@ -23,9 +23,8 @@ describe('Connection test against virtual printer', () => {
         });
 
         cy.visit('/');
-
-        cy.get('#navbar', {timeout: 10000})
-            .should('be.visible');
+        cy.window({timeout: 10000})
+            .should('have.nested.property', 'OctoPrint.coreui.startedUp', true);
     });
 
     it('connect & disconnect', () => {

@@ -39,7 +39,8 @@ $(function() {
                     mobile: false,
                     desktop: false
                 },
-                viewmodels: {}
+                viewmodels: {},
+                startedUp: false
             };
 
             var browserVisibilityCallbacks = [];
@@ -734,6 +735,8 @@ $(function() {
 
             // Use bootstrap tabdrop for tabs and pills
             $('.nav-pills, .nav-tabs').tabdrop();
+
+            OctoPrint.coreui.startedUp = true;
         };
 
         var fetchSettings = function() {

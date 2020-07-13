@@ -2,10 +2,13 @@ describe('Login tests', () => {
     const username = 'admin';
     const password = 'test';
 
-    describe.skip('Successful login', () => {
+    describe('Successful login', () => {
 
         it('logs in', () => {
             cy.visit('/');
+            cy.window()
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
+
             cy.get('#login-user')
                 .type(username);
             cy.get('#login-password')
@@ -13,9 +16,9 @@ describe('Login tests', () => {
 
             cy.get('#login-button')
                 .click();
+            cy.window({timeout: 30000})
+                .should('have.nested.property', 'OctoPrint.coreui.startedUp', true);
 
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
             cy.get('#navbar_login a.dropdown-toggle span')
                 .should('contain', username);
             cy.getCookie('session_P5000')
@@ -28,18 +31,21 @@ describe('Login tests', () => {
 
         it('logs in with remember me', () => {
             cy.visit('/');
+            cy.window()
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
+
             cy.get('#login-user')
                 .type(username);
             cy.get('#login-password')
                 .type(password);
-
             cy.get('#login-remember')
                 .click();
+
             cy.get('#login-button')
                 .click();
+            cy.window({timeout: 30000})
+                .should('have.nested.property', 'OctoPrint.coreui.startedUp', true);
 
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
             cy.get('#navbar_login a.dropdown-toggle span')
                 .should('contain', username);
             cy.getCookie('session_P5000')
@@ -55,6 +61,9 @@ describe('Login tests', () => {
 
         it('logs in and logs out again', () => {
             cy.visit('/');
+            cy.window()
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
+
             cy.get('#login-user')
                 .type(username);
             cy.get('#login-password')
@@ -63,13 +72,16 @@ describe('Login tests', () => {
             cy.get('#login-button')
                 .click();
 
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
+            cy.window({timeout: 30000})
+                .should('have.nested.property', 'OctoPrint.coreui.startedUp', true);
 
             cy.get('#navbar_login a.dropdown-toggle')
                 .click();
             cy.get('#logout_button')
                 .click();
+
+            cy.window({timeout: 30000})
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
 
             cy.get('h2.form-signin-heading')
                 .should('be.visible')
@@ -80,6 +92,8 @@ describe('Login tests', () => {
     context('Unauthorized login attempts', () => {
         it('uses wrong user name', () => {
             cy.visit('/');
+            cy.window()
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
 
             cy.get('#login-user')
                 .type('idonotexist');
@@ -91,6 +105,8 @@ describe('Login tests', () => {
 
         it('uses wrong password', () => {
             cy.visit('/');
+            cy.window()
+                .should('have.nested.property', 'OctoPrint.loginui.startedUp', true);
 
             cy.get('#login-user')
                 .type('admin');
