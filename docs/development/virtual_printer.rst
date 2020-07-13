@@ -110,11 +110,19 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
        smoothieTemperatureReporting: false
 
-       # Whether M20 responses will include filesize or not
-       #
-       # True:  <filename> <filesize in bytes>
-       # False: <filename>
-       extendedSdFileList: false
+       # Settings related to the SD file list output
+       sdFiles:
+         # Whether M20 responses will include filesize or not
+         #
+         # True:  <filename> <filesize in bytes>
+         # False: <filename>
+         size: true
+
+         # Whether M20 responses will include longname or not (only if size = true as well)
+         #
+         # True:  <filename> <filesize in bytes> <longname>
+         # False: <filename> <filesize in bytes>
+         longname: false
 
        # Forced pause for retrieving from the outgoing buffer
        throttle: 0.01
