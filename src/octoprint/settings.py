@@ -98,7 +98,8 @@ default_settings = {
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
-			"detection": 1,
+			"detectionFirst": 10,
+			"detectionConsecutive": 2,
 			"connection": 10,
 			"communication": 30,
 			"communicationBusy": 3,
@@ -414,7 +415,8 @@ default_settings = {
 		"webassets": {
 			"bundle": True,
 			"clean_on_startup": True,
-			"minify": True
+			"minify": True,
+			"minify_plugins": False
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,

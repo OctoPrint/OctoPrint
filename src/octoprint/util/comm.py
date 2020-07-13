@@ -1677,14 +1677,13 @@ class MachineCom(object):
 				return
 			try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
 			self._changeState(self.STATE_CONNECTING)
+			self._timeout = self._ok_timeout = self._get_new_communication_timeout()
 		else:
 			self._changeState(self.STATE_DETECT_SERIAL)
 			self._perform_detection_step(init=True)
 
+		# Start monitoring the serial port
 		self._log("Connected to: %s, starting monitor" % self._serial)
-
-		#Start monitoring the serial port.
-		self._timeout = self._ok_timeout = self._get_new_communication_timeout()
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
@@ -1874,7 +1873,8 @@ class MachineCom(object):
 				                                                and (not self.job_on_hold or self._resendActive)
 				                                                and not self._long_running_command
 				                                                and not self._heating and now >= self._ok_timeout)) \
-						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
+						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until)\
+						and not self._state in (self.STATE_DETECT_SERIAL,):
 					# We have two timeout variants:
 					#
 					# Variant 1: No line at all received within the communication timeout. This can always happen.
@@ -2253,7 +2253,7 @@ class MachineCom(object):
 
 				### Serial detection
 				if self._state == self.STATE_DETECT_SERIAL:
-					if line == '' or monotonic_time() > self._timeout:
+					if line == '' or monotonic_time() > self._ok_timeout:
 						self._perform_detection_step()
 					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
@@ -2412,7 +2412,6 @@ class MachineCom(object):
 			self._logger.info("Serial detection: {}".format(message))
 
 		if init:
-			timeout = settings().getFloat(["serial", "timeout", "connection"])
 			port = self._port
 			baudrate = self._baudrate
 
@@ -2431,27 +2430,26 @@ class MachineCom(object):
 				baudrate_candidates = baudrateList([115200, 250000])
 
 			self._detection_candidates = [(p, b) for p in port_candidates for b in baudrate_candidates]
+			self._detection_retry = self.DETECTION_RETRIES
 
 			log("Performing autodetection with {} " \
 			    "port/baudrate candidates: {}".format(len(self._detection_candidates),
 			                                          ", ".join(map(lambda x: "{}@{}".format(x[0], x[1]),
 			                                                    self._detection_candidates))))
 
-		else:
-			timeout = settings().getFloat(["serial", "timeout", "detection"])
-
 		def attempt_handshake():
+			timeout = self._get_communication_timeout_interval()
 			if self._serial.timeout != timeout:
 				self._serial.timeout = timeout
-			self._timeout = monotonic_time() + timeout
+			self._timeout = self._ok_timeout = monotonic_time() + timeout
 
-			log("Handshake attempt #{}".format(self._detection_retry + 1))
+			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry + 1, timeout))
 
 			self._detection_retry += 1
 			self._do_send_without_checksum(b"", log=False)  # new line to reset things
 			self.sayHello(tags={"trigger:detection", })
 
-		while len(self._detection_candidates) > 0:
+		while len(self._detection_candidates) > 0 or self._detection_retry < self.DETECTION_RETRIES:
 			if self._detection_retry < self.DETECTION_RETRIES:
 				attempt_handshake()
 				return
@@ -2460,6 +2458,7 @@ class MachineCom(object):
 				(p, b) = self._detection_candidates.pop(0)
 
 				try:
+					log("Trying port {}, baudrate {}".format(p, b))
 					if self._serial is None or self._serial.port != p:
 						if not self._open_serial(p, b, trigger_errors=False):
 							log("Could not open port {}, baudrate {}, skipping".format(p, b))
@@ -2467,7 +2466,6 @@ class MachineCom(object):
 					else:
 						self._serial.baudrate = b
 
-					log("Trying port {}, baudrate {}".format(p, b))
 					self._detection_retry = 0
 
 					attempt_handshake()
@@ -2689,6 +2687,15 @@ class MachineCom(object):
 		return interval
 
 	def _get_communication_timeout_interval(self):
+		# special rules during serial detection
+		if self._state in (self.STATE_DETECT_SERIAL,):
+			if self._detection_retry == 0:
+				# first try
+				return self._timeout_intervals.get("detectionFirst", 10.0)
+			else:
+				# consecutive tries
+				return self._timeout_intervals.get("detectionConsecutive", 2.0)
+
 		# communication timeout
 		if self._busy_protocol_support:
 			comm_timeout = self._timeout_intervals.get("communicationBusy", 2.0)
@@ -2910,8 +2917,7 @@ class MachineCom(object):
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
 			if self._send_m112_on_error and not self.isSdPrinting() and reason not in ("connection",
-			                                                                           "autodetect_baudrate",
-			                                                                           "autodetect_port"):
+			                                                                           "autodetect"):
 				self._trigger_emergency_stop(close=False)
 			self.close(is_error=True)
 

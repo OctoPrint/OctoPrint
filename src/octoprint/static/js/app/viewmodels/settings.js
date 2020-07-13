@@ -158,7 +158,8 @@ $(function() {
         self.serial_baudrateOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
         self.serial_timeoutConnection = ko.observable(undefined);
-        self.serial_timeoutDetection = ko.observable(undefined);
+        self.serial_timeoutDetectionFirst = ko.observable(undefined);
+        self.serial_timeoutDetectionConsecutive = ko.observable(undefined);
         self.serial_timeoutCommunication = ko.observable(undefined);
         self.serial_timeoutCommunicationBusy = ko.observable(undefined);
         self.serial_timeoutTemperature = ko.observable(undefined);
