@@ -96,7 +96,7 @@
                                  {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                 <div class="accordion-heading">
-                                    <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
+                                    <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
                                         {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
                                     </a>
                                     {% if "template_header" in data %}
@@ -107,7 +107,7 @@
                                      class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
                                      {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
                                         >
-                                    <div class="accordion-inner">
+                                    <div class="accordion-inner" data-test-id="sidebar-{{ data._div }}-content">
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
                                     </div>
                                 </div>
