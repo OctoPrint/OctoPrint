@@ -38,7 +38,7 @@ context('Login tests', () => {
                 });
         });
 
-        it.skip('logs in with remember me', () => {
+        it('logs in with remember me', () => {
             cy.get('[data-test-id=login-username]')
                 .type(username);
             cy.get('[data-test-id=login-password]')
@@ -68,7 +68,7 @@ context('Login tests', () => {
         });
     });
 
-    context.skip('Successful logout', () => {
+    context('Successful logout', () => {
         it('logs out', () => {
             Cypress.currentTest.retries(3);
 
@@ -89,7 +89,7 @@ context('Login tests', () => {
         })
     });
 
-    context.skip('Unauthorized login attempts', () => {
+    context('Unauthorized login attempts', () => {
         beforeEach(() => {
             cy.visit('/?l10n=en');
             await_loginui();
