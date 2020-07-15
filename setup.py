@@ -17,6 +17,7 @@ PYTHON_REQUIRES = ">=3.6,<4"
 
 # Requirements for setup.py
 SETUP_REQUIRES = [
+	"markdown>=3.2.2,<4",
 ]
 
 # Requirements for our application
