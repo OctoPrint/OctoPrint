@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.4.1.dev393+g32b655451.dirty\n"
+"Project-Id-Version: OctoPrint 1.4.1rc3.dev14+gc5baa05b5.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2020-07-06 09:41+0200\n"
+"POT-Creation-Date: 2020-07-14 21:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -210,16 +210,16 @@ msgstr ""
 
 #: src/octoprint/plugins/action_command_prompt/templates/action_command_prompt_settings.jinja2:11
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:72
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:303
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:357
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:311
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:365
 msgid "Always"
 msgstr ""
 
 #: src/octoprint/plugins/action_command_prompt/templates/action_command_prompt_settings.jinja2:14
 #: src/octoprint/templates/dialogs/settings/features.jinja2:70
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:79
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:306
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:360
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:314
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:368
 msgid "Never"
 msgstr ""
 
@@ -228,9 +228,9 @@ msgstr ""
 #: src/octoprint/plugins/pi_support/templates/pi_support_settings.jinja2:16
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:327
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:105
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:195
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:312
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:399
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:203
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:320
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:407
 #: src/octoprint/templates/dialogs/settings/webcam.jinja2:10
 #: src/octoprint/templates/dialogs/settings/webcam.jinja2:25
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklist.jinja2:5
@@ -1270,7 +1270,7 @@ msgstr ""
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:310
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:336
 #: src/octoprint/static/js/app/viewmodels/loginstate.js:110
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:447
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:455
 msgid "Ignore"
 msgstr ""
 
@@ -1539,10 +1539,10 @@ msgstr ""
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:117
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:67
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:447
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:463
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:472
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:487
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:455
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:471
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:480
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:495
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:87
 #: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:6
 msgid "Warning"
@@ -3153,8 +3153,8 @@ msgstr ""
 msgid "OctoPrint version tracking"
 msgstr ""
 
-#: src/octoprint/plugins/tracking/__init__.py:151
 #: src/octoprint/plugins/tracking/__init__.py:152
+#: src/octoprint/plugins/tracking/__init__.py:153
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:1
 msgid "Anonymous Usage Tracking"
 msgstr ""
@@ -3694,77 +3694,77 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:205
+#: src/octoprint/static/js/app/main.js:206
 msgid "Offline"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:206
+#: src/octoprint/static/js/app/main.js:207
 msgid "Opening serial connection"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:207
+#: src/octoprint/static/js/app/main.js:208
 msgid "Detecting serial connection"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:208
+#: src/octoprint/static/js/app/main.js:209
 msgid "Connecting"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:209
+#: src/octoprint/static/js/app/main.js:210
 msgid "Operational"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:210
+#: src/octoprint/static/js/app/main.js:211
 msgid "Starting"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:211
+#: src/octoprint/static/js/app/main.js:212
 msgid "Starting print from SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:212
+#: src/octoprint/static/js/app/main.js:213
 msgid "Printing from SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:213
+#: src/octoprint/static/js/app/main.js:214
 msgid "Sending file to SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:214
+#: src/octoprint/static/js/app/main.js:215
 msgid "Printing"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:215
+#: src/octoprint/static/js/app/main.js:216
 msgid "Paused"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:216
+#: src/octoprint/static/js/app/main.js:217
 msgid "Closed"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:217
+#: src/octoprint/static/js/app/main.js:218
 msgid "Transferring file to SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:218
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:460
+#: src/octoprint/static/js/app/main.js:219
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:468
 msgid "Pausing"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:219
+#: src/octoprint/static/js/app/main.js:220
 msgid "Resuming"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:220
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:469
+#: src/octoprint/static/js/app/main.js:221
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:477
 msgid "Cancelling"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:221
+#: src/octoprint/static/js/app/main.js:222
 msgid "Finishing"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:833
+#: src/octoprint/static/js/app/main.js:836
 msgid "Loading OctoPrint's UI, please wait..."
 msgstr ""
 
@@ -4273,23 +4273,23 @@ msgstr ""
 msgid "Autodetect from browser"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:348
+#: src/octoprint/static/js/app/viewmodels/settings.js:349
 msgid "If you see your webcam stream below, the entered stream URL is ok."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:356
+#: src/octoprint/static/js/app/viewmodels/settings.js:357
 msgid "Stream test"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:374
+#: src/octoprint/static/js/app/viewmodels/settings.js:375
 msgid "Could not retrieve snapshot URL, please double check the URL"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:375
+#: src/octoprint/static/js/app/viewmodels/settings.js:376
 msgid "Snapshot test failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:390
+#: src/octoprint/static/js/app/viewmodels/settings.js:391
 #, python-format
 msgid ""
 "Could retrieve the snapshot URL, but it didn't look like an image. Got "
@@ -4298,66 +4298,66 @@ msgid ""
 "or videos."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:415
+#: src/octoprint/static/js/app/viewmodels/settings.js:416
 msgid ""
 "If you see your webcam snapshot picture below, the entered snapshot URL "
 "is ok."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:417
+#: src/octoprint/static/js/app/viewmodels/settings.js:418
 msgid "Snapshot test"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:450
+#: src/octoprint/static/js/app/viewmodels/settings.js:451
 msgid "The path doesn't exist"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:452
+#: src/octoprint/static/js/app/viewmodels/settings.js:453
 msgid "The path is not a file"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:454
+#: src/octoprint/static/js/app/viewmodels/settings.js:455
 msgid "The path is not an executable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:457
-#: src/octoprint/static/js/app/viewmodels/settings.js:538
+#: src/octoprint/static/js/app/viewmodels/settings.js:458
+#: src/octoprint/static/js/app/viewmodels/settings.js:539
 msgid "The path is valid"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:477
+#: src/octoprint/static/js/app/viewmodels/settings.js:478
 msgid "The server is not reachable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:479
+#: src/octoprint/static/js/app/viewmodels/settings.js:480
 msgid "The server is reachable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:498
+#: src/octoprint/static/js/app/viewmodels/settings.js:499
 msgid "Name cannot be resolved"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:500
+#: src/octoprint/static/js/app/viewmodels/settings.js:501
 msgid "Name can be resolved"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:529
+#: src/octoprint/static/js/app/viewmodels/settings.js:530
 msgid "The path is a broken symlink."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:531
+#: src/octoprint/static/js/app/viewmodels/settings.js:532
 msgid "The path does not exist and cannot be created."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:533
+#: src/octoprint/static/js/app/viewmodels/settings.js:534
 msgid "The path is not a folder."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:535
+#: src/octoprint/static/js/app/viewmodels/settings.js:536
 msgid "The path is not writable."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:660
+#: src/octoprint/static/js/app/viewmodels/settings.js:661
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:101
 msgid ""
 "This will generate a new API Key. The old API Key will cease to function "
@@ -5505,87 +5505,95 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:176
 msgid ""
-"Time after which to consider an auto detection attempt to have failed if "
-"no successful connection is detected"
+"Time after which to consider the auto detection handshake attempt to have"
+" failed if no successful connection is detected"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:177
 msgid "Autodetection timeout"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:185
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:183
+msgid "First handshake attempt"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:190
+msgid "Consecutive handshake attempts"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:193
 msgid ""
 "Time after which to consider a position query on pause or cancel to have "
 "failed"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:186
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:194
 msgid "Position query timeout"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:197
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:205
 msgid ""
 "Time to wait after opening the serial connection before starting baudrate"
 " detection"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:198
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:206
 msgid "Initial baudrate detection pause"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:204
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:212
 msgid ""
 "Some controllers need a bit of a breather before baudrate detection after"
 " initial connect. If baudrate detection fails due to a hanging "
 "controller, try increasing this value."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:207
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:215
 msgid ""
 "Maximum consecutive communication timeouts while idle. More than this and"
 " the printer will be considered to be gone. Set to 0 to disable."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:208
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:216
 msgid "Max. consecutive timeouts while idle"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:211
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:218
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:225
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:219
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:226
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:233
 msgid "Set to 0 to disable consecutive timeout detection and handling."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:214
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:222
 msgid ""
 "Maximum consecutive communication timeouts while printing. More than this"
 " and the printer will be considered to be gone. Set to 0 to disable."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:215
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:223
 msgid "Max. consecutive timeouts while printing"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:221
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:229
 msgid ""
 "Maximum consecutive communication timeouts while a long running command "
 "is active. More than this and the printer will be considered to be gone. "
 "Set to 0 to disable."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:222
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:230
 msgid "Max. consecutive timeouts during long running commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:234
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:242
 msgid "Firmware specific settings"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:238
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:246
 msgid "Enable automatic firmware detection"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:239
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:247
 msgid ""
 "\n"
 "                                If enabled, OctoPrint will try to figure "
@@ -5597,85 +5605,85 @@ msgid ""
 "                            "
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:250
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:258
 msgid "Select SD files by relative path"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:250
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:258
 msgid "RepRap Firmware"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:257
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:265
 msgid "Always assume SD card is present"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:257
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:271
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:278
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:285
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:292
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:303
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:265
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:279
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:286
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:293
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:300
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:311
 msgid "Repetier"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:264
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:272
 msgid "Disable SD printing detection"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:264
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:272
 msgid "Ultimaker 2/2+"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:271
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:279
 msgid "Ignore consecutive resend requests for the same line"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:278
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:286
 #, python-format
 msgid ""
 "Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target "
 "temperature format"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:285
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:293
 msgid "Disable detection of external heatups"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:292
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:300
 msgid "Actively pause communication during <code>G4</code> dwell command"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:297
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:305
 msgid "Send a checksum with the command"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:300
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:308
 msgid "When printing"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:317
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:325
 msgid "Support temperature autoreporting by firmware, if detected"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:324
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:332
 msgid "Support sd status autoreporting by firmware, if detected"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:331
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:339
 msgid ""
 "Send emergency GCODES <code>M108</code> and <code>M410</code> without "
 "waiting for acknowledgement, if detected as supported by the firmware"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:338
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:346
 msgid "Support <code>busy</code> protocol, if detected"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:345
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:353
 msgid "Simulate <code>ok</code> for <code>M29</code>"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:346
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:354
 msgid ""
 "Most Marlin forks that were derived from Marlin versions &lt; v1.1.0 do "
 "not send an acknowledging <code>ok</code> for a <code>M29</code>. Check "
@@ -5683,40 +5691,40 @@ msgid ""
 "to your printer's SD."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:351
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:359
 msgid "Simulate <code>ok</code> for resend requests"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:354
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:362
 msgid "If detected as necessary"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:362
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:370
 msgid ""
 "Some Marlin forks lack an acknowledging <code>ok</code> with their resend"
 " requests. Set this to \"always\" or \"if detected as necessary\" if you "
 "run into communication stalls on resend requests."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:369
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:377
 msgid "Protocol fine tuning"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:373
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:381
 msgid "Wait for <code>start</code> on connect"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:374
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:382
 msgid ""
 "Try checking this if you run into connection timeouts due to your printer"
 " taking too long to respond to OctoPrint's handshake attempts on connect."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:379
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:387
 msgid "Blocked commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:382
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:390
 msgid ""
 "Use this to specify commands that should never be sent to the printer. "
 "Just the G or M code, comma separated. Defaults to <code>M0</code> and "
@@ -5724,22 +5732,22 @@ msgid ""
 "controller has been pressed if it receives either of those two commands."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:386
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:394
 msgid "Pausing commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:389
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:397
 msgid ""
 "Use this to specify commands on which OctoPrint should pause the print "
 "job. Just the G or M code, comma separated. Defaults to <code>M0</code>, "
 "<code>M1</code> and <code>M25</code>."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:393
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:401
 msgid "Emergency commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:396
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:404
 msgid ""
 "Use this to specify emergency commands which should jump any queues and -"
 " if supported by the firmware - be force sent. Just the G or M code, "
@@ -5747,123 +5755,123 @@ msgid ""
 "<code>M410</code>."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:401
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:409
 msgid "Command to send to the firmware on first handshake attempt."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:402
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:410
 msgid "\"Hello\" command"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:405
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:413
 msgid ""
 "Use this to specify a different command than the default "
 "<code>M110</code> to send to the printer on initial connection to trigger"
 " a communication handshake."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:408
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:416
 msgid ""
 "Commands that are know to run long and hence should suppress "
 "communication timeouts from being triggered."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:409
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:417
 msgid "Long running commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:412
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:420
 msgid ""
 "Use this to specify the commands known to take a long time to complete "
 "without output from your printer and hence might cause timeout issues. "
 "Just the G or M code, comma separated."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:415
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:423
 msgid ""
 "Commands that always require a line number and checksum to be sent with "
 "them."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:416
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:424
 msgid "Commands that always require a checksum"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:419
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:427
 msgid ""
 "Use this to specify which commands <strong>always</strong> need to be "
 "sent with a checksum. Comma separated list."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:422
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:430
 msgid "ok buffer size"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:423
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:431
 msgid "<code>ok</code> buffer size"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:426
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:434
 msgid "Only modify if told to do so"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:435
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:443
 msgid "Error handling"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:437
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:445
 msgid "What to do on a firmware error (<code>Error:</code> or <code>!!</code>)"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:440
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:448
 msgid "Disconnect from the printer"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:443
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:451
 msgid "Cancel any ongoing prints but stay connected to the printer"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:444
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:452
 msgid ""
 "Please note that if you choose this, OctoPrint will still disconnect from"
 " the printer in case of <em>fatal</em> errors reported by your firmware "
 "(e.g. <code>kill() called</code>, <code>fatal:</code>)."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:448
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:456
 msgid ""
 "Only choose this if your firmware sends error messages that are not "
 "actual errors. Might mask printer issues (even fatal errors!), be "
 "careful!"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:454
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:462
 msgid "Send <code>M112</code> on disconnect due to error"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:455
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:463
 msgid ""
 "If this is checked, OctoPrint will try to send an <code>M112</code> prior"
 " to a disconnect due to a (fatal) error in order to disable heaters and "
 "motors."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:463
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:471
 msgid "Log position on pause"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:464
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:472
 msgid ""
 "If you disable this, the <code>pause_position</code> placeholders in your"
 " pause/resume GCODE scripts will stay unpopulated! However, pausing speed"
 " might improve slightly."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:472
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:480
 msgid "Log position on cancel"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:473
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:481
 msgid ""
 "If you disable this, the <code>cancel_position</code> placeholders in "
 "your cancel GCODE script and the corresponding data in the print recovery"
@@ -5871,25 +5879,25 @@ msgid ""
 "slightly."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:478
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:486
 msgid "Attempt to abort any blocking heatups on cancel via <code>M108</code>."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:479
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:487
 msgid ""
 "Uncheck this if your firmware doesn't support <code>M108</code> for "
 "aborting blocking heatups!"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:484
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:492
 msgid "Sanity Checking"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:487
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:495
 msgid "Sanity check tool commands"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:488
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:496
 msgid ""
 "If enabled, OctoPrint will not send tool commands to your printer that "
 "exceed the number of extruders configured in the active printer profile, "
