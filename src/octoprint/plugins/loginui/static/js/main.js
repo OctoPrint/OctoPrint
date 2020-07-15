@@ -4,6 +4,12 @@
  */
 
 $(function() {
+    var OctoPrint = window.OctoPrint;
+
+    OctoPrint.loginui = {
+        startedUp: false
+    }
+
     var overlayElement = $("#login-overlay");
     var errorElement = $("#login-error");
     var offlineElement = $("#login-offline");
@@ -37,8 +43,6 @@ $(function() {
         return false;
     });
 
-    var OctoPrint = window.OctoPrint;
-
     OctoPrint.options.baseurl = BASE_URL;
 
     OctoPrint.socket.onConnected = function() {
@@ -56,4 +60,5 @@ $(function() {
     });
 
     OctoPrint.socket.connect();
+    OctoPrint.loginui.startedUp = true;
 });

@@ -1,4 +1,4 @@
-<span title="{{ _('Current printer state')|edq }}">{{ _('State') }}</span>: <strong data-bind="text: stateString"></strong><br>
+<span title="{{ _('Current printer state')|edq }}">{{ _('State') }}</span>: <strong data-test-id="state-string" data-bind="text: stateString"></strong><br>
 <hr>
 <span title="{{ _('Name of file currently selected for printing')|edq }}">{{ _('File') }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
 <span title="{{ _('Upload date of the file currently selected or printing')|edq }}">{{ _('Uploaded') }}</span>: <strong data-bind="text: dateString"></strong><br>

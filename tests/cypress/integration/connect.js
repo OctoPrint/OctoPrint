@@ -1,60 +1,49 @@
-describe('Connection test against virtual printer', () => {
+import { prepare_server, login, disconnect, await_coreui } from "../util/util"
+
+context('Connection test against virtual printer', () => {
     const username = 'admin';
     const password = 'test';
 
     beforeEach(() => {
+        prepare_server();
+
         // login
-        cy.request({
-            method: 'POST',
-            url: '/api/login',
-            body: {
-                "user": username,
-                "pass": password
-            }
-        });
+        login(username, password);
 
         // ensure we are disconnected
-        cy.request({
-            method: 'POST',
-            url: '/api/connection',
-            body: {
-                "command": "disconnect"
-            }
-        });
+        disconnect();
 
         cy.visit('/');
-
-        cy.get('#navbar', {timeout: 10000})
-            .should('be.visible');
+        await_coreui();
     });
 
     it('connect & disconnect', () => {
-        cy.get('#state .accordion-inner strong:first')
+        cy.get('[data-test-id=state-string]', {timeout: 10000})
             .should('contain', 'Offline');
 
-        cy.get('#connection_printers')
+        cy.get('[data-test-id=connection-printer-profiles]')
             .should('have.length.greaterThan', 0);
-        cy.get('#connection_ports')
+        cy.get('[data-test-id=connection-ports]')
             .select('VIRTUAL');
-        cy.get('#connection_baudrates')
+        cy.get('[data-test-id=connection-baudrates]')
             .select('AUTO');
-        cy.get('#printer_connect')
+        cy.get('[data-test-id=connection-connect]')
             .should('contain', 'Connect')
             .click();
 
-        cy.get('#connection .accordion-inner', {timeout: 10000})
+        cy.get('[data-test-id=sidebar-connection-content]', {timeout: 10000})
             .should('not.be.visible');
-        cy.get('#state .accordion-inner strong:first')
+        cy.get('[data-test-id=state-string]')
             .should('contain', 'Operational');
 
-        cy.get('#connection_wrapper a.accordion-toggle')
+        cy.get('[data-test-id=sidebar-connection-toggle]')
             .click();
-        cy.get('#printer_connect')
+        cy.get('[data-test-id=connection-connect]')
             .should('be.visible')
             .should('contain', 'Disconnect')
             .click();
 
-        cy.get('#state .accordion-inner strong:first')
+        cy.get('[data-test-id=state-string]')
             .should('contain', 'Offline');
     });
 });
