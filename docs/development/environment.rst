@@ -19,12 +19,12 @@ below.
 
   * Checkout the OctoPrint sources from their Git repository:
 
-      * ``git clone -b devel https://github.com/foosel/OctoPrint.git``
+      * ``git clone https://github.com/OctoPrint/OctoPrint.git``
 
   * Enter the checked out source folder: ``cd OctoPrint``
-  * Create virtual environments in the checked out source folder for both Python 2.7 and Python 3.7 to use for
-    installing and running OctoPrint and its dependencies (this avoids potential versioning issues for the dependencies
-    with system wide installed instances):
+  * Create virtual environments in the checked out source folder for both Python 2 and Python 3 to use for
+    installing and running OctoPrint and its dependencies. Creating virtual environments avoids potential versioning
+    issues for the dependencies with system wide installed instances:
 
     * PY2: ``virtualenv --python=python2 venv2``
     * PY3: ``virtualenv --python=python3 venv3``
@@ -46,47 +46,43 @@ below.
 When the virtual environment is activated you can then:
 
   * run the OctoPrint server via ``octoprint serve``
-  * run the test suite from the checked out source folder via ``nosetests --with-doctest``
-  * build the documentation from the ``docs`` sub folder of the checked out sources via ``sphinx-build -b html . _build``
+  * run the test suite from the checked out source folder via ``pytest``
 
 To switch the activated virtual environment, simply activate the new environment as described above.
 
 To deactivate the virtual environment and return to the system's default Python: ``deactivate``.
+
+If you also want to be able to build the documentation that resides in the ``docs`` subfolder, you need to activate
+the *Python 3* environment and install the docs dependencies as well:
+
+  * ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+  * ``pip install -e .[develop,plugins,docs]``
+
+You can then build the documentation:
+
+  * ``sphinx-build -b html . _build``
 
 .. _sec-development-environment-source-linux:
 
 Linux
 .....
 
-.. todo::
-
-   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
-
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
-First make sure you have python including its header files, pip, setuptools, virtualenv, git and some build requirements
+First make sure you have python 2 and 3 including their header files, pip, setuptools, virtualenv, git and some build requirements
 installed:
 
   * On apt based distributions (e.g. Debian, Ubuntu, ...):
 
     .. code-block:: none
 
-       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv git libyaml-dev build-essential
-
-  * On zypper based distributions (example below for SLES 12 SP2):
-
-    .. code-block:: none
-
-       sudo zypper ar https://download.opensuse.org/repositories/devel:/languages:/python/SLE_12_SP2/ python_devel
-       sudo zypper ref
-       sudo zypper in python python-pip python-devel python-setuptools python-virtualenv git libyaml-devel
-       sudo zypper in -t pattern Basis-Devel
+       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv python3 python3-virtualenv python3-dev git libyaml-dev build-essential
 
 .. todo::
 
-   Using a Linux distribution that doesn't use ``apt`` or ``zypper``? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   Using a Linux distribution that doesn't use ``apt``? Please send a
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 Then:
@@ -94,36 +90,42 @@ Then:
 .. code-block:: none
 
    cd ~/devel
-   git clone -b devel https://github.com/foosel/OctoPrint.git
+   git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv venv
-   source ./venv/bin/activate
+   virtualenv --python=python2 venv2
+   virtualenv --python=python3 venv3
+   source ./venv2/bin/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins]
+   source ./venv3/bin/activate
+   pip install --upgrade pip
+   pip install -e .[develop,plugins,docs]
 
-You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
-environment.
+You can then start OctoPrint via ``octoprint`` after activating one of the two virtual environments.
 
 .. _sec-development-environment-windows:
 
 Windows
 .......
 
-.. todo::
-
-   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
-
 This assumes you'll host your OctoPrint development checkout at ``C:\Devel\OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
 First download & install:
 
-  * `Python 2.7.15 Windows x86 MSI installer <https://www.python.org/downloads/release/python-2715/>`_
+  * `Git for Windows <https://git-for-windows.github.io/>`_
+  * `Latest *stable* Python 2.7 and Python 3.8 releases from python.org <https://www.python.org/downloads/windows/>`_
+    (at the time of writing those are ``2.7.18`` and ``3.8.4``)
 
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
+    * it's recommended to install Python 2.7 into ``C:\Python27`` and Python 3 into ``C:\Python38`` - if you select
+      different install locations please substitute accordingly
 
   * `Microsoft Visual C++ Compiler for Python 2.7 <http://www.microsoft.com/en-us/download/details.aspx?id=44266>`_
-  * `Git for Windows <https://git-for-windows.github.io/>`_
+  * `Build Tools For Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
+
+    * install "C++ build tools" and ensure the latest versions of "MSVCv142 - VS 2019 C++ x64/x86 build tools" and
+      "Windows 10 SDK" are checked.
 
 Open the Git Bash you just installed and in that:
 
@@ -131,12 +133,16 @@ Open the Git Bash you just installed and in that:
 
    pip install virtualenv
    cd /c/Devel
-   git clone https://github.com/foosel/OctoPrint.git
+   git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv venv
-   source ./venv/Scripts/activate
+   virtualenv --python=C:\Python27\python.exe venv2
+   virtualenv --python=C:\Python38\python.exe venv3
+   source ./venv2/Scripts/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins]
+   source ./venv3/Scripts/activate
+   pip install --upgrade pip
+   pip install -e .[develop,plugins,docs]
 
 .. _sec-development-environment-mac:
 
@@ -145,12 +151,14 @@ Mac OS X
 
 .. note::
 
-   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac/>`_.
+   This guide is based on the `Setup Guide for Mac OS X on OctoPrint's forum <https://community.octoprint.org/t/setting-up-octoprint-on-macos/13425>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
 .. todo::
 
-   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
+   This guide is not yet adapted to the concurrent use of Python 2 and 3 environments during development. Please send a
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   steps into this guide!
 
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -178,7 +186,7 @@ You'll need a user account with administrator privileges.
     .. code-block:: none
 
        cd ~/devel
-       git clone https://github.com/foosel/OctoPrint.git
+       git clone https://github.com/OctoPrint/OctoPrint.git
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
@@ -192,12 +200,8 @@ IDE Setup
 
 .. todo::
 
-   This guide is not yet adapted to the concurrent use of Python 2.7 and 3.7 environments during development.
-
-.. todo::
-
    Using another IDE than the ones below? Please send a
-   `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
+   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
 
 .. _sec-development-environment-ides-pycharm:
@@ -206,18 +210,23 @@ PyCharm
 .......
 
   - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-  - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
-    folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``)
-  - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
-    "Virtualenv Environment > "Existing Environment", select OctoPrint venv folder (e.g. ``~/devel/OctoPrint/venv``)
+  - Register virtual environments:
+
+    - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...",
+      select OctoPrint ``venv2`` folder (e.g. ``~/devel/OctoPrint/venv2`` or ``C:\Devel\OctoPrint\venv2``).
+    - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
+      "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv2`` folder (e.g. ``~/devel/OctoPrint/venv2``).
+
+    Repeat for the ``venv3`` folder.
+
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
 
     * Name: OctoPrint server
-    * Script: path to ``run`` in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/run`` or ``C:\Devel\OctoPrint\run``)
-    * Script parameters: ``serve --debug``
+    * Module name: ``octoprint``
+    * Parameters: ``serve --debug``
     * Project: ``OctoPrint``
-    * Python interpreter: the ``venv`` local virtual environment
+    * Python interpreter: Project Default
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * If you want dependencies to auto-update on run if necessary: "Before Launch" > "+" > "Run external tool" > "+"
 
@@ -226,28 +235,37 @@ PyCharm
       * Parameters: ``install -e .[develop,plugins]``
       * Working directory: ``$ProjectFileDir$``
 
-  - Add Run/Debug Configuration, select "Python tests" and therein "Nosetests":
+      Note that sadly that seems to cause some hiccups on current PyCharm versions due to ``$PyInterpreterDirectory$``
+      being empty sometimes, so if this fails to run on your installation, you should update your dependencies manually
+      for now.
 
-    * Name: OctoPrint nosetests
-    * Target: Path, ``.``
+  - Add Run/Debug Configuration, select "Python tests" and therein "pytest":
+
+    * Name: OctoPrint tests
+    * Target: Custom
     * Project: ``OctoPrint``
-    * Python interpreter: the ``venv`` local virtual environment
+    * Python interpreter: Project Default
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * Just like with the run configuration for the server you can also have the dependencies auto-update on run of
       the tests, see above on how to set this up.
 
-  - Add Run/Debug Configuration, select "Python docs" and therein "Sphinx task"
+  - Add Run/Debug Configuration, select "Python":
 
     * Name: OctoPrint docs
-    * Command: ``html``
-    * Input: the ``docs`` folder in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/docs`` or
-      ``C:\Devel\OctoPrint\docs``)
-    * Output: the ``docs/_build`` folder in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/docs/_build`` or
-      ``C:\Devel\OctoPrint\docs\_build``)
+    * Module name: ``sphinx.cmd.build``
+    * Parameters: ``-v -T -E ./docs ./docs/_build -b html``
     * Project: ``OctoPrint``
-    * Python interpreter: the ``venv`` local virtual environment
+    * Python interpreter: ``venv3`` environment (the docs build requires Python 3)
+    * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * Just like with the run configuration for the server you can also have the dependencies auto-update when building
       the documentation, see above on how to set this up.
+
+    Note that this requires you to also have installed the additional ``docs`` dependencies into the Python 3 venv as
+    described above via ``pip install -e .[develop,plugins,docs]``.
+
+To switch between Python 2 and 3, all you need to do now is change the Project Default Interpreter and restart
+OctoPrint. On current PyCharm versions you can do that right from a small selection field in the footer of the IDE.
+Otherwise go through Settings.
 
 .. note::
 
