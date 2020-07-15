@@ -700,8 +700,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def get_sd_files(self, *args, **kwargs):
 		if self._comm is None or not self._comm.isSdReady():
-			return []
-		return list(map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles()))
+			result = []
+		else:
+			result = list(map(lambda x: dict(name=x[0][1:], size=x[1], display=x[2]), self._comm.getSdFiles()))
+		return result
 
 	def add_sd_file(self, filename, path, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
@@ -1505,7 +1507,9 @@ class StateMonitor(object):
 					self._last_update = monotonic_time()
 					self._change_event.clear()
 		except Exception:
-			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. Please report this on the OctoPrint issue tracker (make sure to include logs!)")
+			logging.getLogger(__name__).exception("Looks like something crashed inside the state update worker. "
+			                                      "Please report this on the OctoPrint issue tracker (make sure "
+			                                      "to include logs!)")
 
 	def get_current_data(self):
 		with self._progress_lock:

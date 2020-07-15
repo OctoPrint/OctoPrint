@@ -11,10 +11,16 @@ import os
 import re
 import threading
 import math
+import collections
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
 
 # noinspection PyCompatibility
 from past.builtins import basestring
@@ -22,7 +28,7 @@ from past.builtins import basestring
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer, monotonic_time, to_bytes, to_unicode
+from octoprint.util import RepeatedTimer, monotonic_time, to_bytes, to_unicode, get_dos_filename
 
 from typing import Any
 
@@ -592,6 +598,17 @@ class VirtualPrinter(object):
 			filename = data.split(None, 1)[1].strip()
 			self._deleteSdFile(filename)
 
+	def _gcode_M33(self, data):
+		# type: (str) -> None
+		if self._sdCardReady:
+			filename = data.split(None, 1)[1].strip()
+			if filename.startswith("/"):
+				filename = filename[1:]
+			files = self._mappedSdList()
+			file = files.get(filename.lower())
+			if file is not None:
+				self._send(file["name"])
+
 	def _gcode_M113(self, data):
 		# type: (str) -> None
 		matchS = re.search(r"S([0-9]+)", data)
@@ -968,40 +985,56 @@ class VirtualPrinter(object):
 				self._logger.exception("While handling %r", data)
 
 	def _listSd(self):
-		self._send("Begin file list")
-		if self._settings.get_boolean(["extendedSdFileList"]):
-			items = map(
-				lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
-				os.listdir(self._virtualSd)
-			)
+		if self._settings.get_boolean(["sdFiles", "size"]):
+			if self._settings.get_boolean(["sdFiles", "longname"]):
+				line = "{dosname} {size} {name}"
+			else:
+				line = "{dosname} {size}"
 		else:
-			items = map(
-				lambda x: x.upper(),
-				os.listdir(self._virtualSd)
-			)
+			line = "{dosname}"
+
+		files = self._mappedSdList()
+		items = map(lambda x: line.format(**x), files.values())
+
+		self._send("Begin file list")
 		for item in items:
 			self._send(item)
 		self._send("End file list")
+
+	def _mappedSdList(self):
+		# type: () -> collections.OrderedDict
+		result = collections.OrderedDict()
+		for entry in scandir(self._virtualSd):
+			if not entry.is_file():
+				continue
+			dosname = get_dos_filename(entry.name, existing_filenames=list(result.keys())).lower()
+			result[dosname] = dict(name=entry.name,
+			                       path=entry.path,
+			                       dosname=dosname,
+			                       size=entry.stat().st_size)
+		return result
 
 	def _selectSdFile(self, filename, check_already_open=False):
 		# type: (str, bool) -> None
 		if filename.startswith("/"):
 			filename = filename[1:]
 
-		file = os.path.join(self._virtualSd, filename.lower())
-		if self._selectedSdFile == file and check_already_open:
+		files = self._mappedSdList()
+		file = files.get(filename)
+		if file is None or not os.path.exists(file["path"]) or not os.path.isfile(file["path"]):
+			self._send("open failed, File: %s." % filename)
 			return
 
-		if not os.path.exists(file) or not os.path.isfile(file):
-			self._send("open failed, File: %s." % filename)
+		if self._selectedSdFile == file["path"] and check_already_open:
+			return
+
+		self._selectedSdFile = file["path"]
+		self._selectedSdFileSize = file["size"]
+		if self._settings.get_boolean(["includeFilenameInOpened"]):
+			self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
 		else:
-			self._selectedSdFile = file
-			self._selectedSdFileSize = os.stat(file).st_size
-			if self._settings.get_boolean(["includeFilenameInOpened"]):
-				self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
-			else:
-				self._send("File opened")
-			self._send("File selected")
+			self._send("File opened")
+		self._send("File selected")
 
 	def _startSdPrint(self):
 		if self._selectedSdFile is not None:
@@ -1427,9 +1460,10 @@ class VirtualPrinter(object):
 		# type: (str) -> None
 		if filename.startswith("/"):
 			filename = filename[1:]
-		f = os.path.join(self._virtualSd, filename)
-		if os.path.exists(f) and os.path.isfile(f):
-			os.remove(f)
+		files = self._mappedSdList()
+		file = files.get(filename)
+		if file is not None and os.path.exists(file["path"]) and os.path.isfile(file["path"]):
+			os.remove(file["path"])
 
 	def _simulateTemps(self, delta=0.5):
 		timeDiff = self.lastTempAt - monotonic_time()

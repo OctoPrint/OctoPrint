@@ -16,18 +16,18 @@
 <body>
     <div class="container">
         <form class="form-signin">
-            <h2 class="form-signin-heading">{{ _('Please log in') }}</h2>
+            <h2 class="form-signin-heading" data-test-id="login-title">{{ _('Please log in') }}</h2>
 
-            <div id="login-error" class="alert alert-error">{{ _('Incorrect username or password.') }}</div>
+            <div id="login-error" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
-            <input type="text" id="login-user" class="input-block-level" placeholder="{{ _('Username')|edq }}" autofocus>
-            <input type="password" id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
+            <input type="text" id="login-user" data-test-id="login-username" class="input-block-level" placeholder="{{ _('Username')|edq }}" autofocus>
+            <input type="password" id="login-password" data-test-id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
             <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
             <label class="checkbox">
-                <input type="checkbox" id="login-remember"> {{ _('Remember me') }}
+                <input type="checkbox" id="login-remember" data-test-id="login-remember-me"> {{ _('Remember me') }}
             </label>
-            <button class="btn btn-block btn-large btn-primary" id="login-button" type="submit">{{ _('Log in') }}</button>
+            <button class="btn btn-block btn-large btn-primary" id="login-button" data-test-id="login-submit" type="submit">{{ _('Log in') }}</button>
         </form>
     </div>
 

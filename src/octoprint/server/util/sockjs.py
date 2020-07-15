@@ -117,9 +117,12 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 		self._remoteAddress = None
 		self._user = self._userManager.anonymous_user_factory()
 
-		self._throttleFactor = 1
-		self._lastCurrent = 0
-		self._baseRateLimit = 0.5
+		self._throttle_factor = 1
+		self._last_current = 0
+		self._base_rate_limit = 0.5
+
+		self._held_back_current = None
+		self._held_back_mutex = threading.RLock()
 
 		self._register_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.register")
 		self._authed_hooks = self._pluginManager.get_hooks("octoprint.server.sockjs.authed")
@@ -222,18 +225,26 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			except ValueError:
 				self._logger.warning("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
 			else:
-				self._throttleFactor = throttle
-				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
+				self._throttle_factor = throttle
+				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttle_factor))
 
 	def on_printer_send_current_data(self, data):
 		if not self._user.has_permission(Permissions.STATUS):
 			return
 
 		# make sure we rate limit the updates according to our throttle factor
-		now = time.time()
-		if now < self._lastCurrent + self._baseRateLimit * self._throttleFactor:
-			return
-		self._lastCurrent = now
+		with self._held_back_mutex:
+			if self._held_back_current is not None:
+				self._held_back_current.cancel()
+				self._held_back_current = None
+
+			now = time.time()
+			delta = self._last_current + self._base_rate_limit * self._throttle_factor - now
+			if delta > 0:
+				self._held_back_current = threading.Timer(delta, lambda: self.on_printer_send_current_data(data))
+				return
+
+		self._last_current = now
 
 		# add current temperature, log and message backlogs to sent data
 		with self._temperatureBacklogMutex:

@@ -331,7 +331,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ WizardPlugin
 
 	def is_wizard_required(self):
-		return self._settings.global_get(["server", "firstRun"])
+		return self._settings.global_get(["server", "firstRun"]) and is_os_compatible(["!windows"])
 
 	def get_wizard_details(self):
 		return dict(required=self.is_wizard_required())

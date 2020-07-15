@@ -41,7 +41,7 @@ from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
 	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks, ResettableTimer, \
-	monotonic_time
+	monotonic_time, filter_non_utf8
 from octoprint.util.platform import get_os, set_close_exec
 
 try:
@@ -604,7 +604,9 @@ class MachineCom(object):
 		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
 		self._sdFileList = False
+		self._sdFileLongName = False
 		self._sdFiles = []
+		self._sdFilesMap = dict()
 		self._sdFileToSelect = None
 		self._sdFileToSelectUser = None
 		self._ignore_select = False
@@ -676,6 +678,7 @@ class MachineCom(object):
 			if settings().getBoolean(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
+				self._sdFilesMap = dict()
 				self._callback.on_comm_sd_files([])
 
 			if self._currentFile is not None:
@@ -959,7 +962,7 @@ class MachineCom(object):
 			self._send_queue_active = False
 
 		if self._serial is not None:
-			if not is_error:
+			if not is_error and self._state in self.OPERATIONAL_STATES:
 				self.sendGcodeScript("beforePrinterDisconnected")
 				if wait:
 					if timeout is not None:
@@ -1497,7 +1500,8 @@ class MachineCom(object):
 					                             user=user)
 
 	def getSdFiles(self):
-		return self._sdFiles
+		return list(map(lambda x: (x[0], x[1], self._sdFilesMap.get(x[0])),
+		                self._sdFiles))
 
 	def deleteSdFile(self, filename, tags=None):
 		if not self._sdEnabled:
@@ -1557,9 +1561,10 @@ class MachineCom(object):
 		self.sendCommand("M22", tags=tags | {"trigger:comm.release_sd_card",})
 		self._sdAvailable = False
 		self._sdFiles = []
+		self._sdFilesMap = dict()
 
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
-		self._callback.on_comm_sd_files(self._sdFiles)
+		self._callback.on_comm_sd_files(self.getSdFiles())
 
 	def sayHello(self, tags=None):
 		if tags is None:
@@ -1672,14 +1677,13 @@ class MachineCom(object):
 				return
 			try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
 			self._changeState(self.STATE_CONNECTING)
+			self._timeout = self._ok_timeout = self._get_new_communication_timeout()
 		else:
 			self._changeState(self.STATE_DETECT_SERIAL)
 			self._perform_detection_step(init=True)
 
+		# Start monitoring the serial port
 		self._log("Connected to: %s, starting monitor" % self._serial)
-
-		#Start monitoring the serial port.
-		self._timeout = self._ok_timeout = self._get_new_communication_timeout()
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
@@ -1791,31 +1795,60 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = lower_line
-					fileinfo = preprocessed_line.rsplit(None, 1)
-					if len(fileinfo) > 1:
-						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
+					preprocessed_line = line
+					fileinfo = preprocessed_line.split(None, 2)
+					if len(fileinfo) == 3:
+						# name, size, long name
+						filename, size, longname = fileinfo
+					elif len(fileinfo) == 2:
+						# name, size
 						filename, size = fileinfo
+						longname = None
+					else:
+						# name
+						filename = preprocessed_line
+						size = None
+						longname = None
+
+					if size is not None:
 						try:
 							size = int(size)
 						except ValueError:
 							# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
 							filename = preprocessed_line
 							size = None
-					else:
-						# no extended file information, so only the filename is there and we set size to None
-						filename = preprocessed_line
-						size = None
 
 					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
-							self._logger.warning("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+							self._logger.warning("Got a file from printer's SD that has a non-ascii filename ({!r}), "
+							                     "that shouldn't happen according to the protocol".format(filename))
+						elif longname and filter_non_utf8(longname):
+							self._logger.warning("Got a file from printer's SD that has a non-utf8 longname ({!r}), "
+							                     "that shouldn't happen according to the protocol".format(longname))
 						else:
 							if not filename.startswith("/"):
 								# file from the root of the sd -- we'll prepend a /
 								filename = "/" + filename
-							self._sdFiles.append((filename, size))
+							self._sdFiles.append((filename.lower(), size))
+							if longname is not None:
+								self._sdFilesMap[filename] = longname
 						continue
+
+				elif self._sdFileLongName:
+					# Response to M33: just one line with the long name. Yay.
+					#
+					# As we have NO way to parse the request short name from that, and also no indicator
+					# on the line that this is in fact a reply to M33 and not just some arbitrary line injected
+					# by the firmware belonging to some other command and/or an out of band message/autoreport, we have
+					# to hope for the best here, set our requested filename as a flag and only use the potential mapping
+					# if it has a valid file extension.
+					#
+					# It would have been so much easier if M33's output was something sensible like
+					# "<short name>: <long name>" or such, but why make things easy...
+					_, ext = os.path.splitext(lower_line)
+					if ext and valid_file_type(lower_line, "machinecode"):
+						self._sdFilesMap[self._sdFileLongName] = line
+						self._sdFileLongName = False
 
 				handled = False
 
@@ -1824,6 +1857,7 @@ class MachineCom(object):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
+					self._sdFileLongName = False # reset looking for M33 response
 					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
 					                         "X:" in line or "NAME:" in line
 					handled = (line == "wait" or line == "ok" or not needs_further_handling)
@@ -1839,7 +1873,8 @@ class MachineCom(object):
 				                                                and (not self.job_on_hold or self._resendActive)
 				                                                and not self._long_running_command
 				                                                and not self._heating and now >= self._ok_timeout)) \
-						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
+						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until)\
+						and not self._state in (self.STATE_DETECT_SERIAL,):
 					# We have two timeout variants:
 					#
 					# Variant 1: No line at all received within the communication timeout. This can always happen.
@@ -2096,7 +2131,7 @@ class MachineCom(object):
 					self._sdFileList = True
 				elif 'End file list' in line:
 					self._sdFileList = False
-					self._callback.on_comm_sd_files(self._sdFiles)
+					self._callback.on_comm_sd_files(self.getSdFiles())
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
@@ -2218,7 +2253,7 @@ class MachineCom(object):
 
 				### Serial detection
 				if self._state == self.STATE_DETECT_SERIAL:
-					if line == '' or monotonic_time() > self._timeout:
+					if line == '' or monotonic_time() > self._ok_timeout:
 						self._perform_detection_step()
 					elif 'start' in line or line.startswith('ok'):
 						self._onConnected()
@@ -2377,7 +2412,6 @@ class MachineCom(object):
 			self._logger.info("Serial detection: {}".format(message))
 
 		if init:
-			timeout = settings().getFloat(["serial", "timeout", "connection"])
 			port = self._port
 			baudrate = self._baudrate
 
@@ -2396,27 +2430,26 @@ class MachineCom(object):
 				baudrate_candidates = baudrateList([115200, 250000])
 
 			self._detection_candidates = [(p, b) for p in port_candidates for b in baudrate_candidates]
+			self._detection_retry = self.DETECTION_RETRIES
 
 			log("Performing autodetection with {} " \
 			    "port/baudrate candidates: {}".format(len(self._detection_candidates),
 			                                          ", ".join(map(lambda x: "{}@{}".format(x[0], x[1]),
 			                                                    self._detection_candidates))))
 
-		else:
-			timeout = settings().getFloat(["serial", "timeout", "detection"])
-
 		def attempt_handshake():
+			timeout = self._get_communication_timeout_interval()
 			if self._serial.timeout != timeout:
 				self._serial.timeout = timeout
-			self._timeout = monotonic_time() + timeout
+			self._timeout = self._ok_timeout = monotonic_time() + timeout
 
-			log("Handshake attempt #{}".format(self._detection_retry + 1))
+			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry + 1, timeout))
 
 			self._detection_retry += 1
 			self._do_send_without_checksum(b"", log=False)  # new line to reset things
 			self.sayHello(tags={"trigger:detection", })
 
-		while len(self._detection_candidates) > 0:
+		while len(self._detection_candidates) > 0 or self._detection_retry < self.DETECTION_RETRIES:
 			if self._detection_retry < self.DETECTION_RETRIES:
 				attempt_handshake()
 				return
@@ -2425,6 +2458,7 @@ class MachineCom(object):
 				(p, b) = self._detection_candidates.pop(0)
 
 				try:
+					log("Trying port {}, baudrate {}".format(p, b))
 					if self._serial is None or self._serial.port != p:
 						if not self._open_serial(p, b, trigger_errors=False):
 							log("Could not open port {}, baudrate {}, skipping".format(p, b))
@@ -2432,7 +2466,6 @@ class MachineCom(object):
 					else:
 						self._serial.baudrate = b
 
-					log("Trying port {}, baudrate {}".format(p, b))
 					self._detection_retry = 0
 
 					attempt_handshake()
@@ -2654,6 +2687,15 @@ class MachineCom(object):
 		return interval
 
 	def _get_communication_timeout_interval(self):
+		# special rules during serial detection
+		if self._state in (self.STATE_DETECT_SERIAL,):
+			if self._detection_retry == 0:
+				# first try
+				return self._timeout_intervals.get("detectionFirst", 10.0)
+			else:
+				# consecutive tries
+				return self._timeout_intervals.get("detectionConsecutive", 2.0)
+
 		# communication timeout
 		if self._busy_protocol_support:
 			comm_timeout = self._timeout_intervals.get("communicationBusy", 2.0)
@@ -2875,8 +2917,7 @@ class MachineCom(object):
 		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
 		if close:
 			if self._send_m112_on_error and not self.isSdPrinting() and reason not in ("connection",
-			                                                                           "autodetect_baudrate",
-			                                                                           "autodetect_port"):
+			                                                                           "autodetect"):
 				self._trigger_emergency_stop(close=False)
 			self.close(is_error=True)
 
@@ -3696,7 +3737,8 @@ class MachineCom(object):
 
 	def _gcode_M28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if not self.isStreaming():
-			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
+			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. "
+			          "Do NOT attempt to print while manually streaming!")
 			self._manualStreaming = True
 
 	def _gcode_M29_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
@@ -3801,6 +3843,14 @@ class MachineCom(object):
 			interval = int(match.group("value"))
 			self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
 										   and (interval > 0)
+
+	def _gcode_M33_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		parts = cmd.split(None, 1)
+		if len(parts) > 1:
+			filename = parts[1].strip().lower()
+			if not filename.startswith("/"):
+				filename = "/" + filename
+			self._sdFileLongName = filename
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		newLineNumber = 0

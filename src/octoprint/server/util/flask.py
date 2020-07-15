@@ -10,6 +10,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import tornado.web
 import flask
 import flask.json
+import flask.sessions
 import flask_login
 import octoprint.vendor.flask_principal as flask_principal
 import flask_assets
@@ -530,6 +531,9 @@ class OctoPrintFlaskResponse(flask.Response):
 
 
 class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
+
+	def should_set_cookie(self, app, session):
+		return flask.request.endpoint != "static"
 
 	def save_session(self, app, session, response):
 		if flask.g.get("login_via_apikey", False):

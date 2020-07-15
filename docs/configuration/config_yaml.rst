@@ -283,9 +283,13 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # false, no minification will take place regardless of the minify setting below.
        bundle: true
 
-       # If set to true, OctoPrint will minify its viewmodels (that includes those of plugins). Note: if bundle is
+       # If set to true, OctoPrint will the core and library javascript assets. Note: if bundle is
        # set to false, no minification will take place either.
        minify: true
+
+       # If set to true, OctoPrint will also minify the third party plugin javascript assets. Note: if bundle or
+       # minify are set to false, no minification of the plugin assets will take place either.
+       minify_plugins: false
 
        # Whether to delete generated web assets on server startup (forcing a regeneration)
        clean_on_startup: true

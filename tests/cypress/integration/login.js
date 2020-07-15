@@ -1,46 +1,58 @@
-describe('Login tests', () => {
+import { prepare_server, await_coreui, await_loginui, login } from "../util/util"
+
+context('Login tests', () => {
     const username = 'admin';
     const password = 'test';
 
-    describe.skip('Successful login', () => {
+    beforeEach(() => {
+        prepare_server();
+    });
+
+    context('Successful login', () => {
+        beforeEach(() => {
+            cy.visit('/?l10n=en');
+            await_loginui();
+        });
 
         it('logs in', () => {
-            cy.visit('/');
-            cy.get('#login-user')
+            cy.get('[data-test-id=login-username]')
                 .type(username);
-            cy.get('#login-password')
+            cy.get('[data-test-id=login-password]')
                 .type(password);
 
-            cy.get('#login-button')
-                .click();
+            cy.get('[data-test-id=login-submit]')
+                .click({ force: true });
+            cy.wait("@login");
 
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
-            cy.get('#navbar_login a.dropdown-toggle span')
+            await_coreui();
+
+            cy.get('[data-test-id=login-menu-title]')
                 .should('contain', username);
             cy.getCookie('session_P5000')
                 .should('exist');
             cy.getCookie('remember_token_P5000')
                 .should('not.exist');
-            cy.url()
-                .should('contain', '#temp');
+            cy.location()
+                .should((loc) => {
+                    expect(loc.hash).to.eq("#temp");
+                });
         });
 
         it('logs in with remember me', () => {
-            cy.visit('/');
-            cy.get('#login-user')
+            cy.get('[data-test-id=login-username]')
                 .type(username);
-            cy.get('#login-password')
+            cy.get('[data-test-id=login-password]')
                 .type(password);
-
-            cy.get('#login-remember')
-                .click();
-            cy.get('#login-button')
+            cy.get('[data-test-id=login-remember-me]')
                 .click();
 
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
-            cy.get('#navbar_login a.dropdown-toggle span')
+            cy.get('[data-test-id=login-submit]')
+                .click({ force: true });
+            cy.wait("@login");
+
+            await_coreui();
+
+            cy.get('[data-test-id=login-menu-title]')
                 .should('contain', username);
             cy.getCookie('session_P5000')
                 .should('exist');
@@ -49,62 +61,63 @@ describe('Login tests', () => {
                     expect($cookie).to.have.property('value');
                     expect($cookie.value).to.match(new RegExp('^' + username + '\|'));
                 });
-            cy.url()
-                .should('contain', '#temp');
+            cy.location()
+                .should((loc) => {
+                    expect(loc.hash).to.eq("#temp");
+                });
         });
+    });
 
-        it('logs in and logs out again', () => {
-            cy.visit('/');
-            cy.get('#login-user')
-                .type(username);
-            cy.get('#login-password')
-                .type(password);
+    context('Successful logout', () => {
+        it('logs out', () => {
+            Cypress.currentTest.retries(3);
 
-            cy.get('#login-button')
+            // login
+            login(username, password);
+
+            cy.visit('/?l10n=en');
+
+            await_coreui();
+
+            cy.get('[data-test-id=login-menu]')
                 .click();
-
-            cy.get('#navbar', {timeout: 10000})
-                .should('be.visible');
-
-            cy.get('#navbar_login a.dropdown-toggle')
+            cy.get('[data-test-id=logout-submit]')
                 .click();
-            cy.get('#logout_button')
-                .click();
+            cy.wait("@logout");
 
-            cy.get('h2.form-signin-heading')
-                .should('be.visible')
-                .should('contain', 'Please log in');
+            await_loginui();
         })
     });
 
     context('Unauthorized login attempts', () => {
-        it('uses wrong user name', () => {
-            cy.visit('/');
+        beforeEach(() => {
+            cy.visit('/?l10n=en');
+            await_loginui();
+        })
 
-            cy.get('#login-user')
+        it('uses wrong user name', () => {
+            cy.get('[data-test-id=login-username]')
                 .type('idonotexist');
-            cy.get('#login-password')
+            cy.get('[data-test-id=login-password]')
                 .type('test');
-            cy.get('#login-button')
+            cy.get('[data-test-id=login-submit]')
                 .click();
         });
 
         it('uses wrong password', () => {
-            cy.visit('/');
-
-            cy.get('#login-user')
+            cy.get('[data-test-id=login-username]')
                 .type('admin');
-            cy.get('#login-password')
+            cy.get('[data-test-id=login-password]')
                 .type('wrongpassword');
-            cy.get('#login-button')
+            cy.get('[data-test-id=login-submit]')
                 .click();
         });
 
         afterEach(() => {
-            cy.get('h2.form-signin-heading')
+            cy.get('[data-test-id=login-title]')
                 .should('be.visible')
                 .should('contain', 'Please log in');
-            cy.get('#login-error')
+            cy.get('[data-test-id=login-error]')
                 .should('be.visible')
                 .should('contain', 'Incorrect username or password');
         });
