@@ -270,13 +270,15 @@ $(function() {
             self.markedForFileDeletion.removeAll();
         };
 
-        self.isTimelapseViewable = function(url){
-            return (!self.loginState.hasPermissionKo(self.access.permissions.TIMELAPSE_DOWNLOAD)() && url.indexOf('.mp4') < 0)
+        self.isTimelapseViewable = function(data){
+            var url = data.url;
+            return (self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DOWNLOAD) && url.indexOf('.mp4') >= 0)
         }
-        self.showTimelapsePreview = function(url) {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DOWNLOAD) || url.indexOf(".mp4") < 0)
+        self.showTimelapsePreview = function(data) {
+            if (!self.isTimelapseViewable(data))
                 return;
 
+            var url = data.url;
             var previewModal = $("#timelapsePreviewModal");
             previewModal.children("div.modal-body").children("video").attr("src", url);
             previewModal.off("hidden.bs.modal").on("hidden.bs.modal", function(){$(this).attr("src", "")})
