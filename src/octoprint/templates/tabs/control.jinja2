@@ -1,5 +1,8 @@
 {% if enableWebcam %}
-    <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+    <div id="webcam_hls_container" tabindex="0" data-bind="visible: webcamHlsEnabled()">
+        <video id="webcam_hls" muted autoplay style="width: 100%"/>
+    </div>
+    <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">
             <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
                 <p><strong>{{ _('Webcam stream loading...') }}</strong></p>

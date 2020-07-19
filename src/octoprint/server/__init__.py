@@ -1549,7 +1549,8 @@ class Server(object):
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.min.js",
 			"js/lib/ResizeSensor.js",
-			"js/lib/less.min.js"
+			"js/lib/less.min.js",
+			"js/lib/hls.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
