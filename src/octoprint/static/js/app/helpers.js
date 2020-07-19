@@ -1409,3 +1409,33 @@ var copyToClipboard = function(text) {
     document.execCommand("copy");
     temp.remove();
 };
+
+var determineWebcamStreamType = function(streamUrl) {
+    if (streamUrl) {
+        var lastDotPosition = streamUrl.lastIndexOf(".");
+        var firstQuotationSignPosition = streamUrl.indexOf("?");
+        if(
+            lastDotPosition != -1 &&
+            firstQuotationSignPosition != -1 &&
+            lastDotPosition >= firstQuotationSignPosition
+        ) {
+            throw "Malformed URL. Cannot determine stream type."
+        }
+
+        // If we have found a dot, try to extract the extension.
+        if (lastDotPosition > -1) {
+            if (firstQuotationSignPosition > -1) {
+                var extension = streamUrl.slice(lastDotPosition+1, firstQuotationSignPosition-1);
+            } else {
+                var extension = streamUrl.slice(lastDotPosition+1);
+            }
+            if (extension.toLowerCase() == "m3u8") {
+                return "hls";
+            };
+        };
+        // By default, 'mjpg' is the stream type.
+        return "mjpg";
+    } else {
+        throw "Empty streamUrl. Cannot determine stream type.";
+    };
+};
