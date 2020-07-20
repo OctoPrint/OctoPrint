@@ -1248,7 +1248,7 @@ class Server(object):
 
 						headers = kwargs.get("headers", dict())
 						headers["X-Force-View"] = plugin if plugin else "_default"
-						headers["X-Preemptive-Record"] = "no"
+						headers["X-Preemptive-Recording"] = "yes"
 						kwargs["headers"] = headers
 
 						builder = EnvironBuilder(**kwargs)

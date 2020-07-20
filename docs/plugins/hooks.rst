@@ -588,7 +588,7 @@ This describes actually two hooks:
 octoprint.comm.protocol.gcode.<phase>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This describes actually four hooks:
+This actually describes four hooks:
 
   * ``octoprint.comm.protocol.gcode.queuing``
   * ``octoprint.comm.protocol.gcode.queued``
@@ -1647,6 +1647,40 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
+
+.. _sec-plugins-hook-theming-dialog:
+
+octoprint.theming.<dialog>
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This actually describes two hooks:
+
+  * ``octoprint.theming.login``
+  * ``octoprint.theming.recovery``
+
+.. py:function:: ui_theming_hook(*args, **kwargs)
+
+   Support theming of the login or recovery dialog, just in case the core UI is themed as well. Use to return a list of additional
+   CSS file URLs to inject into the dialog HTML.
+
+   Example usage by a plugin:
+
+   .. code-block:: python
+
+      def loginui_theming():
+          from flask import url_for
+          return [url_for("plugin.myplugin.static", filename="css/loginui_theme.css")]
+
+      __plugin_hooks__ = {
+          "octoprint.theming.login": loginui_theming
+      }
+
+   Only a list of ready-made URLs to CSS files is supported, neither LESS nor JS. Best use
+   ``url_for`` like in the example above to be prepared for any configured prefix URLs.
+
+   :return: A list of additional CSS URLs to inject into the login or recovery dialog.
+   :rtype: A list of strings.
+
 
 .. _sec-plugins-hook-timelapse-capture-pre:
 

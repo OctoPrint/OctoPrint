@@ -1,0 +1,56 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OctoPrint Login</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
+    <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
+
+    <!-- le CSS -->
+
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
+
+    {% for url in theming %}
+        <link rel="stylesheet" href="{{ url }}">
+    {% endfor %}
+
+    <!-- le javascript -->
+
+    <script>
+        var BASE_URL = "{{ url_for('index') }}";
+    </script>
+    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/knockout.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/babel.js") }}"></script>
+
+    {% assets "js_client" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    {% if g.locale %}<script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>{% endif %}
+
+    <script src="{{ url_for("static", filename="js/app/helpers.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/recovery/recovery.js") }}"></script>
+</head>
+<body>
+    <div id="recovery" class="container">
+        <form class="form-recovery">
+            <h2 class="form-recovery-heading">{{ _('Recovery options') }}</h2>
+            <fieldset>
+                <legend>{{ _('System commands') }}</legend>
+                <!-- ko foreach: systemCommands -->
+                <button class="btn btn-block" data-bind="text: name, click: function() { $root.executeSystemCommand($data) }"></button>
+                <!-- /ko -->
+            </fieldset>
+        </form>
+    </div>
+</body>
+</html>
