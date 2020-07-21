@@ -670,7 +670,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			defaults = [os.path.join(basedir, "config.yaml"),] + \
 			           [os.path.join(basedir, folder) for folder in default_settings["folder"].keys()]
 
-			# check how much many bytes we are about to backup
+			# check how many bytes we are about to backup
 			size = os.stat(configfile).st_size
 			for folder in default_settings["folder"].keys():
 				if folder in exclude or folder in exclude_by_default:
@@ -741,6 +741,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if callable(on_backup_done):
 				on_backup_done(name, final_path, exclude)
+
 		except Exception as exc:  ## noqa: F841
 			# TODO py3: use the exception, not sys.exc_info()
 			if callable(on_backup_error):
