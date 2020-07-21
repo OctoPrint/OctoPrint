@@ -30,13 +30,7 @@ $(function() {
 
         OctoPrint.browser.login(username, password, remember)
             .done(function() {
-                var params = new URLSearchParams(window.location.search);
-                var redirect = params.get("redirect");
-                if (redirect === null) {
-                    redirect = BASE_URL;
-                }
-
-                window.location.href = redirect;
+                window.location.href = REDIRECT_URL;
             })
             .fail(function() {
                 usernameElement.val("");

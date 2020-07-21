@@ -19,7 +19,7 @@ import octoprint.plugin
 from octoprint.server import app, userManager, groupManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
-from octoprint.access.permissions import Permissions
+from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.settings import settings
 from octoprint.filemanager import full_extension_tree, get_all_extensions
 from octoprint.util import to_unicode, to_bytes, sv
@@ -130,7 +130,23 @@ def _add_additional_assets(hook):
 @app.route("/login")
 @app.route("/login/")
 def login():
-	render_kwargs = dict(theming=[])
+	from flask_login import current_user
+
+	redirect_url = request.args.get("redirect", url_for("index"))
+	permissions = sorted(filter(lambda x: x is not None and isinstance(x, OctoPrintPermission),
+	                            map(lambda x: getattr(Permissions, x.strip()),
+	                                request.args.get("permissions", "").split(","))),
+	                     key=lambda x: x.get_name())
+	if not permissions:
+		permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
+
+	if all(map(lambda p: p.can(), permissions)):
+		return redirect(redirect_url)
+
+	render_kwargs = dict(theming=[],
+	                     redirect_url=redirect_url,
+	                     permission_names=map(lambda x: x.get_name(), permissions),
+	                     logged_in=not current_user.is_anonymous)
 
 	try:
 		additional_assets = _add_additional_assets("octoprint.theming.login")
@@ -149,7 +165,7 @@ def login():
 @app.route("/recovery/")
 def recovery():
 	if not Permissions.ADMIN.can():
-		return redirect(url_for("login", redirect=request.full_path))
+		return redirect(url_for("login", redirect=request.full_path, permissions=Permissions.ADMIN.key))
 
 	render_kwargs = dict(theming=[])
 
@@ -217,7 +233,10 @@ def index():
 		and userManager.enabled \
 		and userManager.has_been_customized():
 		if not (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()):
-			return redirect(url_for("login", redirect=request.full_path))
+			return redirect(url_for("login",
+			                        redirect=request.full_path,
+			                        permissions=",".join([Permissions.STATUS.key,
+			                                              Permissions.SETTINGS_READ.key])))
 
 	global _templates, _plugin_names, _plugin_vars
 
