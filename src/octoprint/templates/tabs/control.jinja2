@@ -109,7 +109,7 @@
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
 
         <!-- Flow rate -->
-        <div id="control-jog-feedrate" class="jog-panel">
+        <div id="control-jog-flowrate" class="jog-panel">
             <label>{{ _('Flow rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!') }}', content: '{{ _('The flow rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.') }}'}"><i class="fa fa-info-circle"></i></a></label>
             <div class="input-append control-box">
                 <input type="number" class="input-mini" min="1" step="1" data-bind="value: flowRate, event: { blur: resetFlowRateDisplay, focus: cancelFlowRateDisplayReset }, css: { pulsate_text_opacity: flowRateResetter() !== undefined }">
