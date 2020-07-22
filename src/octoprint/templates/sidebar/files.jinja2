@@ -4,7 +4,7 @@
         <span class="search-clear" data-bind="click: clearSearchQuery"><i class="fa fa-remove"></i></span>
     </div>
 </form>
-<div class="gcode_files" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
+<div class="gcode_files" data-test-id="files-list" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
     <div class="entry back clickable" data-bind="visible: currentPath() != '', click: function() { $root.navigateUp(); }" style="display: none">
         <div class="back-arrow"><i class="fa fa-arrow-left"></i> {{  _('Back') }}</div>
         <div class="back-path"><small class="muted">{{ _('Currently in') }} <span data-bind="text: currentPath"></span></small></div>
@@ -67,18 +67,18 @@
             <span class="btn btn-primary fileinput-button span6" style="margin-bottom: 10px">
                                 <i class="fa fa-upload"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
+                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
                             </span>
             <span class="btn btn-primary fileinput-button span6" data-bind="enable: $root.isSdReady() && !$root.isPrinting(), css: {disabled: !$root.isSdReady() || $root.isPrinting()}" style="margin-bottom: 10px">
                                 <i class="fa fa-upload"></i>
                                 <span>{{ _('Upload to SD') }}</span>
-                                <input id="gcode_upload_sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: isSdReady()">
+                                <input id="gcode_upload_sd" data-test-id="upload-sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: isSdReady()">
                             </span>
         {% else %}
             <span class="btn btn-primary fileinput-button span12" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
+                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
                             </span>
         {% endif %}
     </div>
