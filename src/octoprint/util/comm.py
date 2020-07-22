@@ -2486,8 +2486,10 @@ class MachineCom(object):
 			self._heating = False
 
 	def _continue_sending(self):
-		while self._active:
-			job_active = self._state in (self.STATE_STARTING, self.STATE_PRINTING) and not (self._currentFile is None or self._currentFile.done or self.isSdPrinting())
+		# Ensure we have at least one line in the send queue, but don't spam it
+		while self._active and not self._send_queue.qsize():
+			job_active = self._state in (self.STATE_STARTING, self.STATE_PRINTING) \
+			             and not (self._currentFile is None or self._currentFile.done or self.isSdPrinting())
 
 			if self._send_from_command_queue():
 				# we found something in the command queue to send
