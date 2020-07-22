@@ -6,6 +6,8 @@ export const prepare_server = () => {
     cy.route("GET", "/api/files?recursive=true").as("files")
     cy.route("GET", "/plugin/softwareupdate/check").as("softwareupdate");
     cy.route("GET", "/api/plugin/pluginmanager").as("pluginmanager");
+    cy.route("POST", "/api/connection").as("connectionCommand");
+    cy.route("GET", "/api/connection").as("connectionDetails");
 }
 
 export const await_loginui = () => {
