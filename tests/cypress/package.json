@@ -19,6 +19,7 @@
   "dependencies": {
     "cypress": "^4.9.0",
     "cypress-commands": "^1.1.0",
+    "cypress-file-upload": "^4.0.7",
     "cypress-plugin-retries": "^1.5.2",
     "cypress-terminal-report": "^1.4.1",
     "cypress-wait-until": "^1.7.1"
