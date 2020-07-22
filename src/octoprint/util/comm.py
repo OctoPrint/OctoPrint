@@ -2494,11 +2494,11 @@ class MachineCom(object):
 				return True
 
 			elif self.job_on_hold:
-				# job is on hold, that means we must not send from either script queue or file
+				# job is on hold, that means we must not send from either job queue or file
 				return False
 
 			elif self._send_from_job_queue():
-				# we found something in the script queue to send
+				# we found something in the job queue to send
 				return True
 
 			elif job_active and self._send_from_job():
@@ -2509,7 +2509,7 @@ class MachineCom(object):
 				# nothing sent but also no job active, so we can just return false
 				return False
 
-			self._logger.debug("No command sent on ok while printing, doing another iteration")
+			self._logger.debug("No command enqueued on ok while printing, doing another iteration")
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
