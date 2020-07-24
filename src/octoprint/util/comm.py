@@ -648,12 +648,17 @@ class MachineCom(object):
 		self._monitoring_active = True
 		self.monitoring_thread = threading.Thread(target=self._monitor, name="comm._monitor")
 		self.monitoring_thread.daemon = True
-		self.monitoring_thread.start()
 
 		# sending thread
 		self._send_queue_active = True
 		self.sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
 		self.sending_thread.daemon = True
+
+	def start(self):
+		# doing this here instead of __init__ combats a race condition where
+		# self._comm in the printer interface is still None on first pushs from
+		# the comm layer during detection
+		self.monitoring_thread.start()
 		self.sending_thread.start()
 
 	def __del__(self):

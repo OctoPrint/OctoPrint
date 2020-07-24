@@ -267,6 +267,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
 
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
+		self._comm.start()
 
 	def disconnect(self, *args, **kwargs):
 		"""
