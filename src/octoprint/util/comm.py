@@ -995,14 +995,16 @@ class MachineCom(object):
 				self._logger.exception("Error while trying to close serial port")
 				is_error = True
 
-			# if we are printing, this will also make sure of firing PRINT_FAILED
-			if is_error:
-				self._changeState(self.STATE_CLOSED_WITH_ERROR)
-			else:
-				self._changeState(self.STATE_CLOSED)
 		else:
 			deactivate_monitoring_and_send_queue()
+
 		self._serial = None
+
+		# if we are printing, this will also make sure of firing PRINT_FAILED
+		if is_error:
+			self._changeState(self.STATE_CLOSED_WITH_ERROR)
+		else:
+			self._changeState(self.STATE_CLOSED)
 
 		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
@@ -1681,6 +1683,10 @@ class MachineCom(object):
 		else:
 			self._changeState(self.STATE_DETECT_SERIAL)
 			self._perform_detection_step(init=True)
+
+		if not self._state in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
+			# we got cancelled during connection, bail
+			return
 
 		# Start monitoring the serial port
 		self._log("Connected to: %s, starting monitor" % self._serial)
@@ -2424,6 +2430,9 @@ class MachineCom(object):
 				self.sayHello(tags={"trigger:detection", })
 
 		while len(self._detection_candidates) > 0 or self._detection_retry < self.DETECTION_RETRIES:
+			if self._state not in (self.STATE_DETECT_SERIAL,):
+				return
+
 			if self._detection_retry < self.DETECTION_RETRIES:
 				if self._serial is None:
 					self._detection_retry = self.DETECTION_RETRIES
@@ -2753,7 +2762,9 @@ class MachineCom(object):
 				serial_obj.close()
 				serial_obj.parity = serial.PARITY_NONE
 
-			serial_obj.open()
+			#serial_obj.open()
+			time.sleep(5.0)
+			raise OSError(22, 'The semaphore timeout period has expired.', None, 121)
 
 			# Set close_exec flag on serial handle, see #3212
 			if hasattr(serial_obj, "fd"):
