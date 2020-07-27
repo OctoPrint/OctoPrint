@@ -2408,19 +2408,27 @@ class MachineCom(object):
 			                                                    self._detection_candidates))))
 
 		def attempt_handshake():
-			timeout = self._get_communication_timeout_interval()
-			if self._serial.timeout != timeout:
-				self._serial.timeout = timeout
-			self._timeout = self._ok_timeout = monotonic_time() + timeout
-
-			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry + 1, timeout))
-
 			self._detection_retry += 1
-			self._do_send_without_checksum(b"", log=False)  # new line to reset things
-			self.sayHello(tags={"trigger:detection", })
+			timeout = self._get_communication_timeout_interval()
+
+			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry, timeout))
+			try:
+				if self._serial.timeout != timeout:
+					self._serial.timeout = timeout
+				self._timeout = self._ok_timeout = monotonic_time() + timeout
+			except Exception:
+				self._log("Unexpected error while setting timeout {}: {}".format(timeout, get_exception_string()))
+				self._logger.exception("Unexpected error while setting timeout {}".format(timeout))
+			else:
+				self._do_send_without_checksum(b"", log=False)  # new line to reset things
+				self.sayHello(tags={"trigger:detection", })
 
 		while len(self._detection_candidates) > 0 or self._detection_retry < self.DETECTION_RETRIES:
 			if self._detection_retry < self.DETECTION_RETRIES:
+				if self._serial is None:
+					self._detection_retry = self.DETECTION_RETRIES
+					continue
+
 				attempt_handshake()
 				return
 
