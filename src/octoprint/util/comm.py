@@ -2762,9 +2762,7 @@ class MachineCom(object):
 				serial_obj.close()
 				serial_obj.parity = serial.PARITY_NONE
 
-			#serial_obj.open()
-			time.sleep(5.0)
-			raise OSError(22, 'The semaphore timeout period has expired.', None, 121)
+			serial_obj.open()
 
 			# Set close_exec flag on serial handle, see #3212
 			if hasattr(serial_obj, "fd"):
