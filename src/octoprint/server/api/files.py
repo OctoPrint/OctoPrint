@@ -63,7 +63,12 @@ def _create_lastmodified(path, recursive):
 		return max(lms)
 
 	else:
-		storage, path_in_storage = path.split("/", 1)
+		if "/" in path:
+			storage, path_in_storage = path.split("/", 1)
+		else:
+			storage = path
+			path_in_storage = None
+
 		try:
 			return fileManager.last_modified(storage, path=path_in_storage, recursive=recursive)
 		except Exception:
