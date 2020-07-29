@@ -650,12 +650,17 @@ class MachineCom(object):
 		self._monitoring_active = True
 		self.monitoring_thread = threading.Thread(target=self._monitor, name="comm._monitor")
 		self.monitoring_thread.daemon = True
-		self.monitoring_thread.start()
 
 		# sending thread
 		self._send_queue_active = True
 		self.sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
 		self.sending_thread.daemon = True
+
+	def start(self):
+		# doing this here instead of __init__ combats a race condition where
+		# self._comm in the printer interface is still None on first pushs from
+		# the comm layer during detection
+		self.monitoring_thread.start()
 		self.sending_thread.start()
 
 	def __del__(self):
@@ -993,14 +998,16 @@ class MachineCom(object):
 				self._logger.exception("Error while trying to close serial port")
 				is_error = True
 
-			# if we are printing, this will also make sure of firing PRINT_FAILED
-			if is_error:
-				self._changeState(self.STATE_CLOSED_WITH_ERROR)
-			else:
-				self._changeState(self.STATE_CLOSED)
 		else:
 			deactivate_monitoring_and_send_queue()
+
 		self._serial = None
+
+		# if we are printing, this will also make sure of firing PRINT_FAILED
+		if is_error:
+			self._changeState(self.STATE_CLOSED_WITH_ERROR)
+		else:
+			self._changeState(self.STATE_CLOSED)
 
 		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
@@ -1681,6 +1688,10 @@ class MachineCom(object):
 		else:
 			self._changeState(self.STATE_DETECT_SERIAL)
 			self._perform_detection_step(init=True)
+
+		if not self._state in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
+			# we got cancelled during connection, bail
+			return
 
 		# Start monitoring the serial port
 		self._log("Connected to: %s, starting monitor" % self._serial)
@@ -2438,19 +2449,30 @@ class MachineCom(object):
 			                                                    self._detection_candidates))))
 
 		def attempt_handshake():
-			timeout = self._get_communication_timeout_interval()
-			if self._serial.timeout != timeout:
-				self._serial.timeout = timeout
-			self._timeout = self._ok_timeout = monotonic_time() + timeout
-
-			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry + 1, timeout))
-
 			self._detection_retry += 1
-			self._do_send_without_checksum(b"", log=False)  # new line to reset things
-			self.sayHello(tags={"trigger:detection", })
+			timeout = self._get_communication_timeout_interval()
+
+			log("Handshake attempt #{} with timeout {}s".format(self._detection_retry, timeout))
+			try:
+				if self._serial.timeout != timeout:
+					self._serial.timeout = timeout
+				self._timeout = self._ok_timeout = monotonic_time() + timeout
+			except Exception:
+				self._log("Unexpected error while setting timeout {}: {}".format(timeout, get_exception_string()))
+				self._logger.exception("Unexpected error while setting timeout {}".format(timeout))
+			else:
+				self._do_send_without_checksum(b"", log=False)  # new line to reset things
+				self.sayHello(tags={"trigger:detection", })
 
 		while len(self._detection_candidates) > 0 or self._detection_retry < self.DETECTION_RETRIES:
+			if self._state not in (self.STATE_DETECT_SERIAL,):
+				return
+
 			if self._detection_retry < self.DETECTION_RETRIES:
+				if self._serial is None:
+					self._detection_retry = self.DETECTION_RETRIES
+					continue
+
 				attempt_handshake()
 				return
 
