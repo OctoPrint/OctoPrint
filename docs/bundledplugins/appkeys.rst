@@ -320,7 +320,7 @@ Key response
      - Multiplicity
      - Type
      - Description
-   * - ``apikey``
+   * - ``api_key``
      - 1
      - str
      - the API key generated for the application
