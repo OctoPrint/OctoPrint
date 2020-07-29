@@ -12,6 +12,10 @@ context('Login tests', () => {
         beforeEach(() => {
             cy.visit('/?l10n=en');
             await_loginui();
+            cy.location()
+                .should((loc) => {
+                    expect(loc.pathname).to.eq("/login/");
+                });
         });
 
         it('logs in', () => {
@@ -86,6 +90,10 @@ context('Login tests', () => {
             cy.wait("@logout");
 
             await_loginui();
+            cy.location()
+                .should((loc) => {
+                    expect(loc.pathname).to.eq("/login/");
+                });
         })
     });
 
@@ -93,6 +101,10 @@ context('Login tests', () => {
         beforeEach(() => {
             cy.visit('/?l10n=en');
             await_loginui();
+            cy.location()
+                .should((loc) => {
+                    expect(loc.pathname).to.eq("/login/");
+                });
         })
 
         it('uses wrong user name', () => {

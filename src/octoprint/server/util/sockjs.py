@@ -242,6 +242,7 @@ class PrinterStateConnection(octoprint.vendor.sockjs.tornado.SockJSConnection,
 			delta = self._last_current + self._base_rate_limit * self._throttle_factor - now
 			if delta > 0:
 				self._held_back_current = threading.Timer(delta, lambda: self.on_printer_send_current_data(data))
+				self._held_back_current.start()
 				return
 
 		self._last_current = now

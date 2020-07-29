@@ -1447,6 +1447,7 @@ def collect_core_assets(preferred_stylesheet="css"):
 		'js/app/viewmodels/control.js',
 		'js/app/viewmodels/files.js',
 		'js/app/viewmodels/loginstate.js',
+		'js/app/viewmodels/loginui.js',
 		'js/app/viewmodels/navigation.js',
 		'js/app/viewmodels/printerstate.js',
 		'js/app/viewmodels/printerprofiles.js',

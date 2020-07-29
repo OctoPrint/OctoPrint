@@ -31,6 +31,7 @@ context('Connection test against virtual printer', () => {
             .should('contain', 'Connect')
             .click();
 
+        cy.wait(["@connectionCommand", "@connectionDetails"]);
         cy.get('[data-test-id=sidebar-connection-content]', {timeout: 10000})
             .should('not.be.visible');
         cy.get('[data-test-id=state-string]')
@@ -43,6 +44,7 @@ context('Connection test against virtual printer', () => {
             .should('contain', 'Disconnect')
             .click();
 
+        cy.wait(["@connectionCommand", "@connectionDetails"]);
         cy.get('[data-test-id=state-string]')
             .should('contain', 'Offline');
     });

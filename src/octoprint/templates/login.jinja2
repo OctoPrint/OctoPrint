@@ -9,9 +9,33 @@
     <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-    {% include "parts/loginui_css.jinja2" %}
+    <!-- le CSS -->
 
-    {% include "parts/loginui_javascripts.jinja2" %}
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/login.css") }}">
+
+    {% for url in theming %}
+        <link rel="stylesheet" href="{{ url }}">
+    {% endfor %}
+
+    <!-- le javascript -->
+
+    <script>
+        var BASE_URL = "{{ url_for('index') }}";
+        var REDIRECT_URL = "{{ redirect_url|e }}";
+    </script>
+    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
+
+    {% assets "js_client" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script src="{{ url_for("static", filename="js/login/login.js") }}"></script>
 </head>
 <body>
     <div class="container">
@@ -20,6 +44,10 @@
 
             <div id="login-error" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
+
+            {% if logged_in %}<p>
+                {{ _('An account with the following permissions is required:') }} {{ permission_names|join(", ") }}
+            </p>{% endif %}
 
             <input type="text" id="login-user" data-test-id="login-username" class="input-block-level" placeholder="{{ _('Username')|edq }}" autofocus>
             <input type="password" id="login-password" data-test-id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">

@@ -3,6 +3,7 @@ on:
   push:
   release:
     types: [published, prereleased]
+  workflow_dispatch:
 
 jobs:
   build:

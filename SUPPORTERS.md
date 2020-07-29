@@ -17,7 +17,6 @@ thanks to everyone who contributed!
   * D Brian Kimmel
   * DeltaMaker 3D Printers
   * Dennis Breining
-  * Dorian Gray
   * Eric Betts
   * Ernesto Martinez
   * Franziska Kunsmann
@@ -66,4 +65,4 @@ thanks to everyone who contributed!
   * Sven Mueller
   * Ulrich Kempken
 
-and 1886 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1932 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
