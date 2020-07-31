@@ -18,7 +18,7 @@ from builtins import range
 import octoprint.plugin
 import octoprint.util
 
-import zeroconf
+import octoprint.vendor.zeroconf as zeroconf
 import time
 import collections
 import socket
