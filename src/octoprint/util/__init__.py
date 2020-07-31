@@ -37,6 +37,7 @@ except ImportError:
 from past.builtins import basestring, unicode
 
 
+from octoprint import UMASK
 from octoprint.util.net import interface_addresses, address_for_client, server_reachable
 from octoprint.util.connectivity import ConnectivityChecker
 
@@ -1060,7 +1061,9 @@ def mime_type_matches(mime, other):
 	return type_matches and subtype_matches
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
+def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=None, max_permissions=0o777):
+	if permissions is None:
+		permissions = 0o664 & ~UMASK
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions

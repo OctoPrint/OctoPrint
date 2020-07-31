@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import io
 import sys
 import logging as log
+import os
 
 #~~ version
 
@@ -19,7 +20,9 @@ __revision__ = versions.get('full-revisionid', versions.get('full', None))
 del versions
 del get_versions
 
-#~~ try to ensure a sound SSL environment
+# figure out current umask - sadly only doable by setting a new one and resetting it, no query method
+UMASK = os.umask(0)
+os.umask(UMASK)
 
 urllib3_ssl = True
 """Whether requests/urllib3 and urllib3 (if installed) should be able to establish

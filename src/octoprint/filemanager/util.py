@@ -6,7 +6,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
+import os
 
+from octoprint import UMASK
 from octoprint.util import atomic_write
 
 class AbstractFileWrapper(object):
@@ -17,15 +19,18 @@ class AbstractFileWrapper(object):
 	    filename (str): The file's name
 	"""
 
+	DEFAULT_PERMISSIONS = 0o664
+
 	def __init__(self, filename):
 		self.filename = filename
 
-	def save(self, path):
+	def save(self, path, permissions=None):
 		"""
 		Saves the file's content to the given absolute path.
 
 		Arguments:
 		    path (str): The absolute path to where to save the file
+		    permissions (int): The permissions to set on the file
 		"""
 		raise NotImplementedError()
 
@@ -55,13 +60,17 @@ class DiskFileWrapper(AbstractFileWrapper):
 		self.path = path
 		self.move = move
 
-	def save(self, path):
+	def save(self, path, permissions=None):
 		import shutil
 
 		if self.move:
 			shutil.move(self.path, path)
 		else:
 			shutil.copy2(self.path, path)
+
+		if permissions is None:
+			permissions = self.DEFAULT_PERMISSIONS & ~UMASK
+		os.chmod(path, permissions)
 
 	def stream(self):
 		return io.open(self.path, 'rb')
@@ -80,7 +89,7 @@ class StreamWrapper(AbstractFileWrapper):
 		AbstractFileWrapper.__init__(self, filename)
 		self.streams = streams
 
-	def save(self, path):
+	def save(self, path, permissions=None):
 		"""
 		Will dump the contents of all streams provided during construction into the target file, in the order they were
 		provided.
@@ -90,6 +99,9 @@ class StreamWrapper(AbstractFileWrapper):
 		with atomic_write(path, mode='wb') as dest:
 			for source in self.streams:
 				shutil.copyfileobj(source, dest)
+		if permissions is None:
+			permissions = self.DEFAULT_PERMISSIONS & ~UMASK
+		os.chmod(path, permissions)
 
 	def stream(self):
 		"""
