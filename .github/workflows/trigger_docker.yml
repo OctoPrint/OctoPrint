@@ -14,5 +14,5 @@ jobs:
         with:
           token: ${{ secrets.OCTOPRINT_DOCKER_DISPATCH_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: octoprint-release
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "event-name": "${{ github.event_name }}", "event-type": "${{ github.event.action }}"}'
+          event-type: ${{ github.event.action }}
+          client-payload: '{"ref": "${{ github.event }}"}'
