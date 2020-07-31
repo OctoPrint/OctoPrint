@@ -81,6 +81,11 @@ INSTALL_REQUIRES_PYTHON2 = [
 	"typing>=3.7.4.1,<4"
 ]
 
+# Python 3 specific requirements
+INSTALL_REQUIRES_PYTHON3 = [
+	"zeroconf>=0.24,<0.25"
+]
+
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
 	"appdirs>=1.4.4",
@@ -130,12 +135,15 @@ if int(setuptools.__version__.split(".", 1)[0]) < 18:
 	# add optional dependencies for setuptools versions < 18 that don't yet support environment markers
 	if sys.version_info[0] < 3:
 		INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
+	else:
+		INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON3
 
 	if sys.platform == "darwin":
 		INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
 else:
 	# environment markers supported
 	EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
+	EXTRA_REQUIRES[":python_version >= '3'"] = INSTALL_REQUIRES_PYTHON3
 	EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
 
 #-----------------------------------------------------------------------------------------------------------------------

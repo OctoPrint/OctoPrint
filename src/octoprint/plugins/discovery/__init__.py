@@ -18,7 +18,14 @@ from builtins import range
 import octoprint.plugin
 import octoprint.util
 
-import octoprint.vendor.zeroconf as zeroconf
+try:
+	# python 3
+	import zeroconf
+
+except ImportError:
+	# python 2: vendored version with some backported fixes
+	import octoprint.vendor.zeroconf as zeroconf
+
 import time
 import collections
 import socket
@@ -197,21 +204,19 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		txt_record = self._format_zeroconf_txt(txt_record)
 
 		key = (reg_type, port)
-		addresses = octoprint.util.net.interface_addresses()
+		addresses = list(map(lambda x: socket.inet_aton(x), octoprint.util.net.interface_addresses()))
 
 		try:
-			for address in addresses:
-				info = zeroconf.ServiceInfo(reg_type,
-				                            name,
-				                            address=socket.inet_aton(address),
-				                            port=port,
-				                            properties=txt_record)
-				self._zeroconf.register_service(info, allow_name_change=True)
-				self._zeroconf_registrations[key].append(info)
-
+			info = zeroconf.ServiceInfo(reg_type, name,
+			                            addresses=addresses,
+			                            port=port,
+			                            server="{}.local.".format(socket.gethostname()),
+			                            properties=txt_record)
+			self._zeroconf.register_service(info, allow_name_change=True)
+			self._zeroconf_registrations[key].append(info)
 			self._logger.info("Registered '{}' for {}".format(name, reg_type))
 		except Exception:
-			self._logger.exception("Could not (fully) register {} for {} on port {}".format(name, reg_type, port))
+			self._logger.exception("Could not register {} for {} on port {}".format(name, reg_type, port))
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -292,16 +297,24 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				self._logger.debug("Got a browsing result for Zeroconf resolution of {}, resolving...".format(type))
 				info = zeroconf.get_service_info(type, name, timeout=resolve_timeout * 1000)
 				if info:
-					address = socket.inet_ntoa(info.address)
-					self._logger.debug("Resolved a result for Zeroconf resolution of {}: {} @ {}".format(type,
-					                                                                                     name,
-					                                                                                     address))
-					result.append(dict(
-						name=info.name[:-(len(type) + 1)],
-						host=address,
-						port=info.port,
-						txt_record=info.properties
-					))
+					def to_result(info, address):
+						n = info.name[:-(len(type) + 1)]
+						p = info.port
+
+						self._logger.debug("Resolved a result for Zeroconf resolution of {}: {} @ {}:{}".format(type,
+						                                                                                        n,
+						                                                                                        address,
+						                                                                                        p))
+
+						return dict(name=n, host=address, port=p, txt_record=info.properties)
+
+					if hasattr(info, "addresses"):
+						# Python 3
+						for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
+							result.append(to_result(info, address))
+					else:
+						# Python 2
+						result.append(to_result(info, socket.inet_ntoa(info.address)))
 
 		self._logger.debug("Browsing Zeroconf for {service_type}".format(service_type=service_type))
 
