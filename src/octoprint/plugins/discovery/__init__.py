@@ -133,14 +133,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		# Zeroconf
 		self.zeroconf_register("_http._tcp", self.get_instance_name(), txt_record=self._create_http_txt_record_dict())
 		self.zeroconf_register("_octoprint._tcp", self.get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
-		for zeroconf in self._settings.get(["zeroConf"]):
-			if "service" in zeroconf:
-				self.zeroconf_register(
-					zeroconf["service"],
-					zeroconf["name"] if "name" in zeroconf else self.get_instance_name(),
-					port=zeroconf["port"] if "port" in zeroconf else None,
-					txt_record=zeroconf["txtRecord"] if "txtRecord" in zeroconf else None
-				)
+		for zc in self._settings.get(["zeroConf"]):
+			if "service" in zc:
+				self.zeroconf_register(zc["service"],
+				                       zc.get("name", self.get_instance_name()),
+				                       port=zc.get("port"),
+				                       txt_record=zc.get("txtRecord"))
 
 		# SSDP
 		self._ssdp_register()
