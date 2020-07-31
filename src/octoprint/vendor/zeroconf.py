@@ -480,7 +480,7 @@ class DNSAddress(DNSRecord):
 
     def __eq__(self, other):
         """Tests equality on address"""
-        return isinstance(other, DNSAddress) and self.address == other.address
+        return isinstance(other, DNSAddress) and self.address == other.address and DNSEntry.__eq__(self, other)
 
     def __repr__(self):
         """String representation"""
@@ -513,7 +513,9 @@ class DNSHinfo(DNSRecord):
     def __eq__(self, other):
         """Tests equality on cpu and os"""
         return (isinstance(other, DNSHinfo) and
-                self.cpu == other.cpu and self.os == other.os)
+                self.cpu == other.cpu and
+                self.os == other.os and
+                DNSEntry.__eq__(self, other))
 
     def __repr__(self):
         """String representation"""
