@@ -308,13 +308,8 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 						return dict(name=n, host=address, port=p, txt_record=info.properties)
 
-					if hasattr(info, "addresses"):
-						# Python 3
-						for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
-							result.append(to_result(info, address))
-					else:
-						# Python 2
-						result.append(to_result(info, socket.inet_ntoa(info.address)))
+					for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
+						result.append(to_result(info, address))
 
 		self._logger.debug("Browsing Zeroconf for {service_type}".format(service_type=service_type))
 
