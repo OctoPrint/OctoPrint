@@ -33,7 +33,7 @@ import struct
 import sys
 import threading
 import time
-from functools import reduce
+import itertools
 
 import netifaces
 from six import binary_type, indexbytes, int2byte, iteritems, text_type
@@ -351,10 +351,10 @@ class DNSEntry(object):
 
     def __eq__(self, other):
         """Equality test on name, type, and class"""
-        return (isinstance(other, DNSEntry) and
-                self.name == other.name and
+        return (self.name == other.name and
                 self.type == other.type and
-                self.class_ == other.class_)
+                self.class_ == other.class_ and
+                isinstance(other, DNSEntry))
 
     def __ne__(self, other):
         """Non-equality test"""
@@ -412,6 +412,8 @@ class DNSRecord(DNSEntry):
         DNSEntry.__init__(self, name, type_, class_)
         self.ttl = ttl
         self.created = current_time_millis()
+        self._expiration_time = self.get_expiration_time(100)
+        self._stale_time = self.get_expiration_time(50)
 
     def __eq__(self, other):
         """Abstract method"""
@@ -437,15 +439,15 @@ class DNSRecord(DNSEntry):
 
     def get_remaining_ttl(self, now):
         """Returns the remaining TTL in seconds."""
-        return max(0, (self.get_expiration_time(100) - now) / 1000.0)
+        return max(0, (self._expiration_time - now) / 1000.0)
 
     def is_expired(self, now):
         """Returns true if this record has expired."""
-        return self.get_expiration_time(100) <= now
+        return self._expiration_time <= now
 
     def is_stale(self, now):
         """Returns true if this record is at least half way expired."""
-        return self.get_expiration_time(50) <= now
+        return self._stale_time <= now
 
     def reset_ttl(self, other):
         """Sets this record's TTL and created time to that of
@@ -532,7 +534,7 @@ class DNSPointer(DNSRecord):
 
     def __eq__(self, other):
         """Tests equality on alias"""
-        return isinstance(other, DNSPointer) and self.alias == other.alias
+        return isinstance(other, DNSPointer) and self.alias == other.alias and DNSEntry.__eq__(self, other)
 
     def __repr__(self):
         """String representation"""
@@ -554,7 +556,7 @@ class DNSText(DNSRecord):
 
     def __eq__(self, other):
         """Tests equality on text"""
-        return isinstance(other, DNSText) and self.text == other.text
+        return isinstance(other, DNSText) and self.text == other.text and DNSEntry.__eq__(self, other)
 
     def __repr__(self):
         """String representation"""
@@ -589,7 +591,8 @@ class DNSService(DNSRecord):
                 self.priority == other.priority and
                 self.weight == other.weight and
                 self.port == other.port and
-                self.server == other.server)
+                self.server == other.server and
+                DNSEntry.__eq__(self, other))
 
     def __repr__(self):
         """String representation"""
@@ -1063,7 +1066,7 @@ class DNSCache(object):
         else:
             # avoid size change during iteration by copying the cache
             values = list(self.cache.values())
-            return reduce(lambda a, b: a + b, values)
+            return list(itertools.chain.from_iterable(values))
 
 
 class Engine(threading.Thread):
@@ -1923,9 +1926,8 @@ class Zeroconf(QuietLogger):
         are held in the cache, and listeners are notified."""
         now = current_time_millis()
         for record in msg.answers:
-            expired = record.is_expired(now)
             if record in self.cache.entries():
-                if expired:
+                if record.is_expired(now):
                     self.cache.remove(record)
                 else:
                     entry = self.cache.get(record)
