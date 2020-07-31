@@ -12,7 +12,7 @@ jobs:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
         with:
-          token: ${{ secrets.TRIGGER_DOCKER_RELEASE_TOKEN }}
-          repository: ${{ github.repository_owner }}/docker
+          token: ${{ secrets.OCTOPRINT_DOCKER_DISPATCH_TOKEN }}
+          repository: ${{ github.repository_owner }}/octoprint-docker
           event-type: octoprint-release
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "event-name": "${{ github.event_name }}", "event-type": "${{ github.event.action }}"}'
