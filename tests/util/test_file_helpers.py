@@ -108,6 +108,7 @@ class TestAtomicWrite(unittest.TestCase):
 		# setup
 		fd = 0
 		path = "tempfile.tmp"
+		umask = 0o026
 
 		mock_file = mock.MagicMock()
 		mock_file.name = path
@@ -117,8 +118,9 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_exists.return_value = False
 
 		# test
-		with octoprint.util.atomic_write("somefile.yaml") as f:
-			f.write("test")
+		with mock.patch("octoprint.util.UMASK", umask):
+			with octoprint.util.atomic_write("somefile.yaml") as f:
+				f.write("test")
 
 		# assert
 		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
@@ -126,7 +128,7 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_open.assert_called_once_with(path, mode="w+b")
 		mock_file.write.assert_called_once_with("test")
 		mock_file.close.assert_called_once_with()
-		mock_chmod.assert_called_once_with(path, 0o664)
+		mock_chmod.assert_called_once_with(path, 0o644 & ~umask)
 		mock_move.assert_called_once_with(path, "somefile.yaml")
 
 	@mock.patch("shutil.move")
@@ -214,6 +216,7 @@ class TestAtomicWrite(unittest.TestCase):
 		# setup
 		fd = 0
 		path = "tempfile.tmp"
+		umask = 0o026
 
 		mock_file = mock.MagicMock()
 		mock_file.name = path
@@ -223,15 +226,16 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_exists.return_value = False
 
 		# test
-		with octoprint.util.atomic_write("somefile.yaml", mode="w", prefix="foo", suffix="bar") as f:
-			f.write("test")
+		with mock.patch("octoprint.util.UMASK", umask):
+			with octoprint.util.atomic_write("somefile.yaml", mode="w", prefix="foo", suffix="bar") as f:
+				f.write("test")
 
 		# assert
 		mock_mkstemp.assert_called_once_with(prefix="foo", suffix="bar")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w", encoding="utf-8")
 		mock_file.close.assert_called_once_with()
-		mock_chmod.assert_called_once_with(path, 0o664)
+		mock_chmod.assert_called_once_with(path, 0o664 & ~umask)
 		mock_move.assert_called_once_with(path, "somefile.yaml")
 
 
@@ -241,7 +245,7 @@ class TestAtomicWrite(unittest.TestCase):
 	@mock.patch("os.close")
 	@mock.patch("os.chmod")
 	@mock.patch("os.path.exists")
-	def test_atomic_custom_permissions(self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move):
+	def test_atomic_write_custom_permissions(self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move):
 		"""Tests that custom permissions may be set."""
 
 		# setup
