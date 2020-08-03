@@ -126,7 +126,7 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_open.assert_called_once_with(path, mode="w+b")
 		mock_file.write.assert_called_once_with("test")
 		mock_file.close.assert_called_once_with()
-		mock_chmod.assert_called_once_with(path, 0o644)
+		mock_chmod.assert_called_once_with(path, 0o664)
 		mock_move.assert_called_once_with(path, "somefile.yaml")
 
 	@mock.patch("shutil.move")
@@ -231,7 +231,7 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w", encoding="utf-8")
 		mock_file.close.assert_called_once_with()
-		mock_chmod.assert_called_once_with(path, 0o644)
+		mock_chmod.assert_called_once_with(path, 0o664)
 		mock_move.assert_called_once_with(path, "somefile.yaml")
 
 

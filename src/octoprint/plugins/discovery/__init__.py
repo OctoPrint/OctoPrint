@@ -9,7 +9,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 The SSDP/UPNP implementations has been largely inspired by https://gist.github.com/schlamar/2428250
 """
 
-import logging
 import flask
 from flask_babel import gettext
 
@@ -20,17 +19,18 @@ import octoprint.plugin
 import octoprint.util
 
 try:
-	# TODO: looks like pybonjour is py2 only - find alternatives or port?
-	import pybonjour
-except ImportError:
-	pybonjour = False
+	# python 3
+	import zeroconf
 
+except ImportError:
+	# python 2: vendored version with some backported fixes
+	import octoprint.vendor.zeroconf as zeroconf
+
+import time
+import collections
+import socket
 
 def __plugin_load__():
-	if not pybonjour:
-		# no pybonjour available, we can't use that
-		logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")
-
 	plugin = DiscoveryPlugin()
 
 	global __plugin_implementation__
@@ -38,14 +38,11 @@ def __plugin_load__():
 
 	global __plugin_helpers__
 	__plugin_helpers__ = dict(
-		ssdp_browse=plugin.ssdp_browse
+		ssdp_browse=plugin.ssdp_browse,
+		zeroconf_browse = plugin.zeroconf_browse,
+		zeroconf_register = plugin.zeroconf_register,
+		zeroconf_unregister = plugin.zeroconf_unregister
 	)
-	if pybonjour:
-		__plugin_helpers__.update(dict(
-			zeroconf_browse=plugin.zeroconf_browse,
-			zeroconf_register=plugin.zeroconf_register,
-			zeroconf_unregister=plugin.zeroconf_unregister
-		))
 
 class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
                       octoprint.plugin.ShutdownPlugin,
@@ -62,8 +59,8 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self.port = None
 
 		# zeroconf
-		self._sd_refs = dict()
-		self._cnames = dict()
+		self._zeroconf = zeroconf.Zeroconf()
+		self._zeroconf_registrations = collections.defaultdict(list)
 
 		# upnp/ssdp
 		self._ssdp_monitor_active = False
@@ -143,14 +140,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		# Zeroconf
 		self.zeroconf_register("_http._tcp", self.get_instance_name(), txt_record=self._create_http_txt_record_dict())
 		self.zeroconf_register("_octoprint._tcp", self.get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
-		for zeroconf in self._settings.get(["zeroConf"]):
-			if "service" in zeroconf:
-				self.zeroconf_register(
-					zeroconf["service"],
-					zeroconf["name"] if "name" in zeroconf else self.get_instance_name(),
-					port=zeroconf["port"] if "port" in zeroconf else None,
-					txt_record=zeroconf["txtRecord"] if "txtRecord" in zeroconf else None
-				)
+		for zc in self._settings.get(["zeroConf"]):
+			if "service" in zc:
+				self.zeroconf_register(zc["service"],
+				                       zc.get("name", self.get_instance_name()),
+				                       port=zc.get("port"),
+				                       txt_record=zc.get("txtRecord"))
 
 		# SSDP
 		self._ssdp_register()
@@ -158,7 +153,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 	##~~ ShutdownPlugin API -- used for unregistering OctoPrint's Zeroconf and SSDP service upon application shutdown
 
 	def on_shutdown(self):
-		for key in self._sd_refs:
+		for key in self._zeroconf_registrations:
 			reg_type, port = key
 			self.zeroconf_unregister(reg_type, port)
 
@@ -167,6 +162,27 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 	##~~ helpers
 
 	# ZeroConf
+
+	def _format_zeroconf_service_type(self, service_type):
+		service_type = octoprint.util.to_native_str(service_type)
+		if not service_type.endswith(octoprint.util.to_native_str(".")):
+			service_type += octoprint.util.to_native_str(".")
+		if not service_type.endswith(octoprint.util.to_native_str("local.")):
+			service_type += octoprint.util.to_native_str("local.")
+		return service_type
+
+	def _format_zeroconf_name(self, name, service_type):
+		service_type = self._format_zeroconf_service_type(service_type)
+		return octoprint.util.to_native_str(name) + octoprint.util.to_native_str(".") + service_type
+
+	def _format_zeroconf_txt(self, record):
+		result = dict()
+		if not record:
+			return result
+
+		for key, value in record.items():
+			result[octoprint.util.to_bytes(key)] = octoprint.util.to_bytes(value)
+		return result
 
 	def zeroconf_register(self, reg_type, name=None, port=None, txt_record=None):
 		"""
@@ -178,37 +194,29 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		:param txt_record: optional txt record to attach to the service, dictionary of key-value-pairs
 		"""
 
-		if not pybonjour:
-			return
-
 		if not name:
 			name = self.get_instance_name()
 		if not port:
 			port = self.port
 
-		params = dict(
-			name=name,
-			regtype=reg_type,
-			port=port
-		)
-		if txt_record:
-			params["txtRecord"] = pybonjour.TXTRecord(txt_record)
+		reg_type = self._format_zeroconf_service_type(reg_type)
+		name = self._format_zeroconf_name(name, reg_type)
+		txt_record = self._format_zeroconf_txt(txt_record)
 
 		key = (reg_type, port)
+		addresses = list(map(lambda x: socket.inet_aton(x), octoprint.util.net.interface_addresses()))
 
-		counter = 1
-		while True:
-			try:
-				self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-				self._logger.info("Registered '{name}' for {regtype}".format(**params))
-				return True
-			except pybonjour.BonjourError as be:
-				if be.errorCode == pybonjour.kDNSServiceErr_NameConflict:
-					# Name already registered by different service, let's try a counter postfix. See #2852
-					counter += 1
-					params["name"] = "{} ({})".format(name, counter)
-				else:
-					raise
+		try:
+			info = zeroconf.ServiceInfo(reg_type, name,
+			                            addresses=addresses,
+			                            port=port,
+			                            server="{}.local.".format(socket.gethostname()),
+			                            properties=txt_record)
+			self._zeroconf.register_service(info, allow_name_change=True)
+			self._zeroconf_registrations[key].append(info)
+			self._logger.info("Registered '{}' for {}".format(name, reg_type))
+		except Exception:
+			self._logger.exception("Could not register {} for {} on port {}".format(name, reg_type, port))
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -219,22 +227,21 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		:return:
 		"""
 
-		if not pybonjour:
-			return
-
 		if not port:
 			port = self.port
+		reg_type = self._format_zeroconf_service_type(reg_type)
 
 		key = (reg_type, port)
-		if not key in self._sd_refs:
+		if not key in self._zeroconf_registrations:
 			return
 
-		sd_ref = self._sd_refs[key]
+		infos = self._zeroconf_registrations.pop(key)
 		try:
-			sd_ref.close()
-			self._logger.debug("Unregistered {reg_type} on port {port}".format(reg_type=reg_type, port=port))
-		except Exception:
-			self._logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
+			for info in infos:
+				self._zeroconf.unregister_service(info)
+			self._logger.debug("Unregistered {} on port {}".format(reg_type, port))
+		except:
+			self._logger.exception("Could not (fully) unregister {} on port {}".format(reg_type, port))
 
 	def zeroconf_browse(self, service_type, block=True, callback=None, browse_timeout=5, resolve_timeout=5):
 		"""
@@ -271,79 +278,46 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		         supplied to the callback instead)
 		"""
 
-		if not pybonjour:
-			return None
-
 		import threading
-		import select
 
 		if not block and not callback:
 			raise ValueError("Non-blocking mode but no callback given")
+
+		service_type = self._format_zeroconf_service_type(service_type)
 
 		result = []
 		result_available = threading.Event()
 		result_available.clear()
 
-		resolved = []
+		class ZeroconfListener(object):
+			def __init__(self, logger):
+				self._logger = logger
 
-		def resolve_callback(sd_ref, flags, interface_index, error_code, fullname, hosttarget, port, txt_record):
-			if error_code == pybonjour.kDNSServiceErr_NoError:
-				txt_record_dict = None
-				if txt_record:
-					record = pybonjour.TXTRecord.parse(txt_record)
-					txt_record_dict = dict()
-					for key, value in record:
-						txt_record_dict[key] = value
+			def add_service(self, zeroconf, type, name):
+				self._logger.debug("Got a browsing result for Zeroconf resolution of {}, resolving...".format(type))
+				info = zeroconf.get_service_info(type, name, timeout=resolve_timeout * 1000)
+				if info:
+					def to_result(info, address):
+						n = info.name[:-(len(type) + 1)]
+						p = info.port
 
-				name = fullname[:fullname.find(service_type) - 1].replace("\\032", " ")
-				host = hosttarget[:-1]
+						self._logger.debug("Resolved a result for Zeroconf resolution of {}: {} @ {}:{}".format(type,
+						                                                                                        n,
+						                                                                                        address,
+						                                                                                        p))
 
-				self._logger.debug("Resolved a result for Zeroconf resolution of {service_type}: {name} @ {host}".format(service_type=service_type, name=name, host=host))
-				result.append(dict(
-					name=name,
-					host=host,
-					port=port,
-					txt_record=txt_record_dict
-				))
-				resolved.append(True)
+						return dict(name=n, host=address, port=p, txt_record=info.properties)
 
-		def browse_callback(sd_ref, flags, interface_index, error_code, service_name, regtype, reply_domain):
-			if error_code != pybonjour.kDNSServiceErr_NoError:
-				return
-
-			if not (flags & pybonjour.kDNSServiceFlagsAdd):
-				return
-
-			self._logger.debug("Got a browsing result for Zeroconf resolution of {service_type}, resolving...".format(service_type=service_type))
-			resolve_ref = pybonjour.DNSServiceResolve(0, interface_index, service_name, regtype, reply_domain, resolve_callback)
-
-			try:
-				while not resolved:
-					ready = select.select([resolve_ref], [], [], resolve_timeout)
-					if resolve_ref not in ready[0]:
-						break
-
-					pybonjour.DNSServiceProcessResult(resolve_ref)
-				else:
-					resolved.pop()
-			finally:
-				resolve_ref.close()
+					for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
+						result.append(to_result(info, address))
 
 		self._logger.debug("Browsing Zeroconf for {service_type}".format(service_type=service_type))
 
 		def browse():
-			sd_ref = pybonjour.DNSServiceBrowse(regtype=service_type, callBack=browse_callback)
-			try:
-				while True:
-					ready = select.select([sd_ref], [], [], browse_timeout)
-
-					if not ready[0]:
-						break
-
-					if sd_ref in ready[0]:
-						pybonjour.DNSServiceProcessResult(sd_ref)
-			finally:
-				sd_ref.close()
+			listener = ZeroconfListener(self._logger)
+			browser = zeroconf.ServiceBrowser(self._zeroconf, service_type, listener)
+			time.sleep(browse_timeout)
+			browser.cancel()
 
 			if callback:
 				callback(result)
@@ -414,8 +388,6 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		result_available.clear()
 
 		def browse():
-			import socket
-
 			socket.setdefaulttimeout(timeout)
 
 			search_message = "".join([
@@ -568,8 +540,6 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		:param alive: True to send an "ssdp:alive" message, False to send an "ssdp:byebye" message
 		"""
 
-		import socket
-
 		if alive and self._ssdp_last_notify + self._ssdp_notify_timeout > octoprint.util.monotonic_time():
 			# we just sent an alive, no need to send another one now
 			return
@@ -627,7 +597,6 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			from BaseHTTPServer import BaseHTTPRequestHandler
 
 		from io import BytesIO
-		import socket
 
 		socket.setdefaulttimeout(timeout)
 
@@ -703,7 +672,6 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		if name:
 			return "OctoPrint instance \"{}\"".format(name)
 		else:
-			import socket
 			return "OctoPrint instance on {}".format(socket.gethostname())
 
 

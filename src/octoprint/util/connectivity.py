@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 
 import threading
 import logging
+import time
 
 from octoprint.util.net import server_reachable, resolve_host
 
@@ -171,16 +172,26 @@ class ConnectivityChecker(object):
 			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
 
 			old_value = self._online
-			self._connection_working = server_reachable(self._host, port=self._port)
 
-			if self._name:
-				if self._connection_working:
-					self._logger.debug("Checking if we can resolve {}...".format(self._name))
-					self._resolution_working = len(resolve_host(self._name)) > 0
+			for _ in range(3):
+				connection_working = server_reachable(self._host, port=self._port)
+
+				if self._name:
+					if connection_working:
+						self._logger.debug("Checking if we can resolve {}...".format(self._name))
+						resolution_working = len(resolve_host(self._name)) > 0
+					else:
+						resolution_working = False
 				else:
-					self._resolution_working = False
-			else:
-				self._resolution_working = True
+					resolution_working = True
+
+				if not (connection_working and resolution_working):
+					# retry up to 3 times
+					time.sleep(1.0)
+					continue
+
+			self._connection_working = connection_working
+			self._resolution_working = resolution_working
 
 			if old_value != self._online:
 				self._trigger_change(old_value, self._online)

@@ -1,6 +1,10 @@
 name: Test install of branches and latest release twice per day
 
 on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
   schedule:
     - cron: '0 */12 * * *'
 

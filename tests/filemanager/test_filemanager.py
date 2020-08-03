@@ -398,7 +398,8 @@ class FileManagerTest(unittest.TestCase):
 	@mock.patch("shutil.copyfileobj")
 	@mock.patch("os.remove")
 	@mock.patch("tempfile.NamedTemporaryFile")
-	def test_slice(self, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
+	@mock.patch("os.chmod")
+	def test_slice(self, mocked_chmod, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
 		callback = mock.MagicMock()
 		callback_args = ("one", "two", "three")
 

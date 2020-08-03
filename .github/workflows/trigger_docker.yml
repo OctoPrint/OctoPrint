@@ -1,0 +1,18 @@
+name: Trigger docker build
+on:
+  release:
+    types:
+      - released
+      - prereleased
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: OctoPrint/docker
+          event-type: octoprint-release
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "event-name": "${{ github.event_name }}", "event-type": "${{ github.event.action }}"}'

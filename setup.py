@@ -64,6 +64,7 @@ INSTALL_REQUIRES = [
 	"frozendict>=1.2,<2",
 	"sentry-sdk>=0.15.1,<1",
 	"filetype>=1.0.7,<2",
+	"zeroconf>=0.24,<0.25",
 
 	# vendor bundle dependencies
 	"unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
