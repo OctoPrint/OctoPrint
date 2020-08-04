@@ -12,6 +12,7 @@ thanks to everyone who contributed!
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
+  * BuildBee
   * Christian Petropolis
   * Christian Wolf
   * D Brian Kimmel
