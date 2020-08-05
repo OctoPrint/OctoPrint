@@ -17,6 +17,30 @@ import octoprint.filemanager.util
 import octoprint.util
 
 
+def fix_scandir():
+	try:
+		from os import scandir
+		# nothing to fix, natively available, return
+		return
+
+	except ImportError:
+		# not natively available, use backport
+		from scandir import scandir
+
+		import watchdog.utils.dirsnapshot
+		OriginalDirectorySnapshot = watchdog.utils.dirsnapshot.DirectorySnapshot
+		class FixedDirectorySnapshot(OriginalDirectorySnapshot):
+			def __init__(self, listdir=scandir, *args, **kwargs):
+				OriginalDirectorySnapshot.__init__(self, listdir=listdir, *args, **kwargs)
+		watchdog.utils.dirsnapshot.DirectorySnapshot = FixedDirectorySnapshot
+
+		import watchdog.observers.polling
+		OriginalPollingEmitter = watchdog.observers.polling.PollingEmitter
+		class FixedPollingEmitter(OriginalPollingEmitter):
+			def __init__(self, listdir=scandir, *args, **kwargs):
+				OriginalPollingEmitter.__init__(self, listdir=listdir, *args, **kwargs)
+		watchdog.observers.polling.PollingEmitter = FixedPollingEmitter
+
 class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 
 	"""

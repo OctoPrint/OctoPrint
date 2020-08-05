@@ -283,6 +283,7 @@ class Server(object):
 		util.tornado.fix_json_encode()
 		util.tornado.fix_websocket_check_origin()
 		util.flask.fix_flask_jsonify()
+		util.watchdog.fix_scandir()
 
 		self._setup_mimetypes()
 
