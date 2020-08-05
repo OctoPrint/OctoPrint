@@ -203,6 +203,7 @@ def download_file(url, folder, max_length=None):
 		r.raise_for_status()
 		if "Content-Disposition" in r.headers.keys():
 			filename = re.findall("filename=(.+)", r.headers["Content-Disposition"])[0]
+			filename = filename.replace('"', '') # remove any double quotes in the file name
 		else:
 			filename = url.split("/")[-1]
 
