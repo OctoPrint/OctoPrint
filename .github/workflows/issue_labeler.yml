@@ -1,0 +1,33 @@
+name: "Issue Labeler"
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  apply-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let labels = [];
+
+            if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
+              labels.push('type:request');
+            }
+            if (context.payload.issue.title.match(/\[brainstorming\]/i)) {
+              labels.push('type:brainstorming');
+            }
+            if (context.payload.issue.title.match(/\[rc feedback\]/i)) {
+              labels.push('type:rc feedback');
+            }
+
+            if (labels.length > 0) {
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              })
+            }
