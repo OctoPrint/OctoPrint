@@ -153,7 +153,8 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 	##~~ ShutdownPlugin API -- used for unregistering OctoPrint's Zeroconf and SSDP service upon application shutdown
 
 	def on_shutdown(self):
-		for key in self._zeroconf_registrations:
+		registrations = list(self._zeroconf_registrations.keys())
+		for key in registrations:
 			reg_type, port = key
 			self.zeroconf_unregister(reg_type, port)
 

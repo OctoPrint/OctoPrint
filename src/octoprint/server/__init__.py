@@ -283,6 +283,7 @@ class Server(object):
 		util.tornado.fix_json_encode()
 		util.tornado.fix_websocket_check_origin()
 		util.flask.fix_flask_jsonify()
+		util.watchdog.fix_scandir()
 
 		self._setup_mimetypes()
 
@@ -818,18 +819,22 @@ class Server(object):
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
-		watched = self._settings.getBaseFolder("watched")
-		watchdog_handler = util.watchdog.GcodeWatchdogHandler(fileManager, printer)
-		watchdog_handler.initial_scan(watched)
+		try:
+			watched = self._settings.getBaseFolder("watched")
+			watchdog_handler = util.watchdog.GcodeWatchdogHandler(fileManager, printer)
+			watchdog_handler.initial_scan(watched)
 
-		if self._settings.getBoolean(["feature", "pollWatched"]):
-			# use less performant polling observer if explicitly configured
-			observer = PollingObserver()
-		else:
-			# use os default
-			observer = Observer()
-		observer.schedule(watchdog_handler, watched, recursive=True)
-		observer.start()
+			if self._settings.getBoolean(["feature", "pollWatched"]):
+				# use less performant polling observer if explicitly configured
+				observer = PollingObserver()
+			else:
+				# use os default
+				observer = Observer()
+
+			observer.schedule(watchdog_handler, watched, recursive=True)
+			observer.start()
+		except Exception:
+			self._logger.exception("Error starting watched folder observer")
 
 		# run our startup plugins
 		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,

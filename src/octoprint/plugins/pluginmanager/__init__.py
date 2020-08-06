@@ -157,7 +157,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def increase_upload_bodysize(self, current_max_body_sizes, *args, **kwargs):
 		# set a maximum body size of 50 MB for plugin archive uploads
-		return [("POST", r"/upload_archive", 50 * 1024 * 1024)]
+		return [("POST", r"/upload_file", 50 * 1024 * 1024)]
 
 	# Additional permissions hook
 

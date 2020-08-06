@@ -15,6 +15,7 @@ import re
 
 import netifaces
 import requests
+import werkzeug.http
 
 _cached_check_v6 = None
 def check_v6():
@@ -201,9 +202,12 @@ def resolve_host(host):
 def download_file(url, folder, max_length=None):
 	with requests.get(url, stream=True) as r:
 		r.raise_for_status()
+
+		filename = None
 		if "Content-Disposition" in r.headers.keys():
-			filename = re.findall("filename=(.+)", r.headers["Content-Disposition"])[0]
-		else:
+			_, options = werkzeug.http.parse_options_header(r.headers["Content-Disposition"])
+			filename = options.get('filename')
+		if filename is None:
 			filename = url.split("/")[-1]
 
 		assert len(filename) > 0
