@@ -35,7 +35,6 @@ thanks to everyone who contributed!
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
-  * Kelly C McNiece
   * Kenneth Jiang
   * Kurt Wubbels
   * Kyle Menigoz
@@ -43,19 +42,16 @@ thanks to everyone who contributed!
   * Lee Dohm
   * Makespace Madrid
   * Mark Walker
-  * Marvin Nahmias
   * Michael Aumock
   * Miles Flavel
   * Mosaic Manufacturing
   * Neil R. Goldberg
-  * Patrick Glyré
   * Patrick McGinnis
   * Prof Yuh Wen Chen
   * Raise3D
   * Randy C. Will
   * Ranjib Dey
   * Richard Michaud
-  * Rigid3D
   * Robert Gusek
   * Ronald Griehsler
   * Sacha Telgenhof
@@ -66,4 +62,4 @@ thanks to everyone who contributed!
   * Sven Mueller
   * Ulrich Kempken
 
-and 1932 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1943 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
