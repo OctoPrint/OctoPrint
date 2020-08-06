@@ -999,7 +999,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 
 	def should_use_precompressed(self):
 		return (self._is_pre_compressed
-		        and "gzip" in self.request.headers.get("Accept-Encoding"))
+		        and "gzip" in self.request.headers.get("Accept-Encoding", ""))
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
