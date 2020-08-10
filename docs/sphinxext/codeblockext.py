@@ -205,9 +205,8 @@ class PygmentsBridgeExt(object):
 			with whitespace(sphinx.highlighting.lexers["none"]) as l:
 				hlsource = highlight(source, l, formatter)
 			# /MODIFIED
-		if self._bridge.dest == 'html':
-			return hlsource
 
+			return hlsource
 
 class whitespace_highlighter(object):
 	"""

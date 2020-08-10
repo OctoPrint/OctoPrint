@@ -420,7 +420,7 @@ default_settings = {
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
-		"sockJsConnectTimeout": 10
+		"sockJsConnectTimeout": 30
 	}
 }
 """The default settings of the core application."""

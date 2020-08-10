@@ -445,7 +445,7 @@ def _saveSettings(data):
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"], min=1.0)
 		if "timeoutDetectionFirst" in data["serial"]: s.setFloat(["serial", "timeout", "detectionFirst"], data["serial"]["timeoutDetectionFirst"], min=1.0)
 		if "timeoutDetectionConsecutive" in data["serial"]: s.setFloat(["serial", "timeout", "detectionConsecutive"], data["serial"]["timeoutDetectionConsecutive"], min=1.0)
-		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunicationFirst"], min=1.0)
+		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"], min=1.0)
 		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"], min=1.0)
 		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"], min=1.0)
 		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"], min=1.0)
