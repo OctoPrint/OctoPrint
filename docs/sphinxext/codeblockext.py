@@ -8,9 +8,7 @@ __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the 
 from sphinx.directives.code import CodeBlock
 
 import sphinx.highlighting
-from sphinx.highlighting import PygmentsBridge
 from sphinx.ext import doctest
-from sphinx.util.texescape import tex_hl_escape_map_new
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -207,13 +205,7 @@ class PygmentsBridgeExt(object):
 			with whitespace(sphinx.highlighting.lexers["none"]) as l:
 				hlsource = highlight(source, l, formatter)
 			# /MODIFIED
-		if self._bridge.dest == 'html':
-			return hlsource
-		else:
-			if not isinstance(hlsource, text_type):  # Py2 / Pygments < 1.6
-				hlsource = hlsource.decode()
-			return hlsource.translate(tex_hl_escape_map_new)
-
+		return hlsource
 
 class whitespace_highlighter(object):
 	"""
