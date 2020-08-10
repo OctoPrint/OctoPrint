@@ -132,7 +132,7 @@ def _add_additional_assets(hook):
 def login():
 	from flask_login import current_user
 
-	redirect_url = request.args.get("redirect", url_for("index"))
+	redirect_url = request.args.get("redirect", request.script_root + url_for("index"))
 	permissions = sorted(filter(lambda x: x is not None and isinstance(x, OctoPrintPermission),
 	                            map(lambda x: getattr(Permissions, x.strip()),
 	                                request.args.get("permissions", "").split(","))),
@@ -165,7 +165,9 @@ def login():
 @app.route("/recovery/")
 def recovery():
 	if not Permissions.ADMIN.can():
-		return redirect(url_for("login", redirect=request.full_path, permissions=Permissions.ADMIN.key))
+		return redirect(url_for("login",
+		                        redirect=request.script_root + request.full_path,
+		                        permissions=Permissions.ADMIN.key))
 
 	render_kwargs = dict(theming=[])
 
@@ -234,7 +236,7 @@ def index():
 		and userManager.has_been_customized():
 		if not (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()):
 			return redirect(url_for("login",
-			                        redirect=request.full_path,
+			                        redirect=request.script_root + request.full_path,
 			                        permissions=",".join([Permissions.STATUS.key,
 			                                              Permissions.SETTINGS_READ.key])))
 
