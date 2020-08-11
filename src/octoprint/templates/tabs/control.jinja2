@@ -102,7 +102,7 @@
             </ul>
         </div>
         <div class="input-append control-box">
-            <input type="number" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting(), attr: {placeholder: settings.printer_defaultExtrusionLength}">
+            <input type="number" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting()">
             <span class="add-on">mm</span>
         </div>
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>

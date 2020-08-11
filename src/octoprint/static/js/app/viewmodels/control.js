@@ -347,7 +347,7 @@ $(function() {
         };
 
         self._sendECommand = function (dir) {
-            var length = self.extrusionAmount() || self.settings.printer_defaultExtrusionLength();
+            var length = self.extrusionAmount();
             OctoPrint.printer.extrude(length * dir);
         };
 
@@ -497,6 +497,8 @@ $(function() {
                 self.rerenderControls();
             }
             self._enableWebcam();
+
+            self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
         };
 
         self.onFocus = function (data, event) {
