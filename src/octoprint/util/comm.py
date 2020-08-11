@@ -1761,23 +1761,24 @@ class MachineCom(object):
 					debugging_output = line[2:].strip()
 					if debugging_output.startswith("action:"):
 						action_command = debugging_output[len("action:"):].strip()
+						action_command_name = action_command.split(' ')[0].strip()
 
-						if action_command == "cancel":
+						if action_command_name == "cancel":
 							self._log("Cancelling on request of the printer...")
 							self.cancelPrint()
-						elif action_command == "pause":
+						elif action_command_name == "pause":
 							self._log("Pausing on request of the printer...")
 							self.setPause(True)
-						elif action_command == "paused":
+						elif action_command_name == "paused":
 							self._log("Printer signalled that it paused, switching state...")
 							self.setPause(True, local_handling=False)
-						elif action_command == "resume":
+						elif action_command_name == "resume":
 							self._log("Resuming on request of the printer...")
 							self.setPause(False)
-						elif action_command == "resumed":
+						elif action_command_name == "resumed":
 							self._log("Printer signalled that it resumed, switching state...")
 							self.setPause(False, local_handling=False)
-						elif action_command == "disconnect":
+						elif action_command_name == "disconnect":
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
 						else:
