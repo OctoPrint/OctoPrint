@@ -285,7 +285,10 @@ $(function() {
         self.feedRateBusy = ko.observable(false);
         self.feedRateResetter = ko.observable();
         self.sendFeedRateCommand = function () {
-            var rate = _.parseInt(self.feedRate());
+            var rate = self.feedRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.feedRate());
             self.feedRateBusy(true);
             OctoPrint.printer.setFeedrate(rate)
                 .done(function() {
@@ -321,7 +324,10 @@ $(function() {
         self.flowRateBusy = ko.observable(false);
         self.flowRateResetter = ko.observable();
         self.sendFlowRateCommand = function () {
-            var rate = _.parseInt(self.flowRate());
+            var rate = self.flowRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.flowRate());
             self.flowRateBusy(true);
             OctoPrint.printer.setFlowrate(rate)
                 .done(function() {
