@@ -56,14 +56,18 @@ def fix_websocket_check_origin():
 	header case-insensitively, as defined in RFC6454, Section 4, item 5.
 	"""
 
+	scheme_translation = dict(wss='https',
+	                          ws='http')
+
 	def patched_check_origin(self, origin):
 		def get_check_tuple(urlstring):
 			parsed = urlparse(urlstring)
-			return (parsed.scheme,
+			scheme = scheme_translation.get(parsed.scheme, parsed.scheme)
+			return (scheme,
 			        parsed.hostname,
 			        parsed.port if parsed.port
-			        else 80 if parsed.scheme in ("http", "ws")
-			        else 443 if parsed.scheme in ("https", "wss")
+			        else 80 if scheme == 'http'
+			        else 443 if scheme == 'https'
 			        else None)
 
 		return get_check_tuple(origin) == get_check_tuple(self.request.full_url())
