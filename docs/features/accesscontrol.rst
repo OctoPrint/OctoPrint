@@ -84,7 +84,7 @@ possible to re-run it by editing ``config.yaml`` [#f1]_ and setting ``firstRun``
 in the ``server`` section and ``enabled`` in the ``accessControl`` section to
 ``true``:
 
-.. code-block-ext:: yaml
+.. code-block:: yaml
 
    accessControl:
      enabled: true
