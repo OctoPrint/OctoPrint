@@ -115,7 +115,6 @@ date of first contribution):
   * [Ludovico de Nittis](https://github.com/RyuzakiKK)
   * [Dominik Paľo](https://github.com/DominikPalo)
   * [Kelly Anderson](https://github.com/cbxbiker61)
-<<<<<<< HEAD
   * [Jim Neill](https://github.com/jneilliii)
   * [Dustin Kerber](https://github.com/kerber)
   * [Tobias Schürg](https://github.com/tobiasschuerg)
@@ -123,9 +122,7 @@ date of first contribution):
   * [Lachlan Cresswell](https://github.com/lachyc)
   * [Khoi Pham](https://github.com/osubuu)
   * [Federico Nembrini](https://github.com/FedericoNembrini)
-=======
   * [Brian Vanderbusch](https://github.com/LongLiveCHIEF)
->>>>>>> updated AUTHORS.md
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
