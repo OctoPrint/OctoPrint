@@ -94,7 +94,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.BlueprintPlugin,
                           octoprint.plugin.EventHandlerPlugin):
 
-	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz")
 	PYTHON_EXTENSIONS = (".py",)
 
 	# valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
