@@ -386,7 +386,7 @@ $(function() {
                 try {
                     viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
                 } catch (exc) {
-                    if (Sentry) {
+                    if (typeof Sentry !=='undefined') {
                         Sentry.captureException(exc);
                     }
                     log.error("Error instantiating", viewModel.name, ":", (exc.stack || exc));
@@ -602,7 +602,7 @@ $(function() {
                 _.each(allViewModelData, function (viewModelData) {
                     try {
                         if (!Array.isArray(viewModelData) || viewModelData.length !== 2) {
-                            if (Sentry) {
+                            if (typeof Sentry !=='undefined') {
                                 Sentry.captureException(new Error("View model data for" + viewModelData.constructor.name + "has wrong format, expected 2-tuple (viewModel, targets), got:" + viewModelData));
                             }
                             log.error("View model data for", viewModelData.constructor.name, "has wrong format, expected 2-tuple (viewModel, targets), got:", viewModelData);
@@ -624,7 +624,7 @@ $(function() {
                         try {
                             callViewModel(viewModel, "onBeforeBinding", undefined, true);
                         } catch (exc) {
-                            if (Sentry) {
+                            if (typeof Sentry !=='undefined') {
                                 Sentry.captureException(exc);
                             }
                             log.error("Error calling onBeforeBinding on view model", viewModel.constructor.name, ":", (exc.stack || exc));
@@ -649,7 +649,7 @@ $(function() {
                                     try {
                                         object = $(target);
                                     } catch (exc) {
-                                        if (Sentry) {
+                                        if (typeof Sentry !=='undefined') {
                                             Sentry.captureException(exc);
                                         }
                                         log.error("Error while attempting to jquery-fy target", target, "of view model", viewModel.constructor.name, ":", (exc.stack || exc));
@@ -678,7 +678,7 @@ $(function() {
 
                                     log.debug("View model", viewModel.constructor.name, "bound to", target);
                                 } catch (exc) {
-                                    if (Sentry) {
+                                    if (typeof Sentry !=='undefined') {
                                         Sentry.captureException(exc);
                                     }
                                     log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
@@ -718,7 +718,7 @@ $(function() {
 
                 viewModelMap["uiStateViewModel"].loading(false);
             } catch (exc) {
-                if (Sentry) {
+                if (typeof Sentry !=='undefined') {
                     Sentry.captureException(exc);
                 }
                 viewModelMap["uiStateViewModel"].showLoadingError("Application startup failed.");
