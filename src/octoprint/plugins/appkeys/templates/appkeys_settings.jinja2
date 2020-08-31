@@ -58,26 +58,26 @@
             <li data-bind="css: {disabled: keys.currentPage() === keys.lastPage()}"><a href="javascript:void(0)" data-bind="click: keys.nextPage">»</a></li>
         </ul>
     </div>
-
-    <legend>{{ _('Manually generate an application key') }}</legend>
-
-    <form class="form-horizontal" onsubmit="return false;">
-        <div class="control-group">
-            <label class="control-label">{{ _('User') }}</label>
-            <div class="controls">
-                <select data-bind="options: access.users.listHelper.items, optionsText: 'name', optionsValue: 'name', value: editorUser"></select>
-            </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _('Application identifier') }}</label>
-            <div class="controls">
-                <input type="text" data-bind="value: editorApp">
-            </div>
-        </div>
-        <div class="control-group">
-            <div class="controls">
-                <button class="btn btn-primary" data-bind="click: generateKey">Generate</button>
-            </div>
-        </div>
-    </form>
 </div>
+
+<legend>{{ _('Manually generate an application key') }}</legend>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <label class="control-label">{{ _('User') }}</label>
+        <div class="controls">
+            <select data-bind="options: access.users.listHelper.items, optionsText: 'name', optionsValue: 'name', value: editorUser"></select>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Application identifier') }}</label>
+        <div class="controls">
+            <input type="text" data-bind="value: editorApp">
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="click: generateKey">Generate</button>
+        </div>
+    </div>
+</form>
