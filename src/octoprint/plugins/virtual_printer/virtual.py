@@ -139,6 +139,9 @@ class VirtualPrinter(object):
 		self._waitInterval = self._settings.get_float(["waitInterval"])
 		self._busyInterval = self._settings.get_float(["busyInterval"])
 
+		self._busy = None
+		self._busy_loop = None
+
 		self._echoOnM117 = self._settings.get_boolean(["echoOnM117"])
 
 		self._brokenM29 = self._settings.get_boolean(["brokenM29"])
@@ -688,6 +691,21 @@ class VirtualPrinter(object):
 		self.buffered.join()
 
 	# noinspection PyUnusedLocal
+	def _gcode_M600(self, data):
+		# type: (str) -> None
+		self._send("//action:paused")
+		self._showPrompt("Heater Timeout", ["Reheat",])
+		self._setBusy("paused for user")
+		return True # handled as we don't want to send an ok now, only when finishing the busy
+
+	# noinspection PyUnusedLocal
+	def _gcode_M876(self, data):
+		# type: (str) -> None
+		self._hidePrompt()
+		if self._busy == "paused for user":
+			self._busy = None
+
+	# noinspection PyUnusedLocal
 	def _gcode_M999(self, data):
 		# type: (str) -> None
 		# mirror Marlin behaviour
@@ -892,6 +910,8 @@ class VirtualPrinter(object):
 			| Sends back <message>
 			reset
 			| Simulates a reset. Internal state will be lost.
+			unbusy
+			| Unsets the busy loop.
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -920,6 +940,8 @@ class VirtualPrinter(object):
 			self._debug_drop_connection = True
 		elif data == "reset":
 			self._reset()
+		elif data == "unbusy":
+			self._setUnbusy()
 		elif data == "mintemp_error":
 			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
@@ -1513,6 +1535,34 @@ class VirtualPrinter(object):
 			self.buffered.task_done()
 
 		self._logger.info("Closing down buffer loop")
+
+	def _setBusy(self, reason="processing"):
+		if not self._sendBusy:
+			return
+
+		def loop():
+			while self._busy:
+				self._send("echo:busy {}".format(self._busy))
+				time.sleep(self._busyInterval)
+			self._sendOk()
+
+		self._busy = reason
+		self._busy_loop = threading.Thread(target=loop)
+		self._busy_loop.daemon = True
+		self._busy_loop.start()
+
+	def _setUnbusy(self):
+		self._busy = None
+
+	def _showPrompt(self, text, choices):
+		self._hidePrompt()
+		self._send("//action:prompt_begin {}".format(text))
+		for choice in choices:
+			self._send("//action:prompt_button {}".format(choice))
+		self._send("//action:prompt_show")
+
+	def _hidePrompt(self):
+		self._send("//action:prompt_end")
 
 	def write(self, data):
 		# type: (bytes) -> int
