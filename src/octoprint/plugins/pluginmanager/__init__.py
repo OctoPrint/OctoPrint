@@ -502,13 +502,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		path_url = "file://" + path
 		if os.sep != "/":
 			# windows gets special handling
-			path = path.replace(os.sep, "/").lower()
-			path_url = "file:///" + path
+			path_url = "file:///" + path.replace(os.sep, "/").lower()
 
 		already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
 
+		# as we now always install from a local temporary file, shell quoting should no longer be necessary
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(path_url), "--no-cache-dir"]
+		pip_args = ["--disable-pip-version-check", "install", path, "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
