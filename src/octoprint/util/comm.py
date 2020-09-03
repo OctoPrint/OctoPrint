@@ -1761,30 +1761,35 @@ class MachineCom(object):
 					debugging_output = line[2:].strip()
 					if debugging_output.startswith("action:"):
 						action_command = debugging_output[len("action:"):].strip()
-						action_command_name = action_command.split(' ')[0].strip()
+						if ' ' in action_command:
+							action_name, action_params = action_command.split(' ', 1)
+							action_name = action_name.strip()
+						else:
+							action_name = action_command
+							action_params = ""
 
-						if action_command_name == "cancel":
+						if action_name == "cancel":
 							self._log("Cancelling on request of the printer...")
 							self.cancelPrint()
-						elif action_command_name == "pause":
+						elif action_name == "pause":
 							self._log("Pausing on request of the printer...")
 							self.setPause(True)
-						elif action_command_name == "paused":
+						elif action_name == "paused":
 							self._log("Printer signalled that it paused, switching state...")
 							self.setPause(True, local_handling=False)
-						elif action_command_name == "resume":
+						elif action_name == "resume":
 							self._log("Resuming on request of the printer...")
 							self.setPause(False)
-						elif action_command_name == "resumed":
+						elif action_name == "resumed":
 							self._log("Printer signalled that it resumed, switching state...")
 							self.setPause(False, local_handling=False)
-						elif action_command_name == "disconnect":
+						elif action_name == "disconnect":
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
 						else:
 							for name, hook in self._printer_action_hooks.items():
 								try:
-									hook(self, line, action_command)
+									hook(self, line, action_command, name=action_name, params=action_params)
 								except Exception:
 									self._logger.exception("Error while calling hook from plugin "
 									                       "{} with action command {}".format(name, action_command),

@@ -507,7 +507,7 @@ octoprint.comm.protocol.firmware.capabilities
 octoprint.comm.protocol.action
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: protocol_action_hook(comm_instance, line, action, *args, **kwargs)
+.. py:function:: protocol_action_hook(comm_instance, line, action, name='', params='', *args, **kwargs)
 
    React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
@@ -534,8 +534,12 @@ octoprint.comm.protocol.action
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str line: The complete line as received from the printer, format ``// action:<command>``
-   :param str action: The parsed out action command, so for a ``line`` like ``// action:some_command`` this will be
+   :param str action: The parsed out action command incl. parameters, so for a ``line`` like ``// action:some_command key value`` this will be
+       ``some_command key value``
+   :param str name: The action command name, for a ``line`` like ``// action:some_command key value`` this will be
        ``some_command``
+   :param str params: The action command's parameter, for a ``line`` like ``// action:some_command key value`` this will
+       be ``key value``
 
 .. _sec-plugins-hook-comm-protocol-atcommand-phase:
 
