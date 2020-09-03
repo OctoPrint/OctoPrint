@@ -13,6 +13,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
-          repository: OctoPrint/docker
-          event-type: octoprint-release
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "event-name": "${{ github.event_name }}", "event-type": "${{ github.event.action }}"}'
+          repository: ${{ github.repository_owner }}/octoprint-docker
+          event-type: 'release'
+          client-payload: '{"tag_name": "${{ github.event.release.tag_name }}"}'
