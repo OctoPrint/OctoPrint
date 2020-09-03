@@ -303,7 +303,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._comm.fakeOk()
 
-	def commands(self, commands, *args, **kwargs):
+	def commands(self, commands, tags=None, force=False, *args, **kwargs):
 		"""
 		Sends one or more gcode commands to the printer.
 		"""
@@ -313,8 +313,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not isinstance(commands, (list, tuple)):
 			commands = [commands]
 
+		if tags is None:
+			tags = set()
+		tags |= {"trigger:printer.commands"}
+
 		for command in commands:
-			self._comm.sendCommand(command, tags=kwargs.get("tags", set()) | {"trigger:printer.commands"})
+			self._comm.sendCommand(command,
+			                       tags=tags,
+			                       force=force)
 
 	def script(self, name, context=None, must_be_set=True, part_of_job=False, *args, **kwargs):
 		if self._comm is None:

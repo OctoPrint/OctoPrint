@@ -221,10 +221,12 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 		self._close_prompt()
 		if "{choice}" in self._command:
-			self._printer.commands([self._command.format(choice=choice)])
+			self._printer.commands([self._command.format(choice=choice)],
+			                       force=True)
 		else:
 			self._printer.commands(["{command} S{choice}".format(command=self._command,
-																 choice=choice)])
+			                                                     choice=choice)],
+			                       force=True)
 
 
 __plugin_name__ = "Action Command Prompt Support"
