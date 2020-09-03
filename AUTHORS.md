@@ -123,6 +123,7 @@ date of first contribution):
   * [Khoi Pham](https://github.com/osubuu)
   * [Federico Nembrini](https://github.com/FedericoNembrini)
   * [Uri Shaked](https://github.com/urish)
+  * [Charlie Powell](https://github.com/cp2004)
   * [Ollis Git](https://github.com/OllisGit)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
