@@ -498,17 +498,27 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("System is currently throttled, refusing to install "
 			                     "anything due to possible stability issues", 409)
 
+		try:
+			# Py3
+			from urllib.parse import quote as url_quote
+		except ImportError:
+			# Py2
+			from urllib import quote as url_quote
+
 		path = os.path.abspath(path)
-		path_url = "file://" + path
 		if os.sep != "/":
 			# windows gets special handling
-			path_url = "file:///" + path.replace(os.sep, "/").lower()
+			drive, loc = os.path.splitdrive(path)
+			path_url = "file:///" + drive.lower() + url_quote(loc.replace(os.sep, "/").lower())
+			shell_quote = lambda x: x # do not shell quote under windows, non posix shell
+		else:
+			path_url = "file://" + url_quote(path)
+			shell_quote = sarge.shell_quote
 
 		already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
 
-		# as we now always install from a local temporary file, shell quoting should no longer be necessary
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["--disable-pip-version-check", "install", path, "--no-cache-dir"]
+		pip_args = ["--disable-pip-version-check", "install", shell_quote(path_url), "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
