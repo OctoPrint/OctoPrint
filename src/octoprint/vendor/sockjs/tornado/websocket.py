@@ -39,3 +39,9 @@ class SockJSWebSocketHandler(websocket.WebSocketHandler):
     def abort_connection(self):
         if self.ws_connection:
             self.ws_connection._abort()
+
+    def send_complete(self, f=None):
+        try:
+            f.result()
+        except (IOError, websocket.WebSocketError):
+            self.on_close()
