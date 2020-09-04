@@ -214,7 +214,9 @@ def download_file(url, folder, max_length=None):
 
 		# TODO check content-length against safety limit
 
-		path = os.path.join(folder, filename)
+		path = os.path.abspath(os.path.join(folder, filename))
+		assert path.startswith(folder)
+
 		with io.open(path, 'wb') as f:
 			for chunk in r.iter_content(chunk_size=8192):
 				f.write(chunk)
