@@ -140,6 +140,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._get_throttled = lambda: False
 
+		self._install_task = None
+		self._install_lock = threading.RLock()
+
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
 		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
@@ -388,11 +391,21 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return make_response("Insufficient rights", 403)
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
-			return self.command_install(url=url,
-			                            force="force" in data and data["force"] in valid_boolean_trues,
-			                            dependency_links="dependency_links" in data
-			                                             and data["dependency_links"] in valid_boolean_trues,
-			                            reinstall=plugin_name)
+
+			with self._install_lock:
+				if self._install_task is not None:
+					return make_response("There's always a plugin being installed", 409)
+
+				self._install_task = threading.Thread(target=self.command_install,
+				                                      kwargs=dict(url=url,
+				                                                  force="force" in data and data["force"] in valid_boolean_trues,
+				                                                  dependency_links="dependency_links" in data
+				                                                                   and data["dependency_links"] in valid_boolean_trues,
+				                                                  reinstall=plugin_name))
+				self._install_task.daemon = True
+				self._install_task.start()
+
+				return jsonify(in_progress=True)
 
 		elif command == "uninstall":
 			plugin_name = data["plugin"]
@@ -450,45 +463,47 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def command_install(self, url=None, path=None, name=None, force=False, reinstall=None, dependency_links=False):
 		folder = None
 
-		try:
-			source = path
-			source_type = "path"
+		with self._install_lock:
+			try:
+				source = path
+				source_type = "path"
 
-			if url is not None:
-				# fetch URL
-				folder = TemporaryDirectory()
-				path = download_file(url, folder.name)
-				source = url
-				source_type = "url"
+				if url is not None:
+					# fetch URL
+					folder = TemporaryDirectory()
+					path = download_file(url, folder.name)
+					source = url
+					source_type = "url"
 
-			# determine type of path
-			if self._is_archive(path):
-				return self._command_install_archive(path,
-				                                     source=source,
-				                                     source_type=source_type,
-				                                     force=force,
-				                                     reinstall=reinstall,
-				                                     dependency_links=dependency_links)
+				# determine type of path
+				if self._is_archive(path):
+					return self._command_install_archive(path,
+					                                     source=source,
+					                                     source_type=source_type,
+					                                     force=force,
+					                                     reinstall=reinstall,
+					                                     dependency_links=dependency_links)
 
-			elif self._is_pythonfile(path):
-				return self._command_install_pythonfile(path,
-				                                        source=source,
-				                                        source_type=source_type,
-				                                        name=name)
+				elif self._is_pythonfile(path):
+					return self._command_install_pythonfile(path,
+					                                        source=source,
+					                                        source_type=source_type,
+					                                        name=name)
 
-			else:
-				self._logger.error("{} is neither an archive nor a python file, can't install that.".format(source))
-				result = dict(result=False,
-				              source=source,
-				              source_type=source_type,
-				              reason="Could not install plugin from {}, was neither "
-				                     "a plugin archive nor a single file plugin".format(source))
-				self._send_result_notification("install", result)
-				return jsonify(result)
+				else:
+					self._logger.error("{} is neither an archive nor a python file, can't install that.".format(source))
+					result = dict(result=False,
+					              source=source,
+					              source_type=source_type,
+					              reason="Could not install plugin from {}, was neither "
+					                     "a plugin archive nor a single file plugin".format(source))
+					self._send_result_notification("install", result)
+					return result
 
-		finally:
-			if folder is not None:
-				folder.cleanup()
+			finally:
+				if folder is not None:
+					folder.cleanup()
+				self._install_task = None
 
 	# noinspection DuplicatedCode
 	def _command_install_archive(self, path, source=None, source_type=None, force=False, reinstall=None, dependency_links=False):
@@ -604,7 +619,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              source_type=source_type,
 			              reason="Pip did not report successful installation")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		installed = list(map(lambda x: x.strip(), result_line[len(success_string):].split(" ")))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
@@ -623,7 +638,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              was_reinstalled=False,
 			              plugin="unknown")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		self._plugin_manager.reload_plugins()
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
@@ -657,7 +672,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              was_reinstalled=new_plugin.key in all_plugins_before or reinstall is not None,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
-		return jsonify(result)
+		return result
 
 	# noinspection DuplicatedCode
 	def _command_install_pythonfile(self, path, source=None, source_type=None, name=None):
@@ -675,8 +690,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._log_call("cp {} {}".format(path, destination))
 			shutil.copy(path, destination)
 		except:
-			self._logger.exception("Could not install plugin from {}".format(source))
-			return make_response("Could not install plugin from URL, see the log for more details", 500)
+			self._logger.exception("Installing plugin from {} failed".format(source))
+			result = dict(result=False,
+			              source=source,
+			              source_type=source_type,
+			              reason="Plugin could not be copied")
+			self._send_result_notification("install", result)
+			return result
 
 		plugins = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 		new_plugin = plugins.get(plugin_id)
@@ -692,7 +712,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              was_reinstalled=False,
 			              plugin="unknown")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		self._plugin_manager.reload_plugins()
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
@@ -719,7 +739,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              was_reinstalled=new_plugin.key in all_plugins_before,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
-		return jsonify(result)
+		return result
 
 	def command_uninstall(self, plugin, cleanup=False):
 		if plugin.key == "pluginmanager":

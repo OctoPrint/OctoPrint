@@ -609,12 +609,6 @@ $(function() {
             self._markWorking(workTitle, workText);
 
             var onSuccess = function(response) {
-                    if (response.result) {
-                        self._markDone();
-                    } else {
-                        self._markDone(response.reason)
-                    }
-                    self.requestData();
                     self.installUrl("");
                 },
                 onError = function() {
@@ -861,6 +855,16 @@ $(function() {
 
         self.installButtonText = function(data) {
             return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
+        };
+
+        self._processPluginManagementResult = function(response, action, plugin) {
+            if (response.result) {
+                self._markDone();
+            } else {
+                self._markDone(response.reason)
+            }
+
+            self._displayPluginManagementNotification(response, action, plugin);
         };
 
         self._displayPluginManagementNotification = function(response, action, plugin) {
@@ -1310,7 +1314,7 @@ $(function() {
                     }
                 }
 
-                self._displayPluginManagementNotification(data, action, name);
+                self._processPluginManagementResult(data, action, name);
                 self.requestData();
             }
         };
