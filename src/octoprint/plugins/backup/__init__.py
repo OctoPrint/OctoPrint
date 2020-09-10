@@ -183,6 +183,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                          kwargs=dict(exclude=exclude,
 		                                      settings=self._settings,
 		                                      plugin_manager=self._plugin_manager,
+		                                      logger=self._logger,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_backup_start=on_backup_start,
 		                                      on_backup_done=on_backup_done,
@@ -388,6 +389,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			self._create_backup(backup_file,
 			                    exclude=exclude,
 			                    settings=settings,
+			                    logger=self._logger,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
 			click.echo("Done.")
@@ -645,6 +647,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                   exclude=None,
 	                   settings=None,
 	                   plugin_manager=None,
+	                   logger=None,
 	                   datafolder=None,
 	                   on_backup_start=None,
 	                   on_backup_done=None,
@@ -659,6 +662,24 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if "timelapse" in exclude:
 				exclude.append("timelapse_tmp")
+
+			current_excludes = list(exclude)
+			additional_excludes = list()
+			plugin_data = settings.global_get_basefolder("data")
+			for plugin, hook in plugin_manager.get_hooks("octoprint.plugin.backup.additional_excludes").items():
+				try:
+					additional = hook(current_excludes)
+					if isinstance(additional, list):
+						if "." in additional:
+							current_excludes.append(os.path.join("data", plugin))
+							additional_excludes.append(os.path.join(plugin_data, plugin))
+						else:
+							current_excludes += map(lambda x: os.path.join("data", plugin, x), additional)
+							additional_excludes += map(lambda x: os.path.join(plugin_data, plugin, x), additional)
+				except Exception as ex:
+					logger.exception("Error while retrieving additional excludes "
+					                 "from plugin {name}".format(**locals()),
+					                 extra=dict(plugin=plugin))
 
 			configfile = settings._configfile
 			basedir = settings._basedir
@@ -717,10 +738,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 					add_to_zip(settings.global_get_basefolder(folder),
 					           "basedir/" + folder.replace("_", "/"),
-					           ignored=[own_folder,])
+					           ignored=[own_folder,] + additional_excludes)
 
 				# backup anything else that might be lying around in our basedir
-				add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ])
+				add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ] + additional_excludes)
 
 				# add list of installed plugins
 				plugins = []

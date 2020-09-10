@@ -1125,6 +1125,13 @@ octoprint.filemanager.preprocessor
    :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
    :rtype: AbstractFileWrapper or None
 
+.. _sec-plugins-hook-plugin-backup-excludes:
+
+octoprint.plugin.backup.additional_excludes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :ref:`here <sec-bundledplugins-backup-hooks-excludes>`.
+
 .. _sec-plugins-hook-plugin-loginui-theming:
 
 octoprint.plugin.loginui.theming
