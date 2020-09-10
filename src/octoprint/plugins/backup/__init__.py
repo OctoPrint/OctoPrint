@@ -676,7 +676,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						else:
 							current_excludes += map(lambda x: os.path.join("data", plugin, x), additional)
 							additional_excludes += map(lambda x: os.path.join(plugin_data, plugin, x), additional)
-				except Exception as ex:
+				except Exception:
 					logger.exception("Error while retrieving additional excludes "
 					                 "from plugin {name}".format(**locals()),
 					                 extra=dict(plugin=plugin))
