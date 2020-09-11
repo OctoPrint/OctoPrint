@@ -1579,12 +1579,15 @@ class MachineCom(object):
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
 		self._callback.on_comm_sd_files(self.getSdFiles())
 
-	def sayHello(self, tags=None):
+	def sayHello(self, tags=None, clear_to_send=True, on_sent_callback=None):
 		if tags is None:
 			tags = set()
 
-		self.sendCommand(self._hello_command, force=True, tags=tags | {"trigger:comm.say_hello",})
-		self._clear_to_send.set()
+		self.sendCommand(self._hello_command, on_sent=on_sent_callback, force=True, tags=tags | {"trigger:comm.say_hello",})
+
+		if clear_to_send == True:
+			self._clear_to_send.set()
+
 		self._hello_sent += 1
 
 	def resetLineNumbers(self, number=0, part_of_job=False, tags=None):
@@ -1708,11 +1711,13 @@ class MachineCom(object):
 
 		# enqueue the "hello command" first thing
 		if try_hello:
-			self.sayHello()
+			self.sayHello(None, True, lambda: self._clear_to_send.set())
 
 			# we send a second one right away because sometimes there's garbage on the line on first connect
 			# that can kill oks
-			self.sayHello()
+			# clear_to_send.set() must be executed right after first hello command,
+			# otherwise race condition can happen and send_thread will block forever
+			self.sayHello(None, False)
 
 		while self._monitoring_active:
 			try:
