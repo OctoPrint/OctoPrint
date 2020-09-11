@@ -521,7 +521,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
 		if os.path.exists(data_file):
 			try:
-				with io.open(data_file, mode='rb', encoding="utf-8") as f:
+				with io.open(data_file, mode='rt', encoding="utf-8") as f:
 					unknown_plugins = json.load(f)
 
 				assert isinstance(unknown_plugins, list)
