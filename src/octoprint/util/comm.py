@@ -1003,6 +1003,12 @@ class MachineCom(object):
 
 		self._serial = None
 
+		# fix for send_thread leak
+		# this two commands is just for unblocking send_thread
+		# nothing will be sended because send queue is deactivated at this point
+		self._enqueue_for_sending(self._hello_command)
+		self._clear_to_send.set()
+
 		# if we are printing, this will also make sure of firing PRINT_FAILED
 		if is_error:
 			self._changeState(self.STATE_CLOSED_WITH_ERROR)
