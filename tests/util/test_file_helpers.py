@@ -123,13 +123,76 @@ class TestAtomicWrite(unittest.TestCase):
 				f.write("test")
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w+b")
 		mock_file.write.assert_called_once_with("test")
 		mock_file.close.assert_called_once_with()
 		mock_chmod.assert_called_once_with(path, 0o644 & ~umask)
 		mock_move.assert_called_once_with(path, "somefile.yaml")
+
+	@mock.patch("shutil.move")
+	@mock.patch("tempfile.mkstemp")
+	@mock.patch("io.open")
+	@mock.patch("os.close")
+	@mock.patch("os.chmod")
+	@mock.patch("os.path.exists")
+	def test_atomic_write_path_aware(self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move):
+		"""Tests whether the tempoary file is to created in the same directory as the target file."""
+
+		# setup
+		fd = 0
+		tmpdirpath = "/testpath/with/subdirectories"
+		path = os.path.join(tmpdirpath, "tempfile.tmp")
+		targetpath = os.path.join(tmpdirpath, "somefile.yaml")
+
+		mock_file = mock.MagicMock()
+		mock_file.name = path
+
+		mock_mkstemp.return_value = fd, path
+		mock_open.return_value = mock_file
+		mock_exists.return_value = False
+
+		# test
+		with octoprint.util.atomic_write(targetpath) as f:
+			f.write("test")
+
+		# assert
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir=tmpdirpath)
+		mock_open.assert_called_once_with(path, mode="w+b")
+		mock_move.assert_called_once_with(path, targetpath)
+
+	@mock.patch("shutil.move")
+	@mock.patch("tempfile.mkstemp")
+	@mock.patch("io.open")
+	@mock.patch("os.close")
+	@mock.patch("os.chmod")
+	@mock.patch("os.path.exists")
+	def test_atomic_write_rel_path_aware(self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move):
+		"""Tests whether the tempoary file is to created in the same directory as the target file. This time submitting a relative path. """
+
+		# setup
+		fd = 0
+		tmpdirpath = "../test"
+		path = os.path.join(tmpdirpath, "tempfile.tmp")
+		targetpath = os.path.join(tmpdirpath, "somefile.yaml")
+
+		mock_file = mock.MagicMock()
+		mock_file.name = path
+
+		mock_mkstemp.return_value = fd, path
+		mock_open.return_value = mock_file
+		mock_exists.return_value = False
+
+		# test
+		with octoprint.util.atomic_write(targetpath) as f:
+			f.write("test")
+
+		# assert
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir=tmpdirpath)
+		mock_open.assert_called_once_with(path, mode="w+b")
+		mock_move.assert_called_once_with(path, targetpath)
+
 
 	@mock.patch("shutil.move")
 	@mock.patch("tempfile.mkstemp")
@@ -161,7 +224,7 @@ class TestAtomicWrite(unittest.TestCase):
 			pass
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w+b")
 		mock_file.close.assert_called_once_with()
@@ -197,7 +260,7 @@ class TestAtomicWrite(unittest.TestCase):
 			pass
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w+b")
 		mock_file.close.assert_called_once_with()
@@ -231,7 +294,7 @@ class TestAtomicWrite(unittest.TestCase):
 				f.write("test")
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="foo", suffix="bar")
+		mock_mkstemp.assert_called_once_with(prefix="foo", suffix="bar", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="w", encoding="utf-8")
 		mock_file.close.assert_called_once_with()
@@ -264,7 +327,7 @@ class TestAtomicWrite(unittest.TestCase):
 			f.write("test")
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
 		mock_file.close.assert_called_once_with()
@@ -301,7 +364,7 @@ class TestAtomicWrite(unittest.TestCase):
 			f.write("test")
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
 		mock_file.close.assert_called_once_with()
@@ -338,7 +401,7 @@ class TestAtomicWrite(unittest.TestCase):
 			f.write("test")
 
 		# assert
-		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="")
+		mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
 		mock_close.assert_called_once_with(fd)
 		mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
 		mock_file.close.assert_called_once_with()

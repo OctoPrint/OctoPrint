@@ -1067,9 +1067,11 @@ def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix=""
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
+	
+	targetdirectory = os.path.dirname(filename)
 
 	# NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
-	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=targetdirectory)
 	os.close(fd)
 
 	if "b" in mode:
