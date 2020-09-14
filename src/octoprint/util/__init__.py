@@ -1061,30 +1061,38 @@ def mime_type_matches(mime, other):
 	return type_matches and subtype_matches
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="", permissions=None, max_permissions=0o777):
+def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix="",
+                 permissions=None, max_permissions=0o777):
 	if permissions is None:
 		permissions = 0o664 & ~UMASK
 	if os.path.exists(filename):
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
-	
+
 	targetdirectory = os.path.dirname(filename)
 
+	# Ensure we create the file in the target dir so our move is atomic. See #3719
+	dir = os.path.dirname(filename)
+
 	# NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
-	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=targetdirectory)
-	os.close(fd)
-
-	if "b" in mode:
-		temp_config = io.open(path, mode=mode)
-	else:
-		temp_config = io.open(path, mode=mode, encoding=encoding)
-
+	fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
 	try:
-		yield temp_config
+		os.close(fd)
+
+		if "b" in mode:
+			fd = io.open(path, mode=mode)
+		else:
+			fd = io.open(path, mode=mode, encoding=encoding)
+
+		try:
+			yield fd
+		finally:
+			fd.close()
+		os.chmod(fd.name, permissions)
+		shutil.move(fd.name, filename)
 	finally:
-		temp_config.close()
-	os.chmod(temp_config.name, permissions)
-	shutil.move(temp_config.name, filename)
+		# just in case something went wrong and the temporary file is still there, nuke it now
+		silent_remove(path)
 
 
 @contextlib.contextmanager
