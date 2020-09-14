@@ -1768,21 +1768,25 @@ class MachineCom(object):
 							action_name = action_command
 							action_params = ""
 
-						if action_name == "cancel":
+						if action_name == "start":
+							if self._currentFile is not None:
+								self._log("(Re)Starting current job on request of the printer...")
+								self.startPrint(tags={"trigger:serial.action_command.start"})
+						elif action_name == "cancel":
 							self._log("Cancelling on request of the printer...")
-							self.cancelPrint()
+							self.cancelPrint(tags={"trigger:serial.action_command.cancel"})
 						elif action_name == "pause":
 							self._log("Pausing on request of the printer...")
-							self.setPause(True)
+							self.setPause(True, tags={"trigger:serial.action_command.pause"})
 						elif action_name == "paused":
 							self._log("Printer signalled that it paused, switching state...")
-							self.setPause(True, local_handling=False)
+							self.setPause(True, local_handling=False, tags={"trigger:serial.action_command.paused"})
 						elif action_name == "resume":
 							self._log("Resuming on request of the printer...")
-							self.setPause(False)
+							self.setPause(False, tags={"trigger:serial.action_command.resume"})
 						elif action_name == "resumed":
 							self._log("Printer signalled that it resumed, switching state...")
-							self.setPause(False, local_handling=False)
+							self.setPause(False, local_handling=False, tags={"trigger:serial.action_command.resumed"})
 						elif action_name == "disconnect":
 							self._log("Disconnecting on request of the printer...")
 							self._callback.on_comm_force_disconnect()
