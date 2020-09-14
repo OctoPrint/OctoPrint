@@ -1069,8 +1069,6 @@ def atomic_write(filename, mode="w+b", encoding="utf-8", prefix="tmp", suffix=""
 		permissions |= os.stat(filename).st_mode
 	permissions &= max_permissions
 
-	targetdirectory = os.path.dirname(filename)
-
 	# Ensure we create the file in the target dir so our move is atomic. See #3719
 	dir = os.path.dirname(filename)
 
