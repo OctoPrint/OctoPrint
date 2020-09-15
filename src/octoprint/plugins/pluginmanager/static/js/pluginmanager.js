@@ -198,7 +198,6 @@ $(function() {
             self.restartCommandSpec = restartSpec != undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
         });
 
-        self.notifications = [];
         self.noticeNotifications = [];
         self.hiddenNoticeNotifications = {};
         self.noticeCount = ko.observable(0);
@@ -1262,11 +1261,6 @@ $(function() {
         self._closeAllNotifications = function() {
             if (self.logNotification) {
                 self.logNotification.remove();
-            }
-            if (self.notifications) {
-                _.each(self.notifications, function(notification) {
-                    notification.remove();
-                });
             }
         };
 
