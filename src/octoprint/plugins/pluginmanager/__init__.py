@@ -1363,16 +1363,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return self._to_external_notification(key, notification)
 
 		return list(filter(lambda x: x is not None,
-		              	   map(map_notification,
-		                  	   filter(lambda n: _filter_relevant_notification(n, plugin.version, octoprint_version),
-		                         	  plugin_notifications))))
+		                   map(map_notification,
+		                       filter(lambda n: _filter_relevant_notification(n, plugin.version, octoprint_version),
+		                              plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
 		return dict(key=key,
 		            date=time.mktime(notification["timestamp"]),
 		            text=notification["text"],
 		            link=notification.get("link"),
-		            versions=notification.get("versions", []),
+		            versions=notification.get("pluginversions", notification.get("versions", [])),
 		            important=notification.get("important", False))
 
 
