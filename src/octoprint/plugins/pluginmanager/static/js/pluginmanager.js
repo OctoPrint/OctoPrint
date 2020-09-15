@@ -793,7 +793,7 @@ $(function() {
 
         self.savePluginSettings = function() {
             var repository = self.config_repositoryUrl();
-            if (repository !== undefined && repository.trim() === "") {
+            if (repository !== null && repository.trim() === "") {
                 repository = null;
             }
 
@@ -805,7 +805,7 @@ $(function() {
             }
 
             var notices = self.config_noticesUrl();
-            if (notices !== undefined && notices.trim() === "") {
+            if (notices !== null && notices.trim() === "") {
                 notices = null;
             }
 
@@ -817,7 +817,7 @@ $(function() {
             }
 
             var pipArgs = self.config_pipAdditionalArgs();
-            if (pipArgs !== undefined && pipArgs.trim() === "") {
+            if (pipArgs !== null && pipArgs.trim() === "") {
                 pipArgs = null;
             }
 
