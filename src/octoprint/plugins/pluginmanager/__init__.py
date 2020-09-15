@@ -37,6 +37,7 @@ import threading
 import tempfile
 import shutil
 import filetype
+import pkg_resources
 
 from datetime import datetime
 
@@ -1358,18 +1359,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		octoprint_version = get_octoprint_version(base=True)
 		plugin_notifications = self._notices.get(key, [])
 
-		def filter_relevant(notification):
-			return "text" in notification and "date" in notification and \
-			       ("versions" not in notification or plugin.version in notification["versions"]) and \
-			       ("octoversions" not in notification or is_octoprint_compatible(*notification["octoversions"],
-			                                                                      octoprint_version=octoprint_version))
-
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
 		return list(filter(lambda x: x is not None,
 		              	   map(map_notification,
-		                  	   filter(filter_relevant,
+		                  	   filter(lambda n: _filter_relevant_notification(n, plugin.version, octoprint_version),
 		                         	  plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
@@ -1379,6 +1374,30 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		            link=notification.get("link"),
 		            versions=notification.get("versions", []),
 		            important=notification.get("important", False))
+
+
+def _filter_relevant_notification(notification, plugin_version, octoprint_version):
+	if "pluginversions" in notification:
+		pluginversions = notification["pluginversions"]
+
+		is_range = lambda x: "=" in x or ">" in x or "<" in x
+		version_ranges = list(map(lambda x: pkg_resources.Requirement.parse(notification["plugin"] + x),
+		                          filter(is_range,
+		                                 pluginversions)))
+		versions = list(filter(lambda x: not is_range(x),
+		                       pluginversions))
+	elif "versions" in notification:
+		version_ranges = []
+		versions = notification["versions"]
+	else:
+		version_ranges = versions = None
+
+	return "text" in notification and "date" in notification and \
+	       ((version_ranges is None and versions is None) or
+	        (version_ranges and (any(map(lambda v: plugin_version in v, version_ranges)))) or
+	        (versions and plugin_version in versions)) and \
+	       ("octoversions" not in notification or is_octoprint_compatible(*notification["octoversions"],
+	                                                                      octoprint_version=octoprint_version))
 
 
 def _register_custom_events(*args, **kwargs):
