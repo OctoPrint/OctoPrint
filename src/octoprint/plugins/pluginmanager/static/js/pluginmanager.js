@@ -455,7 +455,11 @@ $(function() {
             }
         };
 
+        self.requestInProgress = false;
         self.requestData = function(options) {
+            if (self.requestInProgress) return;
+            self.requestInProgress = true;
+
             if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
@@ -481,6 +485,9 @@ $(function() {
                 .done(function(data) {
                     self.requestError(false);
                     self.fromResponse(data, options);
+                })
+                .always(function() {
+                    self.requestInProgress = false;
                 });
         };
 
