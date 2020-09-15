@@ -250,14 +250,23 @@ $(function() {
             params.auto_display = false;
 
             var notify = new PNotify(params);
-            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
-            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+            notify = PNotify.fixSingleButton(notify, options);
 
             if (autoDisplay) {
                 notify.open();
             }
             return notify;
         };
+
+        PNotify.fixSingleButton = function(notify, options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return notify;
+            }
+
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+            return notify;
+        }
 
         //~~ Initialize view models
 

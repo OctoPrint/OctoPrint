@@ -992,19 +992,25 @@ $(function() {
             var options = {
                 title: title,
                 text: text,
-                type: type
+                type: type,
+                hide: false
             };
-
-            if (self.logNotification !== undefined) {
-                self.logNotification.remove();
-            }
 
             if (confirm !== undefined) {
                 options.confirm = confirm;
-                options.hide = false;
-                self.logNotification = PNotify.singleButtonNotify(options);
+
+                if (self.logNotification === undefined) {
+                    self.logNotification = PNotify.singleButtonNotify(options);
+                } else {
+                    self.logNotification.update(options);
+                    self.logNotification = PNotify.fixSingleButton(self.logNotification, options);
+                }
             } else {
-                self.logNotification = new PNotify(options);
+                if (self.logNotification === undefined) {
+                    self.logNotification = new PNotify(options);
+                } else {
+                    self.logNotification.update(options);
+                }
             }
         };
 
