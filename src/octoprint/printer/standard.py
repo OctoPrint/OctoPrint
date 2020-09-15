@@ -1117,11 +1117,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 								thread = threading.Thread(target=finalize)
 								thread.daemon = True
 								thread.start()
-			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+
+			try:
+				self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+			except Exception:
+				self._logger.exception("Error while resuming the analysis queue")
 
 		elif state == comm.MachineCom.STATE_PRINTING:
 			if settings().get(["gcodeAnalysis", "runAt"]) == "idle":
-				self._analysisQueue.pause() # only analyse files while idle
+				try:
+					self._analysisQueue.pause() # only analyse files while idle
+				except Exception:
+					self._logger.exception("Error while pausing the analysis queue")
 
 		if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:
