@@ -677,7 +677,8 @@ class Server(object):
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
-			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain"),
+			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain",
+			                                                                                 stream_body=True),
 			                                                                            download_handler_kwargs,
 			                                                                            log_permission_validator)),
 			# camera snapshot
