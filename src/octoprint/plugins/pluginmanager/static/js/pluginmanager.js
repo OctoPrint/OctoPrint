@@ -186,6 +186,8 @@ $(function() {
         self.workingDialog = undefined;
         self.workingOutput = undefined;
 
+        self.toggling = ko.observable(false);
+
         self.restartCommandSpec = undefined;
         self.systemViewModel.systemActions.subscribe(function() {
             var lastResponse = self.systemViewModel.lastCommandResponse;
@@ -232,7 +234,7 @@ $(function() {
             var not_safemode_victim = !data.safe_mode_victim;
             var not_blacklisted = !data.blacklisted;
             var not_incompatible = !data.incompatible;
-            return self.enableManagement() && (command === "disable" || (not_safemode_victim && not_blacklisted && not_incompatible)) && data.key != 'pluginmanager';
+            return self.enableManagement() && !self.toggling() && (command === "disable" || (not_safemode_victim && not_blacklisted && not_incompatible)) && data.key !== 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
@@ -455,15 +457,8 @@ $(function() {
             }
         };
 
-        self.requestInProgress = false;
+        self.dataDeferred = undefined;
         self.requestData = function(options) {
-            if (self.requestInProgress) return;
-            self.requestInProgress = true;
-
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
-                return;
-            }
-
             if (!_.isPlainObject(options)) {
                 options = {
                     refresh_repo: options,
@@ -478,17 +473,38 @@ $(function() {
             options.refresh_notices = options.refresh_notices || false;
             options.eval_notices = options.eval_notices || false;
 
-            OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices, orphans: options.refresh_orphans})
-                .fail(function() {
+            if (self.dataDeferred && self.dataDeferred.state() === "pending"
+                && !options.refresh_repo && !options.refresh_orphans
+                && !options.refresh_notices && !options.eval_notices) {
+                return self.dataDeferred.promise();
+            }
+
+            var deferred = new $.Deferred();
+            if (!options.refresh_repo && !options.refresh_orphans && !options.refresh_notices && !options.eval_notices) {
+                self.dataDeferred = deferred;
+            }
+
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
+                deferred.fail();
+                return deferred.promise();
+            }
+
+            OctoPrint.plugins.pluginmanager.get({
+                repo: options.refresh_repo,
+                notices: options.refresh_notices,
+                orphans: options.refresh_orphans
+            })
+                .fail(function () {
                     self.requestError(true);
+                    deferred.reject();
                 })
-                .done(function(data) {
+                .done(function (data) {
                     self.requestError(false);
                     self.fromResponse(data, options);
-                })
-                .always(function() {
-                    self.requestInProgress = false;
+                    deferred.resolveWith(data);
                 });
+
+            return deferred.promise();
         };
 
         self.togglePlugin = function(data) {
@@ -503,9 +519,13 @@ $(function() {
             if (data.key === "pluginmanager") return;
 
             var onSuccess = function() {
-                    self.requestData();
+                    self.requestData()
+                        .always(function() {
+                            self.toggling(false);
+                        });
                 },
                 onError = function() {
+                    self.toggling(false);
                     new PNotify({
                         title: gettext("Something went wrong"),
                         text: gettext("Please consult octoprint.log for details"),
@@ -514,18 +534,28 @@ $(function() {
                     })
                 };
 
-            if (self._getToggleCommand(data) === "enable") {
+            var performDisabling = function() {
+                if (self.toggling()) return;
+                self.toggling(true);
+
+                OctoPrint.plugins.pluginmanager.disable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            };
+            var performEnabling = function() {
                 if (data.safe_mode_victim) return;
+
+                if (self.toggling()) return;
+                self.toggling(true);
+
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
                     .fail(onError);
-            } else {
-                var performDisabling = function() {
-                    OctoPrint.plugins.pluginmanager.disable(data.key)
-                        .done(onSuccess)
-                        .fail(onError);
-                };
+            }
 
+            if (self._getToggleCommand(data) === "enable") {
+                performEnabling();
+            } else {
                 // always warn if plugin is marked "disabling discouraged"
                 if (data.disabling_discouraged) {
                     var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: _.escape(data.name)})
@@ -1054,8 +1084,15 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
-            var disabled = (self.enableToggle(data)) ? "" : " disabled";
+            var icon, disabled;
+
+            if (self.toggling()) {
+                icon = "fa fa-spin fa-spinner";
+                disabled = " disabled";
+            } else {
+                icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
+                disabled = (self.enableToggle(data)) ? "" : " disabled";
+            }
 
             return icon + disabled;
         };
