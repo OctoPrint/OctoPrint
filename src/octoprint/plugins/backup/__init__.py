@@ -10,6 +10,7 @@ from octoprint.settings import default_settings
 from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
+from octoprint.events import Events
 from octoprint.util import is_hidden_path, to_bytes
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
 from octoprint.util.platform import is_os_compatible
@@ -82,6 +83,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			     dangerous=True,
 			     default_groups=[ADMIN_GROUP])
 		]
+
+	# Socket emit hook
+
+	def socket_emit_hook(self, socket, user, message, payload, *args, **kwargs):
+		if message != "event" or payload["type"] != Events.PLUGIN_BACKUP_BACKUP_CREATED:
+			return True
+
+		return user and user.has_permission(Permissions.PLUGIN_BACKUP_ACCESS)
 
 	##~~ StartupPlugin
 
@@ -165,6 +174,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				self._send_client_message("backup_done", payload=dict(name=name))
 
 			self._logger.info("... done creating backup zip.")
+
+			self._event_bus.fire(Events.PLUGIN_BACKUP_BACKUP_CREATED,
+			                     dict(name=name,
+			                          path=final_path,
+			                          excludes=exclude))
 
 		def on_backup_error(name, exc_info):
 			with self._in_progress_lock:
@@ -1017,10 +1031,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		payload["type"] = message
 		self._plugin_manager.send_plugin_message(self._identifier, payload)
 
-
-
 class InsufficientSpace(Exception):
 	pass
+
+def _register_custom_events(*args, **kwargs):
+	return ["backup_created"]
 
 __plugin_name__ = "Backup & Restore"
 __plugin_author__ = "Gina Häußge"
@@ -1034,5 +1049,7 @@ __plugin_hooks__ = {
 	"octoprint.server.http.routes": __plugin_implementation__.route_hook,
 	"octoprint.server.http.bodysize": __plugin_implementation__.bodysize_hook,
 	"octoprint.cli.commands": __plugin_implementation__.cli_commands_hook,
-	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+	"octoprint.events.register_custom_events": _register_custom_events,
+	"octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook
 }

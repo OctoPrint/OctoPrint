@@ -57,6 +57,23 @@ It adds two new commands, ``backup:backup`` and ``backup:restore``.
 
    The ``backup:backup`` command can be useful in combination with a cronjob to create backups in regular intervals.
 
+.. _sec-bundledplugins-backup-events:
+
+Events
+------
+
+*Events will not be triggered by CLI operations.*
+
+plugin_backup_backup_created
+  A new backup was created. On the push socket only available with a valid login session with ``Backup Access``
+  permission.
+
+  Payload:
+
+    * ``name``: the name of the backup
+    * ``path``: the path to the backup
+    * ``excludes``: the list of parts excluded from the backup
+
 .. _sec-bundledplugins-backup-hooks:
 
 Hooks
