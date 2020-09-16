@@ -1122,6 +1122,8 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
      regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
    - name: Suppress wait responses
      regex: 'Recv: wait'
+   - name: Suppress processing responses
+     regex: 'Recv: (echo:\s*)?busy:\s*processing'
 
 .. _sec-configuration-config_yaml-webcam:
 
