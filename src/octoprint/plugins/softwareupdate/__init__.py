@@ -26,7 +26,7 @@ from . import version_checks, updaters, exceptions, util, cli
 from flask_babel import gettext
 
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking, check_etag
-from octoprint.server import VERSION, REVISION, BRANCH
+from octoprint.server import VERSION, REVISION, BRANCH, NO_CONTENT
 from octoprint.access import USER_GROUP, ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode, get_formatted_size
@@ -114,6 +114,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			     description=gettext("Allows to perform software updates"),
 			     default_groups=[ADMIN_GROUP],
 			     roles=["update"],
+			     dangerous=True),
+			dict(key="CONFIGURE",
+			     name="Configure",
+			     description=gettext("Allows to configure software update"),
+			     default_groups=[ADMIN_GROUP],
+			     roles=["configure"],
 			     dangerous=True)
 		]
 
@@ -200,7 +206,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				plugin_and_not_enabled = lambda k: k in check_providers and \
 				                                   not check_providers[k] in self._plugin_manager.enabled_plugins
 				obsolete_plugin_checks = list(filter(plugin_and_not_enabled,
-				                                	 config_checks.keys()))
+				                                     config_checks.keys()))
 				for key in obsolete_plugin_checks:
 					self._logger.debug("Check for key {} was provided by plugin {} that's no longer available, ignoring it".format(key, check_providers[key]))
 					del self._configured_checks[key]
@@ -313,6 +319,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = time.time()
 		self._logger.info("Saved version cache to disk")
+
+	def _invalidate_version_cache(self, target):
+		self._refresh_configured_checks = True
+		try:
+			del self._version_cache[target]
+		except KeyError:
+			pass
+		self._version_cache_dirty = True
 
 	#~~ SettingsPlugin API
 
@@ -481,23 +495,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			update_pip_check_config = True
 
 		if updated_octoprint_check_config:
-			self._refresh_configured_checks = True
-			try:
-				del self._version_cache["octoprint"]
-			except KeyError:
-				pass
-			self._version_cache_dirty = True
+			self._invalidate_version_cache("octoprint")
 
 		if update_pip_check_config:
-			self._refresh_configured_checks = True
-			try:
-				del self._version_cache["pip"]
-			except KeyError:
-				pass
-			self._version_cache_dirty = True
+			self._invalidate_version_cache("pip")
 
 	def get_settings_version(self):
-		return 8
+		return 9
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -753,6 +757,57 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		to_be_checked, checks = self.perform_updates(targets=targets, force=force)
 		return flask.jsonify(dict(order=to_be_checked, checks=checks))
 
+	@octoprint.plugin.BlueprintPlugin.route("/configure", methods=["POST"])
+	@no_firstrun_access
+	@Permissions.PLUGIN_SOFTWAREUPDATE_CONFIGURE.require(403)
+	def configure_update(self):
+		json_data = flask.request.get_json(silent=True)
+		if json_data is None:
+			return flask.make_response("Invalid JSON", 400)
+
+		checks = self._get_configured_checks()
+
+		settings_dirty = False
+		for target, data in json_data.items():
+			if not target in checks:
+				continue
+
+			try:
+				populated_check = self._populated_check(target, checks[target])
+			except exceptions.UnknownCheckType:
+				self._logger.debug("Ignoring unknown check type for target {}".format(target))
+				continue
+			except Exception:
+				self._logger.exception("Error while populating check prior to configuration for target {}".format(target))
+				continue
+
+			patch = dict()
+
+			# switched release channel
+			if "channel" in data:
+				if populated_check["type"] == "github_release" and "stable_branch" in populated_check and "prerelease_branches" in populated_check:
+					valid_channel = data["channel"] == populated_check["stable_branch"].get("branch") \
+					                or any(map(lambda x: data["channel"] == x.get("branch"), populated_check["prerelease_branches"]))
+					prerelease = data["channel"] != populated_check["stable_branch"].get("branch")
+
+					if valid_channel:
+						patch["prerelease"] = prerelease
+						patch["prerelease_channel"] = data["channel"]
+
+			# do we have changes to apply?
+			if patch:
+				current = self._settings.get(["checks", target], incl_defaults=False)
+				updated = dict_merge(current, patch)
+				self._settings.set(["checks", target], updated)
+
+				settings_dirty = True
+				self._invalidate_version_cache(target)
+
+		if settings_dirty:
+			self._settings.save()
+
+		return NO_CONTENT
+
 	def is_blueprint_protected(self):
 		return False
 
@@ -884,10 +939,26 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                                                                                   local_value=local_value),
 						                           releaseNotes=release_notes,
 						                           online=target_online,
-						                           error=target_error)
+						                           error=target_error,
+						                           releaseChannels=dict())
 
-						if target == "octoprint" and "released_version" in populated_check:
-							information[target]["released_version"] = populated_check["released_version"]
+						if populated_check["type"] == "github_release" and "stable_branch" in populated_check and "prerelease_branches" in populated_check:
+							# target supports release channels via github branches and releases
+							def to_release_channel(branch_info):
+								return dict(name=branch_info["name"],
+								            channel=branch_info["branch"])
+
+							stable_channel = populated_check["stable_branch"]["branch"]
+							current_channel = populated_check.get("prerelease_channel")
+							release_channels = [to_release_channel(populated_check["stable_branch"]),] + \
+							                   list(map(to_release_channel,
+							                            populated_check["prerelease_branches"]))
+							information[target]["releaseChannels"] = dict(available=release_channels,
+							                                              current=current_channel if current_channel else stable_channel,
+							                                              stable=stable_channel)
+
+						if "released_version" in populated_check:
+							information[target]["releasedVersion"] = populated_check["released_version"]
 
 				if self._version_cache_dirty:
 					self._save_version_cache()
