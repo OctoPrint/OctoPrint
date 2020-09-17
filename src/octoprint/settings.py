@@ -592,6 +592,8 @@ class Settings(object):
 	However, these would be invalid paths: ``["key"]``, ``["serial", "port", "value"]``, ``["server", "host", 3]``.
 	"""
 
+	OVERLAY_KEY = "__overlay__"
+
 	def __init__(self, configfile=None, basedir=None):
 		self._logger = logging.getLogger(__name__)
 
@@ -939,12 +941,35 @@ class Settings(object):
 			self._migrate_config(config)
 		return config
 
-	def add_overlay(self, overlay, at_end=False):
+	def add_overlay(self, overlay, at_end=False, key=None):
+		assert isinstance(overlay, dict)
+
+		if key is None:
+			overlay_yaml = yaml.safe_dump(overlay)
+			import hashlib
+			hash = hashlib.md5()
+			hash.update(overlay_yaml.encode('utf-8'))
+			key = hash.hexdigest()
+
+		overlay[self.OVERLAY_KEY] = key
 		if at_end:
 			pos = len(self._map.maps) - 1
 			self._map.maps.insert(pos, overlay)
 		else:
 			self._map.maps.insert(1, overlay)
+
+		return key
+
+	def remove_overlay(self, key):
+		index = -1
+		for i, overlay in enumerate(self._overlay_maps):
+			if key == overlay.get(self.OVERLAY_KEY):
+				index = i
+
+		if index > -1:
+			del self._map.maps[index + 1]
+			return True
+		return False
 
 	def _migrate_config(self, config=None, persist=False):
 		if config is None:
