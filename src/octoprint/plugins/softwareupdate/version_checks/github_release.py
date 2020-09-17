@@ -270,7 +270,7 @@ def get_latest(target, check, custom_compare=None, online=True):
 
 	# determine valid "commitish" values in case we track prereleases
 	commitish = None
-	if prerelease_channel:
+	if include_prerelease and prerelease_channel:
 		prerelease_branches = check.get("prerelease_branches", None)
 		if prerelease_branches:
 			# fetch valid commitish list from configured prerelease_branches for selected channel

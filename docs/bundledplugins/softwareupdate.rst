@@ -156,10 +156,25 @@ types are currently recognized:
     * ``repo``: (mandatory) Github repository to check
     * ``prerelease``: ``True`` or ``False``, default ``False``, set to
       ``True`` to also include releases on Github marked as prerelease.
-    * ``release_branch``: Branch name to check against ``target_comittish``
-      field in Github release data - release will only be included if the
-      values match. Defaults to being unset, in which case no match will
-      be performed.
+    * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
+      * ``branch``: Branch associated with the channel, acts as ID
+      * ``name``: Human readable name of the release channel
+      * ``committish``: List of values to check against ``target_comittish``
+        field in Github release data - release will only be included if the
+        values match. Defaults to being unset, in which case the ``branch``
+        will be matched.
+    * ``stable_branch``: Stable channel definition, optional. Structure:
+      * ``branch``: Branch associated with the channel, acts as ID
+      * ``name``: Human readable name of the release channel
+      * ``commitish``: List of values to check against ``target_comittish``
+        field in Github release data - release will only be included if the
+        values match. Defaults to being unset, in which case the ``branch``
+        will be matched.
+    * ``prerelease_channel``: Release channel to limit updates to. If set only
+      those releases will be included if their ``target_comittish`` matches
+      the ones associated with the release channel identified by this, either
+      included in ``prerelease_channels`` or the ``stable_channel``. Only
+      taken into account if ``prerelease`` is ``true``.
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected
@@ -357,7 +372,69 @@ tracked:
            repo: OctoPrint-SomePlugin
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
 
-The same, but tracking all commits pushed to branch ``devel`` (thus allowing
+The same, but declaring three release channels "Stable", "Maintenance RCs" (tagged on ``rc/maintenance`` or ``master``,
+id ``rc/maintenance``) and "Devel RCs" (tagged on ``rc/maintenance``, ``rc/devel`` or ``master``, id ``rc/devel``),
+but with "Stable" active:
+
+.. code-block:: yaml
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: github_release
+           user: someUser
+           repo: OctoPrint-SomePlugin
+           stable_branch:
+             name: Stable
+             branch: master
+             comittish:
+             - master
+           prerelease_branches:
+           - name: Maintenance RCs
+             branch: rc/maintenance
+             comittish:
+             - rc/maintenance
+             - master
+           - name: Devel RCs
+             branch: rc/devel
+             comittish:
+             - rc/devel
+             - rc/maintenance
+             - master
+           pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
+
+And now with "Maintenance RCs" active (note the ``prerelease`` and ``prerelease_channel`` settings):
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: github_release
+           user: someUser
+           repo: OctoPrint-SomePlugin
+           stable_branch:
+             name: Stable
+             branch: master
+             comittish:
+             - master
+           prerelease_branches:
+           - name: Maintenance RCs
+             branch: rc/maintenance
+             comittish:
+             - rc/maintenance
+             - master
+           - name: Devel RCs
+             branch: rc/devel
+             comittish:
+             - rc/devel
+             - rc/maintenance
+             - master
+           prerelease: True
+           prerelease_channel: rc/maintenance
+           pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
+
+The same plugin again, but tracking all commits pushed to branch ``devel`` (thus allowing
 "bleeding edge" updates):
 
 .. code-block:: yaml

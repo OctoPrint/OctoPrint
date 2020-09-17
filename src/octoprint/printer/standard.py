@@ -303,7 +303,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._comm.fakeOk()
 
-	def commands(self, commands, *args, **kwargs):
+	def commands(self, commands, tags=None, force=False, *args, **kwargs):
 		"""
 		Sends one or more gcode commands to the printer.
 		"""
@@ -313,8 +313,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not isinstance(commands, (list, tuple)):
 			commands = [commands]
 
+		if tags is None:
+			tags = set()
+		tags |= {"trigger:printer.commands"}
+
 		for command in commands:
-			self._comm.sendCommand(command, tags=kwargs.get("tags", set()) | {"trigger:printer.commands"})
+			self._comm.sendCommand(command,
+			                       tags=tags,
+			                       force=force)
 
 	def script(self, name, context=None, must_be_set=True, part_of_job=False, *args, **kwargs):
 		if self._comm is None:
@@ -1111,11 +1117,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 								thread = threading.Thread(target=finalize)
 								thread.daemon = True
 								thread.start()
-			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+
+			try:
+				self._analysisQueue.resume() # printing done, put those cpu cycles to good use
+			except Exception:
+				self._logger.exception("Error while resuming the analysis queue")
 
 		elif state == comm.MachineCom.STATE_PRINTING:
 			if settings().get(["gcodeAnalysis", "runAt"]) == "idle":
-				self._analysisQueue.pause() # only analyse files while idle
+				try:
+					self._analysisQueue.pause() # only analyse files while idle
+				except Exception:
+					self._logger.exception("Error while pausing the analysis queue")
 
 		if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:

@@ -72,8 +72,7 @@ To display the :ref:`above dialog <fig-bundledplugins-action_command_prompt-exam
    //action:prompt_choice Filament swapped
    //action:prompt_show
 
-If the user clicks the button, assuming a ``selection_command`` of ``M876 S{choice}`` is configured, OctoPrint
-will send back ``M876 S0`` (0-based index).
+If the user clicks the button, OctoPrint will send back ``M876 S0`` (0-based index).
 
 A more complicated example with three options would be the following:
 

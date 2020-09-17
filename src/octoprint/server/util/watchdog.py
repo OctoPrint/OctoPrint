@@ -91,7 +91,13 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		thread.start()
 
 	def on_created(self, event):
-		path = event.src_path
+		self._start_check(event.src_path)
+
+	def on_moved(self, event):
+		# for move/rename we are only interested in the dest_path
+		self._start_check(event.dest_path)
+
+	def _start_check(self, path):
 		if not self._valid_path(path):
 			return
 

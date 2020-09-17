@@ -146,10 +146,14 @@ appearance or to modify the order and presence of the various UI components:
          navbar:
          - settings
          - systemmenu
+         - plugin_announcements
+         - plugin_logging
+         - plugin_pi_support
          - login
 
          # order of sidebar items
          sidebar:
+         - plugin_firmware_check
          - connection
          - state
          - files
@@ -158,7 +162,7 @@ appearance or to modify the order and presence of the various UI components:
          tab:
          - temperature
          - control
-         - gcodeviewer
+         - plugin_gcodeviewer
          - terminal
          - timelapse
 
@@ -175,16 +179,39 @@ appearance or to modify the order and presence of the various UI components:
          - features
          - webcam
          - accesscontrol
+         - plugin_gcodeviewer
          - api
+         - plugin_appkeys
          - section_octoprint
          - folders
          - appearance
-         - logs
+         - plugin_logging
+         - plugin_pluginmanager
+         - plugin_softwareupdate
+         - plugin_announcements
+         - plugin_backup
+         - plugin_tracking
+         - plugin_errortracking
 
          # order of user settings
          usersettings:
          - access
          - interface
+
+         # order of wizards
+         wizard:
+         - plugin_backup
+         - plugin_corewizard_acl
+
+         # order of about dialog entries
+         about:
+         - about
+         - plugin_pi_support
+         - supporters
+         - authors
+         - license
+         - thirdparty
+         - plugin_pluginmanager
 
          # order of generic templates
          generic: []
@@ -222,7 +249,7 @@ appearance or to modify the order and presence of the various UI components:
             tab:
             - plugin_helloworld
 
-   OctoPrint will then display the tabs in the order ``plugin_helloworld``, ``temperature``, ``control``, ``gcodeviewer``,
+   OctoPrint will then display the tabs in the order ``plugin_helloworld``, ``temperature``, ``control``, ``plugin_gcodeviewer``,
    ``terminal``, ``timelapse`` plus any other plugins.
 
 
@@ -1095,6 +1122,8 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
      regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
    - name: Suppress wait responses
      regex: 'Recv: wait'
+   - name: Suppress processing responses
+     regex: 'Recv: (echo:\s*)?busy:\s*processing'
 
 .. _sec-configuration-config_yaml-webcam:
 

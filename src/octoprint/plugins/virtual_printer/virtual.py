@@ -139,6 +139,9 @@ class VirtualPrinter(object):
 		self._waitInterval = self._settings.get_float(["waitInterval"])
 		self._busyInterval = self._settings.get_float(["busyInterval"])
 
+		self._busy = None
+		self._busy_loop = None
+
 		self._echoOnM117 = self._settings.get_boolean(["echoOnM117"])
 
 		self._brokenM29 = self._settings.get_boolean(["brokenM29"])
@@ -688,6 +691,21 @@ class VirtualPrinter(object):
 		self.buffered.join()
 
 	# noinspection PyUnusedLocal
+	def _gcode_M600(self, data):
+		# type: (str) -> None
+		self._send("//action:paused")
+		self._showPrompt("Heater Timeout", ["Reheat",])
+		self._setBusy("paused for user")
+		return True # handled as we don't want to send an ok now, only when finishing the busy
+
+	# noinspection PyUnusedLocal
+	def _gcode_M876(self, data):
+		# type: (str) -> None
+		self._hidePrompt()
+		if self._busy == "paused for user":
+			self._busy = None
+
+	# noinspection PyUnusedLocal
 	def _gcode_M999(self, data):
 		# type: (str) -> None
 		# mirror Marlin behaviour
@@ -892,6 +910,8 @@ class VirtualPrinter(object):
 			| Sends back <message>
 			reset
 			| Simulates a reset. Internal state will be lost.
+			unbusy
+			| Unsets the busy loop.
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -920,6 +940,8 @@ class VirtualPrinter(object):
 			self._debug_drop_connection = True
 		elif data == "reset":
 			self._reset()
+		elif data == "unbusy":
+			self._setUnbusy()
 		elif data == "mintemp_error":
 			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
@@ -1058,66 +1080,45 @@ class VirtualPrinter(object):
 
 	def _generateTemperatureOutput(self):
 		# type: () -> str
-		includeTarget = not self._settings.get_boolean(["repetierStyleTargetTemperature"])
+		if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
+			template = self._settings.get(["m105NoTargetFormatString"])
+		else:
+			template = self._settings.get(["m105TargetFormatString"])
+
+		temps = collections.OrderedDict()
 
 		# send simulated temperature data
 		if self.temperatureCount > 1:
-			allTemps = []
-			for i in range(len(self.temp)):
-				allTemps.append((i, self.temp[i], self.targetTemp[i]))
-			allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x if includeTarget else "T%d:%.2f" % (x[0], x[1]), allTemps))
-
 			if self._settings.get_boolean(["smoothieTemperatureReporting"]):
-				allTempsString = allTempsString.replace("T0:", "T:")
+				temps["T"] = (self.temp[0], self.targetTemp[0])
+			elif self._settings.get_boolean(["includeCurrentToolInTemps"]):
+				temps["T"] = (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder])
+
+			for i in range(len(self.temp)):
+				if i == 0 and self._settings.get_boolean(["smoothieTemperatureReporting"]):
+					continue
+				temps["T{}".format(i)] = (self.temp[i], self.targetTemp[i])
 
 			if self._settings.get_boolean(["hasBed"]):
-				if includeTarget:
-					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
-				else:
-					allTempsString = "B:%.2f %s" % (self.bedTemp, allTempsString)
+				temps["B"] = (self.bedTemp, self.bedTargetTemp)
 
 			if self._settings.get_boolean(["hasChamber"]):
-				if includeTarget:
-					allTempsString = "C:%.2f /%.2f %s" % (self.chamberTemp, self.chamberTargetTemp, allTempsString)
-				else:
-					allTempsString = "C:%.2f %s" % (self.chamberTemp, allTempsString)
+				temps["C"] = (self.chamberTemp, self.chamberTargetTemp)
 
-			if self._settings.get_boolean(["includeCurrentToolInTemps"]):
-				if includeTarget:
-					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
-				else:
-					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
-			else:
-				output = allTempsString
 		else:
-			prefix = "T"
+			heater = "T"
 			if self._settings.get_boolean(["klipperTemperatureReporting"]):
-				prefix = "T0"
+				heater = "T0"
 
-			if includeTarget:
-				t = "%s:%.2f /%.2f" % (prefix, self.temp[0], self.targetTemp[0])
-			else:
-				t = "%s:%.2f" % (prefix, self.temp[0])
+			temps[heater] = (self.temp[0], self.targetTemp[0])
 
 			if self._settings.get_boolean(["hasBed"]):
-				if includeTarget:
-					b = "B:%.2f /%.2f" % (self.bedTemp, self.bedTargetTemp)
-				else:
-					b = "B:%.2f" % self.bedTemp
-			else:
-				b = ""
+				temps["B"] = (self.bedTemp, self.bedTargetTemp)
 
 			if self._settings.get_boolean(["hasChamber"]):
-				if includeTarget:
-					c = "C:%.2f /%.2f" % (self.chamberTemp, self.chamberTargetTemp)
-				else:
-					c = "C:%.2f" % self.chamberTemp
-			else:
-				c = ""
+				temps["C"] = (self.chamberTemp, self.chamberTargetTemp)
 
-			output = t + " " + b + " " + c
-			output = output.strip()
-
+		output = " ".join(map(lambda x: template.format(heater=x[0], actual=x[1][0], target=x[1][1]), temps.items()))
 		output += " @:64\n"
 		return output
 
@@ -1513,6 +1514,34 @@ class VirtualPrinter(object):
 			self.buffered.task_done()
 
 		self._logger.info("Closing down buffer loop")
+
+	def _setBusy(self, reason="processing"):
+		if not self._sendBusy:
+			return
+
+		def loop():
+			while self._busy:
+				self._send("echo:busy {}".format(self._busy))
+				time.sleep(self._busyInterval)
+			self._sendOk()
+
+		self._busy = reason
+		self._busy_loop = threading.Thread(target=loop)
+		self._busy_loop.daemon = True
+		self._busy_loop.start()
+
+	def _setUnbusy(self):
+		self._busy = None
+
+	def _showPrompt(self, text, choices):
+		self._hidePrompt()
+		self._send("//action:prompt_begin {}".format(text))
+		for choice in choices:
+			self._send("//action:prompt_button {}".format(choice))
+		self._send("//action:prompt_show")
+
+	def _hidePrompt(self):
+		self._send("//action:prompt_end")
 
 	def write(self, data):
 		# type: (bytes) -> int

@@ -245,12 +245,24 @@ $(function() {
                 }
                 value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
+                if (value.releaseChannels && value.releaseChannels.current) {
+                    value.releaseChannels.current = ko.observable(value.releaseChannels.current);
+                    value.releaseChannels.current.subscribe(function(selected) {
+                        var patch = {}
+                        patch[key] = {channel: selected};
+                        OctoPrint.plugins.softwareupdate.configure(patch)
+                            .done(function() {
+                                self.performCheck(false, false, false, [key]);
+                            });
+                    })
+                }
+
                 versions.push(value);
             });
             self.versions.updateItems(versions);
 
             var octoprint = data.information["octoprint"];
-            self.octoprintReleasedVersion(!octoprint || octoprint.released_version);
+            self.octoprintReleasedVersion(!octoprint || octoprint.releasedVersion);
 
             self.environmentSupported(data.environment.supported);
             self.environmentVersions(data.environment.versions);
@@ -362,9 +374,9 @@ $(function() {
             }
         };
 
-        self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
+        self.performCheck = function(showIfNothingNew, force, ignoreSeen, entries) {
             self.checking(true);
-            OctoPrint.plugins.softwareupdate.check(force)
+            OctoPrint.plugins.softwareupdate.check({entries: entries, force: force})
                 .done(function(data) {
                     self.fromCheckResponse(data, ignoreSeen, showIfNothingNew);
                 })

@@ -60,6 +60,8 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.Tem
 				"EMERGENCY_PARSER": True
 			},
 			"m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
+			"m105TargetFormatString": "{heater}:{actual:.2f}/ {target:.2f}",
+			"m105NoTargetFormatString": "{heater}:{actual:.2f}",
 			"ambientTemperature": 21.3,
 			"errors": {
 				"checksum_mismatch": "Checksum mismatch",

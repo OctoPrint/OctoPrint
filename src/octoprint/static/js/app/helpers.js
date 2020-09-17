@@ -1259,7 +1259,7 @@ function setOnViewModelIf(viewModel, key, value, condition) {
 
         viewModel[key] = value;
     } catch (exc) {
-        if (Sentry) {
+        if (typeof Sentry !== 'undefined') {
             Sentry.captureException(exc);
         }
         log.error("Error while setting", key, "to", value, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
@@ -1277,7 +1277,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         try {
             callViewModelIf(viewModel, method, condition, callback);
         } catch (exc) {
-            if (Sentry) {
+            if (typeof Sentry !== 'undefined') {
                 Sentry.captureException(exc);
             }
             log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
@@ -1339,7 +1339,7 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
             callback(viewModel[method], viewModel);
         }
     } catch (exc) {
-        if (Sentry) {
+        if (typeof Sentry !== 'undefined') {
             Sentry.captureException(exc);
         }
         if (raiseErrors) {
@@ -1417,4 +1417,34 @@ var copyToClipboard = function(text) {
     temp.val(text).select();
     document.execCommand("copy");
     temp.remove();
+};
+
+var determineWebcamStreamType = function(streamUrl) {
+    if (streamUrl) {
+        var lastDotPosition = streamUrl.lastIndexOf(".");
+        var firstQuotationSignPosition = streamUrl.indexOf("?");
+        if(
+            lastDotPosition != -1 &&
+            firstQuotationSignPosition != -1 &&
+            lastDotPosition >= firstQuotationSignPosition
+        ) {
+            throw "Malformed URL. Cannot determine stream type."
+        }
+
+        // If we have found a dot, try to extract the extension.
+        if (lastDotPosition > -1) {
+            if (firstQuotationSignPosition > -1) {
+                var extension = streamUrl.slice(lastDotPosition+1, firstQuotationSignPosition-1);
+            } else {
+                var extension = streamUrl.slice(lastDotPosition+1);
+            }
+            if (extension.toLowerCase() == "m3u8") {
+                return "hls";
+            };
+        };
+        // By default, 'mjpg' is the stream type.
+        return "mjpg";
+    } else {
+        throw "Empty streamUrl. Cannot determine stream type.";
+    };
 };

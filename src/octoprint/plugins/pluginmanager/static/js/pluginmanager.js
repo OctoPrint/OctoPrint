@@ -186,6 +186,8 @@ $(function() {
         self.workingDialog = undefined;
         self.workingOutput = undefined;
 
+        self.toggling = ko.observable(false);
+
         self.restartCommandSpec = undefined;
         self.systemViewModel.systemActions.subscribe(function() {
             var lastResponse = self.systemViewModel.lastCommandResponse;
@@ -198,7 +200,6 @@ $(function() {
             self.restartCommandSpec = restartSpec != undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
         });
 
-        self.notifications = [];
         self.noticeNotifications = [];
         self.hiddenNoticeNotifications = {};
         self.noticeCount = ko.observable(0);
@@ -233,7 +234,7 @@ $(function() {
             var not_safemode_victim = !data.safe_mode_victim;
             var not_blacklisted = !data.blacklisted;
             var not_incompatible = !data.incompatible;
-            return self.enableManagement() && (command === "disable" || (not_safemode_victim && not_blacklisted && not_incompatible)) && data.key != 'pluginmanager';
+            return self.enableManagement() && !self.toggling() && (command === "disable" || (not_safemode_victim && not_blacklisted && not_incompatible)) && data.key !== 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
@@ -456,11 +457,8 @@ $(function() {
             }
         };
 
+        self.dataDeferred = undefined;
         self.requestData = function(options) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
-                return;
-            }
-
             if (!_.isPlainObject(options)) {
                 options = {
                     refresh_repo: options,
@@ -475,14 +473,38 @@ $(function() {
             options.refresh_notices = options.refresh_notices || false;
             options.eval_notices = options.eval_notices || false;
 
-            OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices, orphans: options.refresh_orphans})
-                .fail(function() {
+            if (self.dataDeferred && self.dataDeferred.state() === "pending"
+                && !options.refresh_repo && !options.refresh_orphans
+                && !options.refresh_notices && !options.eval_notices) {
+                return self.dataDeferred.promise();
+            }
+
+            var deferred = new $.Deferred();
+            if (!options.refresh_repo && !options.refresh_orphans && !options.refresh_notices && !options.eval_notices) {
+                self.dataDeferred = deferred;
+            }
+
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
+                deferred.fail();
+                return deferred.promise();
+            }
+
+            OctoPrint.plugins.pluginmanager.get({
+                repo: options.refresh_repo,
+                notices: options.refresh_notices,
+                orphans: options.refresh_orphans
+            })
+                .fail(function () {
                     self.requestError(true);
+                    deferred.reject();
                 })
-                .done(function(data) {
+                .done(function (data) {
                     self.requestError(false);
                     self.fromResponse(data, options);
+                    deferred.resolveWith(data);
                 });
+
+            return deferred.promise();
         };
 
         self.togglePlugin = function(data) {
@@ -497,9 +519,13 @@ $(function() {
             if (data.key === "pluginmanager") return;
 
             var onSuccess = function() {
-                    self.requestData();
+                    self.requestData()
+                        .always(function() {
+                            self.toggling(false);
+                        });
                 },
                 onError = function() {
+                    self.toggling(false);
                     new PNotify({
                         title: gettext("Something went wrong"),
                         text: gettext("Please consult octoprint.log for details"),
@@ -508,18 +534,28 @@ $(function() {
                     })
                 };
 
-            if (self._getToggleCommand(data) === "enable") {
+            var performDisabling = function() {
+                if (self.toggling()) return;
+                self.toggling(true);
+
+                OctoPrint.plugins.pluginmanager.disable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            };
+            var performEnabling = function() {
                 if (data.safe_mode_victim) return;
+
+                if (self.toggling()) return;
+                self.toggling(true);
+
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
                     .fail(onError);
-            } else {
-                var performDisabling = function() {
-                    OctoPrint.plugins.pluginmanager.disable(data.key)
-                        .done(onSuccess)
-                        .fail(onError);
-                };
+            }
 
+            if (self._getToggleCommand(data) === "enable") {
+                performEnabling();
+            } else {
                 // always warn if plugin is marked "disabling discouraged"
                 if (data.disabling_discouraged) {
                     var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: _.escape(data.name)})
@@ -609,12 +645,6 @@ $(function() {
             self._markWorking(workTitle, workText);
 
             var onSuccess = function(response) {
-                    if (response.result) {
-                        self._markDone();
-                    } else {
-                        self._markDone(response.reason)
-                    }
-                    self.requestData();
                     self.installUrl("");
                 },
                 onError = function() {
@@ -793,7 +823,7 @@ $(function() {
 
         self.savePluginSettings = function() {
             var repository = self.config_repositoryUrl();
-            if (repository !== undefined && repository.trim() === "") {
+            if (repository !== null && repository.trim() === "") {
                 repository = null;
             }
 
@@ -805,7 +835,7 @@ $(function() {
             }
 
             var notices = self.config_noticesUrl();
-            if (notices !== undefined && notices.trim() === "") {
+            if (notices !== null && notices.trim() === "") {
                 notices = null;
             }
 
@@ -817,7 +847,7 @@ $(function() {
             }
 
             var pipArgs = self.config_pipAdditionalArgs();
-            if (pipArgs !== undefined && pipArgs.trim() === "") {
+            if (pipArgs !== null && pipArgs.trim() === "") {
                 pipArgs = null;
             }
 
@@ -861,6 +891,16 @@ $(function() {
 
         self.installButtonText = function(data) {
             return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
+        };
+
+        self._processPluginManagementResult = function(response, action, plugin) {
+            if (response.result) {
+                self._markDone();
+            } else {
+                self._markDone(response.reason)
+            }
+
+            self._displayPluginManagementNotification(response, action, plugin);
         };
 
         self._displayPluginManagementNotification = function(response, action, plugin) {
@@ -989,19 +1029,25 @@ $(function() {
             var options = {
                 title: title,
                 text: text,
-                type: type
+                type: type,
+                hide: false
             };
-
-            if (self.logNotification !== undefined) {
-                self.logNotification.remove();
-            }
 
             if (confirm !== undefined) {
                 options.confirm = confirm;
-                options.hide = false;
-                self.logNotification = PNotify.singleButtonNotify(options);
+
+                if (self.logNotification === undefined) {
+                    self.logNotification = PNotify.singleButtonNotify(options);
+                } else {
+                    self.logNotification.update(options);
+                    self.logNotification = PNotify.fixSingleButton(self.logNotification, options);
+                }
             } else {
-                self.logNotification = new PNotify(options);
+                if (self.logNotification === undefined) {
+                    self.logNotification = new PNotify(options);
+                } else {
+                    self.logNotification.update(options);
+                }
             }
         };
 
@@ -1038,8 +1084,15 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
-            var disabled = (self.enableToggle(data)) ? "" : " disabled";
+            var icon, disabled;
+
+            if (self.toggling()) {
+                icon = "fa fa-spin fa-spinner";
+                disabled = " disabled";
+            } else {
+                icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
+                disabled = (self.enableToggle(data)) ? "" : " disabled";
+            }
 
             return icon + disabled;
         };
@@ -1259,11 +1312,6 @@ $(function() {
             if (self.logNotification) {
                 self.logNotification.remove();
             }
-            if (self.notifications) {
-                _.each(self.notifications, function(notification) {
-                    notification.remove();
-                });
-            }
         };
 
         self.onServerDisconnect = function() {
@@ -1310,7 +1358,7 @@ $(function() {
                     }
                 }
 
-                self._displayPluginManagementNotification(data, action, name);
+                self._processPluginManagementResult(data, action, name);
                 self.requestData();
             }
         };

@@ -39,6 +39,8 @@ $(function() {
 
         self.webcamDisableTimeout = undefined;
         self.webcamLoaded = ko.observable(false);
+        self.webcamMjpgEnabled = ko.observable(false);
+        self.webcamHlsEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
 
         self.keycontrolActive = ko.observable(false);
@@ -285,7 +287,10 @@ $(function() {
         self.feedRateBusy = ko.observable(false);
         self.feedRateResetter = ko.observable();
         self.sendFeedRateCommand = function () {
-            var rate = _.parseInt(self.feedRate());
+            var rate = self.feedRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.feedRate());
             self.feedRateBusy(true);
             OctoPrint.printer.setFeedrate(rate)
                 .done(function() {
@@ -321,7 +326,10 @@ $(function() {
         self.flowRateBusy = ko.observable(false);
         self.flowRateResetter = ko.observable();
         self.sendFlowRateCommand = function () {
-            var rate = _.parseInt(self.flowRate());
+            var rate = self.flowRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.flowRate());
             self.flowRateBusy(true);
             OctoPrint.printer.setFlowrate(rate)
                 .done(function() {
@@ -347,7 +355,7 @@ $(function() {
         };
 
         self._sendECommand = function (dir) {
-            var length = self.extrusionAmount() || self.settings.printer_defaultExtrusionLength();
+            var length = self.extrusionAmount();
             OctoPrint.printer.extrude(length * dir);
         };
 
@@ -434,26 +442,15 @@ $(function() {
             if (self.webcamDisableTimeout != undefined) {
                 clearTimeout(self.webcamDisableTimeout);
             }
-            var webcamImage = $("#webcam_image");
-            var currentSrc = webcamImage.attr("src");
 
-            // safari bug doesn't release the mjpeg stream, so we just set it up the once
-            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
-                return;
-            }
-
-            var newSrc = self.settings.webcam_streamUrl();
-            if (currentSrc != newSrc) {
-                if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
-                } else {
-                    newSrc += "?";
-                }
-                newSrc += new Date().getTime();
-
-                self.webcamLoaded(false);
-                self.webcamError(false);
-                webcamImage.attr("src", newSrc);
+            // Determine stream type and switch to corresponding webcam.
+            var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
+            if (streamType == "mjpg") {
+                self._switchToMjpgWebcam();
+            } else if (streamType == "hls") {
+                self._switchToHlsWebcam();
+            } else {
+                throw "Unknown stream type " + streamType;
             }
         };
 
@@ -497,6 +494,8 @@ $(function() {
                 self.rerenderControls();
             }
             self._enableWebcam();
+
+            self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
         };
 
         self.onFocus = function (data, event) {
@@ -608,6 +607,48 @@ $(function() {
             return distance.toString().replace(".", "");
         };
 
+        self._switchToMjpgWebcam = function() {
+            var webcamImage = $("#webcam_image");
+            var currentSrc = webcamImage.attr("src");
+
+            // safari bug doesn't release the mjpeg stream, so we just set it up the once
+            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
+                return;
+            }
+
+            var newSrc = self.settings.webcam_streamUrl();
+            if (currentSrc != newSrc) {
+                if (newSrc.lastIndexOf("?") > -1) {
+                    newSrc += "&";
+                } else {
+                    newSrc += "?";
+                }
+                newSrc += new Date().getTime();
+
+                self.webcamLoaded(false);
+                self.webcamError(false);
+                webcamImage.attr("src", newSrc);
+
+                self.webcamHlsEnabled(false);
+                self.webcamMjpgEnabled(true);
+            }
+        }
+
+        self._switchToHlsWebcam = function() {
+            var video = document.getElementById('webcam_hls');
+
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = self.settings.webcam_streamUrl();
+            }
+            else if (Hls.isSupported()) {
+                var hls = new Hls();
+                hls.loadSource(self.settings.webcam_streamUrl());
+                hls.attachMedia(video);
+            }
+
+            self.webcamMjpgEnabled(false);
+            self.webcamHlsEnabled(true);
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push({

@@ -175,7 +175,7 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def commands(self, commands, tags=None, *args, **kwargs):
+	def commands(self, commands, tags=None, force=False, *args, **kwargs):
 		"""
 		Sends the provided ``commands`` to the printer.
 
@@ -183,6 +183,7 @@ class PrinterInterface(object):
 		    commands (str, list): The commands to send. Might be a single command provided just as a string or a list
 		        of multiple commands to send in order.
 		    tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
+		    force (bool): Whether to force sending of the command right away or allow queuing while printing
 		"""
 		raise NotImplementedError()
 

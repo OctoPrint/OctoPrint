@@ -10,6 +10,7 @@ from octoprint.settings import default_settings
 from octoprint.plugin.core import FolderOrigin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
+from octoprint.events import Events
 from octoprint.util import is_hidden_path, to_bytes
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, get_comparable_version, is_octoprint_compatible
 from octoprint.util.platform import is_os_compatible
@@ -82,6 +83,14 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			     dangerous=True,
 			     default_groups=[ADMIN_GROUP])
 		]
+
+	# Socket emit hook
+
+	def socket_emit_hook(self, socket, user, message, payload, *args, **kwargs):
+		if message != "event" or payload["type"] != Events.PLUGIN_BACKUP_BACKUP_CREATED:
+			return True
+
+		return user and user.has_permission(Permissions.PLUGIN_BACKUP_ACCESS)
 
 	##~~ StartupPlugin
 
@@ -166,6 +175,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			self._logger.info("... done creating backup zip.")
 
+			self._event_bus.fire(Events.PLUGIN_BACKUP_BACKUP_CREATED,
+			                     dict(name=name,
+			                          path=final_path,
+			                          excludes=exclude))
+
 		def on_backup_error(name, exc_info):
 			with self._in_progress_lock:
 				try:
@@ -183,6 +197,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		                          kwargs=dict(exclude=exclude,
 		                                      settings=self._settings,
 		                                      plugin_manager=self._plugin_manager,
+		                                      logger=self._logger,
 		                                      datafolder=self.get_plugin_data_folder(),
 		                                      on_backup_start=on_backup_start,
 		                                      on_backup_done=on_backup_done,
@@ -388,6 +403,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			self._create_backup(backup_file,
 			                    exclude=exclude,
 			                    settings=settings,
+			                    logger=self._logger,
 			                    plugin_manager=cli_group.plugin_manager,
 			                    datafolder=datafolder)
 			click.echo("Done.")
@@ -519,7 +535,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
 		if os.path.exists(data_file):
 			try:
-				with io.open(data_file, mode='rb', encoding="utf-8") as f:
+				with io.open(data_file, mode='rt', encoding="utf-8") as f:
 					unknown_plugins = json.load(f)
 
 				assert isinstance(unknown_plugins, list)
@@ -645,6 +661,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                   exclude=None,
 	                   settings=None,
 	                   plugin_manager=None,
+	                   logger=None,
 	                   datafolder=None,
 	                   on_backup_start=None,
 	                   on_backup_done=None,
@@ -659,6 +676,24 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			if "timelapse" in exclude:
 				exclude.append("timelapse_tmp")
+
+			current_excludes = list(exclude)
+			additional_excludes = list()
+			plugin_data = settings.global_get_basefolder("data")
+			for plugin, hook in plugin_manager.get_hooks("octoprint.plugin.backup.additional_excludes").items():
+				try:
+					additional = hook(current_excludes)
+					if isinstance(additional, list):
+						if "." in additional:
+							current_excludes.append(os.path.join("data", plugin))
+							additional_excludes.append(os.path.join(plugin_data, plugin))
+						else:
+							current_excludes += map(lambda x: os.path.join("data", plugin, x), additional)
+							additional_excludes += map(lambda x: os.path.join(plugin_data, plugin, x), additional)
+				except Exception:
+					logger.exception("Error while retrieving additional excludes "
+					                 "from plugin {name}".format(**locals()),
+					                 extra=dict(plugin=plugin))
 
 			configfile = settings._configfile
 			basedir = settings._basedir
@@ -717,10 +752,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 					add_to_zip(settings.global_get_basefolder(folder),
 					           "basedir/" + folder.replace("_", "/"),
-					           ignored=[own_folder,])
+					           ignored=[own_folder,] + additional_excludes)
 
 				# backup anything else that might be lying around in our basedir
-				add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ])
+				add_to_zip(basedir, "basedir", ignored=defaults + [own_folder, ] + additional_excludes)
 
 				# add list of installed plugins
 				plugins = []
@@ -996,10 +1031,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		payload["type"] = message
 		self._plugin_manager.send_plugin_message(self._identifier, payload)
 
-
-
 class InsufficientSpace(Exception):
 	pass
+
+def _register_custom_events(*args, **kwargs):
+	return ["backup_created"]
 
 __plugin_name__ = "Backup & Restore"
 __plugin_author__ = "Gina Häußge"
@@ -1013,5 +1049,7 @@ __plugin_hooks__ = {
 	"octoprint.server.http.routes": __plugin_implementation__.route_hook,
 	"octoprint.server.http.bodysize": __plugin_implementation__.bodysize_hook,
 	"octoprint.cli.commands": __plugin_implementation__.cli_commands_hook,
-	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+	"octoprint.events.register_custom_events": _register_custom_events,
+	"octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook
 }

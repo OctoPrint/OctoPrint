@@ -347,10 +347,28 @@ $(function() {
             }
 
             var text = gettext("If you see your webcam stream below, the entered stream URL is ok.");
-            var image = $('<img src="' + self.webcam_streamUrl() + '">');
+            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+            var webcam_element;
+            if (streamType == "mjpg") {
+                webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
+            } else if (streamType == "hls") {
+                webcam_element = $('<video id="webcam_hls" muted autoplay style="width: 100%"/>');
+                video_element = webcam_element[0];
+                if (video_element.canPlayType('application/vnd.apple.mpegurl')) {
+                    video_element.src = self.webcam_streamUrl();
+                }
+                else if (Hls.isSupported()) {
+                    var hls = new Hls();
+                    hls.loadSource(self.webcam_streamUrl());
+                    hls.attachMedia(video_element);
+                }
+            } else {
+                throw "Unknown stream type " + streamType;
+            }
+
             var message = $("<p></p>")
                 .append(text)
-                .append(image);
+                .append(webcam_element);
 
             self.testWebcamStreamUrlBusy(true);
             showMessageDialog({

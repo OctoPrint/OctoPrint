@@ -57,6 +57,107 @@ It adds two new commands, ``backup:backup`` and ``backup:restore``.
 
    The ``backup:backup`` command can be useful in combination with a cronjob to create backups in regular intervals.
 
+.. _sec-bundledplugins-backup-events:
+
+Events
+------
+
+*Events will not be triggered by CLI operations.*
+
+plugin_backup_backup_created
+  A new backup was created. On the push socket only available with a valid login session with ``Backup Access``
+  permission.
+
+  Payload:
+
+    * ``name``: the name of the backup
+    * ``path``: the path to the backup
+    * ``excludes``: the list of parts excluded from the backup
+
+.. _sec-bundledplugins-backup-hooks:
+
+Hooks
+-----
+
+.. _sec-bundledplugins-backup-hooks-excludes:
+
+octoprint.plugin.backup.additional_excludes
++++++++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: additional_excludes_hook(excludes, *args, **kwargs)
+
+   Use this to provide additional paths on your plugin's data folder to exclude from the backup. Your handler also
+   get a list of currently excluded sub paths in the base folder, so you can react to them. E.g. exclude things
+   in your data folder that relate to uploaded GCODE files if `uploads` is excluded, or exclude things that relate
+   to timelapses if `timelapse` is excluded.
+
+   Expects a list of additional paths relative to your plugin's data folder. If you return a single `.`, your whole
+   plugin's data folder will be excluded from the backup.
+
+   **Example 1**
+
+   The following example plugin will create two files ``foo.txt`` and ``bar.txt`` in its data folder, but flag
+   ``foo.txt`` as not to be backed up.
+
+   .. code-block:: python
+
+      # -*- coding: utf-8 -*-
+      from __future__ import absolute_import, division, print_function, unicode_literals
+
+      import octoprint.plugin
+
+      import os
+      import io
+
+      class BackupExcludeTestPlugin(octoprint.plugin.OctoPrintPlugin):
+          def initialize(self):
+              with io.open(os.path.join(self.get_plugin_data_folder(), "foo.txt"), "w", encoding="utf-8") as f:
+                  f.write("Hello\n")
+              with io.open(os.path.join(self.get_plugin_data_folder(), "bar.txt"), "w", encoding="utf-8") as f:
+                  f.write("Hello\n")
+
+          def additional_excludes_hook(self, excludes, *args, **kwargs):
+              return ["foo.txt"]
+
+      __plugin_implementation__ = BackupExcludeTestPlugin()
+      __plugin_hooks__ = {
+          "octoprint.plugin.backup.additional_excludes": __plugin_implementation__.additional_excludes_hook
+      }
+
+   **Example 2**
+
+   In this example the plugin will create a file ``foo.txt`` in its data folder and flag its whole data folder as excluded from the
+   backup if uploaded GCODE files are also excluded:
+
+   .. code-block:: python
+
+      # -*- coding: utf-8 -*-
+      from __future__ import absolute_import, division, print_function, unicode_literals
+
+      import octoprint.plugin
+
+      import os
+      import io
+
+      class BackupExcludeTestPlugin(octoprint.plugin.OctoPrintPlugin):
+          def initialize(self):
+              with io.open(os.path.join(self.get_plugin_data_folder(), "foo.txt"), "w", encoding="utf-8") as f:
+                  f.write("Hello\n")
+
+          def additional_excludes_hook(self, excludes, *args, **kwargs):
+              if "uploads" in excludes:
+                 return ["."]
+              return []
+
+      __plugin_implementation__ = BackupExcludeTestPlugin()
+      __plugin_hooks__ = {
+          "octoprint.plugin.backup.additional_excludes": __plugin_implementation__.additional_excludes_hook
+      }
+
+   :param excludes list: A list of paths already flagged as excluded in the backup
+   :return: A list of paths to exclude, relative to your plugin's data folder
+   :rtype: list
+
 .. _sec-bundledplugins-backup-sourcecode:
 
 Source code

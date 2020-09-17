@@ -11,6 +11,7 @@
         var url = this.base.getBlueprintUrl("softwareupdate");
         this.checkUrl = url + "check";
         this.updateUrl = url + "update";
+        this.configureUrl = url + "configure";
     };
 
     OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
@@ -78,6 +79,10 @@
         };
         return this.base.postJson(this.updateUrl, data, opts);
     };
+
+    OctoPrintSoftwareUpdateClient.prototype.configure = function(data, opts) {
+        return this.base.postJson(this.configureUrl, data, opts);
+    }
 
     OctoPrintClient.registerPluginComponent("softwareupdate", OctoPrintSoftwareUpdateClient);
     return OctoPrintSoftwareUpdateClient;

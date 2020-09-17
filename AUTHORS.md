@@ -121,7 +121,13 @@ date of first contribution):
   * [Josh Friend](https://github.com/joshfriend)
   * [Lachlan Cresswell](https://github.com/lachyc)
   * [Khoi Pham](https://github.com/osubuu)
+  * [Timofei Korostelev](https://github.com/chudsaviet)
   * [Federico Nembrini](https://github.com/FedericoNembrini)
+  * [Uri Shaked](https://github.com/urish)
+  * [Brian Vanderbusch](https://github.com/LongLiveCHIEF)
+  * [Charlie Powell](https://github.com/cp2004)
+  * [Ollis Git](https://github.com/OllisGit)
+  * [Sophist](https://github.com/Sophist-UK)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

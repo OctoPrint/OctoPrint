@@ -92,7 +92,7 @@ class WebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransportMix
             # Running in Main Thread
             # Send message
             try:
-                self.write_message(message, binary)
+                self.write_message(message, binary).add_done_callback(self.send_complete)
             except (IOError, WebSocketError):
                 self.server.io_loop.add_callback(self.on_close)
         else:

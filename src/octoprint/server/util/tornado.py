@@ -56,14 +56,18 @@ def fix_websocket_check_origin():
 	header case-insensitively, as defined in RFC6454, Section 4, item 5.
 	"""
 
+	scheme_translation = dict(wss='https',
+	                          ws='http')
+
 	def patched_check_origin(self, origin):
 		def get_check_tuple(urlstring):
 			parsed = urlparse(urlstring)
-			return (parsed.scheme,
+			scheme = scheme_translation.get(parsed.scheme, parsed.scheme)
+			return (scheme,
 			        parsed.hostname,
 			        parsed.port if parsed.port
-			        else 80 if parsed.scheme in ("http", "ws")
-			        else 443 if parsed.scheme in ("https", "wss")
+			        else 80 if scheme == 'http'
+			        else 443 if scheme == 'https'
 			        else None)
 
 		return get_check_tuple(origin) == get_check_tuple(self.request.full_url())
@@ -986,7 +990,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
 	               access_validation=None, path_validation=None, etag_generator=None, name_generator=None,
-	               mime_type_guesser=None, is_pre_compressed=False):
+	               mime_type_guesser=None, is_pre_compressed=False, stream_body=False):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._allow_client_caching = allow_client_caching
@@ -996,6 +1000,7 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 		self._name_generator = name_generator
 		self._mime_type_guesser = mime_type_guesser
 		self._is_pre_compressed = is_pre_compressed
+		self._stream_body = stream_body
 
 	def should_use_precompressed(self):
 		return (self._is_pre_compressed
@@ -1018,7 +1023,43 @@ class LargeResponseHandler(RequestlessExceptionLoggingMixin,
 				logging.getLogger(__name__).warning("Precompressed assets expected but {}.gz does not exist "
 				                                    "in {}, using plain file instead.".format(path, self.root))
 
-		return tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
+		if self._stream_body:
+			return self.streamed_get(path, include_body=include_body)
+		else:
+			return tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
+
+	@tornado.gen.coroutine
+	def streamed_get(self, path, include_body=True):
+		"""
+		Version of StaticFileHandler.get that doesn't support ranges or ETag but streams the content. Helpful for files
+		that might still change while being transmitted (e.g. log files)
+		"""
+
+		# Set up our path instance variables.
+		self.path = self.parse_url_path(path)
+		del path  # make sure we don't refer to path instead of self.path again
+		absolute_path = self.get_absolute_path(self.root, self.path)
+		self.absolute_path = self.validate_absolute_path(self.root, absolute_path)
+		if self.absolute_path is None:
+			return
+
+		content_type = self.get_content_type()
+		if content_type:
+			self.set_header("Content-Type", content_type)
+		self.set_extra_headers(self.path)
+
+		if include_body:
+			content = self.get_content(self.absolute_path)
+			if isinstance(content, bytes):
+				content = [content]
+			for chunk in content:
+				try:
+					self.write(chunk)
+					yield self.flush()
+				except tornado.iostream.StreamClosedError:
+					return
+		else:
+			assert self.request.method == "HEAD"
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:

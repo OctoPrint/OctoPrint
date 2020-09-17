@@ -37,6 +37,7 @@ import threading
 import tempfile
 import shutil
 import filetype
+import pkg_resources
 
 from datetime import datetime
 
@@ -94,7 +95,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.BlueprintPlugin,
                           octoprint.plugin.EventHandlerPlugin):
 
-	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz")
 	PYTHON_EXTENSIONS = (".py",)
 
 	# valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -139,6 +140,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger = None
 
 		self._get_throttled = lambda: False
+
+		self._install_task = None
+		self._install_lock = threading.RLock()
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
@@ -388,11 +392,21 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return make_response("Insufficient rights", 403)
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
-			return self.command_install(url=url,
-			                            force="force" in data and data["force"] in valid_boolean_trues,
-			                            dependency_links="dependency_links" in data
-			                                             and data["dependency_links"] in valid_boolean_trues,
-			                            reinstall=plugin_name)
+
+			with self._install_lock:
+				if self._install_task is not None:
+					return make_response("There's always a plugin being installed", 409)
+
+				self._install_task = threading.Thread(target=self.command_install,
+				                                      kwargs=dict(url=url,
+				                                                  force="force" in data and data["force"] in valid_boolean_trues,
+				                                                  dependency_links="dependency_links" in data
+				                                                                   and data["dependency_links"] in valid_boolean_trues,
+				                                                  reinstall=plugin_name))
+				self._install_task.daemon = True
+				self._install_task.start()
+
+				return jsonify(in_progress=True)
 
 		elif command == "uninstall":
 			plugin_name = data["plugin"]
@@ -450,45 +464,47 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def command_install(self, url=None, path=None, name=None, force=False, reinstall=None, dependency_links=False):
 		folder = None
 
-		try:
-			source = path
-			source_type = "path"
+		with self._install_lock:
+			try:
+				source = path
+				source_type = "path"
 
-			if url is not None:
-				# fetch URL
-				folder = TemporaryDirectory()
-				path = download_file(url, folder.name)
-				source = url
-				source_type = "url"
+				if url is not None:
+					# fetch URL
+					folder = TemporaryDirectory()
+					path = download_file(url, folder.name)
+					source = url
+					source_type = "url"
 
-			# determine type of path
-			if self._is_archive(path):
-				return self._command_install_archive(path,
-				                                     source=source,
-				                                     source_type=source_type,
-				                                     force=force,
-				                                     reinstall=reinstall,
-				                                     dependency_links=dependency_links)
+				# determine type of path
+				if self._is_archive(path):
+					return self._command_install_archive(path,
+					                                     source=source,
+					                                     source_type=source_type,
+					                                     force=force,
+					                                     reinstall=reinstall,
+					                                     dependency_links=dependency_links)
 
-			elif self._is_pythonfile(path):
-				return self._command_install_pythonfile(path,
-				                                        source=source,
-				                                        source_type=source_type,
-				                                        name=name)
+				elif self._is_pythonfile(path):
+					return self._command_install_pythonfile(path,
+					                                        source=source,
+					                                        source_type=source_type,
+					                                        name=name)
 
-			else:
-				self._logger.error("{} is neither an archive nor a python file, can't install that.".format(source))
-				result = dict(result=False,
-				              source=source,
-				              source_type=source_type,
-				              reason="Could not install plugin from {}, was neither "
-				                     "a plugin archive nor a single file plugin".format(source))
-				self._send_result_notification("install", result)
-				return jsonify(result)
+				else:
+					self._logger.error("{} is neither an archive nor a python file, can't install that.".format(source))
+					result = dict(result=False,
+					              source=source,
+					              source_type=source_type,
+					              reason="Could not install plugin from {}, was neither "
+					                     "a plugin archive nor a single file plugin".format(source))
+					self._send_result_notification("install", result)
+					return result
 
-		finally:
-			if folder is not None:
-				folder.cleanup()
+			finally:
+				if folder is not None:
+					folder.cleanup()
+				self._install_task = None
 
 	# noinspection DuplicatedCode
 	def _command_install_archive(self, path, source=None, source_type=None, force=False, reinstall=None, dependency_links=False):
@@ -498,17 +514,27 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return make_response("System is currently throttled, refusing to install "
 			                     "anything due to possible stability issues", 409)
 
+		try:
+			# Py3
+			from urllib.parse import quote as url_quote
+		except ImportError:
+			# Py2
+			from urllib import quote as url_quote
+
 		path = os.path.abspath(path)
-		path_url = "file://" + path
 		if os.sep != "/":
 			# windows gets special handling
-			path = path.replace(os.sep, "/").lower()
-			path_url = "file:///" + path
+			drive, loc = os.path.splitdrive(path)
+			path_url = "file:///" + drive.lower() + url_quote(loc.replace(os.sep, "/").lower())
+			shell_quote = lambda x: x # do not shell quote under windows, non posix shell
+		else:
+			path_url = "file://" + url_quote(path)
+			shell_quote = sarge.shell_quote
 
 		already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
 
 		self._logger.info("Installing plugin from {}".format(source))
-		pip_args = ["--disable-pip-version-check", "install", sarge.shell_quote(path_url), "--no-cache-dir"]
+		pip_args = ["--disable-pip-version-check", "install", shell_quote(path_url), "--no-cache-dir"]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
@@ -594,7 +620,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              source_type=source_type,
 			              reason="Pip did not report successful installation")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		installed = list(map(lambda x: x.strip(), result_line[len(success_string):].split(" ")))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
@@ -613,7 +639,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              was_reinstalled=False,
 			              plugin="unknown")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		self._plugin_manager.reload_plugins()
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
@@ -647,7 +673,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              was_reinstalled=new_plugin.key in all_plugins_before or reinstall is not None,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
-		return jsonify(result)
+		return result
 
 	# noinspection DuplicatedCode
 	def _command_install_pythonfile(self, path, source=None, source_type=None, name=None):
@@ -665,8 +691,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._log_call("cp {} {}".format(path, destination))
 			shutil.copy(path, destination)
 		except:
-			self._logger.exception("Could not install plugin from {}".format(source))
-			return make_response("Could not install plugin from URL, see the log for more details", 500)
+			self._logger.exception("Installing plugin from {} failed".format(source))
+			result = dict(result=False,
+			              source=source,
+			              source_type=source_type,
+			              reason="Plugin could not be copied")
+			self._send_result_notification("install", result)
+			return result
 
 		plugins = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 		new_plugin = plugins.get(plugin_id)
@@ -682,7 +713,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              was_reinstalled=False,
 			              plugin="unknown")
 			self._send_result_notification("install", result)
-			return jsonify(result)
+			return result
 
 		self._plugin_manager.reload_plugins()
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
@@ -709,7 +740,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              was_reinstalled=new_plugin.key in all_plugins_before,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
-		return jsonify(result)
+		return result
 
 	def command_uninstall(self, plugin, cleanup=False):
 		if plugin.key == "pluginmanager":
@@ -1328,27 +1359,45 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		octoprint_version = get_octoprint_version(base=True)
 		plugin_notifications = self._notices.get(key, [])
 
-		def filter_relevant(notification):
-			return "text" in notification and "date" in notification and \
-			       ("versions" not in notification or plugin.version in notification["versions"]) and \
-			       ("octoversions" not in notification or is_octoprint_compatible(*notification["octoversions"],
-			                                                                      octoprint_version=octoprint_version))
-
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
 		return list(filter(lambda x: x is not None,
-		              	   map(map_notification,
-		                  	   filter(filter_relevant,
-		                         	  plugin_notifications))))
+		                   map(map_notification,
+		                       filter(lambda n: _filter_relevant_notification(n, plugin.version, octoprint_version),
+		                              plugin_notifications))))
 
 	def _to_external_notification(self, key, notification):
 		return dict(key=key,
 		            date=time.mktime(notification["timestamp"]),
 		            text=notification["text"],
 		            link=notification.get("link"),
-		            versions=notification.get("versions", []),
+		            versions=notification.get("pluginversions", notification.get("versions", [])),
 		            important=notification.get("important", False))
+
+
+def _filter_relevant_notification(notification, plugin_version, octoprint_version):
+	if "pluginversions" in notification:
+		pluginversions = notification["pluginversions"]
+
+		is_range = lambda x: "=" in x or ">" in x or "<" in x
+		version_ranges = list(map(lambda x: pkg_resources.Requirement.parse(notification["plugin"] + x),
+		                          filter(is_range,
+		                                 pluginversions)))
+		versions = list(filter(lambda x: not is_range(x),
+		                       pluginversions))
+	elif "versions" in notification:
+		version_ranges = []
+		versions = notification["versions"]
+	else:
+		version_ranges = versions = None
+
+	return "text" in notification and "date" in notification and \
+	       ((version_ranges is None and versions is None) or
+	        (version_ranges and (any(map(lambda v: plugin_version in v, version_ranges)))) or
+	        (versions and plugin_version in versions)) and \
+	       ("octoversions" not in notification or is_octoprint_compatible(*notification["octoversions"],
+	                                                                      octoprint_version=octoprint_version))
 
 
 def _register_custom_events(*args, **kwargs):
