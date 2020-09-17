@@ -600,7 +600,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		for k, v in data.items():
 			if k in defaults and defaults[k] == data[k]:
-				del data[k]
+				delete.append(k)
 
 		for k in delete:
 			if k in data:
