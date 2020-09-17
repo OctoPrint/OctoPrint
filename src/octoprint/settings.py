@@ -475,7 +475,7 @@ class HierarchicalChainMap(ChainMap):
 		except KeyError:
 			return False
 
-	def get_by_path(self, path, only_local=False, only_defaults=False):
+	def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
 		if only_defaults:
 			current = self.parents
 		elif only_local:
@@ -490,6 +490,8 @@ class HierarchicalChainMap(ChainMap):
 			else:
 				raise KeyError(key)
 
+		if merged:
+			current = current.deep_dict()
 		return current[path[-1]]
 
 	def set_by_path(self, path, value):
@@ -1448,7 +1450,7 @@ class Settings(object):
 
 			if isinstance(value, dict) and merged:
 				try:
-					default_value = chain.get_by_path(parent_path + [key], only_defaults=True)
+					default_value = chain.get_by_path(parent_path + [key], only_defaults=True, merged=True)
 					if default_value is not None:
 						value = dict_merge(default_value, value)
 				except KeyError:
