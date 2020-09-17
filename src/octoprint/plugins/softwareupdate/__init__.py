@@ -501,7 +501,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._invalidate_version_cache("pip")
 
 	def get_settings_version(self):
-		return 9
+		return 8
 
 	def on_settings_migrate(self, target, current=None):
 
