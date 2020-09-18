@@ -17,6 +17,7 @@ import time
 import logging
 import logging.handlers
 import hashlib
+import requests
 
 # noinspection PyCompatibility
 from concurrent import futures
@@ -58,6 +59,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	DATA_FORMAT_VERSION = "v4"
 
+	CHECK_OVERLAY_KEY = "softwareupdate_check_overlay"
+
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._update_in_progress = False
@@ -74,6 +77,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_path = None
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = None
+
+		self._overlay_cache = dict()
+		self._overlay_cache_ttl = 0
+		self._overlay_cache_timestamp = None
 
 		self._environment_supported = True
 		self._environment_versions = dict()
@@ -92,6 +99,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 		self._version_cache_path = os.path.join(self.get_plugin_data_folder(), "versioncache.yaml")
 		self._load_version_cache()
+
+		self._overlay_cache_ttl = self._settings.get_int(["check_overlay_ttl"]) * 60
 
 		def refresh_checks(name, plugin):
 			self._refresh_configured_checks = True
@@ -147,8 +156,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
-			if self._refresh_configured_checks or self._configured_checks is None:
+			if self._refresh_configured_checks \
+				or self._configured_checks is None \
+				or self._check_overlays_stale:
+
 				self._refresh_configured_checks = False
+
+				overlays = self._get_check_overlays()
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
@@ -173,6 +187,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 									continue
 
 							check_providers[key] = name
+
+							if key in overlays:
+								overlay_config = overlays[key]
+								default_config = dict_merge(default_config, overlay_config)
 
 							yaml_config = dict()
 							effective_config = default_config
@@ -269,6 +287,45 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		                                                                   if self._storage_sufficient
 		                                                                   else "insufficient"))
 
+	@property
+	def _check_overlays_stale(self):
+		return self._overlay_cache is None or self._overlay_cache_timestamp is None \
+		       or self._overlay_cache_timestamp + self._overlay_cache_ttl < time.time()
+
+	def _get_check_overlays(self, force=False):
+		if self._check_overlays_stale or force:
+			if self._connectivity_checker.online:
+				# reload from URL
+				url = self._settings.get(["check_overlay_url"])
+				self._logger.info("Fetching check overlays from {}".format(url))
+				try:
+					r = requests.get(url, timeout=3.1)
+					r.raise_for_status()
+					data = r.json()
+				except Exception as exc:
+					self._logger.error("Could not fetch check overlay from {}: {}".format(url, exc))
+					self._overlay_cache = dict()
+				else:
+					self._overlay_cache = data
+
+			else:
+				self._logger.info("Not fetching check overlays, we are offline")
+				self._overlay_cache = dict()
+
+			self._overlay_cache_timestamp = time.time()
+
+			default_overlay = dict()
+			defaults = self.get_settings_defaults()
+			for key in defaults["checks"]:
+				if key in self._overlay_cache:
+					default_overlay[key] = self._overlay_cache[key]
+
+			self._settings.remove_overlay(self.CHECK_OVERLAY_KEY)
+			if default_overlay:
+				self._settings.add_overlay(dict(checks=default_overlay), key=self.CHECK_OVERLAY_KEY)
+
+		return self._overlay_cache
+
 	def _load_version_cache(self):
 		if not os.path.isfile(self._version_cache_path):
 			return
@@ -362,7 +419,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"ignore_throttled": False,
 
-			"minimum_free_storage": 150
+			"minimum_free_storage": 150,
+
+			"check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
+
+			"check_overlay_ttl": 6 * 60,
 		}
 
 	def on_settings_load(self):
@@ -704,6 +765,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			hash_update(str(self._environment_supported))
 			hash_update(str(self._version_cache_timestamp))
+			hash_update(str(self._overlay_cache_timestamp))
 			hash_update(str(self._connectivity_checker.online))
 			hash_update(str(self._update_in_progress))
 			hash_update(self.DATA_FORMAT_VERSION)
@@ -714,7 +776,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
 		                                  condition=lambda *args, **kwargs: condition(),
-		                                  unless=lambda: force)(view)()
+		                                  unless=lambda: force or self._check_overlays_stale)(view)()
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
@@ -857,6 +919,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		:param check_targets: an iterable defining the targets to check, if not supplied defaults to all targets
 		"""
+
+		if force:
+			self._get_check_overlays(force=True)
 
 		checks = self._get_configured_checks()
 		if check_targets is None:
