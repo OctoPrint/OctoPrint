@@ -318,6 +318,27 @@ class PluginSettings(object):
 	   :type force: boolean
 	   :param trigger_event: Trigger the ``SettingsUpdated`` :ref:`event <sec-events-available_events-settings>` on save.
 	   :type trigger_event: boolean
+
+	.. method:: add_overlay(overlay, at_end=False, key=None)
+
+	   Adds a new config overlay for the plugin's settings. Will return the overlay's key in the map.
+
+	   :param overlay: Overlay dict to add
+	   :type overlay: dict
+	   :param at_end: Whether to add overlay at end or start (default) of config hierarchy
+	   :type at_end: boolean
+	   :param key: Key to use to identify overlay. If not set one will be built based on the overlay's hash
+	   :type key: str
+	   :rtype: str
+
+	.. method:: remove_overlay(key)
+
+	   Removes an overlay from the settings based on its key. Return ``True`` if the overlay could be found and was
+	   removed, ``False`` otherwise.
+
+	   :param key: The key of the overlay to remove
+	   :type key: str
+	   :rtype: boolean
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
@@ -368,17 +389,25 @@ class PluginSettings(object):
 				kwargs.update(preprocessors=self.set_preprocessors)
 			return kwargs
 
+		def wrap_overlay(args):
+			result = list(args)
+			overlay = result[0]
+			result[0] = dict(plugins={plugin_key: overlay})
+			return result
+
 		self.access_methods = dict(
-			has        =("has",        prefix_path_in_args, add_getter_kwargs),
-			get        =("get",        prefix_path_in_args, add_getter_kwargs),
-			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
-			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
-			get_boolean=("getBoolean", prefix_path_in_args, add_getter_kwargs),
-			set        =("set",        prefix_path_in_args, add_setter_kwargs),
-			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
-			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
-			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
-			remove     =("remove",     prefix_path_in_args, lambda x: x)
+			has            = ("has",            prefix_path_in_args, add_getter_kwargs),
+			get            = ("get",            prefix_path_in_args, add_getter_kwargs),
+			get_int        = ("getInt",         prefix_path_in_args, add_getter_kwargs),
+			get_float      = ("getFloat",       prefix_path_in_args, add_getter_kwargs),
+			get_boolean    = ("getBoolean",     prefix_path_in_args, add_getter_kwargs),
+			set            = ("set",            prefix_path_in_args, add_setter_kwargs),
+			set_int        = ("setInt",         prefix_path_in_args, add_setter_kwargs),
+			set_float      = ("setFloat",       prefix_path_in_args, add_setter_kwargs),
+			set_boolean    = ("setBoolean",     prefix_path_in_args, add_setter_kwargs),
+			remove         = ("remove",         prefix_path_in_args, lambda x: x),
+			add_overlay    = ("add_overlay",    wrap_overlay,        lambda x: x),
+			remove_overlay = ("remove_overlay", lambda x: x,         lambda x: x)
 		)
 		self.deprecated_access_methods = dict(
 			getInt    ="get_int",
