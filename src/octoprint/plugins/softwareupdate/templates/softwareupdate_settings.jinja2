@@ -81,7 +81,7 @@
         <tbody data-bind="foreach: versions.paginatedItems">
         <tr data-bind="attr: {title: displayName}">
             <td class="settings_plugin_softwareupdate_column_update">
-                <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available')|edq }}"></i></span>
+                <a href="javascript:void(0)" data-bind="click: toggleDisabled"><i class="fa" data-bind="css: { muted: !updateAvailable, 'fa-bell-o': !disabled, 'fa-bell-slash-o': disabled }" title="{{ _('Update available')|edq }}"></i></a><br />
             </td>
             <td class="settings_plugin_softwareupdate_column_information">
                 <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
@@ -99,7 +99,7 @@
     </table>
 </div>
 
-<button class="btn btn-primary btn-block" data-bind="click: function() { $root.update(); }, enable: enableUpdate, css: {disabled: !enableUpdate}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
+<button class="btn btn-primary btn-block" data-bind="click: function() { $root.updateAll(); }, enable: enableUpdate, css: {disabled: !enableUpdate}"><i class="fa fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
 <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>
@@ -107,7 +107,7 @@
     <div class="hide">
         <small class="muted" style="display: block">{{ _('Last cache refresh:') }} <span data-bind="text: cacheTimestampText"></span></small>
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: enableUpdate() && !checking(), css: {disabled: !enableUpdate() || checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.updateAll(true); }, enable: enableUpdate() && !checking(), css: {disabled: !enableUpdate() || checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force update all (even if no new versions are available)') }}</button>
     </div>
 </div>
 

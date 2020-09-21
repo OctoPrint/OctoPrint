@@ -856,11 +856,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						patch["prerelease"] = prerelease
 						patch["prerelease_channel"] = data["channel"]
 
+			# disable/enable check
+			if "disabled" in data:
+				patch["disabled"] = data["disabled"] in octoprint.settings.valid_boolean_trues
+
 			# do we have changes to apply?
 			if patch:
 				current = self._settings.get(["checks", target], incl_defaults=False)
 				updated = dict_merge(current, patch)
-				self._settings.set(["checks", target], updated)
+				self._settings.set(["checks", target], updated, defaults=dict(plugins=dict(softwareupdate=dict(checks={target: dict()}))))
 
 				settings_dirty = True
 				self._invalidate_version_cache(target)
@@ -976,8 +980,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                                                 release_notes=None),
 						                                     needs_online=True), target_information)
 
-						update_available = update_available or target_update_available
-						update_possible = update_possible or (target_update_possible and target_update_available)
+						target_disabled = populated_check.get("disabled", False)
+						update_available = update_available or (target_update_available and not target_disabled)
+						update_possible = update_possible or (target_update_possible and target_update_available and not target_disabled)
 
 						local_name = target_information["local"]["name"]
 						local_value = target_information["local"]["value"]
@@ -1005,6 +1010,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                           releaseNotes=release_notes,
 						                           online=target_online,
 						                           error=target_error,
+						                           disabled=target_disabled,
 						                           releaseChannels=dict())
 
 						if populated_check["type"] == "github_release" and "stable_branch" in populated_check and "prerelease_branches" in populated_check:
@@ -1111,13 +1117,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._logger.exception("Error while checking if {} can be updated".format(target))
 				update_possible = False
 
+		disabled = check.get("disabled", False)
+
 		self._version_cache[target] = dict(timestamp=time.time(),
 		                                   hash=current_hash,
 		                                   information=information,
 		                                   available=update_available,
 		                                   possible=update_possible,
 		                                   online=online,
-		                                   error=error)
+		                                   error=error,
+		                                   disabled=disabled)
 		self._version_cache_dirty = True
 		return information, update_available, update_possible, online, error
 

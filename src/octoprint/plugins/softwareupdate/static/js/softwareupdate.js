@@ -106,6 +106,10 @@ $(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
         });
 
+        self.availableAndPossibleAndEnabled = ko.pureComputed(function() {
+            return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible && !info.disabled });
+        })
+
         self.throttled = ko.pureComputed(function() {
             return self.piSupport && self.piSupport.currentIssue() && !self.settings.settings.plugins.pluginmanager.ignore_throttled();
         });
@@ -257,6 +261,15 @@ $(function() {
                     })
                 }
 
+                value.toggleDisabled = function() {
+                    var patch = {};
+                    patch[key] = {disabled: !value.disabled};
+                    OctoPrint.plugins.softwareupdate.configure(patch)
+                        .done(function() {
+                            self.performCheck(false, false, false, [key]);
+                        });
+                }
+
                 versions.push(value);
             });
             self.versions.updateItems(versions);
@@ -282,7 +295,7 @@ $(function() {
 
                 text += "<ul class='fa-ul'>";
                 _.each(self.versions.items(), function(update_info) {
-                    if (update_info.updateAvailable) {
+                    if (update_info.updateAvailable && !update_info.disabled) {
                         text += "<li>"
                             + "<i class='fa fa-li " + (update_info.updatePossible && self.environmentSupported() && self.storageSufficient() ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
@@ -332,7 +345,7 @@ $(function() {
                             click: function() {
                                 if (self._updateClicked) return;
                                 self._updateClicked = true;
-                                self.update();
+                                self.updateEnabled();
                             }
                         }]
                     };
@@ -505,6 +518,14 @@ $(function() {
                 });
         };
 
+        self.updateAll = function(force) {
+            return self.update(force, self.availableAndPossible());
+        }
+
+        self.updateEnabled = function(force) {
+            return self.update(force, self.availableAndPossibleAndEnabled());
+        }
+
         self.update = function(force, items) {
             if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                 self._updateClicked = false;
@@ -512,7 +533,7 @@ $(function() {
             }
 
             if (items === undefined) {
-                items = self.availableAndPossible();
+                items = self.availableAndPossibleAndEnabled();
             }
 
             if (self.printerState.isPrinting()) {
@@ -556,7 +577,8 @@ $(function() {
                 proceed: gettext("Proceed"),
                 onproceed: function() {
                     self.performUpdate((force === true),
-                                       _.map(items, function(info) { return info.key }));
+                                       _.map(items,
+                                             function(info) { return info.key }));
                 },
                 onclose: function() {
                     self._updateClicked = false;
