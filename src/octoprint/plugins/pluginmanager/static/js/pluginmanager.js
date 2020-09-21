@@ -1049,6 +1049,11 @@ $(function() {
                     self.logNotification.update(options);
                 }
             }
+
+            // make sure the notification is visible
+            if (self.logNotification.state !== 'open' && self.logNotification.state !== 'opening') {
+                self.logNotification.open();
+            }
         };
 
         self._markWorking = function(title, line) {
