@@ -544,16 +544,21 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			updated_octoprint_check_config = True
 
 		if "pip_enable_check" in data:
-			checks = self._settings.get(["checks"], merged=True)
-			if data["pip_enable_check"] in octoprint.settings.valid_boolean_trues:
-				checks["pip"] = dict(type="pypi_release",
-				                     package="pip",
-				                     pip="pip=={target_version}")
-			elif "pip" in checks:
-				del checks["pip"]
-			self._settings.set(["checks"], checks, force=True)
-			self._settings.save()
-			update_pip_check_config = True
+			pip_defaults = dict(plugins=dict(softwareupdate=dict(checks=dict(pip=dict()))))
+			pip_enable_check = data["pip_enable_check"] in octoprint.settings.valid_boolean_trues
+			pip_check_currently_enabled = "pip" in self._settings.get(["checks"], merged=True)
+
+			if pip_enable_check != pip_check_currently_enabled:
+				if pip_enable_check:
+					pip_check = dict(type="pypi_release",
+					                 package="pip",
+					                 pip="pip=={target_version}")
+					self._settings.set(["checks", "pip"],
+					                   pip_check,
+					                   defaults=pip_defaults)
+				else:
+					self._settings.remove(["checks", "pip"], defaults=pip_defaults)
+				update_pip_check_config = True
 
 		if updated_octoprint_check_config:
 			self._invalidate_version_cache("octoprint")
@@ -562,7 +567,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._invalidate_version_cache("pip")
 
 	def get_settings_version(self):
-		return 8
+		return 9
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -607,8 +612,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.set(["environment_restart_command"], None)
 			self._settings.set(["octoprint_restart_command"], None)
 
-		if current is None or current == 2:
-			# No config version and config version 2 need the same fix, stripping
+		if current is None or current == 2 or current == 8:
+			# No config version and config version 2 and 8 need the same fix, stripping
 			# accidentally persisted data off the checks.
 			#
 			# We used to do the same processing for the plugin entries too here, but that interfered
@@ -629,7 +634,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
-				self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
+				self._clean_settings_check("octoprint",
+				                           octoprint_check,
+				                           self.get_settings_defaults()["checks"]["octoprint"],
+				                           delete=deletables,
+				                           save=False)
 
 		elif current == 1:
 			# config version 1 had the error that the octoprint check got accidentally
@@ -673,7 +682,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if len(data):
 			self._settings.set(["checks", key], data, defaults=dummy_defaults)
 		else:
-			self._settings.set(["checks", key], None, defaults=dummy_defaults)
+			self._settings.remove(["checks", key], defaults=dummy_defaults)
 
 		if save:
 			self._settings.save()
