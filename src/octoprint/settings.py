@@ -1654,15 +1654,20 @@ class Settings(object):
 
 	#~~ remove
 
-	def remove(self, path, config=None, error_on_path=False):
+	def remove(self, path, config=None, error_on_path=False, defaults=None):
 		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
 			return
 
-		if config is not None:
-			mappings = [config] + self._overlay_maps + [self._default_map]
-			chain = HierarchicalChainMap(*mappings)
+		if config is not None or defaults is not None:
+			if config is None:
+				config = self._config
+
+			if defaults is None:
+				defaults = dict(self._map.parents)
+
+			chain = HierarchicalChainMap(config, defaults)
 		else:
 			chain = self._map
 
