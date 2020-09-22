@@ -472,7 +472,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "notify_user", "minimum_free_storage",
+			if key in ("checks", "cache_ttl", "check_overlay_ttl", "notify_user", "minimum_free_storage",
 			           "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
@@ -481,6 +481,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "cache_ttl" in data:
 			self._settings.set_int(["cache_ttl"], data["cache_ttl"])
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
+
+		if "check_overlay_ttl" in data:
+			self._settings.set_int(["check_overlay_ttl"], data["check_overlay_ttl"])
+		self._overlay_cache_ttl = self._settings.get_int(["check_overlay_ttl"]) * 60
 
 		if "notify_users" in data:
 			self._settings.set_boolean(["notify_users"], data["notify_users"])
