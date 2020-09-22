@@ -188,15 +188,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 							check_providers[key] = name
 
-							if key in overlays:
-								overlay_config = overlays[key]
-								default_config = dict_merge(default_config, overlay_config)
-
 							yaml_config = dict()
 							effective_config = default_config
+
+							if key in overlays:
+								effective_config = dict_merge(default_config, overlays[key])
+
 							if key in self._configured_checks:
 								yaml_config = self._configured_checks[key]
-								effective_config = dict_merge(default_config, yaml_config)
+								effective_config = dict_merge(effective_config, yaml_config)
 
 								# Make sure there's nothing persisted in that check that shouldn't be persisted
 								#
@@ -427,11 +427,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		}
 
 	def on_settings_load(self):
+		# ensure we don't persist check configs we receive on the API
 		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 		if "checks" in data:
 			del data["checks"]
 
 		checks = self._get_configured_checks()
+
+		#~~ octoprint check settings
+
 		if "octoprint" in checks:
 			data["octoprint_checkout_folder"] = self._get_octoprint_checkout_folder(checks=checks)
 			data["octoprint_tracked_branch"] = self._get_octoprint_tracked_branch(checks=checks)
@@ -464,13 +468,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			data["octoprint_checkout_folder"] = None
 			data["octoprint_type"] = None
-			data["octoprint_branch_mappings"] = []
+
+		#~~ pip check settings
 
 		data["pip_enable_check"] = "pip" in checks
 
 		return data
 
 	def on_settings_save(self, data):
+		#~~ plugin settings
+
 		for key in self.get_settings_defaults():
 			if key in ("checks", "cache_ttl", "check_overlay_ttl", "notify_user", "minimum_free_storage",
 			           "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
@@ -493,79 +500,83 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.set_int(["minimum_free_storage"], data["minimum_free_storage"])
 			self._check_storage()
 
-		defaults = dict(
-			plugins=dict(softwareupdate=dict(
-				checks=dict(
-					octoprint=self.get_settings_defaults()["checks"]["octoprint"]
-				)
-			))
-		)
+		#~~ octoprint check settings
 
 		updated_octoprint_check_config = False
-		update_pip_check_config = False
 
 		if "octoprint_checkout_folder" in data:
-			self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], defaults=defaults, force=True)
-			if self._settings.get(["checks", "octoprint", "update_folder"]) and data["octoprint_checkout_folder"]:
-				self._settings.set(["checks", "octoprint", "update_folder"], None, defaults=defaults, force=True)
+			if data["octoprint_checkout_folder"]:
+				# force=True as that path is not part of the default config
+				self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], force=True)
+				if self._settings.get(["checks", "octoprint", "update_folder"]):
+					self._settings.remove(["checks", "octoprint", "update_folder"])
+			else:
+				self._settings.remove(["checks", "octoprint", "checkout_folder"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_type" in data:
 			octoprint_type = data["octoprint_type"]
 
 			if octoprint_type == "github_release":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "pip")
 				updated_octoprint_check_config = True
 
 			elif octoprint_type == "github_commit":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "pip")
 				updated_octoprint_check_config = True
 
 			elif octoprint_type == "git_commit":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "update_script")
 				updated_octoprint_check_config = True
 
 		if "octoprint_tracked_branch" in data:
-			self._settings.set(["checks", "octoprint", "branch"], data["octoprint_tracked_branch"], defaults=defaults, force=True)
+			if data["octoprint_tracked_branch"]:
+				# force=True as that path is not part of the default config
+				self._settings.set(["checks", "octoprint", "branch"], data["octoprint_tracked_branch"], force=True)
+			else:
+				self._settings.remove(["checks", "octoprint", "branch"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_pip_target" in data:
-			self._settings.set(["checks", "octoprint", "pip"], data["octoprint_pip_target"], defaults=defaults)
+			self._settings.set(["checks", "octoprint", "pip"], data["octoprint_pip_target"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_release_channel" in data:
 			prerelease_branches = self._settings.get(["checks", "octoprint", "prerelease_branches"])
 			if prerelease_branches and data["octoprint_release_channel"] in [x["branch"] for x in prerelease_branches]:
-				self._settings.set(["checks", "octoprint", "prerelease"], True, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "prerelease_channel"], data["octoprint_release_channel"],
-				                   defaults=defaults, force=True)
+				# force=True as those paths are not part of the default config
+				self._settings.set(["checks", "octoprint", "prerelease"], True, force=True)
+				self._settings.set(["checks", "octoprint", "prerelease_channel"], data["octoprint_release_channel"], force=True)
 			else:
-				self._settings.set(["checks", "octoprint", "prerelease"], False, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "prerelease_channel"], None, defaults=defaults, force=True)
+				self._settings.remove(["checks", "octoprint", "prerelease"])
+				self._settings.remove(["checks", "octoprint", "prerelease_channel"])
 			updated_octoprint_check_config = True
 
+		if updated_octoprint_check_config:
+			self._invalidate_version_cache("octoprint")
+
+		#~~ pip check settings
+
+		update_pip_check_config = False
+
 		if "pip_enable_check" in data:
-			pip_defaults = dict(plugins=dict(softwareupdate=dict(checks=dict(pip=dict()))))
 			pip_enable_check = data["pip_enable_check"] in octoprint.settings.valid_boolean_trues
 			pip_check_currently_enabled = "pip" in self._settings.get(["checks"], merged=True)
 
 			if pip_enable_check != pip_check_currently_enabled:
 				if pip_enable_check:
-					pip_check = dict(type="pypi_release",
-					                 package="pip",
-					                 pip="pip=={target_version}")
+					# force=True as that path is not part of the default config
 					self._settings.set(["checks", "pip"],
-					                   pip_check,
-					                   defaults=pip_defaults)
+					                   dict(type="pypi_release",
+					                        package="pip",
+					                        pip="pip=={target_version}"),
+					                   force=True)
 				else:
-					self._settings.remove(["checks", "pip"], defaults=pip_defaults)
+					self._settings.remove(["checks", "pip"])
 				update_pip_check_config = True
-
-		if updated_octoprint_check_config:
-			self._invalidate_version_cache("octoprint")
 
 		if update_pip_check_config:
 			self._invalidate_version_cache("pip")
