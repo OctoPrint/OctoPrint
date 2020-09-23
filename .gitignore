@@ -35,6 +35,7 @@ pypy
 .eggs
 .mypy_cache
 .pytest_cache
+.python-version
 .tox
 
 venv*
