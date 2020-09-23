@@ -1153,6 +1153,35 @@ octoprint.plugin.softwareupdate.check_config
 
 See :ref:`here <sec-bundledplugins-softwareupdate-hooks-check_config>`.
 
+.. _sec-plugins-hooks-plugin-printer-additional_state_data
+
+octoprint.printer.additional_state_data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_state_data_hook(initial=False, *args, **kwargs)
+
+   .. versionadded:: 1.5.0
+
+   Use this to inject additional data into the data structure returned from the printer backend to the frontend
+   on the push socket or other registered :ref:`~octoprint.printer.PrinterCallback`s. Anything you return here
+   will be located beneath ``plugins.<your plugin id>`` in the resulting initial and current data push structure.
+
+   The ``initial`` parameter will be ``True`` if this the additional update sent to the callback. Your handler should
+   return a ``dict``, or ``None`` if nothing should be included.
+
+   .. warning::
+
+      Make sure to not perform any computationally expensive or otherwise long running actions within these handlers as
+      you could stall the whole state monitor and thus updates being pushed to the frontend.
+
+      This includes I/O of any kind.
+
+      Cache your data!
+
+   :param boolean initial: True if this is the initial update, False otherwise
+   :return: Additional data to include
+   :rtype: dict
+
 .. _sec-plugins-hook-printer-factory:
 
 octoprint.printer.factory
