@@ -287,9 +287,10 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 
 ## Setting up a development environment
 
-See [the corresponding chapter in the documentation](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment).
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/environment.html).
 This also includes information on how to run the test suite and how to build
-the documentation.
+the documentation, the bundled virtual printer plugin and OctoPrint's versioning
+and branching strategy.
 
 ## Pull requests
 
@@ -297,7 +298,8 @@ the documentation.
    consider if it wouldn't be better suited for a plugin.** As a general rule
    of thumb, any feature that is only of interest to a small sub group should
    be moved into a plugin. If the current plugin system doesn't allow you to
-   implement your feature as a plugin, create a "Brainstorming" ticket to get
+   implement your feature as a plugin, please get in touch on the
+   [forums](https://community.octoprint.org/c/development) to get
    the discussion going on how best to solve *this* in OctoPrint's plugin
    system - maybe that's the actual PR you have been waiting for to contribute :)
 2. If you plan to make **any large or otherwise disruptive changes to the
@@ -335,7 +337,7 @@ the documentation.
        from experiments).
 8. Ensure your changes **pass the existing unit tests**. PRs that break
    those cannot be accepted. You can run the unit tests locally (after
-   [initial development environment setup with "develop" dependencies](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment))
+   [initial development environment setup with "develop" dependencies](https://docs.octoprint.org/en/master/development/environment.html))
    by running
 
    ```
@@ -376,86 +378,13 @@ Template to use for Pull Request descriptions:
 #### Further notes
 ```
 
+## How is OctoPrint versioned?
+
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/versioning.html).
+
 ## What do the branches mean?
 
-There are three main branches in OctoPrint:
-
-  * `master`: The master branch always contains the current stable release plus any changes
-    since made to *documentation*, *CI related tests* or *Github meta files*. OctoPrint's actual
-    code will only be modified on new releases. Will have a version number following
-    the scheme `<x>.<y>.<z>` (e.g. `1.5.1`).
-  * `maintenance`: Improvements and fixes of the current release that make up
-    the next release go here. More or less continuously updated. You can consider
-    this a preview of the next release version. It should be very stable at all
-    times. Anything you spot in here helps tremendously with getting a rock solid
-    next stable release, so if you want to help out development, running the
-    `maintenance` branch and reporting back anything you find is a very good way
-    to do that. Will usually have a version number following the scheme
-    `<x>.<y+1>.<0>.dev<commits since increase of y>` for an OctoPrint version of `<x>.<y>.<z>`
-    (e.g. `1.5.0.dev114`).
-  * `devel`: Ongoing development of what will go into the next big
-    release (MAJOR version number increases) will happen on this branch. Usually
-    kept stable, sometimes stuff can break though. Backwards incompatible changes will
-    be encountered here. Can be considered the "bleeding edge". Will usually have a version
-    number following the scheme `<x+1>.<0>.0.dev<commits since increase of y>` for a current
-    OctoPrint version of `<x>.<y>.<z>` (e.g. `2.0.0.dev123`).
-
-There are couple more RC and staging branches that see regular use:
-
-  * `staging/hotfix`: Any preparation for potential hotfix releases takes place here.
-    Version number follows the scheme `<x>.<y>.<z+1>` (e.g. `1.5.1`) for a current release
-    of `<x>.<y>.<z>`.
-  * `rc/maintenance`: This branch is reserved for future releases that have graduated from
-    the `maintenance` branch and are now being pushed on the "Maintenance"
-    pre release channel for further testing. Version number follows the scheme
-    `<x>.<y>.<z>rc<n>` (e.g. `1.5.0rc1`).
-  * `staging/maintenance`: Any preparation for potential follow-up RCs takes place here.
-    Version number follows the scheme `<x>.<y>.<z>rc<n+1>.dev<commits since increase of n>` (e.g.
-    `1.5.0rc2.dev3`) for a current Maintenance RC of `<x>.<y>.<z>`.
-  * `rc/devel`: This branch is reserved for future releases that have graduated from
-    the `devel` branch and are now being pushed on the "Devel" pre release channel
-    for further testing. Version number follows the scheme `<x+1>.0.0rc<n>` (e.g. `2.0.0rc1`)
-    for a current stable OctoPrint version of `<x>.<y>.<z>`.
-  * `staging/devel`: Any preparation for potential follow-up Devel RCs takes place
-    here. Version number follows the scheme `<x>.0.0rc<n+1>.dev<commits since increase of n>` (e.g.
-    `2.0.0rc2.dev12`) for a current Devel RC of `<x>.0.0rc<n>`.
-
-Additionally, from time to time you might see other branches pop up in the repository.
-Those usually have one of the following prefixes:
-
-  * `hotfix/...`: Hotfixes under development that are to be merged into the `staging/hotfix`
-    and later the `master` branch.
-  * `fix/...`: Fixes under development that are to be merged into the `maintenance`
-    and `devel` branches.
-  * `improve/...`: Improvements under development that are to be merged into the
-    `maintenance` and `devel` branches.
-  * `dev/...` or `feature/...`: New functionality under development that is to be merged
-    into the `devel` branch.
-
-There is also the `gh-pages` branch, which holds OctoPrint's web page, and a few
-older development branches that are slowly being migrated or deleted.
-
-## How OctoPrint is versioned
-
-OctoPrint follows the [semantic versioning scheme](http://semver.org/) of **MAJOR.MINOR.PATCH**.
-
-The **PATCH** version number will increase in case of hotfix releases [3].
-Releases that only change the patch number indicate that they only contain bug fixes, and usually
-only hotfixes at that. Example: 1.5.0 to 1.5.1.
-
-The **MINOR** version number increases with releases that add new functionality while maintaining
-backwards compatibility. Example: 1.4.x to 1.5.0.
-
-Finally, the **MAJOR** version number increases if there are breaking API changes that concern any of the
-documented interfaces (REST API, plugin interfaces, ...). Example: 1.x.y to 2.0.0.
-
-OctoPrint's version numbers are automatically generated using [versioneer](https://github.com/warner/python-versioneer)
-and depend on the selected git branch, nearest git tag and commits. The generated version number
-should always be [PEP440](https://www.python.org/dev/peps/pep-0440/) compatible. Unless a git tag
-is used for version number determination, the version number will also contain the git hash within
-the local version identifier to allow for an exact determination of the active code base
-(e.g. `1.2.9.dev68+g46c7a9c`). Additionally, instances with active uncommitted changes will contain
-`.dirty` in the local version identifier.
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/branches.html).
 
 ## History
 
@@ -485,6 +414,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2018-10-18: Allow PRs against `maintenance` branch for improvements and small
     new features, suggest getting in touch on the forum for larger changes
   * 2020-08-10: Update versioning scheme and PR instructions
+  * 2020-09-23: Move branch & versioning into development docs
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
@@ -496,7 +426,3 @@ the local version identifier to allow for an exact determination of the active c
     it now would make the history and especially `git blame` completely
     unusable, so for now we'll have to deal with it (this decision might be
     revisited in the future).
-  * [3] - Up until 1.4.2, the PATCH version segment was the one increasing most often
-    due to OctoPrint's maintenance releases but with 1.5.0 this will *fully* adhere
-    to the concepts in semantic versioning mandating only bug fixes in patch releases.
-    Maintenance releases will henceforth increase the MINOR segment.
