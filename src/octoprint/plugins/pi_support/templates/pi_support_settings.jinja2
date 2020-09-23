@@ -2,7 +2,7 @@
 
 <p>{{ _('Please restart OctoPrint after changing any of this plugin\'s settings.') }}</p>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
@@ -15,7 +15,7 @@
     <div>
         <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
-            <form class="form-horizontal">
+            <form class="form-horizontal" onsubmit="return false;">
                 <div class="control-group">
                     <label class="control-label">{{ _('Command for under voltage/overheat detection') }}</label>
                     <div class="controls">

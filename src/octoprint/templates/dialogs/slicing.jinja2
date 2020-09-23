@@ -9,7 +9,7 @@
         </div>
         <div data-bind="visible: enableSlicingDialog()">
             <p>{{ _('Please configure which slicer and which slicing profile to use and name the GCode file to slice to below, or click "Cancel" if you do not wish to slice the file now.') }}</p>
-            <form class="form-horizontal">
+            <form class="form-horizontal" onsubmit="return false;">
                 <div class="control-group">
                     <label class="control-label">{{ _('Slicer') }}</label>
                     <div class="controls">

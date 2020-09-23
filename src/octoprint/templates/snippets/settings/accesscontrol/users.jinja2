@@ -78,7 +78,7 @@
             </ul>
             <div class="tab-content">
                 <div id="settings_accesscontrol_users_add_general" class="tab-pane active">
-                    <form class="form-horizontal">
+                    <form class="form-horizontal" onsubmit="return false;">
                         <div class="control-group">
                             <label class="control-label" for="settings-usersDialogAddUserName">{{ _('Username') }}</label>
                             <div class="controls">
@@ -136,7 +136,7 @@
         <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editor.name"></span>') }}</h3>
     </div>
     <div class="modal-body">
-        <form class="form-horizontal">
+        <form class="form-horizontal" onsubmit="return false;">
             <div class="control-group">
                 <label class="control-label" for="settings-usersDialogChangePasswordPassword1">{{ _('New Password') }}</label>
                 <div class="controls">

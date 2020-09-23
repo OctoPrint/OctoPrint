@@ -2,7 +2,7 @@
     <strong>{{ _('Note: ') }}</strong>{{ _('Changing most of these settings requires restarting the connection with your printer for your changes to become effective.') }}
 </div>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <ul class="nav nav-pills">
         <li class="active"><a href="#settings_serial_general" data-toggle="tab">{{ _('General') }}</a></li>
         <li><a href="#settings_serial_timeouts" data-toggle="tab">{{ _('Intervals &amp; timeouts') }}</a></li>

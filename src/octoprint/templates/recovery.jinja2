@@ -86,7 +86,7 @@
                     <small data-bind="visible: !restoreSupported()">{{ _('Online restore is not supported on your system.') }}</small>
 
                     <h2>{{ _('Create backup') }}</h2>
-                    <form class="form-horizontal">
+                    <form class="form-horizontal" onsubmit="return false;">
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
