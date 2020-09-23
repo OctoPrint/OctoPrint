@@ -138,12 +138,13 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self.port = port
 
 		# Zeroconf
-		self.zeroconf_register("_http._tcp", self.get_instance_name(), txt_record=self._create_http_txt_record_dict())
-		self.zeroconf_register("_octoprint._tcp", self.get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
+		instance_name = self.get_instance_name()
+		self.zeroconf_register("_http._tcp", instance_name, txt_record=self._create_http_txt_record_dict())
+		self.zeroconf_register("_octoprint._tcp", instance_name, txt_record=self._create_octoprint_txt_record_dict())
 		for zc in self._settings.get(["zeroConf"]):
 			if "service" in zc:
 				self.zeroconf_register(zc["service"],
-				                       zc.get("name", self.get_instance_name()),
+				                       zc.get("name", instance_name),
 				                       port=zc.get("port"),
 				                       txt_record=zc.get("txtRecord"))
 
@@ -177,7 +178,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		return octoprint.util.to_native_str(name) + octoprint.util.to_native_str(".") + service_type
 
 	def _format_zeroconf_txt(self, record):
-		result = dict()
+		result = {}
 		if not record:
 			return result
 
@@ -489,23 +490,22 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		:return: a dictionary containing the defined key-value-pairs, ready to be turned into a TXT record
 		"""
-
-		entries = self._create_http_txt_record_dict()
-
 		import octoprint.server
 		import octoprint.server.api
 
-		entries.update(dict(
+		entries = self._create_http_txt_record_dict()
+		entries.update(
 			version=octoprint.server.VERSION,
 			api=octoprint.server.api.VERSION,
-			))
+			uuid=self.get_uuid()
+		)
 
 		modelName = self._settings.get(["model", "name"])
 		if modelName:
-			entries.update(dict(model=modelName))
+			entries.update(model=modelName)
 		vendor = self._settings.get(["model", "vendor"])
 		if vendor:
-			entries.update(dict(vendor=vendor))
+			entries.update(vendor=vendor)
 
 		return entries
 
