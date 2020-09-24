@@ -3,6 +3,8 @@
 GCode Viewer Plugin
 ===================
 
+.. versionchanged:: 1.4.1
+
 The GCode Viewer plugin provides a GCode viewer based on `Alex Ustyantsev's work <https://github.com/hudbrog/gCodeViewer>`_.
 
 .. _fig-bundledplugins-gcodeviewer-example:

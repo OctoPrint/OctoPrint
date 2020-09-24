@@ -3,7 +3,9 @@
 Action Command Prompt support
 =============================
 
-The OctoPrint Action Command Prompt Support Plugin comes bundled with OctoPrint (starting with 1.3.9).
+.. versionadded:: 1.3.9
+
+The OctoPrint Action Command Prompt Support Plugin comes bundled with OctoPrint.
 
 It allows firmware to trigger dialog prompts for logged in users using :ref:`action commands <sec-features-action_commands>`, e.g. to wait
 for user acknowledgement or allow the user to choose between options, and also to close the dialog again

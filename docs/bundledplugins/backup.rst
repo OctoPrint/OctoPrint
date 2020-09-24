@@ -3,6 +3,8 @@
 Backup Plugin
 =============
 
+.. versionadded:: 1.3.10
+
 The OctoPrint Backup Plugin comes bundled with OctoPrint (starting with 1.3.10).
 
 It allows the creation and restoration of backups of OctoPrint's settings, data and installed plugins [#]_.
@@ -74,6 +76,8 @@ plugin_backup_backup_created
     * ``path``: the path to the backup
     * ``excludes``: the list of parts excluded from the backup
 
+  .. versionadded:: 1.5.0
+
 .. _sec-bundledplugins-backup-hooks:
 
 Hooks
@@ -85,6 +89,8 @@ octoprint.plugin.backup.additional_excludes
 +++++++++++++++++++++++++++++++++++++++++++
 
 .. py:function:: additional_excludes_hook(excludes, *args, **kwargs)
+
+   .. versionadded:: 1.5.0
 
    Use this to provide additional paths on your plugin's data folder to exclude from the backup. Your handler also
    get a list of currently excluded sub paths in the base folder, so you can react to them. E.g. exclude things

@@ -4,6 +4,9 @@
 Safe mode
 *********
 
+.. versionadded:: 1.3.0
+.. versionchanged:: 1.3.13
+
 With the advent of support for plugins in OctoPrint, it quickly became apparent that some of the bugs
 reported on OctoPrint's bug tracker were actually bugs with installed third party plugins or language
 packs instead of OctoPrint itself.

@@ -130,6 +130,9 @@ class ReloadNeedingPlugin(Plugin):
 
 
 class EnvironmentDetectionPlugin(OctoPrintPlugin, RestartNeedingPlugin):
+	"""
+	.. versionadded:: 1.3.6
+	"""
 
 	def get_additional_environment(self):
 		pass
@@ -342,6 +345,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	      callback and returning ``false`` there if it is detected that the user hasn't yet filled in the
 	      wizard step.
 
+	   .. versionadded:: 1.3.0
+
 	About
 	   Plugins may define additional panels into OctoPrint's "About" dialog. Note that with the current implementation
 	   further about dialog panels will be sorted alphabetically by their name and sorted after the predefined ones.
@@ -352,6 +357,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapped div and the link in the navigation will have the additional classes and styles applied as defined via
 	   the configuration supplied through :func:`get_template_configs`.
+
+	   .. versionadded:: 1.3.0
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
@@ -638,6 +645,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	server startup (basically eager caching instead of lazily waiting for the first request).
 
 	See below for details on this.
+
+	.. versionadded:: 1.3.0
 	"""
 
 	# noinspection PyMethodMayBeStatic,PyUnusedLocal
@@ -761,6 +770,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		    list, tuple: A list or tuple of strings to use in the cache key. Will be joined by OctoPrint
 		        using ``:`` as separator and appended to the existing ``ui:<identifier>:<base url>:<locale>``
 		        cache key. Ignored if ``None`` is returned.
+
+		.. versionadded:: 1.3.0
 		"""
 		return None
 
@@ -774,6 +785,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Returns:
 		    list: A list of paths to additional files whose modification to track for (in)validating
 		        the cache. Ignored if ``None`` is returned.
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -787,6 +800,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Returns:
 		    list: A list of paths representing the only files whose modification to track for (in)validating
 		        the cache. Ignored if ``None`` is returned.
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -798,6 +813,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		Returns:
 		    str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -814,6 +831,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		Returns:
 		    (list): A list of additional fields for the ETag generation, or None
+
+		..versionadded:: 1.3.0
 		"""
 		return default_additional
 
@@ -825,6 +844,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		Returns:
 		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned (default).
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -849,6 +870,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		Returns:
 		    dict: Additional data to persist in the preemptive cache configuration.
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -865,6 +888,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Returns:
 		    dict: Additional request data to persist in the preemptive cache configuration and to
 		        use for request environment construction.
+
+		..versionadded:: 1.3.0
 		"""
 		return None
 
@@ -879,6 +904,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		Returns:
 		    bool: Whether to suppress a record (True) or not (False, default)
+
+		..versionadded:: 1.3.0
 		"""
 		return False
 
@@ -899,6 +926,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		    (callable) A filter function accepting the ``template_type`` and ``template_key`` of a template
 		    and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
 		    filtering will take place.
+
+		..versionadded:: 1.3.0
 		"""
 		return default_template_filter
 
@@ -1313,6 +1342,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		See `the documentation for flask.Blueprint.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.errorhandler>`_
 		and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
 		information.
+
+		..versionadded:: 1.3.0
 		"""
 		from collections import defaultdict
 		def decorator(f):
@@ -1669,6 +1700,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		   #          another=dict(admin_only=dict(path="path"),
 		   #                       field="field"),
 		   #          path=dict(to=dict(never=dict(return=None))))
+
+		..versionadded:: 1.2.17
 		"""
 		return dict()
 
@@ -1756,6 +1789,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		The default implementation just minimizes the data persisted on disk to only contain
 		the differences to the defaults (in case the current data was persisted with an older
 		version of OctoPrint that still duplicated default data).
+
+		..versionadded:: 1.3.0
 		"""
 		import octoprint.util
 		from octoprint.settings import NoSuchSettingsPath
@@ -1895,6 +1930,8 @@ class SlicerPlugin(OctoPrintPlugin):
 		For the extension tree format, take a look at the docs of the :ref:`octoprint.filemanager.extension_tree hook <sec-plugins-hook-filemanager-extensiontree>`.
 
 		Returns: (dict) a dictionary containing a valid extension subtree.
+
+		..versionadded:: 1.3.11
 		"""
 		from octoprint.filemanager import ContentTypeMapping
 		return dict(model=dict(stl=ContentTypeMapping(["stl"], "application/sla")))
@@ -1909,6 +1946,8 @@ class SlicerPlugin(OctoPrintPlugin):
 
 		Arguments:
 		    profile_path (str): The base folder where OctoPrint stores this slicer plugin's profiles
+
+		..versionadded:: 1.3.7
 		"""
 
 		try:
@@ -1930,6 +1969,9 @@ class SlicerPlugin(OctoPrintPlugin):
 
 	# noinspection PyMethodMayBeStatic
 	def get_slicer_profiles_lastmodified(self, profile_path):
+		"""
+		..versionadded:: 1.3.0
+		"""
 		import os
 		try:
 			from os import scandir

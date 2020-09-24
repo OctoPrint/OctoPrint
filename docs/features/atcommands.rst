@@ -3,6 +3,8 @@
 @ Commands
 ==========
 
+.. versionadded:: 1.3.7
+
 @ commands (also known as host commands elsewhere) are special commands you may include in GCODE files streamed
 through OctoPrint to your printer or send as part of GCODE scripts, through the Terminal Tab, the API or plugins.
 Contrary to other commands they will never be sent to the printer but instead trigger functions inside OctoPrint.

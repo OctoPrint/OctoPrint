@@ -3,8 +3,9 @@
 Plugin Manager
 ==============
 
-The OctoPrint Plugin Manager comes bundled with OctoPrint starting with
-version 1.2.0.
+.. versionadded:: 1.2.0
+
+The OctoPrint Plugin Manager comes bundled with OctoPrint.
 
 It allows management of installed plugins (listing, enabling, disabling
 and uninstalling) and installing new plugins from the official

@@ -3,6 +3,8 @@
 Virtual Printer
 ===============
 
+.. versionchanged:: 1.4.1
+
 The Virtual Printer plugin provides a virtual printer to connect to during development. It is able to simulate various
 firmware quirks, communication issues and can be heavily configured through ``config.yaml``. See
 :ref:`the development documentation on details and usage <sec-development-virtual-printer>`.

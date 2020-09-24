@@ -3,7 +3,9 @@
 Announcement Plugin
 ===================
 
-The OctoPrint Announcement Plugin comes bundled with OctoPrint (starting with 1.2.11).
+.. versionadded:: 1.2.11
+
+The OctoPrint Announcement Plugin comes bundled with OctoPrint.
 
 It displays announcements fetched from OctoPrint's websites, such as important updates, release announcements, new
 plugins and similar. Through some manual configuration via ``config.yaml`` it also allows adding additional channels
