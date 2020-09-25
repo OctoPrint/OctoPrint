@@ -32,7 +32,7 @@
             data.force = true;
         }
         if (entries && entries.length) {
-            data.check = entries.join(",");
+            data.targets = entries.join(",");
         }
         return this.base.getWithQuery(this.checkUrl, data, opts);
     };

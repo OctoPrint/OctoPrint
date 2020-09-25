@@ -710,12 +710,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@no_firstrun_access
 	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
-		if "check" in flask.request.values:
-			check_targets = list(map(lambda x: x.strip(), flask.request.values["check"].split(",")))
+		request_data = flask.request.values
+
+		if "targets" in request_data or "check" in request_data:
+			check_targets = list(map(lambda x: x.strip(),
+			                         request_data.get("targets", request_data.get("check", "")).split(",")))
 		else:
 			check_targets = None
 
-		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
+		force = request_data.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		def view():
 			self._environment_ready.wait(timeout=30.0)
@@ -759,7 +762,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				                          storage=dict(sufficient=self._storage_sufficient,
 				                                       free=storage)))
 			except exceptions.ConfigurationInvalid as e:
-				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
+				return flask.make_response("Update not properly configured, can't proceed: {}".format(e), 500)
 
 		def etag():
 			checks = self._get_configured_checks()
@@ -830,15 +833,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if json_data is None:
 			return flask.make_response("Invalid JSON", 400)
 
-		if "targets" in json_data:
-			targets = list(map(lambda x: x.strip(), json_data["targets"]))
+		if "targets" in json_data or "checks" in json_data:
+			targets = list(map(lambda x: x.strip(), json_data.get("targets", json_data.get("check", []))))
 		else:
 			targets = None
 
-		if "force" in json_data and json_data["force"] in octoprint.settings.valid_boolean_trues:
-			force = True
-		else:
-			force = False
+		force = json_data.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		to_be_checked, checks = self.perform_updates(targets=targets, force=force)
 		return flask.jsonify(dict(order=to_be_checked, checks=checks))

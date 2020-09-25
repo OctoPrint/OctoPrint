@@ -35,10 +35,13 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		- octoprint plugins softwareupdate:check octoprint
 		    This will only check OctoPrint itself for available
 		    updates.
+
+		Note that the OctoPrint server needs to be running for this
+		command to work as it utilizes the server API.
 		"""
 		params = dict(force=force)
 		if targets:
-			params["check"] = ",".join(targets)
+			params["targets"] = ",".join(targets)
 
 		client = create_client(settings=cli_group.settings,
 		                       apikey=apikey,
@@ -119,11 +122,14 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		- octoprint plugins softwareupdate:update octoprint
 		    This will only update OctoPrint and leave any further
 		    components with pending updates at their current versions.
+
+		Note that the OctoPrint server needs to be running for this
+		command to work as it utilizes the server API.
 		"""
 
 		data = dict(force=force)
 		if targets:
-			data["check"] = targets
+			data["targets"] = targets
 
 		client = create_client(settings=cli_group.settings,
 		                       apikey=apikey,
@@ -176,7 +182,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 				flags["waiting_for_restart"] = True
 				click.echo("Restarting to apply changes...")
 
-			elif plugin_message_type == "failure":
+			elif plugin_message_type == "error":
 				click.echo("Error")
 				ws.close()
 
