@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
 # NO unicode_literals because Py2 setuptool can't cope with them
 
 __author__ = u"Gina Häußge <osd@foosel.net>"

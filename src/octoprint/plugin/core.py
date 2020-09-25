@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 In this module resides the core data structures and logic of the plugin system. It is implemented in an OctoPrint-agnostic
 way and could be extracted into a separate Python module in the future.
