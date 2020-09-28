@@ -78,7 +78,7 @@ def full_extension_tree():
 			plugin_result = plugin.get_slicer_extension_tree()
 			if plugin_result is None or not isinstance(plugin_result, dict):
 				continue
-			result = octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger)
+			octoprint.util.dict_merge(result, plugin_result, leaf_merger=leaf_merger, in_place=True)
 		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
 			                                      "tree entries from SlicerPlugin {name}".format(name=plugin._identifier),
@@ -90,7 +90,7 @@ def full_extension_tree():
 			hook_result = hook()
 			if hook_result is None or not isinstance(hook_result, dict):
 				continue
-			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
+			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger, in_place=True)
 		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
 			                                      "tree entries from hook {name}".format(name=name),

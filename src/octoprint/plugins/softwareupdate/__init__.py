@@ -196,7 +196,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 							if key in self._configured_checks:
 								yaml_config = self._configured_checks[key]
-								effective_config = dict_merge(effective_config, yaml_config)
+								effective_config = dict_merge(effective_config, yaml_config, in_place=True)
 
 								# Make sure there's nothing persisted in that check that shouldn't be persisted
 								#

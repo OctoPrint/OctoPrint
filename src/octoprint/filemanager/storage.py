@@ -909,11 +909,8 @@ class LocalFileStorage(StorageInterface):
 			metadata[name][key] = data
 			metadata_dirty = True
 		elif key in metadata[name] and isinstance(metadata[name][key], dict) and isinstance(data, dict) and merge:
-			current_data = metadata[name][key]
-
 			import octoprint.util
-			new_data = octoprint.util.dict_merge(current_data, data)
-			metadata[name][key] = new_data
+			metadata[name][key] = octoprint.util.dict_merge(metadata[name][key], data, in_place=True)
 			metadata_dirty = True
 
 		if metadata_dirty:

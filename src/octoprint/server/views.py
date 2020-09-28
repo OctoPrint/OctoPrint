@@ -1140,6 +1140,6 @@ def _get_translations(locale, domain):
 			continue
 		po_messages, plural_expr = messages_from_po(po_file, locale, domain)
 		if po_messages is not None:
-			messages = dict_merge(messages, po_messages)
+			messages = dict_merge(messages, po_messages, in_place=True)
 
 	return messages, plural_expr

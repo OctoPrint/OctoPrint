@@ -669,11 +669,11 @@ def is_running_from_source():
 	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
 
 
-def dict_merge(a, b, leaf_merger=None):
+def dict_merge(a, b, leaf_merger=None, in_place=False):
 	"""
 	Recursively deep-merges two dictionaries.
 
-	Taken from https://www.xormedia.com/recursively-merge-dictionaries-in-python/
+	Based on https://www.xormedia.com/recursively-merge-dictionaries-in-python/
 
 	Example::
 
@@ -701,11 +701,17 @@ def dict_merge(a, b, leaf_merger=None):
 	    True
 	    >>> result.get("b") == "b"
 	    True
+	    >>> c = dict(foo="foo")
+	    >>> dict_merge(c, {"bar": "bar"}) is c
+	    False
+	    >>> dict_merge(c, {"bar": "bar"}, in_place=True) is c
+	    True
 
 	Arguments:
 	    a (dict): The dictionary to merge ``b`` into
 	    b (dict): The dictionary to merge into ``a``
 	    leaf_merger (callable): An optional callable to use to merge leaves (non-dict values)
+	    in_place (boolean): If set to True, a will be merged with b in place, meaning a will be modified
 
 	Returns:
 	    dict: ``b`` deep-merged into ``a``
@@ -720,10 +726,15 @@ def dict_merge(a, b, leaf_merger=None):
 
 	if not isinstance(b, dict):
 		return b
-	result = deepcopy(a)
+
+	if in_place:
+		result = a
+	else:
+		result = deepcopy(a)
+
 	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
-			result[k] = dict_merge(result[k], v, leaf_merger=leaf_merger)
+			result[k] = dict_merge(result[k], v, leaf_merger=leaf_merger, in_place=in_place)
 		else:
 			merged = None
 			if k in result and callable(leaf_merger):
