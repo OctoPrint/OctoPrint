@@ -535,7 +535,7 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
 	def save_session(self, app, session, response):
 		if flask.g.get("login_via_apikey", False):
 			return
-		return super(OctoPrintSessionInterface, self).save_session(app, session, response)
+		return super().save_session(app, session, response)
 
 
 #~~ passive login helper

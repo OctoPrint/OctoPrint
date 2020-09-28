@@ -473,7 +473,7 @@ class Server:
 
 				class TaggedFuncsPrinter(wrapt.ObjectProxy):
 					def __getattribute__(self, attr):
-						__wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__("__wrapped__")
+						__wrapped__ = super().__getattribute__("__wrapped__")
 						if attr == "__wrapped__":
 							return __wrapped__
 

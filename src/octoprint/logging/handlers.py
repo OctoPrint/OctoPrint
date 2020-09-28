@@ -10,7 +10,7 @@ import concurrent.futures
 class AsyncLogHandlerMixin(logging.Handler):
 	def __init__(self, *args, **kwargs):
 		self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-		super(AsyncLogHandlerMixin, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 	def emit(self, record):
 		if getattr(self._executor, "_shutdown", False):
@@ -23,11 +23,11 @@ class AsyncLogHandlerMixin(logging.Handler):
 
 	def _emit(self, record):
 		# noinspection PyUnresolvedReferences
-		super(AsyncLogHandlerMixin, self).emit(record)
+		super().emit(record)
 
 	def close(self):
 		self._executor.shutdown(wait=True)
-		super(AsyncLogHandlerMixin, self).close()
+		super().close()
 
 
 class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
@@ -35,7 +35,7 @@ class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
 	def __init__(self, *args, **kwargs):
 		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
 
-		super(CleaningTimedRotatingFileHandler, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 		# clean up old files on handler start
 		if self.backupCount > 0:
@@ -48,14 +48,14 @@ class OctoPrintLogHandler(AsyncLogHandlerMixin, CleaningTimedRotatingFileHandler
 
 	def __init__(self, *args, **kwargs):
 		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
-		super(OctoPrintLogHandler, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 	@classmethod
 	def registerRolloverCallback(cls, callback, *args, **kwargs):
 		cls.rollover_callbacks.append((callback, args, kwargs))
 
 	def doRollover(self):
-		super(OctoPrintLogHandler, self).doRollover()
+		super().doRollover()
 
 		for rcb in self.rollover_callbacks:
 			callback, args, kwargs = rcb
@@ -78,7 +78,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 
 	def __init__(self, *args, **kwargs):
 		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
-		super(SerialLogHandler, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self.cleanupFiles()
 
 	def shouldRollover(self, record):
@@ -131,7 +131,7 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 
 class RecordingLogHandler(logging.Handler):
 	def __init__(self, target=None, *args, **kwargs):
-		super(RecordingLogHandler, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self._buffer = []
 		self._target = target
 

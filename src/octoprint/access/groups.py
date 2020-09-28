@@ -25,7 +25,7 @@ GroupNeed.__doc__ = """A need with the method preset to `"group"`."""
 class GroupPermission(Permission):
 	def __init__(self, key):
 		need = GroupNeed(key)
-		super(GroupPermission, self).__init__(need)
+		super().__init__(need)
 
 
 class GroupManager:
