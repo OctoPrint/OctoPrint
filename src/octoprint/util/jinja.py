@@ -177,7 +177,7 @@ class ExceptionHandlerExtension(Extension):
 	tags = {"try"}
 
 	def __init__(self, environment):
-		super(ExceptionHandlerExtension, self).__init__(environment)
+		super().__init__(environment)
 		self._logger = logging.getLogger(__name__)
 
 	def parse(self, parser):

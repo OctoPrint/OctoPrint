@@ -50,7 +50,7 @@ class UrlRewriter(PatternRewriter):
 		self.output_url = self.ctx.resolver.resolve_output_to_url(
 			self.ctx, output)
 
-		return super(UrlRewriter, self).input(_in, out, **kw)
+		return super().input(_in, out, **kw)
 
 	def replace_url(self, url):
 		return replace_url(self.source_url, self.output_url, url)
