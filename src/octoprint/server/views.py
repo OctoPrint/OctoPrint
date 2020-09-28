@@ -127,6 +127,24 @@ def _add_additional_assets(hook):
 			                  extra=dict(plugin=name))
 	return result
 
+def _has_permissions(*permissions):
+	logged_in = False
+
+	try:
+		if util.loginUserFromApiKey():
+			logged_in = True
+	except util.InvalidApiKeyException:
+		pass # ignored
+
+	if not logged_in and util.loginUserFromAuthorizationHeader():
+		logged_in = True
+
+	if logged_in:
+		util.flask.passive_login()
+		return all(map(lambda p: p.can(), permissions))
+	else:
+		return True
+
 @app.route("/login")
 @app.route("/login/")
 def login():
@@ -140,7 +158,7 @@ def login():
 	if not permissions:
 		permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
-	if all(map(lambda p: p.can(), permissions)):
+	if _has_permissions(*permissions):
 		return redirect(redirect_url)
 
 	render_kwargs = dict(theming=[],
@@ -164,7 +182,7 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-	if not Permissions.ADMIN.can():
+	if not _has_permissions(Permissions.ADMIN):
 		return redirect(url_for("login",
 		                        redirect=request.script_root + request.full_path,
 		                        permissions=Permissions.ADMIN.key))
@@ -234,7 +252,7 @@ def index():
 	if request.headers.get("X-Preemptive-Recording", "no") == "no" \
 		and userManager.enabled \
 		and userManager.has_been_customized():
-		if not (Permissions.STATUS.can() and Permissions.SETTINGS_READ.can()):
+		if not _has_permissions(Permissions.STATUS, Permissions.SETTINGS_READ):
 			return redirect(url_for("login",
 			                        redirect=request.script_root + request.full_path,
 			                        permissions=",".join([Permissions.STATUS.key,
