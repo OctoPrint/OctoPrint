@@ -26,7 +26,7 @@ from octoprint.access.groups import GroupChangeListener, Group
 
 from past.builtins import basestring
 
-class UserManager(GroupChangeListener, object):
+class UserManager(GroupChangeListener):
 	def __init__(self, group_manager, settings=None):
 		self._group_manager = group_manager
 		self._group_manager.register_listener(self)
@@ -439,7 +439,7 @@ class UserManager(GroupChangeListener, object):
 	                                  since="1.4.0")(has_been_customized)
 
 
-class LoginStatusListener(object):
+class LoginStatusListener:
 
 	def on_user_logged_in(self, user):
 		pass
@@ -905,7 +905,7 @@ class UnknownRole(Exception):
 
 ##~~ Refactoring helpers
 
-class MethodReplacedByBooleanProperty(object):
+class MethodReplacedByBooleanProperty:
 
 	def __init__(self, name, message, getter):
 		self._name = name

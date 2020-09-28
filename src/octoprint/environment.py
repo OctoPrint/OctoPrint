@@ -14,7 +14,7 @@ from octoprint.plugin import EnvironmentDetectionPlugin
 from octoprint.util.platform import get_os
 from octoprint.util.version import get_python_version_string
 
-class EnvironmentDetector(object):
+class EnvironmentDetector:
 
 	def __init__(self, plugin_manager):
 		self._plugin_manager = plugin_manager

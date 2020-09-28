@@ -594,7 +594,7 @@ def _extended_header_value(value):
 		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
 
 
-class WsgiInputContainer(object):
+class WsgiInputContainer:
 	"""
 	A WSGI container for use with Tornado that allows supplying the request body to be used for ``wsgi.input`` in the
 	generated WSGI environment upon call.

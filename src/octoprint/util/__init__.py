@@ -1016,7 +1016,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 		                                       collections.OrderedDict.__repr__(self))
 
 
-class Object(object):
+class Object:
 	pass
 
 
@@ -1121,7 +1121,7 @@ if hasattr(tempfile, "TemporaryDirectory"):
 	TemporaryDirectory = tempfile.TemporaryDirectory
 else:
 	# Python 2
-	class TemporaryDirectory(object):
+	class TemporaryDirectory:
 		def __init__(self, suffix='', prefix="tmp", dir=None):
 			self._path = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
 
@@ -1492,7 +1492,7 @@ class ResettableTimer(threading.Thread):
 			self.on_reset()
 
 
-class CountedEvent(object):
+class CountedEvent:
 
 	def __init__(self, value=0, minimum=0, maximum=None, **kwargs):
 		self._counter = 0
@@ -1550,7 +1550,7 @@ class CountedEvent(object):
 			self._event.set()
 
 
-class InvariantContainer(object):
+class InvariantContainer:
 	def __init__(self, initial_data=None, guarantee_invariant=None):
 		try:
 			from collections import Iterable

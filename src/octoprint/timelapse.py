@@ -388,7 +388,7 @@ def configure_timelapse(config=None, persist=False):
 		settings().save()
 
 
-class Timelapse(object):
+class Timelapse:
 	QUEUE_ENTRY_TYPE_CAPTURE = "capture"
 	QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
@@ -803,7 +803,7 @@ class TimedTimelapse(Timelapse):
 		self._timer = None
 
 
-class TimelapseRenderJob(object):
+class TimelapseRenderJob:
 
 	render_job_lock = threading.RLock()
 

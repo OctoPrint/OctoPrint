@@ -31,7 +31,7 @@ from typing import Any
 
 
 # noinspection PyBroadException
-class VirtualPrinter(object):
+class VirtualPrinter:
 	command_regex = re.compile(r"^([GMTF])(\d+)")
 	sleep_regex = re.compile(r"sleep (\d+)")
 	sleep_after_regex = re.compile(r"sleep_after ([GMTF]\d+) (\d+)")

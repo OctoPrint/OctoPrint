@@ -197,7 +197,7 @@ class NoSuchStorage(Exception):
 	pass
 
 
-class FileManager(object):
+class FileManager:
 	def __init__(self, analysis_queue, slicing_manager, printer_profile_manager, initial_storage_managers=None):
 		self._logger = logging.getLogger(__name__)
 		self._analysis_queue = analysis_queue

@@ -136,7 +136,7 @@ class PluginOctoPrintPermission(OctoPrintPermission):
 		return result
 
 
-class PluginIdentityContext(object):
+class PluginIdentityContext:
 	"""Identity context for not initialized Permissions
 
 	Needed to support @Permissions.PLUGIN_X_Y.require()

@@ -27,7 +27,7 @@ import octoprint.filemanager
 
 from octoprint.util import is_hidden_path, to_unicode, to_bytes
 
-class StorageInterface(object):
+class StorageInterface:
 	"""
 	Interface of storage adapters for OctoPrint.
 	"""

@@ -170,7 +170,7 @@ class InvalidProfileError(Exception):
 	"""Profile invalid"""
 	pass
 
-class BedFormFactor(object):
+class BedFormFactor:
 	"""Valid values for bed form factor"""
 
 	RECTANGULAR = "rectangular"
@@ -186,7 +186,7 @@ class BedFormFactor(object):
 BedTypes = BedFormFactor
 """Deprecated name of :class:`BedFormFactors`"""
 
-class BedOrigin(object):
+class BedOrigin:
 	"""Valid values for bed origin"""
 
 	LOWERLEFT = "lowerleft"
@@ -199,7 +199,7 @@ class BedOrigin(object):
 	def values(cls):
 		return [getattr(cls, name) for name in cls.__dict__ if not (name.startswith("__") or name == "values")]
 
-class PrinterProfileManager(object):
+class PrinterProfileManager:
 	"""
 	Manager for printer profiles. Offers methods to select the globally used printer profile and to list, add, remove,
 	load and save printer profiles.

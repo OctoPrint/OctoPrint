@@ -24,7 +24,7 @@ def all_events():
 	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("_") and not name in ("register_event",)]
 
 
-class Events(object):
+class Events:
 	# server
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
@@ -148,7 +148,7 @@ def eventManager():
 	return _instance
 
 
-class EventManager(object):
+class EventManager:
 	"""
 	Handles receiving events and dispatching them to subscribers
 	"""
@@ -258,7 +258,7 @@ class EventManager(object):
 		return self._worker.is_alive()
 
 
-class GenericEventListener(object):
+class GenericEventListener:
 	"""
 	The GenericEventListener can be subclassed to easily create custom event listeners.
 	"""

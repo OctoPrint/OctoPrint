@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from octoprint.settings import settings
 
 
-class PrintTimeEstimator(object):
+class PrintTimeEstimator:
 	"""
 	Estimator implementation.
 
@@ -165,7 +165,7 @@ class PrintTimeEstimator(object):
 			return self._data.update(printTime / progress)
 
 
-class TimeEstimationHelper(object):
+class TimeEstimationHelper:
 
 	STABLE_THRESHOLD = 0.1
 	STABLE_COUNTDOWN = 250

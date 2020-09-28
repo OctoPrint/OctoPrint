@@ -9,7 +9,7 @@ import sys
 
 #~~ click context
 
-class OctoPrintContext(object):
+class OctoPrintContext:
 	"""Custom context wrapping the standard options."""
 
 	def __init__(self, configfile=None, basedir=None, verbosity=0, safe_mode=False):
