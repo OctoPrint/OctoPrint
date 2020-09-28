@@ -139,11 +139,8 @@ def _has_permissions(*permissions):
 	if not logged_in and util.loginUserFromAuthorizationHeader():
 		logged_in = True
 
-	if logged_in:
-		util.flask.passive_login()
-		return all(map(lambda p: p.can(), permissions))
-	else:
-		return False
+	util.flask.passive_login()
+	return all(map(lambda p: p.can(), permissions))
 
 @app.route("/login")
 @app.route("/login/")
