@@ -143,7 +143,7 @@ def _has_permissions(*permissions):
 		util.flask.passive_login()
 		return all(map(lambda p: p.can(), permissions))
 	else:
-		return True
+		return False
 
 @app.route("/login")
 @app.route("/login/")
