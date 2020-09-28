@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module represents OctoPrint's plugin subsystem. This includes management and helper methods as well as the
 registered plugin types.
