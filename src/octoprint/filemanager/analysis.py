@@ -46,7 +46,7 @@ class AnalysisAborted(Exception):
 		self.reenqueue = reenqueue
 
 
-class AnalysisQueue(object):
+class AnalysisQueue:
 	"""
 	OctoPrint's :class:`AnalysisQueue` can manage various :class:`AbstractAnalysisQueue` implementations, mapped
 	by their machine code type.
@@ -118,7 +118,7 @@ class AnalysisQueue(object):
 		                                                        "origin": entry.location,
 		                                                        "result": result})
 
-class AbstractAnalysisQueue(object):
+class AbstractAnalysisQueue:
 	"""
 	The :class:`AbstractAnalysisQueue` is the parent class of all specific analysis queues such as the
 	:class:`GcodeAnalysisQueue`. It offers methods to enqueue new entries to analyze and pausing and resuming analysis

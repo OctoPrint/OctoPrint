@@ -268,7 +268,7 @@ def fix_flask_jsonify():
 
 #~~ WSGI environment wrapper for reverse proxying
 
-class ReverseProxiedEnvironment(object):
+class ReverseProxiedEnvironment:
 
 	@staticmethod
 	def to_header_candidates(values):
@@ -813,7 +813,7 @@ def cache_check_status_code(response, valid):
 	else:
 		return response.status_code not in valid
 
-class PreemptiveCache(object):
+class PreemptiveCache:
 
 	def __init__(self, cachefile):
 		self.cachefile = cachefile

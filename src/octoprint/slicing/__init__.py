@@ -34,7 +34,7 @@ from .exceptions import UnknownSlicer, SlicerNotConfigured, SlicingCancelled, \
 		ProfileAlreadyExists, ProfileException, CouldNotDeleteProfile, UnknownProfile
 
 
-class SlicingProfile(object):
+class SlicingProfile:
 	"""
 	A wrapper for slicing profiles, both meta data and actual profile data.
 
@@ -56,7 +56,7 @@ class SlicingProfile(object):
 		self.default = default
 
 
-class TemporaryProfile(object):
+class TemporaryProfile:
 	"""
 	A wrapper for a temporary slicing profile to be used for a slicing job, based on a :class:`SlicingProfile` with
 	optional ``overrides`` applied through the supplied ``save_profile`` method.
@@ -100,7 +100,7 @@ class TemporaryProfile(object):
 			pass
 
 
-class SlicingManager(object):
+class SlicingManager:
 	"""
 	The :class:`SlicingManager` is responsible for managing available slicers and slicing profiles.
 

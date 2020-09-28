@@ -288,7 +288,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		result_available = threading.Event()
 		result_available.clear()
 
-		class ZeroconfListener(object):
+		class ZeroconfListener:
 			def __init__(self, logger):
 				self._logger = logger
 

@@ -12,7 +12,7 @@ import logging
 import codecs
 
 
-class Vector3D(object):
+class Vector3D:
 	"""
 	3D vector value
 
@@ -126,7 +126,7 @@ class Vector3D(object):
 		return "Vector3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
 
 
-class MinMax3D(object):
+class MinMax3D:
 	"""
 	Tracks minimum and maximum of recorded values
 
@@ -183,7 +183,7 @@ class AnalysisAborted(Exception):
 		Exception.__init__(self, *args, **kwargs)
 
 
-class gcode(object):
+class gcode:
 	def __init__(self, progress_callback=None):
 		self._logger = logging.getLogger(__name__)
 		self.layerList = None

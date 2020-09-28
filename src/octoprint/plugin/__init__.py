@@ -233,7 +233,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 					error_callback(plugin._identifier, plugin, exc)
 
 
-class PluginSettings(object):
+class PluginSettings:
 	"""
 	The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
 

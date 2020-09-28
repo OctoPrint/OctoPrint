@@ -265,7 +265,7 @@ gcodeToEvent = {
 	"M81": Events.POWER_OFF,
 }
 
-class PositionRecord(object):
+class PositionRecord:
 	_standard_attrs = {"x", "y", "z", "e", "f", "t"}
 
 	@classmethod
@@ -300,7 +300,7 @@ class PositionRecord(object):
 		attrs = self._standard_attrs | set(key for key in dir(self) if self.valid_e(key))
 		return dict((attr, getattr(self, attr)) for attr in attrs)
 
-class TemperatureRecord(object):
+class TemperatureRecord:
 	RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
 
 	def __init__(self):
@@ -387,7 +387,7 @@ class TemperatureRecord(object):
 		else:
 			return actual, target
 
-class MachineCom(object):
+class MachineCom:
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
 	STATE_DETECT_SERIAL = 2
@@ -4030,7 +4030,7 @@ class MachineCom(object):
 
 ### MachineCom callback ################################################################################################
 
-class MachineComPrintCallback(object):
+class MachineComPrintCallback:
 	def on_comm_log(self, message):
 		pass
 
@@ -4099,7 +4099,7 @@ class MachineComPrintCallback(object):
 
 ### Printing file information classes ##################################################################################
 
-class PrintingFileInformation(object):
+class PrintingFileInformation:
 	"""
 	Encapsulates information regarding the current file being printed: file name, current position, total size and
 	time the print started.
@@ -5081,7 +5081,7 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, tag
 	return result
 
 
-class QueueMarker(object):
+class QueueMarker:
 
 	def __init__(self, callback):
 		self.callback = callback

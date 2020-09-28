@@ -72,7 +72,7 @@ EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_nam
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
 ModuleOrigin = namedtuple("PackageOrigin", "type, module_name, folder")
 
-class PluginInfo(object):
+class PluginInfo:
 	"""
 	The :class:`PluginInfo` class wraps all available information about a registered plugin.
 
@@ -636,7 +636,7 @@ class PluginInfo(object):
 		return result
 
 
-class PluginManager(object):
+class PluginManager:
 	"""
 	The :class:`PluginManager` is the central component for finding, loading and accessing plugins provided to the
 	system.
@@ -1791,7 +1791,7 @@ class EntryPointMetadata(pkginfo.Distribution):
 		warnings.warn('No package metadata found for package {}'.format(self.entry_point.module_name))
 
 
-class Plugin(object):
+class Plugin:
 	"""
 	The parent class of all plugin implementations.
 

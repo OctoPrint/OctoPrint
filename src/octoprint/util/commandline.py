@@ -69,7 +69,7 @@ class CommandlineError(Exception):
 		self.stderr = stderr
 
 
-class CommandlineCaller(object):
+class CommandlineCaller:
 	"""
 	The CommandlineCaller is a utility class that allows running command line commands while logging their stdout
 	and stderr via configurable callback functions.

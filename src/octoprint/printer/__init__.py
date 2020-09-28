@@ -32,7 +32,7 @@ def get_connection_options():
 	return PrinterInterface.get_connection_options()
 
 
-class PrinterInterface(object):
+class PrinterInterface:
 	"""
 	The :class:`PrinterInterface` represents the developer interface to the :class:`~octoprint.printer.standard.Printer`
 	instance.
@@ -590,7 +590,7 @@ class PrinterInterface(object):
 		raise NotImplementedError()
 
 
-class PrinterCallback(object):
+class PrinterCallback:
 	def on_printer_add_log(self, data):
 		"""
 		Called when the :class:`PrinterInterface` receives a new communication log entry from the communication layer.

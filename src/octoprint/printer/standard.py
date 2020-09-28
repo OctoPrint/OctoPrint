@@ -1448,7 +1448,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return result
 
 
-class StateMonitor(object):
+class StateMonitor:
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
 		self._interval = interval
 		self._update_callback = on_update

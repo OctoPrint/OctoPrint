@@ -11,7 +11,7 @@ from octoprint.events import Events
 import flask
 from flask_babel import gettext
 
-class Prompt(object):
+class Prompt:
 
 	def __init__(self, text):
 		self.text = text

@@ -8,7 +8,7 @@ import time
 
 from octoprint.util.net import server_reachable, resolve_host
 
-class ConnectivityChecker(object):
+class ConnectivityChecker:
 	"""
 	Regularly checks for online connectivity.
 

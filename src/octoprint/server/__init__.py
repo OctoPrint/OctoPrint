@@ -183,7 +183,7 @@ def unauthorized_user():
 #~~ startup code
 
 
-class Server(object):
+class Server:
 	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
 	             event_manager=None, host=None, port=None, v6_only=False, debug=False, safe_mode=False, allow_root=False,
 	             octoprint_daemon=None):
@@ -2027,7 +2027,7 @@ class Server(object):
 			pass_number += 1
 
 
-class LifecycleManager(object):
+class LifecycleManager:
 	def __init__(self, plugin_manager):
 		self._plugin_manager = plugin_manager
 

@@ -537,7 +537,7 @@ class HierarchicalChainMap(ChainMap):
 			return cls._hierarchy_for_key(key, node)
 
 
-class Settings(object):
+class Settings:
 	"""
 	The :class:`Settings` class allows managing all of OctoPrint's settings. It takes care of initializing the settings
 	directory, loading the configuration from ``config.yaml``, persisting changes to disk etc and provides access

@@ -223,7 +223,7 @@ class ExceptionHandlerExtension(Extension):
 trycatch = ExceptionHandlerExtension
 
 
-class MarkdownFilter(object):
+class MarkdownFilter:
 
 	def __init__(self, app, **markdown_options):
 		self._markdown_options = markdown_options

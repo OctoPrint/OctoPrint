@@ -48,7 +48,7 @@ _FLAG_PAST_UNDERVOLTAGE = 1 << 16
 _FLAG_PAST_FREQ_CAPPED = 1 << 17
 _FLAG_PAST_THROTTLED = 1 << 18
 
-class ThrottleState(object):
+class ThrottleState:
 	@classmethod
 	def from_value(cls, value=0):
 		if value == 0:

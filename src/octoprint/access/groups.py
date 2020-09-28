@@ -28,7 +28,7 @@ class GroupPermission(Permission):
 		super(GroupPermission, self).__init__(need)
 
 
-class GroupManager(object):
+class GroupManager:
 	@classmethod
 	def default_permissions_for_group(cls, group):
 		result = []
@@ -158,7 +158,7 @@ class GroupManager(object):
 			except Exception:
 				self._logger.exception("Error notifying listener {!r} via {}".format(listener, method))
 
-class GroupChangeListener(object):
+class GroupChangeListener:
 
 	def on_group_added(self, group):
 		pass
@@ -428,7 +428,7 @@ class GroupCantBeChanged(Exception):
 		Exception.__init__(self, "Group can't be changed: %s" % key)
 
 
-class Group(object):
+class Group:
 	def __init__(self, key, name, description="", permissions=None, subgroups=None, default=False, removable=True, changeable=True, toggleable=True):
 		self._key = key
 		self._name = name

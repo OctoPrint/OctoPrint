@@ -401,7 +401,7 @@ def _test_url(data):
 	import requests
 	from octoprint import util as util
 
-	class StatusCodeRange(object):
+	class StatusCodeRange:
 		def __init__(self, start=None, end=None):
 			self.start = start
 			self.end = end

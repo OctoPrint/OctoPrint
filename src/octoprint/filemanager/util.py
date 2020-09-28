@@ -8,7 +8,7 @@ import os
 from octoprint import UMASK
 from octoprint.util import atomic_write
 
-class AbstractFileWrapper(object):
+class AbstractFileWrapper:
 	"""
 	Wrapper for file representations to save to storages.
 

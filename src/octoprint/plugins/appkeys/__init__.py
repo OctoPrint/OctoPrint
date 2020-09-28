@@ -24,7 +24,7 @@ class AppAlreadyExists(Exception):
 	pass
 
 
-class PendingDecision(object):
+class PendingDecision:
 	def __init__(self, app_id, app_token, user_id, user_token, timeout_callback=None):
 		self.app_id = app_id
 		self.app_token = app_token
@@ -48,7 +48,7 @@ class PendingDecision(object):
 		                                                                               self.user_token)
 
 
-class ReadyDecision(object):
+class ReadyDecision:
 	def __init__(self, app_id, app_token, user_id):
 		self.app_id = app_id
 		self.app_token = app_token
@@ -64,7 +64,7 @@ class ReadyDecision(object):
 		                                                 self.user_id)
 
 
-class ActiveKey(object):
+class ActiveKey:
 	def __init__(self, app_id, api_key, user_id):
 		self.app_id = app_id
 		self.api_key = api_key

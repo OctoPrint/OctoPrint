@@ -7,7 +7,7 @@ import frozendict
 
 from octoprint.util import to_unicode
 
-class JsonEncoding(object):
+class JsonEncoding:
 
 	encoders = collections.OrderedDict()
 
