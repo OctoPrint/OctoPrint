@@ -3,6 +3,8 @@
 Access Control
 ==============
 
+.. versionchanged:: 1.4.0
+
 OctoPrint's bundled access control feature allows granular permission control
 over which users or user groups are allowed to access which parts of OctoPrint.
 

@@ -3,7 +3,9 @@
 Discovery Plugin
 ================
 
-The OctoPrint Discovery Plugin comes bundled with OctoPrint (starting with 1.2.0).
+.. versionadded:: 1.2.0
+
+The OctoPrint Discovery Plugin comes bundled with OctoPrint.
 
 It allows discovery of the OctoPrint instances via SSDP/UPNP. If
 `pybonjour <https://pypi.python.org/pypi/pybonjour>`_ is installed OctoPrint

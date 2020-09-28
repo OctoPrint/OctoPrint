@@ -3,9 +3,9 @@
 Logging
 =======
 
-The OctoPrint Logging plugin comes bundled with OctoPrint starting with version 1.3.7.
+.. versionadded:: 1.3.7
 
-It implements the log management functionality that was formerly part of the core application and adds features to
+The OctoPrint Logging plugin implements the log management functionality that was formerly part of the core application and adds features to
 configure logging levels for sub modules through the included settings dialog.
 
 .. _fig-bundledplugins-logging-settings:

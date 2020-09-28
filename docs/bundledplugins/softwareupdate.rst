@@ -3,9 +3,13 @@
 Software Update Plugin
 ======================
 
+.. versionadded:: 1.2.0
+
 The Software Update Plugin allows receiving notifications about new releases
 of OctoPrint or installed plugins which registered with it and -- if properly
 configured -- also applying the found updates.
+
+It comes bundled with OctoPrint.
 
 .. _sec-bundledplugins-softwareupdate-firststeps:
 
@@ -163,6 +167,7 @@ types are currently recognized:
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+      .. versionadded:: 1.2.16
     * ``stable_branch``: Stable channel definition, optional. Structure:
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
@@ -170,11 +175,13 @@ types are currently recognized:
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+      .. versionadded:: 1.2.16
     * ``prerelease_channel``: Release channel to limit updates to. If set only
       those releases will be included if their ``target_comittish`` matches
       the ones associated with the release channel identified by this, either
       included in ``prerelease_channels`` or the ``stable_channel``. Only
       taken into account if ``prerelease`` is ``true``.
+      .. versionadded:: 1.2.16
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected
@@ -208,6 +215,8 @@ types are currently recognized:
       ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
       a new app password. App passwords are user specific on Bitbucket.
 
+    .. versionadded:: 1.3.5
+
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:
 
@@ -218,6 +227,8 @@ types are currently recognized:
     config parameters:
 
     * ``package``: (mandatory) Name of the package which to check.
+
+    .. versionadded:: 1.4.0
 
   * ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
     against things like ``ETag`` or ``Last-Modified`` headers. Additional
@@ -230,11 +241,15 @@ types are currently recognized:
     * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
       will be used. If set to an empty string, no prefix will be added.
 
+    .. versionadded:: 1.4.1
+
   * ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
     property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
     config parameters:
 
     * ``jsondata``: (mandatory) URL from which to fetch the JSON data
+
+    .. versionadded:: 1.4.1
 
   * ``command_line``: Uses a provided script to determine whether an update
     is available. Additional config parameters:
@@ -258,11 +273,15 @@ types are currently recognized:
 
     * ``current_version``: Version to report for both local and remote version.
 
+    .. versionadded:: 1.3.7
+
   * ``never_current``: Always reports that an update is necessary. Useful for debugging
     software update mechanisms during development. Additional config parameters:
 
     * ``local_version``: Current local version. Defaults to ``1.0.0``.
     * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
+
+    .. versionadded:: 1.3.7
 
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
@@ -308,6 +327,8 @@ supported:
   * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
     a countdown in the meantime. Useful for debugging software update mechanisms
     during development.
+
+    .. versionadded:: 1.3.7
 
 .. note::
 

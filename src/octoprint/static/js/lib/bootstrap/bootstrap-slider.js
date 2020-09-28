@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * ========================================================= */
- 
+
 (function( $ ) {
 
     var pauseEvent = function(e) {
@@ -201,7 +201,7 @@
 			}
 		}
 
-		this.enabled = options.enabled && 
+		this.enabled = options.enabled &&
 						(this.element.data('slider-enabled') === undefined || this.element.data('slider-enabled') === true);
 		if(!this.enabled)
 		{
@@ -214,12 +214,13 @@
 
 		over: false,
 		inDrag: false,
-		
+
 		showTooltip: function(){
+			this.recalculate();
 			this.tooltip.addClass('in');
 			this.over = true;
 		},
-		
+
 		hideTooltip: function(){
 			if (this.inDrag === false && this.alwaysShowTooltip !== true) {
 				this.tooltip.removeClass('in');
@@ -476,12 +477,14 @@
 
 		disable: function() {
 			this.enabled = false;
+			this.tooltip.addClass('hide');
 			this.picker.addClass('slider-disabled');
 			this.element.trigger('slideDisabled');
 		},
 
 		enable: function() {
 			this.enabled = true;
+			this.tooltip.removeClass('hide');
 			this.picker.removeClass('slider-disabled');
 			this.element.trigger('slideEnabled');
 		},
@@ -496,7 +499,13 @@
 
 		isEnabled: function() {
 			return this.enabled;
-		}
+		},
+
+		recalculate: function() {
+			if (this.picker === undefined) return;
+			this.offset = this.picker.offset();
+			this.size = this.picker[0][this.sizePos];
+		},
 	};
 
 	var publicMethods = {

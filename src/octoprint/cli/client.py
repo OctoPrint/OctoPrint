@@ -216,28 +216,32 @@ def delete(ctx, path, timeout):
 @click.pass_context
 def listen(ctx):
 	def on_connect(ws):
-		click.echo(">>> Connected!")
+		click.echo("--- Connected!")
 
 	def on_close(ws):
-		click.echo(">>> Connection closed!")
+		click.echo("--- Connection closed!")
 
 	def on_error(ws, error):
 		click.echo("!!! Error: {}".format(error))
+
+	def on_sent(ws, data):
+		click.echo(">>> {}".format(json.dumps(data)))
 
 	def on_heartbeat(ws):
 		click.echo("<3")
 
 	def on_message(ws, message_type, message_payload):
-		click.echo("Message: {}, Payload: {}".format(message_type, json.dumps(message_payload)))
+		click.echo("<<< {}, Payload: {}".format(message_type, json.dumps(message_payload)))
 
 	socket = ctx.obj.client.create_socket(on_connect=on_connect,
 	                                      on_close=on_close,
 	                                      on_error=on_error,
+	                                      on_sent=on_sent,
 	                                      on_heartbeat=on_heartbeat,
 	                                      on_message=on_message)
 
-	click.echo(">>> Waiting for client to exit")
+	click.echo("--- Waiting for client to exit")
 	try:
 		socket.wait()
 	finally:
-		click.echo(">>> Goodbye...")
+		click.echo("--- Goodbye...")

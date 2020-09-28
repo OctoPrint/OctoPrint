@@ -3,7 +3,9 @@
 Action Command Notification support
 ===================================
 
-The OctoPrint Action Command Notification Support Plugin comes bundled with OctoPrint (starting with 1.4.1).
+.. versionadded:: 1.4.1
+
+The OctoPrint Action Command Notification Support Plugin comes bundled with OctoPrint.
 
 It allows firmware to trigger notifications users with the ``PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW`` permission
 using :ref:`action commands <sec-features-action_commands>` about relevant events. These notifications will be shown

@@ -17,6 +17,7 @@ import time
 import logging
 import logging.handlers
 import hashlib
+import requests
 
 # noinspection PyCompatibility
 from concurrent import futures
@@ -58,6 +59,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	DATA_FORMAT_VERSION = "v4"
 
+	CHECK_OVERLAY_KEY = "softwareupdate_check_overlay"
+
 	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._update_in_progress = False
@@ -74,6 +77,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_path = None
 		self._version_cache_dirty = False
 		self._version_cache_timestamp = None
+
+		self._overlay_cache = dict()
+		self._overlay_cache_ttl = 0
+		self._overlay_cache_timestamp = None
 
 		self._environment_supported = True
 		self._environment_versions = dict()
@@ -92,6 +99,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 		self._version_cache_path = os.path.join(self.get_plugin_data_folder(), "versioncache.yaml")
 		self._load_version_cache()
+
+		self._overlay_cache_ttl = self._settings.get_int(["check_overlay_ttl"]) * 60
 
 		def refresh_checks(name, plugin):
 			self._refresh_configured_checks = True
@@ -147,8 +156,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
-			if self._refresh_configured_checks or self._configured_checks is None:
+			if self._refresh_configured_checks \
+				or self._configured_checks is None \
+				or self._check_overlays_stale:
+
 				self._refresh_configured_checks = False
+
+				overlays = self._get_check_overlays()
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
@@ -176,9 +190,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 							yaml_config = dict()
 							effective_config = default_config
+
+							if key in overlays:
+								effective_config = dict_merge(default_config, overlays[key])
+
 							if key in self._configured_checks:
 								yaml_config = self._configured_checks[key]
-								effective_config = dict_merge(default_config, yaml_config)
+								effective_config = dict_merge(effective_config, yaml_config)
 
 								# Make sure there's nothing persisted in that check that shouldn't be persisted
 								#
@@ -268,6 +286,45 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		                                                               "sufficient"
 		                                                                   if self._storage_sufficient
 		                                                                   else "insufficient"))
+
+	@property
+	def _check_overlays_stale(self):
+		return self._overlay_cache is None or self._overlay_cache_timestamp is None \
+		       or self._overlay_cache_timestamp + self._overlay_cache_ttl < time.time()
+
+	def _get_check_overlays(self, force=False):
+		if self._check_overlays_stale or force:
+			if self._connectivity_checker.online:
+				# reload from URL
+				url = self._settings.get(["check_overlay_url"])
+				self._logger.info("Fetching check overlays from {}".format(url))
+				try:
+					r = requests.get(url, timeout=3.1)
+					r.raise_for_status()
+					data = r.json()
+				except Exception as exc:
+					self._logger.error("Could not fetch check overlay from {}: {}".format(url, exc))
+					self._overlay_cache = dict()
+				else:
+					self._overlay_cache = data
+
+			else:
+				self._logger.info("Not fetching check overlays, we are offline")
+				self._overlay_cache = dict()
+
+			self._overlay_cache_timestamp = time.time()
+
+			default_overlay = dict()
+			defaults = self.get_settings_defaults()
+			for key in defaults["checks"]:
+				if key in self._overlay_cache:
+					default_overlay[key] = self._overlay_cache[key]
+
+			self._settings.remove_overlay(self.CHECK_OVERLAY_KEY)
+			if default_overlay:
+				self._settings.add_overlay(dict(checks=default_overlay), key=self.CHECK_OVERLAY_KEY)
+
+		return self._overlay_cache
 
 	def _load_version_cache(self):
 		if not os.path.isfile(self._version_cache_path):
@@ -362,15 +419,23 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"ignore_throttled": False,
 
-			"minimum_free_storage": 150
+			"minimum_free_storage": 150,
+
+			"check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
+
+			"check_overlay_ttl": 6 * 60,
 		}
 
 	def on_settings_load(self):
+		# ensure we don't persist check configs we receive on the API
 		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 		if "checks" in data:
 			del data["checks"]
 
 		checks = self._get_configured_checks()
+
+		#~~ octoprint check settings
+
 		if "octoprint" in checks:
 			data["octoprint_checkout_folder"] = self._get_octoprint_checkout_folder(checks=checks)
 			data["octoprint_tracked_branch"] = self._get_octoprint_tracked_branch(checks=checks)
@@ -403,15 +468,18 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			data["octoprint_checkout_folder"] = None
 			data["octoprint_type"] = None
-			data["octoprint_branch_mappings"] = []
+
+		#~~ pip check settings
 
 		data["pip_enable_check"] = "pip" in checks
 
 		return data
 
 	def on_settings_save(self, data):
+		#~~ plugin settings
+
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "notify_user", "minimum_free_storage",
+			if key in ("checks", "cache_ttl", "check_overlay_ttl", "notify_user", "minimum_free_storage",
 			           "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
@@ -421,6 +489,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.set_int(["cache_ttl"], data["cache_ttl"])
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
+		if "check_overlay_ttl" in data:
+			self._settings.set_int(["check_overlay_ttl"], data["check_overlay_ttl"])
+		self._overlay_cache_ttl = self._settings.get_int(["check_overlay_ttl"]) * 60
+
 		if "notify_users" in data:
 			self._settings.set_boolean(["notify_users"], data["notify_users"])
 
@@ -428,80 +500,89 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.set_int(["minimum_free_storage"], data["minimum_free_storage"])
 			self._check_storage()
 
-		defaults = dict(
-			plugins=dict(softwareupdate=dict(
-				checks=dict(
-					octoprint=self.get_settings_defaults()["checks"]["octoprint"]
-				)
-			))
-		)
+		#~~ octoprint check settings
 
 		updated_octoprint_check_config = False
-		update_pip_check_config = False
 
 		if "octoprint_checkout_folder" in data:
-			self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], defaults=defaults, force=True)
-			if self._settings.get(["checks", "octoprint", "update_folder"]) and data["octoprint_checkout_folder"]:
-				self._settings.set(["checks", "octoprint", "update_folder"], None, defaults=defaults, force=True)
+			if data["octoprint_checkout_folder"]:
+				# force=True as that path is not part of the default config
+				self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], force=True)
+				if self._settings.get(["checks", "octoprint", "update_folder"]):
+					self._settings.remove(["checks", "octoprint", "update_folder"])
+			else:
+				self._settings.remove(["checks", "octoprint", "checkout_folder"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_type" in data:
 			octoprint_type = data["octoprint_type"]
 
 			if octoprint_type == "github_release":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "pip")
 				updated_octoprint_check_config = True
 
 			elif octoprint_type == "github_commit":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "pip")
 				updated_octoprint_check_config = True
 
 			elif octoprint_type == "git_commit":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
-				self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type)
+				self._settings.set(["checks", "octoprint", "method"], "update_script")
 				updated_octoprint_check_config = True
 
 		if "octoprint_tracked_branch" in data:
-			self._settings.set(["checks", "octoprint", "branch"], data["octoprint_tracked_branch"], defaults=defaults, force=True)
+			if data["octoprint_tracked_branch"]:
+				# force=True as that path is not part of the default config
+				self._settings.set(["checks", "octoprint", "branch"], data["octoprint_tracked_branch"], force=True)
+			else:
+				self._settings.remove(["checks", "octoprint", "branch"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_pip_target" in data:
-			self._settings.set(["checks", "octoprint", "pip"], data["octoprint_pip_target"], defaults=defaults)
+			self._settings.set(["checks", "octoprint", "pip"], data["octoprint_pip_target"])
 			updated_octoprint_check_config = True
 
 		if "octoprint_release_channel" in data:
 			prerelease_branches = self._settings.get(["checks", "octoprint", "prerelease_branches"])
 			if prerelease_branches and data["octoprint_release_channel"] in [x["branch"] for x in prerelease_branches]:
-				self._settings.set(["checks", "octoprint", "prerelease"], True, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "prerelease_channel"], data["octoprint_release_channel"],
-				                   defaults=defaults, force=True)
+				# force=True as those paths are not part of the default config
+				self._settings.set(["checks", "octoprint", "prerelease"], True, force=True)
+				self._settings.set(["checks", "octoprint", "prerelease_channel"], data["octoprint_release_channel"], force=True)
 			else:
-				self._settings.set(["checks", "octoprint", "prerelease"], False, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "prerelease_channel"], None, defaults=defaults, force=True)
+				self._settings.remove(["checks", "octoprint", "prerelease"])
+				self._settings.remove(["checks", "octoprint", "prerelease_channel"])
 			updated_octoprint_check_config = True
-
-		if "pip_enable_check" in data:
-			checks = self._settings.get(["checks"], merged=True)
-			if data["pip_enable_check"] in octoprint.settings.valid_boolean_trues:
-				checks["pip"] = dict(type="pypi_release",
-				                     package="pip",
-				                     pip="pip=={target_version}")
-			elif "pip" in checks:
-				del checks["pip"]
-			self._settings.set(["checks"], checks, force=True)
-			self._settings.save()
-			update_pip_check_config = True
 
 		if updated_octoprint_check_config:
 			self._invalidate_version_cache("octoprint")
+
+		#~~ pip check settings
+
+		update_pip_check_config = False
+
+		if "pip_enable_check" in data:
+			pip_enable_check = data["pip_enable_check"] in octoprint.settings.valid_boolean_trues
+			pip_check_currently_enabled = "pip" in self._settings.get(["checks"], merged=True)
+
+			if pip_enable_check != pip_check_currently_enabled:
+				if pip_enable_check:
+					# force=True as that path is not part of the default config
+					self._settings.set(["checks", "pip"],
+					                   dict(type="pypi_release",
+					                        package="pip",
+					                        pip="pip=={target_version}"),
+					                   force=True)
+				else:
+					self._settings.remove(["checks", "pip"])
+				update_pip_check_config = True
 
 		if update_pip_check_config:
 			self._invalidate_version_cache("pip")
 
 	def get_settings_version(self):
-		return 8
+		return 9
 
 	def on_settings_migrate(self, target, current=None):
 
@@ -546,8 +627,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.set(["environment_restart_command"], None)
 			self._settings.set(["octoprint_restart_command"], None)
 
-		if current is None or current == 2:
-			# No config version and config version 2 need the same fix, stripping
+		if current is None or current == 2 or current == 8:
+			# No config version and config version 2 and 8 need the same fix, stripping
 			# accidentally persisted data off the checks.
 			#
 			# We used to do the same processing for the plugin entries too here, but that interfered
@@ -568,7 +649,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
-				self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
+				self._clean_settings_check("octoprint",
+				                           octoprint_check,
+				                           self.get_settings_defaults()["checks"]["octoprint"],
+				                           delete=deletables,
+				                           save=False)
 
 		elif current == 1:
 			# config version 1 had the error that the octoprint check got accidentally
@@ -612,7 +697,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if len(data):
 			self._settings.set(["checks", key], data, defaults=dummy_defaults)
 		else:
-			self._settings.set(["checks", key], None, defaults=dummy_defaults)
+			self._settings.remove(["checks", key], defaults=dummy_defaults)
 
 		if save:
 			self._settings.save()
@@ -625,12 +710,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@no_firstrun_access
 	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
-		if "check" in flask.request.values:
-			check_targets = list(map(lambda x: x.strip(), flask.request.values["check"].split(",")))
+		request_data = flask.request.values
+
+		if "targets" in request_data or "check" in request_data:
+			check_targets = list(map(lambda x: x.strip(),
+			                         request_data.get("targets", request_data.get("check", "")).split(",")))
 		else:
 			check_targets = None
 
-		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
+		force = request_data.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		def view():
 			self._environment_ready.wait(timeout=30.0)
@@ -674,7 +762,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				                          storage=dict(sufficient=self._storage_sufficient,
 				                                       free=storage)))
 			except exceptions.ConfigurationInvalid as e:
-				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
+				return flask.make_response("Update not properly configured, can't proceed: {}".format(e), 500)
 
 		def etag():
 			checks = self._get_configured_checks()
@@ -704,6 +792,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			hash_update(str(self._environment_supported))
 			hash_update(str(self._version_cache_timestamp))
+			hash_update(str(self._overlay_cache_timestamp))
 			hash_update(str(self._connectivity_checker.online))
 			hash_update(str(self._update_in_progress))
 			hash_update(self.DATA_FORMAT_VERSION)
@@ -714,7 +803,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
 		                                  condition=lambda *args, **kwargs: condition(),
-		                                  unless=lambda: force)(view)()
+		                                  unless=lambda: force or self._check_overlays_stale)(view)()
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
@@ -744,15 +833,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if json_data is None:
 			return flask.make_response("Invalid JSON", 400)
 
-		if "targets" in json_data:
-			targets = list(map(lambda x: x.strip(), json_data["targets"]))
+		if "targets" in json_data or "checks" in json_data:
+			targets = list(map(lambda x: x.strip(), json_data.get("targets", json_data.get("check", []))))
 		else:
 			targets = None
 
-		if "force" in json_data and json_data["force"] in octoprint.settings.valid_boolean_trues:
-			force = True
-		else:
-			force = False
+		force = json_data.get("force", "false") in octoprint.settings.valid_boolean_trues
 
 		to_be_checked, checks = self.perform_updates(targets=targets, force=force)
 		return flask.jsonify(dict(order=to_be_checked, checks=checks))
@@ -794,11 +880,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						patch["prerelease"] = prerelease
 						patch["prerelease_channel"] = data["channel"]
 
+			# disable/enable check
+			if "disabled" in data:
+				patch["disabled"] = data["disabled"] in octoprint.settings.valid_boolean_trues
+
 			# do we have changes to apply?
 			if patch:
 				current = self._settings.get(["checks", target], incl_defaults=False)
 				updated = dict_merge(current, patch)
-				self._settings.set(["checks", target], updated)
+				self._settings.set(["checks", target], updated, defaults=dict(plugins=dict(softwareupdate=dict(checks={target: dict()}))))
 
 				settings_dirty = True
 				self._invalidate_version_cache(target)
@@ -858,6 +948,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		:param check_targets: an iterable defining the targets to check, if not supplied defaults to all targets
 		"""
 
+		if force:
+			self._get_check_overlays(force=True)
+
 		checks = self._get_configured_checks()
 		if check_targets is None:
 			check_targets = list(checks.keys())
@@ -911,8 +1004,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                                                 release_notes=None),
 						                                     needs_online=True), target_information)
 
-						update_available = update_available or target_update_available
-						update_possible = update_possible or (target_update_possible and target_update_available)
+						target_disabled = populated_check.get("disabled", False)
+						update_available = update_available or (target_update_available and not target_disabled)
+						update_possible = update_possible or (target_update_possible and target_update_available and not target_disabled)
 
 						local_name = target_information["local"]["name"]
 						local_value = target_information["local"]["value"]
@@ -940,6 +1034,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                           releaseNotes=release_notes,
 						                           online=target_online,
 						                           error=target_error,
+						                           disabled=target_disabled,
 						                           releaseChannels=dict())
 
 						if populated_check["type"] == "github_release" and "stable_branch" in populated_check and "prerelease_branches" in populated_check:
@@ -1046,13 +1141,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._logger.exception("Error while checking if {} can be updated".format(target))
 				update_possible = False
 
+		disabled = check.get("disabled", False)
+
 		self._version_cache[target] = dict(timestamp=time.time(),
 		                                   hash=current_hash,
 		                                   information=information,
 		                                   available=update_available,
 		                                   possible=update_possible,
 		                                   online=online,
-		                                   error=error)
+		                                   error=error,
+		                                   disabled=disabled)
 		self._version_cache_dirty = True
 		return information, update_available, update_possible, online, error
 

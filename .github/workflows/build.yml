@@ -1,6 +1,7 @@
 name: Build
 on:
   push:
+  pull_request: [opened, sychronize, reopened]
   release:
     types: [published, prereleased]
   workflow_dispatch:

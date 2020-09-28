@@ -3,6 +3,8 @@
 Anonymous Usage Tracking Plugin
 ===============================
 
+.. versionadded:: 1.3.10
+
 The Anonymous Usage Tracking plugin provides valuable insights into how many instances running what versions of
 OctoPrint are out there, whether they are successfully completing print jobs and various other metrics.
 

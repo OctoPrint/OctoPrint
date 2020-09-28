@@ -6,7 +6,7 @@
     If you want to do that though it needs to know its checkout folder. You can configure that here.
 </p>{% endtrans %}
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
     {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
     {% include "snippets/plugins/softwareupdate/trackedBranch.jinja2" %}

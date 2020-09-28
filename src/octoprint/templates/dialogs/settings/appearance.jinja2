@@ -1,4 +1,4 @@
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group" title="{{ _('Name of this OctoPrint instance, will be shown in the navigation bar and broadcast on the network')|edq }}">
         <label class="control-label" for="settings-appearanceName">{{ _('Title') }}</label>
         <div class="controls">
@@ -76,7 +76,7 @@
             <strong>{{ _('There is currently no central repository for language packs like there is for plugins - any help to change that is appreciated!') }}</strong>
         </p>
         <p>
-            {{ _('Until a repository is available, please see <a href="%(url)s" target="_blank" >the wiki</a> for language packs provided by the community.', url = "https://github.com/OctoPrint/OctoPrint/wiki#language-packs") }}
+            {{ _('Until a repository is available, please see <a href="%(url)s" target="_blank" >the wiki</a> for language packs provided by the community.', url = "https://community.octoprint.org/t/translating-octoprint/21144") }}
         </p>
 
         <h4>{{ _('Available Language Packs') }}</h4>
@@ -111,7 +111,7 @@
 
         <h4>{{ _('Upload additional Language Packs') }}</h4>
 
-        <form class="form-inline">
+        <form class="form-inline" onsubmit="return false;">
             <div class="control-group row-fluid" data-bind="css: {error: invalidTranslationArchive}">
                 <div class="input-prepend span9">
                     <span class="btn fileinput-button">

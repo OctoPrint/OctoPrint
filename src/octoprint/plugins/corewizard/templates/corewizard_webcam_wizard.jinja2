@@ -25,7 +25,7 @@
     a fully qualified URL reachable <strong>from the OctoPrint server</strong>.
 </p>{% endtrans %}
 
-<form class="form-horizontal" data-bind="with: settingsViewModel">
+<form class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
     {% include "snippets/settings/webcam/webcamStreamUrl.jinja2" %}
     {% include "snippets/settings/webcam/webcamSnapshotUrl.jinja2" %}
 </form>
@@ -37,6 +37,6 @@
     know the correct <strong>path to FFMPEG</strong>.
 </p>{% endtrans %}
 
-<form class="form-horizontal" data-bind="with: settingsViewModel">
+<form class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
     {% include "snippets/settings/webcam/ffmpegPath.jinja2" %}
 </form>

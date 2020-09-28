@@ -297,7 +297,7 @@
 
             <h4>{{ _('... from URL') }}</h4>
 
-            <form class="form-inline">
+            <form class="form-inline" onsubmit="return false;">
                 <div class="control-group row-fluid" data-bind="css: {error: invalidUrl}">
                     <div class="span9">
                         <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...')|edq }}" >
@@ -309,7 +309,7 @@
 
             <h4>{{ _('... from an uploaded file') }}</h4>
 
-            <form class="form-inline">
+            <form class="form-inline" onsubmit="return false;">
                 <div class="control-group row-fluid" data-bind="css: {error: invalidFile}">
                     <div class="input-prepend span9">
                         <span class="btn fileinput-button">
@@ -326,7 +326,7 @@
             <div>
                 <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                 <div class="hide">
-                    <form class="form-horizontal">
+                    <form class="form-horizontal" onsubmit="return false;">
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
@@ -350,7 +350,7 @@
         <h3>{{ _('Plugin Configuration') }}</h3>
     </div>
     <div class="modal-body">
-        <form class="form-horizontal">
+        <form class="form-horizontal" onsubmit="return false;">
             <fieldset>
                 <legend>{{ _('Confirmations') }}</legend>
 

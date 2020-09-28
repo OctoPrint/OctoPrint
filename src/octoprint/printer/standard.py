@@ -112,6 +112,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._lastProgressReport = None
 		self._progressPlugins = plugin_manager().get_implementations(ProgressPlugin)
 
+		self._additional_data_hooks = plugin_manager().get_hooks("octoprint.printer.additional_state_data")
+		self._blacklisted_data_hooks = []
+
 		self._stateMonitor = StateMonitor(
 			interval=0.5,
 			on_update=self._sendCurrentDataCallbacks,
@@ -200,12 +203,33 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				                       extra=dict(callback=fqcn(callback)))
 
 	def _sendCurrentDataCallbacks(self, data):
+		plugin_data = self._get_additional_plugin_data(initial=False)
 		for callback in self._callbacks:
 			try:
-				callback.on_printer_send_current_data(copy.deepcopy(data))
+				data_copy = copy.deepcopy(data)
+				if plugin_data:
+					data_copy.update(plugins=copy.deepcopy(plugin_data))
+				callback.on_printer_send_current_data(data_copy)
 			except Exception:
 				self._logger.exception("Exception while pushing current data to callback {}".format(callback),
 				                       extra=dict(callback=fqcn(callback)))
+
+	def _get_additional_plugin_data(self, initial=False):
+		plugin_data = {}
+
+		for name, hook in self._additional_data_hooks.items():
+			if name in self._blacklisted_data_hooks:
+				continue
+			try:
+				additional = hook(initial=initial)
+				if additional and isinstance(additional, dict):
+					plugin_data[name] = additional
+			except Exception:
+				self._logger.exception("Error while retrieving additional data from plugin {}, blacklisting it for further loops".format(name),
+				                       extra={"plugin": name})
+				self._blacklisted_data_hooks.append(name)
+
+		return plugin_data
 
 	#~~ callback from metadata analysis event
 
@@ -1040,11 +1064,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.get_current_data()
-			data.update({
-				"temps": list(self._temps),
-				"logs": list(self._log),
-				"messages": list(self._messages)
-			})
+			data.update(temps=list(self._temps),
+			            logs=list(self._log),
+			            messages=list(self._messages))
+
+			plugin_data = self._get_additional_plugin_data(initial=False)
+			if plugin_data:
+				data.update(plugins=copy.deepcopy(plugin_data))
+
 			callback.on_printer_send_initial_data(data)
 		except Exception:
 			self._logger.exception(u"Error while pushing initial state update to callback {}".format(callback),

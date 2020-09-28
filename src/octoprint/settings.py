@@ -475,7 +475,7 @@ class HierarchicalChainMap(ChainMap):
 		except KeyError:
 			return False
 
-	def get_by_path(self, path, only_local=False, only_defaults=False):
+	def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
 		if only_defaults:
 			current = self.parents
 		elif only_local:
@@ -490,6 +490,8 @@ class HierarchicalChainMap(ChainMap):
 			else:
 				raise KeyError(key)
 
+		if merged:
+			current = current.deep_dict()
 		return current[path[-1]]
 
 	def set_by_path(self, path, value):
@@ -589,6 +591,8 @@ class Settings(object):
 
 	However, these would be invalid paths: ``["key"]``, ``["serial", "port", "value"]``, ``["server", "host", 3]``.
 	"""
+
+	OVERLAY_KEY = "__overlay__"
 
 	def __init__(self, configfile=None, basedir=None):
 		self._logger = logging.getLogger(__name__)
@@ -937,12 +941,35 @@ class Settings(object):
 			self._migrate_config(config)
 		return config
 
-	def add_overlay(self, overlay, at_end=False):
+	def add_overlay(self, overlay, at_end=False, key=None):
+		assert isinstance(overlay, dict)
+
+		if key is None:
+			overlay_yaml = yaml.safe_dump(overlay)
+			import hashlib
+			hash = hashlib.md5()
+			hash.update(overlay_yaml.encode('utf-8'))
+			key = hash.hexdigest()
+
+		overlay[self.OVERLAY_KEY] = key
 		if at_end:
 			pos = len(self._map.maps) - 1
 			self._map.maps.insert(pos, overlay)
 		else:
 			self._map.maps.insert(1, overlay)
+
+		return key
+
+	def remove_overlay(self, key):
+		index = -1
+		for i, overlay in enumerate(self._overlay_maps):
+			if key == overlay.get(self.OVERLAY_KEY):
+				index = i
+
+		if index > -1:
+			del self._map.maps[index + 1]
+			return True
+		return False
 
 	def _migrate_config(self, config=None, persist=False):
 		if config is None:
@@ -1448,7 +1475,7 @@ class Settings(object):
 
 			if isinstance(value, dict) and merged:
 				try:
-					default_value = chain.get_by_path(parent_path + [key], only_defaults=True)
+					default_value = chain.get_by_path(parent_path + [key], only_defaults=True, merged=True)
 					if default_value is not None:
 						value = dict_merge(default_value, value)
 				except KeyError:
@@ -1627,15 +1654,20 @@ class Settings(object):
 
 	#~~ remove
 
-	def remove(self, path, config=None, error_on_path=False):
+	def remove(self, path, config=None, error_on_path=False, defaults=None):
 		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
 			return
 
-		if config is not None:
-			mappings = [config] + self._overlay_maps + [self._default_map]
-			chain = HierarchicalChainMap(*mappings)
+		if config is not None or defaults is not None:
+			if config is None:
+				config = self._config
+
+			if defaults is None:
+				defaults = dict(self._map.parents)
+
+			chain = HierarchicalChainMap(config, defaults)
 		else:
 			chain = self._map
 

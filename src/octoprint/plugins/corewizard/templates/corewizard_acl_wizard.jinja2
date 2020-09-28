@@ -22,7 +22,7 @@
     initial administrator account who will have full access to both the printer and OctoPrint's settings, then click
     on "Keep Access Control Enabled":
 </p>{% endtrans %}
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group" data-bind="css: {success: validUsername()}">
         <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
         <div class="controls">

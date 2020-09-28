@@ -7,6 +7,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import io
 import requests
 import time
+import json
+
+import websocket
 
 
 def build_base_url(https=False, httpuser=None, httppass=None, host=None, port=None, prefix=None):
@@ -63,7 +66,6 @@ class SocketClient(object):
 			callbacks[callback] = factory(callback)
 
 		# initialize socket instance with url and callbacks
-		import websocket
 		kwargs = dict(self._ws_kwargs)
 		kwargs.update(callbacks)
 		self._ws = websocket.WebSocketApp(self._url, **kwargs)
@@ -283,7 +285,6 @@ class Client(object):
 	def create_socket(self, **kwargs):
 		import uuid
 		import random
-		import json
 
 		# creates websocket URL for SockJS according to
 		# - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-37
@@ -300,7 +301,26 @@ class Client(object):
 		on_message_cb = kwargs.get("on_message", None)
 		on_close_cb = kwargs.get("on_close", None)
 		on_error_cb = kwargs.get("on_error", None)
+		on_sent_cb = kwargs.get("on_sent", None)
 		daemon = kwargs.get("daemon", True)
+
+		def send(ws, data):
+			payload = '["' + json.dumps(data).replace('"', '\\"') + '"]'
+			ws.send(payload)
+			if callable(on_sent_cb):
+				on_sent_cb(ws, data)
+
+		def authenticate(ws):
+			# perform passive login to retrieve username and session key for API key
+			response = self.post("/api/login", {"passive": True})
+			response.raise_for_status()
+			data = response.json()
+
+			# prepare auth payload
+			auth_message = {"auth": "{name}:{session}".format(**data)}
+
+			# send it
+			send(ws, auth_message)
 
 		def on_message(ws, message):
 			message_type = message[0]
@@ -332,6 +352,9 @@ class Client(object):
 			for d in data:
 				for internal_type, internal_message in d.items():
 					on_message_cb(ws, internal_type, internal_message)
+					if internal_type == "connected":
+						# we just got connected to the server, authenticate
+						authenticate(ws)
 
 		def on_open(ws):
 			if callable(on_open_cb):
@@ -345,13 +368,23 @@ class Client(object):
 			if callable(on_error_cb):
 				on_error_cb(ws, error)
 
-		socket = SocketClient(url,
-		                      use_ssl=use_ssl,
-		                      daemon=daemon,
-		                      on_open=on_open,
-		                      on_message=on_message,
-		                      on_close=on_close,
-		                      on_error=on_error)
+		class CustomSocketClient(SocketClient):
+			def auth(self, username, key):
+				self.send({"auth": "{}:{}".format(username, key)})
+
+			def throttle(self, factor):
+				self.send({"throttle": factor})
+
+			def send(self, data):
+				send(self._ws, data)
+
+		socket = CustomSocketClient(url,
+		                            use_ssl=use_ssl,
+		                            daemon=daemon,
+		                            on_open=on_open,
+		                            on_message=on_message,
+		                            on_close=on_close,
+		                            on_error=on_error)
 		socket.connect()
 
 		return socket
