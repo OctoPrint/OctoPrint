@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
 class, :class:`OctoPrintPlugin`.
