@@ -2,8 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 """
-In this module resides the core data structures and logic of the plugin system. It is implemented in an OctoPrint-agnostic
-way and could be extracted into a separate Python module in the future.
+In this module resides the core data structures and logic of the plugin system.
 
 .. autoclass:: PluginManager
    :members:
@@ -71,9 +70,63 @@ def _load_module(name, spec):
 	return imp.load_module(name, f, filename, details)
 
 
-EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
-FolderOrigin = namedtuple("FolderOrigin", "type, folder")
-ModuleOrigin = namedtuple("PackageOrigin", "type, module_name, folder")
+_EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
+class EntryPointOrigin(_EntryPointOrigin):
+	"""
+	Origin of a plugin registered via an entry point.
+
+	.. attribute:: type
+
+	   Always ``entry_point``.
+
+	.. attribute:: entry_point
+
+	   Name of the entry point, usually ``octoprint.plugin``.
+
+	.. attribute:: module_name
+
+	   Module registered to the entry point.
+
+	.. attribute:: package_name
+
+	   Python package containing the entry point.
+
+	.. attribute:: package_version
+
+	   Version of the python package containing the entry point.
+	"""
+
+_FolderOrigin = namedtuple("FolderOrigin", "type, folder")
+class FolderOrigin(_FolderOrigin):
+	"""
+	Origin of a (single file) plugin loaded from a plugin folder.
+
+	.. attribute:: type
+
+	   Always `folder`.
+
+	.. attribute:: folder
+
+	   Folder path from which the plugin was loaded.
+	"""
+
+_ModuleOrigin = namedtuple("ModuleOrigin", "type, module_name, folder")
+class ModuleOrigin(_ModuleOrigin):
+	"""
+	Origin of a (single file) plugin loaded from a plugin folder.
+
+	.. attribute:: type
+
+	   Always `module`.
+
+	.. attribute:: module_name
+
+	   Name of the module from which the plugin was loaded.
+
+	.. attribute:: folder
+
+	   Folder path from which the plugin was loaded.
+	"""
 
 class PluginInfo(object):
 	"""
@@ -1217,6 +1270,7 @@ class PluginManager(object):
 				self.disabled_plugins[name] = plugin
 
 	def enable_plugin(self, name, plugin=None, initialize_implementation=True, startup=False):
+		"""Enables a plugin"""
 		if not name in self.disabled_plugins:
 			self.logger.warning("Tried to enable plugin {name}, however it is not disabled".format(**locals()))
 			return
@@ -1259,6 +1313,7 @@ class PluginManager(object):
 		return True
 
 	def disable_plugin(self, name, plugin=None):
+		"""Disables a plugin"""
 		if not name in self.enabled_plugins:
 			self.logger.warning("Tried to disable plugin {name}, however it is not enabled".format(**locals()))
 			return
@@ -1341,21 +1396,27 @@ class PluginManager(object):
 					pass
 
 	def is_restart_needing_plugin(self, plugin):
+		"""Checks whether the plugin needs a restart on changes"""
 		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
+		"""Checks whether the plugin's implementation needs a restart on changes"""
 		return self.has_any_of_mixins(plugin, RestartNeedingPlugin)
 
 	def has_restart_needing_hooks(self, plugin):
+		"""Checks whether the plugin has any hooks that need a restart on changes"""
 		return self.has_any_of_hooks(plugin, self.plugin_restart_needing_hooks)
 
 	def has_obsolete_hooks(self, plugin):
+		"""Checks whether the plugin uses any obsolete hooks"""
 		return self.has_any_of_hooks(plugin, self.plugin_obsolete_hooks)
 
 	def is_restart_needing_hook(self, hook):
+		"""Checks whether a hook needs a restart on changes"""
 		return self.hook_matches_hooks(hook, self.plugin_restart_needing_hooks)
 
 	def is_obsolete_hook(self, hook):
+		"""Checks whether a hook is obsolete"""
 		return self.hook_matches_hooks(hook, self.plugin_obsolete_hooks)
 
 	@staticmethod
