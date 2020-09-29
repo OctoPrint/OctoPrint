@@ -1100,7 +1100,18 @@ def with_revalidation_checking(etag_factory=None,
 			if etag is None:
 				etag = etag_factory(lm=lm)
 
-			return check_lastmodified(lm) and check_etag(etag)
+			if flask.request.if_none_match and flask.request.if_modified_since:
+				# use both
+				return check_lastmodified(lm) and check_etag(etag)
+			elif flask.request.if_none_match:
+				# use only ETag
+				return check_etag(etag)
+			elif flask.request.if_modified_since:
+				# use only Last-Modified
+				return check_lastmodified(lm)
+			else:
+				# assume stale cache
+				return False
 
 	if unless is None:
 		def unless():
@@ -1140,7 +1151,6 @@ def check_etag(etag):
 		return False
 
 	return flask.request.method in ("GET", "HEAD") and \
-	       flask.request.if_none_match is not None and \
 	       etag in flask.request.if_none_match
 
 
@@ -1161,8 +1171,7 @@ def check_lastmodified(lastmodified):
 		raise ValueError("lastmodified must be a datetime or float or int instance but, got {} instead".format(lastmodified.__class__))
 
 	return flask.request.method in ("GET", "HEAD") and \
-	       flask.request.if_modified_since is not None and \
-	       lastmodified >= flask.request.if_modified_since
+	       lastmodified <= flask.request.if_modified_since
 
 
 def add_revalidation_response_headers(response):
