@@ -63,7 +63,6 @@ class InvalidApiKeyException(Exception): pass
 
 def loginUserFromApiKey():
 	apikey = get_api_key(_flask.request)
-
 	if not apikey:
 		return False
 
@@ -72,19 +71,16 @@ def loginUserFromApiKey():
 		# invalid API key = no API key
 		return False
 
-	if not loginUser(user):
-		return False
-
-	return True
+	return loginUser(user, login_mechanism="apikey")
 
 
 def loginUserFromAuthorizationHeader():
 	authorization_header = get_authorization_header(_flask.request)
 	user = get_user_for_authorization_header(authorization_header)
-	return loginUser(user)
+	return loginUser(user, login_mechanism="authheader")
 
 
-def loginUser(user, remember=False):
+def loginUser(user, remember=False, login_mechanism=None):
 	"""
 	Logs the provided ``user`` into Flask Login and Principal if not None and active
 
@@ -98,6 +94,8 @@ def loginUser(user, remember=False):
 	if user is not None and user.is_active and flask_login.login_user(user, remember=remember):
 		flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                      identity=flask_principal.Identity(user.get_id()))
+		if login_mechanism:
+			_flask.session["login_mechanism"] = login_mechanism
 		return True
 	return False
 

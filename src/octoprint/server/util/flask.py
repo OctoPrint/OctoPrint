@@ -613,6 +613,7 @@ def passive_login():
 					autologin_user = octoprint.server.userManager.find_user(autologin_as)
 					if autologin_user is not None and autologin_user.is_active:
 						logger.info("Passively logging in user {} from {} via autologin".format(autologin_as, remote_address))
+						flask.session["login_mechanism"] = "autologin"
 						return autologin_user
 			except Exception:
 				logger.exception("Could not autologin user {} from {} for networks {}".format(autologin_as, remote_address, local_networks))
@@ -627,6 +628,8 @@ def passive_login():
 	response = user.as_dict()
 	response["_is_external_client"] = ip_check_enabled and not is_lan_address(remote_address,
 	                                                                          additional_private=ip_check_trusted)
+	if flask.session.get("login_mechanism") is not None:
+		response["_login_mechanism"] = flask.session.get("login_mechanism")
 	return flask.jsonify(response)
 
 

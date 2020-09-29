@@ -1413,6 +1413,20 @@ input[type="number"].input-nospin {
     -moz-appearance: textfield;
 }
 
+.dropdown-menu {
+  li {
+    a.disabled,
+    a.disabled:visited,
+    a.disabled:active,
+    a.disabled:hover {
+      background-color: transparent;
+      background-image: none;
+      color: #aaa;
+      cursor: default;
+    }
+  }
+}
+
 // Progress bars with text
 //
 // .progress-text-front will also need to have the full width of the enclosing

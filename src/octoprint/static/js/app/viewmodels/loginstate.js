@@ -16,6 +16,7 @@ $(function() {
         self.startupDeferred = $.Deferred();
 
         self.currentUser = ko.observable(undefined);
+        self.currentLoginMechanism = ko.observable(undefined);
 
         self.elementUsernameInput = undefined;
         self.elementPasswordInput = undefined;
@@ -36,6 +37,23 @@ $(function() {
                 return _.sprintf(gettext("Logged in as %(name)s"), {name: _.escape(self.username())});
             } else {
                 return gettext("Login");
+            }
+        });
+
+        self.logoutSupported = ko.pureComputed(function() {
+            var mechanism = self.currentLoginMechanism();
+            return !(mechanism === "apikey" || mechanism === "authheader");
+        });
+        self.logoutTooltip = ko.pureComputed(function() {
+            var mechanism = self.currentLoginMechanism();
+            if (!self.logoutSupported()) {
+                var methodMap = {
+                    apikey: gettext("API key based login"),
+                    authheader: gettext("Authorization header based login")
+                }
+                return _.sprintf(gettext("Logout not supported for %(method)s, please close the browser instead"), {method: methodMap[mechanism]});
+            } else {
+                return gettext("Logout of OctoPrint");
             }
         });
 
@@ -63,6 +81,7 @@ $(function() {
                 var currentNeeds = self.userneeds();
                 if (response && response.name) {
                     self.loggedIn(true);
+                    self.currentLoginMechanism(response._login_mechanism);
                     self.updateCurrentUserData(response);
                     if (!currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
@@ -127,8 +146,13 @@ $(function() {
 
                         })
                     }
+
+                    if (response._login_mechanism) {
+                        log.info("Login mechanism: " + response._login_mechanism);
+                    }
                 } else {
                     self.loggedIn(false);
+                    self.currentLoginMechanism(undefined);
                     self.updateCurrentUserData(response);
                     if (currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedOut");
@@ -218,7 +242,12 @@ $(function() {
         };
 
         var _logoutInProgress = false;
-        self.logout = function() {
+        self.logout = function(target, event) {
+            if (!self.logoutSupported()) {
+                event.stopPropagation();
+                return;
+            }
+
             if (_logoutInProgress) return;
             _logoutInProgress = true;
             return OctoPrint.browser.logout()
