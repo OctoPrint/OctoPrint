@@ -189,16 +189,39 @@ class PluginInfo(object):
 		self.key = key
 		self.location = location
 		self.instance = instance
+
 		self.origin = None
+		"""
+		The origin from which this plugin was loaded, either a :class:`EntryPointOrigin`, :class:`FolderOrigin`
+		or :class:`ModuleOrigin` instance. Set during loading, initially ``None``.
+		"""
+
 		self.enabled = True
+		"""Whether the plugin is enabled."""
+
 		self.blacklisted = False
+		"""Whether the plugin is blacklisted."""
+
 		self.forced_disabled = False
+		"""Whether the plugin has been force disabled by the system, e.g. due to safe mode blacklisting."""
+
 		self.incompatible = False
+		"""Whether this plugin has been detected as incompatible."""
+
 		self.bundled = False
+		"""Whether this plugin is bundled with OctoPrint."""
+
 		self.loaded = False
+		"""Whether this plugin has been loaded."""
+
 		self.managable = True
+		"""Whether this plugin can be managed by OctoPrint."""
+
 		self.needs_restart = False
+		"""Whether this plugin needs a restart of OctoPrint after enabling/disabling."""
+
 		self.invalid_syntax = False
+		"""Whether invalid syntax was encountered while trying to load this plugin."""
 
 		self._name = name
 		self._version = version
@@ -214,6 +237,13 @@ class PluginInfo(object):
 			self._cached_parsed_metadata = self._parse_metadata()
 
 	def validate(self, phase, additional_validators=None):
+		"""
+		Validates the plugin for various validation phases.
+
+		``phase`` can be one of ``before_import``, ``before_load``, ``after_load``.
+
+		Used by :class:`PluginManager`, should not be used elsewhere.
+		"""
 		result = True
 
 		if phase == "before_import":
@@ -332,7 +362,7 @@ class PluginInfo(object):
 	def get_implementation(self, *types):
 		"""
 		Arguments:
-		    types (list): List of :class:`Plugin` sub classes all returned implementations need to implement.
+		    types (list): List of :class:`Plugin` sub classes the implementation needs to implement.
 
 		Returns:
 		    object: The plugin's implementation if it matches all of the requested ``types``, None otherwise.
@@ -571,6 +601,7 @@ class PluginInfo(object):
 
 	@property
 	def parsed_metadata(self):
+		"""The plugin metadata parsed from the plugin ``__init__.py``'s AST."""
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
@@ -726,12 +757,20 @@ class PluginManager(object):
 
 	@property
 	def plugins(self):
+		"""
+		Returns:
+			(list) list of enabled and disabled registered plugins
+		"""
 		plugins = dict(self.enabled_plugins)
 		plugins.update(self.disabled_plugins)
 		return plugins
 
 	@property
 	def plugin_hooks(self):
+		"""
+		Returns:
+			(dict) dictionary of registered hooks and their handlers
+		"""
 		return {key: list(map(lambda v: (v[1], v[2]), value)) for key, value in self._plugin_hooks.items()}
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True, incl_all_found=False):
@@ -1015,6 +1054,14 @@ class PluginManager(object):
 		               self.plugin_blacklist))
 
 	def reload_plugins(self, startup=False, initialize_implementations=True, force_reload=None):
+		"""
+		Reloads plugins, detecting newly added ones in the process.
+
+		Args:
+			startup (boolean): whether this is called during startup of the platform
+			initialize_implementations (boolean): whether plugin implementations should be initialized
+			force_reload (list): list of plugin identifiers which should be force reloaded
+		"""
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(
 			folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))
 		))
@@ -1080,11 +1127,18 @@ class PluginManager(object):
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
-	def mark_plugin(self, name, **kwargs):
+	def mark_plugin(self, name, **flags):
+		"""
+		Mark plugin ``name`` with an arbitrary number of flags.
+
+		Args:
+			name (str): plugin identifier
+			**flags (dict): dictionary of flag names and values
+		"""
 		if not name in self.plugins:
 			self.logger.debug("Trying to mark an unknown plugin {name}".format(**locals()))
 
-		for key, value in kwargs.items():
+		for key, value in flags.items():
 			if value is None:
 				continue
 
@@ -1093,11 +1147,21 @@ class PluginManager(object):
 			elif not value and name in self.marked_plugins[key]:
 				self.marked_plugins[key].remove(name)
 
-	def is_plugin_marked(self, name, key):
+	def is_plugin_marked(self, name, flag):
+		"""
+		Checks whether a plugin has been marked with a certain flag.
+
+		Args:
+			name (str): the plugin's identifier
+			flag (str): the flag to check
+
+		Returns:
+			(boolean): True if the plugin has been flagged, False otherwise
+		"""
 		if not name in self.plugins:
 			return False
 
-		return name in self.marked_plugins[key]
+		return name in self.marked_plugins[flag]
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
