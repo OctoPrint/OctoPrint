@@ -1151,6 +1151,7 @@ def check_etag(etag):
 		return False
 
 	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_none_match is not None and \
 	       etag in flask.request.if_none_match
 
 
@@ -1171,6 +1172,7 @@ def check_lastmodified(lastmodified):
 		raise ValueError("lastmodified must be a datetime or float or int instance but, got {} instead".format(lastmodified.__class__))
 
 	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_modified_since is not None and \
 	       lastmodified <= flask.request.if_modified_since
 
 
