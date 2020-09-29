@@ -7,7 +7,7 @@ Backup Plugin
 
 The OctoPrint Backup Plugin comes bundled with OctoPrint (starting with 1.3.10).
 
-It allows the creation and restoration of backups of OctoPrint's settings, data and installed plugins [#]_.
+It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_.
 
 This allows easy migration
 to newly setup instances as well as making regular backups to prevent data loss.
@@ -22,6 +22,19 @@ to newly setup instances as well as making regular backups to prevent data loss.
 As long as plugins adhere to the standard of storing their data and settings in OctoPrint's plugin data folders, their
 data will be part of the backup. Note that the backups made by the Backup Plugin will *not* be part of any backups -
 you'll need to persist the resulting zip files yourself!
+
+.. _sec-bundledplugins-backup-configuration:
+
+Configuring the plugin
+----------------------
+
+The plugin supports the following configuration keys:
+
+  * ``restore_unsupported``: If the system you are installing OctoPrint on doesn't support restoring backups or you
+    want to disable that feature for other reasons, set this to `true`. Alternatively you can also set the
+    environment variable `OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED` to `true`. OctoPrint will then disable the restore
+    functionality. Under normal circumstances you should not have to touch this setting (OctoPrint will do its
+    best to autodetect whether it's able to perform restores), thus it is not exposed in the Settings dialog.
 
 .. _sec-bundledplugins-backup-cli:
 
@@ -172,6 +185,8 @@ Source code
 The source of the Backup plugin is bundled with OctoPrint and can be found in
 its source repository under ``src/octoprint/plugins/backup``.
 
-.. [#] Note that only those plugins that are available on `OctoPrint's official plugin repository <https://plugins.octoprint.org>`_
-       can be automatically restored. If you have plugins installed that are not available on there you'll get their
-       names and - if available - homepage URL displayed after restore in order to be able to manually reinstall them.
+.. [#1] Note that restore is currently unavailable on OctoPrint servers running on Windows. Additionally they may be
+        disabled through a config flag or an environment variable as documented :ref:`here <sec-bundledplugins-backup-configuration>`.
+.. [#2] Note that only those plugins that are available on `OctoPrint's official plugin repository <https://plugins.octoprint.org>`_
+        can be automatically restored. If you have plugins installed that are not available on there you'll get their
+        names and - if available - homepage URL displayed after restore in order to be able to manually reinstall them.

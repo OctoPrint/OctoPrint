@@ -46,6 +46,8 @@ import json
 import sys
 import traceback
 
+from octoprint.settings import valid_boolean_trues
+
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
@@ -98,6 +100,13 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		self._clean_dir_backup(self._settings._basedir,
 		                       on_log_progress=self._logger.info)
 
+	##~~ SettingsPlugin
+
+	def get_settings_defaults(self):
+		return {
+			"restore_unsupported": False
+		}
+
 	##~~ AssetPlugin
 
 	def get_assets(self):
@@ -123,7 +132,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		return flask.jsonify(backups=backups,
 		                     backup_in_progress=len(self._in_progress) > 0,
 		                     unknown_plugins=unknown_plugins,
-		                     restore_supported=is_os_compatible(["!windows"]))
+		                     restore_supported=self._restore_supported(self._settings))
 
 	@octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
 	@no_firstrun_access
@@ -231,7 +240,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		if not Permissions.PLUGIN_BACKUP_ACCESS.can() and not self._settings.global_get(["server", "firstRun"]):
 			return flask.abort(403)
 
-		if not is_os_compatible(["!windows"]):
+		if not self._restore_supported(self._settings):
 			return flask.make_response("Invalid request, the restores are not supported on the underlying operating system", 400)
 
 		input_name = "file"
@@ -800,7 +809,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	                    on_restore_start=None,
 	                    on_restore_done=None,
 	                    on_restore_failed=None):
-		if not is_os_compatible(["!windows"]):
+		if not cls._restore_supported(settings):
 			if callable(on_log_error):
 				on_log_error("Restore is not supported on this operating system")
 			if callable(on_restore_failed):
@@ -1023,6 +1032,12 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				on_log_error("No restart command configured. Please restart OctoPrint manually.")
 
 		return True
+
+	@classmethod
+	def _restore_supported(cls, settings):
+		return is_os_compatible(["!windows"]) \
+		       and not settings.get_boolean(["restore_unsupported"]) \
+		       and not os.environ.get("OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED", False) in valid_boolean_trues
 
 
 	def _send_client_message(self, message, payload=None):
