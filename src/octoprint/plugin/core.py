@@ -368,14 +368,10 @@ class PluginInfo(object):
 		    object: The plugin's implementation if it matches all of the requested ``types``, None otherwise.
 		"""
 
-		if not self.implementation:
+		if self.implementation and all(map(lambda t: isinstance(self.implementation, t), types)):
+			return self.implementation
+		else:
 			return None
-
-		for t in types:
-			if not isinstance(self.implementation, t):
-				return None
-
-		return self.implementation
 
 	@property
 	def name(self):
