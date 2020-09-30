@@ -1241,7 +1241,6 @@ except ImportError:
 		from monotonic import monotonic as monotonic_time
 	except RuntimeError:
 		# no source of monotonic time available, nothing left but using time.time *cringe*
-		import time
 		monotonic_time = time.time
 
 
