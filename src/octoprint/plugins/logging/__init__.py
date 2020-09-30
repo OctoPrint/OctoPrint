@@ -52,9 +52,11 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		loggers = self._get_available_loggers()
 		levels = self._get_logging_levels()
 		serial_log_enabled = self._settings.global_get_boolean(["serial", "log"])
+		plugintimings_log_enabled = self._settings.global_get_boolean(["devel", "pluginTimings"])
 		return jsonify(logs=dict(files=files, free=free, total=total),
 		               setup=dict(loggers=loggers, levels=levels),
-		               serial_log=dict(enabled=serial_log_enabled))
+		               serial_log=dict(enabled=serial_log_enabled),
+		               plugintimings_log=dict(enabled=plugintimings_log_enabled))
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
 	@no_firstrun_access
@@ -213,6 +215,8 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_template_configs(self):
 		return [
+			dict(type="navbar", template="logging_navbar_seriallog.jinja2", suffix="_seriallog"),
+			dict(type="navbar", template="logging_navbar_plugintimingslog.jinja2", suffix="_plugintimingslog"),
 			dict(type="settings", custom_bindings=True)
 		]
 

@@ -69,19 +69,19 @@ class OctoPrintStreamHandler(AsyncLogHandlerMixin, logging.StreamHandler):
 	pass
 
 
-class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler):
+class TriggeredRolloverLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler):
 
 	do_rollover = False
 	suffix_template = "%Y-%m-%d_%H-%M-%S"
 	file_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
 
 	@classmethod
-	def on_open_connection(cls):
+	def arm_rollover(cls):
 		cls.do_rollover = True
 
 	def __init__(self, *args, **kwargs):
 		kwargs["encoding"] = kwargs.get("encoding", "utf-8")
-		super(SerialLogHandler, self).__init__(*args, **kwargs)
+		super(TriggeredRolloverLogHandler, self).__init__(*args, **kwargs)
 		self.cleanupFiles()
 
 	def shouldRollover(self, record):
@@ -131,6 +131,15 @@ class SerialLogHandler(AsyncLogHandlerMixin, logging.handlers.RotatingFileHandle
 		self.cleanupFiles()
 		if not self.delay:
 			self.stream = self._open()
+
+
+class SerialLogHandler(TriggeredRolloverLogHandler):
+	pass
+
+
+class PluginTimingsLogHandler(TriggeredRolloverLogHandler):
+	pass
+
 
 class RecordingLogHandler(logging.Handler):
 	def __init__(self, target=None, *args, **kwargs):

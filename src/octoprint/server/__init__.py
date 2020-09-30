@@ -302,6 +302,10 @@ class Server(object):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 
+		if self._settings.getBoolean(["devel", "pluginTimings"]):
+			# enable plugin timings log
+			logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
+
 		# start the intermediary server
 		self._start_intermediary_server()
 

@@ -253,6 +253,9 @@ def getSettings():
 				"ttl": int(s.getInt(["server", "pluginBlacklist", "ttl"]) / 60)
 			},
 			"allowFraming": s.getBoolean(["server", "allowFraming"])
+		},
+		"devel": {
+			"pluginTimings": s.getBoolean(["devel", "pluginTimings"])
 		}
 	}
 
@@ -577,6 +580,18 @@ def _saveSettings(data):
 					pass
 		if "allowFraming" in data["server"]:
 			s.setBoolean(["server", "allowFraming"], data["server"]["allowFraming"])
+
+	if "devel" in data:
+		oldLog = s.getBoolean(["devel", "pluginTimings"])
+		if "pluginTimings" in data["devel"]: s.setBoolean(["devel", "pluginTimings"], data["devel"]["pluginTimings"])
+		if oldLog and not s.getBoolean(["devel", "pluginTimings"]):
+			# disable plugin timing logging to plugintimings.log
+			logging.getLogger("PLUGIN_TIMINGS").debug("Disabling plugin timings logging")
+			logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.INFO)
+		elif not oldLog and s.getBoolean(["devel", "pluginTimings"]):
+			# enable plugin timing logging to plugintimings.log
+			logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
+			logging.getLogger("PLUGIN_TIMINGS").debug("Enabling plugin timings logging")
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

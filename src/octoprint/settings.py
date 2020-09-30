@@ -319,7 +319,7 @@ default_settings = {
 		"closeModalsWithClick": True,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_logging", "plugin_pi_support", "login"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "plugin_logging_seriallog", "plugin_logging_plugintimingslog", "plugin_pi_support", "login"],
 				"sidebar": ["plugin_firmware_check", "connection", "state", "files"],
 				"tab": ["temperature", "control", "plugin_gcodeviewer", "terminal", "timelapse"],
 				"settings": [
@@ -421,7 +421,8 @@ default_settings = {
 		},
 		"useFrozenDictForPrinterState": True,
 		"showLoadingAnimation": True,
-		"sockJsConnectTimeout": 30
+		"sockJsConnectTimeout": 30,
+		"pluginTimings": False
 	}
 }
 """The default settings of the core application."""

@@ -11,6 +11,7 @@ $(function() {
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
         self.serialLogEnabled = ko.observable();
+        self.pluginTimingsLogEnabled = ko.observable();
         self.freeSpace = ko.observable(undefined);
         self.totalSpace = ko.observable(undefined);
 
@@ -70,6 +71,7 @@ $(function() {
             self.fromLogsResponse(response.logs);
             self.fromSetupResponse(response.setup);
             self.fromSerialLogResponse(response.serial_log);
+            self.fromPluginTimingsLogResponse(response.plugintimings_log);
         };
 
         self.fromLogsResponse = function(response) {
@@ -112,16 +114,30 @@ $(function() {
             self.serialLogEnabled(response.enabled);
         };
 
-        self.popoverContent = function() {
+        self.fromPluginTimingsLogResponse = function(response) {
+            if (!response) return;
+
+            self.pluginTimingsLogEnabled(response.enabled);
+        };
+
+        self.serialLogPopoverContent = function() {
+            return self.popoverContent("serial.log");
+        };
+
+        self.pluginTimingsLogPopoverContent = function() {
+            return self.popoverContent("plugintimings.log");
+        };
+
+        self.popoverContent = function(logfile) {
             var free = self.freeSpace();
             var total = self.totalSpace();
 
             var content = "<p>"
-                + gettext("You currently have <code>serial.log</code> enabled. Please remember to turn it off " +
-                    "again once your are done debugging whatever issue prompted you to turn it on.")
+                + _.sprintf(gettext("You currently have <code>%(logfile)s</code> enabled. Please remember to turn it off " +
+                    "again once your are done debugging whatever issue prompted you to turn it on."), {logfile: logfile})
                 + "</p><p>"
                 + gettext("It can negatively impact print performance and also take up a lot of storage space " +
-                    "depending on how long you stay connected to your printer and thus should only be used for " +
+                    "depending on how long you keep it enabled and thus should only be used for " +
                     "debugging.")
                 + "</p>";
 
@@ -133,7 +149,7 @@ $(function() {
             }
 
             return content;
-        };
+        }
 
         self.configuredLoggersHasChanged = function () {
             self.configuredLoggersChanged = true;
@@ -279,6 +295,6 @@ $(function() {
         construct: LoggingViewModel,
         additionalNames: ["logsViewModel"],
         dependencies: ["loginStateViewModel", "accessViewModel"],
-        elements: ["#settings_plugin_logging", "#navbar_plugin_logging"]
+        elements: ["#settings_plugin_logging", "#navbar_plugin_logging_seriallog", "#navbar_plugin_logging_plugintimingslog"]
     });
 });

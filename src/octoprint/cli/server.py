@@ -20,8 +20,10 @@ def run_server(basedir, configfile, host, port, v6_only, debug, allow_root, logg
 
 	def log_startup(recorder=None, safe_mode=None, **kwargs):
 		from octoprint.logging import get_divider_line
+		from octoprint.logging.handlers import PluginTimingsLogHandler
 
 		logger = logging.getLogger("octoprint.startup")
+		PluginTimingsLogHandler.arm_rollover()
 
 		logger.info(get_divider_line("*"))
 		logger.info("Starting OctoPrint {}".format(__display_version__))

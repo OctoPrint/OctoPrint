@@ -25,6 +25,7 @@ import contextlib
 import collections
 import frozendict
 import copy
+import time
 
 from typing import Union
 
@@ -1723,17 +1724,37 @@ def count(gen):
 		n += 1
 	return n
 
+def fqfn(f):
+	if hasattr(f, "__self__"):
+		# bound method
+		return "{}.{}.{}".format(f.__self__.__class__.__module__,
+		                         f.__self__.__class__.__name__,
+		                         f.__name__)
+	else:
+		return "{}.{}".format(f.__module__,
+		                      f.__name__)
 
-def timing(f):
+
+def time_this(f, logtarget="octoprint.util.timings", expand_logtarget=False, message="{func} took {timing:.2f}ms"):
 	@wraps(f)
 	def decorator(*args, **kwargs):
 		start = monotonic_time()
 		try:
 			return f(*args, **kwargs)
 		finally:
-			end = monotonic_time()
-			logging.getLogger("octoprint.util.timing").debug("func:{} took {:0.2f}s".format(f.__name__,
-			                                                                                end - start))
+			timing = (monotonic_time() - start) * 1000.0
+			func = fqfn(f)
+
+			l = logtarget
+			if expand_logtarget:
+				l += "." + func
+
+			logger = logging.getLogger(l)
+			if logger.isEnabledFor(logging.DEBUG):
+				data = {"func": func, "timing": timing}
+				logger.debug(message.format(**data),
+				             extra=data)
+
 	return decorator
 
 

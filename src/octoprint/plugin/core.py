@@ -38,7 +38,7 @@ import pkginfo
 
 from past.builtins import unicode
 
-from octoprint.util import to_unicode, sv
+from octoprint.util import to_unicode, sv, time_this
 from octoprint.util.version import is_python_compatible, get_python_version_string
 
 try:
@@ -727,6 +727,9 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
+	plugin_timings_logtarget = "PLUGIN_TIMINGS"
+	plugin_timings_message = "{func} - {timing:05.2f}ms"
+
 	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
 	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
 	             plugin_obsolete_hooks=None, plugin_considered_bundled=None, plugin_validators=None,
@@ -1365,8 +1368,18 @@ class PluginManager(object):
 			mixins = self.mixins_matching_bases(plugin.implementation.__class__, *self.plugin_bases)
 			for mixin in mixins:
 				self.plugin_implementations_by_type[mixin].append((name, plugin.implementation))
+				if not getattr(plugin.implementation, "__timing_wrapped", False):
+					for method in filter(lambda a: not a.startswith("_") and callable(getattr(mixin, a)), dir(mixin)):
+						# wrap method with time_this
+						setattr(plugin.implementation,
+						        method,
+						        time_this(getattr(plugin.implementation, method),
+						                  logtarget=self.plugin_timings_logtarget,
+						                  expand_logtarget=True,
+						                  message=self.plugin_timings_message))
 
 			self.plugin_implementations[name] = plugin.implementation
+			setattr(plugin.implementation, "__timing_wrapped", True)
 
 	def _deactivate_plugin(self, name, plugin):
 		for hook, definition in plugin.hooks.items():
@@ -1697,7 +1710,10 @@ class PluginManager(object):
 
 		result = OrderedDict()
 		for h in self.plugin_hooks[hook]:
-			result[h[0]] = h[1]
+			result[h[0]] = time_this(h[1],
+			                         logtarget=self.plugin_timings_logtarget,
+			                         expand_logtarget=True,
+			                         message=self.plugin_timings_message)
 		return result
 
 	def get_implementations(self, *types, **kwargs):

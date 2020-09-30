@@ -243,6 +243,12 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				},
 				"serial": {
 					"format": "%(asctime)s - %(message)s"
+				},
+				"timings": {
+					"format": "%(asctime)s - %(message)s"
+				},
+				"timingscsv": {
+					"format": "%(asctime)s;%(func)s;%(timing)f"
 				}
 			},
 			"handlers": {
@@ -267,6 +273,22 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"backupCount": 3,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log"),
 					"delay": True
+				},
+				"pluginTimingsFile": {
+					"class": "octoprint.logging.handlers.PluginTimingsLogHandler",
+					"level": "DEBUG",
+					"formatter": "timings",
+					"backupCount": 3,
+					"filename": os.path.join(settings.getBaseFolder("logs"), "plugintimings.log"),
+					"delay": True
+				},
+				"pluginTimingsCsvFile": {
+					"class": "octoprint.logging.handlers.PluginTimingsLogHandler",
+					"level": "DEBUG",
+					"formatter": "timingscsv",
+					"backupCount": 3,
+					"filename": os.path.join(settings.getBaseFolder("logs"), "plugintimings.csv"),
+					"delay": True
 				}
 			},
 			"loggers": {
@@ -274,6 +296,14 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"level": "INFO",
 					"handlers": ["serialFile"],
 					"propagate": False
+				},
+				"PLUGIN_TIMINGS": {
+					"level": "INFO",
+					"handlers": ["pluginTimingsFile", "pluginTimingsCsvFile"],
+					"propagate": False
+				},
+				"PLUGIN_TIMINGS.octoprint.plugin": {
+					"level": "INFO"
 				},
 				"octoprint": {
 					"level": "INFO"
