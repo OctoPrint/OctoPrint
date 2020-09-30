@@ -1734,26 +1734,27 @@ def fqfn(f):
 		                      f.__name__)
 
 
-def time_this(f, logtarget="octoprint.util.timings", expand_logtarget=False, message="{func} took {timing:.2f}ms"):
-	@wraps(f)
-	def decorator(*args, **kwargs):
-		start = monotonic_time()
-		try:
-			return f(*args, **kwargs)
-		finally:
-			timing = (monotonic_time() - start) * 1000.0
-			func = fqfn(f)
+def time_this(logtarget="octoprint.util.timings", expand_logtarget=False, message="{func} took {timing:.2f}ms"):
+	def decorator(f):
+		@wraps(f)
+		def wrapper(*args, **kwargs):
+			start = time.time()
+			try:
+				return f(*args, **kwargs)
+			finally:
+				timing = (time.time() - start) * 1000.0
+				func = fqfn(f)
 
-			l = logtarget
-			if expand_logtarget:
-				l += "." + func
+				l = logtarget
+				if expand_logtarget:
+					l += "." + func
 
-			logger = logging.getLogger(l)
-			if logger.isEnabledFor(logging.DEBUG):
-				data = {"func": func, "timing": timing}
-				logger.debug(message.format(**data),
-				             extra=data)
-
+				logger = logging.getLogger(l)
+				if logger.isEnabledFor(logging.DEBUG):
+					data = {"func": func, "timing": timing}
+					logger.debug(message.format(**data),
+					             extra=data)
+		return wrapper
 	return decorator
 
 

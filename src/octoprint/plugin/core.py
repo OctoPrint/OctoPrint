@@ -1373,10 +1373,9 @@ class PluginManager(object):
 						# wrap method with time_this
 						setattr(plugin.implementation,
 						        method,
-						        time_this(getattr(plugin.implementation, method),
-						                  logtarget=self.plugin_timings_logtarget,
+						        time_this(logtarget=self.plugin_timings_logtarget,
 						                  expand_logtarget=True,
-						                  message=self.plugin_timings_message))
+						                  message=self.plugin_timings_message)(getattr(plugin.implementation, method)))
 
 			self.plugin_implementations[name] = plugin.implementation
 			setattr(plugin.implementation, "__timing_wrapped", True)
@@ -1710,10 +1709,9 @@ class PluginManager(object):
 
 		result = OrderedDict()
 		for h in self.plugin_hooks[hook]:
-			result[h[0]] = time_this(h[1],
-			                         logtarget=self.plugin_timings_logtarget,
+			result[h[0]] = time_this(logtarget=self.plugin_timings_logtarget,
 			                         expand_logtarget=True,
-			                         message=self.plugin_timings_message)
+			                         message=self.plugin_timings_message)(h[1])
 		return result
 
 	def get_implementations(self, *types, **kwargs):
