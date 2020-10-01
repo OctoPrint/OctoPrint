@@ -468,7 +468,7 @@ class FileManager(object):
 	def folder_exists(self, destination, path):
 		return self._storage(destination).folder_exists(path)
 
-	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
+	def list_files(self, destinations=None, path=None, filter=None, recursive=None, force_refresh=False):
 		if not destinations:
 			destinations = list(self._storage_managers.keys())
 		if isinstance(destinations, basestring):
@@ -476,7 +476,7 @@ class FileManager(object):
 
 		result = dict()
 		for dst in destinations:
-			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive)
+			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive, force_refresh=force_refresh)
 		return result
 
 	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None, analysis=None, display=None):

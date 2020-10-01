@@ -460,6 +460,54 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEqual("folder", file_list["empty"]["type"])
 		self.assertEqual(0, len(file_list["empty"]["children"]))
 
+	def test_list_with_filter(self):
+		bp_case_stl = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=bp_case_stl))])
+
+		content_folder = self._add_and_verify_folder("content", "content")
+		self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
+		self._add_and_verify_file((content_folder, "bp_case.gcode"), content_folder + "/bp_case.gcode", FILE_BP_CASE_GCODE)
+
+		self._add_and_verify_folder("empty", "empty")
+
+		def filter_machinecode(node):
+			return node["type"] == "machinecode"
+
+		file_list = self.storage.list_files(filter=filter_machinecode)
+		self.assertTrue(3, len(file_list))
+		self.assertTrue("bp_case.gcode" in file_list)
+		self.assertTrue("content" in file_list)
+		self.assertTrue("empty" in file_list)
+
+		self.assertEqual("folder", file_list[content_folder]["type"])
+		self.assertEqual(1, len(file_list[content_folder]["children"]))
+		self.assertTrue("bp_case.gcode" in file_list[content_folder]["children"])
+
+		self.assertEqual("folder", file_list["empty"]["type"])
+		self.assertEqual(0, len(file_list["empty"]["children"]))
+
+	def test_list_without_recursive(self):
+		bp_case_stl = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=bp_case_stl))])
+
+		content_folder = self._add_and_verify_folder("content", "content")
+		self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
+
+		self._add_and_verify_folder("empty", "empty")
+
+		file_list = self.storage.list_files(recursive=False)
+		self.assertTrue(3, len(file_list))
+		self.assertTrue("bp_case.gcode" in file_list)
+		self.assertTrue("content" in file_list)
+		self.assertTrue("empty" in file_list)
+
+		self.assertEqual("folder", file_list[content_folder]["type"])
+		self.assertEqual(0, len(file_list[content_folder]["children"]))
+		self.assertNotEquals(0, file_list[content_folder]["size"])
+
+		self.assertEqual("folder", file_list["empty"]["type"])
+		self.assertEqual(0, len(file_list["empty"]["children"]))
+
 	def test_add_link_model(self):
 		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)

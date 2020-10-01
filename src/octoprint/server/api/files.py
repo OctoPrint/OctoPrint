@@ -20,7 +20,7 @@ import octoprint.filemanager.util
 import octoprint.filemanager.storage
 import octoprint.slicing
 
-from octoprint.util import sv
+from octoprint.util import sv, time_this
 
 import os
 import psutil
@@ -191,6 +191,7 @@ def _getFileDetails(origin, path, recursive=True):
 		return None
 
 
+@time_this(logtarget=__name__+'.timings', message="{func}({func_args},{func_kwargs}) took {timing:.2f}ms", incl_func_args=True)
 def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cache=True):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.get_sd_files()
@@ -232,7 +233,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 			files, lastmodified = _file_cache.get(cache_key, ([], None))
 			# recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
 			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=True):
-				files = list(fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values())
+				files = list(fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive, force_refresh=not allow_from_cache)[origin].values())
 				lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
 				_file_cache[cache_key] = (files, lastmodified)
 
