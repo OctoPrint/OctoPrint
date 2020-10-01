@@ -198,12 +198,16 @@ def apiPrinterState():
 @api.route("/version", methods=["GET"])
 @Permissions.STATUS.require(403)
 def apiVersion():
-	return jsonify({
-		"server": octoprint.server.VERSION,
-		"api": VERSION,
-		"text": "OctoPrint {}".format(octoprint.server.DISPLAY_VERSION)
-	})
+	return jsonify(server=octoprint.server.VERSION,
+	               api=VERSION,
+	               text="OctoPrint {}".format(octoprint.server.DISPLAY_VERSION))
 
+
+@api.route("/server", methods=["GET"])
+@Permissions.STATUS.require(403)
+def serverStatus():
+	return jsonify(version=octoprint.server.VERSION,
+	               safemode=octoprint.server.safe_mode)
 
 #~~ Login/user handling
 
