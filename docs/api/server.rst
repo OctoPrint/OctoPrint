@@ -9,7 +9,7 @@ Server information
    .. versionadded:: 1.5.0
 
    Retrieve information regarding server status. Returns a JSON object with two keys, ``version`` containing
-   the server version and ``safe_mode`` containing one of ``settings``, ``incomplete_startup`` or ``flag``
+   the server version and ``safemode`` containing one of ``settings``, ``incomplete_startup`` or ``flag``
    to indicate the reason the server is running in safe mode, or the boolean value of ``false`` if it's not
    running in safe mode.
 
@@ -30,7 +30,7 @@ Server information
 
       {
         "server": "1.5.0",
-        "safe_mode": "incomplete_startup"
+        "safemode": "incomplete_startup"
       }
 
    :statuscode 200: No error
