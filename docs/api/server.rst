@@ -6,6 +6,8 @@ Server information
 
 .. http:get:: /api/server
 
+   .. versionadded:: 1.5.0
+
    Retrieve information regarding server status. Returns a JSON object with two keys, ``version`` containing
    the server version and ``safe_mode`` containing one of ``settings``, ``incomplete_startup`` or ``flag``
    to indicate the reason the server is running in safe mode, or the boolean value of ``false`` if it's not
