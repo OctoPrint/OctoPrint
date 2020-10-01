@@ -1734,7 +1734,7 @@ def fqfn(f):
 		                      f.__name__)
 
 
-def time_this(logtarget="octoprint.util.timings", expand_logtarget=False, message="{func} took {timing:.2f}ms"):
+def time_this(logtarget="octoprint.util.timings", expand_logtarget=False, message="{func} took {timing:.2f}ms", incl_func_args=False):
 	def decorator(f):
 		@wraps(f)
 		def wrapper(*args, **kwargs):
@@ -1751,7 +1751,11 @@ def time_this(logtarget="octoprint.util.timings", expand_logtarget=False, messag
 
 				logger = logging.getLogger(l)
 				if logger.isEnabledFor(logging.DEBUG):
-					data = {"func": func, "timing": timing}
+					data = {"func": func,
+					        "timing": timing}
+					if incl_func_args:
+						data.update(func_args=",".join(map(repr, args)),
+						            func_kwargs=",".join(map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())))
 					logger.debug(message.format(**data),
 					             extra=data)
 		return wrapper
