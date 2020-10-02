@@ -1342,134 +1342,131 @@ class LocalFileStorage(StorageInterface):
 					nodes[key] = value
 			return nodes
 
-		with self._filelist_cache_mutex:
-			cache = self._filelist_cache.get(path)
-			if not force_refresh and cache and cache[0] >= self.last_modified(path, recursive=True):
-				return enrich_folders(cache[1])
+		metadata_dirty = False
+		try:
+			with self._filelist_cache_mutex:
+				cache = self._filelist_cache.get(path)
+				if not force_refresh and cache and cache[0] >= self.last_modified(path, recursive=True):
+					return enrich_folders(cache[1])
 
-			metadata = self._get_metadata(path)
-			if not metadata:
-				metadata = dict()
-			metadata_dirty = False
+				metadata = self._get_metadata(path)
+				if not metadata:
+					metadata = dict()
 
-			result = dict()
+				result = dict()
 
-			for entry in scandir(path):
-				if is_hidden_path(entry.name):
-					# no hidden files and folders
-					continue
+				for entry in scandir(path):
+					if is_hidden_path(entry.name):
+						# no hidden files and folders
+						continue
 
-				try:
-					entry_name = entry_display = entry.name
-					entry_path = entry.path
-					entry_is_file = entry.is_file()
-					entry_is_dir = entry.is_dir()
-					entry_stat = entry.stat()
-				except Exception:
-					# error while trying to fetch file metadata, that might be thanks to file already having
-					# been moved or deleted - ignore it and continue
-					continue
+					try:
+						entry_name = entry_display = entry.name
+						entry_path = entry.path
+						entry_is_file = entry.is_file()
+						entry_is_dir = entry.is_dir()
+						entry_stat = entry.stat()
+					except Exception:
+						# error while trying to fetch file metadata, that might be thanks to file already having
+						# been moved or deleted - ignore it and continue
+						continue
 
-				try:
-					new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
-					if entry_name != new_entry_name or entry_path != new_entry_path:
-						entry_display = to_unicode(entry_name)
-						entry_name = new_entry_name
-						entry_path = new_entry_path
-						entry_stat = os.stat(entry_path)
-				except Exception:
-					# error while trying to rename the file, we'll continue here and ignore it
-					continue
+					try:
+						new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
+						if entry_name != new_entry_name or entry_path != new_entry_path:
+							entry_display = to_unicode(entry_name)
+							entry_name = new_entry_name
+							entry_path = new_entry_path
+							entry_stat = os.stat(entry_path)
+					except Exception:
+						# error while trying to rename the file, we'll continue here and ignore it
+						continue
 
-				path_in_location = entry_name if not base else base + entry_name
+					path_in_location = entry_name if not base else base + entry_name
 
-				try:
-					# file handling
-					if entry_is_file:
-						type_path = octoprint.filemanager.get_file_type(entry_name)
-						if not type_path:
-							# only supported extensions
-							continue
-						else:
-							file_type = type_path[0]
+					try:
+						# file handling
+						if entry_is_file:
+							type_path = octoprint.filemanager.get_file_type(entry_name)
+							if not type_path:
+								# only supported extensions
+								continue
+							else:
+								file_type = type_path[0]
 
-						if entry_name in metadata and isinstance(metadata[entry_name], dict):
-							entry_metadata = metadata[entry_name]
-							if not "display" in entry_metadata and entry_display != entry_name:
+							if entry_name in metadata and isinstance(metadata[entry_name], dict):
+								entry_metadata = metadata[entry_name]
+								if not "display" in entry_metadata and entry_display != entry_name:
+									if not metadata_dirty:
+										metadata = self._copied_metadata(metadata, entry_name)
+									metadata[entry_name]["display"] = entry_display
+									entry_metadata["display"] = entry_display
+									metadata_dirty = True
+							else:
 								if not metadata_dirty:
 									metadata = self._copied_metadata(metadata, entry_name)
-								metadata[entry_name]["display"] = entry_display
-								entry_metadata["display"] = entry_display
+								entry_metadata = self._add_basic_metadata(path, entry_name,
+								                                          display_name=entry_display,
+								                                          save=False,
+								                                          metadata=metadata)
 								metadata_dirty = True
-						else:
-							if not metadata_dirty:
-								metadata = self._copied_metadata(metadata, entry_name)
-							entry_metadata = self._add_basic_metadata(path, entry_name,
-							                                          display_name=entry_display,
-							                                          save=False,
-							                                          metadata=metadata)
-							metadata_dirty = True
 
-						# TODO extract model hash from source if possible to recreate link
+							extended_entry_data = dict()
+							extended_entry_data.update(entry_metadata)
+							extended_entry_data["name"] = entry_name
+							extended_entry_data["display"] = entry_metadata.get("display", entry_name)
+							extended_entry_data["path"] = path_in_location
+							extended_entry_data["type"] = file_type
+							extended_entry_data["typePath"] = type_path
+							stat = entry_stat
+							if stat:
+								extended_entry_data["size"] = stat.st_size
+								extended_entry_data["date"] = int(stat.st_mtime)
 
-						extended_entry_data = dict()
-						extended_entry_data.update(entry_metadata)
-						extended_entry_data["name"] = entry_name
-						extended_entry_data["display"] = entry_metadata.get("display", entry_name)
-						extended_entry_data["path"] = path_in_location
-						extended_entry_data["type"] = file_type
-						extended_entry_data["typePath"] = type_path
-						stat = entry_stat
-						if stat:
-							extended_entry_data["size"] = stat.st_size
-							extended_entry_data["date"] = int(stat.st_mtime)
+							result[entry_name] = extended_entry_data
 
-						result[entry_name] = extended_entry_data
-
-					# folder recursion
-					elif entry_is_dir:
-						if entry_name in metadata and isinstance(metadata[entry_name], dict):
-							entry_metadata = metadata[entry_name]
-							if not "display" in entry_metadata and entry_display != entry_name:
+						# folder recursion
+						elif entry_is_dir:
+							if entry_name in metadata and isinstance(metadata[entry_name], dict):
+								entry_metadata = metadata[entry_name]
+								if not "display" in entry_metadata and entry_display != entry_name:
+									if not metadata_dirty:
+										metadata = self._copied_metadata(metadata, entry_name)
+									metadata[entry_name]["display"] = entry_display
+									entry_metadata["display"] = entry_display
+									metadata_dirty = True
+							elif entry_name != entry_display:
 								if not metadata_dirty:
 									metadata = self._copied_metadata(metadata, entry_name)
-								metadata[entry_name]["display"] = entry_display
-								entry_metadata["display"] = entry_display
+								entry_metadata = self._add_basic_metadata(path, entry_name,
+								                                          display_name=entry_display,
+								                                          save=False,
+								                                          metadata=metadata)
 								metadata_dirty = True
-						elif entry_name != entry_display:
-							if not metadata_dirty:
-								metadata = self._copied_metadata(metadata, entry_name)
-							entry_metadata = self._add_basic_metadata(path, entry_name,
-							                                          display_name=entry_display,
-							                                          save=False,
-							                                          metadata=metadata)
-							metadata_dirty = True
-						else:
-							entry_metadata = dict()
+							else:
+								entry_metadata = dict()
 
-						entry_data = dict(
-							name=entry_name,
-							display=entry_metadata.get("display", entry_name),
-							path=path_in_location,
-							type="folder",
-							typePath=["folder"]
-						)
+							entry_data = dict(
+								name=entry_name,
+								display=entry_metadata.get("display", entry_name),
+								path=path_in_location,
+								type="folder",
+								typePath=["folder"]
+							)
 
-						result[entry_name] = entry_data
-				except Exception:
-					# So something went wrong somewhere while processing this file entry - log that and continue
-					self._logger.exception("Error while processing entry {}".format(entry_path))
-					continue
+							result[entry_name] = entry_data
+					except Exception:
+						# So something went wrong somewhere while processing this file entry - log that and continue
+						self._logger.exception("Error while processing entry {}".format(entry_path))
+						continue
 
-			# TODO recreate links if we have metadata less entries
-
+				self._filelist_cache[path] = (self.last_modified(path, recursive=True),
+				                              result)
+				return enrich_folders(result)
+		finally:
 			# save metadata
 			if metadata_dirty:
 				self._save_metadata(path, metadata)
-
-			self._filelist_cache[path] = (self.last_modified(path, recursive=True),
-			                              result)
-			return enrich_folders(result)
 
 	def _add_basic_metadata(self, path, entry, display_name=None, additional_metadata=None, save=True, metadata=None):
 		if additional_metadata is None:
