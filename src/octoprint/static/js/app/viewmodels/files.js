@@ -1251,6 +1251,8 @@ $(function() {
         };
 
         self._handleUploadDone = function(e, data) {
+            self._setProgressBar(100, gettext("Refreshing list ..."), true);
+
             var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
                 focus = {location: "sdcard", path: data.result.files.sdcard.path};
