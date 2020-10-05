@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 """
 The SSDP/UPNP implementations has been largely inspired by https://gist.github.com/schlamar/2428250
+
+For a spec see http://www.upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.0.pdf
 """
 
 import flask
@@ -29,6 +31,7 @@ except ImportError:
 import time
 import collections
 import socket
+import platform
 
 def __plugin_load__():
 	plugin = DiscoveryPlugin()
@@ -49,9 +52,13 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
                       octoprint.plugin.BlueprintPlugin,
                       octoprint.plugin.SettingsPlugin):
 
-	ssdp_multicast_addr = "239.255.255.250"
+	ssdp_multicast_addr = "239.255.255.250" # IPv6: ff0X::c
 
 	ssdp_multicast_port = 1900
+
+	ssdp_server = "{}/{} UPnP/1.0 OctoPrint/{}".format(platform.system(),
+	                                                   platform.version(),
+	                                                   octoprint.__version__)
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
@@ -65,7 +72,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		# upnp/ssdp
 		self._ssdp_monitor_active = False
 		self._ssdp_monitor_thread = None
-		self._ssdp_notify_timeout = 10
+		self._ssdp_notify_timeout = 30
 		self._ssdp_last_notify = 0
 
 	##~~ SettingsPlugin API
@@ -561,22 +568,29 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				self._logger.debug("Sending NOTIFY {} via {}".format("alive" if alive else "byebye", addr))
 				notify_message = "".join([
 					"NOTIFY * HTTP/1.1\r\n",
-					"Server: Python/2.7\r\n",
+					"Server: {server}\r\n",
 					"Cache-Control: max-age=900\r\n",
 					"Location: {location}\r\n",
 					"NTS: {nts}\r\n",
-					"NT: upnp:rootdevice\r\n",
-					"USN: uuid:{uuid}::upnp:rootdevice\r\n",
+					"NT: {nt}\r\n",
+					"USN: {usn}\r\n",
 					"HOST: {mcast_addr}:{mcast_port}\r\n\r\n"
 				])
-				message = notify_message.format(uuid=self.get_uuid(),
-				                                location=location,
-				                                nts="ssdp:alive" if alive else "ssdp:byebye",
-				                                mcast_addr=self.__class__.ssdp_multicast_addr,
-				                                mcast_port=self.__class__.ssdp_multicast_port)
-				for _ in range(2):
-					# send twice, stuff might get lost, it's only UDP
-					sock.sendto(message.encode("utf-8"), (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
+				uuid = self.get_uuid()
+				for nt, usn in (("upnp:rootdevice", "uuid:{uuid}::upnp:rootdevice"),
+				                ("uuid:{}", "uuid:{uuid}"),
+				                ("urn:schemas-upnp-org:device:basic:1", "uuid:{uuid}::url:schemas-upnp-org:device:basic:1")):
+					message = notify_message.format(uuid=uuid,
+					                                location=location,
+					                                nts="ssdp:alive" if alive else "ssdp:byebye",
+					                                nt=nt.format(uuid=uuid),
+					                                usn=usn.format(uuid=uuid),
+					                                server=self.ssdp_server,
+					                                mcast_addr=self.ssdp_multicast_addr,
+					                                mcast_port=self.ssdp_multicast_port)
+					for _ in range(2):
+						# send twice, stuff might get lost, it's only UDP
+						sock.sendto(message.encode("utf-8"), (self.ssdp_multicast_addr, self.ssdp_multicast_port))
 			except Exception:
 				pass
 
