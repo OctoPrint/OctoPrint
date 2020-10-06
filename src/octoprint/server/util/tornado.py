@@ -658,7 +658,7 @@ class WsgiInputContainer(object):
 		status_code, reason = data["status"].split(" ", 1)
 		status_code = int(status_code)
 		headers = data["headers"]
-		header_set = set(k.lower() for (k, v) in headers)
+		header_set = {k.lower() for (k, v) in headers}
 		body = tornado.escape.utf8(body)
 		if status_code != 304:
 			if "content-length" not in header_set:
@@ -666,7 +666,7 @@ class WsgiInputContainer(object):
 			if "content-type" not in header_set:
 				headers.append(("Content-Type", "text/html; charset=UTF-8"))
 
-		header_set = set(k.lower() for (k, v) in headers)
+		header_set = {k.lower() for (k, v) in headers}
 		for header, value in self.headers.items():
 			if header.lower() not in header_set:
 				headers.append((header, value))

@@ -282,23 +282,23 @@ class PositionRecord(object):
 		return True
 
 	def __init__(self, *args, **kwargs):
-		attrs = self._standard_attrs | set(key for key in kwargs if self.valid_e(key))
+		attrs = self._standard_attrs | {key for key in kwargs if self.valid_e(key)}
 		for attr in attrs:
 			setattr(self, attr, kwargs.get(attr))
 
 	def copy_from(self, other):
 		# make sure all standard attrs and attrs from other are set
-		attrs = self._standard_attrs | set(key for key in dir(other) if self.valid_e(key))
+		attrs = self._standard_attrs | {key for key in dir(other) if self.valid_e(key)}
 		for attr in attrs:
 			setattr(self, attr, getattr(other, attr))
 
 		# delete attrs other doesn't have
-		attrs = set(key for key in dir(self) if self.valid_e(key)) - attrs
+		attrs = {key for key in dir(self) if self.valid_e(key)} - attrs
 		for attr in attrs:
 			delattr(self, attr)
 
 	def as_dict(self):
-		attrs = self._standard_attrs | set(key for key in dir(self) if self.valid_e(key))
+		attrs = self._standard_attrs | {key for key in dir(self) if self.valid_e(key)}
 		return dict((attr, getattr(self, attr)) for attr in attrs)
 
 class TemperatureRecord(object):
@@ -1107,8 +1107,8 @@ class MachineCom(object):
 			return process_gcode_line(line), tags
 
 		return list(filter(lambda x: x[0] is not None and x[0].strip() != "",
-		              	   map(process,
-		                  	   scriptLines)))
+		                   map(process,
+		                       scriptLines)))
 
 
 	def sendGcodeScript(self, scriptName, replacements=None, tags=None, part_of_job=False):
