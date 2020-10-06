@@ -68,7 +68,7 @@ class AnalysisQueue(object):
 		self._logger = logging.getLogger(__name__)
 		self._callbacks = []
 
-		self._queues = dict()
+		self._queues = {}
 		for key, queue_factory in queue_factories.items():
 			self._queues[key] = queue_factory(self._analysis_finished)
 
@@ -115,7 +115,7 @@ class AnalysisQueue(object):
 				callback(entry, result)
 			except:
 				self._logger.exception(u"Error while pushing analysis data to callback {}".format(callback),
-				                       extra=dict(callback=fqcn(callback)))
+				                       extra={"callback": fqcn(callback)})
 		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"name": entry.name,
 		                                                        "path": entry.path,
 		                                                        "origin": entry.location,
@@ -414,13 +414,13 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			_, output = output.split("RESULTS:")
 			analysis = yaml.safe_load(output)
 
-			result = dict()
+			result = {}
 			result["printingArea"] = analysis["printing_area"]
 			result["dimensions"] = analysis["dimensions"]
 			if analysis["total_time"]:
 				result["estimatedPrintTime"] = analysis["total_time"] * 60
 			if analysis["extrusion_length"]:
-				result["filament"] = dict()
+				result["filament"] = {}
 				for i in range(len(analysis["extrusion_length"])):
 					result["filament"]["tool%d" % i] = {
 						"length": analysis["extrusion_length"][i],

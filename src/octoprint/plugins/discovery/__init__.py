@@ -40,12 +40,10 @@ def __plugin_load__():
 	__plugin_implementation__ = plugin
 
 	global __plugin_helpers__
-	__plugin_helpers__ = dict(
-		ssdp_browse=plugin.ssdp_browse,
-		zeroconf_browse = plugin.zeroconf_browse,
-		zeroconf_register = plugin.zeroconf_register,
-		zeroconf_unregister = plugin.zeroconf_unregister
-	)
+	__plugin_helpers__ = {"ssdp_browse": plugin.ssdp_browse,
+	                      "zeroconf_browse": plugin.zeroconf_browse,
+	                      "zeroconf_register": plugin.zeroconf_register,
+	                      "zeroconf_unregister": plugin.zeroconf_unregister}
 
 class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
                       octoprint.plugin.ShutdownPlugin,
@@ -315,7 +313,10 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 						                                                                                        address,
 						                                                                                        p))
 
-						return dict(name=n, host=address, port=p, txt_record=info.properties)
+						return {"name": n,
+						        "host": address,
+						        "port": p,
+						        "txt_record": info.properties}
 
 					for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
 						result.append(to_result(info, address))
@@ -472,12 +473,10 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		username = self._settings.get(["httpUsername"])
 		password = self._settings.get(["httpPassword"])
 
-		entries = dict(
-			path=path
-		)
+		entries = {"path": path}
 
 		if username and password:
-			entries.update(dict(u=username, p=password))
+			entries.update({"u": username, "p": password})
 
 		return entries
 
@@ -527,7 +526,8 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		self._ssdp_monitor_active = True
 
-		self._ssdp_monitor_thread = threading.Thread(target=self._ssdp_monitor, kwargs=dict(timeout=self._ssdp_notify_timeout))
+		self._ssdp_monitor_thread = threading.Thread(target=self._ssdp_monitor,
+		                                             kwargs={"timeout": self._ssdp_notify_timeout})
 		self._ssdp_monitor_thread.daemon = True
 		self._ssdp_monitor_thread.start()
 

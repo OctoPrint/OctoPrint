@@ -81,7 +81,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   after_settings_init=None, after_logging=None, after_safe_mode=None, after_settings_valid=None,
                   after_event_manager=None, after_connectivity_checker=None,
                   after_plugin_manager=None, after_environment_detector=None):
-	kwargs = dict()
+	kwargs = {}
 
 	logger, recorder = preinit_logging(debug, verbosity, uncaught_logger, uncaught_handler)
 	kwargs["logger"] = logger
@@ -422,8 +422,8 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 	                    plugin_validators=plugin_validators,
 	                    compatibility_ignored_list=compatibility_ignored_list)
 
-	settings_overlays = dict()
-	disabled_from_overlays = dict()
+	settings_overlays = {}
+	disabled_from_overlays = {}
 
 	def handle_plugin_loaded(name, plugin):
 		if plugin.instance and hasattr(plugin.instance, "__plugin_settings_overlay__"):
@@ -602,10 +602,10 @@ def init_connectivity_checker(settings, event_manager):
 	connectivityName = settings.get(["server", "onlineCheck", "name"])
 
 	def on_connectivity_change(old_value, new_value, connection_working=None, resolution_working=None):
-		event_manager.fire(Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value,
-		                                                             new=new_value,
-		                                                             connection=connection_working,
-		                                                             resolution=resolution_working))
+		event_manager.fire(Events.CONNECTIVITY_CHANGED, payload={"old": old_value,
+		                                                         "new": new_value,
+		                                                         "connection": connection_working,
+		                                                         "resolution": resolution_working})
 
 	connectivityChecker = ConnectivityChecker(connectivityInterval,
 	                                          connectivityHost,

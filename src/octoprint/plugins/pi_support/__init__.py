@@ -57,13 +57,13 @@ class ThrottleState(object):
 		if value == 0:
 			return ThrottleState()
 
-		kwargs = dict(undervoltage=_FLAG_UNDERVOLTAGE & value == _FLAG_UNDERVOLTAGE,
-		              freq_capped=_FLAG_FREQ_CAPPED & value == _FLAG_FREQ_CAPPED,
-		              throttled=_FLAG_THROTTLED & value == _FLAG_THROTTLED,
-		              past_undervoltage=_FLAG_PAST_UNDERVOLTAGE & value == _FLAG_PAST_UNDERVOLTAGE,
-		              past_freq_capped=_FLAG_PAST_FREQ_CAPPED & value == _FLAG_PAST_FREQ_CAPPED,
-		              past_throttled=_FLAG_PAST_THROTTLED & value == _FLAG_PAST_THROTTLED,
-		              raw_value=value)
+		kwargs = {"undervoltage": _FLAG_UNDERVOLTAGE & value == _FLAG_UNDERVOLTAGE,
+		          "freq_capped": _FLAG_FREQ_CAPPED & value == _FLAG_FREQ_CAPPED,
+		          "throttled": _FLAG_THROTTLED & value == _FLAG_THROTTLED,
+		          "past_undervoltage": _FLAG_PAST_UNDERVOLTAGE & value == _FLAG_PAST_UNDERVOLTAGE,
+		          "past_freq_capped": _FLAG_PAST_FREQ_CAPPED & value == _FLAG_PAST_FREQ_CAPPED,
+		          "past_throttled": _FLAG_PAST_THROTTLED & value == _FLAG_PAST_THROTTLED,
+		          "raw_value": value}
 		return ThrottleState(**kwargs)
 
 	def __init__(self, **kwargs):
@@ -128,13 +128,13 @@ class ThrottleState(object):
 		       and self._past_throttled == other._past_throttled
 
 	def as_dict(self):
-		return dict(raw_value=self._raw_value,
-		            current_undervoltage=self.current_undervoltage,
-		            past_undervoltage=self.past_undervoltage,
-		            current_overheat=self.current_overheat,
-		            past_overheat=self.past_overheat,
-		            current_issue=self.current_issue,
-		            past_issue=self.past_issue)
+		return {"raw_value": self._raw_value,
+		        "current_undervoltage": self.current_undervoltage,
+		        "past_undervoltage": self.past_undervoltage,
+		        "current_overheat": self.current_overheat,
+		        "past_overheat": self.past_overheat,
+		        "current_issue": self.current_issue,
+		        "past_issue": self.past_issue}
 
 
 _proc_dt_model = None
@@ -195,21 +195,19 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	# Additional permissions hook
 
 	def get_additional_permissions(self):
-		return [
-			dict(key="STATUS",
-			     name="Status",
-			     description=gettext("Allows to check for the Pi's throttling status and environment info"),
-			     roles=["check"],
-			     default_groups=[USER_GROUP])
-		]
+		return [{"key": "STATUS",
+		         "name": "Status",
+		         "description": gettext("Allows to check for the Pi's throttling status and environment info"),
+		         "roles": ["check"],
+		         "default_groups": [USER_GROUP]}]
 
 	#~~ EnvironmentDetectionPlugin
 
 	def get_additional_environment(self):
-		result = dict(model=get_proc_dt_model())
+		result = {"model": get_proc_dt_model()}
 
 		if is_octopi():
-			result.update(dict(octopi_version=get_octopi_version()))
+			result.update({"octopi_version": get_octopi_version()})
 
 		return result
 
@@ -218,26 +216,29 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	def on_api_get(self, request):
 		if not Permissions.PLUGIN_PI_SUPPORT_STATUS.can():
 			return flask.abort(403)
-		result = dict(throttle_state=self._throttle_state.as_dict())
+		result = {"throttle_state": self._throttle_state.as_dict()}
 		result.update(self.get_additional_environment())
 		return flask.jsonify(**result)
 
 	#~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(
-			js=["js/pi_support.js"],
-			clientjs=["clientjs/pi_support.js"],
-			css=["css/pi_support.css"]
-		)
+		return {"js": ["js/pi_support.js"],
+		        "clientjs": ["clientjs/pi_support.js"],
+		        "css": ["css/pi_support.css"]}
 
 	#~~ TemplatePlugin
 
 	def get_template_configs(self):
-		configs = [dict(type="settings", name=gettext("Pi Support"), template="pi_support_settings.jinja2", custom_bindings=False)]
+		configs = [{"type": "settings",
+		            "name": gettext("Pi Support"),
+		            "template": "pi_support_settings.jinja2",
+		            "custom_bindings": False}]
 
 		if is_octopi():
-			configs.append(dict(type="about", name="About OctoPi", template="pi_support_about_octopi.jinja2"))
+			configs.append({"type": "about",
+			                "name": "About OctoPi",
+			                "template": "pi_support_about_octopi.jinja2"})
 
 		return configs
 
@@ -257,11 +258,11 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 	#~~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(vcgencmd_throttle_check_enabled=True,
-		            vcgencmd_throttle_check_command=_VCGENCMD_THROTTLE)
+		return {"vcgencmd_throttle_check_enabled": True,
+		        "vcgencmd_throttle_check_command": _VCGENCMD_THROTTLE}
 
 	def get_settings_restricted_paths(self):
-		return dict(admin=[["vcgencmd_throttle_check_enabled"], ["vcgencmd_throttle_check_command"]])
+		return {"admin": [["vcgencmd_throttle_check_enabled"], ["vcgencmd_throttle_check_command"]]}
 
 	#~~ Helpers
 
@@ -318,8 +319,8 @@ class PiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 			self._logger.warning(message)
 
-		self._plugin_manager.send_plugin_message(self._identifier, dict(type="throttle_state",
-		                                                                state=self._throttle_state.as_dict()))
+		self._plugin_manager.send_plugin_message(self._identifier, {"type": "throttle_state",
+		                                                            "state": self._throttle_state.as_dict()})
 
 		# noinspection PyUnresolvedReferences
 		self._event_bus.fire(octoprint.events.Events.PLUGIN_PI_SUPPORT_THROTTLE_STATE, self._throttle_state.as_dict())
@@ -360,4 +361,4 @@ def __plugin_load__():
 	}
 
 	global __plugin_helpers__
-	__plugin_helpers__ = dict(get_throttled=plugin.get_throttle_state)
+	__plugin_helpers__ = {"get_throttled": plugin.get_throttle_state}

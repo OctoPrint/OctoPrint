@@ -56,8 +56,8 @@ def fix_websocket_check_origin():
 	header case-insensitively, as defined in RFC6454, Section 4, item 5.
 	"""
 
-	scheme_translation = dict(wss='https',
-	                          ws='http')
+	scheme_translation = {"wss": 'https',
+	                      "ws": 'http'}
 
 	def patched_check_origin(self, origin):
 		def get_check_tuple(urlstring):
@@ -212,7 +212,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 
 	def initialize(self, fallback, file_prefix="tmp", file_suffix="", path=None, suffixes=None):
 		if not suffixes:
-			suffixes = dict()
+			suffixes = {}
 
 		self._fallback = fallback
 		self._file_prefix = file_prefix
@@ -228,7 +228,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 		self._multipart_boundary = None
 
 		# Parts, files and values will be stored here
-		self._parts = dict()
+		self._parts = {}
 		self._files = []
 
 		# Part currently being processed
@@ -433,14 +433,14 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 			# this is a file
 			import tempfile
 			handle = tempfile.NamedTemporaryFile(mode="wb", prefix=self._file_prefix, suffix=self._file_suffix, dir=self._path, delete=False)
-			return dict(name=tornado.escape.utf8(name),
-						filename=tornado.escape.utf8(filename),
-						path=tornado.escape.utf8(handle.name),
-						content_type=tornado.escape.utf8(content_type),
-						file=handle)
+			return {"name": tornado.escape.utf8(name),
+			        "filename": tornado.escape.utf8(filename),
+			        "path": tornado.escape.utf8(handle.name),
+			        "content_type": tornado.escape.utf8(content_type),
+			        "file": handle}
 
 		else:
-			return dict(name=tornado.escape.utf8(name), content_type=tornado.escape.utf8(content_type), data=b"")
+			return {"name": tornado.escape.utf8(name), "content_type": tornado.escape.utf8(content_type), "data": b""}
 
 	def _on_part_data(self, part, data):
 		"""
@@ -481,11 +481,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin,
 				if not "path" in part:
 					continue
 
-				parameters = dict(
-					name=part["filename"],
-					path=part["path"],
-					size=str(os.stat(part["path"]).st_size)
-				)
+				parameters = {"name": part["filename"],
+				              "path": part["path"],
+				              "size": str(os.stat(part["path"]).st_size)}
 				if "content_type" in part:
 					parameters["content_type"] = part["content_type"]
 
@@ -621,9 +619,9 @@ class WsgiInputContainer(object):
 		self.wsgi_application = wsgi_application
 
 		if headers is None:
-			headers = dict()
+			headers = {}
 		if forced_headers is None:
-			forced_headers = dict()
+			forced_headers = {}
 		if removed_headers is None:
 			removed_headers = []
 
@@ -783,8 +781,8 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 		tornado.httpserver.HTTPServer.initialize(self, *args, **kwargs)
 
-		additional = dict(default_max_body_size=default_max_body_size,
-		                  max_body_sizes=max_body_sizes)
+		additional = {"default_max_body_size": default_max_body_size,
+		              "max_body_sizes": max_body_sizes}
 		self.conn_params = CustomHTTP1ConnectionParameters.from_stock_params(self.conn_params, **additional)
 
 
@@ -1269,23 +1267,23 @@ class DeprecatedEndpointHandler(CorsSupportMixin,
 
 class GlobalHeaderTransform(tornado.web.OutputTransform):
 
-	HEADERS = dict()
-	FORCED_HEADERS = dict()
+	HEADERS = {}
+	FORCED_HEADERS = {}
 	REMOVED_HEADERS = []
 
 	@classmethod
 	def for_headers(cls, name, headers=None, forced_headers=None, removed_headers=None):
 		if headers is None:
-			headers = dict()
+			headers = {}
 		if forced_headers is None:
-			forced_headers = dict()
+			forced_headers = {}
 		if removed_headers is None:
 			removed_headers = []
 
 		return type(octoprint.util.to_native_str(name), (GlobalHeaderTransform,),
-				    dict(HEADERS=headers,
-						 FORCED_HEADERS=forced_headers,
-						 REMOVED_HEADERS=removed_headers))
+		            {"HEADERS": headers,
+		             "FORCED_HEADERS": forced_headers,
+		             "REMOVED_HEADERS": removed_headers})
 
 	def __init__(self, request):
 		tornado.web.OutputTransform.__init__(self, request)

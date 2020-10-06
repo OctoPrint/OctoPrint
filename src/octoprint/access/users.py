@@ -35,8 +35,8 @@ class UserManager(GroupChangeListener, object):
 		self._group_manager.register_listener(self)
 
 		self._logger = logging.getLogger(__name__)
-		self._session_users_by_session = dict()
-		self._sessionids_by_userid = dict()
+		self._session_users_by_session = {}
+		self._sessionids_by_userid = {}
 		self._enabled = True
 
 		if settings is None:
@@ -103,7 +103,7 @@ class UserManager(GroupChangeListener, object):
 				listener.on_user_logged_in(user)
 			except Exception:
 				self._logger.exception("Error in on_user_logged_in on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 		self._logger.info("Logged in user: {}".format(user.get_id()))
 
@@ -139,7 +139,7 @@ class UserManager(GroupChangeListener, object):
 				listener.on_user_logged_out(user, stale=stale)
 			except Exception:
 				self._logger.exception("Error in on_user_logged_out on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 		self._logger.info("Logged out user: {}".format(user.get_id()))
 
@@ -224,7 +224,7 @@ class UserManager(GroupChangeListener, object):
 		return None
 
 	def get_all_user_settings(self, username):
-		return dict()
+		return {}
 
 	def change_user_setting(self, username, key, value):
 		pass
@@ -290,7 +290,7 @@ class UserManager(GroupChangeListener, object):
 					listener.on_user_modified(user)
 			except Exception:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 	def on_group_subgroups_changed(self, group, added=None, removed=None):
 		users = self.find_sessions_for(lambda u: group in u.groups)
@@ -301,7 +301,7 @@ class UserManager(GroupChangeListener, object):
 					listener.on_user_modified(user)
 			except Exception:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 	def _trigger_on_user_modified(self, user):
 		if isinstance(user, basestring):
@@ -331,7 +331,7 @@ class UserManager(GroupChangeListener, object):
 					listener.on_user_modified(user)
 			except Exception:
 				self._logger.exception("Error in on_user_modified on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 	def _trigger_on_user_removed(self, username):
 		for listener in self._login_status_listeners:
@@ -339,7 +339,7 @@ class UserManager(GroupChangeListener, object):
 				listener.on_user_removed(username)
 			except Exception:
 				self._logger.exception("Error in on_user_removed on {!r}".format(listener),
-				                       extra=dict(callback=fqcn(listener)))
+				                       extra={"callback": fqcn(listener)})
 
 	#~~ Deprecated methods follow
 
@@ -505,7 +505,7 @@ class FilebasedUserManager(UserManager):
 					apikey = None
 					if "apikey" in attributes:
 						apikey = attributes["apikey"]
-					settings = dict()
+					settings = {}
 					if "settings" in attributes:
 						settings = attributes["settings"]
 
@@ -983,7 +983,7 @@ class User(UserMixin):
 		self._apikey = apikey
 
 		if settings is None:
-			settings = dict()
+			settings = {}
 
 		self._settings = settings
 
@@ -1056,10 +1056,10 @@ class User(UserMixin):
 		s = self._settings
 		for p in path[:-1]:
 			if p not in s:
-				s[p] = dict()
+				s[p] = {}
 
 			if not isinstance(s[p], dict):
-				s[p] = dict()
+				s[p] = {}
 
 			s = s[p]
 
@@ -1265,7 +1265,7 @@ class SessionUser(wrapt.ObjectProxy):
 
 	def as_dict(self):
 		result = self.__wrapped__.as_dict()
-		result.update(dict(session=self.session))
+		result.update({"session": self.session})
 		return result
 
 	def __repr__(self):

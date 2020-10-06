@@ -438,7 +438,7 @@ def printerCommand():
 	elif not ("command" in data or "commands" in data or "script" in data):
 		return make_response("Need one of 'command', 'commands' or 'script'", 400)
 
-	parameters = dict()
+	parameters = {}
 	if "parameters" in data:
 		parameters = data["parameters"]
 
@@ -463,7 +463,7 @@ def printerCommand():
 
 	elif "script" in data:
 		script_name = data["script"]
-		context = dict(parameters=parameters)
+		context = {"parameters": parameters}
 		if "context" in data:
 			context["context"] = data["context"]
 

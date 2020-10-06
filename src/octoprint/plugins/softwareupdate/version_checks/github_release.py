@@ -257,11 +257,9 @@ def get_latest(target, check, custom_compare=None, online=True):
 	if user is None or repo is None or current is None:
 		raise ConfigurationInvalid("Update configuration for {} of type github_release needs all of user, repo and current set and not None".format(target))
 
-	information =dict(
-		local=dict(name=current, value=current),
-		remote=dict(name="?", value="?", release_notes=None),
-		needs_online=not check.get("offline", False)
-	)
+	information ={"local": {"name": current, "value": current},
+	              "remote": {"name": "?", "value": "?", "release_notes": None},
+	              "needs_online": not check.get("offline", False)}
 	if not online and information["needs_online"]:
 		return information, True
 
@@ -294,7 +292,7 @@ def get_latest(target, check, custom_compare=None, online=True):
 		else:
 			remote_name = "-"
 
-	information["remote"] = dict(name=remote_name, value=remote_tag, release_notes=release_notes)
+	information["remote"] = {"name": remote_name, "value": remote_tag, "release_notes": release_notes}
 
 	logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_tag))
 

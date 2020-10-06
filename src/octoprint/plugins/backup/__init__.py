@@ -78,12 +78,12 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="ACCESS",
-			     name="Backup access",
-			     description=gettext("Allows access to backups and restores"),
-			     roles=["access"],
-			     dangerous=True,
-			     default_groups=[ADMIN_GROUP])
+			{"key": "ACCESS",
+			 "name": "Backup access",
+			 "description": gettext("Allows access to backups and restores"),
+			 "roles": ["access"],
+			 "dangerous": True,
+			 "default_groups": [ADMIN_GROUP]}
 		]
 
 	# Socket emit hook
@@ -110,16 +110,16 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/backup.js"],
-		            clientjs=["clientjs/backup.js"],
-		            css=["css/backup.css"],
-		            less=["less/backup.less"])
+		return {"js": ["js/backup.js"],
+		        "clientjs": ["clientjs/backup.js"],
+		        "css": ["css/backup.css"],
+		        "less": ["less/backup.less"]}
 
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="settings", name=gettext("Backup & Restore")),
-		        dict(type="wizard", name=gettext("Restore Backup?"))]
+		return [{"type": "settings", "name": gettext("Backup & Restore")},
+		        {"type": "wizard", "name": gettext("Restore Backup?")}]
 
 	##~~ BlueprintPlugin
 
@@ -175,19 +175,19 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			with self._in_progress_lock:
 				self._in_progress.append(name)
-				self._send_client_message("backup_started", payload=dict(name=name))
+				self._send_client_message("backup_started", payload={"name": name})
 
 		def on_backup_done(name, final_path, exclude):
 			with self._in_progress_lock:
 				self._in_progress.remove(name)
-				self._send_client_message("backup_done", payload=dict(name=name))
+				self._send_client_message("backup_done", payload={"name": name})
 
 			self._logger.info("... done creating backup zip.")
 
 			self._event_bus.fire(Events.PLUGIN_BACKUP_BACKUP_CREATED,
-			                     dict(name=name,
-			                          path=final_path,
-			                          excludes=exclude))
+			                     {"name": name,
+			                      "path": final_path,
+			                      "excludes": exclude})
 
 		def on_backup_error(name, exc_info):
 			with self._in_progress_lock:
@@ -197,20 +197,20 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					# we'll ignore that
 					pass
 
-			self._send_client_message("backup_error", payload=dict(name=name,
-			                                                       error="{}".format(exc_info[1])))
+			self._send_client_message("backup_error", payload={"name": name,
+			                                                   "error": "{}".format(exc_info[1])})
 			self._logger.error("Error while creating backup zip", exc_info=exc_info)
 
 		thread = threading.Thread(target=self._create_backup,
 		                          args=(backup_file,),
-		                          kwargs=dict(exclude=exclude,
-		                                      settings=self._settings,
-		                                      plugin_manager=self._plugin_manager,
-		                                      logger=self._logger,
-		                                      datafolder=self.get_plugin_data_folder(),
-		                                      on_backup_start=on_backup_start,
-		                                      on_backup_done=on_backup_done,
-		                                      on_backup_error=on_backup_error))
+		                          kwargs={"exclude": exclude,
+		                                  "settings": self._settings,
+		                                  "plugin_manager": self._plugin_manager,
+		                                  "logger": self._logger,
+		                                  "datafolder": self.get_plugin_data_folder(),
+		                                  "on_backup_start": on_backup_start,
+		                                  "on_backup_done": on_backup_done,
+		                                  "on_backup_error": on_backup_error})
 		thread.daemon = True
 		thread.start()
 
@@ -268,7 +268,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 			def on_log(line):
 				self._logger.info(line)
-				self._send_client_message("logline", dict(line=line, type="stdout"))
+				self._send_client_message("logline", {"line": line, "type": "stdout"})
 
 			for plugin in plugins:
 				octoprint_compatible = is_octoprint_compatible(*plugin["compatibility"]["octoprint"])
@@ -284,34 +284,34 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					elif not os_compatible:
 						self._logger.warning("Cannot install plugin {}, it is incompatible to the underlying "
 						                     "operating system".format(plugin["id"]))
-					self._send_client_message("plugin_incompatible", dict(plugin=plugin["id"],
-					                                                      octoprint_compatible=octoprint_compatible,
-					                                                      os_compatible=os_compatible))
+					self._send_client_message("plugin_incompatible", {"plugin": plugin["id"],
+					                                                  "octoprint_compatible": octoprint_compatible,
+					                                                  "os_compatible": os_compatible})
 					continue
 
 				self._logger.info("Installing plugin {}".format(plugin["id"]))
-				self._send_client_message("installing_plugin", dict(plugin=plugin["id"]))
+				self._send_client_message("installing_plugin", {"plugin": plugin["id"]})
 				self.__class__._install_plugin(plugin,
 				                               force_user=force_user,
 				                               pip_args=pip_args,
 				                               on_log=on_log)
 
 		def on_report_unknown_plugins(plugins):
-			self._send_client_message("unknown_plugins", payload=dict(plugins=plugins))
+			self._send_client_message("unknown_plugins", payload={"plugins": plugins})
 
 		def on_log_progress(line):
 			self._logger.info(line)
-			self._send_client_message("logline", payload=dict(line=line, stream="stdout"))
+			self._send_client_message("logline", payload={"line": line, "stream": "stdout"})
 
 		def on_log_error(line, exc_info=None):
 			self._logger.error(line, exc_info=exc_info)
-			self._send_client_message("logline", payload=dict(line=line, stream="stderr"))
+			self._send_client_message("logline", payload={"line": line, "stream": "stderr"})
 
 			if exc_info is not None:
 				exc_type, exc_value, exc_tb = exc_info
 				output = traceback.format_exception(exc_type, exc_value, exc_tb)
 				for line in output:
-					self._send_client_message("logline", payload=dict(line=line.rstrip(), stream="stderr"))
+					self._send_client_message("logline", payload={"line": line.rstrip(), "stream": "stderr"})
 
 		def on_restore_start(path):
 			self._send_client_message("restore_started")
@@ -333,17 +333,17 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		# noinspection PyTypeChecker
 		thread = threading.Thread(target=self._restore_backup,
 		                          args=(path,),
-		                          kwargs=dict(settings=self._settings,
-		                                      plugin_manager=self._plugin_manager,
-		                                      datafolder=self.get_plugin_data_folder(),
-		                                      on_install_plugins=on_install_plugins,
-		                                      on_report_unknown_plugins=on_report_unknown_plugins,
-		                                      on_invalid_backup=on_invalid_backup,
-		                                      on_log_progress=on_log_progress,
-		                                      on_log_error=on_log_error,
-		                                      on_restore_start=on_restore_start,
-		                                      on_restore_done=on_restore_done,
-		                                      on_restore_failed=on_restore_failed))
+		                          kwargs={"settings": self._settings,
+		                                  "plugin_manager": self._plugin_manager,
+		                                  "datafolder": self.get_plugin_data_folder(),
+		                                  "on_install_plugins": on_install_plugins,
+		                                  "on_report_unknown_plugins": on_report_unknown_plugins,
+		                                  "on_invalid_backup": on_invalid_backup,
+		                                  "on_log_progress": on_log_progress,
+		                                  "on_log_error": on_log_error,
+		                                  "on_restore_start": on_restore_start,
+		                                  "on_restore_done": on_restore_done,
+		                                  "on_restore_failed": on_restore_failed})
 		thread.daemon = True
 		thread.start()
 
@@ -358,7 +358,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		return self._settings.global_get(["server", "firstRun"]) and is_os_compatible(["!windows"])
 
 	def get_wizard_details(self):
-		return dict(required=self.is_wizard_required())
+		return {"required": self.is_wizard_required()}
 
 	##~~ tornado hook
 
@@ -370,11 +370,11 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		from octoprint.server.util.flask import admin_validator
 
 		return [
-			(r"/download/(.*)", LargeResponseHandler, dict(path=self.get_plugin_data_folder(),
-			                                               as_attachment=True,
-			                                               path_validation=path_validation_factory(lambda path: not is_hidden_path(path),
-			                                                                                       status_code=404),
-			                                               access_validation=access_validation_factory(app, admin_validator)))
+			(r"/download/(.*)", LargeResponseHandler, {"path": self.get_plugin_data_folder(),
+			                                           "as_attachment": True,
+			                                           "path_validation": path_validation_factory(lambda path: not is_hidden_path(path),
+			                                                                                      status_code=404),
+			                                           "access_validation": access_validation_factory(app, admin_validator)})
 		]
 
 	def bodysize_hook(self, current_max_body_sizes, *args, **kwargs):
@@ -436,7 +436,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			# register plugin manager plugin setting overlays
 			plugin_info = plugin_manager.get_plugin_info("pluginmanager")
 			if plugin_info and plugin_info.implementation:
-				default_settings_overlay = dict(plugins=dict())
+				default_settings_overlay = {"plugins": {}}
 				default_settings_overlay["plugins"]["pluginmanager"] = plugin_info.implementation.get_settings_defaults()
 				settings.add_overlay(default_settings_overlay, at_end=True)
 
@@ -534,10 +534,10 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			if not entry.name.endswith(".zip"):
 				continue
 
-			backups.append(dict(name=entry.name,
-			                    date=entry.stat().st_mtime,
-			                    size=entry.stat().st_size,
-			                    url=flask.url_for("index") + "plugin/backup/download/" + entry.name))
+			backups.append({"name": entry.name,
+			                "date": entry.stat().st_mtime,
+			                "size": entry.stat().st_size,
+			                "url": flask.url_for("index") + "plugin/backup/download/" + entry.name})
 		return backups
 
 	def _get_unknown_plugins(self):
@@ -617,7 +617,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 			r.raise_for_status()
 		except Exception:
 			logger.exception("Error while fetching the plugin repository data from {}".format(url))
-			return dict()
+			return {}
 
 		from octoprint.plugins.pluginmanager import map_repository_entry
 		return dict((plugin["id"], plugin) for plugin in map(map_repository_entry, r.json()))
@@ -702,7 +702,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 				except Exception:
 					logger.exception("Error while retrieving additional excludes "
 					                 "from plugin {name}".format(**locals()),
-					                 extra=dict(plugin=plugin))
+					                 extra={"plugin": plugin})
 
 			configfile = settings._configfile
 			basedir = settings._basedir
@@ -747,8 +747,8 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						zip.write(source, arcname=target)
 
 				# add metadata
-				metadata = dict(version=get_octoprint_version_string(),
-				                excludes=exclude)
+				metadata = {"version": get_octoprint_version_string(),
+				            "excludes": exclude}
 				zip.writestr("metadata.json", json.dumps(metadata))
 
 				# backup current config file
@@ -774,9 +774,9 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 						# ignore anything bundled or from the plugins folder we already include in the backup
 						continue
 
-					plugins.append(dict(key=plugin.key,
-					                    name=plugin.name,
-					                    url=plugin.url))
+					plugins.append({"key": plugin.key,
+					                "name": plugin.name,
+					                "url": plugin.url})
 
 				if len(plugins):
 					zip.writestr("plugin_list.json", json.dumps(plugins))
@@ -822,7 +822,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 		cls._clean_dir_backup(basedir,
 		                       on_log_progress=on_log_progress)
 
-		plugin_repo = dict()
+		plugin_repo = {}
 		repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
 		if repo_url:
 			plugin_repo = cls._get_plugin_repository_data(repo_url)
@@ -892,7 +892,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 					with io.open(configfile, "rt", encoding="utf-8") as f:
 						configdata = yaml.safe_load(f)
 
-					if configdata.get("accessControl", dict()).get("enabled", True):
+					if configdata.get("accessControl", {}).get("enabled", True):
 						userfile = os.path.join(temp, "basedir", "users.yaml")
 						if not os.path.exists(userfile):
 							if callable(on_invalid_backup):
@@ -1006,7 +1006,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 		# restart server
 		if not restart_command:
-			restart_command = configdata.get("server", dict()).get("commands", dict()).get("serverRestartCommand")
+			restart_command = configdata.get("server", {}).get("commands", {}).get("serverRestartCommand")
 
 		if restart_command:
 			import sarge
@@ -1042,7 +1042,7 @@ class BackupPlugin(octoprint.plugin.SettingsPlugin,
 
 	def _send_client_message(self, message, payload=None):
 		if payload is None:
-			payload = dict()
+			payload = {}
 		payload["type"] = message
 		self._plugin_manager.send_plugin_message(self._identifier, payload)
 

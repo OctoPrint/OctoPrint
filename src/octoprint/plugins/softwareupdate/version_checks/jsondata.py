@@ -29,8 +29,8 @@ def get_latest(target, check, online=True):
 
 	latest = data.get("version")
 
-	information = dict(local=dict(name=current if current else "-", value=current),
-	                   remote=dict(name=latest if latest else "-", value=latest))
+	information = {"local": {"name": current if current else "-", "value": current},
+	               "remote": {"name": latest if latest else "-", "value": latest}}
 
 	logger.debug("Target: {}, local: {}, remote: {}".format(target, information["local"]["name"], information["remote"]["name"]))
 

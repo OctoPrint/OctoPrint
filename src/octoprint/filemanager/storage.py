@@ -493,9 +493,9 @@ class LocalFileStorage(StorageInterface):
 
 		import threading
 		self._metadata_lock_mutex = threading.RLock()
-		self._metadata_locks = dict()
+		self._metadata_locks = {}
 		self._persisted_metadata_lock_mutex = threading.RLock()
-		self._persisted_metadata_locks = dict()
+		self._persisted_metadata_locks = {}
 
 		self._metadata_cache = pylru.lrucache(100)
 		self._filelist_cache = {}
@@ -553,7 +553,7 @@ class LocalFileStorage(StorageInterface):
 
 		metadata = self._get_metadata(path)
 		if not metadata:
-			metadata = dict()
+			metadata = {}
 		for entry in scandir(path):
 			if is_hidden_path(entry.name):
 				continue
@@ -657,7 +657,7 @@ class LocalFileStorage(StorageInterface):
 			os.mkdir(folder_path)
 
 		if display_name != name:
-			metadata = self._get_metadata_entry(path, name, default=dict())
+			metadata = self._get_metadata_entry(path, name, default={})
 			metadata["display"] = display_name
 			self._update_metadata_entry(path, name, metadata)
 
@@ -713,18 +713,14 @@ class LocalFileStorage(StorageInterface):
 		if (must_not_equal or source_display == destination_canon_name) and source_fullpath == destination_fullpath:
 			raise StorageError("Source {} and destination {} are the same folder".format(source_path, destination_path), code=StorageError.SOURCE_EQUALS_DESTINATION)
 
-		source_data = dict(
-			path=source_path,
-			name=source_name,
-			display=source_display,
-			fullpath=source_fullpath,
-		)
-		destination_data = dict(
-			path=destination_path,
-			name=destination_name,
-			display=destination_canon_name,
-			fullpath=destination_fullpath,
-		)
+		source_data = {"path": source_path,
+		               "name": source_name,
+		               "display": source_display,
+		               "fullpath": source_fullpath}
+		destination_data = {"path": destination_path,
+		                    "name": destination_name,
+		                    "display": destination_canon_name,
+		                    "fullpath": destination_fullpath}
 		return source_data, destination_data
 
 	def _set_display_metadata(self, destination_data, source_data=None):
@@ -736,7 +732,7 @@ class LocalFileStorage(StorageInterface):
 			display = None
 
 		destination_meta = self._get_metadata_entry(destination_data["path"], destination_data["name"],
-		                                            default=dict())
+		                                            default={})
 		if display:
 			destination_meta["display"] = display
 			self._update_metadata_entry(destination_data["path"], destination_data["name"], destination_meta)
@@ -802,11 +798,11 @@ class LocalFileStorage(StorageInterface):
 
 		# save the file's hash to the metadata of the folder
 		file_hash = self._create_hash(file_path)
-		metadata = self._get_metadata_entry(path, name, default=dict())
+		metadata = self._get_metadata_entry(path, name, default={})
 		metadata_dirty = False
 		if not "hash" in metadata or metadata["hash"] != file_hash:
 			# hash changed -> throw away old metadata
-			metadata = dict(hash=file_hash)
+			metadata = {"hash": file_hash}
 			metadata_dirty = True
 
 		if not "display" in metadata and display_name != name:
@@ -822,7 +818,9 @@ class LocalFileStorage(StorageInterface):
 			links = []
 
 		if printer_profile is not None:
-			links.append(("printerprofile", dict(id=printer_profile["id"], name=printer_profile["name"])))
+			links.append(("printerprofile",
+			              {"id": printer_profile["id"],
+			               "name": printer_profile["name"]}))
 
 		self._add_links(name, path, links)
 
@@ -1147,8 +1145,8 @@ class LocalFileStorage(StorageInterface):
 			return
 
 		# collect data from history
-		former_print_times = dict()
-		last_print = dict()
+		former_print_times = {}
+		last_print = {}
 
 
 		for history_entry in metadata[name]["history"]:
@@ -1174,7 +1172,7 @@ class LocalFileStorage(StorageInterface):
 				last_print[printer_profile] = history_entry
 
 		# calculate stats
-		statistics = dict(averagePrintTime=dict(), lastPrintTime=dict())
+		statistics = {"averagePrintTime": {}, "lastPrintTime": {}}
 
 		for printer_profile in former_print_times:
 			if not former_print_times[printer_profile]:
@@ -1241,10 +1239,8 @@ class LocalFileStorage(StorageInterface):
 				else:
 					hash = self._create_hash(ref_path)
 					if not data["name"] in metadata:
-						metadata[data["name"]] = dict(
-							hash=hash,
-							links=[]
-						)
+						metadata[data["name"]] = {"hash": hash,
+						                          "links": []}
 					else:
 						metadata[data["name"]]["hash"] = hash
 
@@ -1256,22 +1252,18 @@ class LocalFileStorage(StorageInterface):
 					metadata[data["name"]]["links"] = []
 
 				# add reverse link to link target file
-				metadata[data["name"]]["links"].append(
-					dict(rel="machinecode" if rel == "model" else "model", name=name, hash=metadata[name]["hash"])
-				)
+				metadata[data["name"]]["links"].append({"rel": "machinecode" if rel == "model" else "model",
+					                                    "name": name,
+					                                    "hash": metadata[name]["hash"]})
 				metadata_dirty = True
 
-				link_dict = dict(
-					rel=rel,
-					name=data["name"],
-					hash=hash
-				)
+				link_dict = {"rel": rel,
+				             "name": data["name"],
+				             "hash": hash}
 
 			elif rel == "web" and "href" in data:
-				link_dict = dict(
-					rel=rel,
-					href=data["href"]
-				)
+				link_dict = {"rel": rel,
+				             "href": data["href"]}
 				if "retrieved" in data:
 					link_dict["retrieved"] = data["retrieved"]
 
@@ -1351,9 +1343,9 @@ class LocalFileStorage(StorageInterface):
 
 				metadata = self._get_metadata(path)
 				if not metadata:
-					metadata = dict()
+					metadata = {}
 
-				result = dict()
+				result = {}
 
 				for entry in scandir(path):
 					if is_hidden_path(entry.name):
@@ -1411,7 +1403,7 @@ class LocalFileStorage(StorageInterface):
 								                                          metadata=metadata)
 								metadata_dirty = True
 
-							extended_entry_data = dict()
+							extended_entry_data = {}
 							extended_entry_data.update(entry_metadata)
 							extended_entry_data["name"] = entry_name
 							extended_entry_data["display"] = entry_metadata.get("display", entry_name)
@@ -1444,15 +1436,13 @@ class LocalFileStorage(StorageInterface):
 								                                          metadata=metadata)
 								metadata_dirty = True
 							else:
-								entry_metadata = dict()
+								entry_metadata = {}
 
-							entry_data = dict(
-								name=entry_name,
-								display=entry_metadata.get("display", entry_name),
-								path=path_in_location,
-								type="folder",
-								typePath=["folder"]
-							)
+							entry_data = {"name": entry_name,
+							              "display": entry_metadata.get("display", entry_name),
+							              "path": path_in_location,
+							              "type": "folder",
+							              "typePath": ["folder"]}
 
 							result[entry_name] = entry_data
 					except Exception:
@@ -1470,7 +1460,7 @@ class LocalFileStorage(StorageInterface):
 
 	def _add_basic_metadata(self, path, entry, display_name=None, additional_metadata=None, save=True, metadata=None):
 		if additional_metadata is None:
-			additional_metadata = dict()
+			additional_metadata = {}
 
 		if metadata is None:
 			metadata = self._get_metadata(path)
@@ -1478,17 +1468,15 @@ class LocalFileStorage(StorageInterface):
 		entry_path = os.path.join(path, entry)
 
 		if os.path.isfile(entry_path):
-			entry_data = dict(
-				hash=self._create_hash(os.path.join(path, entry)),
-				links=[],
-				notes=[]
-			)
+			entry_data = {"hash": self._create_hash(os.path.join(path, entry)),
+			              "links": [],
+			              "notes": []}
 			if path == self.basefolder and self._old_metadata is not None and entry in self._old_metadata and "gcodeAnalysis" in self._old_metadata[entry]:
 				# if there is still old metadata available and that contains an analysis for this file, use it!
 				entry_data["analysis"] = self._old_metadata[entry]["gcodeAnalysis"]
 
 		elif os.path.isdir(entry_path):
-			entry_data = dict()
+			entry_data = {}
 
 		else:
 			return
@@ -1551,7 +1539,7 @@ class LocalFileStorage(StorageInterface):
 
 	def _copy_metadata_entry(self, source_path, source_name, destination_path, destination_name, delete_source=False, updates=None):
 		with self._get_metadata_lock(source_path):
-			source_data = self._get_metadata_entry(source_path, source_name, default=dict())
+			source_data = self._get_metadata_entry(source_path, source_name, default={})
 			if not source_data:
 				return
 
@@ -1606,7 +1594,7 @@ class LocalFileStorage(StorageInterface):
 					self._metadata_cache[path] = metadata
 			return metadata
 		else:
-			return dict()
+			return {}
 
 	def _save_metadata(self, path, metadata):
 		import json
@@ -1640,7 +1628,7 @@ class LocalFileStorage(StorageInterface):
 	@staticmethod
 	def _copied_metadata(metadata, name):
 		metadata = copy.copy(metadata)
-		metadata[name] = copy.deepcopy(metadata.get(name, dict()))
+		metadata[name] = copy.deepcopy(metadata.get(name, {}))
 		return metadata
 
 	def _migrate_metadata(self, path):

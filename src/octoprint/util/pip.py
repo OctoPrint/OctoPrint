@@ -20,7 +20,7 @@ from .commandline import CommandlineCaller, clean_ansi
 from octoprint.util import to_unicode, to_native_str
 from octoprint.util.platform import CLOSE_FDS
 
-_cache = dict(version=dict(), setup=dict())
+_cache = {"version": {}, "setup": {}}
 _cache_mutex = threading.RLock()
 
 class UnknownPip(Exception):
@@ -372,12 +372,12 @@ class PipCaller(CommandlineCaller):
 					          stdout=sarge.Capture(),
 					          stderr=sarge.Capture(),
 					          cwd=testballoon,
-					          env=dict(TESTBALLOON_OUTPUT=to_native_str(testballoon_output_file)))
+					          env={"TESTBALLOON_OUTPUT": to_native_str(testballoon_output_file)})
 				except Exception:
 					self._logger.exception("Error while trying to install testballoon to figure out pip setup")
 					return False, False, False, None
 
-				data = dict()
+				data = {}
 				with io.open(testballoon_output_file, 'rt', encoding='utf-8') as f:
 					for line in f:
 						key, value = line.split("=", 2)

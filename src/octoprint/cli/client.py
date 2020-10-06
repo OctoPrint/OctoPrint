@@ -68,7 +68,7 @@ def client_commands():
 	pass
 
 
-@client_commands.group("client", context_settings=dict(ignore_unknown_options=True))
+@client_commands.group("client", context_settings={"ignore_unknown_options": True})
 @client_options
 @click.pass_context
 def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
@@ -175,7 +175,7 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
 @click.pass_context
 def command(ctx, path, command, str_params, int_params, float_params, bool_params, timeout):
 	"""Sends a JSON command to the specified server path."""
-	data = dict()
+	data = {}
 	params = str_params + int_params + float_params + bool_params
 	for param in params:
 		data[param[0]] = param[1]
@@ -193,7 +193,7 @@ def command(ctx, path, command, str_params, int_params, float_params, bool_param
 @click.pass_context
 def upload(ctx, path, file_path, params, file_name, content_type, timeout):
 	"""Uploads the specified file to the specified server path."""
-	data = dict()
+	data = {}
 	for param in params:
 		data[param[0]] = param[1]
 

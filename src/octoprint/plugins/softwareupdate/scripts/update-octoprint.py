@@ -68,10 +68,10 @@ def _execute(command, **kwargs):
 		joined_command = command
 	_log_call(joined_command)
 
-	kwargs.update(dict(close_fds=CLOSE_FDS,
-	                   async_=True,
-	                   stdout=sarge.Capture(),
-	                   stderr=sarge.Capture()))
+	kwargs.update({"close_fds": CLOSE_FDS,
+	               "async_": True,
+	               "stdout": sarge.Capture(),
+	               "stderr": sarge.Capture()})
 
 	try:
 		p = sarge.run(command, **kwargs)

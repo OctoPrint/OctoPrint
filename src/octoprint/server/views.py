@@ -33,7 +33,7 @@ from . import util
 import logging
 _logger = logging.getLogger(__name__)
 
-_templates = dict()
+_templates = {}
 _plugin_names = None
 _plugin_vars = None
 
@@ -61,9 +61,9 @@ def _preemptive_data(key, path=None, base_url=None, data=None, additional_reques
 	if base_url is None:
 		base_url = request.url_root
 
-	d = dict(path=path,
-	         base_url=base_url,
-	         query_string="l10n={}".format(g.locale.language if g.locale else "en"))
+	d = {"path": path,
+	     "base_url": base_url,
+	     "query_string": "l10n={}".format(g.locale.language if g.locale else "en")}
 
 	if key != "_default":
 		d["plugin"] = key
@@ -85,9 +85,7 @@ def _preemptive_data(key, path=None, base_url=None, data=None, additional_reques
 		try:
 			ard = additional_request_data()
 			if ard:
-				d.update(dict(
-					_additional_request_data=ard
-				))
+				d.update({"_additional_request_data": ard})
 		except Exception:
 			_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
 
@@ -124,7 +122,7 @@ def _add_additional_assets(hook):
 				result += assets
 		except:
 			_logger.exception("Error fetching theming CSS to include from plugin {}".format(name),
-			                  extra=dict(plugin=name))
+			                  extra={"plugin": name})
 	return result
 
 def _has_permissions(*permissions):
@@ -158,10 +156,10 @@ def login():
 	if _has_permissions(*permissions):
 		return redirect(redirect_url)
 
-	render_kwargs = dict(theming=[],
-	                     redirect_url=redirect_url,
-	                     permission_names=map(lambda x: x.get_name(), permissions),
-	                     logged_in=not current_user.is_anonymous)
+	render_kwargs = {"theming": [],
+	                 "redirect_url": redirect_url,
+	                 "permission_names": map(lambda x: x.get_name(), permissions),
+	                 "logged_in": not current_user.is_anonymous}
 
 	try:
 		additional_assets = _add_additional_assets("octoprint.theming.login")
@@ -170,7 +168,7 @@ def login():
 		additional_assets += _add_additional_assets("octoprint.plugin.forcelogin.theming")
 		additional_assets += _add_additional_assets("octoprint.plugin.loginui.theming")
 
-		render_kwargs.update(dict(theming=additional_assets))
+		render_kwargs.update({"theming": additional_assets})
 	except:
 		_logger.exception("Error processing theming CSS, ignoring")
 
@@ -184,11 +182,11 @@ def recovery():
 		                        redirect=request.script_root + request.full_path,
 		                        permissions=Permissions.ADMIN.key))
 
-	render_kwargs = dict(theming=[])
+	render_kwargs = {"theming": []}
 
 	try:
 		additional_assets = _add_additional_assets("octoprint.theming.recovery")
-		render_kwargs.update(dict(theming=additional_assets))
+		render_kwargs.update({"theming": additional_assets})
 	except:
 		_logger.exception("Error processing theming CSS, ignoring")
 
@@ -219,7 +217,7 @@ def in_cache():
 				break
 		except Exception:
 			_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
-			                  extra=dict(plugin=plugin._identifier))
+			                  extra={"plugin": plugin._identifier})
 	else:
 		ui = "_default"
 		key = _cache_key("_default", url=url)
@@ -464,17 +462,15 @@ def index():
 		                                   _plugin_names,
 		                                   _plugin_vars,
 		                                   now)
-		render_kwargs.update(dict(
-			enableWebcam=enable_webcam,
-			enableTemperatureGraph=enable_temperature_graph,
-			enableAccessControl=enable_accesscontrol,
-			accessControlActive=accesscontrol_active,
-			enableLoadingAnimation=enable_loading_animation,
-			enableSdSupport=enable_sd_support,
-			sockJsConnectTimeout=sockjs_connect_timeout * 1000,
-			wizard=wizard,
-			now=now,
-		))
+		render_kwargs.update({"enableWebcam": enable_webcam,
+		                      "enableTemperatureGraph": enable_temperature_graph,
+		                      "enableAccessControl": enable_accesscontrol,
+		                      "accessControlActive": accesscontrol_active,
+		                      "enableLoadingAnimation": enable_loading_animation,
+		                      "enableSdSupport": enable_sd_support,
+		                      "sockJsConnectTimeout": sockjs_connect_timeout * 1000,
+		                      "wizard": wizard,
+		                      "now": now,})
 
 		# no plugin took an interest, we'll use the default UI
 		def make_default_ui():
@@ -489,8 +485,8 @@ def index():
 		                         additional_etag=default_additional_etag)
 		preemptively_cached = get_preemptively_cached_view("_default",
 		                                                   cached,
-		                                                   dict(),
-		                                                   dict())
+		                                                   {},
+		                                                   {})
 		return preemptively_cached()
 
 	response = None
@@ -527,7 +523,7 @@ def index():
 						_logger.warning("UiPlugin {} returned an empty response".format(plugin._identifier))
 			except Exception:
 				_logger.exception("Error while calling plugin {}, skipping it".format(plugin._identifier),
-				                  extra=dict(plugin=plugin._identifier))
+				                  extra={"plugin": plugin._identifier})
 		else:
 			response = default_view()
 			if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
@@ -545,10 +541,10 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 	first_run = settings().getBoolean(["server", "firstRun"])
 
-	locales = dict()
+	locales = {}
 	for l in LOCALES:
 		try:
-			locales[l.language] = dict(language=l.language, display=l.display_name, english=l.english_name)
+			locales[l.language] = {"language": l.language, "display": l.display_name, "english": l.english_name}
 		except Exception:
 			_logger.exception("Error while collecting available locales")
 
@@ -558,18 +554,16 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 	#~~ prepare full set of template vars for rendering
 
-	render_kwargs = dict(
-		debug=debug,
-		firstRun=first_run,
-		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
-		python_version=get_python_version_string(),
-		templates=templates,
-		pluginNames=plugin_names,
-		locales=locales,
-		permissions=permissions,
-		supportedFiletypes=filetypes,
-		supportedExtensions=extensions
-	)
+	render_kwargs = {"debug": debug,
+	                 "firstRun": first_run,
+	                 "version": {"number": VERSION, "display": DISPLAY_VERSION, "branch": BRANCH},
+	                 "python_version": get_python_version_string(),
+	                 "templates": templates,
+	                 "pluginNames": plugin_names,
+	                 "locales": locales,
+	                 "permissions": permissions,
+	                 "supportedFiletypes": filetypes,
+	                 "supportedExtensions": extensions}
 	render_kwargs.update(plugin_vars)
 
 	return render_kwargs
@@ -587,19 +581,17 @@ def fetch_template_data(refresh=False):
 
 	##~~ prepare templates
 
-	templates = defaultdict(lambda: dict(order=[], entries=dict()))
+	templates = defaultdict(lambda: {"order": [], "entries": {}})
 
 	# rules for transforming template configs to template entries
-	template_rules = dict(
-		navbar=dict(div=lambda x: "navbar_plugin_" + x, template=lambda x: x + "_navbar.jinja2", to_entry=lambda data: data),
-		sidebar=dict(div=lambda x: "sidebar_plugin_" + x, template=lambda x: x + "_sidebar.jinja2", to_entry=lambda data: (data["name"], data)),
-		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
-		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
-		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
-		wizard=dict(div=lambda x: "wizard_plugin_" + x, template=lambda x: x + "_wizard.jinja2", to_entry=lambda data: (data["name"], data)),
-		about=dict(div=lambda x: "about_plugin_" + x, template=lambda x: x + "_about.jinja2", to_entry=lambda data: (data["name"], data)),
-		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
-	)
+	template_rules = {"navbar": {"div": lambda x: "navbar_plugin_" + x, "template": lambda x: x + "_navbar.jinja2", "to_entry": lambda data: data},
+	                  "sidebar": {"div": lambda x: "sidebar_plugin_" + x, "template": lambda x: x + "_sidebar.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "tab": {"div": lambda x: "tab_plugin_" + x, "template": lambda x: x + "_tab.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "settings": {"div": lambda x: "settings_plugin_" + x, "template": lambda x: x + "_settings.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "usersettings": {"div": lambda x: "usersettings_plugin_" + x, "template": lambda x: x + "_usersettings.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "wizard": {"div": lambda x: "wizard_plugin_" + x, "template": lambda x: x + "_wizard.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "about": {"div": lambda x: "about_plugin_" + x, "template": lambda x: x + "_about.jinja2", "to_entry": lambda data: (data["name"], data)},
+	                  "generic": {"template": lambda x: x + ".jinja2", "to_entry": lambda data: data}}
 
 	# sorting orders
 	def wizard_key_extractor(d, k):
@@ -615,16 +607,14 @@ def fetch_template_data(refresh=False):
 			# Finally everything else
 			return "2:{}".format(to_unicode(d[0]))
 
-	template_sorting = dict(
-		navbar=dict(add="prepend", key=None),
-		sidebar=dict(add="append", key="name"),
-		tab=dict(add="append", key="name"),
-		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
-		usersettings=dict(add="append", key="name"),
-		wizard=dict(add="append", key="name", key_extractor=wizard_key_extractor),
-		about=dict(add="append", key="name"),
-		generic=dict(add="append", key=None)
-	)
+	template_sorting = {"navbar": {"add": "prepend", "key": None},
+	                    "sidebar": {"add": "append", "key": "name"},
+	                    "tab": {"add": "append", "key": "name"},
+	                    "settings": {"add": "custom_append", "key": "name", "custom_add_entries": lambda missing: {"section_plugins": (gettext("Plugins"), None)}, "custom_add_order": lambda missing: ["section_plugins"] + missing},
+	                    "usersettings": {"add": "append", "key": "name"},
+	                    "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
+	                    "about": {"add": "append", "key": "name"},
+	                    "generic": {"add": "append", "key": None}}
 
 	hooks = pluginManager.get_hooks("octoprint.ui.web.templatetypes")
 	for name, hook in hooks.items():
@@ -633,7 +623,7 @@ def fetch_template_data(refresh=False):
 		except Exception:
 			_logger.exception("Error while retrieving custom template type "
 			                  "definitions from plugin {name}".format(**locals()),
-			                  extra=dict(plugin=name))
+			                  extra={"plugin": name})
 		else:
 			if not isinstance(result, list):
 				continue
@@ -669,60 +659,137 @@ def fetch_template_data(refresh=False):
 
 	# navbar
 
-	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"),
-		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", classes=["dropdown"], styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SYSTEM)", custom_bindings=False),
-		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False),
-	)
+	templates["navbar"]["entries"] = {"settings": {"template": "navbar/settings.jinja2",
+	                                               "_div": "navbar_settings",
+	                                               "styles": ["display: none;"],
+	                                               "data_bind": "visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"},
+	                                  "systemmenu": {"template": "navbar/systemmenu.jinja2",
+	                                                 "_div": "navbar_systemmenu",
+	                                                 "classes": ["dropdown"],
+	                                                 "styles": ["display: none;"],
+	                                                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.SYSTEM)",
+	                                                 "custom_bindings": False},
+	                                  "login": {"template": "navbar/login.jinja2",
+	                                            "_div": "navbar_login",
+	                                            "classes": ["dropdown"],
+	                                            "custom_bindings": False}}
 
 	# sidebar
 
-	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.CONNECTION)", template_header="sidebar/connection_header.jinja2")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.STATUS)")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.FILES_LIST)"))
-	)
+	templates["sidebar"]["entries"]= {"connection": (gettext("Connection"),
+	                                                 {"template": "sidebar/connection.jinja2",
+	                                                  "_div": "connection",
+	                                                  "icon": "signal",
+	                                                  "styles_wrapper": ["display: none;"],
+	                                                  "data_bind": "visible: loginState.hasPermissionKo(access.permissions.CONNECTION)",
+	                                                  "template_header": "sidebar/connection_header.jinja2"}),
+	                                  "state": (gettext("State"),
+	                                            {"template": "sidebar/state.jinja2",
+	                                             "_div": "state",
+	                                             "icon": "info-circle",
+	                                             "styles_wrapper": ["display: none;"],
+	                                             "data_bind": "visible: loginState.hasPermissionKo(access.permissions.STATUS)"}),
+	                                  "files": (gettext("Files"),
+	                                            {"template": "sidebar/files.jinja2",
+	                                             "_div": "files",
+	                                             "icon": "list",
+	                                             "classes_content": ["overflow_visible"],
+	                                             "template_header": "sidebar/files_header.jinja2",
+	                                             "styles_wrapper": ["display: none;"],
+	                                             "data_bind": "visible: loginState.hasPermissionKo(access.permissions.FILES_LIST)"})}
 
 	# tabs
 
-	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL)() && visible()")),
-		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasAnyPermissionKo(access.permissions.WEBCAM, access.permissions.CONTROL)")),
-		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.MONITOR_TERMINAL)")),
-		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_LIST)"))
-	)
+	templates["tab"]["entries"] = {"temperature": (gettext("Temperature"),
+	                                               {"template": "tabs/temperature.jinja2",
+	                                                "_div": "temp",
+	                                                "styles": ["display: none;"],
+	                                                "data_bind": "visible: loginState.hasAnyPermissionKo(access.permissions.STATUS, access.permissions.CONTROL)() && visible()"}),
+	                               "control": (gettext("Control"),
+	                                           {"template": "tabs/control.jinja2",
+	                                            "_div": "control",
+	                                            "styles": ["display: none;"],
+	                                            "data_bind": "visible: loginState.hasAnyPermissionKo(access.permissions.WEBCAM, access.permissions.CONTROL)"}),
+	                               "terminal": (gettext("Terminal"),
+	                                            {"template": "tabs/terminal.jinja2",
+	                                             "_div": "term",
+	                                             "styles": ["display: none;"],
+	                                             "data_bind": "visible: loginState.hasPermissionKo(access.permissions.MONITOR_TERMINAL)"}),
+	                               "timelapse": (gettext("Timelapse"),
+	                                             {"template": "tabs/timelapse.jinja2",
+	                                              "_div": "timelapse",
+	                                              "styles": ["display: none;"],
+	                                              "data_bind": "visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_LIST)"})}
 
 	# settings dialog
 
-	templates["settings"]["entries"] = dict(
-		section_printer=(gettext("Printer"), None),
+	templates["settings"]["entries"] = {"section_printer": (gettext("Printer"), None),
 
-		serial=(gettext("Serial Connection"), dict(template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", custom_bindings=False)),
-		printerprofiles=(gettext("Printer Profiles"), dict(template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles", custom_bindings=False)),
-		temperatures=(gettext("Temperatures"), dict(template="dialogs/settings/temperatures.jinja2", _div="settings_temperature", custom_bindings=False)),
-		terminalfilters=(gettext("Terminal Filters"), dict(template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters", custom_bindings=False)),
-		gcodescripts=(gettext("GCODE Scripts"), dict(template="dialogs/settings/gcodescripts.jinja2", _div="settings_gcodeScripts", custom_bindings=False)),
+	                                    "serial": (gettext("Serial Connection"),
+	                                               {"template": "dialogs/settings/serialconnection.jinja2",
+	                                                "_div": "settings_serialConnection",
+	                                                "custom_bindings": False}),
+	                                    "printerprofiles": (gettext("Printer Profiles"),
+	                                                        {"template": "dialogs/settings/printerprofiles.jinja2",
+	                                                         "_div": "settings_printerProfiles",
+	                                                         "custom_bindings": False}),
+	                                    "temperatures": (gettext("Temperatures"),
+	                                                     {"template": "dialogs/settings/temperatures.jinja2",
+	                                                      "_div": "settings_temperature",
+	                                                      "custom_bindings": False}),
+	                                    "terminalfilters": (gettext("Terminal Filters"),
+	                                                        {"template": "dialogs/settings/terminalfilters.jinja2",
+	                                                         "_div": "settings_terminalFilters",
+	                                                         "custom_bindings": False}),
+	                                    "gcodescripts": (gettext("GCODE Scripts"),
+	                                                     {"template": "dialogs/settings/gcodescripts.jinja2",
+	                                                      "_div": "settings_gcodeScripts",
+	                                                      "custom_bindings": False}),
 
-		section_features=(gettext("Features"), None),
+	                                    "section_features": (gettext("Features"), None),
 
-		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
-		webcam=(gettext("Webcam & Timelapse"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
-		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
+	                                    "features": (gettext("Features"),
+	                                                 {"template": "dialogs/settings/features.jinja2",
+	                                                  "_div": "settings_features",
+	                                                  "custom_bindings": False}),
+	                                    "webcam": (gettext("Webcam & Timelapse"),
+	                                               {"template": "dialogs/settings/webcam.jinja2",
+	                                                "_div": "settings_webcam",
+	                                                "custom_bindings": False}),
+	                                    "api": (gettext("API"),
+	                                            {"template": "dialogs/settings/api.jinja2",
+	                                             "_div": "settings_api",
+	                                             "custom_bindings": False}),
 
-		section_octoprint=(gettext("OctoPrint"), None),
+	                                    "section_octoprint": (gettext("OctoPrint"), None),
 
-		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
-		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
-		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
-		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
-	)
+	                                    "accesscontrol": (gettext("Access Control"),
+	                                                      {"template": "dialogs/settings/accesscontrol.jinja2",
+	                                                       "_div": "settings_users",
+	                                                       "custom_bindings": False}),
+	                                    "folders": (gettext("Folders"),
+	                                                {"template": "dialogs/settings/folders.jinja2",
+	                                                 "_div": "settings_folders",
+	                                                 "custom_bindings": False}),
+	                                    "appearance": (gettext("Appearance"),
+	                                                   {"template": "dialogs/settings/appearance.jinja2",
+	                                                    "_div": "settings_appearance",
+	                                                    "custom_bindings": False}),
+	                                    "server": (gettext("Server"),
+	                                               {"template": "dialogs/settings/server.jinja2",
+	                                                "_div": "settings_server",
+	                                                "custom_bindings": False})}
 
 	# user settings dialog
 
-	templates["usersettings"]["entries"] = dict(
-		access=(gettext("Access"), dict(template="dialogs/usersettings/access.jinja2", _div="usersettings_access", custom_bindings=False)),
-		interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
-	)
+	templates["usersettings"]["entries"] = {"access": (gettext("Access"),
+	                                                   {"template": "dialogs/usersettings/access.jinja2",
+	                                                    "_div": "usersettings_access",
+	                                                    "custom_bindings": False}),
+	                                        "interface": (gettext("Interface"),
+	                                                      {"template": "dialogs/usersettings/interface.jinja2",
+	                                                       "_div": "usersettings_interface",
+	                                                       "custom_bindings": False})}
 
 	# wizard
 
@@ -735,30 +802,47 @@ def fetch_template_data(refresh=False):
 
 			return ["firstrunstart"] + existing + missing + ["firstrunend"]
 
-		template_sorting["wizard"].update(dict(add="custom_insert", custom_insert_entries=lambda missing: dict(), custom_insert_order=custom_insert_order))
-		templates["wizard"]["entries"] = dict(
-			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrun_start.jinja2", _div="wizard_firstrun_start")),
-			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
-		)
+		template_sorting["wizard"].update({"add": "custom_insert",
+		                                   "custom_insert_entries": lambda missing: {},
+		                                   "custom_insert_order": custom_insert_order})
+		templates["wizard"]["entries"] = {"firstrunstart": (gettext("Start"),
+		                                                    {"template": "dialogs/wizard/firstrun_start.jinja2",
+		                                                     "_div": "wizard_firstrun_start"}),
+		                                  "firstrunend": (gettext("Finish"),
+		                                                  {"template": "dialogs/wizard/firstrun_end.jinja2",
+		                                                   "_div": "wizard_firstrun_end"})}
 
 	# about dialog
 
-	templates["about"]["entries"] = dict(
-		about=("About OctoPrint", dict(template="dialogs/about/about.jinja2", _div="about_about", custom_bindings=False)),
-		license=("OctoPrint License", dict(template="dialogs/about/license.jinja2", _div="about_license", custom_bindings=False)),
-		thirdparty=("Third Party Licenses", dict(template="dialogs/about/thirdparty.jinja2", _div="about_thirdparty", custom_bindings=False)),
-		authors=("Authors", dict(template="dialogs/about/authors.jinja2", _div="about_authors", custom_bindings=False)),
-		supporters=("Supporters", dict(template="dialogs/about/supporters.jinja2", _div="about_sponsors", custom_bindings=False))
-	)
+	templates["about"]["entries"] = {"about": ("About OctoPrint",
+	                                           {"template": "dialogs/about/about.jinja2",
+	                                            "_div": "about_about",
+	                                            "custom_bindings": False}),
+	                                 "license": ("OctoPrint License",
+	                                             {"template": "dialogs/about/license.jinja2",
+	                                              "_div": "about_license",
+	                                              "custom_bindings": False}),
+	                                 "thirdparty": ("Third Party Licenses",
+	                                                {"template": "dialogs/about/thirdparty.jinja2",
+	                                                 "_div": "about_thirdparty",
+	                                                 "custom_bindings": False}),
+	                                 "authors": ("Authors",
+	                                             {"template": "dialogs/about/authors.jinja2",
+	                                              "_div": "about_authors",
+	                                              "custom_bindings": False}),
+	                                 "supporters": ("Supporters",
+	                                                {"template": "dialogs/about/supporters.jinja2",
+	                                                 "_div": "about_sponsors",
+	                                                 "custom_bindings": False})}
 
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
-	plugin_vars = dict()
+	plugin_vars = {}
 	plugin_names = set()
-	plugin_aliases = dict()
-	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else dict()
+	plugin_aliases = {}
+	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else {}
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
@@ -773,11 +857,11 @@ def fetch_template_data(refresh=False):
 				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except Exception:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name),
-			                  extra=dict(plugin=name))
+			                  extra={"plugin": name})
 			continue
 
 		if not isinstance(vars, dict):
-			vars = dict()
+			vars = {}
 		if not isinstance(configs, (list, tuple)):
 			configs = []
 
@@ -790,7 +874,7 @@ def fetch_template_data(refresh=False):
 			includes["wizard"] = list()
 
 		for t in template_types:
-			plugin_aliases[t] = dict()
+			plugin_aliases[t] = {}
 			for include in includes[t]:
 				if t == "navbar" or t == "generic":
 					data = include
@@ -810,7 +894,7 @@ def fetch_template_data(refresh=False):
 	# 2) we have all entries located somewhere within the order
 
 	for t in template_types:
-		default_order = settings().get(["appearance", "components", "order", t], merged=True, config=dict()) or []
+		default_order = settings().get(["appearance", "components", "order", t], merged=True, config={}) or []
 		configured_order = settings().get(["appearance", "components", "order", t], merged=True) or []
 		configured_disabled = settings().get(["appearance", "components", "disabled", t]) or []
 
@@ -949,7 +1033,7 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 				return None
 
 	if config is None:
-		config = dict()
+		config = {}
 	data = dict(config)
 
 	if not "suffix" in data and counter > 1:
@@ -988,15 +1072,15 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 
 
 def _filter_templates(templates, template_filter):
-	filtered_templates = dict()
+	filtered_templates = {}
 	for template_type, template_collection in templates.items():
-		filtered_entries = dict()
+		filtered_entries = {}
 		for template_key, template_entry in template_collection["entries"].items():
 			if template_filter(template_type, template_key):
 				filtered_entries[template_key] = template_entry
-		filtered_templates[template_type] = dict(order=list(filter(lambda x: x in filtered_entries,
+		filtered_templates[template_type] = {"order": list(filter(lambda x: x in filtered_entries,
 		                                                      	   template_collection["order"])),
-		                                         entries=filtered_entries)
+		                                     "entries": filtered_entries}
 	return filtered_templates
 
 
@@ -1010,18 +1094,16 @@ def robotsTxt():
 @util.flask.etagged(lambda _: _compute_etag_for_i18n(request.view_args["locale"], request.view_args["domain"]))
 @util.flask.lastmodified(lambda _: _compute_date_for_i18n(request.view_args["locale"], request.view_args["domain"]))
 def localeJs(locale, domain):
-	messages = dict()
+	messages = {}
 	plural_expr = None
 
 	if locale != "en":
 		messages, plural_expr = _get_translations(locale, domain)
 
-	catalog = dict(
-		messages=messages,
-		plural_expr=plural_expr,
-		locale=locale,
-		domain=domain
-	)
+	catalog = {"messages": messages,
+	           "plural_expr": plural_expr,
+	           "locale": locale,
+	           "domain": domain}
 
 	from flask import Response
 	return Response(render_template("i18n.js.jinja2", catalog=catalog), content_type="application/x-javascript; charset=utf-8")
@@ -1132,11 +1214,11 @@ def _get_translations(locale, domain):
 	from babel.messages.pofile import read_po
 	from octoprint.util import dict_merge
 
-	messages = dict()
+	messages = {}
 	plural_expr = None
 
 	def messages_from_po(path, locale, domain):
-		messages = dict()
+		messages = {}
 		with io.open(path, mode="rt", encoding="utf-8") as f:
 			catalog = read_po(f, locale=locale, domain=domain)
 

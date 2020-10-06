@@ -48,16 +48,16 @@ def get_latest(target, check, online=True):
 
 	current = check.get("current")
 
-	information = dict(local=dict(name="Commit {commit}".format(commit=current if current is not None else "?"), value=current),
-	                   remote=dict(name="?", value="?"),
-	                   needs_online=not check.get("offline", False))
+	information = {"local": {"name": "Commit {commit}".format(commit=current if current is not None else "?"), "value": current},
+	               "remote": {"name": "?", "value": "?"},
+	               "needs_online": not check.get("offline", False)}
 	if not online and information["needs_online"]:
 		return information, True
 
 	remote_commit = _get_latest_commit(check["user"], check["repo"], branch)
 	remote_name = "Commit {commit}".format(commit=remote_commit) if remote_commit is not None else "-"
 
-	information["remote"] = dict(name=remote_name, value=remote_commit)
+	information["remote"] = {"name": remote_name, "value": remote_commit}
 	is_current = (current is not None and current == remote_commit) or remote_commit is None
 
 	logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_commit))

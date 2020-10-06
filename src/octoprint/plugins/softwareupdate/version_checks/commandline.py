@@ -39,16 +39,8 @@ def get_latest(target, check, online=True):
 	remote_name = stdout_lines[-1] if len(stdout_lines) >= 1 else "unknown"
 	is_current = returncode != 0
 
-	information =dict(
-		local=dict(
-			name=local_name,
-		    value=local_name,
-		),
-		remote=dict(
-			name=remote_name,
-			value=remote_name
-		)
-	)
+	information ={"local": {"name": local_name, "value": local_name,},
+	              "remote": {"name": remote_name, "value": remote_name}}
 
 	logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_commit")
 	logger.debug("Target: %s, local: %s, remote: %s" % (target, local_name, remote_name))

@@ -449,7 +449,7 @@ class HierarchicalChainMap(ChainMap):
 		if root is None:
 			root = self
 
-		result = dict()
+		result = {}
 		for key, value in root.items():
 			if isinstance(value, dict):
 				result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
@@ -500,7 +500,7 @@ class HierarchicalChainMap(ChainMap):
 
 		for key in path[:-1]:
 			if key not in current.maps[0]:
-				current.maps[0][key] = dict()
+				current.maps[0][key] = {}
 			if not isinstance(current[key], dict):
 				raise KeyError(key)
 			current = self.__class__._hierarchy_for_key(key, current)
@@ -528,7 +528,7 @@ class HierarchicalChainMap(ChainMap):
 			if key in mapping and mapping[key] is not None:
 				wrapped_mappings.append(mapping[key])
 			else:
-				wrapped_mappings.append(dict())
+				wrapped_mappings.append({})
 		return HierarchicalChainMap(*wrapped_mappings)
 
 	@classmethod
@@ -602,7 +602,7 @@ class Settings(object):
 
 		assert(isinstance(default_settings, dict))
 
-		self._map = HierarchicalChainMap(dict(), default_settings)
+		self._map = HierarchicalChainMap({}, default_settings)
 
 		self._config = None
 		self._dirty = False
@@ -611,10 +611,8 @@ class Settings(object):
 		self._last_effective_hash = None
 		self._mtime = None
 
-		self._get_preprocessors = dict(
-			controls=self._process_custom_controls
-		)
-		self._set_preprocessors = dict()
+		self._get_preprocessors = {"controls": self._process_custom_controls}
+		self._set_preprocessors = {}
 
 		self._init_basedir(basedir)
 
@@ -759,8 +757,8 @@ class Settings(object):
 		settings_loader = SettingsScriptLoader(self)
 		choice_loader = ChoiceLoader([file_system_loader, settings_loader])
 		select_loader = SelectLoader(choice_loader,
-		                             dict(bundled=settings_loader,
-		                                  file=file_system_loader))
+		                             {"bundled": settings_loader,
+		                              "file": file_system_loader})
 		return RelEnvironment(loader=select_loader, extensions=[SnippetExtension])
 
 	def _get_script_template(self, script_type, name, source=False):
@@ -909,7 +907,7 @@ class Settings(object):
 
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config or not isinstance(self._config, dict):
-			self._config = dict()
+			self._config = {}
 
 		if migrate:
 			self._migrate_config()
@@ -1011,12 +1009,10 @@ class Settings(object):
 				if "templates" in config["scripts"]["gcode"]:
 					del config["scripts"]["gcode"]["templates"]
 
-				replacements = dict(
-					disable_steppers="M84",
-					disable_hotends="{% snippet 'disable_hotends' %}",
-					disable_bed="M140 S0",
-					disable_fan="M106 S0"
-				)
+				replacements = {"disable_steppers": "M84",
+				                "disable_hotends": "{% snippet 'disable_hotends' %}",
+				                "disable_bed": "M140 S0",
+				                "disable_fan": "M106 S0"}
 
 				for name, script in config["scripts"]["gcode"].items():
 					self.saveScript("gcode", name, script.format(**replacements))
@@ -1030,7 +1026,7 @@ class Settings(object):
 
 		Added in 1.2.0
 		"""
-		default_profile = config["printerProfiles"]["defaultProfile"] if "printerProfiles" in config and "defaultProfile" in config["printerProfiles"] else dict()
+		default_profile = config["printerProfiles"]["defaultProfile"] if "printerProfiles" in config and "defaultProfile" in config["printerProfiles"] else {}
 		dirty = False
 
 		if "printerParameters" in config:
@@ -1038,7 +1034,7 @@ class Settings(object):
 
 			if "movementSpeed" in printer_parameters or "invertAxes" in printer_parameters:
 				dirty = True
-				default_profile["axes"] = dict(x=dict(), y=dict(), z=dict(), e=dict())
+				default_profile["axes"] = {"x": {}, "y": {}, "z": {}, "e": {}}
 				if "movementSpeed" in printer_parameters:
 					for axis in ("x", "y", "z", "e"):
 						if axis in printer_parameters["movementSpeed"]:
@@ -1053,7 +1049,7 @@ class Settings(object):
 			if "numExtruders" in printer_parameters or "extruderOffsets" in printer_parameters:
 				dirty = True
 				if not "extruder" in default_profile:
-					default_profile["extruder"] = dict()
+					default_profile["extruder"] = {}
 
 				if "numExtruders" in printer_parameters:
 					default_profile["extruder"]["count"] = printer_parameters["numExtruders"]
@@ -1070,7 +1066,7 @@ class Settings(object):
 				dirty = True
 				bed_dimensions = printer_parameters["bedDimensions"]
 				if not "volume" in default_profile:
-					default_profile["volume"] = dict()
+					default_profile["volume"] = {}
 
 				if "circular" in bed_dimensions and "r" in bed_dimensions and bed_dimensions["circular"]:
 					default_profile["volume"]["formFactor"] = "circular"
@@ -1086,7 +1082,7 @@ class Settings(object):
 
 		if dirty:
 			if not "printerProfiles" in config:
-				config["printerProfiles"] = dict()
+				config["printerProfiles"] = {}
 			config["printerProfiles"]["defaultProfile"] = default_profile
 		return dirty
 
@@ -1109,7 +1105,7 @@ class Settings(object):
 				del config["server"]["scheme"]
 
 			if not "reverseProxy" in config["server"] or not isinstance(config["server"]["reverseProxy"], dict):
-				config["server"]["reverseProxy"] = dict()
+				config["server"]["reverseProxy"] = {}
 			if prefix:
 				config["server"]["reverseProxy"]["prefixFallback"] = prefix
 			if scheme:
@@ -1225,9 +1221,9 @@ class Settings(object):
 		"""
 		changed = False
 
-		migration_map = dict(shutdown="systemShutdownCommand",
-		                     reboot="systemRestartCommand",
-		                     restart="serverRestartCommand")
+		migration_map = {"shutdown": "systemShutdownCommand",
+		                 "reboot": "systemRestartCommand",
+		                 "restart": "serverRestartCommand"}
 
 		if "system" in config and "actions" in config["system"] and isinstance(config["system"]["actions"], (list, tuple)):
 			actions = config["system"]["actions"]
@@ -1242,9 +1238,9 @@ class Settings(object):
 				if migrate_to is not None:
 					if not "server" in config or not "commands" in config["server"] or not migrate_to in config["server"]["commands"]:
 						if not "server" in config:
-							config["server"] = dict()
+							config["server"] = {}
 						if not "commands" in config["server"]:
-							config["server"]["commands"] = dict()
+							config["server"]["commands"] = {}
 						config["server"]["commands"][migrate_to] = command
 						self._logger.info("Migrated {} action to server.commands.{}".format(action, migrate_to))
 
@@ -1285,7 +1281,7 @@ class Settings(object):
 			if source in config and key in config[source]:
 				if config.get(target) is None:
 					# make sure we have a serial tree
-					config[target] = dict()
+					config[target] = {}
 				if key not in config[target]:
 					# only copy over if it's not there yet
 					config[target][key] = config[source][key]
@@ -1366,7 +1362,7 @@ class Settings(object):
 	def _migrate_gcodeviewer_enabled(self, config):
 		if "gcodeViewer" in config and "enabled" in config["gcodeViewer"] and not config["gcodeViewer"]["enabled"]:
 			if not "plugins" in config:
-				config["plugins"] = dict()
+				config["plugins"] = {}
 			if not "_disabled" in config["plugins"]:
 				config["plugins"]["_disabled"] = []
 			config["plugins"]["_disabled"].append("gcodeviewer")
@@ -1413,8 +1409,8 @@ class Settings(object):
 			self.load()
 
 			if trigger_event:
-				payload = dict(config_hash=self.config_hash,
-				               effective_hash=self.effective_hash)
+				payload = {"config_hash": self.config_hash,
+				           "effective_hash": self.effective_hash}
 				eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
 
 			return True
@@ -1464,7 +1460,7 @@ class Settings(object):
 			keys = last
 
 		if asdict:
-			results = dict()
+			results = {}
 		else:
 			results = list()
 
@@ -1635,8 +1631,8 @@ class Settings(object):
 
 	def loadScript(self, script_type, name, context=None, source=False):
 		if context is None:
-			context = dict()
-		context.update(dict(script=dict(type=script_type, name=name)))
+			context = {}
+		context.update({"script": {"type": script_type, "name": name}})
 
 		template = self._get_script_template(script_type, name, source=source)
 		if template is None:

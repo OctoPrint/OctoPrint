@@ -39,7 +39,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		Note that the OctoPrint server needs to be running for this
 		command to work as it utilizes the server API.
 		"""
-		params = dict(force=force)
+		params = {"force": force}
 		if targets:
 			params["targets"] = ",".join(targets)
 
@@ -127,7 +127,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		command to work as it utilizes the server API.
 		"""
 
-		data = dict(force=force)
+		data = {"force": force}
 		if targets:
 			data["targets"] = targets
 
@@ -140,10 +140,8 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		                       https=https,
 		                       prefix=prefix)
 
-		flags = dict(
-			waiting_for_restart=False,
-			seen_close=False
-		)
+		flags = {"waiting_for_restart": False,
+			"seen_close": False}
 
 		def on_message(ws, msg_type, msg):
 			if msg_type != "plugin" or msg["plugin"] != "softwareupdate":
@@ -169,7 +167,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 					click.echo("\t{}{}".format(prefix, entry["line"].replace("\n", "\n\t")), err=error)
 
 			elif plugin_message_type == "success" or plugin_message_type == "restart_manually":
-				results = plugin_message_data["results"] if "results" in plugin_message_data else dict()
+				results = plugin_message_data["results"] if "results" in plugin_message_data else {}
 				if results:
 					click.echo("The update finished successfully.")
 					if plugin_message_type == "restart_manually":

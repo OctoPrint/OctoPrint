@@ -79,13 +79,11 @@ def _get_options():
 	profile_options = printerProfileManager.get_all()
 	default_profile = printerProfileManager.get_default()
 
-	options = dict(
-		ports=connection_options["ports"],
-		baudrates=connection_options["baudrates"],
-		printerProfiles=[dict(id=printer_profile["id"], name=printer_profile["name"] if "name" in printer_profile else printer_profile["id"]) for printer_profile in profile_options.values() if "id" in printer_profile],
-		portPreference=connection_options["portPreference"],
-		baudratePreference=connection_options["baudratePreference"],
-		printerProfilePreference=default_profile["id"] if "id" in default_profile else None
-	)
+	options = {"ports": connection_options["ports"],
+	           "baudrates": connection_options["baudrates"],
+	           "printerProfiles": [{"id": printer_profile["id"], "name": printer_profile["name"] if "name" in printer_profile else printer_profile["id"]} for printer_profile in profile_options.values() if "id" in printer_profile],
+	           "portPreference": connection_options["portPreference"],
+	           "baudratePreference": connection_options["baudratePreference"],
+	           "printerProfilePreference": default_profile["id"] if "id" in default_profile else None}
 
 	return options

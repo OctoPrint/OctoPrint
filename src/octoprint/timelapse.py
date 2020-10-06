@@ -92,7 +92,7 @@ def valid_timelapse(path):
 			except Exception:
 				logging.getLogger(__name__).exception("Exception while retrieving additional timelapse "
 				                                      "extensions from hook {name}".format(name=name),
-				                                      extra=dict(plugin=name))
+				                                      extra={"plugin": name})
 
 		_extensions = list(set(extensions))
 
@@ -142,7 +142,7 @@ def get_unrendered_timelapses():
 	delete_old_unrendered_timelapses()
 
 	basedir = settings().getBaseFolder("timelapse_tmp", check_writable=False)
-	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
+	jobs = collections.defaultdict(lambda: {"count": 0, "size": None, "bytes": 0, "date": None, "timestamp": None})
 
 	for entry in scandir(basedir):
 		if not fnmatch.fnmatch(entry.name, "*.jpg"):
@@ -173,7 +173,7 @@ def get_unrendered_timelapses():
 
 			return job
 
-		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value))
+		return sorted([util.dict_merge({"name": key}, finalize_fields(key, value))
 		               for key, value in jobs.items()],
 		              key=lambda x: sv(x["name"]))
 
@@ -256,11 +256,11 @@ def _create_render_start_handler(name, gcode=None):
 
 		with _job_lock:
 			global current_render_job
-			payload = dict(gcode=gcode if gcode is not None else "unknown",
-			               movie=movie,
-			               movie_basename=os.path.basename(movie),
-			               movie_prefix=name)
-			current_render_job = dict(prefix=name)
+			payload = {"gcode": gcode if gcode is not None else "unknown",
+			           "movie": movie,
+			           "movie_basename": os.path.basename(movie),
+			           "movie_prefix": name}
+			current_render_job = {"prefix": name}
 			current_render_job.update(payload)
 		eventManager().fire(Events.MOVIE_RENDERING, payload)
 	return f
@@ -269,24 +269,24 @@ def _create_render_start_handler(name, gcode=None):
 def _create_render_success_handler(name, gcode=None):
 	def f(movie):
 		delete_unrendered_timelapse(name)
-		payload = dict(gcode=gcode if gcode is not None else "unknown",
-		               movie=movie,
-		               movie_basename=os.path.basename(movie),
-		               movie_prefix=name)
+		payload = {"gcode": gcode if gcode is not None else "unknown",
+		           "movie": movie,
+		           "movie_basename": os.path.basename(movie),
+		           "movie_prefix": name}
 		eventManager().fire(Events.MOVIE_DONE, payload)
 	return f
 
 
 def _create_render_fail_handler(name, gcode=None):
 	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error", reason="unknown"):
-		payload = dict(gcode=gcode if gcode is not None else "unknown",
-		               movie=movie,
-		               movie_basename=os.path.basename(movie),
-		               movie_prefix=name,
-		               returncode=returncode,
-		               out=stdout,
-		               error=stderr,
-		               reason=reason)
+		payload = {"gcode": gcode if gcode is not None else "unknown",
+		           "movie": movie,
+		           "movie_basename": os.path.basename(movie),
+		           "movie_prefix": name,
+		           "returncode": returncode,
+		           "out": stdout,
+		           "error": stderr,
+		           "reason": reason}
 		eventManager().fire(Events.MOVIE_FAILED, payload)
 	return f
 
@@ -331,7 +331,7 @@ def notify_callback(callback, config=None, timelapse=None):
 		callback.sendTimelapseConfig(config)
 	except Exception:
 		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration",
-		                                      extra=dict(callback=fqcn(callback)))
+		                                      extra={"callback": fqcn(callback)})
 
 
 def configure_timelapse(config=None, persist=False):
@@ -531,7 +531,7 @@ class Timelapse(object):
 			create_movie()
 
 		def wait_for_captures(callback):
-			self._capture_queue.put(dict(type=self.__class__.QUEUE_ENTRY_TYPE_CALLBACK, callback=callback))
+			self._capture_queue.put({"type": self.__class__.QUEUE_ENTRY_TYPE_CALLBACK, "callback": callback})
 
 		def create_wait_for_captures(callback):
 			def f():
@@ -558,9 +558,9 @@ class Timelapse(object):
 			if self._post_roll > 0:
 				# capture post roll, wait for THAT to finish, THEN render
 				eventManager().fire(Events.POSTROLL_START,
-				                    dict(postroll_duration=self.calculate_post_roll(),
-				                         postroll_length=self.post_roll,
-				                         postroll_fps=self.fps))
+				                    {"postroll_duration": self.calculate_post_roll(),
+				                     "postroll_length": self.post_roll,
+				                     "postroll_fps": self.fps})
 				if do_create_movie:
 					self._on_post_roll_done = create_wait_for_captures(reset_and_create)
 				else:
@@ -602,9 +602,9 @@ class Timelapse(object):
 			self._image_number += 1
 
 		self._logger.debug("Capturing image to {}".format(filename))
-		entry = dict(type=self.__class__.QUEUE_ENTRY_TYPE_CAPTURE,
-		             filename=filename,
-		             onerror=self._on_capture_error)
+		entry = {"type": self.__class__.QUEUE_ENTRY_TYPE_CAPTURE,
+		         "filename": filename,
+		         "onerror": self._on_capture_error}
 		self._capture_queue.put(entry)
 		return filename
 
@@ -624,7 +624,7 @@ class Timelapse(object):
 
 			elif entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CALLBACK and "callback" in entry:
 				args = entry.pop("args", [])
-				kwargs = entry.pop("kwargs", dict())
+				kwargs = entry.pop("kwargs", {})
 				entry["callback"](*args, **kwargs)
 
 	def _perform_capture(self, filename, onerror=None):
@@ -635,7 +635,7 @@ class Timelapse(object):
 			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()))
 
-		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
+		eventManager().fire(Events.CAPTURE_START, {"file": filename})
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
 			r = requests.get(self._snapshot_url,
@@ -668,14 +668,14 @@ class Timelapse(object):
 
 		# handle events and onerror call
 		if err is None:
-			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 			return True
 		else:
 			if callable(onerror):
 				onerror()
-			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
-			                                                error=str(err),
-			                                                url=self._snapshot_url))
+			eventManager().fire(Events.CAPTURE_FAILED, {"file": filename,
+			                                            "error": str(err),
+			                                            "url": self._snapshot_url})
 			return False
 
 

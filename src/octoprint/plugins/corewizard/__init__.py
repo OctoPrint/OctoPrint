@@ -46,11 +46,11 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			if not name:
 				continue
 
-			config = dict(type="wizard",
-			              name=name,
-			              template="corewizard_{}_wizard.jinja2".format(key),
-			              div="wizard_plugin_corewizard_{}".format(key),
-			              suffix="_{}".format(key))
+			config = {"type": "wizard",
+			          "name": name,
+			          "template": "corewizard_{}_wizard.jinja2".format(key),
+			          "div": "wizard_plugin_corewizard_{}".format(key),
+			          "suffix": "_{}".format(key)}
 			if key in additional:
 				additional_result = additional[key]()
 				if additional_result:
@@ -63,12 +63,10 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_assets(self):
 		if self.is_wizard_required():
-			return dict(
-				js=["js/corewizard.js"],
-				css=["css/corewizard.css"]
-			)
+			return {"js": ["js/corewizard.js"],
+			        "css": ["css/corewizard.css"]}
 		else:
-			return dict()
+			return {}
 
 	#~~ WizardPlugin API
 
@@ -85,7 +83,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return any_required
 
 	def get_wizard_details(self):
-		result = dict()
+		result = {}
 
 		def add_result(key, method):
 			result[key] = method()
@@ -99,7 +97,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ helpers
 
 	def _get_subwizard_attrs(self, start, end, callback=None):
-		result = dict()
+		result = {}
 
 		for item in dir(self):
 			if not item.startswith(start) or not item.endswith(end):

@@ -27,16 +27,10 @@ from past.builtins import basestring
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
 
-extensions = dict(
-)
+extensions = {}
 
 def full_extension_tree():
-	result = dict(
-		# extensions for printable machine code
-		machinecode=dict(
-			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
-		)
-	)
+	result = {"machinecode": {"gcode": ContentTypeMapping(["gcode", "gco", "g"], "text/plain")}}
 
 	def leaf_merger(a, b):
 		supported_leaf_types = (ContentTypeMapping, ContentTypeDetector, list)
@@ -82,7 +76,7 @@ def full_extension_tree():
 		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
 			                                      "tree entries from SlicerPlugin {name}".format(name=plugin._identifier),
-			                                      extra=dict(plugin=plugin._identifier))
+			                                      extra={"plugin": plugin._identifier})
 
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
@@ -94,7 +88,7 @@ def full_extension_tree():
 		except Exception:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension "
 			                                      "tree entries from hook {name}".format(name=name),
-			                                      extra=dict(plugin=name))
+			                                      extra={"plugin": name})
 
 	return result
 
@@ -206,7 +200,7 @@ class FileManager(object):
 		self._analysis_queue = analysis_queue
 		self._analysis_queue.register_finish_callback(self._on_analysis_finished)
 
-		self._storage_managers = dict()
+		self._storage_managers = {}
 		if initial_storage_managers:
 			self._storage_managers.update(initial_storage_managers)
 
@@ -214,14 +208,14 @@ class FileManager(object):
 		self._printer_profile_manager = printer_profile_manager
 
 		import threading
-		self._slicing_jobs = dict()
+		self._slicing_jobs = {}
 		self._slicing_jobs_mutex = threading.Lock()
 
 		self._slicing_progress_callbacks = []
 		self._last_slicing_progress = None
 
 		self._progress_plugins = []
-		self._preprocessor_hooks = dict()
+		self._preprocessor_hooks = {}
 
 		import octoprint.settings
 		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
@@ -336,24 +330,24 @@ class FileManager(object):
 		                 printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
-					eventManager().fire(Events.SLICING_FAILED, dict(slicer=slicer_name,
-					                                                stl=source_path,
-					                                                stl_location=source_location,
-					                                                gcode=dest_path,
-					                                                gcode_location=dest_location,
-					                                                reason=_error))
+					eventManager().fire(Events.SLICING_FAILED, {"slicer": slicer_name,
+					                                            "stl": source_path,
+					                                            "stl_location": source_location,
+					                                            "gcode": dest_path,
+					                                            "gcode_location": dest_location,
+					                                            "reason": _error})
 				elif _cancelled:
-					eventManager().fire(Events.SLICING_CANCELLED, dict(slicer=slicer_name,
-					                                                   stl=source_path,
-					                                                   stl_location=source_location,
-					                                                   gcode=dest_path,
-					                                                   gcode_location=dest_location))
+					eventManager().fire(Events.SLICING_CANCELLED, {"slicer": slicer_name,
+					                                               "stl": source_path,
+					                                               "stl_location": source_location,
+					                                               "gcode": dest_path,
+					                                               "gcode_location": dest_location})
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
 					hash = source_meta.get("hash", "n/a")
 
 					import io
-					links = [("model", dict(name=source_path))]
+					links = [("model", {"name": source_path})]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = StreamWrapper(os.path.basename(dest_path),
 					                         io.BytesIO(";Generated from {stl_name} (hash: {hash})\n".format(**locals()).encode("ascii", "replace")),
@@ -365,12 +359,12 @@ class FileManager(object):
 					              printer_profile=printer_profile, analysis=_analysis)
 
 					end_time = octoprint.util.monotonic_time()
-					eventManager().fire(Events.SLICING_DONE, dict(slicer=slicer_name,
-					                                              stl=source_path,
-					                                              stl_location=source_location,
-					                                              gcode=dest_path,
-					                                              gcode_location=dest_location,
-					                                              time=end_time - start_time))
+					eventManager().fire(Events.SLICING_DONE, {"slicer": slicer_name,
+					                                          "stl": source_path,
+					                                          "stl_location": source_location,
+					                                          "gcode": dest_path,
+					                                          "gcode_location": dest_location,
+					                                          "time": end_time - start_time})
 
 					if callback is not None:
 						if callback_args is None:
@@ -439,7 +433,7 @@ class FileManager(object):
 					callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
 				except Exception:
 					self._logger.exception("Exception while pushing slicing progress",
-				                           extra=dict(callback=fqcn(callback)))
+				                           extra={"callback": fqcn(callback)})
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
@@ -448,7 +442,7 @@ class FileManager(object):
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
 						except Exception:
 							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier,
-							                       extra=dict(plugin=plugin._identifier))
+							                       extra={"plugin": plugin._identifier})
 
 				import threading
 				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))
@@ -474,7 +468,7 @@ class FileManager(object):
 		if isinstance(destinations, basestring):
 			destinations = [destinations]
 
-		result = dict()
+		result = {}
 		for dst in destinations:
 			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive, force_refresh=force_refresh)
 		return result
@@ -487,7 +481,7 @@ class FileManager(object):
 			try:
 				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 			except Exception:
-				self._logger.exception("Error when calling preprocessor hook for plugin {}, ignoring".format(name), extra=dict(plugin=name))
+				self._logger.exception("Error when calling preprocessor hook for plugin {}, ignoring".format(name), extra={"plugin": name})
 				continue
 
 			if hook_file_object is not None:
@@ -505,11 +499,11 @@ class FileManager(object):
 			self._analysis_queue.enqueue(queue_entry, high_priority=True)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
-		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
-		                                            path=path_in_storage,
-		                                            name=name,
-		                                            type=get_file_type(name)))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FILE_ADDED, {"storage": destination,
+		                                        "path": path_in_storage,
+		                                        "name": name,
+		                                        "type": get_file_type(name)})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 		return path_in_storage
 
 	def remove_file(self, destination, path):
@@ -518,11 +512,11 @@ class FileManager(object):
 		self._storage(destination).remove_file(path)
 
 		_, name = self._storage(destination).split_path(path)
-		eventManager().fire(Events.FILE_REMOVED, dict(storage=destination,
-		                                              path=path,
-		                                              name=name,
-		                                              type=get_file_type(name)))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FILE_REMOVED, {"storage": destination,
+		                                          "path": path,
+		                                          "name": name,
+		                                          "type": get_file_type(name)})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def copy_file(self, destination, source, dst):
 		path_in_storage = self._storage(destination).copy_file(source, dst)
@@ -532,11 +526,11 @@ class FileManager(object):
 				self._analysis_queue.enqueue(queue_entry)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
-		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
-		                                            path=path_in_storage,
-		                                            name=name,
-		                                            type=get_file_type(name)))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FILE_ADDED, {"storage": destination,
+		                                        "path": path_in_storage,
+		                                        "name": name,
+		                                        "type": get_file_type(name)})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def move_file(self, destination, source, dst):
 		queue_entry = self._analysis_queue_entry(destination, source)
@@ -552,24 +546,24 @@ class FileManager(object):
 		dst_path_in_storage = self._storage(destination).path_in_storage(dst)
 		_, dst_name = self._storage(destination).split_path(dst_path_in_storage)
 
-		eventManager().fire(Events.FILE_REMOVED, dict(storage=destination,
-		                                              path=source_path_in_storage,
-		                                              name=source_name,
-		                                              type=get_file_type(source_name)))
-		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
-		                                            path=dst_path_in_storage,
-		                                            name=dst_name,
-		                                            type=get_file_type(dst_name)))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FILE_REMOVED, {"storage": destination,
+		                                          "path": source_path_in_storage,
+		                                          "name": source_name,
+		                                          "type": get_file_type(source_name)})
+		eventManager().fire(Events.FILE_ADDED, {"storage": destination,
+		                                        "path": dst_path_in_storage,
+		                                        "name": dst_name,
+		                                        "type": get_file_type(dst_name)})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def add_folder(self, destination, path, ignore_existing=True, display=None):
 		path_in_storage = self._storage(destination).add_folder(path, ignore_existing=ignore_existing, display=display)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
-		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
-		                                              path=path_in_storage,
-		                                              name=name))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FOLDER_ADDED, {"storage": destination,
+		                                          "path": path_in_storage,
+		                                          "name": name})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 		return path_in_storage
 
 	def remove_folder(self, destination, path, recursive=True):
@@ -579,20 +573,20 @@ class FileManager(object):
 		self._analysis_queue.resume()
 
 		_, name = self._storage(destination).split_path(path)
-		eventManager().fire(Events.FOLDER_REMOVED, dict(storage=destination,
-		                                                path=path,
-		                                                name=name))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FOLDER_REMOVED, {"storage": destination,
+		                                            "path": path,
+		                                            "name": name})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def copy_folder(self, destination, source, dst):
 		path_in_storage = self._storage(destination).copy_folder(source, dst)
 		self._determine_analysis_backlog(destination, self._storage(destination), root=path_in_storage)
 
 		_, name = self._storage(destination).split_path(path_in_storage)
-		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
-		                                              path=path_in_storage,
-		                                              name=name))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FOLDER_ADDED, {"storage": destination,
+		                                          "path": path_in_storage,
+		                                          "name": name})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def move_folder(self, destination, source, dst):
 		self._analysis_queue.dequeue_folder(destination, source)
@@ -605,13 +599,13 @@ class FileManager(object):
 		_, source_name = self._storage(destination).split_path(source_path_in_storage)
 		_, dst_name = self._storage(destination).split_path(dst_path_in_storage)
 
-		eventManager().fire(Events.FOLDER_REMOVED, dict(storage=destination,
-		                                                path=source_path_in_storage,
-		                                                name=source_name))
-		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
-		                                              path=dst_path_in_storage,
-		                                              name=dst_name))
-		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+		eventManager().fire(Events.FOLDER_REMOVED, {"storage": destination,
+		                                            "path": source_path_in_storage,
+		                                            "name": source_name})
+		eventManager().fire(Events.FOLDER_ADDED, {"storage": destination,
+		                                          "path": dst_path_in_storage,
+		                                          "name": dst_name})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
 	def has_analysis(self, destination, path):
 		return self._storage(destination).has_analysis(path)
@@ -628,10 +622,16 @@ class FileManager(object):
 	def log_print(self, destination, path, timestamp, print_time, success, printer_profile):
 		try:
 			if success:
-				self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success, printerProfile=printer_profile))
+				self._storage(destination).add_history(path, {"timestamp": timestamp,
+				                                              "printTime": print_time,
+				                                              "success": success,
+				                                              "printerProfile": printer_profile})
 			else:
-				self._storage(destination).add_history(path, dict(timestamp=timestamp, success=success, printerProfile=printer_profile))
-			eventManager().fire(Events.METADATA_STATISTICS_UPDATED, dict(storage=destination, path=path))
+				self._storage(destination).add_history(path, {"timestamp": timestamp,
+				                                              "success": success,
+				                                              "printerProfile": printer_profile})
+			eventManager().fire(Events.METADATA_STATISTICS_UPDATED, {"storage": destination,
+			                                                         "path": path})
 		except NoSuchStorage:
 			# if there's no storage configured where to log the print, we'll just not log it
 			pass
@@ -641,10 +641,10 @@ class FileManager(object):
 		import yaml
 		from octoprint.util import atomic_write
 
-		data = dict(origin=origin,
-		            path=self.path_in_storage(origin, path),
-		            pos=pos,
-		            date=time.time())
+		data = {"origin": origin,
+		        "path": self.path_in_storage(origin, path),
+		        "pos": pos,
+		        "date": time.time()}
 		try:
 			with atomic_write(self._recovery_file, mode='wt', max_permissions=0o666) as f:
 				yaml.safe_dump(data, stream=f, default_flow_style=False, indent=2, allow_unicode=True)

@@ -19,27 +19,27 @@ class GcodeviewerPlugin(octoprint.plugin.AssetPlugin,
 		      "js/viewer/renderer.js"
 		]
 
-		return dict(js=js,
-		            less=["less/gcodeviewer.less"],
-		            css=["css/gcodeviewer.css"])
+		return {"js": js,
+		        "less": ["less/gcodeviewer.less"],
+		        "css": ["css/gcodeviewer.css"]}
 
 	def get_template_configs(self):
 		return [
-			dict(type="tab",
-			     template="gcodeviewer_tab.jinja2",
-			     div="gcode",
-			     styles=["display: none;"],
-			     data_bind="visible: loginState.hasAllPermissionsKo(access.permissions.GCODE_VIEWER, access.permissions.FILES_DOWNLOAD)"),
-			dict(type="settings",
-			     template="gcodeviewer_settings.jinja2",
-			     custom_bindings=True),
-			dict(type="generic",
-			     template="gcodeviewer_initscript.jinja2")
+			{"type": "tab",
+			 "template": "gcodeviewer_tab.jinja2",
+			 "div": "gcode",
+			 "styles": ["display: none;"],
+			 "data_bind": "visible: loginState.hasAllPermissionsKo(access.permissions.GCODE_VIEWER, access.permissions.FILES_DOWNLOAD)"},
+			{"type": "settings",
+			 "template": "gcodeviewer_settings.jinja2",
+			 "custom_bindings": True},
+			{"type": "generic",
+			 "template": "gcodeviewer_initscript.jinja2"}
 		]
 
 	def get_settings_defaults(self):
-		return dict(mobileSizeThreshold=2 * 1024 * 1024, # 2MB
-		            sizeThreshold=20 * 1024 * 1024) # 20MB
+		return {"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
+		        "sizeThreshold": 20 * 1024 * 1024} # 20MB
 
 	def get_settings_version(self):
 		return 1

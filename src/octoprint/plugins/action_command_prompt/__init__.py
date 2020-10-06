@@ -64,18 +64,18 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="INTERACT",
-			     name="Interact with printer prompts",
-			     description=gettext("Allows to see and interact with printer prompts"),
-			     default_groups=[USER_GROUP],
-			     roles=["interact"])
+			{"key": "INTERACT",
+			 "name": "Interact with printer prompts",
+			 "description": gettext("Allows to see and interact with printer prompts"),
+			 "default_groups": [USER_GROUP],
+			 "roles": ["interact"]}
 		]
 
 	#~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/action_command_prompt.js"],
-		            clientjs=["clientjs/action_command_prompt.js"])
+		return {"js": ["js/action_command_prompt.js"],
+		        "clientjs": ["clientjs/action_command_prompt.js"]}
 
 	#~ EventHandlerPlugin
 
@@ -88,10 +88,10 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(enable="detected",
-		            command=self.COMMAND,
-		            enable_emergency_sending=True,
-		            enable_signal_support=True)
+		return {"enable": "detected",
+		        "command": self.COMMAND,
+		        "enable_emergency_sending": True,
+		        "enable_signal_support": True}
 
 	def on_settings_save(self, data):
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
@@ -103,7 +103,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ SimpleApiPlugin
 
 	def get_api_commands(self):
-		return dict(select=["choice"])
+		return {"select": ["choice"]}
 
 	def on_api_command(self, command, data):
 		if command == "select":
@@ -130,7 +130,7 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 	#~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="settings", name=gettext("Printer Dialogs"), custom_bindings=False)]
+		return [{"type": "settings", "name": gettext("Printer Dialogs"), "custom_bindings": False}]
 
 	#~ action command handler
 
@@ -204,16 +204,16 @@ class ActionCommandPromptPlugin(octoprint.plugin.AssetPlugin,
 			return
 
 		self._prompt.activate()
-		self._plugin_manager.send_plugin_message(self._identifier, dict(action="show",
-		                                                                text=self._prompt.text,
-		                                                                choices=self._prompt.choices))
+		self._plugin_manager.send_plugin_message(self._identifier, {"action": "show",
+		                                                            "text": self._prompt.text,
+		                                                            "choices": self._prompt.choices})
 
 	def _close_prompt(self):
 		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support):
 			return
 
 		self._prompt = None
-		self._plugin_manager.send_plugin_message(self._identifier, dict(action="close"))
+		self._plugin_manager.send_plugin_message(self._identifier, {"action": "close"})
 
 	def _answer_prompt(self, choice):
 		if self._enable == "never" or (self._enable == "detected" and not self._cap_prompt_support):

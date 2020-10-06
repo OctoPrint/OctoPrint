@@ -57,25 +57,25 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(enabled=None,
-		            unique_id=None,
-		            server=TRACKING_URL,
-		            ping=15*60,
-		            pong=24*60*60,
-		            events=dict(pong=True,
-		                        startup=True,
-		                        printjob=True,
-		                        commerror=True,
-		                        plugin=True,
-		                        update=True,
-		                        printer=True,
-		                        printer_safety_check=True,
-		                        throttled=True,
-		                        slicing=True))
+		return {"enabled": None,
+		        "unique_id": None,
+		        "server": TRACKING_URL,
+		        "ping": 15*60,
+		        "pong": 24*60*60,
+		        "events": {"pong": True,
+		                   "startup": True,
+		                   "printjob": True,
+		                   "commerror": True,
+		                   "plugin": True,
+		                   "update": True,
+		                   "printer": True,
+		                   "printer_safety_check": True,
+		                   "throttled": True,
+		                   "slicing": True}}
 
 	def get_settings_restricted_paths(self):
-		return dict(admin=[["enabled"], ["unique_id"], ["events"]],
-		            never=[["server"], ["ping"]])
+		return {"admin": [["enabled"], ["unique_id"], ["events"]],
+		        "never": [["server"], ["ping"]]}
 
 	def on_settings_save(self, data):
 		enabled = self._settings.get(["enabled"])
@@ -118,8 +118,8 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			self._track_commerror_event(event, payload)
 
 		elif event in (Events.CONNECTED,):
-			self._printer_connection_parameters = dict(port=payload["port"],
-			                                           baudrate=payload["baudrate"])
+			self._printer_connection_parameters = {"port": payload["port"],
+			                                       "baudrate": payload["baudrate"]}
 			self._record_next_firmware_info = True
 
 		elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
@@ -149,14 +149,14 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_template_configs(self):
 		return [
-			dict(type="settings", name=gettext("Anonymous Usage Tracking"), template="tracking_settings.jinja2", custom_bindings=False),
-			dict(type="wizard", name=gettext("Anonymous Usage Tracking"), template="tracking_wizard.jinja2", custom_bindings=True, mandatory=True)
+			{"type": "settings", "name": gettext("Anonymous Usage Tracking"), "template": "tracking_settings.jinja2", "custom_bindings": False},
+			{"type": "wizard", "name": gettext("Anonymous Usage Tracking"), "template": "tracking_wizard.jinja2", "custom_bindings": True, "mandatory": True}
 		]
 
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/usage.js"])
+		return {"js": ["js/usage.js"]}
 
 	##~~ WizardPlugin
 
@@ -260,13 +260,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		if not self._settings.get_boolean(["events", "throttled"]):
 			return
 
-		args = dict(throttled_now=payload["current_issue"],
-		            throttled_past=payload["past_issue"],
-		            throttled_mask=payload["raw_value"],
-		            throttled_voltage_now=payload["current_undervoltage"],
-		            throttled_voltage_past=payload["past_undervoltage"],
-		            throttled_overheat_now=payload["current_overheat"],
-		            throttled_overheat_past=payload["past_overheat"])
+		args = {"throttled_now": payload["current_issue"],
+		        "throttled_past": payload["past_issue"],
+		        "throttled_mask": payload["raw_value"],
+		        "throttled_voltage_now": payload["current_undervoltage"],
+		        "throttled_voltage_past": payload["past_undervoltage"],
+		        "throttled_overheat_now": payload["current_overheat"],
+		        "throttled_overheat_past": payload["past_overheat"]}
 
 		if payload["current_issue"]:
 			track_event = "system_throttled"
@@ -284,7 +284,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		track_event = "commerror_{}".format(payload["reason"])
-		args = dict(commerror_text=payload["error"])
+		args = {"commerror_text": payload["error"]}
 
 		if callable(self._helpers_get_throttle_state):
 			try:
@@ -312,7 +312,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 		sha.update(unique_id.encode("utf-8"))
 
 		track_event = None
-		args = dict(origin=payload.get("origin"), file=sha.hexdigest())
+		args = {"origin": payload.get("origin"), "file": sha.hexdigest()}
 
 		if event == Events.PRINT_STARTED:
 			track_event = "print_started"
@@ -365,7 +365,7 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if event in (Events.FIRMWARE_DATA,):
-			args = dict(firmware_name=payload["name"])
+			args = {"firmware_name": payload["name"]}
 			if self._printer_connection_parameters:
 				args["printer_port"] = self._printer_connection_parameters["port"]
 				args["printer_baudrate"] = self._printer_connection_parameters["baudrate"]
@@ -431,13 +431,13 @@ class TrackingPlugin(octoprint.plugin.SettingsPlugin,
 				pass
 
 	def _get_environment_payload(self):
-		payload = dict(version=get_octoprint_version_string(),
-		               os=self._environment["os"]["id"],
-		               python=self._environment["python"]["version"],
-		               pip=self._environment["python"]["pip"],
-		               cores=self._environment["hardware"]["cores"],
-		               freq=self._environment["hardware"]["freq"],
-		               ram=self._environment["hardware"]["ram"])
+		payload = {"version": get_octoprint_version_string(),
+		           "os": self._environment["os"]["id"],
+		           "python": self._environment["python"]["version"],
+		           "pip": self._environment["python"]["pip"],
+		           "cores": self._environment["hardware"]["cores"],
+		           "freq": self._environment["hardware"]["freq"],
+		           "ram": self._environment["hardware"]["ram"]}
 
 		if "plugins" in self._environment and "pi_support" in self._environment["plugins"]:
 			payload["pi_model"] = self._environment["plugins"]["pi_support"]["model"]

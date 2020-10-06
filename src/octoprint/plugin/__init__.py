@@ -215,7 +215,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if args is None:
 		args = []
 	if kwargs is None:
-		kwargs = dict()
+		kwargs = {}
 
 	logger = logging.getLogger(__name__)
 
@@ -231,7 +231,8 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 				if callback:
 					callback(plugin._identifier, plugin, result)
 			except Exception as exc:
-				logger.exception("Error while calling plugin %s" % plugin._identifier, extra=dict(plugin=plugin._identifier))
+				logger.exception("Error while calling plugin %s" % plugin._identifier,
+				                 extra={"plugin": plugin._identifier})
 				if error_callback:
 					error_callback(plugin._identifier, plugin, exc)
 
@@ -346,20 +347,20 @@ class PluginSettings(object):
 		self.plugin_key = plugin_key
 
 		if defaults is not None:
-			self.defaults = dict(plugins=dict())
+			self.defaults = {"plugins": {}}
 			self.defaults["plugins"][plugin_key] = defaults
 			self.defaults["plugins"][plugin_key]["_config_version"] = None
 		else:
 			self.defaults = None
 
 		if get_preprocessors is None:
-			get_preprocessors = dict()
-		self.get_preprocessors = dict(plugins=dict())
+			get_preprocessors = {}
+		self.get_preprocessors = {"plugins": {}}
 		self.get_preprocessors["plugins"][plugin_key] = get_preprocessors
 
 		if set_preprocessors is None:
-			set_preprocessors = dict()
-		self.set_preprocessors = dict(plugins=dict())
+			set_preprocessors = {}
+		self.set_preprocessors = {"plugins": {}}
 		self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
 
 		def prefix_path_in_args(args, index=0):
@@ -392,31 +393,27 @@ class PluginSettings(object):
 		def wrap_overlay(args):
 			result = list(args)
 			overlay = result[0]
-			result[0] = dict(plugins={plugin_key: overlay})
+			result[0] = {"plugins": {plugin_key: overlay}}
 			return result
 
-		self.access_methods = dict(
-			has            = ("has",            prefix_path_in_args, add_getter_kwargs),
-			get            = ("get",            prefix_path_in_args, add_getter_kwargs),
-			get_int        = ("getInt",         prefix_path_in_args, add_getter_kwargs),
-			get_float      = ("getFloat",       prefix_path_in_args, add_getter_kwargs),
-			get_boolean    = ("getBoolean",     prefix_path_in_args, add_getter_kwargs),
-			set            = ("set",            prefix_path_in_args, add_setter_kwargs),
-			set_int        = ("setInt",         prefix_path_in_args, add_setter_kwargs),
-			set_float      = ("setFloat",       prefix_path_in_args, add_setter_kwargs),
-			set_boolean    = ("setBoolean",     prefix_path_in_args, add_setter_kwargs),
-			remove         = ("remove",         prefix_path_in_args, lambda x: x),
-			add_overlay    = ("add_overlay",    wrap_overlay,        lambda x: x),
-			remove_overlay = ("remove_overlay", lambda x: x,         lambda x: x)
-		)
-		self.deprecated_access_methods = dict(
-			getInt    ="get_int",
-			getFloat  ="get_float",
-			getBoolean="get_boolean",
-			setInt    ="set_int",
-			setFloat  ="set_float",
-			setBoolean="set_boolean"
-		)
+		self.access_methods = {"has":            ("has",            prefix_path_in_args, add_getter_kwargs),
+		                       "get":            ("get",            prefix_path_in_args, add_getter_kwargs),
+		                       "get_int":        ("getInt",         prefix_path_in_args, add_getter_kwargs),
+		                       "get_float":      ("getFloat",       prefix_path_in_args, add_getter_kwargs),
+		                       "get_boolean":    ("getBoolean",     prefix_path_in_args, add_getter_kwargs),
+		                       "set":            ("set",            prefix_path_in_args, add_setter_kwargs),
+		                       "set_int":        ("setInt",         prefix_path_in_args, add_setter_kwargs),
+		                       "set_float":      ("setFloat",       prefix_path_in_args, add_setter_kwargs),
+		                       "set_boolean":    ("setBoolean",     prefix_path_in_args, add_setter_kwargs),
+		                       "remove":         ("remove",         prefix_path_in_args, lambda x: x),
+		                       "add_overlay":    ("add_overlay",    wrap_overlay,        lambda x: x),
+		                       "remove_overlay": ("remove_overlay", lambda x: x,         lambda x: x)}
+		self.deprecated_access_methods = {"getInt": "get_int",
+		                                  "getFloat": "get_float",
+		                                  "getBoolean": "get_boolean",
+		                                  "setInt": "set_int",
+		                                  "setFloat": "set_float",
+		                                  "setBoolean": "set_boolean"}
 
 	def _prefix_path(self, path=None):
 		if path is None:
@@ -528,12 +525,10 @@ class PluginSettings(object):
 		defaults = kwargs.get("defaults", self.defaults)
 		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
 
-		kwargs.update(dict(
-			merged=merged,
-			asdict=asdict,
-			defaults=defaults,
-			preprocessors=preprocessors
-		))
+		kwargs.update({"merged": merged,
+		               "asdict": asdict,
+		               "defaults": defaults,
+		               "preprocessors": preprocessors})
 
 		return self.settings.get(self._prefix_path(), **kwargs)
 

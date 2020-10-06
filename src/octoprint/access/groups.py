@@ -65,38 +65,38 @@ class GroupManager(object):
 
 	def _init_defaults(self):
 		self._default_groups = {
-			ADMIN_GROUP: dict(name="Admins",
-			                  description="Administrators",
-			                  permissions=self.default_permissions_for_group(ADMIN_GROUP),
-			                  subgroups=[],
-			                  changeable=False,
-			                  removable=False,
-			                  default=False,
-			                  toggleable=True),
-			USER_GROUP: dict(name="Operator",
-			                 description="Group to gain operator access",
-			                 permissions=self.default_permissions_for_group(USER_GROUP),
-			                 subgroups=[],
-			                 changeable=True,
-			                 default=True,
-			                 removable=False,
-			                 toggleable=True),
-			GUEST_GROUP: dict(name="Guests",
-			                  description="Anyone who is not currently logged in",
-			                  permissions=self.default_permissions_for_group(GUEST_GROUP),
-			                  subgroups=[],
-			                  changeable=True,
-			                  default=False,
-			                  removable=False,
-			                  toggleable=False),
-			READONLY_GROUP: dict(name="Read-only Access",
-			                     description="Group to gain read-only access",
-			                     permissions=self.default_permissions_for_group(READONLY_GROUP),
-			                     subgroups=[],
-			                     changeable=False,
-			                     removable=False,
-			                     default=False,
-			                     toggleable=True)
+			ADMIN_GROUP: {"name": "Admins",
+			              "description": "Administrators",
+			              "permissions": self.default_permissions_for_group(ADMIN_GROUP),
+			              "subgroups": [],
+			              "changeable": False,
+			              "removable": False,
+			              "default": False,
+			              "toggleable": True},
+			USER_GROUP: {"name": "Operator",
+			             "description": "Group to gain operator access",
+			             "permissions": self.default_permissions_for_group(USER_GROUP),
+			             "subgroups": [],
+			             "changeable": True,
+			             "default": True,
+			             "removable": False,
+			             "toggleable": True},
+			GUEST_GROUP: {"name": "Guests",
+			              "description": "Anyone who is not currently logged in",
+			              "permissions": self.default_permissions_for_group(GUEST_GROUP),
+			              "subgroups": [],
+			              "changeable": True,
+			              "default": False,
+			              "removable": False,
+			              "toggleable": False},
+			READONLY_GROUP: {"name": "Read-only Access",
+			                 "description": "Group to gain read-only access",
+			                 "permissions": self.default_permissions_for_group(READONLY_GROUP),
+			                 "subgroups": [],
+			                 "changeable": False,
+			                 "removable": False,
+			                 "default": False,
+			                 "toggleable": True}
 		}
 
 		for key, g in self._default_groups.items():
@@ -186,7 +186,7 @@ class FilebasedGroupManager(GroupManager):
 				path = os.path.join(settings().getBaseFolder("base"), "groups.yaml")
 
 		self._groupfile = path
-		self._groups = dict()
+		self._groups = {}
 		self._dirty = False
 
 		GroupManager.__init__(self)
@@ -201,7 +201,7 @@ class FilebasedGroupManager(GroupManager):
 
 				if not "groups" in data:
 					groups = data
-					data = dict(groups=groups)
+					data = {"groups": groups}
 
 				file_version = data.get("_version", 1)
 				if file_version < self.FILE_VERSION:
@@ -210,7 +210,7 @@ class FilebasedGroupManager(GroupManager):
 					                  "storage, migrating to version {}".format(file_version, self.FILE_VERSION))
 					self._dirty = True
 
-				groups = data.get("groups", dict())
+				groups = data.get("groups", {})
 				tracked_permissions = data.get("tracked", list())
 
 				for key, attributes in groups.items():
@@ -270,21 +270,19 @@ class FilebasedGroupManager(GroupManager):
 		if self._groupfile is None or not self._dirty and not force:
 			return
 
-		groups = dict()
+		groups = {}
 		for key in self._groups.keys():
 			group = self._groups[key]
-			groups[key] = dict(
-				permissions=self._from_permissions(*group._permissions),
-				subgroups=self._from_groups(*group._subgroups),
-				default=group._default
-			)
+			groups[key] = {"permissions": self._from_permissions(*group._permissions),
+				           "subgroups": self._from_groups(*group._subgroups),
+				           "default": group._default}
 			if not key in self._default_groups:
 				groups[key]["name"] = group.get_name()
 				groups[key]["description"] = group.get_description()
 
-		data = dict(_version=self.FILE_VERSION,
-		            groups=groups,
-		            tracked=[x.key for x in Permissions.all()])
+		data = {"_version": self.FILE_VERSION,
+		        "groups": groups,
+		        "tracked": [x.key for x in Permissions.all()]}
 
 		with atomic_write(self._groupfile, mode='wt', permissions=0o600, max_permissions=0o666) as f:
 			import yaml
@@ -381,7 +379,8 @@ class FilebasedGroupManager(GroupManager):
 				self._dirty |= group.add_permissions_to_group(added_permissions)
 
 			notifications.append((("permissions_changed", group),
-			                      dict(added=added_permissions, removed=removed_permissions)))
+			                      {"added": added_permissions,
+			                       "removed": removed_permissions}))
 
 		if subgroups is not None:
 			subgroups = self._to_groups(*subgroups)
@@ -396,7 +395,8 @@ class FilebasedGroupManager(GroupManager):
 				self._dirty = group.add_subgroups_to_group(added_subgroups)
 
 			notifications.append((("subgroups_changed", group),
-			                      dict(added=added_subgroups, removed=removed_subgroups)))
+			                      {"added": added_subgroups,
+			                       "removed": removed_subgroups}))
 
 		if default is not None:
 			group.change_default(default)
@@ -445,18 +445,16 @@ class Group(object):
 
 	def as_dict(self):
 		from octoprint.access.permissions import OctoPrintPermission
-		return dict(
-			key=self.key,
-			name=self.get_name(),
-			description=self._description,
-			permissions=list(map(lambda p: p.key, self._permissions)),
-			subgroups=list(map(lambda g: g.key, self._subgroups)),
-			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
-			default=self._default,
-			removable=self._removable,
-			changeable=self._changeable,
-			toggleable=self._toggleable
-		)
+		return {"key": self.key,
+		        "name": self.get_name(),
+		        "description": self._description,
+		        "permissions": list(map(lambda p: p.key, self._permissions)),
+		        "subgroups": list(map(lambda g: g.key, self._subgroups)),
+		        "needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
+		        "default": self._default,
+		        "removable": self._removable,
+		        "changeable": self._changeable,
+		        "toggleable": self._toggleable}
 
 	@property
 	def key(self):

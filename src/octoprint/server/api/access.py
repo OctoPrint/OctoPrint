@@ -89,7 +89,7 @@ def update_group(key):
 		return make_response("Malformed JSON body in request", 400)
 
 	try:
-		kwargs = dict()
+		kwargs = {}
 
 		if "permissions" in data:
 			kwargs["permissions"] = data["permissions"]

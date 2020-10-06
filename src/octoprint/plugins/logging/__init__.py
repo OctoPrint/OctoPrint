@@ -36,11 +36,11 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="MANAGE",
-			     name="Logging management",
-			     description=gettext("Allows to download and delete log files and list and set log levels."),
-			     default_groups=[ADMIN_GROUP],
-			     roles=["manage"])
+			{"key": "MANAGE",
+			 "name": "Logging management",
+			 "description": gettext("Allows to download and delete log files and list and set log levels."),
+			 "default_groups": [ADMIN_GROUP],
+			 "roles": ["manage"]}
 		]
 
 	@octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
@@ -53,10 +53,10 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		levels = self._get_logging_levels()
 		serial_log_enabled = self._settings.global_get_boolean(["serial", "log"])
 		plugintimings_log_enabled = self._settings.global_get_boolean(["devel", "pluginTimings"])
-		return jsonify(logs=dict(files=files, free=free, total=total),
-		               setup=dict(loggers=loggers, levels=levels),
-		               serial_log=dict(enabled=serial_log_enabled),
-		               plugintimings_log=dict(enabled=plugintimings_log_enabled))
+		return jsonify(logs={"files": files, "free": free, "total": total},
+		               setup={"loggers": loggers, "levels": levels},
+		               serial_log={"enabled": serial_log_enabled},
+		               plugintimings_log={"enabled": plugintimings_log_enabled})
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
 	@no_firstrun_access
@@ -162,10 +162,10 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 	def _get_logging_levels(self):
 		config = self._get_logging_config()
 		if config is None or not isinstance(config, dict):
-			return dict()
+			return {}
 
 		return dict((key, value.get("level"))
-		            for key, value in config.get("loggers", dict()).items()
+		            for key, value in config.get("loggers", {}).items()
 		            if isinstance(value, dict) and "level" in value)
 
 	def _set_logging_levels(self, new_levels):
@@ -188,12 +188,12 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 			for component in purge:
 				del config["loggers"][component]
 		else:
-			config["loggers"] = dict()
+			config["loggers"] = {}
 
 		# update all logging levels
 		for logger, level in new_levels.items():
 			if logger not in config["loggers"]:
-				config["loggers"][logger] = dict()
+				config["loggers"][logger] = {}
 			config["loggers"][logger]["level"] = level
 
 		# delete empty entries
@@ -214,17 +214,20 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 		return logger and (logger.startswith("octoprint") or logger.startswith("tornado"))
 
 	def get_template_configs(self):
-		return [
-			dict(type="navbar", template="logging_navbar_seriallog.jinja2", suffix="_seriallog"),
-			dict(type="navbar", template="logging_navbar_plugintimingslog.jinja2", suffix="_plugintimingslog"),
-			dict(type="settings", custom_bindings=True)
-		]
+		return [{"type": "navbar",
+		         "template": "logging_navbar_seriallog.jinja2",
+		         "suffix": "_seriallog"},
+		        {"type": "navbar",
+		         "template": "logging_navbar_plugintimingslog.jinja2",
+		         "suffix": "_plugintimingslog"},
+		        {"type": "settings",
+		         "custom_bindings": True}]
 
 	def get_assets(self):
-		return dict(js=["js/logging.js"],
-		            clientjs=["clientjs/logging.js"],
-		            less=["less/logging.less"],
-		            css=["css/logging.css"])
+		return {"js": ["js/logging.js"],
+		        "clientjs": ["clientjs/logging.js"],
+		        "less": ["less/logging.less"],
+		        "css": ["css/logging.css"]}
 
 __plugin_name__ = "Logging"
 __plugin_author__ = "Shawn Bruce, based on work by Gina Häußge and Marc Hannappel"

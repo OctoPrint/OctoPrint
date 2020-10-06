@@ -66,19 +66,17 @@ regex_command = re.compile(r"^\s*((?P<codeGM>[GM]\d+)(\.(?P<subcode>\d+))?|(?P<c
 regex_float = re.compile(regex_float_pattern)
 """Regex for a float value."""
 
-regexes_parameters = dict(
-	floatE=re.compile(r"(^|[^A-Za-z])[Ee](?P<value>%s)" % regex_float_pattern),
-	floatF=re.compile(r"(^|[^A-Za-z])[Ff](?P<value>%s)" % regex_float_pattern),
-	floatP=re.compile(r"(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
-	floatR=re.compile(r"(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
-	floatS=re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
-	floatX=re.compile(r"(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
-	floatY=re.compile(r"(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
-	floatZ=re.compile(r"(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
-	intN=re.compile(r"(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
-	intS=re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
-	intT=re.compile(r"(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
-)
+regexes_parameters = {"floatE": re.compile(r"(^|[^A-Za-z])[Ee](?P<value>%s)" % regex_float_pattern),
+                      "floatF": re.compile(r"(^|[^A-Za-z])[Ff](?P<value>%s)" % regex_float_pattern),
+                      "floatP": re.compile(r"(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+                      "floatR": re.compile(r"(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
+                      "floatS": re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+                      "floatX": re.compile(r"(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
+                      "floatY": re.compile(r"(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
+                      "floatZ": re.compile(r"(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
+                      "intN": re.compile(r"(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+                      "intS": re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
+                      "intT": re.compile(r"(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)}
 """Regexes for parsing various GCODE command parameters."""
 
 regex_minMaxError = re.compile(r"Error:[0-9]\n")
@@ -307,10 +305,10 @@ class TemperatureRecord(object):
 	RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
 
 	def __init__(self):
-		self._tools = dict()
+		self._tools = {}
 		self._bed = (None, None)
 		self._chamber = (None, None)
-		self._custom = dict()
+		self._custom = {}
 
 	def copy_from(self, other):
 		self._tools = other.tools
@@ -351,25 +349,25 @@ class TemperatureRecord(object):
 		return dict(self._custom)
 
 	def as_script_dict(self):
-		result = dict()
+		result = {}
 
 		tools = self.tools
 		for tool, data in tools.items():
-			result[tool] = dict(actual=data[0],
-			                    target=data[1])
+			result[tool] = {"actual": data[0],
+			                "target": data[1]}
 
 		bed = self.bed
-		result["b"] = dict(actual=bed[0],
-		                   target=bed[1])
+		result["b"] = {"actual": bed[0],
+		               "target": bed[1]}
 
 		chamber = self.chamber
-		result["c"] = dict(actual=chamber[0],
-		                   target=chamber[1])
+		result["c"] = {"actual": chamber[0],
+		               "target": chamber[1]}
 
 		custom = self.custom
 		for identifier, data in custom.items():
-			result[identifier] = dict(actual=data[0],
-			                          target=data[1])
+			result[identifier] = {"actual": data[0],
+			                      "target": data[1]}
 
 		return result
 
@@ -454,7 +452,7 @@ class MachineCom(object):
 		self._detection_retry = self.DETECTION_RETRIES
 
 		self._temperatureTargetSetThreshold = 25
-		self._tempOffsets = dict()
+		self._tempOffsets = {}
 		self._command_queue = CommandQueue()
 		self._currentZ = None
 		self._currentF = None
@@ -474,7 +472,7 @@ class MachineCom(object):
 
 		self._timeout = None
 		self._ok_timeout = None
-		self._timeout_intervals = dict()
+		self._timeout_intervals = {}
 		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
 			try:
 				self._timeout_intervals[key] = float(value)
@@ -482,7 +480,7 @@ class MachineCom(object):
 				pass
 
 		self._consecutive_timeouts = 0
-		self._consecutive_timeout_maximums = dict()
+		self._consecutive_timeout_maximums = {}
 		for key, value in settings().get(["serial", "maxCommunicationTimeouts"], merged=True, asdict=True).items():
 			try:
 				self._consecutive_timeout_maximums[key] = int(value)
@@ -529,8 +527,8 @@ class MachineCom(object):
 
 		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
 		self._firmware_info_received = False
-		self._firmware_info = dict()
-		self._firmware_capabilities = dict()
+		self._firmware_info = {}
+		self._firmware_capabilities = {}
 
 		self._temperature_autoreporting = False
 		self._sdstatus_autoreporting = False
@@ -577,22 +575,16 @@ class MachineCom(object):
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
 
-		self._gcode_hooks = dict(
-			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.queuing"),
-			queued=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.queued"),
-			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sending"),
-			sent=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent")
-		)
+		self._gcode_hooks = {"queuing": self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.queuing"),
+			"queued": self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.queued"),
+			"sending": self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sending"),
+			"sent": self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent")}
 		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
 		self._error_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.error")
-		self._atcommand_hooks = dict(
-			queuing=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
-			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")
-		)
-		self._firmware_info_hooks = dict(
-			info=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.info"),
-			capabilities=self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.capabilities")
-		)
+		self._atcommand_hooks = {"queuing": self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.queuing"),
+		                         "sending": self._pluginManager.get_hooks("octoprint.comm.protocol.atcommand.sending")}
+		self._firmware_info_hooks = {"info": self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.info"),
+		                             "capabilities": self._pluginManager.get_hooks("octoprint.comm.protocol.firmware.capabilities")}
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -606,7 +598,7 @@ class MachineCom(object):
 		self._sdFileList = False
 		self._sdFileLongName = False
 		self._sdFiles = []
-		self._sdFilesMap = dict()
+		self._sdFilesMap = {}
 		self._sdFileToSelect = None
 		self._sdFileToSelectUser = None
 		self._ignore_select = False
@@ -626,7 +618,7 @@ class MachineCom(object):
 		self._suppress_scripts = set()
 		self._suppress_scripts_mutex = threading.RLock()
 
-		self._action_users = dict()
+		self._action_users = {}
 		self._action_users_mutex = threading.RLock()
 
 		self._pause_position_timer = None
@@ -683,7 +675,7 @@ class MachineCom(object):
 			if settings().getBoolean(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
-				self._sdFilesMap = dict()
+				self._sdFilesMap = {}
 				self._callback.on_comm_sd_files([])
 
 			if self._currentFile is not None:
@@ -1046,22 +1038,20 @@ class MachineCom(object):
 			return self._sendCommand(cmd, cmd_type=cmd_type, on_sent=on_sent, tags=tags)
 
 	def _getGcodeScript(self, scriptName, replacements=None):
-		context = dict()
+		context = {}
 		if replacements is not None and isinstance(replacements, dict):
 			context.update(replacements)
 
-		context.update(dict(
-			printer_profile=self._printerProfileManager.get_current_or_default(),
-			last_position=self.last_position,
-			last_temperature=self.last_temperature.as_script_dict()
-		))
+		context.update({"printer_profile": self._printerProfileManager.get_current_or_default(),
+		                "last_position": self.last_position,
+		                "last_temperature": self.last_temperature.as_script_dict()})
 
 		if scriptName == "afterPrintPaused" or scriptName == "beforePrintResumed":
-			context.update(dict(pause_position=self.pause_position,
-			                    pause_temperature=self.pause_temperature.as_script_dict()))
+			context.update({"pause_position": self.pause_position,
+			                "pause_temperature": self.pause_temperature.as_script_dict()})
 		elif scriptName == "afterPrintCancelled":
-			context.update(dict(cancel_position=self.cancel_position,
-			                    cancel_temperature=self.cancel_temperature.as_script_dict()))
+			context.update({"cancel_position": self.cancel_position,
+			                "cancel_temperature": self.cancel_temperature.as_script_dict()})
 
 		scriptLinesPrefix = []
 		scriptLinesSuffix = []
@@ -1071,7 +1061,7 @@ class MachineCom(object):
 				retval = hook(self, "gcode", scriptName)
 			except Exception:
 				self._logger.exception("Error while processing hook {name}.".format(**locals()),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 			else:
 				if retval is None:
 					continue
@@ -1099,7 +1089,7 @@ class MachineCom(object):
 
 				if len(retval) == 3:
 					variables = retval[2]
-					context.update(dict(plugins={name:variables}))
+					context.update({"plugins": {name:variables}})
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
@@ -1568,7 +1558,7 @@ class MachineCom(object):
 		self.sendCommand("M22", tags=tags | {"trigger:comm.release_sd_card",})
 		self._sdAvailable = False
 		self._sdFiles = []
-		self._sdFilesMap = dict()
+		self._sdFilesMap = {}
 
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
 		self._callback.on_comm_sd_files(self.getSdFiles())
@@ -1602,9 +1592,9 @@ class MachineCom(object):
 		filename = self._currentFile.getFilename()
 		pos = self._currentFile.getFilepos()
 
-		return dict(origin=origin,
-		            filename=filename,
-		            pos=pos)
+		return {"origin": origin,
+		        "filename": filename,
+		        "pos": pos}
 
 	def _recordFilePosition(self):
 		if self._currentFile is None:
@@ -1628,7 +1618,7 @@ class MachineCom(object):
 					return
 			except Exception:
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		if current_tool_key in parsedTemps or "T0" in parsedTemps:
 			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
@@ -1797,7 +1787,7 @@ class MachineCom(object):
 								except Exception:
 									self._logger.exception("Error while calling hook from plugin "
 									                       "{} with action command {}".format(name, action_command),
-									                       extra=dict(plugin=name))
+									                       extra={"plugin": name})
 									continue
 
 					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
@@ -2019,7 +2009,7 @@ class MachineCom(object):
 						if name and "malyan" in name.lower() and ver:
 							firmware_name = name.strip() + " " + ver.strip()
 
-					eventManager().fire(Events.FIRMWARE_DATA, dict(name=firmware_name, data=data))
+					eventManager().fire(Events.FIRMWARE_DATA, {"name": firmware_name, "data": data})
 
 					if not self._firmware_info_received and firmware_name:
 						firmware_name = firmware_name.strip()
@@ -2079,7 +2069,7 @@ class MachineCom(object):
 								hook(self, firmware_name, copy.copy(data))
 							except Exception:
 								self._logger.exception("Error processing firmware info hook {}:".format(name),
-								                       extra=dict(plugin=name))
+								                       extra={"plugin": name})
 
 				##~~ Firmware capability report triggered by M115
 				elif lower_line.startswith("cap:"):
@@ -2104,7 +2094,7 @@ class MachineCom(object):
 								hook(self, capability, enabled, copy.copy(self._firmware_capabilities))
 							except Exception:
 								self._logger.exception("Error processing firmware capability hook {}:".format(name),
-								                       extra=dict(plugin=name))
+								                       extra={"plugin": name})
 
 				##~~ invalid extruder
 				elif 'invalid extruder' in lower_line:
@@ -2326,7 +2316,7 @@ class MachineCom(object):
 								self._on_external_reset()
 								self.cancelPrint(disable_log_position=True)
 
-							eventManager().fire(Events.PRINTER_RESET, payload=dict(idle=idle))
+							eventManager().fire(Events.PRINTER_RESET, payload={"idle": idle})
 
 			except Exception:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
@@ -2564,7 +2554,7 @@ class MachineCom(object):
 				if match is None:
 					continue
 
-				outputs = dict()
+				outputs = {}
 				for template_key, template in feedback_controls[feedback_key]["templates"].items():
 					try:
 						output = template.format(*match.groups())
@@ -2578,7 +2568,10 @@ class MachineCom(object):
 
 					if output is not None:
 						outputs[template_key] = output
-				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED, dict(key=feedback_key, matched=matched_part, outputs=outputs))
+				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED,
+				                                        {"key": feedback_key,
+				                     "matched": matched_part,
+				                     "outputs": outputs})
 			except Exception:
 				self._logger.exception("Error while trying to match feedback control output, disabling key {key}".format(key=match_key))
 				feedback_errors.append(match_key)
@@ -2662,9 +2655,9 @@ class MachineCom(object):
 		else:
 			self.initSdCard(tags={"trigger:comm.on_connected"})
 
-		payload = dict(port=self._port, baudrate=self._baudrate)
+		payload = {"port": self._port, "baudrate": self._baudrate}
 		eventManager().fire(Events.CONNECTED, payload)
-		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
+		self.sendGcodeScript("afterPrinterConnected", replacements={"event": payload})
 
 	def _on_external_reset(self):
 		# hold queue processing, clear queues and acknowledgements, reset line number and last lines
@@ -2922,7 +2915,7 @@ class MachineCom(object):
 						ret = hook(self, stripped_error)
 					except Exception:
 						self._logger.exception("Error while processing hook {name}:".format(**locals()),
-						                       extra=dict(plugin=name))
+						                       extra={"plugin": name})
 					else:
 						if ret:
 							return line
@@ -2999,7 +2992,7 @@ class MachineCom(object):
 				ret = hook(self, ret)
 			except Exception:
 				self._logger.exception("Error while processing hook {name}:".format(**locals()),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 			else:
 				if ret is None:
 					return ""
@@ -3486,7 +3479,7 @@ class MachineCom(object):
 					                                                                phase=phase,
 					                                                                command=to_unicode(command,
 					                                                                                   errors="replace")),
-					                       extra=dict(plugin=name))
+					                       extra={"plugin": name})
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
 					                                               hook_results,
@@ -3503,7 +3496,7 @@ class MachineCom(object):
 						                   u"command as-is.".format(name=name,
 						                                            phase=phase,
 						                                            command=to_unicode(command, errors="replace")),
-						                   extra=dict(plugin=name))
+						                   extra={"plugin": name})
 						new_results.append((command, command_type, gcode, subcode, tags))
 					else:
 						new_results += normalized
@@ -3576,7 +3569,7 @@ class MachineCom(object):
 			except Exception:
 				self._logger.exception(u"Error while processing hook {} for "
 				                       u"phase {} and command {}:".format(name, phase, to_unicode(atcommand, errors="replace")),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		# trigger built-in handler if available
 		handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)
@@ -3705,8 +3698,8 @@ class MachineCom(object):
 				          "was reported as invalid by the firmware".format(new_tool))
 				return None,
 
-			before = self._getGcodeScript("beforeToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
-			after = self._getGcodeScript("afterToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
+			before = self._getGcodeScript("beforeToolChange", replacements={"tool": {"old": current_tool, "new": new_tool}})
+			after = self._getGcodeScript("afterToolChange", replacements={"tool": {"old": current_tool, "new": new_tool}})
 
 			def convert(data):
 				result = []
@@ -3735,7 +3728,7 @@ class MachineCom(object):
 			new_tool = int(toolMatch.group("value"))
 			self._toolBeforeChange = self._currentTool
 			self._currentTool = new_tool
-			eventManager().fire(Events.TOOL_CHANGE, dict(old=self._toolBeforeChange, new=self._currentTool))
+			eventManager().fire(Events.TOOL_CHANGE, {"old": self._toolBeforeChange, "new": self._currentTool})
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if "Z" in cmd or "F" in cmd:
@@ -4335,10 +4328,10 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 		duration = monotonic_time() - self._start_time
 		read_lines = self._read_lines
 		if duration > 0 and read_lines > 0:
-			stats = dict(lines=read_lines,
-			             rate=float(read_lines) / duration,
-			             time_per_line=duration * 1000.0 / float(read_lines),
-			             duration=duration)
+			stats = {"lines": read_lines,
+			         "rate": float(read_lines) / duration,
+			         "time_per_line": duration * 1000.0 / float(read_lines),
+			         "duration": duration}
 			self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
 
 
@@ -4573,7 +4566,7 @@ def process_gcode_line(line, offsets=None, current_tool=None):
 
 def convert_pause_triggers(configured_triggers):
 	if not configured_triggers:
-		return dict()
+		return {}
 
 	triggers = {
 		"enable": [],
@@ -4596,7 +4589,7 @@ def convert_pause_triggers(configured_triggers):
 			# invalid regex or something like this
 			_logger.debug("Problem with trigger %r: %s", trigger, str(exc))
 
-	result = dict()
+	result = {}
 	for t in triggers.keys():
 		if len(triggers[t]) > 0:
 			result[t] = re.compile("|".join(map(lambda pattern: "({pattern})".format(pattern=pattern), triggers[t])))
@@ -4605,7 +4598,7 @@ def convert_pause_triggers(configured_triggers):
 
 def convert_feedback_controls(configured_controls):
 	if not configured_controls:
-		return dict(), None
+		return {}, None
 
 	def preprocess_feedback_control(control, result):
 		if "key" in control and "regex" in control and "template" in control:
@@ -4627,7 +4620,7 @@ def convert_feedback_controls(configured_controls):
 				preprocess_feedback_control(c, result)
 
 	def prepare_result_entry():
-		return dict(pattern=None, matcher=None, templates=dict())
+		return {"pattern": None, "matcher": None, "templates": {}}
 
 	from collections import defaultdict
 	feedback_controls = defaultdict(prepare_result_entry)
@@ -4792,7 +4785,7 @@ def parse_firmware_line(line):
 		line[4] = ":"
 		line = "".join(line)
 
-	result = dict()
+	result = {}
 	split_line = regex_firmware_splitter.split(line.strip())[1:] # first entry is empty start of trimmed string
 	for key, value in chunks(split_line, 2):
 		result[key] = value.strip()
@@ -4866,9 +4859,9 @@ def parse_position_line(line):
 
 	match = regex_position.search(line)
 	if match is not None:
-		result = dict(x=float(match.group("x")),
-		              y=float(match.group("y")),
-		              z=float(match.group("z")))
+		result = {"x": float(match.group("x")),
+		          "y": float(match.group("y")),
+		          "z": float(match.group("z"))}
 		if match.group("e") is not None:
 			# report contains only one E
 			result["e"] = float(match.group("e"))
@@ -5212,8 +5205,8 @@ def upload_cli():
 	callback = MyMachineComCallback(path, target)
 
 	# mock printer profile manager
-	profile = dict(heatedBed=False,
-	               extruder=dict(count=1, sharedNozzle=False))
+	profile = {"heatedBed": False,
+	           "extruder": {"count": 1, "sharedNozzle": False}}
 	printer_profile_manager = Object()
 	printer_profile_manager.get_current_or_default = lambda: profile
 

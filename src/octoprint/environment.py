@@ -43,7 +43,7 @@ class EnvironmentDetector(object):
 
 	def run_detection(self, notify_plugins=True):
 		try:
-			environment = dict()
+			environment = {}
 			environment["os"] = self._detect_os()
 			environment["python"] = self._detect_python()
 			environment["hardware"] = self._detect_hardware()
@@ -62,16 +62,16 @@ class EnvironmentDetector(object):
 		except Exception:
 			self._logger.exception("Unexpected error while detecting environment")
 			with self._cache_lock:
-				self._cache = dict()
+				self._cache = {}
 				return self._cache
 
 	def _detect_os(self):
-		return dict(id=get_os(),
-		            platform=sys.platform)
+		return {"id": get_os(),
+		        "platform": sys.platform}
 
 	def _detect_python(self):
-		result = dict(version="unknown",
-		              pip="unknown")
+		result = {"version": "unknown",
+		          "pip": "unknown"}
 
 		# determine python version
 		try:
@@ -96,9 +96,9 @@ class EnvironmentDetector(object):
 		return result
 
 	def _detect_hardware(self):
-		result = dict(cores="unknown",
-		              freq="unknown",
-		              ram="unknown")
+		result = {"cores": "unknown",
+		          "freq": "unknown",
+		          "ram": "unknown"}
 
 		try:
 			cores = psutil.cpu_count()
@@ -116,7 +116,7 @@ class EnvironmentDetector(object):
 		return result
 
 	def _detect_from_plugins(self):
-		result = dict()
+		result = {}
 
 		for implementation in self._environment_plugins:
 			try:
@@ -126,7 +126,7 @@ class EnvironmentDetector(object):
 			except Exception:
 				self._logger.exception("Error while fetching additional "
 				                       "environment data from plugin {}".format(implementation._identifier),
-				                       extra=dict(plugin=implementation._identifier))
+				                       extra={"plugin": implementation._identifier})
 
 		return result
 

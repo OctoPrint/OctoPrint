@@ -721,9 +721,9 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
 	from copy import deepcopy
 
 	if a is None:
-		a = dict()
+		a = {}
 	if b is None:
-		b = dict()
+		b = {}
 
 	if not isinstance(b, dict):
 		return b
@@ -821,12 +821,12 @@ def dict_minimal_mergediff(source, target):
 
 	if source == target:
 		# shortcut: if both are equal, we return an empty dict as result
-		return dict()
+		return {}
 
 	from copy import deepcopy
 
 	all_keys = set(list(source.keys()) + list(target.keys()))
-	result = dict()
+	result = {}
 	for k in all_keys:
 		if k not in target:
 			# key not contained in b => not contained in result
@@ -1167,7 +1167,7 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	encoding = codec.name
 
 	if kwargs is None:
-		kwargs = dict()
+		kwargs = {}
 
 	potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
 	if "r" in mode and hasattr(codecs, potential_bom_attribute):
@@ -1249,7 +1249,7 @@ def thaw_frozendict(obj):
 		raise ValueError("obj must be a dict or frozendict instance")
 
 	# only true love can thaw a frozen dict
-	letitgo = dict()
+	letitgo = {}
 	for key, value in obj.items():
 		if isinstance(value, (dict, frozendict.frozendict)):
 			letitgo[key] = thaw_frozendict(value)
@@ -1366,7 +1366,7 @@ class RepeatedTimer(threading.Thread):
 		if args is None:
 			args = []
 		if kwargs is None:
-			kwargs = dict()
+			kwargs = {}
 		if condition is None:
 			condition = lambda: True
 
@@ -1465,7 +1465,7 @@ class ResettableTimer(threading.Thread):
 		if args is None:
 			args = []
 		if kwargs is None:
-			kwargs = dict()
+			kwargs = {}
 
 		self.interval = interval
 		self.function = function

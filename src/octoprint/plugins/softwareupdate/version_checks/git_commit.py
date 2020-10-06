@@ -56,11 +56,9 @@ def get_latest(target, check, online=True):
 	if returncode != 0:
 		return None, True
 
-	information = dict(
-		local=dict(name="Commit %s" % local_commit, value=local_commit),
-		remote=dict(name="?", value="?"),
-		needs_online=not check.get("offline", False)
-	)
+	information = {"local": {"name": "Commit %s" % local_commit, "value": local_commit},
+	               "remote": {"name": "?", "value": "?"},
+	               "needs_online": not check.get("offline", False)}
 	if not online and information["needs_online"]:
 		return information, True
 
@@ -77,10 +75,10 @@ def get_latest(target, check, online=True):
 		return information, True
 
 	if local_commit == remote_commit or remote_commit == base:
-		information["remote"] = dict(name="Commit %s" % local_commit, value=local_commit)
+		information["remote"] = {"name": "Commit %s" % local_commit, "value": local_commit}
 		is_current = True
 	else:
-		information["remote"] = dict(name="Commit %s" % remote_commit, value=remote_commit)
+		information["remote"] = {"name": "Commit %s" % remote_commit, "value": remote_commit}
 		is_current = local_commit == remote_commit
 
 	logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.git_commit")

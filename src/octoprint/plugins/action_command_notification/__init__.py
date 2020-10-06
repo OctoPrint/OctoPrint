@@ -28,24 +28,24 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="SHOW",
-			     name="Show printer notifications",
-			     description=gettext("Allows to see printer notifications"),
-			     default_groups=[USER_GROUP],
-			     roles=["show"]),
-			dict(key="CLEAR",
-			     name="Clear printer notifications",
-			     description=gettext("Allows to clear printer notifications"),
-			     default_groups=[USER_GROUP],
-			     roles=["clear"])
+			{"key": "SHOW",
+			 "name": "Show printer notifications",
+			 "description": gettext("Allows to see printer notifications"),
+			 "default_groups": [USER_GROUP],
+			 "roles": ["show"]},
+			{"key": "CLEAR",
+			 "name": "Clear printer notifications",
+			 "description": gettext("Allows to clear printer notifications"),
+			 "default_groups": [USER_GROUP],
+			 "roles": ["clear"]}
 		]
 
 	#~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/action_command_notification.js"],
-		            clientjs=["clientjs/action_command_notification.js"],
-		            css=["css/action_command_notification.css"])
+		return {"js": ["js/action_command_notification.js"],
+		        "clientjs": ["clientjs/action_command_notification.js"],
+		        "css": ["css/action_command_notification.css"]}
 
 	#~ EventHandlerPlugin
 
@@ -56,19 +56,19 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 	#~ SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(enable=True,
-		            enable_popups=False)
+		return {"enable": True,
+		        "enable_popups": False}
 
 	#~ SimpleApiPlugin
 
 	def on_api_get(self, request):
 		if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW.can():
 			return flask.abort(403, "Insufficient permissions")
-		return flask.jsonify(notifications=[dict(timestamp=notification[0],
-		                                         message=notification[1]) for notification in self._notifications])
+		return flask.jsonify(notifications=[{"timestamp": notification[0],
+		                                    "message": notification[1]} for notification in self._notifications])
 
 	def get_api_commands(self):
-		return dict(clear=[])
+		return {"clear": []}
 
 	def on_api_command(self, command, data):
 		if command == "clear":
@@ -80,15 +80,15 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_template_configs(self):
 		return [
-			dict(type="settings",
-			     name=gettext("Printer Notifications"),
-			     custom_bindings=False),
-			dict(type="sidebar",
-			     name=gettext("Printer Notifications"),
-			     icon="bell-o",
-			     styles_wrapper=["display: none"],
-			     data_bind="visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
-			               " && settings.settings.plugins.action_command_notification.enable()")
+			{"type": "settings",
+			 "name": gettext("Printer Notifications"),
+			 "custom_bindings": False},
+			{"type": "sidebar",
+			 "name": gettext("Printer Notifications"),
+			 "icon": "bell-o",
+			 "styles_wrapper": ["display: none"],
+			 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
+			              " && settings.settings.plugins.action_command_notification.enable()"}
 		]
 
 	#~ action command handler
@@ -109,13 +109,13 @@ class ActionCommandNotificationPlugin(octoprint.plugin.AssetPlugin,
 
 		message = parameter.strip()
 		self._notifications.append((time.time(), message))
-		self._plugin_manager.send_plugin_message(self._identifier, dict(message=message))
+		self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
 
 		self._logger.info("Got a notification: {}".format(message))
 
 	def _clear_notifications(self):
 		self._notifications = []
-		self._plugin_manager.send_plugin_message(self._identifier, dict())
+		self._plugin_manager.send_plugin_message(self._identifier, {})
 		self._logger.info("Notifications cleared")
 
 __plugin_name__ = "Action Command Notification Support"

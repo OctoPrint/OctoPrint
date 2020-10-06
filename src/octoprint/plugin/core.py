@@ -654,7 +654,7 @@ class PluginInfo(object):
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
-		result = dict()
+		result = {}
 
 		path = self.location
 		if not path:
@@ -765,14 +765,14 @@ class PluginManager(object):
 		self.compatibility_ignored_list = compatibility_ignored_list
 		self.plugin_considered_bundled = plugin_considered_bundled
 
-		self.enabled_plugins = dict()
-		self.disabled_plugins = dict()
-		self.plugin_implementations = dict()
+		self.enabled_plugins = {}
+		self.disabled_plugins = {}
+		self.plugin_implementations = {}
 		self.plugin_implementations_by_type = defaultdict(list)
 
 		self._plugin_hooks = defaultdict(list)
 
-		self.implementation_injects = dict()
+		self.implementation_injects = {}
 		self.implementation_inject_factories = []
 		self.implementation_pre_inits = []
 		self.implementation_post_inits = []
@@ -974,20 +974,20 @@ class PluginManager(object):
 						continue
 
 					bundled = key in self.plugin_considered_bundled
-					kwargs = dict(module_name=module_name, version=version, bundled=bundled)
+					kwargs = {"module_name": module_name,
+					          "version": version,
+					          "bundled": bundled}
 					package_name = entry_point.dist.project_name
 					try:
 						entry_point_metadata = EntryPointMetadata(entry_point)
 					except Exception:
 						self.logger.exception("Something went wrong while retrieving metadata for module {}".format(module_name))
 					else:
-						kwargs.update(dict(
-							name=entry_point_metadata.name,
-							summary=entry_point_metadata.summary,
-							author=entry_point_metadata.author,
-							url=entry_point_metadata.home_page,
-							license=entry_point_metadata.license
-						))
+						kwargs.update({"name": entry_point_metadata.name,
+						               "summary": entry_point_metadata.summary,
+						               "author": entry_point_metadata.author,
+						               "url": entry_point_metadata.home_page,
+						               "license": entry_point_metadata.license})
 
 					plugin = self._import_plugin_from_module(key, **kwargs)
 					if plugin:
@@ -1552,7 +1552,7 @@ class PluginManager(object):
 
 	def initialize_implementation(self, name, plugin, implementation, additional_injects=None, additional_inject_factories=None, additional_pre_inits=None, additional_post_inits=None):
 		if additional_injects is None:
-			additional_injects = dict()
+			additional_injects = {}
 		if additional_inject_factories is None:
 			additional_inject_factories = []
 		if additional_pre_inits is None:
@@ -1575,14 +1575,12 @@ class PluginManager(object):
 		try:
 			kwargs = dict(injects)
 
-			kwargs.update(dict(
-				identifier=name,
-				plugin_name=plugin.name,
-				plugin_version=plugin.version,
-				plugin_info=plugin,
-				basefolder=os.path.realpath(plugin.location),
-				logger=logging.getLogger(self.logging_prefix + name),
-				))
+			kwargs.update({"identifier": name,
+			               "plugin_name": plugin.name,
+			               "plugin_version": plugin.version,
+			               "plugin_info": plugin,
+			               "basefolder": os.path.realpath(plugin.location),
+			               "logger": logging.getLogger(self.logging_prefix + name)})
 
 			# inject the additional_injects
 			for arg, value in kwargs.items():
@@ -1705,7 +1703,7 @@ class PluginManager(object):
 		"""
 
 		if not hook in self.plugin_hooks:
-			return dict()
+			return {}
 
 		result = OrderedDict()
 		for h in self.plugin_hooks[hook]:

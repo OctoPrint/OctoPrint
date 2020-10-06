@@ -77,7 +77,7 @@ def pluginData(name):
 		raise
 	except Exception:
 		logging.getLogger(__name__).exception("Error calling SimpleApiPlugin {}".format(name),
-		                                      extra=dict(plugin=name))
+		                                      extra={"plugin": name})
 		return abort(500)
 
 #~~ commands for plugins
@@ -114,7 +114,7 @@ def pluginCommand(name):
 		raise
 	except Exception:
 		logging.getLogger(__name__).exception("Error while executing SimpleApiPlugin {}".format(name),
-		                                      extra=dict(plugin=name))
+		                                      extra={"plugin": name})
 		return abort(500)
 
 #~~ first run setup
@@ -126,7 +126,7 @@ def wizardState():
 
 	seen_wizards = s().get(["server", "seenWizards"])
 
-	result = dict()
+	result = {}
 	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
 	for implementation in wizard_plugins:
 		name = implementation._identifier
@@ -138,9 +138,9 @@ def wizardState():
 		except Exception:
 			logging.getLogger(__name__).exception("There was an error fetching wizard "
 			                                      "details for {}, ignoring".format(name),
-			                                      extra=dict(plugin=name))
+			                                      extra={"plugin": name})
 		else:
-			result[name] = dict(required=required, details=details, version=version, ignored=ignored)
+			result[name] = {"required": required, "details": details, "version": version, "ignored": ignored}
 
 	return jsonify(result)
 
@@ -150,7 +150,7 @@ def wizardFinish():
 	if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
 		abort(403)
 
-	data = dict()
+	data = {}
 	try:
 		data = request.get_json()
 	except Exception:
@@ -178,7 +178,7 @@ def wizardFinish():
 		except Exception:
 			logging.getLogger(__name__).exception("There was an error finishing the "
 			                                      "wizard for {}, ignoring".format(name),
-			                                      extra=dict(plugin=name))
+			                                      extra={"plugin": name})
 
 	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()
@@ -256,7 +256,7 @@ def login():
 				r = make_response(jsonify(response))
 				r.delete_cookie("active_logout")
 
-				eventManager().fire(Events.USER_LOGGED_IN, payload=dict(username=user.get_id()))
+				eventManager().fire(Events.USER_LOGGED_IN, payload={"username": user.get_id()})
 
 				return r
 
@@ -285,7 +285,7 @@ def logout():
 	r.set_cookie("active_logout", "true")
 
 	if username:
-		eventManager().fire(Events.USER_LOGGED_OUT, payload=dict(username=username))
+		eventManager().fire(Events.USER_LOGGED_OUT, payload={"username": username})
 
 	return r
 
@@ -312,12 +312,10 @@ def get_current_user():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def utilTest():
-	valid_commands = dict(
-		path=["path"],
-		url=["url"],
-		server=["host", "port"],
-		resolution=["name"]
-	)
+	valid_commands = {"path": ["path"],
+	                  "url": ["url"],
+	                  "server": ["host", "port"],
+	                  "resolution": ["name"]}
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
@@ -379,14 +377,14 @@ def _test_path(data):
 				exists = True
 
 	# check path type
-	type_mapping = dict(file=os.path.isfile, dir=os.path.isdir)
+	type_mapping = {"file": os.path.isfile, "dir": os.path.isdir}
 	if check_type:
 		typeok = type_mapping[check_type](path)
 	else:
 		typeok = exists
 
 	# check if path allows requested access
-	access_mapping = dict(r=os.R_OK, w=os.W_OK, x=os.X_OK)
+	access_mapping = {"r": os.R_OK, "w": os.W_OK, "x": os.X_OK}
 	if check_access:
 		mode = 0
 		for a in map(lambda x: access_mapping[x], check_access):
@@ -430,22 +428,18 @@ def _test_url(data):
 				return False
 
 		def as_dict(self):
-			return dict(
-				start=self.start,
-				end=self.end
-			)
+			return {"start": self.start,
+			        "end": self.end}
 
-	status_ranges = dict(
-		informational=StatusCodeRange(start=100, end=200),
-		success=StatusCodeRange(start=200, end=300),
-		redirection=StatusCodeRange(start=300, end=400),
-		client_error=StatusCodeRange(start=400, end=500),
-		server_error=StatusCodeRange(start=500, end=600),
-		normal=StatusCodeRange(end=400),
-		error=StatusCodeRange(start=400, end=600),
-		any=StatusCodeRange(start=100),
-		timeout=StatusCodeRange(start=0, end=1)
-	)
+	status_ranges = {"informational": StatusCodeRange(start=100, end=200),
+	                 "success": StatusCodeRange(start=200, end=300),
+	                 "redirection": StatusCodeRange(start=300, end=400),
+	                 "client_error": StatusCodeRange(start=400, end=500),
+	                 "server_error": StatusCodeRange(start=500, end=600),
+	                 "normal": StatusCodeRange(end=400),
+	                 "error": StatusCodeRange(start=400, end=600),
+	                 "any": StatusCodeRange(start=100),
+	                 "timeout": StatusCodeRange(start=0, end=1)}
 
 	url = data["url"]
 	method = data.get("method", "HEAD")
@@ -500,8 +494,8 @@ def _test_url(data):
 			outcome = outcome and any(map(lambda x: status in x, check_status))
 			content_type = response.headers.get("content-type")
 
-			response_result = dict(headers=dict(response.headers),
-			                       content_type=content_type)
+			response_result = {"headers": dict(response.headers),
+			                   "content_type": content_type}
 
 			if not content_type and data.get("content_type_guess") in valid_boolean_trues:
 				content = response.content
@@ -510,7 +504,7 @@ def _test_url(data):
 			if not content_type:
 				content_type = "application/octet-stream"
 
-			response_result = dict(assumed_content_type=content_type)
+			response_result = {"assumed_content_type": content_type}
 
 			parsed_content_type = util.parse_mime_type(content_type)
 
@@ -538,11 +532,9 @@ def _test_url(data):
 		logging.getLogger(__name__).exception("Error while running a test {} request on {}".format(method, url))
 		outcome = False
 
-	result = dict(
-		url=url,
-		status=status,
-		result=outcome
-	)
+	result = {"url": url,
+	          "status": status,
+	          "result": outcome}
 	if response_result:
 		result["response"] = response_result
 
@@ -570,10 +562,10 @@ def _test_server(data):
 	from octoprint.util import server_reachable
 	reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
 
-	result = dict(host=host,
-	              port=port,
-	              protocol=protocol,
-	              result=reachable)
+	result = {"host": host,
+	          "port": port,
+	          "protocol": protocol,
+	          "result": reachable}
 
 	return jsonify(**result)
 
@@ -583,7 +575,7 @@ def _test_resolution(data):
 	from octoprint.util.net import resolve_host
 	resolvable = len(resolve_host(name)) > 0
 
-	result = dict(name=name,
-	              result=resolvable)
+	result = {"name": name,
+	          "result": resolvable}
 
 	return jsonify(**result)

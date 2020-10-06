@@ -33,7 +33,7 @@ def _filter_out_latest(releases, include_prerelease=False, python_version=None):
 	    '2.0.0rc1'
 	    >>> to_native_str(_filter_out_latest(releases, python_version="3.6.0"))
 	"""
-	releases = [dict(version=k, data=v[0]) for k, v in releases.items()]
+	releases = [{"version": k, "data": v[0]} for k, v in releases.items()]
 
 	# filter out prereleases and versions incompatible to our python
 	filter_function = lambda release: not is_prerelease(release["version"]) and is_python_compatible(release["data"].get("requires_python", ""), python_version=python_version)
@@ -100,8 +100,8 @@ def get_latest(target, check, online=True):
 	remote_version = _get_latest_release(package,
 	                                     include_prerelease=check.get("prerelease", False))
 
-	information = dict(local=dict(name=local_version, value=local_version),
-	                   remote=dict(name=remote_version, value=remote_version))
+	information = {"local": {"name": local_version, "value": local_version},
+	               "remote": {"name": remote_version, "value": remote_version}}
 
 	logger.debug("Target: {}, local: {}, remote: {}".format(target, information["local"]["name"], information["remote"]["name"]))
 

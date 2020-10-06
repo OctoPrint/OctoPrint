@@ -40,9 +40,9 @@ class PendingDecision(object):
 			self.poll_timeout.start()
 
 	def external(self):
-		return dict(app_id=self.app_id,
-		            user_id=self.user_id,
-		            user_token=self.user_token)
+		return {"app_id": self.app_id,
+		        "user_id": self.user_id,
+		        "user_token": self.user_token}
 
 	def __repr__(self):
 		return u"PendingDecision({!r}, {!r}, {!r}, {!r}, timeout_callback=...)".format(self.app_id,
@@ -74,13 +74,13 @@ class ActiveKey(object):
 		self.user_id = user_id
 
 	def external(self):
-		return dict(app_id=self.app_id,
-		            api_key=self.api_key,
-		            user_id=self.user_id)
+		return {"app_id": self.app_id,
+		        "api_key": self.api_key,
+		        "user_id": self.user_id}
 
 	def internal(self):
-		return dict(app_id=self.app_id,
-		            api_key=self.api_key)
+		return {"app_id": self.app_id,
+		        "api_key": self.api_key}
 
 	@classmethod
 	def for_internal(cls, internal, user_id):
@@ -117,27 +117,27 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="ADMIN",
-			     name="Admin access",
-			     description=gettext("Allows administrating all application keys"),
-			     roles=["admin"],
-			     dangerous=True,
-			     default_groups=[ADMIN_GROUP])
+			{"key": "ADMIN",
+			 "name": "Admin access",
+			 "description": gettext("Allows administrating all application keys"),
+			 "roles": ["admin"],
+			 "dangerous": True,
+			 "default_groups": [ADMIN_GROUP]}
 		]
 
 	##~~ TemplatePlugin
 
 	def get_template_configs(self):
-		return [dict(type="usersettings", name=gettext("Application Keys")),
-		        dict(type="settings", name=gettext("Application Keys"))]
+		return [{"type": "usersettings", "name": gettext("Application Keys")},
+		        {"type": "settings", "name": gettext("Application Keys")}]
 
 	##~~ AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/appkeys.js"],
-		            clientjs=["clientjs/appkeys.js"],
-		            less=["less/appkeys.less"],
-		            css=["css/appkeys.css"])
+		return {"js": ["js/appkeys.js"],
+		        "clientjs": ["clientjs/appkeys.js"],
+		        "less": ["less/appkeys.less"],
+		        "css": ["css/appkeys.css"]}
 
 	##~~ BlueprintPlugin mixin
 
@@ -163,10 +163,10 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 		app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
 
-		self._plugin_manager.send_plugin_message(self._identifier, dict(type="request_access",
-		                                                                app_name=app_name,
-		                                                                user_token=user_token,
-		                                                                user_id=user_id))
+		self._plugin_manager.send_plugin_message(self._identifier, {"type": "request_access",
+		                                                            "app_name": app_name,
+		                                                            "user_token": user_token,
+		                                                            "user_id": user_id})
 		response = flask.jsonify(app_token=app_token)
 		response.status_code = 201
 		response.headers["Location"] = flask.url_for(".handle_decision_poll", app_token=app_token, _external=True)
@@ -204,10 +204,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			return flask.abort(404)
 
 		# Close access_request dialog for this request on all open OctoPrint connections
-		self._plugin_manager.send_plugin_message(self._identifier, dict(
-			type="end_request",
-			user_token=user_token
-		))
+		self._plugin_manager.send_plugin_message(self._identifier, {"type": "end_request",
+		                                                            "user_token": user_token})
 
 		return NO_CONTENT
 
@@ -217,8 +215,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 	##~~ SimpleApiPlugin mixin
 
 	def get_api_commands(self):
-		return dict(generate=["app"],
-		            revoke=["key"])
+		return {"generate": ["app"],
+		        "revoke": ["key"]}
 
 	def on_api_get(self, request):
 		user_id = current_user.get_name()
@@ -309,10 +307,8 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 			len_after = len(self._pending_decisions)
 
 			if len_after < len_before:
-				self._plugin_manager.send_plugin_message(self._identifier, dict(
-					type="end_request",
-					user_token=user_token
-				))
+				self._plugin_manager.send_plugin_message(self._identifier, {"type": "end_request",
+				                                                            "user_token": user_token})
 
 	def _remove_stale_pending(self):
 		with self._pending_lock:
@@ -427,7 +423,7 @@ class AppKeysPlugin(octoprint.plugin.AssetPlugin,
 
 	def _save_keys(self):
 		with self._keys_lock:
-			to_persist = dict()
+			to_persist = {}
 			for user_id, keys in self._keys.items():
 				to_persist[user_id] = [x.internal() for x in keys]
 

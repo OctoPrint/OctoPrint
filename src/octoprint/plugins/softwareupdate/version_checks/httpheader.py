@@ -33,8 +33,8 @@ def get_latest(target, check, online=True):
 	except Exception as exc:
 		raise NetworkError(cause=exc)
 
-	information = dict(local=dict(name="{}{}".format(prefix, current if current else "-"), value=current),
-	                   remote=dict(name="{}{}".format(prefix, latest if latest else "-"), value=latest))
+	information = {"local": {"name": "{}{}".format(prefix, current if current else "-"), "value": current},
+	               "remote": {"name": "{}{}".format(prefix, latest if latest else "-"), "value": latest}}
 
 	logger.debug("Target: {}, local: {}, remote: {}".format(target, information["local"]["name"], information["remote"]["name"]))
 

@@ -465,8 +465,8 @@ class OctoPrintFlaskRequest(flask.Request):
 		# strip cookie_suffix from all cookies in the request, return result
 		cookies = flask.Request.cookies.__get__(self)
 
-		result = dict()
-		desuffixed = dict()
+		result = {}
+		desuffixed = {}
 		for key, value in cookies.items():
 			if key.endswith(self.cookie_suffix):
 				desuffixed[key[:-len(self.cookie_suffix)]] = value
@@ -589,7 +589,7 @@ def passive_login():
 			flask.session["usersession.id"] = u.session
 		flask.g.user = u
 
-		eventManager().fire(Events.USER_LOGGED_IN, payload=dict(username=u.get_id()))
+		eventManager().fire(Events.USER_LOGGED_IN, payload={"username": u.get_id()})
 
 		return u
 
@@ -895,11 +895,11 @@ class PreemptiveCache(object):
 				self._logger.exception("Error while reading {}".format(self.cachefile))
 
 		if cache_data is None:
-			cache_data = dict()
+			cache_data = {}
 
 		if not self._validate_data(cache_data):
 			self._logger.warning("Preemptive cache data was invalid, ignoring it")
-			cache_data = dict()
+			cache_data = {}
 
 		return cache_data
 
@@ -1438,12 +1438,10 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 
 ##~~ core assets collector
 def collect_core_assets(preferred_stylesheet="css"):
-	assets = dict(
-		js=[],
-		clientjs=[],
-		css=[],
-		less=[]
-	)
+	assets = {"js": [],
+	          "clientjs": [],
+	          "css": [],
+	          "less": []}
 	assets["js"] = [
 		'js/app/bindings/allowbindings.js',
 		'js/app/bindings/contextmenu.js',
@@ -1512,14 +1510,14 @@ def collect_plugin_assets(preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
-	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
-	                           clientjs=DefaultOrderedDict(list),
-	                           css=DefaultOrderedDict(list),
-	                           less=DefaultOrderedDict(list)),
-	              external=dict(js=DefaultOrderedDict(list),
-	                            clientjs=DefaultOrderedDict(list),
-	                            css=DefaultOrderedDict(list),
-	                            less=DefaultOrderedDict(list)))
+	assets = {"bundled": {"js": DefaultOrderedDict(list),
+	                      "clientjs": DefaultOrderedDict(list),
+	                      "css": DefaultOrderedDict(list),
+	                      "less": DefaultOrderedDict(list)},
+	          "external": {"js": DefaultOrderedDict(list),
+	                       "clientjs": DefaultOrderedDict(list),
+	                       "css": DefaultOrderedDict(list),
+	                       "less": DefaultOrderedDict(list)}}
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
@@ -1533,7 +1531,7 @@ def collect_plugin_assets(preferred_stylesheet="css"):
 			basefolder = implementation.get_asset_folder()
 		except Exception:
 			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name),
-			                 extra=dict(plugin=name))
+			                 extra={"plugin": name})
 			continue
 
 		def asset_exists(category, asset):

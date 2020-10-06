@@ -78,7 +78,7 @@ def slicingListAll():
 	else:
 		slicers = slicingManager.registered_slicers
 
-	result = dict()
+	result = {}
 	for slicer in slicers:
 		try:
 			slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
@@ -87,18 +87,14 @@ def slicingListAll():
 			for source_file_type in slicer_impl.get_slicer_properties().get("source_file_types", ["model"]):
 				extensions = extensions.union(get_extensions(source_file_type))
 
-			result[slicer] = dict(
-				key=slicer,
-				displayName=slicer_impl.get_slicer_properties().get("name", "n/a"),
-				sameDevice=slicer_impl.get_slicer_properties().get("same_device", True),
-				default=default_slicer == slicer,
-				configured=slicer_impl.is_slicer_configured(),
-				profiles=_getSlicingProfilesData(slicer),
-				extensions=dict(
-					source=list(extensions),
-					destination=slicer_impl.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])
-				)
-			)
+			result[slicer] = {"key": slicer,
+			                  "displayName": slicer_impl.get_slicer_properties().get("name", "n/a"),
+			                  "sameDevice": slicer_impl.get_slicer_properties().get("same_device", True),
+			                  "default": default_slicer == slicer,
+			                  "configured": slicer_impl.is_slicer_configured(),
+			                  "profiles": _getSlicingProfilesData(slicer),
+			                  "extensions": {"source": list(extensions),
+			                                 "destination": slicer_impl.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])}}
 		except (UnknownSlicer, SlicerNotConfigured):
 			# this should never happen
 			pass
@@ -148,7 +144,7 @@ def slicingAddSlicerProfile(slicer, name):
 	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
-	data = dict()
+	data = {}
 	display_name = None
 	description = None
 	if "data" in json_data:
@@ -191,7 +187,7 @@ def slicingPatchSlicerProfile(slicer, name):
 	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
-	data = dict()
+	data = {}
 	display_name = None
 	description = None
 	if "data" in json_data:
@@ -229,18 +225,16 @@ def slicingDelSlicerProfile(slicer, name):
 def _getSlicingProfilesData(slicer, require_configured=False):
 	profiles = slicingManager.all_profiles(slicer, require_configured=require_configured)
 
-	result = dict()
+	result = {}
 	for name, profile in profiles.items():
 		result[name] = _getSlicingProfileData(slicer, name, profile)
 	return result
 
 def _getSlicingProfileData(slicer, name, profile):
 	defaultProfiles = s().get(["slicing", "defaultProfiles"])
-	result = dict(
-		key=name,
-		default=defaultProfiles and slicer in defaultProfiles and defaultProfiles[slicer] == name,
-		resource=url_for(".slicingGetSlicerProfile", slicer=slicer, name=name, _external=True)
-	)
+	result = {"key": name,
+	          "default": defaultProfiles and slicer in defaultProfiles and defaultProfiles[slicer] == name,
+	          "resource": url_for(".slicingGetSlicerProfile", slicer=slicer, name=name, _external=True)}
 	if profile.display_name is not None:
 		result["displayName"] = profile.display_name
 	if profile.description is not None:

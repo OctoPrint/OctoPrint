@@ -64,10 +64,10 @@ if sys.platform == "win32" and sys.version_info < (3, 7):
 
 # current os
 
-_OPERATING_SYSTEMS = dict(windows=["win32"],
-                          linux=lambda x: x.startswith("linux"),
-                          macos=["darwin"],
-                          freebsd=lambda x: x.startswith("freebsd"))
+_OPERATING_SYSTEMS = {"windows": ["win32"],
+                      "linux": lambda x: x.startswith("linux"),
+                      "macos": ["darwin"],
+                      "freebsd": lambda x: x.startswith("freebsd")}
 OPERATING_SYSTEM_UNMAPPED = "unmapped"
 
 

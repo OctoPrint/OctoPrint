@@ -47,7 +47,7 @@ def _etag(lm=None):
 @Permissions.CONNECTION.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
-	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
+	return jsonify({"profiles": _convert_profiles(all_profiles)})
 
 @api.route("/printerprofiles", methods=["POST"])
 @no_firstrun_access
@@ -103,7 +103,7 @@ def printerProfilesAdd():
 	except Exception as e:
 		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
-		return jsonify(dict(profile=_convert_profile(saved_profile)))
+		return jsonify({"profile": _convert_profile(saved_profile)})
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
 @no_firstrun_access
@@ -172,10 +172,10 @@ def printerProfilesUpdate(identifier):
 	except Exception as e:
 		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
-		return jsonify(dict(profile=_convert_profile(saved_profile)))
+		return jsonify({"profile": _convert_profile(saved_profile)})
 
 def _convert_profiles(profiles):
-	result = dict()
+	result = {}
 	for identifier, profile in profiles.items():
 		result[identifier] = _convert_profile(profile)
 	return result

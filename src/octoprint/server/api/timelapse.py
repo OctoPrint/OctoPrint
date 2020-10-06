@@ -34,18 +34,18 @@ _timelapse_cache_mutex = threading.RLock()
 
 def _config_for_timelapse(timelapse):
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-		return dict(type="zchange",
-		            postRoll=timelapse.post_roll,
-		            fps=timelapse.fps,
-		            retractionZHop=timelapse.retraction_zhop,
-		            minDelay=timelapse.min_delay)
+		return {"type": "zchange",
+		        "postRoll": timelapse.post_roll,
+		        "fps": timelapse.fps,
+		        "retractionZHop": timelapse.retraction_zhop,
+		        "minDelay": timelapse.min_delay}
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
-		return dict(type="timed",
-		            postRoll=timelapse.post_roll,
-		            fps=timelapse.fps,
-		            interval=timelapse.interval)
+		return {"type": "timed",
+		        "postRoll": timelapse.post_roll,
+		        "fps": timelapse.fps,
+		        "interval": timelapse.interval}
 	else:
-		return dict(type="off")
+		return {"type": "off"}
 
 def _lastmodified(unrendered):
 	lm_finished = octoprint.timelapse.last_modified_finished()
@@ -115,9 +115,9 @@ def getTimelapseData():
 		output["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
 		finished_list.append(output)
 
-	result = dict(config=config,
-	              enabled=settings().getBoolean(["webcam", "timelapseEnabled"]),
-	              files=finished_list)
+	result = {"config": config,
+	          "enabled": settings().getBoolean(["webcam", "timelapseEnabled"]),
+	          "files": finished_list}
 
 	if unrendered:
 		result.update(unrendered=unrendered_files)

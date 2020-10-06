@@ -25,7 +25,7 @@ class ServerCommandsSubwizard(object):
 		return not (system_shutdown_command and system_restart_command and server_restart_command)
 
 	def _get_servercommands_wizard_details(self):
-		return dict(required=self._is_servercommands_wizard_required())
+		return {"required": self._is_servercommands_wizard_required()}
 
 	def _get_servercommands_wizard_name(self):
 		return gettext("Server Commands")
@@ -44,7 +44,7 @@ class WebcamSubwizard(object):
 		return not (webcam_snapshot_url and webcam_stream_url and ffmpeg_path)
 
 	def _get_webcam_wizard_details(self):
-		return dict(required=self._is_webcam_wizard_required())
+		return {"required": self._is_webcam_wizard_required()}
 
 	def _get_webcam_wizard_name(self):
 		return gettext("Webcam & Timelapse")
@@ -59,13 +59,13 @@ class AclSubwizard(object):
 		return self._user_manager.enabled and not self._user_manager.has_been_customized()
 
 	def _get_acl_wizard_details(self):
-		return dict(required=self._is_acl_wizard_required())
+		return {"required": self._is_acl_wizard_required()}
 
 	def _get_acl_wizard_name(self):
 		return gettext("Access Control")
 
 	def _get_acl_additional_wizard_template_data(self):
-		return dict(mandatory=self._is_acl_wizard_required())
+		return {"mandatory": self._is_acl_wizard_required()}
 
 	@octoprint.plugin.BlueprintPlugin.route("/acl", methods=["POST"])
 	def acl_wizard_api(self):
@@ -104,13 +104,13 @@ class OnlineCheckSubwizard(object):
 		return self._settings.global_get(["server", "onlineCheck", "enabled"]) is None
 
 	def _get_onlinecheck_wizard_details(self):
-		return dict(required=self._is_onlinecheck_wizard_required())
+		return {"required": self._is_onlinecheck_wizard_required()}
 
 	def _get_onlinecheck_wizard_name(self):
 		return gettext("Online Connectivity Check")
 
 	def _get_onlinecheck_additional_wizard_template_data(self):
-		return dict(mandatory=self._is_onlinecheck_wizard_required())
+		return {"mandatory": self._is_onlinecheck_wizard_required()}
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -122,13 +122,13 @@ class PluginBlacklistSubwizard(object):
 		return self._settings.global_get(["server", "pluginBlacklist", "enabled"]) is None
 
 	def _get_pluginblacklist_wizard_details(self):
-		return dict(required=self._is_pluginblacklist_wizard_required())
+		return {"required": self._is_pluginblacklist_wizard_required()}
 
 	def _get_pluginblacklist_wizard_name(self):
 		return gettext("Plugin Blacklist")
 
 	def _get_pluginblacklist_additional_wizard_template_data(self):
-		return dict(mandatory=self._is_pluginblacklist_wizard_required())
+		return {"mandatory": self._is_pluginblacklist_wizard_required()}
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -140,7 +140,7 @@ class PrinterProfileSubwizard(object):
 		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
 
 	def _get_printerprofile_wizard_details(self):
-		return dict(required=self._is_printerprofile_wizard_required())
+		return {"required": self._is_printerprofile_wizard_required()}
 
 	def _get_printerprofile_wizard_name(self):
 		return gettext("Default Printer Profile")
@@ -149,4 +149,4 @@ class PrinterProfileSubwizard(object):
 Subwizards = type(to_native_str("Subwizards"),
                   tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
                         if clsname.endswith("Subwizard")),
-                  dict())
+                  {})

@@ -208,36 +208,28 @@ class PrinterProfileManager(object):
 	load and save printer profiles.
 	"""
 
-	default = dict(
-		id = "_default",
-		name = "Default",
-		model = "Generic RepRap Printer",
-		color = "default",
-		volume=dict(
-			width = 200,
-			depth = 200,
-			height = 200,
-			formFactor = BedFormFactor.RECTANGULAR,
-			origin = BedOrigin.LOWERLEFT,
-			custom_box = False
-		),
-		heatedBed = True,
-		heatedChamber = False,
-		extruder=dict(
-			count = 1,
-			offsets = [
-				(0, 0)
-			],
-			nozzleDiameter = 0.4,
-			sharedNozzle = False
-		),
-		axes=dict(
-			x = dict(speed=6000, inverted=False),
-			y = dict(speed=6000, inverted=False),
-			z = dict(speed=200, inverted=False),
-			e = dict(speed=300, inverted=False)
-		)
-	)
+	default = {"id": "_default",
+	           "name": "Default",
+	           "model": "Generic RepRap Printer",
+	           "color": "default",
+	           "volume": {"width": 200,
+	                      "depth": 200,
+	                      "height": 200,
+	                      "formFactor": BedFormFactor.RECTANGULAR,
+	                      "origin": BedOrigin.LOWERLEFT,
+	                      "custom_box": False},
+	           "heatedBed": True,
+	           "heatedChamber": False,
+	           "extruder": {"count": 1,
+	                        "offsets": [
+	                            (0, 0)
+	                        ],
+	                        "nozzleDiameter": 0.4,
+	                        "sharedNozzle": False},
+	           "axes": {"x": {"speed": 6000, "inverted": False},
+	                    "y": {"speed": 6000, "inverted": False},
+	                    "z": {"speed": 200, "inverted": False},
+	                    "e": {"speed": 300, "inverted": False}}}
 
 	def __init__(self):
 		self._current = None
@@ -329,7 +321,7 @@ class PrinterProfileManager(object):
 		removed = self._remove_from_path(self._get_profile_path(identifier))
 		if removed and trigger_event:
 			from octoprint.events import eventManager, Events
-			payload = dict(identifier=identifier)
+			payload = {"identifier": identifier}
 			eventManager().fire(Events.PRINTER_PROFILE_DELETED, payload=payload)
 
 		return removed
@@ -363,7 +355,7 @@ class PrinterProfileManager(object):
 
 		from octoprint.events import eventManager, Events
 		if trigger_event:
-			payload = dict(identifier=identifier)
+			payload = {"identifier": identifier}
 			event = Events.PRINTER_PROFILE_MODIFIED if is_overwrite else Events.PRINTER_PROFILE_ADDED
 			eventManager().fire(event, payload=payload)
 
@@ -420,7 +412,7 @@ class PrinterProfileManager(object):
 
 	def _load_all(self):
 		all_identifiers = self._load_all_identifiers()
-		results = dict()
+		results = {}
 		for identifier, path in all_identifiers.items():
 			try:
 				profile = self._load_from_path(path)
@@ -435,7 +427,7 @@ class PrinterProfileManager(object):
 		return results
 
 	def _load_all_identifiers(self):
-		results = dict()
+		results = {}
 		for entry in scandir(self._folder):
 			if is_hidden_path(entry.name) or not entry.name.endswith(".profile"):
 				continue
@@ -648,16 +640,16 @@ class PrinterProfileManager(object):
 		if volume["origin"] == BedOrigin.CENTER:
 			half_width = volume["width"] / 2.0
 			half_depth = volume["depth"] / 2.0
-			return dict(x_min=-half_width,
-			            x_max=half_width,
-			            y_min=-half_depth,
-			            y_max=half_depth,
-			            z_min=0.0,
-			            z_max=volume["height"])
+			return {"x_min": -half_width,
+			        "x_max": half_width,
+			        "y_min": -half_depth,
+			        "y_max": half_depth,
+			        "z_min": 0.0,
+			        "z_max": volume["height"]}
 		else:
-			return dict(x_min=0.0,
-			            x_max=volume["width"],
-			            y_min=0.0,
-			            y_max=volume["depth"],
-			            z_min=0.0,
-			            z_max=volume["height"])
+			return {"x_min": 0.0,
+			        "x_max": volume["width"],
+			        "y_min": 0.0,
+			        "y_max": volume["depth"],
+			        "z_min": 0.0,
+			        "z_max": volume["height"]}

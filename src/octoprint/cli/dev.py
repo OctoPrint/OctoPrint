@@ -50,7 +50,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				yield result
 
 	def _get_commands(self):
-		result = dict()
+		result = {}
 		for group in self.groups:
 			for command in self._get_commands_from_prefix_methods("{}_".format(group)):
 				result[group + self.sep + command.name] = command
@@ -109,7 +109,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 			original_prompt_for_config = cookiecutter.main.prompt_for_config
 
 			def custom_prompt_for_config(context, no_input=False):
-				cookiecutter_dict = dict()
+				cookiecutter_dict = {}
 
 				env = StrictEnvironment()
 
@@ -163,20 +163,18 @@ class OctoPrintDevelCommands(click.MultiCommand):
 					raise
 
 			with tempdir(onerror=onerror) as path:
-				custom = dict(cookiecutters_dir=path)
+				custom = {"cookiecutters_dir": path}
 				with custom_cookiecutter_config(custom):
-					raw_options = dict(
-						plugin_identifier=identifier,
-						plugin_package=package,
-						plugin_name=name,
-						full_name=author,
-						email=email,
-						plugin_description=description,
-						plugin_license=license,
-						plugin_homepage=homepage,
-						plugin_source=source,
-						plugin_installurl=installurl
-					)
+					raw_options = {"plugin_identifier": identifier,
+					               "plugin_package": package,
+					               "plugin_name": name,
+					               "full_name": author,
+					               "email": email,
+					               "plugin_description": description,
+					               "plugin_license": license,
+					               "plugin_homepage": homepage,
+					               "plugin_source": source,
+					               "plugin_installurl": installurl}
 					options = dict((k, v) for k, v in raw_options.items() if v is not None)
 
 					with custom_cookiecutter_prompt(options):

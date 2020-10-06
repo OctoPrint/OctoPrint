@@ -119,8 +119,8 @@ class SlicingManager(object):
 		self._profile_path = profile_path
 		self._printer_profile_manager = printer_profile_manager
 
-		self._slicers = dict()
-		self._slicer_names = dict()
+		self._slicers = {}
+		self._slicer_names = {}
 
 	def initialize(self):
 		"""
@@ -135,13 +135,13 @@ class SlicingManager(object):
 		available slicers.
 		"""
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
-		slicers = dict()
+		slicers = {}
 		for plugin in plugins:
 			try:
 				slicers[plugin.get_slicer_properties()["type"]] = plugin
 			except Exception:
 				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra={"plugin": plugin._identifier})
 				continue
 		self._slicers = slicers
 
@@ -272,7 +272,7 @@ class SlicingManager(object):
 		if callback_args is None:
 			callback_args = ()
 		if callback_kwargs is None:
-			callback_kwargs = dict()
+			callback_kwargs = {}
 
 		if not slicer_name in self.configured_slicers:
 			if not slicer_name in self.registered_slicers:
@@ -281,7 +281,7 @@ class SlicingManager(object):
 			else:
 				error = "Slicer not configured: {slicer_name}".format(**locals())
 				exc = SlicerNotConfigured(slicer_name)
-			callback_kwargs.update(dict(_error=error, _exc=exc))
+			callback_kwargs.update({"_error": error, "_exc": exc})
 			callback(*callback_args, **callback_kwargs)
 			raise exc
 
@@ -310,11 +310,11 @@ class SlicingManager(object):
 					)
 
 				if not ok:
-					callback_kwargs.update(dict(_error=result))
+					callback_kwargs.update({"_error": result})
 				elif result is not None and isinstance(result, dict) and "analysis" in result:
-					callback_kwargs.update(dict(_analysis=result["analysis"]))
+					callback_kwargs.update({"_analysis": result["analysis"]})
 			except SlicingCancelled:
-				callback_kwargs.update(dict(_cancelled=True))
+				callback_kwargs.update({"_cancelled": True})
 			finally:
 				callback(*callback_args, **callback_kwargs)
 
@@ -430,8 +430,8 @@ class SlicingManager(object):
 
 		self._save_profile_to_path(slicer, path, profile, overrides=overrides, allow_overwrite=allow_overwrite)
 
-		payload = dict(slicer=slicer,
-		               profile=name)
+		payload = {"slicer": slicer,
+		           "profile": name}
 		event = octoprint.events.Events.SLICING_PROFILE_MODIFIED if is_overwrite else octoprint.events.Events.SLICING_PROFILE_ADDED
 		octoprint.events.eventManager().fire(event, payload)
 
@@ -487,7 +487,7 @@ class SlicingManager(object):
 		except Exception as e:
 			raise CouldNotDeleteProfile(slicer, name, cause=e)
 		else:
-			octoprint.events.eventManager().fire(octoprint.events.Events.SLICING_PROFILE_DELETED, dict(slicer=slicer, profile=name))
+			octoprint.events.eventManager().fire(octoprint.events.Events.SLICING_PROFILE_DELETED, {"slicer": slicer, "profile": name})
 
 	def set_default_profile(self, slicer, name, require_configured=False,
 	                        require_exists=True):
@@ -528,7 +528,7 @@ class SlicingManager(object):
 
 		default_profiles = settings().get(["slicing", "defaultProfiles"])
 		if not default_profiles:
-			default_profiles = dict()
+			default_profiles = {}
 		default_profiles[slicer] = name
 		settings().set(["slicing", "defaultProfiles"], default_profiles)
 		settings().save(force=True)

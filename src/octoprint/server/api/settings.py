@@ -38,7 +38,7 @@ def _etag(lm=None):
 	from collections import OrderedDict
 	sorted_plugin_settings = OrderedDict()
 	for key in sorted(plugin_settings.keys()):
-		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
+		sorted_plugin_settings[key] = plugin_settings.get(key, {})
 
 	if current_user is not None and not current_user.is_anonymous:
 		roles = sorted(current_user.permissions, key=lambda x: x.key)
@@ -227,7 +227,7 @@ def getSettings():
 				"afterPrintResumed": None,
 				"beforeToolChange": None,
 				"afterToolChange": None,
-				"snippets": dict()
+				"snippets": {}
 			}
 		},
 		"server": {
@@ -261,7 +261,7 @@ def getSettings():
 
 	gcode_scripts = s.listScripts("gcode")
 	if gcode_scripts:
-		data["scripts"] = dict(gcode=dict())
+		data["scripts"] = {"gcode": {}}
 		for name in gcode_scripts:
 			data["scripts"]["gcode"][name] = s.loadScript("gcode", name, source=True)
 
@@ -275,7 +275,7 @@ def getSettings():
 def _get_plugin_settings():
 	logger = logging.getLogger(__name__)
 
-	data = dict()
+	data = {}
 
 	def process_plugin_result(name, result):
 		if result:
@@ -296,7 +296,7 @@ def _get_plugin_settings():
 		except Exception:
 			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
 			                                                                                name=plugin._plugin_name),
-			                 extra=dict(plugin=plugin._identifier))
+			                 extra={"plugin": plugin._identifier})
 
 	return data
 
@@ -350,7 +350,7 @@ def fetchTemplateData():
 	refresh = request.values.get("refresh", "false") in valid_boolean_trues
 	templates, _, _ = fetch_template_data(refresh=refresh)
 
-	result = dict()
+	result = {}
 	for tt in templates:
 		result[tt] = []
 		for key in templates[tt]["order"]:
@@ -363,7 +363,7 @@ def fetchTemplateData():
 			else:
 				name, entry = entry
 
-			data = dict(id=key, name=name)
+			data = {"id": key, "name": name}
 
 			if entry and "_plugin" in entry:
 				plugin = pluginManager.get_plugin_info(entry["_plugin"], require_enabled=False)
@@ -607,6 +607,6 @@ def _saveSettings(data):
 				except Exception:
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version,
 					                                                                                name=plugin._plugin_name),
-					                 extra=dict(plugin=plugin._identifier))
+					                 extra={"plugin": plugin._identifier})
 
 	s.save(trigger_event=True)

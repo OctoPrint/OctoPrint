@@ -325,7 +325,7 @@ class Server(object):
 		printerProfileManager = PrinterProfileManager()
 		eventManager = self._event_manager
 
-		analysis_queue_factories = dict(gcode=octoprint.filemanager.analysis.GcodeAnalysisQueue)
+		analysis_queue_factories = {"gcode": octoprint.filemanager.analysis.GcodeAnalysisQueue}
 		analysis_queue_hooks = pluginManager.get_hooks("octoprint.filemanager.analysis.factory")
 		for name, hook in analysis_queue_hooks.items():
 			try:
@@ -333,12 +333,12 @@ class Server(object):
 				analysis_queue_factories.update(**additional_factories)
 			except Exception:
 				self._logger.exception("Error while processing analysis queues from {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(analysis_queue_factories)
 
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
 
-		storage_managers = dict()
+		storage_managers = {}
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
@@ -351,7 +351,7 @@ class Server(object):
 
 		# start regular check if we are connected to the internet
 		def on_connectivity_change(old_value, new_value):
-			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
+			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload={"old": old_value, "new": new_value})
 
 		connectivityChecker = self._connectivity_checker
 
@@ -377,20 +377,18 @@ class Server(object):
 
 		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
 
-		components = dict(
-			plugin_manager=pluginManager,
-			printer_profile_manager=printerProfileManager,
-			event_bus=eventManager,
-			analysis_queue=analysisQueue,
-			slicing_manager=slicingManager,
-			file_manager=fileManager,
-			plugin_lifecycle_manager=pluginLifecycleManager,
-			preemptive_cache=preemptiveCache,
-			json_encoder=jsonEncoder,
-			json_decoder=jsonDecoder,
-			connectivity_checker=connectivityChecker,
-			environment_detector=self._environment_detector
-		)
+		components = {"plugin_manager": pluginManager,
+		              "printer_profile_manager": printerProfileManager,
+		              "event_bus": eventManager,
+		              "analysis_queue": analysisQueue,
+		              "slicing_manager": slicingManager,
+		              "file_manager": fileManager,
+		              "plugin_lifecycle_manager": pluginLifecycleManager,
+		              "preemptive_cache": preemptiveCache,
+		              "json_encoder": jsonEncoder,
+		              "json_decoder": jsonDecoder,
+		              "connectivity_checker": connectivityChecker,
+		              "environment_detector": self._environment_detector}
 
 		#~~ setup access control
 
@@ -416,7 +414,7 @@ class Server(object):
 				self._logger.exception("Could not instantiate group manager {}, "
 				                       "falling back to FilebasedGroupManager!".format(group_manager_name))
 				groupManager = octoprint.access.groups.FilebasedGroupManager()
-		components.update(dict(group_manager=groupManager))
+		components.update({"group_manager": groupManager})
 
 		# create user manager instance
 		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory") # legacy, set first so that new wins
@@ -429,7 +427,7 @@ class Server(object):
 					break
 			except Exception:
 				self._logger.exception("Error while creating user manager instance from factory {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 		else:
 			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
@@ -441,7 +439,7 @@ class Server(object):
 				userManager = octoprint.access.users.FilebasedUserManager(groupManager)
 			finally:
 				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
-		components.update(dict(user_manager=userManager))
+		components.update({"user_manager": userManager})
 
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
@@ -453,10 +451,10 @@ class Server(object):
 					break
 			except Exception:
 				self._logger.exception("Error while creating printer instance from factory {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 		else:
 			printer = Printer(fileManager, analysisQueue, printerProfileManager)
-		components.update(dict(printer=printer))
+		components.update({"printer": printer})
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			"""Factory for injections for all OctoPrintPlugins"""
@@ -494,11 +492,9 @@ class Server(object):
 
 				components_copy["printer"] = TaggedFuncsPrinter(components["printer"])
 
-			props = dict()
+			props = {}
 			props.update(components_copy)
-			props.update(dict(
-				data_folder=os.path.join(self._settings.getBaseFolder("data"), name)
-			))
+			props.update({"data_folder": os.path.join(self._settings.getBaseFolder("data"), name)})
 			return props
 
 		def settings_plugin_inject_factory(name, implementation):
@@ -506,7 +502,7 @@ class Server(object):
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return
 
-			default_settings_overlay = dict(plugins=dict())
+			default_settings_overlay = {"plugins": {}}
 			default_settings_overlay["plugins"][name] = implementation.get_settings_defaults()
 			self._settings.add_overlay(default_settings_overlay, at_end=True)
 
@@ -514,7 +510,7 @@ class Server(object):
 			if plugin_settings is None:
 				return
 
-			return dict(settings=plugin_settings)
+			return {"settings": plugin_settings}
 
 		def settings_plugin_config_migration_and_cleanup(identifier, implementation):
 			"""Take care of migrating and cleaning up any old settings"""
@@ -546,7 +542,7 @@ class Server(object):
 						self._logger.debug("Registered event {} of plugin {} as Events.{} = \"{}\"".format(event, name, constant, value))
 			except Exception:
 				self._logger.exception("Error while retrieving custom event list from plugin {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
 		                                               settings_plugin_inject_factory]
@@ -559,7 +555,7 @@ class Server(object):
 			except Exception:
 				self._logger.exception("Error while trying to migrate settings for "
 				                       "plugin {}, ignoring it".format(implementation._identifier),
-				                       extra=dict(plugin=implementation._identifier))
+				                       extra={"plugin": implementation._identifier})
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
@@ -606,11 +602,11 @@ class Server(object):
 
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
 		                            session_kls=util.sockjs.ThreadSafeSession,
-		                            user_settings=dict(websocket_allow_origin="*" if enable_cors else "",
-		                                               jsessionid=False,
-		                                               sockjs_url="../../static/js/lib/sockjs.min.js"))
+		                            user_settings={"websocket_allow_origin": "*" if enable_cors else "",
+		                                           "jsessionid": False,
+		                                           "sockjs_url": "../../static/js/lib/sockjs.min.js"})
 
-		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
+		upload_suffixes = {"name": self._settings.get(["server", "uploads", "nameSuffix"]), "path": self._settings.get(["server", "uploads", "pathSuffix"])}
 
 		def mime_type_guesser(path):
 			from octoprint.filemanager import get_mime_type
@@ -621,12 +617,10 @@ class Server(object):
 			if metadata and "display" in metadata:
 				return metadata["display"]
 
-		download_handler_kwargs = dict(
-			as_attachment=True,
-			allow_client_caching=False
-		)
+		download_handler_kwargs = {"as_attachment": True,
+			"allow_client_caching": False}
 
-		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
+		additional_mime_types={"mime_type_guesser": mime_type_guesser}
 
 		##~~ Permission validators
 
@@ -636,29 +630,29 @@ class Server(object):
 				access_validators_from_plugins.append(util.tornado.access_validation_factory(app, hook))
 			except Exception:
 				self._logger.exception("Error while adding tornado access validator from plugin {}".format(plugin),
-				                       extra=dict(plugin=plugin))
-		access_validator = dict(access_validation=util.tornado.validation_chain(*access_validators_from_plugins))
+				                       extra={"plugin": plugin})
+		access_validator = {"access_validation": util.tornado.validation_chain(*access_validators_from_plugins)}
 
 		timelapse_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.TIMELAPSE_LIST),] + access_validators_from_plugins
 		download_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.FILES_DOWNLOAD),] + access_validators_from_plugins
 		log_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.PLUGIN_LOGGING_MANAGE),] + access_validators_from_plugins
 		camera_validators = [util.tornado.access_validation_factory(app, util.flask.permission_validator, permissions.Permissions.WEBCAM),] + access_validators_from_plugins
 
-		timelapse_permission_validator = dict(access_validation=util.tornado.validation_chain(*timelapse_validators))
-		download_permission_validator = dict(access_validation=util.tornado.validation_chain(*download_validators))
-		log_permission_validator = dict(access_validation=util.tornado.validation_chain(*log_validators))
-		camera_permission_validator = dict(access_validation=util.tornado.validation_chain(*camera_validators))
+		timelapse_permission_validator = {"access_validation": util.tornado.validation_chain(*timelapse_validators)}
+		download_permission_validator = {"access_validation": util.tornado.validation_chain(*download_validators)}
+		log_permission_validator = {"access_validation": util.tornado.validation_chain(*log_validators)}
+		camera_permission_validator = {"access_validation": util.tornado.validation_chain(*camera_validators)}
 
-		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
-		                                                                                      status_code=404))
-		timelapse_path_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
-		                                                                                status_code=404))
+		no_hidden_files_validator = {"path_validation": util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
+		                                                                                      status_code=404)}
+		timelapse_path_validator = {"path_validation": util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path) and octoprint.timelapse.valid_timelapse(path),
+		                                                                                status_code=404)}
 
 		def joined_dict(*dicts):
 			if not len(dicts):
-				return dict()
+				return {}
 
-			joined = dict()
+			joined = {}
 			for d in dicts:
 				joined.update(d)
 			return joined
@@ -669,38 +663,38 @@ class Server(object):
 		server_routes = self._router.urls + [
 			# various downloads
 			# .mpg and .mp4 timelapses:
-			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			(r"/downloads/timelapse/(.*)", util.tornado.LargeResponseHandler, joined_dict({"path": self._settings.getBaseFolder("timelapse")},
 			                                                                              timelapse_permission_validator,
 			                                                                              download_handler_kwargs,
 			                                                                              timelapse_path_validator)),
-			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
-			                                                                                     as_attachment=True,
-			                                                                                     name_generator=download_name_generator),
+			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict({"path": self._settings.getBaseFolder("uploads"),
+		                                                                                     "as_attachment": True,
+		                                                                                     "name_generator": download_name_generator},
 			                                                                                download_permission_validator,
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs"),
-			                                                                                 mime_type_guesser=lambda *args, **kwargs: "text/plain",
-			                                                                                 stream_body=True),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict({"path": self._settings.getBaseFolder("logs"),
+			                                                                             "mime_type_guesser": lambda *args, **kwargs: "text/plain",
+			                                                                             "stream_body": True},
 			                                                                            download_handler_kwargs,
 			                                                                            log_permission_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
-			                                                                              as_attachment=True),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict({"url": self._settings.get(["webcam", "snapshot"]),
+			                                                                          "as_attachment": True},
 			                                                                         camera_permission_validator)),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"),
-			                                                                    is_pre_compressed=True)),
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, {"path": os.path.join(self._settings.getBaseFolder("generated"), "webassets"),
+			                                                                "is_pre_compressed": True}),
 
 			# online indicators - text file with "online" as content and a transparent gif
-			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
-			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
-			                                                      content_type="image/gif")),
+			(r"/online.txt", util.tornado.StaticDataHandler, {"data": "online\n"}),
+			(r"/online.gif", util.tornado.StaticDataHandler, {"data": bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
+			                                                  "content_type": "image/gif"}),
 
 			# deprecated endpoints
-			(r"/api/logs", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs")),
-			(r"/api/logs/(.*)", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs/{0}")),
+			(r"/api/logs", util.tornado.DeprecatedEndpointHandler, {"url": "/plugin/logging/logs"}),
+			(r"/api/logs/(.*)", util.tornado.DeprecatedEndpointHandler, {"url": "/plugin/logging/logs/{0}"}),
 		]
 
 		# fetch additional routes from plugins
@@ -710,7 +704,7 @@ class Server(object):
 			except Exception:
 				self._logger.exception("There was an error while retrieving additional "
 				                       "server routes from plugin hook {name}".format(**locals()),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -734,12 +728,12 @@ class Server(object):
 
 		removed_headers = ["Server"]
 
-		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app,
+		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, {"fallback": util.tornado.WsgiInputContainer(app.wsgi_app,
 		                                                                                                                      headers=headers,
 		                                                                                                                      removed_headers=removed_headers),
-		                                                                             file_prefix="octoprint-file-upload-",
-		                                                                             file_suffix=".tmp",
-		                                                                             suffixes=upload_suffixes)))
+		                                                                         "file_prefix": "octoprint-file-upload-",
+		                                                                         "file_suffix": ".tmp",
+		                                                                         "suffixes": upload_suffixes}))
 
 		transforms = [util.tornado.GlobalHeaderTransform.for_headers("OctoPrintGlobalHeaderTransform",
 		                                                             headers=headers,
@@ -759,7 +753,7 @@ class Server(object):
 			except Exception:
 				self._logger.exception("There was an error while retrieving additional "
 				                       "upload sizes from plugin hook {name}".format(**locals()),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 			else:
 				if isinstance(result, (list, tuple)):
 					for entry in result:
@@ -784,13 +778,13 @@ class Server(object):
 			self._logger.warning("server.reverseProxy.trustedDownstream is not a list, skipping")
 			trusted_downstreams = []
 
-		server_kwargs = dict(max_body_sizes=max_body_sizes,
-		                     default_max_body_size=self._settings.getInt(["server", "maxSize"]),
-		                     xheaders=True,
-		                     trusted_downstream=trusted_downstream)
+		server_kwargs = {"max_body_sizes": max_body_sizes,
+		                 "default_max_body_size": self._settings.getInt(["server", "maxSize"]),
+		                 "xheaders": True,
+		                 "trusted_downstream": trusted_downstream}
 		if sys.platform == "win32":
 			# set 10min idle timeout under windows to hopefully make #2916 less likely
-			server_kwargs.update(dict(idle_connection_timeout=600))
+			server_kwargs.update({"idle_connection_timeout": 600})
 
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
 
@@ -1245,7 +1239,7 @@ class Server(object):
 							logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
 							continue
 
-					additional_request_data = kwargs.get("_additional_request_data", dict())
+					additional_request_data = kwargs.get("_additional_request_data", {})
 					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
 
@@ -1256,7 +1250,7 @@ class Server(object):
 						else:
 							logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
 
-						headers = kwargs.get("headers", dict())
+						headers = kwargs.get("headers", {})
 						headers["X-Force-View"] = plugin if plugin else "_default"
 						headers["X-Preemptive-Recording"] = "yes"
 						kwargs["headers"] = headers
@@ -1323,7 +1317,7 @@ class Server(object):
 			except Exception:
 				self._logger.exception("Error while registering blueprint of "
 				                       "plugin {}, ignoring it".format(plugin._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra={"plugin": plugin._identifier})
 				continue
 
 		return blueprints
@@ -1341,7 +1335,7 @@ class Server(object):
 			except Exception:
 				self._logger.exception("Error while registering assets of plugin "
 				                       "{}, ignoring it".format(plugin._identifier),
-				                       extra=dict(plugin=plugin._identifier))
+				                       extra={"plugin": plugin._identifier})
 				continue
 
 		return blueprints
@@ -1393,7 +1387,7 @@ class Server(object):
 							blueprint.before_request(h)
 				except Exception:
 					self._logger.exception("Error processing before_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=name))
+					                       extra={"plugin": name})
 
 		for name, hook in after_hooks.items():
 			plugin = octoprint.plugin.plugin_manager().get_plugin(name)
@@ -1405,7 +1399,7 @@ class Server(object):
 							blueprint.after_request(h)
 				except Exception:
 					self._logger.exception("Error processing after_request hooks from plugin {}".format(plugin),
-					                       extra=dict(plugin=name))
+					                       extra={"plugin": name})
 
 	def _setup_mimetypes(self):
 		# Safety measures for Windows... apparently the mimetypes module takes its translation from the windows
@@ -1490,7 +1484,7 @@ class Server(object):
 
 		AdjustedEnvironment = type(Environment)(Environment.__name__,
 		                                        (Environment,),
-		                                        dict(resolver_class=util.flask.PluginAssetResolver))
+		                                        {"resolver_class": util.flask.PluginAssetResolver})
 		class CustomDirectoryEnvironment(AdjustedEnvironment):
 			@property
 			def directory(self):
@@ -1501,7 +1495,7 @@ class Server(object):
 
 		UpdaterType = type(util.flask.SettingsCheckUpdater)(util.flask.SettingsCheckUpdater.__name__,
 		                                                    (util.flask.SettingsCheckUpdater,),
-		                                                    dict(updater=assets.updater))
+		                                                    {"updater": assets.updater})
 		assets.updater = UpdaterType
 
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])

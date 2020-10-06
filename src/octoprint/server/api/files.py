@@ -31,7 +31,7 @@ import threading
 
 #~~ GCODE file handling
 
-_file_cache = dict()
+_file_cache = {}
 _file_cache_mutex = threading.RLock()
 
 _DATA_FORMAT_VERSION = "v2"
@@ -252,7 +252,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 					if "children" in file_or_folder:
 						file_or_folder["children"] = analyse_recursively(file_or_folder["children"].values(), path + file_or_folder["name"] + "/")
 
-					file_or_folder["refs"] = dict(resource=url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file_or_folder["name"], _external=True))
+					file_or_folder["refs"] = {"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file_or_folder["name"], _external=True)}
 				else:
 					if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(file_or_folder["name"], type="gcode"):
 						file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
@@ -271,20 +271,16 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 							if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
 								last = entry
 						if last:
-							prints = dict(
-								success=success,
-								failure=failure,
-								last=dict(
-									success=last["success"],
-									date=last["timestamp"]
-								)
-							)
+							prints = {"success": success,
+							          "failure": failure,
+							          "last": {"success": last["success"],
+							                   "date": last["timestamp"]}}
 							if "printTime" in last:
 								prints["last"]["printTime"] = last["printTime"]
 							file_or_folder["prints"] = prints
 
-					file_or_folder["refs"] = dict(resource=url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file_or_folder["path"], _external=True),
-					                              download=url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file_or_folder["path"])
+					file_or_folder["refs"] = {"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file_or_folder["path"], _external=True),
+					                          "download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file_or_folder["path"]}
 
 				result.append(file_or_folder)
 
@@ -434,11 +430,11 @@ def uploadGcodeFile(target):
 		if isinstance(filename, tuple):
 			filename, sdFilename = filename
 
-		payload = dict(name=futureFilename,
-		               path=filename,
-		               target=target,
-		               select=selectAfterUpload,
-		               print=printAfterSelect)
+		payload = {"name": futureFilename,
+		           "path": filename,
+		           "target": target,
+		           "select": selectAfterUpload,
+		           "print": printAfterSelect}
 		if userdata is not None:
 			payload["userdata"] = userdata
 		eventManager.fire(Events.UPLOAD, payload)
@@ -506,10 +502,10 @@ def uploadGcodeFile(target):
 		                   target=FileDestinations.LOCAL,
 		                   filename=added_folder,
 		                   _external=True)
-		folder = dict(name=futureName,
-		              path=added_folder,
-		              origin=target,
-		              refs=dict(resource=location))
+		folder = {"name": futureName,
+		          "path": added_folder,
+		          "origin": target,
+		          "refs": {"resource": location}}
 
 		r = make_response(jsonify(folder=folder, done=True), 201)
 		r.headers["Location"] = location
@@ -658,7 +654,7 @@ def gcodeFileCommand(filename, target):
 				select_after_slicing = print_after_slicing = True
 
 			override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
-			overrides = dict()
+			overrides = {}
 			for key in override_keys:
 				overrides[key[len("profile."):]] = data[key]
 

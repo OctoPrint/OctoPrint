@@ -266,7 +266,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 		:return dict: a dictionary describing the static assets to publish for the plugin
 		"""
-		return dict()
+		return {}
 
 
 class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
@@ -565,7 +565,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 		:return dict: a dictionary containing any additional template variables to include in the renderer
 		"""
-		return dict()
+		return {}
 
 	def get_template_folder(self):
 		"""
@@ -1045,7 +1045,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		    dict: a dictionary containing additional data to provide to the frontend. Whatever the plugin
 		          returns here will be made available on the wizard API under the plugin's identifier
 		"""
-		return dict()
+		return {}
 
 	# noinspection PyMethodMayBeStatic,PyUnusedLocal
 	def on_wizard_finish(self, handled):
@@ -1414,10 +1414,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		else:
 			template_folder = os.path.join(self._basefolder, "templates")
 
-		return dict(
-			static_folder=static_folder,
-			template_folder=template_folder
-		)
+		return {"static_folder": static_folder,
+		        "template_folder": template_folder}
 
 	# noinspection PyMethodMayBeStatic
 	def is_blueprint_protected(self):
@@ -1570,15 +1568,15 @@ class SettingsPlugin(OctoPrintPlugin):
 					node[key] = default_value
 				else:
 					if isinstance(node[key], dict):
-						node[key] = dict()
+						node[key] = {}
 					elif isinstance(node[key], (list, tuple)):
 						node[key] = []
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
-		                  admin=lambda: current_user is not None and current_user.has_permission(Permissions.SETTINGS),
-		                  never=lambda: False)
+		conditions = {"user": lambda: current_user is not None and not current_user.is_anonymous,
+		              "admin": lambda: current_user is not None and current_user.has_permission(Permissions.SETTINGS),
+		              "never": lambda: False}
 
 		for level, condition in conditions.items():
 			paths_for_level = restricted_paths.get(level, [])
@@ -1614,7 +1612,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		# get the current data
 		current = self._settings.get_all_data()
 		if current is None:
-			current = dict()
+			current = {}
 
 		# merge our new data on top of it
 		new_current = octoprint.util.dict_merge(current, data)
@@ -1646,7 +1644,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		Override this in your plugin's implementation and return a dictionary defining your settings data structure
 		with included default values.
 		"""
-		return dict()
+		return {}
 
 	# noinspection PyMethodMayBeStatic
 	def get_settings_restricted_paths(self):
@@ -1703,7 +1701,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		..versionadded:: 1.2.17
 		"""
-		return dict()
+		return {}
 
 	# noinspection PyMethodMayBeStatic
 	def get_settings_preprocessors(self):
@@ -1741,7 +1739,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		    (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
 		        getters, the second the preprocessors for setters
 		"""
-		return dict(), dict()
+		return {}, {}
 
 	# noinspection PyMethodMayBeStatic
 	def get_settings_version(self):
@@ -1910,14 +1908,12 @@ class SlicerPlugin(OctoPrintPlugin):
 		Returns:
 		    dict: A dict describing the slicer as outlined above.
 		"""
-		return dict(
-			type=None,
-			name=None,
-			same_device=True,
-			progress_report=False,
-			source_file_types=["model"],
-			destination_extensions=["gco", "gcode", "g"]
-		)
+		return {"type": None,
+		        "name": None,
+		        "same_device": True,
+		        "progress_report": False,
+		        "source_file_types": ["model"],
+		        "destination_extensions": ["gco", "gcode", "g"]}
 
 	# noinspection PyMethodMayBeStatic
 	def get_slicer_extension_tree(self):
@@ -1934,7 +1930,7 @@ class SlicerPlugin(OctoPrintPlugin):
 		..versionadded:: 1.3.11
 		"""
 		from octoprint.filemanager import ContentTypeMapping
-		return dict(model=dict(stl=ContentTypeMapping(["stl"], "application/sla")))
+		return {"model": {"stl": ContentTypeMapping(["stl"], "application/sla")}}
 
 	def get_slicer_profiles(self, profile_path):
 		"""
@@ -1957,7 +1953,7 @@ class SlicerPlugin(OctoPrintPlugin):
 
 		import octoprint.util
 
-		profiles = dict()
+		profiles = {}
 		for entry in scandir(profile_path):
 			if not entry.name.endswith(".profile") or octoprint.util.is_hidden_path(entry.name):
 				# we are only interested in profiles and no hidden files

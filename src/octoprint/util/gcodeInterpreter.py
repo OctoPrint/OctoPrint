@@ -203,18 +203,18 @@ class gcode(object):
 	@property
 	def dimensions(self):
 		size = self._minMax.size
-		return dict(width=size.x,
-		            depth=size.y,
-		            height=size.z)
+		return {"width": size.x,
+		        "depth": size.y,
+		        "height": size.z}
 
 	@property
 	def printing_area(self):
-		return dict(minX=None if math.isinf(self._minMax.min.x) else self._minMax.min.x,
-		            minY=None if math.isinf(self._minMax.min.y) else self._minMax.min.y,
-		            minZ=None if math.isinf(self._minMax.min.z) else self._minMax.min.z,
-		            maxX=None if math.isinf(self._minMax.max.x) else self._minMax.max.x,
-		            maxY=None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
-		            maxZ=None if math.isinf(self._minMax.max.z) else self._minMax.max.z)
+		return {"minX": None if math.isinf(self._minMax.min.x) else self._minMax.min.x,
+		        "minY": None if math.isinf(self._minMax.min.y) else self._minMax.min.y,
+		        "minZ": None if math.isinf(self._minMax.min.z) else self._minMax.min.z,
+		        "maxX": None if math.isinf(self._minMax.max.x) else self._minMax.max.x,
+		        "maxY": None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
+		        "maxZ": None if math.isinf(self._minMax.max.z) else self._minMax.max.z}
 
 	def load(self, filename, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
 		if os.path.isfile(filename):
@@ -459,8 +459,8 @@ class gcode(object):
 					s = getCodeInt(line, 'S')
 					if s in [2, 4, 5, 6]:
 						# Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
- 						# from first extruder to all other extruders
- 						duplicationMode = True
+						# from first extruder to all other extruders
+						duplicationMode = True
 					else:
 						duplicationMode = False
 
@@ -504,11 +504,11 @@ class gcode(object):
 		return {key: value for (key, value) in map(lambda x: x.split(b"=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split(b"\b"))}
 
 	def get_result(self):
-		return dict(total_time=self.totalMoveTimeMinute,
-		            extrusion_length=self.extrusionAmount,
-		            extrusion_volume=self.extrusionVolume,
-		            dimensions=self.dimensions,
-		            printing_area=self.printing_area)
+		return {"total_time": self.totalMoveTimeMinute,
+		        "extrusion_length": self.extrusionAmount,
+		        "extrusion_volume": self.extrusionVolume,
+		        "dimensions": self.dimensions,
+		        "printing_area": self.printing_area}
 
 def getCodeInt(line, code):
 	return getCode(line, code, int)

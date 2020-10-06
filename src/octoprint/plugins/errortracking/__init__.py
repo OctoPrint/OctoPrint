@@ -16,11 +16,11 @@ from flask_babel import gettext
 SENTRY_URL_SERVER = "https://d479a74f172d4ac2b959a9a7d0536a82@o118517.ingest.sentry.io/1373987"
 SENTRY_URL_COREUI = "https://040577fb88b241ff985e408c11775720@o118517.ingest.sentry.io/1374096"
 
-SETTINGS_DEFAULTS = dict(enabled=False,
-                         enabled_unreleased=False,
-                         unique_id=None,
-                         url_server=SENTRY_URL_SERVER,
-                         url_coreui=SENTRY_URL_COREUI)
+SETTINGS_DEFAULTS = {"enabled": False,
+                     "enabled_unreleased": False,
+                     "unique_id": None,
+                     "url_server": SENTRY_URL_SERVER,
+                     "url_coreui": SENTRY_URL_COREUI}
 
 import serial
 import requests.exceptions
@@ -67,24 +67,23 @@ class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
                           octoprint.plugin.SimpleApiPlugin):
 
 	def get_template_configs(self):
-		return [
-			dict(type="settings",
-			     name=gettext("Error Tracking"),
-			     template="errortracking_settings.jinja2",
-			     custom_bindings=False),
-			dict(type="generic", template="errortracking_javascripts.jinja2")
-		]
+		return [{"type": "settings",
+		         "name": gettext("Error Tracking"),
+		         "template": "errortracking_settings.jinja2",
+		         "custom_bindings": False},
+		        {"type": "generic",
+		         "template": "errortracking_javascripts.jinja2"}]
 
 	def get_template_vars(self):
 		enabled = self._settings.get_boolean(["enabled"])
 		enabled_unreleased = self._settings.get_boolean(["enabled_unreleased"])
 
-		return dict(enabled=_is_enabled(enabled, enabled_unreleased),
-		            unique_id=self._settings.get(["unique_id"]),
-		            url_coreui=self._settings.get(["url_coreui"]))
+		return {"enabled": _is_enabled(enabled, enabled_unreleased),
+		        "unique_id": self._settings.get(["unique_id"]),
+		        "url_coreui": self._settings.get(["url_coreui"])}
 
 	def get_assets(self):
-		return dict(js=["js/sentry.min.js", "js/errortracking.js"])
+		return {"js": ["js/sentry.min.js", "js/errortracking.js"]}
 
 	def get_settings_defaults(self):
 		return SETTINGS_DEFAULTS
@@ -119,7 +118,7 @@ def _enable_errortracking():
 	version = get_octoprint_version_string()
 
 	s = settings()
-	plugin_defaults = dict(plugins=dict(errortracking=SETTINGS_DEFAULTS))
+	plugin_defaults = {"plugins": {"errortracking": SETTINGS_DEFAULTS}}
 
 	enabled = s.getBoolean(["plugins", "errortracking", "enabled"], defaults=plugin_defaults)
 	enabled_unreleased = s.getBoolean(["plugins", "errortracking", "enabled_unreleased"], defaults=plugin_defaults)
@@ -142,8 +141,8 @@ def _enable_errortracking():
 
 			handled = True
 			logger = event.get("logger", "")
-			plugin = event.get("extra", dict()).get("plugin", None)
-			callback = event.get("extra", dict()).get("callback", None)
+			plugin = event.get("extra", {}).get("plugin", None)
+			callback = event.get("extra", {}).get("callback", None)
 
 			for ignore in IGNORED_EXCEPTIONS:
 				if isinstance(ignore, tuple):
@@ -192,7 +191,7 @@ def _enable_errortracking():
 		                before_send=_before_send)
 
 		with sentry_sdk.configure_scope() as scope:
-			scope.user = dict(id=unique_id)
+			scope.user = {"id": unique_id}
 
 		logging.getLogger("octoprint.plugins.errortracking").info("Initialized error tracking")
 		_enabled = True

@@ -61,7 +61,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		self.settings = None
 		self.plugin_manager = None
-		self.hooks = dict()
+		self.hooks = {}
 
 		self._logger = logging.getLogger(__name__)
 		self._initialized = False
@@ -74,7 +74,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		if ctx.obj is None:
 			ctx.obj = OctoPrintContext()
 
-		logging_config = dict_merge(LOGGING_CONFIG, dict(root=dict(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARNING)))
+		logging_config = dict_merge(LOGGING_CONFIG, {"root": {"level": logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARNING}})
 		logging.config.dictConfig(logging_config)
 
 		# initialize settings and plugin manager based on provided
@@ -121,7 +121,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 					result[name + self.sep + command.name] = command
 			except Exception:
 				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		return result
 

@@ -52,14 +52,12 @@ class OctoPrintPermission(Permission):
 		Permission.__init__(self, *self.convert_to_needs(needs))
 
 	def as_dict(self):
-		return dict(
-			key=self.key,
-			name=self.get_name(),
-			dangerous=self._dangerous,
-			default_groups=self._default_groups,
-			description=self.get_description(),
-			needs=self.convert_needs_to_dict(self.needs)
-		)
+		return {"key": self.key,
+		        "name": self.get_name(),
+		        "dangerous": self._dangerous,
+		        "default_groups": self._default_groups,
+		        "description": self.get_description(),
+		        "needs": self.convert_needs_to_dict(self.needs)}
 
 	@property
 	def key(self):

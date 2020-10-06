@@ -50,18 +50,18 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 	def get_additional_permissions(self):
 		return [
-			dict(key="READ",
-			     name="Read announcements",
-			     description=gettext("Allows to read announcements"),
-			     default_groups=[ADMIN_GROUP],
-			     roles=["read"]),
-			dict(key="MANAGE",
-			     name="Manage announcement subscriptions",
-			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
-			                         "permission"),
-			     default_groups=[ADMIN_GROUP],
-			     roles=["manage"],
-			     permissions=["PLUGIN_ANNOUNCEMENTS_READ"])
+			{"key": "READ",
+			 "name": "Read announcements",
+			 "description": gettext("Allows to read announcements"),
+			 "default_groups": [ADMIN_GROUP],
+			 "roles": ["read"]},
+			{"key": "MANAGE",
+			 "name": "Manage announcement subscriptions",
+			 "description": gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
+			                        "permission"),
+			 "default_groups": [ADMIN_GROUP],
+			 "roles": ["manage"],
+			 "permissions": ["PLUGIN_ANNOUNCEMENTS_READ"]}
 		]
 
 	# StartupPlugin
@@ -78,37 +78,37 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# SettingsPlugin
 
 	def get_settings_defaults(self):
-		settings = dict(channels=dict(_important=dict(name="Important Announcements",
-		                                              description="Important announcements about OctoPrint.",
-		                                              priority=1,
-		                                              type="rss",
-		                                              url="https://octoprint.org/feeds/important.xml"),
-		                              _releases=dict(name="Release Announcements",
-		                                             description="Announcements of new releases and release candidates of OctoPrint.",
-		                                             priority=2,
-		                                             type="rss",
-		                                             url="https://octoprint.org/feeds/releases.xml"),
-		                              _blog=dict(name="On the OctoBlog",
-		                                         description="Development news, community spotlights, OctoPrint On Air episodes and more from the official OctoBlog.",
-		                                         priority=2,
-		                                         type="rss",
-		                                         url="https://octoprint.org/feeds/octoblog.xml"),
-		                              _plugins=dict(name="New Plugins in the Repository",
-		                                            description="Announcements of new plugins released on the official Plugin Repository.",
-		                                            priority=2,
-		                                            type="rss",
-		                                            url="https://plugins.octoprint.org/feed.xml"),
-		                              _octopi=dict(name="OctoPi News",
-		                                           description="News around OctoPi, the Raspberry Pi image including OctoPrint.",
-		                                           priority=2,
-		                                           type="rss",
-		                                           url="https://octoprint.org/feeds/octopi.xml")),
-		                enabled_channels=[],
-		                forced_channels=["_important"],
-		                channel_order=["_important", "_releases", "_blog", "_plugins", "_octopi"],
-		                ttl=6*60,
-		                display_limit=3,
-		                summary_limit=300)
+		settings = {"channels": {"_important": {"name": "Important Announcements",
+		                                        "description": "Important announcements about OctoPrint.",
+		                                        "priority": 1,
+		                                        "type": "rss",
+		                                        "url": "https://octoprint.org/feeds/important.xml"},
+		                         "_releases": {"name": "Release Announcements",
+		                                       "description": "Announcements of new releases and release candidates of OctoPrint.",
+		                                       "priority": 2,
+		                                       "type": "rss",
+		                                       "url": "https://octoprint.org/feeds/releases.xml"},
+		                         "_blog": {"name": "On the OctoBlog",
+		                                   "description": "Development news, community spotlights, OctoPrint On Air episodes and more from the official OctoBlog.",
+		                                   "priority": 2,
+		                                   "type": "rss",
+		                                   "url": "https://octoprint.org/feeds/octoblog.xml"},
+		                         "_plugins": {"name": "New Plugins in the Repository",
+		                                      "description": "Announcements of new plugins released on the official Plugin Repository.",
+		                                      "priority": 2,
+		                                      "type": "rss",
+		                                      "url": "https://plugins.octoprint.org/feed.xml"},
+		                         "_octopi": {"name": "OctoPi News",
+		                                     "description": "News around OctoPi, the Raspberry Pi image including OctoPrint.",
+		                                     "priority": 2,
+		                                     "type": "rss",
+		                                     "url": "https://octoprint.org/feeds/octopi.xml"}},
+		            "enabled_channels": [],
+		            "forced_channels": ["_important"],
+		            "channel_order": ["_important", "_releases", "_blog", "_plugins", "_octopi"],
+		            "ttl": 6*60,
+		            "display_limit": 3,
+		            "summary_limit": 300}
 		settings["enabled_channels"] = list(settings["channels"].keys())
 		return settings
 
@@ -140,17 +140,21 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# AssetPlugin
 
 	def get_assets(self):
-		return dict(js=["js/announcements.js"],
-		            less=["less/announcements.less"],
-		            css=["css/announcements.css"])
+		return {"js": ["js/announcements.js"],
+		        "less": ["less/announcements.less"],
+		        "css": ["css/announcements.css"]}
 
 	# Template Plugin
 
 	def get_template_configs(self):
-		return [
-			dict(type="settings", name=gettext("Announcements"), template="announcements_settings.jinja2", custom_bindings=True),
-			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_READ)")
-		]
+		return [{"type": "settings",
+		   	     "name": gettext("Announcements"),
+		   	     "template": "announcements_settings.jinja2",
+		   	     "custom_bindings": True},
+		   	    {"type": "navbar",
+		   	     "template": "announcements_navbar.jinja2",
+		   	     "styles": ["display: none"],
+		   	     "data_bind": "visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_READ)"}]
 
 	# Blueprint Plugin
 
@@ -181,15 +185,15 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 					last = entries[0]["published"]
 					self._mark_read_until(key, last)
 
-				result.append(dict(key=key,
-				                   channel=data["name"],
-				                   url=data["url"],
-				                   description=data.get("description", ""),
-				                   priority=data.get("priority", 2),
-				                   enabled=key in enabled or key in forced,
-				                   forced=key in forced,
-				                   data=entries,
-				                   unread=unread))
+				result.append({"key": key,
+				               "channel": data["name"],
+				               "url": data["url"],
+				               "description": data.get("description", ""),
+				               "priority": data.get("priority", 2),
+				               "enabled": key in enabled or key in forced,
+				               "forced": key in forced,
+				               "data": entries,
+				               "unread": unread})
 
 			return flask.jsonify(channels=result)
 
@@ -224,8 +228,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		from octoprint.server.util.flask import get_json_command_from_request
 		from octoprint.server import NO_CONTENT
 
-		valid_commands = dict(read=["until"],
-		                      toggle=[])
+		valid_commands = {"read": ["until"],
+		                  "toggle": []}
 
 		command, data, response = get_json_command_from_request(flask.request, valid_commands=valid_commands)
 		if response is not None:
@@ -263,8 +267,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		if channel_data:
 			current_read_until = channel_data.get("read_until", None)
 
-		defaults = dict(plugins=dict(announcements=dict(channels=dict())))
-		defaults["plugins"]["announcements"]["channels"][channel] = dict(read_until=current_read_until)
+		defaults = {"plugins": {"announcements": {"channels": {}}}}
+		defaults["plugins"]["announcements"]["channels"][channel] = {"read_until": current_read_until}
 
 		with self._cached_channel_configs_mutex:
 			self._settings.set(["channels", channel, "read_until"], until, defaults=defaults)
@@ -310,7 +314,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		return self._get_channel_configs(force=force).get(safe_key)
 
 	def _fetch_all_channels_async(self, force=False):
-		thread = threading.Thread(target=self._fetch_all_channels, kwargs=dict(force=force))
+		thread = threading.Thread(target=self._fetch_all_channels, kwargs={"force": force})
 		thread.daemon = True
 		thread.start()
 
@@ -321,7 +325,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		enabled = self._settings.get(["enabled_channels"])
 		forced = self._settings.get(["forced_channels"])
 
-		all_channels = dict()
+		all_channels = {}
 		for key, config in channels.items():
 			if not key in enabled and not key in forced:
 				continue
@@ -424,13 +428,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		if read_until is not None:
 			read = published <= read_until
 
-		return dict(title=entry["title"],
-		            title_without_tags=_strip_tags(entry["title"]),
-		            summary=_lazy_images(entry["summary"]),
-		            summary_without_images=_strip_images(entry["summary"]),
-		            published=published,
-		            link=utmify(entry["link"], source="octoprint", medium="announcements", content=OCTOPRINT_VERSION),
-		            read=read)
+		return {"title": entry["title"],
+		        "title_without_tags": _strip_tags(entry["title"]),
+		        "summary": _lazy_images(entry["summary"]),
+		        "summary_without_images": _strip_images(entry["summary"]),
+		        "published": published,
+		        "link": utmify(entry["link"], source="octoprint", medium="announcements", content=OCTOPRINT_VERSION),
+		        "read": read}
 
 	def _get_channel_cache_path(self, key):
 		"""Retrieve cache path for channel key."""

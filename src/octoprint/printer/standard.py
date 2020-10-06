@@ -97,7 +97,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					self._estimator_factory = estimator
 			except Exception:
 				self._logger.exception("Error while processing analysis queues from {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		#hook card upload
 		self.sd_card_upload_hooks = plugin_manager().get_hooks("octoprint.printer.sdcardupload")
@@ -184,7 +184,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				callback.on_printer_add_temperature(data)
 			except Exception:
 				self._logger.exception("Exception while adding temperature data point to callback {}".format(callback),
-				                       extra=dict(callback=fqcn(callback)))
+				                       extra={"callback": fqcn(callback)})
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
@@ -192,7 +192,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				callback.on_printer_add_log(data)
 			except Exception:
 				self._logger.exception("Exception while adding communication log entry to callback {}".format(callback),
-				                       extra=dict(callback=fqcn(callback)))
+				                       extra={"callback": fqcn(callback)})
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
@@ -200,7 +200,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				callback.on_printer_add_message(data)
 			except Exception:
 				self._logger.exception("Exception while adding printer message to callback {}".format(callback),
-				                       extra=dict(callback=fqcn(callback)))
+				                       extra={"callback": fqcn(callback)})
 
 	def _sendCurrentDataCallbacks(self, data):
 		plugin_data = self._get_additional_plugin_data(initial=False)
@@ -212,7 +212,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				callback.on_printer_send_current_data(data_copy)
 			except Exception:
 				self._logger.exception("Exception while pushing current data to callback {}".format(callback),
-				                       extra=dict(callback=fqcn(callback)))
+				                       extra={"callback": fqcn(callback)})
 
 	def _get_additional_plugin_data(self, initial=False):
 		plugin_data = {}
@@ -265,7 +265,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					plugin.on_print_progress(storage, filename, progress)
 				except Exception:
 					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier,
-					                       extra=dict(plugin=plugin._identifier))
+					                       extra={"plugin": plugin._identifier})
 
 		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
 		thread.daemon = False
@@ -371,7 +371,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if not isinstance(amount, (int, long, float)):
 				raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
-			axes = dict()
+			axes = {}
 			axes[axis] = amount
 
 		if not axes:
@@ -468,7 +468,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
-			offsets = dict()
+			offsets = {}
 
 		if not isinstance(offsets, dict):
 			raise ValueError("offsets must be a dict")
@@ -655,7 +655,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is not None:
 			offsets = self._comm.getOffsets()
 		else:
-			offsets = dict()
+			offsets = {}
 
 		result = {}
 		if self._temp is not None:
@@ -733,7 +733,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or not self._comm.isSdReady():
 			result = []
 		else:
-			result = list(map(lambda x: dict(name=x[0][1:], size=x[1], display=x[2]), self._comm.getSdFiles()))
+			result = list(map(lambda x: {"name": x[0][1:], "size": x[1], "display": x[2]}, self._comm.getSdFiles()))
 		return result
 
 	def add_sd_file(self, filename, path, on_success=None, on_failure=None, *args, **kwargs):
@@ -745,21 +745,21 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._streamingFailedCallback = on_failure
 
 		def sd_upload_started(local_filename, remote_filename):
-			eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
-			                                                  remote=remote_filename))
+			eventManager().fire(Events.TRANSFER_STARTED, {"local": local_filename,
+			                                              "remote": remote_filename})
 
 		def sd_upload_succeeded(local_filename, remote_filename, elapsed):
-			payload = dict(local=local_filename,
-			               remote=remote_filename,
-			               time=elapsed)
+			payload = {"local": local_filename,
+			           "remote": remote_filename,
+			           "time": elapsed}
 			eventManager().fire(Events.TRANSFER_DONE, payload)
 			if callable(self._streamingFinishedCallback):
 				self._streamingFinishedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
 
 		def sd_upload_failed(local_filename, remote_filename, elapsed):
-			payload = dict(local=local_filename,
-			               remote=remote_filename,
-			               time=elapsed)
+			payload = {"local": local_filename,
+			           "remote": remote_filename,
+			           "time": elapsed}
 			eventManager().fire(Events.TRANSFER_FAILED, payload)
 			if callable(self._streamingFailedCallback):
 				self._streamingFailedCallback(remote_filename, remote_filename, FileDestinations.SDCARD)
@@ -774,7 +774,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			except Exception:
 				self._logger.exception("There was an error running the sd upload "
 				                       "hook provided by plugin {}".format(name),
-				                       extra=dict(plugin=name))
+				                       extra={"plugin": name})
 
 		else:
 			# no plugin feels responsible, use the default implementation
@@ -852,10 +852,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._state = state
 		self._stateMonitor.set_state(self._dict(text=state_string, flags=self._getStateFlags()))
 
-		payload = dict(
-			state_id=self.get_state_id(self._state),
-			state_string=self.get_state_string(self._state)
-		)
+		payload = {"state_id": self.get_state_id(self._state),
+		           "state_string": self.get_state_string(self._state)}
 		eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
 	def _addLog(self, log):
@@ -925,11 +923,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def _addTemperatureData(self, tools=None, bed=None, chamber=None, custom=None):
 		if tools is None:
-			tools = dict()
+			tools = {}
 		if custom is None:
-			custom = dict()
+			custom = {}
 
-		data = dict(time=int(time.time()))
+		data = {"time": int(time.time())}
 		for tool in tools.keys():
 			data["tool%d" % tool] = self._dict(actual=tools[tool][0], target=tools[tool][1])
 		if bed is not None and isinstance(bed, tuple):
@@ -1075,7 +1073,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			callback.on_printer_send_initial_data(data)
 		except Exception:
 			self._logger.exception(u"Error while pushing initial state update to callback {}".format(callback),
-			                       extra=dict(callback=fqcn(callback)))
+			                       extra={"callback": fqcn(callback)})
 
 	def _getStateFlags(self):
 		return self._dict(operational=self.is_operational(),
@@ -1100,14 +1098,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
 		if custom is None:
-			custom = dict()
+			custom = {}
 		self._addTemperatureData(tools=copy.deepcopy(tools),
 		                         bed=copy.deepcopy(bed),
 		                         chamber=copy.deepcopy(chamber),
 		                         custom=copy.deepcopy(custom))
 
 	def on_comm_position_update(self, position, reason=None):
-		payload = dict(reason=reason)
+		payload = {"reason": reason}
 		payload.update(position)
 		eventManager().fire(Events.POSITION_UPDATE, payload)
 
@@ -1243,7 +1241,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			if not suppress_script:
 				self.script("beforePrintStarted",
-				            context=dict(event=payload),
+				            context={"event": payload},
 				            part_of_job=True,
 				            must_be_set=False)
 
@@ -1266,7 +1264,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			if not suppress_script:
 				self.script("afterPrintDone",
-				            context=dict(event=payload),
+				            context={"event": payload},
 				            part_of_job=True,
 				            must_be_set=False)
 
@@ -1311,7 +1309,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			if not suppress_script:
 				self.script("afterPrintCancelled",
-				            context=dict(event=payload),
+				            context={"event": payload},
 				            part_of_job=True,
 				            must_be_set=False)
 
@@ -1341,7 +1339,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                                                                                            payload.get("user")))
 			if not suppress_script:
 				self.script("afterPrintPaused",
-				            context=dict(event=payload),
+				            context={"event": payload},
 				            part_of_job=True,
 				            must_be_set=False)
 
@@ -1356,13 +1354,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			if not suppress_script:
 				self.script("beforePrintResumed",
-				            context=dict(event=payload),
+				            context={"event": payload},
 				            part_of_job=True,
 				            must_be_set=False)
 
 	def on_comm_file_transfer_started(self, local_filename, remote_filename, filesize, user=None):
-		eventManager().fire(Events.TRANSFER_STARTED, dict(local=local_filename,
-		                                                  remote=remote_filename))
+		eventManager().fire(Events.TRANSFER_STARTED, {"local": local_filename,
+		                                              "remote": remote_filename})
 
 		self._sdStreaming = True
 
@@ -1373,9 +1371,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_file_transfer_done(self, local_filename, remote_filename, elapsed, failed=False):
 		self._sdStreaming = False
 
-		payload = dict(local=local_filename,
-		               remote=remote_filename,
-		               time=elapsed)
+		payload = {"local": local_filename,
+		           "remote": remote_filename,
+		           "time": elapsed}
 
 		if failed:
 			eventManager().fire(Events.TRANSFER_FAILED, payload)
@@ -1411,7 +1409,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			with self._selectedFileMutex:
 				selected_file = self._selectedFile
 				if not selected_file:
-					return dict()
+					return {}
 
 				print_job_file = selected_file.get("filename", None)
 				print_job_size = selected_file.get("filesize", None)
@@ -1419,7 +1417,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
 		if not print_job_file or not location:
-			return dict()
+			return {}
 
 		if location == FileDestinations.SDCARD:
 			full_path = print_job_file
@@ -1434,10 +1432,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
 			origin = FileDestinations.LOCAL
 
-		result= dict(name=name,
-		             path=path,
-		             origin=origin,
-		             size=print_job_size)
+		result= {"name": name,
+		         "path": path,
+		         "origin": origin,
+		         "size": print_job_size}
 
 		if position is not None:
 			result["position"] = position
@@ -1463,7 +1461,7 @@ class StateMonitor(object):
 		self._state = None
 		self._job_data = None
 		self._current_z = None
-		self._offsets = dict()
+		self._offsets = {}
 		self._progress = None
 
 		self._progress_dirty = False
@@ -1527,7 +1525,7 @@ class StateMonitor(object):
 
 	def set_temp_offsets(self, offsets):
 		if offsets is None:
-			offsets = dict()
+			offsets = {}
 		self._offsets = offsets
 		self._change_event.set()
 

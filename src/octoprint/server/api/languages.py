@@ -36,16 +36,16 @@ from flask_babel import Locale
 def getInstalledLanguagePacks():
 	translation_folder = settings().getBaseFolder("translations", check_writable=False)
 	if not os.path.exists(translation_folder):
-		return jsonify(language_packs=dict(_core=[]))
+		return jsonify(language_packs={"_core": []})
 
 	core_packs = []
-	plugin_packs = defaultdict(lambda: dict(identifier=None, display=None, languages=[]))
+	plugin_packs = defaultdict(lambda: {"identifier": None, "display": None, "languages": []})
 	for entry in scandir(translation_folder):
 		if not entry.is_dir():
 			continue
 
 		def load_meta(path, locale):
-			meta = dict()
+			meta = {}
 
 			meta_path = os.path.join(path, "meta.yaml")
 			if os.path.isfile(meta_path):
@@ -97,7 +97,7 @@ def getInstalledLanguagePacks():
 				logging.getLogger(__name__).exception("Error while parsing metadata for core language pack {} from {}".format(entry.name,
 				                                                                                                              entry.path))
 
-	result = dict(_core=dict(identifier="_core", display="Core", languages=core_packs))
+	result = {"_core": {"identifier": "_core", "display": "Core", "languages": core_packs}}
 	result.update(plugin_packs)
 	return jsonify(language_packs=result)
 

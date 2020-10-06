@@ -206,7 +206,7 @@ def get_user_for_apikey(apikey):
 			except Exception:
 				logging.getLogger(__name__).exception("Error running api key validator "
 				                                      "for plugin {} and key {}".format(name, apikey),
-				                                      extra=dict(plugin=name))
+				                                      extra={"plugin": name})
 	return None
 
 

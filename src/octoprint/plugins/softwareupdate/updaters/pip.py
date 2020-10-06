@@ -20,7 +20,7 @@ _ALREADY_INSTALLED = "Requirement already satisfied (use --upgrade to upgrade)"
 _POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
 _POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
 
-_pip_callers = dict()
+_pip_callers = {}
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 def can_perform_update(target, check, online=True):
@@ -87,7 +87,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 
 	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
-	pip_kwargs = dict(env=dict(PYTHONWARNINGS=b"ignore:DEPRECATION::pip._internal.cli.base_command"))
+	pip_kwargs = {"env": {"PYTHONWARNINGS": b"ignore:DEPRECATION::pip._internal.cli.base_command"}}
 	if pip_working_directory is not None:
 		pip_kwargs.update(cwd=pip_working_directory)
 

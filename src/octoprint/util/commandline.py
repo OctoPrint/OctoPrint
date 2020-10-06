@@ -188,10 +188,10 @@ class CommandlineCaller(object):
 		except KeyError:
 			pass
 
-		kwargs.update(dict(close_fds=CLOSE_FDS,
-		                   async_=True,
-		                   stdout=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
-		                   stderr=DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size)))
+		kwargs.update({"close_fds": CLOSE_FDS,
+		               "async_": True,
+		               "stdout": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+		               "stderr": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size)})
 
 		p = sarge.run(command, **kwargs)
 		while len(p.commands) == 0:
