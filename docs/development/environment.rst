@@ -286,6 +286,18 @@ PyCharm
     Note that this requires you to also have installed the additional ``docs`` dependencies into the Python 3 venv as
     described above via ``pip install -e .[develop,plugins,docs]``.
 
+  - Settings > Tools > File Watchers (you might have to enable this, it's a bundled plugin), add new:
+
+    * Name: pre-commit
+    * File type: Python
+    * Scope: Module 'OctoPrint'
+    * Program: ``<OctoPrint venv3 folder>/bin/pre-commit`` (Linux) or ``<OctoPrint venv3 folder>/Scripts/pre-commit`` (Windows)
+    * Arguments: ``run --hook-stage manual --files $FilePath$``
+    * Output paths to refresh: ``$FilePath$``
+    * Working directory: ``$ProjectFileDir$``
+    * disable "Auto-save edited files to trigger the watched"
+    * enable "Trigger the watched on external changes"
+
 To switch between Python 2 and 3, all you need to do now is change the Project Default Interpreter and restart
 OctoPrint. On current PyCharm versions you can do that right from a small selection field in the footer of the IDE.
 Otherwise go through Settings.
