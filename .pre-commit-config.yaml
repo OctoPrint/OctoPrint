@@ -1,7 +1,7 @@
 exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/|.*\.css|.*\.svg)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v3.2.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -13,8 +13,11 @@ repos:
       - id: fix-encoding-pragma
         args: ["--remove"]
   - repo: https://github.com/OctoPrint/codemods
-    rev: main
+    rev: 3e0c32250907092998f8892a4da1abc238c95891
     hooks:
+      - id: codemod_check_future_imports
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
       - id: codemod_dict_to_literal
         args: ["--ignore", "src/octoprint/vendor"]
         stages: ["manual"]
@@ -29,15 +32,15 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: stable
+    rev: 20.8b1
     hooks:
       - id: black
         args: ["--config", "black.toml"]
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.1
+    rev: 3.8.4
     hooks:
       - id: flake8
   - repo: https://github.com/prettier/prettier
-    rev: master
+    rev: 2.1.2
     hooks:
       - id: prettier
