@@ -78,7 +78,7 @@ class SessionContainer(object):
     clean them up all the time.
     """
     def __init__(self):
-        self._items = dict()
+        self._items = {}
         self._queue = []
 
     def add(self, session):

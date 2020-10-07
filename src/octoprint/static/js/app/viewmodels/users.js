@@ -1,31 +1,43 @@
-$(function() {
+$(function () {
     function UsersViewModel(parameters) {
         var self = this;
 
         self.access = parameters[0];
 
-        self.deprecatedUsersMethod = function(oldFct) {
+        self.deprecatedUsersMethod = function (oldFct) {
             var newFct = oldFct;
             if (arguments.length === 2) {
                 newFct = arguments[1];
             }
 
-            OctoPrintClient.deprecatedMethod(self, "UsersViewModel", oldFct, "AccessViewModel.users", newFct, function() {
-                self.access.users[newFct](this.arguments);
-            });
+            OctoPrintClient.deprecatedMethod(
+                self,
+                "UsersViewModel",
+                oldFct,
+                "AccessViewModel.users",
+                newFct,
+                function () {
+                    self.access.users[newFct](this.arguments);
+                }
+            );
         };
 
-        self.deprecatedUsersVariable = function(oldVar) {
+        self.deprecatedUsersVariable = function (oldVar) {
             var newVar = oldVar;
             if (arguments.length === 2) {
                 newVar = arguments[1];
             }
 
-            OctoPrintClient.deprecatedVariable(self, "UsersViewModel", oldVar, "AccessViewModel.users", newVar,
-                function() {
+            OctoPrintClient.deprecatedVariable(
+                self,
+                "UsersViewModel",
+                oldVar,
+                "AccessViewModel.users",
+                newVar,
+                function () {
                     return self.access.users[newVar];
                 },
-                function(val) {
+                function (val) {
                     self.access.users[newVar] = val;
                 }
             );
@@ -47,7 +59,6 @@ $(function() {
         self.deprecatedUsersVariable("editorActive");
 
         self.deprecatedUsersVariable("editorPasswordMismatch");
-
 
         self.deprecatedUsersMethod("requestData");
         self.deprecatedUsersMethod("fromResponse");

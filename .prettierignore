@@ -1,0 +1,15 @@
+src/octoprint/static/js/lib
+src/octoprint/static/vendor
+src/octoprint/static/less/bootstrap
+src/octoprint/static/less/font-awesome.less
+*.md
+*.css
+**/package.json
+**/package-lock.json
+**/*.min.js
+docs
+build
+dist
+venv
+venv2
+venv3

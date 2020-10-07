@@ -4,14 +4,14 @@
     } else {
         factory(global.OctoPrintClient, global.$);
     }
-})(this, function(OctoPrintClient, $) {
+})(this, function (OctoPrintClient, $) {
     var url = "api/printerprofiles";
 
-    var profileUrl = function(profile) {
+    var profileUrl = function (profile) {
         return url + "/" + profile;
     };
 
-    var OctoPrintPrinterProfileClient = function(base) {
+    var OctoPrintPrinterProfileClient = function (base) {
         this.base = base;
     };
 
@@ -34,7 +34,7 @@
         return this.base.get(profileUrl(id), opts);
     };
 
-   OctoPrintPrinterProfileClient.prototype. update = function (id, profile, opts) {
+    OctoPrintPrinterProfileClient.prototype.update = function (id, profile, opts) {
         profile = profile || {};
 
         var data = {profile: profile};

@@ -127,9 +127,9 @@ class InfoHandler(PreflightHandler):
         self.disable_cache()
         self.set_header('Content-Type', 'application/json; charset=UTF-8')
 
-        options = dict(websocket=self.server.websockets_enabled,
-                       cookie_needed=self.server.cookie_needed,
-                       origins=['*:*'],
-                       entropy=random.randint(0, MAXSIZE))
+        options = {"websocket": self.server.websockets_enabled,
+                   "cookie_needed": self.server.cookie_needed,
+                   "origins": ['*:*'],
+                   "entropy": random.randint(0, MAXSIZE)}
 
         self.write(json_encode(options))

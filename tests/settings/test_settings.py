@@ -11,649 +11,680 @@ Tests for OctoPrint's Settings class
      * tests for settings migration
 """
 
-import io
-import unittest
-import shutil
 import contextlib
-import os
-import sys
-import tempfile
-import yaml
 import hashlib
-import ddt
-import time
+import io
+import os
 import re
+import shutil
+import tempfile
+import time
+import unittest
+
+import ddt
+import yaml
 
 import octoprint.settings
 
+
 @ddt.ddt
 class TestSettings(unittest.TestCase):
+    def _load_yaml(self, fname):
+        with io.open(fname, "rt", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    def _dump_yaml(self, fname, config):
+        with io.open(fname, "wt", encoding="utf-8") as f:
+            yaml.safe_dump(config, f)
+
+    def setUp(self):
+        self.base_path = os.path.join(os.path.dirname(__file__), "_files")
+        self.config_path = os.path.realpath(os.path.join(self.base_path, "config.yaml"))
+        self.defaults_path = os.path.realpath(
+            os.path.join(self.base_path, "defaults.yaml")
+        )
+
+        self.config = self._load_yaml(self.config_path)
+        self.defaults = self._load_yaml(self.defaults_path)
+
+        from octoprint.util import dict_merge
+
+        self.expected_effective = dict_merge(self.defaults, self.config)
+
+    def test_basedir_initialization(self):
+        with self.mocked_basedir() as basedir:
+            # construct settings
+            settings = octoprint.settings.Settings()
+
+            # verify
+            self.assertTrue(os.path.isdir(basedir))
+            self.assertTrue(os.path.isfile(os.path.join(basedir, "config.yaml")))
+            self.assertIsNotNone(settings.get(["api", "key"]))
+
+    def test_basedir_folder_creation(self):
+        with self.mocked_basedir() as basedir:
+            # construct settings
+            settings = octoprint.settings.Settings()
+
+            expected_upload_folder = os.path.join(basedir, "uploads")
+            expected_timelapse_folder = os.path.join(basedir, "timelapse")
+            expected_timelapse_tmp_folder = os.path.join(basedir, "timelapse", "tmp")
+
+            # test
+            upload_folder = settings.getBaseFolder("uploads")
+            timelapse_folder = settings.getBaseFolder("timelapse")
+            timelapse_tmp_folder = settings.getBaseFolder("timelapse_tmp")
+
+            for folder, expected in (
+                (upload_folder, expected_upload_folder),
+                (timelapse_folder, expected_timelapse_folder),
+                (timelapse_tmp_folder, expected_timelapse_tmp_folder),
+            ):
+                self.assertIsNotNone(folder)
+                self.assertEqual(folder, expected)
+                self.assertTrue(os.path.isdir(folder))
+
+    def test_basedir_initialization_with_custom_basedir(self):
+        with self.mocked_basedir() as default_basedir:
+            my_basedir = None
+
+            try:
+                my_basedir = tempfile.mkdtemp("octoprint-settings-test-custom")
+                self.assertNotEqual(my_basedir, default_basedir)
+
+                octoprint.settings.Settings(basedir=my_basedir)
+
+                self.assertFalse(
+                    os.path.isfile(os.path.join(default_basedir, "config.yaml"))
+                )
+                self.assertTrue(os.path.isfile(os.path.join(my_basedir, "config.yaml")))
+
+            finally:
+                try:
+                    shutil.rmtree(my_basedir)
+                except Exception:
+                    self.fail("Could not remove temporary custom basedir")
+
+    def test_basedir_initialization_with_custom_config(self):
+        config_path = os.path.realpath(
+            os.path.join(os.path.dirname(__file__), "_files", "config.yaml")
+        )
+
+        with self.mocked_basedir() as basedir:
+            my_configdir = None
+
+            try:
+                my_configdir = tempfile.mkdtemp("octoprint-settings-test-custom")
+                my_configfile = os.path.join(my_configdir, "config.yaml")
+                shutil.copy(config_path, my_configfile)
+
+                expected_upload_folder = os.path.join(basedir, "uploads")
+
+                settings = octoprint.settings.Settings(configfile=my_configfile)
+                upload_folder = settings.getBaseFolder("uploads")
+
+                self.assertFalse(os.path.isfile(os.path.join(basedir, "config.yaml")))
+                self.assertTrue(os.path.isfile(my_configfile))
+                self.assertIsNotNone(upload_folder)
+                self.assertTrue(os.path.isdir(upload_folder))
+                self.assertEqual(expected_upload_folder, upload_folder)
+
+            finally:
+                try:
+                    shutil.rmtree(my_configdir)
+                except Exception:
+                    self.fail("Could not remove temporary custom basedir")
+
+    ##~~ regexes
+    def test_should_have_regex_filters(self):
+        # we don't want the mocked_config, because we're testing the actual value.
+        # with self.mocked_config():
+
+        filters = octoprint.settings.Settings().get(["terminalFilters"])
+
+        # we *should* have at least three, but we'll ensure there's at least one as a sanity check.
+        self.assertGreater(len(filters), 0)
+
+    def test_should_have_suppress_temperature_regex(self):
+        # we don't want the mocked_config, because we're testing the actual value.
+        # with self.mocked_config():
+
+        filters = octoprint.settings.Settings().get(["terminalFilters"])
+        temperature_regex_filters = [
+            x for x in filters if x.get("name") == "Suppress temperature messages"
+        ]
+        self.assertEqual(len(temperature_regex_filters), 1)
+
+        # we know there's a 'name' by now, so just ensure we have the regex key
+        temperature_regex_filter = temperature_regex_filters[0]
+        self.assertIn("regex", temperature_regex_filter)
+
+    def test_temperature_regex_should_not_match(self):
+        """random entries that aren't temperature regex entries"""
+        # we don't want the mocked_config, because we're testing the actual value.
+        # with self.mocked_config():
+        bad_terminal_entries = [
+            "Send: N71667 G1 X163.151 Y35.424 E0.02043*83",
+            "Send: N85343 G1 Z29.880 F10800.000*15",
+            "Recv: ok",
+            "Recv: FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410",
+        ]
 
-	def _load_yaml(self, fname):
-		with io.open(fname, 'rt', encoding='utf-8') as f:
-			return yaml.safe_load(f)
-
-	def _dump_yaml(self, fname, config):
-		with io.open(fname, 'wt', encoding='utf-8') as f:
-			yaml.safe_dump(config, f)
+        filters = octoprint.settings.Settings().get(["terminalFilters"])
+        temperature_pattern = [
+            x for x in filters if x.get("name") == "Suppress temperature messages"
+        ][0]["regex"]
 
-	def setUp(self):
-		self.base_path = os.path.join(os.path.dirname(__file__), "_files")
-		self.config_path = os.path.realpath(os.path.join(self.base_path, "config.yaml"))
-		self.defaults_path = os.path.realpath(os.path.join(self.base_path, "defaults.yaml"))
-
-		self.config = self._load_yaml(self.config_path)
-		self.defaults = self._load_yaml(self.defaults_path)
+        matcher = re.compile(temperature_pattern)
+        for terminal_string in bad_terminal_entries:
+            match_result = matcher.match(terminal_string)
+            # can switch to assertIsNone after 3.x upgrade.
+            self.assertFalse(
+                match_result,
+                "string matched and it shouldn't have: {!r}".format(terminal_string),
+            )
 
-		from octoprint.util import dict_merge
-		self.expected_effective = dict_merge(self.defaults, self.config)
-
-	def test_basedir_initialization(self):
-		with self.mocked_basedir() as basedir:
-			# construct settings
-			settings = octoprint.settings.Settings()
-
-			# verify
-			self.assertTrue(os.path.isdir(basedir))
-			self.assertTrue(os.path.isfile(os.path.join(basedir, "config.yaml")))
-			self.assertIsNotNone(settings.get(["api", "key"]))
-
-	def test_basedir_folder_creation(self):
-		with self.mocked_basedir() as basedir:
-			# construct settings
-			settings = octoprint.settings.Settings()
-
-			expected_upload_folder = os.path.join(basedir, "uploads")
-			expected_timelapse_folder = os.path.join(basedir, "timelapse")
-			expected_timelapse_tmp_folder = os.path.join(basedir, "timelapse", "tmp")
-
-			# test
-			upload_folder = settings.getBaseFolder("uploads")
-			timelapse_folder = settings.getBaseFolder("timelapse")
-			timelapse_tmp_folder = settings.getBaseFolder("timelapse_tmp")
-
-			for folder, expected in ((upload_folder, expected_upload_folder),
-			                         (timelapse_folder, expected_timelapse_folder),
-			                         (timelapse_tmp_folder, expected_timelapse_tmp_folder)):
-				self.assertIsNotNone(folder)
-				self.assertEqual(folder, expected)
-				self.assertTrue(os.path.isdir(folder))
-
-	def test_basedir_initialization_with_custom_basedir(self):
-		with self.mocked_basedir() as default_basedir:
-			my_basedir = None
-
-			try:
-				my_basedir = tempfile.mkdtemp("octoprint-settings-test-custom")
-				self.assertNotEqual(my_basedir, default_basedir)
-
-				octoprint.settings.Settings(basedir=my_basedir)
-
-				self.assertFalse(os.path.isfile(os.path.join(default_basedir, "config.yaml")))
-				self.assertTrue(os.path.isfile(os.path.join(my_basedir, "config.yaml")))
-
-			finally:
-				try:
-					shutil.rmtree(my_basedir)
-				except Exception:
-					self.fail("Could not remove temporary custom basedir")
-
-	def test_basedir_initialization_with_custom_config(self):
-		config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "_files", "config.yaml"))
-
-		with self.mocked_basedir() as basedir:
-			my_configdir = None
-
-			try:
-				my_configdir = tempfile.mkdtemp("octoprint-settings-test-custom")
-				my_configfile = os.path.join(my_configdir, "config.yaml")
-				shutil.copy(config_path, my_configfile)
+    def test_temperature_regex_matches(self):
+        # we don't want the mocked_config, because we're testing the actual value.
+        # with self.mocked_config():
 
-				expected_upload_folder = os.path.join(basedir, "uploads")
+        common_terminal_entries = [
+            "Send: M105",
+            "Send: N123 M105*456",
+            "Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:",  # monoprice mini delta
+            "Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0",  # Prusa mk3
+            "Recv:  T:210.3 /210.0",
+        ]
 
-				settings = octoprint.settings.Settings(configfile=my_configfile)
-				upload_folder = settings.getBaseFolder("uploads")
+        filters = octoprint.settings.Settings().get(["terminalFilters"])
+        temperature_pattern = [
+            x for x in filters if x.get("name") == "Suppress temperature messages"
+        ][0]["regex"]
 
-				self.assertFalse(os.path.isfile(os.path.join(basedir, "config.yaml")))
-				self.assertTrue(os.path.isfile(my_configfile))
-				self.assertIsNotNone(upload_folder)
-				self.assertTrue(os.path.isdir(upload_folder))
-				self.assertEqual(expected_upload_folder, upload_folder)
+        matcher = re.compile(temperature_pattern)
+        for terminal_string in common_terminal_entries:
+            match_result = matcher.match(terminal_string)
+            # can switch to assertIsNotNone after 3.x upgrade.
+            self.assertTrue(
+                match_result,
+                "string did not match and it should have: {!r}".format(terminal_string),
+            )
 
-			finally:
-				try:
-					shutil.rmtree(my_configdir)
-				except Exception:
-					self.fail("Could not remove temporary custom basedir")
+    ##~~ test getters
 
-	##~~ regexes
-	def test_should_have_regex_filters(self):
-		# we don't want the mocked_config, because we're testing the actual value.
-		#with self.mocked_config():
+    def test_get(self):
+        with self.mocked_config():
+            expected_api_key = "test"
 
-		filters = octoprint.settings.Settings().get(["terminalFilters"])
+            settings = octoprint.settings.Settings()
 
-		# we *should* have at least three, but we'll ensure there's at least one as a sanity check.
-		self.assertGreater(len(filters), 0)
+            api_key = settings.get(["api", "key"])
 
-	def test_should_have_suppress_temperature_regex(self):
-		# we don't want the mocked_config, because we're testing the actual value.
-		#with self.mocked_config():
+            self.assertIsNotNone(api_key)
+            self.assertEqual(api_key, expected_api_key)
 
-		filters = octoprint.settings.Settings().get(["terminalFilters"])
-		temperature_regex_filters = [x for x in filters if x.get('name') == 'Suppress temperature messages']
-		self.assertEqual(len(temperature_regex_filters), 1)
+    def test_get_int(self):
+        with self.mocked_config():
+            expected_server_port = 8080
 
-		# we know there's a 'name' by now, so just ensure we have the regex key
-		temperature_regex_filter = temperature_regex_filters[0]
-		self.assertIn('regex', temperature_regex_filter)
+            settings = octoprint.settings.Settings()
 
-	def test_temperature_regex_should_not_match(self):
-		'''random entries that aren't temperature regex entries'''
-		# we don't want the mocked_config, because we're testing the actual value.
-		#with self.mocked_config():
-		bad_terminal_entries = [
-			'Send: N71667 G1 X163.151 Y35.424 E0.02043*83',
-			'Send: N85343 G1 Z29.880 F10800.000*15',
-			'Recv: ok',
-			'Recv: FIRMWARE_NAME:Marlin 1.1.7-C2 (Github) SOURCE_CODE_URL:https://github.com/Robo3D/Marlin-C2 PROTOCOL_VERSION:C2 MACHINE_TYPE:RoboC2 EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff EMERGENCY_CODES:M108,M112,M410'
-		]
+            server_port = settings.get(["server", "port"])
 
-		filters = octoprint.settings.Settings().get(["terminalFilters"])
-		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+            self.assertIsNotNone(server_port)
+            self.assertEqual(server_port, expected_server_port)
 
-		matcher = re.compile(temperature_pattern)
-		for terminal_string in bad_terminal_entries:
-			match_result = matcher.match(terminal_string)
-			# can switch to assertIsNone after 3.x upgrade.
-			self.assertFalse(match_result, "string matched and it shouldn't have: {!r}".format(terminal_string))
+    def test_get_int_converted(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
+            value = settings.getInt(["serial", "timeout", "connection"])
 
-	def test_temperature_regex_matches(self):
-		# we don't want the mocked_config, because we're testing the actual value.
-		#with self.mocked_config():
+            self.assertEqual(5, value)
 
-		common_terminal_entries = [
-			'Send: M105',
-			'Send: N123 M105*456',
-			'Recv: ok N5993 P15 B15 T:59.2 /0.0 B:31.8 /0.0 T0:59.2 /0.0 @:0 B@:100:', # monoprice mini delta
-			'Recv: ok T:210.3 /210.0 B:60.3 /60.0 T0:210.3 /210.0 @:79 B@:0 P:35.9 A:40.0', # Prusa mk3
-			'Recv:  T:210.3 /210.0',
-		]
+    def test_get_int_invalid(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-		filters = octoprint.settings.Settings().get(["terminalFilters"])
-		temperature_pattern = [x for x in filters if x.get('name') == 'Suppress temperature messages'][0]['regex']
+            value = settings.getInt(["server", "host"])
 
-		matcher = re.compile(temperature_pattern)
-		for terminal_string in common_terminal_entries:
-			match_result = matcher.match(terminal_string)
-			# can switch to assertIsNotNone after 3.x upgrade.
-			self.assertTrue(match_result, "string did not match and it should have: {!r}".format(terminal_string))
+            self.assertIsNone(value)
 
+    def test_get_float(self):
+        with self.mocked_config():
+            expected_serial_timeout = 1.0
 
-	##~~ test getters
+            settings = octoprint.settings.Settings()
 
-	def test_get(self):
-		with self.mocked_config():
-			expected_api_key = "test"
+            serial_timeout = settings.get(["serial", "timeout", "detection"])
 
-			settings = octoprint.settings.Settings()
+            self.assertIsNotNone(serial_timeout)
+            self.assertEqual(serial_timeout, expected_serial_timeout)
 
-			api_key = settings.get(["api", "key"])
+    def test_get_float_converted(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertIsNotNone(api_key)
-			self.assertEqual(api_key, expected_api_key)
+            value = settings.getFloat(["serial", "timeout", "connection"])
 
-	def test_get_int(self):
-		with self.mocked_config():
-			expected_server_port = 8080
+            self.assertEqual(5.0, value)
 
-			settings = octoprint.settings.Settings()
+    def test_get_float_invalid(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			server_port = settings.get(["server", "port"])
+            value = settings.getFloat(["server", "host"])
 
-			self.assertIsNotNone(server_port)
-			self.assertEqual(server_port, expected_server_port)
+            self.assertIsNone(value)
 
-	def test_get_int_converted(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_boolean(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			value = settings.getInt(["serial", "timeout", "connection"])
+            value = settings.get(["devel", "virtualPrinter", "enabled"])
 
-			self.assertEqual(5, value)
+            self.assertTrue(value)
 
-	def test_get_int_invalid(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_list(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			value = settings.getInt(["server", "host"])
+            data = settings.get(["serial", "additionalPorts"])
 
-			self.assertIsNone(value)
+            self.assertEqual(len(data), 2)
+            self.assertListEqual(["/dev/portA", "/dev/portB"], data)
 
-	def test_get_float(self):
-		with self.mocked_config():
-			expected_serial_timeout = 1.0
+    def test_get_map(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			settings = octoprint.settings.Settings()
+            data = settings.get(["devel", "virtualPrinter"])
 
-			serial_timeout = settings.get(["serial", "timeout", "detection"])
+            self.assertEqual(len(data), 1)
+            self.assertDictEqual({"enabled": True}, data)
 
-			self.assertIsNotNone(serial_timeout)
-			self.assertEqual(serial_timeout, expected_serial_timeout)
+    def test_get_map_merged(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-	def test_get_float_converted(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            data = settings.get(["devel", "virtualPrinter"], merged=True)
 
-			value = settings.getFloat(["serial", "timeout", "connection"])
+            self.assertGreater(len(data), 1)
+            test_dict = {"enabled": True, "sendWait": True, "waitInterval": 1.0}
+            test_data = dict((k, v) for k, v in data.items() if k in test_dict)
+            self.assertEqual(test_dict, test_data)
 
-			self.assertEqual(5.0, value)
+    def test_get_multiple(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-	def test_get_float_invalid(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            data = settings.get(["serial", ["timeout", "additionalPorts"]])
 
-			value = settings.getFloat(["server", "host"])
+            self.assertIsInstance(data, list)
+            self.assertEqual(len(data), 2)
 
-			self.assertIsNone(value)
+            self.assertIsInstance(data[0], dict)
+            self.assertIsInstance(data[1], list)
 
-	def test_get_boolean(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_multiple_asdict(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			value = settings.get(["devel", "virtualPrinter", "enabled"])
+            data = settings.get(["serial", ["timeout", "additionalPorts"]], asdict=True)
 
-			self.assertTrue(value)
+            self.assertIsInstance(data, dict)
+            self.assertEqual(len(data), 2)
 
-	def test_get_list(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertTrue("timeout" in data)
+            self.assertTrue("additionalPorts" in data)
 
-			data = settings.get(["serial", "additionalPorts"])
+    def test_get_invalid(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(len(data), 2)
-			self.assertListEqual(["/dev/portA", "/dev/portB"], data)
+            value = settings.get(["i", "do", "not", "exist"])
 
-	def test_get_map(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertIsNone(value)
 
-			data = settings.get(["devel", "virtualPrinter"])
+    def test_get_invalid_error(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(len(data), 1)
-			self.assertDictEqual(dict(enabled=True), data)
+            try:
+                settings.get(["i", "do", "not", "exist"], error_on_path=True)
+                self.fail("Expected NoSuchSettingsPath")
+            except octoprint.settings.NoSuchSettingsPath:
+                pass
 
-	def test_get_map_merged(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_custom_config(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			data = settings.get(["devel", "virtualPrinter"], merged=True)
+            server_port = settings.getInt(
+                ["server", "port"], config={"server": {"port": 9090}}
+            )
 
-			self.assertGreater(len(data), 1)
-			test_dict = dict(enabled=True, sendWait=True, waitInterval=1.0)
-			test_data = dict((k,v) for k,v in data.items() if k in test_dict)
-			self.assertEqual(test_dict, test_data)
+            self.assertEqual(9090, server_port)
 
-	def test_get_multiple(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_custom_defaults(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			data = settings.get(["serial", ["timeout", "additionalPorts"]])
+            api_enabled = settings.getBoolean(
+                ["api", "enabled"], defaults={"api": {"enabled": False}}
+            )
 
-			self.assertIsInstance(data, list)
-			self.assertEqual(len(data), 2)
+            self.assertFalse(api_enabled)
 
-			self.assertIsInstance(data[0], dict)
-			self.assertIsInstance(data[1], list)
+    def test_get_empty_path(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
+            self.assertIsNone(settings.get([]))
 
+            try:
+                settings.get([], error_on_path=True)
+                self.fail("Expected NoSuchSettingsPath")
+            except octoprint.settings.NoSuchSettingsPath:
+                pass
 
-	def test_get_multiple_asdict(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    ##~~ test setters
 
-			data = settings.get(["serial", ["timeout", "additionalPorts"]], asdict=True)
+    def test_set(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertIsInstance(data, dict)
-			self.assertEqual(len(data), 2)
+            settings.set(["server", "host"], "127.0.0.1")
 
-			self.assertTrue("timeout" in data)
-			self.assertTrue("additionalPorts" in data)
+            self.assertEqual("127.0.0.1", settings._config["server"]["host"])
 
-	def test_get_invalid(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_set_int(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			value = settings.get(["i", "do", "not", "exist"])
+            settings.setInt(["server", "port"], 8181)
 
-			self.assertIsNone(value)
+            self.assertEqual(8181, settings._config["server"]["port"])
 
-	def test_get_invalid_error(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_set_int_convert(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			try:
-				settings.get(["i", "do", "not", "exist"], error_on_path=True)
-				self.fail("Expected NoSuchSettingsPath")
-			except octoprint.settings.NoSuchSettingsPath:
-				pass
+            settings.setInt(["server", "port"], "8181")
 
-	def test_get_custom_config(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(8181, settings._config["server"]["port"])
 
-			server_port = settings.getInt(["server", "port"], config=dict(server=dict(port=9090)))
+    def test_set_float(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(9090, server_port)
+            settings.setFloat(["serial", "timeout", "detection"], 1.2)
 
-	def test_get_custom_defaults(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(1.2, settings._config["serial"]["timeout"]["detection"])
 
-			api_enabled = settings.getBoolean(["api", "enabled"], defaults=dict(api=dict(enabled=False)))
+    def test_set_float_convert(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertFalse(api_enabled)
+            settings.setFloat(["serial", "timeout", "detection"], "1.2")
 
-	def test_get_empty_path(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
-			self.assertIsNone(settings.get([]))
+            self.assertEqual(1.2, settings._config["serial"]["timeout"]["detection"])
 
-			try:
-				settings.get([], error_on_path=True)
-				self.fail("Expected NoSuchSettingsPath")
-			except octoprint.settings.NoSuchSettingsPath:
-				pass
+    def test_set_boolean(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-	##~~ test setters
+            settings.setBoolean(["devel", "virtualPrinter", "sendWait"], False)
 
-	def test_set(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(
+                False, settings._config["devel"]["virtualPrinter"]["sendWait"]
+            )
 
-			settings.set(["server", "host"], "127.0.0.1")
+    @ddt.data("1", "yes", "true", "TrUe", "y", "Y", "YES")
+    def test_set_boolean_convert_string_true(self, value):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual("127.0.0.1", settings._config["server"]["host"])
+            settings.setBoolean(
+                ["devel", "virtualPrinter", "repetierStyleResends"], value
+            )
 
-	def test_set_int(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(
+                True, settings._config["devel"]["virtualPrinter"]["repetierStyleResends"]
+            )
 
-			settings.setInt(["server", "port"], 8181)
+    @ddt.data("0", "no", "false", ["some", "list"], {"a": "dictionary"}, lambda: None)
+    def test_set_boolean_convert_any_false(self, value):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(8181, settings._config["server"]["port"])
+            settings.setBoolean(["api", "enabled"], value)
 
-	def test_set_int_convert(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(False, settings._config["api"]["enabled"])
 
-			settings.setInt(["server", "port"], "8181")
+    def test_set_default(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(8181, settings._config["server"]["port"])
+            self.assertEqual(8080, settings._config["server"]["port"])
 
-	def test_set_float(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            settings.set(["server", "port"], 5000)
 
-			settings.setFloat(["serial", "timeout", "detection"], 1.2)
+            self.assertNotIn("port", settings._config["server"])
+            self.assertEqual(5000, settings.get(["server", "port"]))
 
-			self.assertEqual(1.2, settings._config["serial"]["timeout"]["detection"])
+    def test_set_none(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-	def test_set_float_convert(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertTrue("port" in settings._config["server"])
 
-			settings.setFloat(["serial", "timeout", "detection"], "1.2")
+            settings.set(["server", "port"], None)
 
-			self.assertEqual(1.2, settings._config["serial"]["timeout"]["detection"])
+            self.assertFalse("port" in settings._config["server"])
 
-	def test_set_boolean(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    @ddt.data(
+        [], ["api", "lock"], ["api", "lock", "door"], ["serial", "additionalPorts", "key"]
+    )
+    def test_set_invalid(self, path):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			settings.setBoolean(["devel", "virtualPrinter", "sendWait"], False)
+            try:
+                settings.set(path, "value", error_on_path=True)
+                self.fail("Expected NoSuchSettingsPath")
+            except octoprint.settings.NoSuchSettingsPath:
+                pass
 
-			self.assertEqual(False, settings._config["devel"]["virtualPrinter"]["sendWait"])
+    ##~~ test remove
 
-	@ddt.data("1", "yes", "true", "TrUe", "y", "Y", "YES")
-	def test_set_boolean_convert_string_true(self, value):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_remove(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			settings.setBoolean(["devel", "virtualPrinter", "repetierStyleResends"], value)
+            self.assertTrue("port" in settings._config["server"])
 
-			self.assertEqual(True, settings._config["devel"]["virtualPrinter"]["repetierStyleResends"])
+            settings.remove(["server", "port"])
 
-	@ddt.data("0", "no", "false", ["some", "list"], dict(a="dictionary"), lambda: None)
-	def test_set_boolean_convert_any_false(self, value):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertFalse("port" in settings._config["server"])
+            self.assertEqual(5000, settings.get(["server", "port"]))
 
-			settings.setBoolean(["api", "enabled"], value)
+    @ddt.data([], ["server", "lock"], ["serial", "additionalPorts", "key"])
+    def test_remove_invalid(self, path):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(False, settings._config["api"]["enabled"])
+            try:
+                settings.remove(path, error_on_path=True)
+                self.fail("Expected NoSuchSettingsPath")
+            except octoprint.settings.NoSuchSettingsPath:
+                pass
 
-	def test_set_default(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    ##~~ test has
 
-			self.assertEqual(8080, settings._config["server"]["port"])
+    def test_has(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
 
-			settings.set(["server", "port"], 5000)
+            self.assertTrue(settings.has(["api", "key"]))
+            self.assertFalse(settings.has(["api", "lock"]))
 
-			self.assertNotIn("port", settings._config["server"])
-			self.assertEqual(5000, settings.get(["server", "port"]))
+    ##~~ test properties
 
-	def test_set_none(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_effective(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
+            effective = settings.effective
 
-			self.assertTrue("port" in settings._config["server"])
+            self.assertDictEqual(self.expected_effective, effective)
 
-			settings.set(["server", "port"], None)
+    def test_effective_hash(self):
+        with self.mocked_config():
+            hash = hashlib.md5()
+            hash.update(yaml.safe_dump(self.expected_effective).encode("utf-8"))
+            expected_effective_hash = hash.hexdigest()
+            print(yaml.safe_dump(self.expected_effective))
 
-			self.assertFalse("port" in settings._config["server"])
+            settings = octoprint.settings.Settings()
+            effective_hash = settings.effective_hash
+            print(yaml.safe_dump(settings.effective))
 
-	@ddt.data([], ["api", "lock"], ["api", "lock", "door"], ["serial", "additionalPorts", "key"])
-	def test_set_invalid(self, path):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(expected_effective_hash, effective_hash)
 
-			try:
-				settings.set(path, "value", error_on_path=True)
-				self.fail("Expected NoSuchSettingsPath")
-			except octoprint.settings.NoSuchSettingsPath:
-				pass
+    def test_config_hash(self):
+        with self.mocked_config():
+            hash = hashlib.md5()
+            hash.update(yaml.safe_dump(self.config).encode("utf-8"))
+            expected_config_hash = hash.hexdigest()
 
-	##~~ test remove
+            settings = octoprint.settings.Settings()
+            config_hash = settings.config_hash
 
-	def test_remove(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+            self.assertEqual(expected_config_hash, config_hash)
 
-			self.assertTrue("port" in settings._config["server"])
+    def test_last_modified(self):
+        with self.mocked_config() as paths:
+            basedir, configfile = paths
+            settings = octoprint.settings.Settings()
 
-			settings.remove(["server", "port"])
+            last_modified = os.stat(configfile).st_mtime
+            self.assertEqual(settings.last_modified, last_modified)
 
-			self.assertFalse("port" in settings._config["server"])
-			self.assertEqual(5000, settings.get(["server", "port"]))
+    ##~~ test preprocessors
 
-	@ddt.data([], ["server", "lock"], ["serial", "additionalPorts", "key"])
-	def test_remove_invalid(self, path):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_get_preprocessor(self):
+        with self.mocked_config():
+            config = {}
+            defaults = {"test": "some string"}
+            preprocessors = {"test": lambda x: x.upper()}
 
-			try:
-				settings.remove(path, error_on_path=True)
-				self.fail("Expected NoSuchSettingsPath")
-			except octoprint.settings.NoSuchSettingsPath:
-				pass
+            settings = octoprint.settings.Settings()
+            value = settings.get(
+                ["test"], config=config, defaults=defaults, preprocessors=preprocessors
+            )
 
-	##~~ test has
+            self.assertEqual("SOME STRING", value)
 
-	def test_has(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
+    def test_set_preprocessor(self):
+        with self.mocked_config():
+            config = {}
+            defaults = {"foo": {"bar": "fnord"}}
+            preprocessors = {"foo": {"bar": lambda x: x.upper()}}
 
-			self.assertTrue(settings.has(["api", "key"]))
-			self.assertFalse(settings.has(["api", "lock"]))
+            settings = octoprint.settings.Settings()
+            settings.set(
+                ["foo", "bar"],
+                "value",
+                config=config,
+                defaults=defaults,
+                preprocessors=preprocessors,
+            )
 
-	##~~ test properties
+            self.assertEqual("VALUE", config["foo"]["bar"])
 
-	def test_effective(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
-			effective = settings.effective
+    def test_set_external_modification(self):
+        with self.mocked_config() as paths:
+            basedir, configfile = paths
+            settings = octoprint.settings.Settings()
 
-			self.assertDictEqual(self.expected_effective, effective)
+            self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
-	def test_effective_hash(self):
-		with self.mocked_config():
-			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.expected_effective).encode('utf-8'))
-			expected_effective_hash = hash.hexdigest()
-			print(yaml.safe_dump(self.expected_effective))
+            # modify yaml file externally
+            config = self._load_yaml(configfile)
+            config["server"]["host"] = "127.0.0.1"
+            self._dump_yaml(configfile, config)
 
-			settings = octoprint.settings.Settings()
-			effective_hash = settings.effective_hash
-			print(yaml.safe_dump(settings.effective))
+            # set some value, should also reload file before setting new api key
+            settings.set(["api", "key"], "key")
 
-			self.assertEqual(expected_effective_hash, effective_hash)
+            # verify updated values
+            self.assertEqual("127.0.0.1", settings.get(["server", "host"]))
+            self.assertEqual("key", settings.get(["api", "key"]))
 
-	def test_config_hash(self):
-		with self.mocked_config():
-			hash = hashlib.md5()
-			hash.update(yaml.safe_dump(self.config).encode('utf-8'))
-			expected_config_hash = hash.hexdigest()
+    ##~~ test save
 
-			settings = octoprint.settings.Settings()
-			config_hash = settings.config_hash
+    def test_save(self):
+        with self.mocked_config() as paths:
+            basedir, config_path = paths
+            settings = octoprint.settings.Settings()
 
-			self.assertEqual(expected_config_hash, config_hash)
+            # current modification date of config.yaml
+            current_modified = os.stat(config_path).st_mtime
 
-	def test_last_modified(self):
-		with self.mocked_config() as paths:
-			basedir, configfile = paths
-			settings = octoprint.settings.Settings()
+            # sleep a bit to make sure we do have a change in the timestamp
+            time.sleep(1.0)
 
-			last_modified = os.stat(configfile).st_mtime
-			self.assertEqual(settings.last_modified, last_modified)
+            # set a new value
+            settings.set(["api", "key"], "newkey")
 
-	##~~ test preprocessors
+            # should not be written automatically
+            self.assertEqual(current_modified, os.stat(config_path).st_mtime)
 
-	def test_get_preprocessor(self):
-		with self.mocked_config():
-			config = dict()
-			defaults = dict(test="some string")
-			preprocessors = dict(test=lambda x: x.upper())
+            # should be updated after calling save though
+            settings.save()
+            self.assertNotEqual(current_modified, os.stat(config_path).st_mtime)
 
-			settings = octoprint.settings.Settings()
-			value = settings.get(["test"],
-			                     config=config,
-			                     defaults=defaults,
-			                     preprocessors=preprocessors)
+    def test_save_unmodified(self):
+        with self.mocked_config():
+            settings = octoprint.settings.Settings()
+            last_modified = settings.last_modified
 
-			self.assertEqual("SOME STRING", value)
+            # sleep a bit to make sure we do have a change in the timestamp
+            time.sleep(1.0)
 
-	def test_set_preprocessor(self):
-		with self.mocked_config():
-			config = dict()
-			defaults = dict(foo=dict(bar="fnord"))
-			preprocessors = dict(foo=dict(bar=lambda x: x.upper()))
+            settings.save()
+            self.assertEqual(settings.last_modified, last_modified)
 
-			settings = octoprint.settings.Settings()
-			settings.set(["foo", "bar"],
-			             "value",
-			             config=config,
-			             defaults=defaults,
-			             preprocessors=preprocessors)
+            settings.save(force=True)
+            self.assertGreater(settings.last_modified, last_modified)
 
-			self.assertEqual("VALUE", config["foo"]["bar"])
+    ##~~ helpers
 
-	def test_set_external_modification(self):
-		with self.mocked_config() as paths:
-			basedir, configfile = paths
-			settings = octoprint.settings.Settings()
+    @contextlib.contextmanager
+    def mocked_basedir(self):
+        orig_default_basedir = octoprint.settings._default_basedir
+        directory = None
 
-			self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
+        try:
+            directory = tempfile.mkdtemp("octoprint-settings-test")
+            octoprint.settings._default_basedir = lambda *args, **kwargs: directory
+            yield directory
+        finally:
+            octoprint.settings._default_basedir = orig_default_basedir
+            if directory is not None:
+                try:
+                    shutil.rmtree(directory)
+                except Exception:
+                    self.fail("Could not remove temporary basedir")
 
-			# modify yaml file externally
-			config = self._load_yaml(configfile)
-			config["server"]["host"] = "127.0.0.1"
-			self._dump_yaml(configfile, config)
+    @contextlib.contextmanager
+    def mocked_config(self):
+        orig_defaults = octoprint.settings.default_settings
 
-			# set some value, should also reload file before setting new api key
-			settings.set(["api", "key"], "key")
-
-			# verify updated values
-			self.assertEqual("127.0.0.1", settings.get(["server", "host"]))
-			self.assertEqual("key", settings.get(["api", "key"]))
-
-	##~~ test save
-
-	def test_save(self):
-		with self.mocked_config() as paths:
-			basedir, config_path = paths
-			settings = octoprint.settings.Settings()
-
-			# current modification date of config.yaml
-			current_modified = os.stat(config_path).st_mtime
-
-			# sleep a bit to make sure we do have a change in the timestamp
-			time.sleep(1.0)
-
-			# set a new value
-			settings.set(["api", "key"], "newkey")
-
-			# should not be written automatically
-			self.assertEqual(current_modified, os.stat(config_path).st_mtime)
-
-			# should be updated after calling save though
-			settings.save()
-			self.assertNotEqual(current_modified, os.stat(config_path).st_mtime)
-
-	def test_save_unmodified(self):
-		with self.mocked_config():
-			settings = octoprint.settings.Settings()
-			last_modified = settings.last_modified
-
-			# sleep a bit to make sure we do have a change in the timestamp
-			time.sleep(1.0)
-
-			settings.save()
-			self.assertEqual(settings.last_modified, last_modified)
-
-			settings.save(force=True)
-			self.assertGreater(settings.last_modified, last_modified)
-
-	##~~ helpers
-
-	@contextlib.contextmanager
-	def mocked_basedir(self):
-		orig_default_basedir = octoprint.settings._default_basedir
-		directory = None
-
-		try:
-			directory = tempfile.mkdtemp("octoprint-settings-test")
-			octoprint.settings._default_basedir = lambda *args, **kwargs: directory
-			yield directory
-		finally:
-			octoprint.settings._default_basedir = orig_default_basedir
-			if directory is not None:
-				try:
-					shutil.rmtree(directory)
-				except Exception:
-					self.fail("Could not remove temporary basedir")
-
-	@contextlib.contextmanager
-	def mocked_config(self):
-		orig_defaults = octoprint.settings.default_settings
-
-		with self.mocked_basedir() as basedir:
-			fresh_config_path = os.path.join(basedir, "config.yaml")
-			shutil.copy(self.config_path, fresh_config_path)
-			try:
-				octoprint.settings.default_settings = self.defaults
-				yield basedir, fresh_config_path
-			finally:
-				octoprint.settings.default_settings = orig_defaults
+        with self.mocked_basedir() as basedir:
+            fresh_config_path = os.path.join(basedir, "config.yaml")
+            shutil.copy(self.config_path, fresh_config_path)
+            try:
+                octoprint.settings.default_settings = self.defaults
+                yield basedir, fresh_config_path
+            finally:
+                octoprint.settings.default_settings = orig_defaults

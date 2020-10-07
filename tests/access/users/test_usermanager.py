@@ -5,22 +5,23 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 Unit tests for octoprint.access.users.UserManager
 """
 
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import unittest
+
 import ddt
 
 import octoprint.access.users
 
+
 @ddt.ddt
 class UserManagerTest(unittest.TestCase):
+    def test_createPasswordHash_nonascii(self):
+        """Test for issue #1891"""
 
-	def test_createPasswordHash_nonascii(self):
-		"""Test for issue #1891"""
+        password = "password with ümläutß"
+        salt = "abc"
 
-		password = "password with ümläutß"
-		salt = "abc"
-
-		# should not throw an exception
-		octoprint.access.users.UserManager.create_password_hash(password, salt=salt)
+        # should not throw an exception
+        octoprint.access.users.UserManager.create_password_hash(password, salt=salt)
