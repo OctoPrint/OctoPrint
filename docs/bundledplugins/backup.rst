@@ -120,9 +120,6 @@ octoprint.plugin.backup.additional_excludes
 
    .. code-block:: python
 
-      # -*- coding: utf-8 -*-
-      from __future__ import absolute_import, division, print_function, unicode_literals
-
       import octoprint.plugin
 
       import os
@@ -149,9 +146,6 @@ octoprint.plugin.backup.additional_excludes
    backup if uploaded GCODE files are also excluded:
 
    .. code-block:: python
-
-      # -*- coding: utf-8 -*-
-      from __future__ import absolute_import, division, print_function, unicode_literals
 
       import octoprint.plugin
 
