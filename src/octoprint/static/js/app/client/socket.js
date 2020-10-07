@@ -4,11 +4,10 @@
     } else {
         factory(global.OctoPrintClient, global.$, global._, global.SockJS);
     }
-})(this, function(OctoPrintClient, $, _, SockJS) {
-
+})(this, function (OctoPrintClient, $, _, SockJS) {
     var normalClose = 1000;
 
-    var OctoPrintSocketClient = function(base) {
+    var OctoPrintSocketClient = function (base) {
         var self = this;
 
         this.base = base;
@@ -30,30 +29,30 @@
 
         this.connectTimeout = undefined;
 
-        this.onMessage("connected", function() {
+        this.onMessage("connected", function () {
             // Make sure to clear connection timeout on connect
             if (self.connectTimeout) {
                 clearTimeout(self.connectTimeout);
                 self.connectTimeout = undefined;
             }
-        })
+        });
     };
 
-    OctoPrintSocketClient.prototype.propagateMessage = function(event, data) {
+    OctoPrintSocketClient.prototype.propagateMessage = function (event, data) {
         var start = new Date().getTime();
 
         var eventObj = {event: event, data: data};
 
         var catchAllHandlers = this.registeredHandlers["*"];
         if (catchAllHandlers && catchAllHandlers.length) {
-            _.each(catchAllHandlers, function(handler) {
+            _.each(catchAllHandlers, function (handler) {
                 handler(eventObj);
             });
         }
 
         var handlers = this.registeredHandlers[event];
         if (handlers && handlers.length) {
-            _.each(handlers, function(handler) {
+            _.each(handlers, function (handler) {
                 handler(eventObj);
             });
         }
@@ -62,7 +61,7 @@
         this.analyzeTiming(end - start);
     };
 
-    OctoPrintSocketClient.prototype.analyzeTiming = function(measurement) {
+    OctoPrintSocketClient.prototype.analyzeTiming = function (measurement) {
         while (this.rateLastMeasurements.length >= this.options.rateSlidingWindowSize) {
             this.rateLastMeasurements.shift();
         }
@@ -80,7 +79,7 @@
         }
     };
 
-    OctoPrintSocketClient.prototype.increaseRate = function() {
+    OctoPrintSocketClient.prototype.increaseRate = function () {
         if (this.rateThrottleFactor <= 1) {
             this.rateThrottleFactor = 1;
             return;
@@ -89,26 +88,26 @@
         this.sendThrottleFactor();
     };
 
-    OctoPrintSocketClient.prototype.decreaseRate = function() {
+    OctoPrintSocketClient.prototype.decreaseRate = function () {
         this.rateThrottleFactor++;
         this.sendThrottleFactor();
     };
 
-    OctoPrintSocketClient.prototype.sendThrottleFactor = function() {
+    OctoPrintSocketClient.prototype.sendThrottleFactor = function () {
         this.sendMessage("throttle", this.rateThrottleFactor);
     };
 
-    OctoPrintSocketClient.prototype.sendAuth = function(userId, session) {
+    OctoPrintSocketClient.prototype.sendAuth = function (userId, session) {
         this.sendMessage("auth", userId + ":" + session);
     };
 
-    OctoPrintSocketClient.prototype.sendMessage = function(type, payload) {
+    OctoPrintSocketClient.prototype.sendMessage = function (type, payload) {
         var data = {};
         data[type] = payload;
         this.socket.send(JSON.stringify(data));
     };
 
-    OctoPrintSocketClient.prototype.connect = function(opts) {
+    OctoPrintSocketClient.prototype.connect = function (opts) {
         opts = opts || {};
 
         var self = this;
@@ -126,13 +125,13 @@
             delete opts.connectTimeout;
         }
 
-        var onOpen = function() {
+        var onOpen = function () {
             self.reconnecting = false;
             self.reconnectTrial = 0;
             self.onConnected();
         };
 
-        var onClose = function(e) {
+        var onClose = function (e) {
             if (e.code === normalClose) {
                 return;
             }
@@ -145,15 +144,17 @@
 
             if (self.reconnectTrial < self.options.timeouts.length) {
                 var timeout = self.options.timeouts[self.reconnectTrial];
-                setTimeout(function() { self.reconnect() }, timeout * 1000);
+                setTimeout(function () {
+                    self.reconnect();
+                }, timeout * 1000);
                 self.reconnectTrial++;
             } else {
                 self.onReconnectFailed();
             }
         };
 
-        var onMessage = function(msg) {
-            _.each(msg.data, function(data, key) {
+        var onMessage = function (msg) {
+            _.each(msg.data, function (data, key) {
                 self.propagateMessage(key, data);
             });
         };
@@ -162,7 +163,7 @@
             clearTimeout(self.connectTimeout);
         }
         if (timeout > 0) {
-            self.connectTimeout = setTimeout(function() {
+            self.connectTimeout = setTimeout(function () {
                 self.onConnectTimeout();
             }, timeout);
         }
@@ -173,19 +174,19 @@
         self.socket.onmessage = onMessage;
     };
 
-    OctoPrintSocketClient.prototype.reconnect = function() {
+    OctoPrintSocketClient.prototype.reconnect = function () {
         this.disconnect();
         this.socket = undefined;
         this.connect();
     };
 
-    OctoPrintSocketClient.prototype.disconnect = function() {
+    OctoPrintSocketClient.prototype.disconnect = function () {
         if (this.socket !== undefined) {
             this.socket.close();
         }
     };
 
-    OctoPrintSocketClient.prototype.onMessage = function(message, handler) {
+    OctoPrintSocketClient.prototype.onMessage = function (message, handler) {
         if (!this.registeredHandlers.hasOwnProperty(message)) {
             this.registeredHandlers[message] = [];
         }
@@ -193,16 +194,16 @@
         return this;
     };
 
-    OctoPrintSocketClient.prototype.onReconnectAttempt = function(trial) {};
-    OctoPrintSocketClient.prototype.onReconnectFailed = function() {};
-    OctoPrintSocketClient.prototype.onConnected = function() {};
-    OctoPrintSocketClient.prototype.onDisconnected = function(code) {};
-    OctoPrintSocketClient.prototype.onConnectTimeout = function() {};
+    OctoPrintSocketClient.prototype.onReconnectAttempt = function (trial) {};
+    OctoPrintSocketClient.prototype.onReconnectFailed = function () {};
+    OctoPrintSocketClient.prototype.onConnected = function () {};
+    OctoPrintSocketClient.prototype.onDisconnected = function (code) {};
+    OctoPrintSocketClient.prototype.onConnectTimeout = function () {};
 
-    OctoPrintSocketClient.prototype.onRateTooLow = function(measured, minimum) {
+    OctoPrintSocketClient.prototype.onRateTooLow = function (measured, minimum) {
         this.increaseRate();
     };
-    OctoPrintSocketClient.prototype.onRateTooHigh = function(measured, maximum) {
+    OctoPrintSocketClient.prototype.onRateTooHigh = function (measured, maximum) {
         this.decreaseRate();
     };
 

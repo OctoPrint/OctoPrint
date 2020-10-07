@@ -2,7 +2,6 @@
 // Popovers
 // --------------------------------------------------
 
-
 .popover {
   position: absolute;
   top: 0;
@@ -14,21 +13,29 @@
   text-align: left; // Reset given new insertion method
   background-color: @popoverBackground;
   -webkit-background-clip: padding-box;
-     -moz-background-clip: padding;
-          background-clip: padding-box;
+  -moz-background-clip: padding;
+  background-clip: padding-box;
   border: 1px solid #ccc;
-  border: 1px solid rgba(0,0,0,.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   .border-radius(6px);
-  .box-shadow(0 5px 10px rgba(0,0,0,.2));
+  .box-shadow(0 5px 10px rgba(0,0,0,0.2));
 
   // Overrides for proper insertion
   white-space: normal;
 
   // Offset the popover to account for the popover arrow
-  &.top     { margin-top: -10px; }
-  &.right   { margin-left: 10px; }
-  &.bottom  { margin-top: 10px; }
-  &.left    { margin-left: -10px; }
+  &.top {
+    margin-top: -10px;
+  }
+  &.right {
+    margin-left: 10px;
+  }
+  &.bottom {
+    margin-top: 10px;
+  }
+  &.left {
+    margin-left: -10px;
+  }
 }
 
 .popover-title {
@@ -129,5 +136,4 @@
       bottom: -@popoverArrowWidth;
     }
   }
-
 }

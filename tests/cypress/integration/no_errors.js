@@ -1,8 +1,8 @@
-import { prepare_server, login, await_coreui } from "../util/util"
+import {prepare_server, login, await_coreui} from "../util/util";
 
 context("Error free page load", () => {
     let spy;
-    Cypress.on('uncaught:exception', (err, runnable) => {
+    Cypress.on("uncaught:exception", (err, runnable) => {
         console.error(err);
         return false;
     });
@@ -11,14 +11,14 @@ context("Error free page load", () => {
         spy = cy.spy(win.console, "error");
     });
 
-    const username = 'admin';
-    const password = 'test';
+    const username = "admin";
+    const password = "test";
 
     beforeEach(() => {
         prepare_server();
         login(username, password);
 
-        cy.visit('/');
+        cy.visit("/");
 
         await_coreui();
     });
@@ -26,4 +26,4 @@ context("Error free page load", () => {
     it("loads without error", () => {
         expect(spy).not.to.be.called;
     });
-})
+});

@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     //~~ OctoPrint client setup
 
     var OctoPrint = window.OctoPrint;
@@ -15,13 +15,18 @@ $(function() {
 
     var catalog = window["BABEL_TO_LOAD_EN"];
     if (catalog === undefined) {
-        catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined}
+        catalog = {
+            messages: undefined,
+            plural_expr: undefined,
+            locale: undefined,
+            domain: undefined
+        };
     }
     babel.Translations.load(catalog).install();
 
     //~~ Lodash setup
 
-    _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
+    _.mixin({sprintf: sprintf, vsprintf: vsprintf});
 
     //~~ View Model
 
@@ -52,80 +57,78 @@ $(function() {
         self.workLoglines = ko.observableArray([]);
         self.workTitle = ko.observable("");
 
-        self.request = function() {
-            OctoPrint.browser.passiveLogin()
-                .done(function(resp) {
-                    self.username(resp.name);
-                    self.permitted(_.includes(resp.needs.role, "admin"));
-                    self.known(true);
+        self.request = function () {
+            OctoPrint.browser.passiveLogin().done(function (resp) {
+                self.username(resp.name);
+                self.permitted(_.includes(resp.needs.role, "admin"));
+                self.known(true);
 
-                    OctoPrint.socket.sendAuth(resp.name, resp.session);
-                });
+                OctoPrint.socket.sendAuth(resp.name, resp.session);
+            });
 
-            OctoPrint.system.getCommandsForSource("core")
-                .done(function(resp) {
-                    self.systemCommands(resp);
-                });
+            OctoPrint.system.getCommandsForSource("core").done(function (resp) {
+                self.systemCommands(resp);
+            });
 
-            OctoPrint.printer.getFullState()
-                .done(function(resp) {
+            OctoPrint.printer
+                .getFullState()
+                .done(function (resp) {
                     self.printerConnected(true);
                     self.jobInProgress(resp.state.flags.printing);
                 })
-                .fail(function(xhr) {
+                .fail(function (xhr) {
                     self.printerConnected(false);
                     self.jobInProgress(false);
                 });
 
             if (OctoPrint.plugins.backup) {
-                OctoPrint.plugins.backup.get()
-                    .done(function(resp) {
-                        self.backupSupported(true);
-                        self.restoreSupported(resp.restore_supported);
+                OctoPrint.plugins.backup.get().done(function (resp) {
+                    self.backupSupported(true);
+                    self.restoreSupported(resp.restore_supported);
 
-                        var backups = resp.backups;
-                        backups.sort(function(a, b) { return b.date - a.date });
-                        self.backups(backups);
+                    var backups = resp.backups;
+                    backups.sort(function (a, b) {
+                        return b.date - a.date;
                     });
+                    self.backups(backups);
+                });
             } else {
                 self.backupSupported(false);
                 self.restoreSupported(false);
                 self.backups([]);
             }
-        }
+        };
 
-        self.executeSystemCommand = function(command) {
-            var process = function() {
+        self.executeSystemCommand = function (command) {
+            var process = function () {
                 OctoPrint.system.executeCommand(command.source, command.action);
-            }
+            };
 
             if (command.confirm) {
                 showConfirmationDialog({
                     message: command.confirm,
-                    onproceed: function() {
+                    onproceed: function () {
                         process();
                     }
                 });
             } else {
                 process();
             }
-        }
+        };
 
-        self.cancelPrint = function() {
-            OctoPrint.job.cancel()
-                .done(function() {
-                    self.request();
-                });
-        }
+        self.cancelPrint = function () {
+            OctoPrint.job.cancel().done(function () {
+                self.request();
+            });
+        };
 
-        self.disconnectPrinter = function() {
-            OctoPrint.connection.disconnect()
-                .done(function() {
-                    self.request();
-                });
-        }
+        self.disconnectPrinter = function () {
+            OctoPrint.connection.disconnect().done(function () {
+                self.request();
+            });
+        };
 
-        self.createBackup = function() {
+        self.createBackup = function () {
             self.workInProgress(true);
             self.workTitle(gettext("Creating backup..."));
             self.workLoglines.removeAll();
@@ -133,117 +136,157 @@ $(function() {
 
             if (!self.backupSupported()) return;
             var excluded = self.excludeFromBackup();
-            OctoPrint.plugins.backup.createBackup(excluded)
-                .done(function() {
-                    self.excludeFromBackup([]);
-                })
-        }
+            OctoPrint.plugins.backup.createBackup(excluded).done(function () {
+                self.excludeFromBackup([]);
+            });
+        };
 
-        self.restoreBackup = function(backup) {
+        self.restoreBackup = function (backup) {
             if (!self.restoreSupported()) return;
 
-            var perform = function() {
+            var perform = function () {
                 self.workInProgress(true);
                 self.workTitle(gettext("Restoring backup..."));
                 self.workLoglines.removeAll();
-                self.workLoglines.push({line: "Preparing to restore...", stream: "message"});
+                self.workLoglines.push({
+                    line: "Preparing to restore...",
+                    stream: "message"
+                });
                 self.workLoglines.push({line: " ", stream: "message"});
                 self.workDialog.modal({keyboard: false, backdrop: "static", show: true});
 
                 OctoPrint.plugins.backup.restoreBackup(backup);
             };
-            showConfirmationDialog(_.sprintf(gettext("You are about to restore the backup file \"%(name)s\". This cannot be undone."), {name: _.escape(backup.name)}),
-                                   perform);
-        }
+            showConfirmationDialog(
+                _.sprintf(
+                    gettext(
+                        'You are about to restore the backup file "%(name)s". This cannot be undone.'
+                    ),
+                    {name: _.escape(backup.name)}
+                ),
+                perform
+            );
+        };
 
-        self.logout = function() {
-            OctoPrint.browser.logout()
-                .done(function() {
-                    window.location.href = LOGIN_URL;
-                })
-        }
+        self.logout = function () {
+            OctoPrint.browser.logout().done(function () {
+                window.location.href = LOGIN_URL;
+            });
+        };
 
-        self.reconnect = function() {
+        self.reconnect = function () {
             OctoPrint.socket.reconnect();
-        }
+        };
 
-        self.onSocketConnected = function() {
+        self.onSocketConnected = function () {
             self.connected(true);
             self.request();
-        }
+        };
 
-        self.onSocketDisconnected = function() {
+        self.onSocketDisconnected = function () {
             self.connected(false);
-        }
+        };
 
-        self.onSocketMessage = function(event, data) {
+        self.onSocketMessage = function (event, data) {
             console.log("onSocketMessage", event, data);
             if (event === "plugin" && data.plugin === "backup") {
                 switch (data.data.type) {
                     case "logline": {
-                        self.workLoglines.push(self._preprocessLine({line: data.data.line, stream: data.data.stream}));
+                        self.workLoglines.push(
+                            self._preprocessLine({
+                                line: data.data.line,
+                                stream: data.data.stream
+                            })
+                        );
                         break;
                     }
                     case "backup_started": {
-                        self.workLoglines.push({line: gettext("Creating backup..."), stream: "message"});
+                        self.workLoglines.push({
+                            line: gettext("Creating backup..."),
+                            stream: "message"
+                        });
                         self.workLoglines.push({line: " ", stream: "message"});
                         break;
                     }
                     case "backup_failed": {
                         self.workLoglines.push({line: " ", stream: "message"});
-                        self.workLoglines.push({line: gettext("Backup creation failed! Check octoprint.log for reasons as to why."), stream: "error"});
+                        self.workLoglines.push({
+                            line: gettext(
+                                "Backup creation failed! Check octoprint.log for reasons as to why."
+                            ),
+                            stream: "error"
+                        });
                         self.workInProgress(false);
                         self.request();
                         break;
                     }
                     case "backup_done": {
                         self.workLoglines.push({line: " ", stream: "message"});
-                        self.workLoglines.push({line: gettext("Backup created successfully!"), stream: "message"});
+                        self.workLoglines.push({
+                            line: gettext("Backup created successfully!"),
+                            stream: "message"
+                        });
                         self.workInProgress(false);
                         self.request();
                         break;
                     }
                     case "restore_started": {
-                        self.workLoglines.push({line: gettext("Restoring from backup..."), stream: "message"});
+                        self.workLoglines.push({
+                            line: gettext("Restoring from backup..."),
+                            stream: "message"
+                        });
                         self.workLoglines.push({line: " ", stream: "message"});
                         break;
                     }
                     case "restore_failed": {
                         self.workLoglines.push({line: " ", stream: "message"});
-                        self.workLoglines.push({line: gettext("Restore failed! Check the above output and octoprint.log for reasons as to why."), stream: "error"});
+                        self.workLoglines.push({
+                            line: gettext(
+                                "Restore failed! Check the above output and octoprint.log for reasons as to why."
+                            ),
+                            stream: "error"
+                        });
                         self.workInProgress(false);
                         break;
                     }
                     case "restore_done": {
                         self.workLoglines.push({line: " ", stream: "message"});
-                        self.workLoglines.push({line: gettext("Restore successful! The server will now be restarted!"), stream: "message"});
+                        self.workLoglines.push({
+                            line: gettext(
+                                "Restore successful! The server will now be restarted!"
+                            ),
+                            stream: "message"
+                        });
                         self.workInProgress(false);
                         break;
                     }
                     case "installing_plugin": {
                         self.workLoglines.push({line: " ", stream: "message"});
                         self.workLoglines.push({
-                            line: _.sprintf(gettext("Installing plugin \"%(plugin)s\"..."), {plugin: _.escape(data.data.plugin)}),
+                            line: _.sprintf(
+                                gettext('Installing plugin "%(plugin)s"...'),
+                                {plugin: _.escape(data.data.plugin)}
+                            ),
                             stream: "message"
                         });
                         break;
                     }
                 }
             }
-        }
+        };
     }
 
     var viewModel = new RecoveryViewModel();
 
-    OctoPrint.socket.onConnected = function() {
+    OctoPrint.socket.onConnected = function () {
         viewModel.onSocketConnected();
     };
 
-    OctoPrint.socket.onDisconnected = function() {
+    OctoPrint.socket.onDisconnected = function () {
         viewModel.onSocketDisconnected();
     };
 
-    OctoPrint.socket.onMessage("*", function(data) {
+    OctoPrint.socket.onMessage("*", function (data) {
         viewModel.onSocketMessage(data.event, data.data);
     });
 

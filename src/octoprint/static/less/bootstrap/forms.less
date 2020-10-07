@@ -2,7 +2,6 @@
 // Forms
 // --------------------------------------------------
 
-
 // GENERAL STYLES
 // --------------
 
@@ -31,7 +30,7 @@ legend {
 
   // Small
   small {
-    font-size: @baseLineHeight * .75;
+    font-size: @baseLineHeight * 0.75;
     color: @grayLight;
   }
 }
@@ -42,7 +41,8 @@ input,
 button,
 select,
 textarea {
-  #font > .shorthand(@baseFontSize,normal,@baseLineHeight); // Set size, weight, line-height here
+  #font
+    > .shorthand(@baseFontSize,normal,@baseLineHeight); // Set size, weight, line-height here
 }
 input,
 button,
@@ -119,12 +119,12 @@ input[type="color"],
 .uneditable-input {
   background-color: @inputBackground;
   border: 1px solid @inputBorder;
-  .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+  .box-shadow(inset 0 1px 1px rgba(0,0,0,0.075));
   .transition(~"border linear .2s, box-shadow linear .2s");
 
   // Focus state
   &:focus {
-    border-color: rgba(82,168,236,.8);
+    border-color: rgba(82, 168, 236, 0.8);
     outline: 0;
     outline: thin dotted \9; /* IE6-9 */
     .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
@@ -180,7 +180,6 @@ input[type="checkbox"]:focus {
   .tab-focus();
 }
 
-
 // Uneditable inputs
 // -------------------------
 
@@ -190,7 +189,7 @@ input[type="checkbox"]:focus {
   color: @grayLight;
   background-color: darken(@inputBackground, 1%);
   border-color: @inputBorder;
-  .box-shadow(inset 0 1px 2px rgba(0,0,0,.025));
+  .box-shadow(inset 0 1px 2px rgba(0,0,0,0.025));
   cursor: not-allowed;
 }
 
@@ -206,7 +205,6 @@ input[type="checkbox"]:focus {
   height: auto;
 }
 
-
 // Placeholder
 // -------------------------
 
@@ -215,7 +213,6 @@ input,
 textarea {
   .placeholder();
 }
-
 
 // CHECKBOXES & RADIOS
 // -------------------
@@ -252,18 +249,28 @@ textarea {
   margin-left: 10px; // space out consecutive inline controls
 }
 
-
-
 // INPUT SIZES
 // -----------
 
 // General classes for quick sizes
-.input-mini       { width: 60px; }
-.input-small      { width: 90px; }
-.input-medium     { width: 150px; }
-.input-large      { width: 210px; }
-.input-xlarge     { width: 270px; }
-.input-xxlarge    { width: 530px; }
+.input-mini {
+  width: 60px;
+}
+.input-small {
+  width: 90px;
+}
+.input-medium {
+  width: 150px;
+}
+.input-large {
+  width: 210px;
+}
+.input-xlarge {
+  width: 270px;
+}
+.input-xxlarge {
+  width: 530px;
+}
 
 // Grid style input sizes
 input[class*="span"],
@@ -292,8 +299,6 @@ textarea[class*="span"],
   display: inline-block;
 }
 
-
-
 // GRID SIZING FOR INPUTS
 // ----------------------
 
@@ -317,9 +322,6 @@ textarea[class*="span"],
   padding-top: 5px;
 }
 
-
-
-
 // DISABLED STATE
 // --------------
 
@@ -340,9 +342,6 @@ input[type="radio"][readonly],
 input[type="checkbox"][readonly] {
   background-color: transparent;
 }
-
-
-
 
 // FORM FIELD FEEDBACK STATES
 // --------------------------
@@ -378,8 +377,6 @@ select:focus:invalid {
   }
 }
 
-
-
 // FORM ACTIONS
 // ------------
 
@@ -391,8 +388,6 @@ select:focus:invalid {
   border-top: 1px solid #e5e5e5;
   .clearfix(); // Adding clearfix to allow for .pull-right button containers
 }
-
-
 
 // HELP TEXT
 // ---------
@@ -413,8 +408,6 @@ select:focus:invalid {
   vertical-align: middle;
   padding-left: 5px;
 }
-
-
 
 // INPUT GROUPS
 // ------------
@@ -534,9 +527,6 @@ select:focus:invalid {
   }
 }
 
-
-
-
 // SEARCH FORM
 // -----------
 
@@ -566,9 +556,6 @@ input.search-query {
 .form-search .input-prepend .btn {
   .border-radius(14px 0 0 14px);
 }
-
-
-
 
 // HORIZONTAL & VERTICAL FORMS
 // ---------------------------
@@ -627,7 +614,6 @@ input.search-query {
   margin-right: 3px;
   margin-left: 0;
 }
-
 
 // Margin to space out fieldsets
 .control-group {

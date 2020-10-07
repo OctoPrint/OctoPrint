@@ -5,8 +5,8 @@ serial:
     detection: 1.0
     connection: "5"
   additionalPorts:
-  - /dev/portA
-  - /dev/portB
+    - /dev/portA
+    - /dev/portB
 server:
   port: 8080
 devel:

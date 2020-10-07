@@ -1,5 +1,5 @@
-$(function() {
-    var cleanProfile = function() {
+$(function () {
+    var cleanProfile = function () {
         return {
             id: "",
             name: "",
@@ -23,13 +23,11 @@ $(function() {
             },
             extruder: {
                 count: 1,
-                offsets: [
-                    [0,0]
-                ],
+                offsets: [[0, 0]],
                 nozzleDiameter: 0.4,
                 sharedNozzle: false
             }
-        }
+        };
     };
 
     function EditedProfileViewModel(profiles) {
@@ -51,13 +49,20 @@ $(function() {
         self.volumeFormFactor = ko.observable();
         self.volumeOrigin = ko.observable();
 
-        self.volumeFormFactor.subscribe(function(value) {
+        self.volumeFormFactor.subscribe(function (value) {
             if (value == "circular") {
                 self.volumeOrigin("center");
             }
         });
-        self.volumeOrigin.subscribe(function() {
-            self.toBoundingBoxPlaceholders(self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin()));
+        self.volumeOrigin.subscribe(function () {
+            self.toBoundingBoxPlaceholders(
+                self.defaultBoundingBox(
+                    self.volumeWidth(),
+                    self.volumeDepth(),
+                    self.volumeHeight(),
+                    self.volumeOrigin()
+                )
+            );
         });
 
         self.heatedBed = ko.observable();
@@ -92,7 +97,7 @@ $(function() {
         self.boundingBoxMaxYPlaceholder = ko.observable();
         self.boundingBoxMaxZPlaceholder = ko.observable();
 
-        self.koExtruderOffsets = ko.pureComputed(function() {
+        self.koExtruderOffsets = ko.pureComputed(function () {
             var extruderOffsets = self.extruderOffsets();
             var numExtruders = self.extruders();
             if (!numExtruders) {
@@ -105,7 +110,7 @@ $(function() {
                         idx: i + 1,
                         x: ko.observable(0),
                         y: ko.observable(0)
-                    }
+                    };
                 }
                 self.extruderOffsets(extruderOffsets);
             }
@@ -113,11 +118,11 @@ $(function() {
             return extruderOffsets.slice(0, numExtruders - 1);
         });
 
-        self.nameInvalid = ko.pureComputed(function() {
+        self.nameInvalid = ko.pureComputed(function () {
             return !self.name();
         });
 
-        self.identifierInvalid = ko.pureComputed(function() {
+        self.identifierInvalid = ko.pureComputed(function () {
             var identifier = self.identifier();
             var placeholder = self.identifierPlaceholder();
             var data = identifier;
@@ -125,13 +130,19 @@ $(function() {
                 data = placeholder;
             }
 
-            var validCharacters = (data && (data == self._sanitize(data)));
+            var validCharacters = data && data == self._sanitize(data);
 
-            var existingProfile = self.profiles.getItem(function(item) {return item.id == data});
-            return !data || !validCharacters || (self.isNew() && existingProfile != undefined);
+            var existingProfile = self.profiles.getItem(function (item) {
+                return item.id == data;
+            });
+            return (
+                !data ||
+                !validCharacters ||
+                (self.isNew() && existingProfile != undefined)
+            );
         });
 
-        self.identifierInvalidText = ko.pureComputed(function() {
+        self.identifierInvalidText = ko.pureComputed(function () {
             if (!self.identifierInvalid()) {
                 return "";
             }
@@ -139,17 +150,19 @@ $(function() {
             if (!self.identifier() && !self.identifierPlaceholder()) {
                 return gettext("Identifier must be set");
             } else if (self.identifier() != self._sanitize(self.identifier())) {
-                return gettext("Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed")
+                return gettext(
+                    "Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed"
+                );
             } else {
                 return gettext("A profile with such an identifier already exists");
             }
         });
 
-        self.name.subscribe(function() {
+        self.name.subscribe(function () {
             self.identifierPlaceholder(self._sanitize(self.name()).toLowerCase());
         });
 
-        self.valid = function() {
+        self.valid = function () {
             return !self.nameInvalid() && !self.identifierInvalid();
         };
 
@@ -163,12 +176,12 @@ $(function() {
             {key: "black", name: gettext("black")}
         ]);
 
-        self.availableOrigins = ko.pureComputed(function() {
+        self.availableOrigins = ko.pureComputed(function () {
             var formFactor = self.volumeFormFactor();
 
             var possibleOrigins = {
-                "lowerleft": gettext("Lower Left"),
-                "center": gettext("Center")
+                lowerleft: gettext("Lower Left"),
+                center: gettext("Center")
             };
 
             var keys = [];
@@ -179,13 +192,13 @@ $(function() {
             }
 
             var result = [];
-            _.each(keys, function(key) {
-               result.push({key: key, name: possibleOrigins[key]});
+            _.each(keys, function (key) {
+                result.push({key: key, name: possibleOrigins[key]});
             });
             return result;
         });
 
-        self.fromProfileData = function(data) {
+        self.fromProfileData = function (data) {
             self.isNew(data === undefined);
 
             if (data === undefined) {
@@ -206,7 +219,12 @@ $(function() {
             if (data.volume.custom_box) {
                 self.toBoundingBoxData(data.volume.custom_box, true);
             } else {
-                var box = self.defaultBoundingBox(data.volume.width, data.volume.depth, data.volume.height, data.volume.origin);
+                var box = self.defaultBoundingBox(
+                    data.volume.width,
+                    data.volume.depth,
+                    data.volume.height,
+                    data.volume.origin
+                );
                 self.toBoundingBoxData(box, false);
             }
 
@@ -218,7 +236,7 @@ $(function() {
             self.extruders(data.extruder.count);
             var offsets = [];
             if (data.extruder.count > 1) {
-                _.each(_.slice(data.extruder.offsets, 1), function(offset, index) {
+                _.each(_.slice(data.extruder.offsets, 1), function (offset, index) {
                     offsets.push({
                         idx: index + 1,
                         x: ko.observable(offset[0]),
@@ -238,24 +256,24 @@ $(function() {
             self.axisEInverted(data.axes.e.inverted);
         };
 
-        self.toProfileData = function() {
+        self.toProfileData = function () {
             var identifier = self.identifier();
             if (!identifier) {
                 identifier = self.identifierPlaceholder();
             }
 
             var defaultProfile = cleanProfile();
-            var valid = function(value, f, def) {
+            var valid = function (value, f, def) {
                 var v = f(value);
                 if (isNaN(v)) {
                     return def;
                 }
                 return v;
             };
-            var validFloat = function(value, def) {
+            var validFloat = function (value, def) {
                 return valid(value, parseFloat, def);
             };
-            var validInt = function(value, def) {
+            var validInt = function (value, def) {
                 return valid(value, parseInt, def);
             };
 
@@ -275,10 +293,11 @@ $(function() {
                 heatedChamber: self.heatedChamber(),
                 extruder: {
                     count: parseInt(self.extruders()),
-                    offsets: [
-                        [0.0, 0.0]
-                    ],
-                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter),
+                    offsets: [[0.0, 0.0]],
+                    nozzleDiameter: validFloat(
+                        self.nozzleDiameter(),
+                        defaultProfile.extruder.nozzleDiameter
+                    ),
                     sharedNozzle: self.sharedNozzle()
                 },
                 axes: {
@@ -323,7 +342,7 @@ $(function() {
             return profile;
         };
 
-        self.defaultBoundingBox = function(width, depth, height, origin) {
+        self.defaultBoundingBox = function (width, depth, height, origin) {
             if (origin == "center") {
                 var halfWidth = width / 2.0;
                 var halfDepth = depth / 2.0;
@@ -335,7 +354,7 @@ $(function() {
                     x_max: halfWidth,
                     y_max: halfDepth,
                     z_max: height
-                }
+                };
             } else {
                 return {
                     x_min: 0.0,
@@ -344,11 +363,11 @@ $(function() {
                     x_max: width,
                     y_max: depth,
                     z_max: height
-                }
+                };
             }
         };
 
-        self.toBoundingBoxData = function(box, custom) {
+        self.toBoundingBoxData = function (box, custom) {
             self.customBoundingBox(custom);
             if (custom) {
                 self.boundingBoxMinX(box.x_min);
@@ -368,7 +387,7 @@ $(function() {
             self.toBoundingBoxPlaceholders(box);
         };
 
-        self.toBoundingBoxPlaceholders = function(box) {
+        self.toBoundingBoxPlaceholders = function (box) {
             self.boundingBoxMinXPlaceholder(box.x_min);
             self.boundingBoxMinYPlaceholder(box.y_min);
             self.boundingBoxMinZPlaceholder(box.z_min);
@@ -377,23 +396,46 @@ $(function() {
             self.boundingBoxMaxZPlaceholder(box.z_max);
         };
 
-        self.fillBoundingBoxData = function(profile) {
+        self.fillBoundingBoxData = function (profile) {
             if (self.customBoundingBox()) {
-                var defaultBox = self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin());
+                var defaultBox = self.defaultBoundingBox(
+                    self.volumeWidth(),
+                    self.volumeDepth(),
+                    self.volumeHeight(),
+                    self.volumeOrigin()
+                );
                 profile.volume.custom_box = {
-                    x_min: (self.boundingBoxMinX() !== undefined) ? Math.min(self.boundingBoxMinX(), defaultBox.x_min) : defaultBox.x_min,
-                    y_min: (self.boundingBoxMinY() !== undefined) ? Math.min(self.boundingBoxMinY(), defaultBox.y_min) : defaultBox.y_min,
-                    z_min: (self.boundingBoxMinZ() !== undefined) ? Math.min(self.boundingBoxMinZ(), defaultBox.z_min) : defaultBox.z_min,
-                    x_max: (self.boundingBoxMaxX() !== undefined) ? Math.max(self.boundingBoxMaxX(), defaultBox.x_max) : defaultBox.x_max,
-                    y_max: (self.boundingBoxMaxY() !== undefined) ? Math.max(self.boundingBoxMaxY(), defaultBox.y_max) : defaultBox.y_max,
-                    z_max: (self.boundingBoxMaxZ() !== undefined) ? Math.max(self.boundingBoxMaxZ(), defaultBox.z_max) : defaultBox.z_max
+                    x_min:
+                        self.boundingBoxMinX() !== undefined
+                            ? Math.min(self.boundingBoxMinX(), defaultBox.x_min)
+                            : defaultBox.x_min,
+                    y_min:
+                        self.boundingBoxMinY() !== undefined
+                            ? Math.min(self.boundingBoxMinY(), defaultBox.y_min)
+                            : defaultBox.y_min,
+                    z_min:
+                        self.boundingBoxMinZ() !== undefined
+                            ? Math.min(self.boundingBoxMinZ(), defaultBox.z_min)
+                            : defaultBox.z_min,
+                    x_max:
+                        self.boundingBoxMaxX() !== undefined
+                            ? Math.max(self.boundingBoxMaxX(), defaultBox.x_max)
+                            : defaultBox.x_max,
+                    y_max:
+                        self.boundingBoxMaxY() !== undefined
+                            ? Math.max(self.boundingBoxMaxY(), defaultBox.y_max)
+                            : defaultBox.y_max,
+                    z_max:
+                        self.boundingBoxMaxZ() !== undefined
+                            ? Math.max(self.boundingBoxMaxZ(), defaultBox.z_max)
+                            : defaultBox.z_max
                 };
             } else {
                 profile.volume.custom_box = false;
             }
         };
 
-        self._sanitize = function(name) {
+        self._sanitize = function (name) {
             return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
@@ -411,10 +453,12 @@ $(function() {
         self.profiles = new ItemListHelper(
             "printerProfiles",
             {
-                "name": function(a, b) {
+                name: function (a, b) {
                     // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase())
+                        return -1;
+                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase())
+                        return 1;
                     return 0;
                 }
             },
@@ -427,7 +471,7 @@ $(function() {
         self.defaultProfile = ko.observable();
         self.currentProfile = ko.observable();
 
-        self.createProfileEditor = function(data) {
+        self.createProfileEditor = function (data) {
             var editor = new EditedProfileViewModel(self.profiles);
             if (data !== undefined) {
                 editor.fromProfileData(data);
@@ -438,11 +482,11 @@ $(function() {
         self.editor = self.createProfileEditor();
         self.currentProfileData = ko.observable(ko.mapping.fromJS(cleanProfile()));
 
-        self.enableEditorSubmitButton = ko.pureComputed(function() {
+        self.enableEditorSubmitButton = ko.pureComputed(function () {
             return self.editor.valid() && !self.requestInProgress();
         });
 
-        self.makeDefault = function(data) {
+        self.makeDefault = function (data) {
             var profile = {
                 id: data.id,
                 default: true
@@ -451,35 +495,37 @@ $(function() {
             self.updateProfile(profile);
         };
 
-        self.canMakeDefault = function(data) {
+        self.canMakeDefault = function (data) {
             return !data.isdefault();
         };
 
-        self.canRemove = function(data) {
+        self.canRemove = function (data) {
             return !data.iscurrent() && !data.isdefault();
         };
 
-        self.requestData = function() {
+        self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
 
-            return OctoPrint.printerprofiles.list()
-                .done(self.fromResponse);
+            return OctoPrint.printerprofiles.list().done(self.fromResponse);
         };
 
-        self.fromResponse = function(data) {
+        self.fromResponse = function (data) {
             var items = [];
             var defaultProfile = undefined;
             var currentProfile = undefined;
             var currentProfileData = undefined;
-            _.each(data.profiles, function(entry) {
+            _.each(data.profiles, function (entry) {
                 if (entry.default) {
                     defaultProfile = entry.id;
                 }
                 if (entry.current) {
                     currentProfile = entry.id;
-                    currentProfileData = ko.mapping.fromJS(entry, self.currentProfileData);
+                    currentProfileData = ko.mapping.fromJS(
+                        entry,
+                        self.currentProfileData
+                    );
                 }
                 entry["isdefault"] = ko.observable(entry.default);
                 entry["iscurrent"] = ko.observable(entry.current);
@@ -493,81 +539,114 @@ $(function() {
                 self.currentProfileData(currentProfileData);
             } else {
                 // shouldn't normally happen, but just to not have anything else crash...
-                log.warn("Current printer profile could not be detected, using default values");
+                log.warn(
+                    "Current printer profile could not be detected, using default values"
+                );
                 self.currentProfile("");
-                self.currentProfileData(ko.mapping.fromJS(cleanProfile(), self.currentProfileData));
+                self.currentProfileData(
+                    ko.mapping.fromJS(cleanProfile(), self.currentProfileData)
+                );
             }
         };
 
-        self.addProfile = function(callback) {
+        self.addProfile = function (callback) {
             var profile = self.editor.toProfileData();
             self.requestInProgress(true);
-            OctoPrint.printerprofiles.add(profile)
-                .done(function() {
+            OctoPrint.printerprofiles
+                .add(profile)
+                .done(function () {
                     if (callback !== undefined) {
                         callback();
                     }
                     self.requestData();
                 })
-                .fail(function(xhr) {
-                    var text = gettext("There was unexpected error while saving the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Could not add profile"), text: text, type: "error", hide: false});
+                .fail(function (xhr) {
+                    var text = gettext(
+                        "There was unexpected error while saving the printer profile, please consult the logs."
+                    );
+                    new PNotify({
+                        title: gettext("Could not add profile"),
+                        text: text,
+                        type: "error",
+                        hide: false
+                    });
                 })
-                .always(function() {
+                .always(function () {
                     self.requestInProgress(false);
                 });
         };
 
-        self.removeProfile = function(data) {
-            var perform = function() {
+        self.removeProfile = function (data) {
+            var perform = function () {
                 self.requestInProgress(true);
-                OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
-                    .done(function() {
-                        self.requestData()
-                            .always(function() {
-                                self.requestInProgress(false);
-                            });
+                OctoPrint.printerprofiles
+                    .delete(data.id, {url: data.resource})
+                    .done(function () {
+                        self.requestData().always(function () {
+                            self.requestInProgress(false);
+                        });
                     })
-                    .fail(function(xhr) {
+                    .fail(function (xhr) {
                         var text;
                         if (xhr.status == 409) {
-                            text = gettext("Cannot delete the default profile or the currently active profile.");
+                            text = gettext(
+                                "Cannot delete the default profile or the currently active profile."
+                            );
                         } else {
-                            text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
+                            text = gettext(
+                                "There was unexpected error while removing the printer profile, please consult the logs."
+                            );
                         }
-                        new PNotify({title: gettext("Could not delete profile"), text: text, type: "error", hide: false});
+                        new PNotify({
+                            title: gettext("Could not delete profile"),
+                            text: text,
+                            type: "error",
+                            hide: false
+                        });
                         self.requestInProgress(false);
                     });
             };
 
-            showConfirmationDialog(_.sprintf(gettext("You are about to delete the printer profile \"%(name)s\"."), {name: _.escape(data.name)}),
-                                   perform);
+            showConfirmationDialog(
+                _.sprintf(
+                    gettext('You are about to delete the printer profile "%(name)s".'),
+                    {name: _.escape(data.name)}
+                ),
+                perform
+            );
         };
 
-        self.updateProfile = function(profile, callback) {
+        self.updateProfile = function (profile, callback) {
             if (profile == undefined) {
                 profile = self.editor.toProfileData();
             }
 
             self.requestInProgress(true);
-            OctoPrint.printerprofiles.update(profile.id, profile)
-                .done(function() {
+            OctoPrint.printerprofiles
+                .update(profile.id, profile)
+                .done(function () {
                     if (callback !== undefined) {
                         callback();
                     }
-                    self.requestData()
-                        .always(function() {
-                            self.requestInProgress(false);
-                        });
+                    self.requestData().always(function () {
+                        self.requestInProgress(false);
+                    });
                 })
-                .fail(function() {
-                    var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
+                .fail(function () {
+                    var text = gettext(
+                        "There was unexpected error while updating the printer profile, please consult the logs."
+                    );
+                    new PNotify({
+                        title: gettext("Could not update profile"),
+                        text: text,
+                        type: "error",
+                        hide: false
+                    });
                     self.requestInProgress(false);
                 });
         };
 
-        self.showEditProfileDialog = function(data) {
+        self.showEditProfileDialog = function (data) {
             self.editor.fromProfileData(data);
 
             var editDialog = $("#settings_printerProfiles_editDialog");
@@ -575,25 +654,37 @@ $(function() {
             var dialogTitle = $("h3.modal-title", editDialog);
 
             var add = data === undefined;
-            dialogTitle.text(add ? gettext("Add Printer Profile") : _.sprintf(gettext("Edit Printer Profile \"%(name)s\""), {name: _.escape(data.name)}));
+            dialogTitle.text(
+                add
+                    ? gettext("Add Printer Profile")
+                    : _.sprintf(gettext('Edit Printer Profile "%(name)s"'), {
+                          name: _.escape(data.name)
+                      })
+            );
             confirmButton.unbind("click");
-            confirmButton.bind("click", function() {
+            confirmButton.bind("click", function () {
                 if (self.enableEditorSubmitButton()) {
                     self.confirmEditProfile(add);
                 }
             });
 
             $('ul.nav-pills a[data-toggle="tab"]:first', editDialog).tab("show");
-            editDialog.modal({
-                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-            }).css({
-                width: 'auto',
-                'margin-left': function() { return -($(this).width() /2); }
-            });
+            editDialog
+                .modal({
+                    minHeight: function () {
+                        return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                    }
+                })
+                .css({
+                    "width": "auto",
+                    "margin-left": function () {
+                        return -($(this).width() / 2);
+                    }
+                });
         };
 
-        self.confirmEditProfile = function(add) {
-            var callback = function() {
+        self.confirmEditProfile = function (add) {
+            var callback = function () {
                 $("#settings_printerProfiles_editDialog").modal("hide");
             };
 
@@ -606,9 +697,9 @@ $(function() {
 
         self.onSettingsShown = self.requestData;
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
-        }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

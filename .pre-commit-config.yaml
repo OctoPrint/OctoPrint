@@ -11,14 +11,14 @@ repos:
     rev: main
     hooks:
       - id: codemod_dict_to_literal
-        args: ['--ignore', 'src/octoprint/vendor']
-        stages: ['manual']
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
       - id: codemod_set_to_literal
-        args: ['--ignore', 'src/octoprint/vendor']
-        stages: ['manual']
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
       - id: codemod_not_in
-        args: ['--ignore', 'src/octoprint/vendor']
-        stages: ['manual']
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.5.4
     hooks:
@@ -27,8 +27,12 @@ repos:
     rev: stable
     hooks:
       - id: black
-        args: ['--config', 'black.toml']
+        args: ["--config", "black.toml"]
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.1
     hooks:
       - id: flake8
+  - repo: https://github.com/prettier/prettier
+    rev: master
+    hooks:
+      - id: prettier
