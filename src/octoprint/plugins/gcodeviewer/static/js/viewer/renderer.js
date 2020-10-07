@@ -84,7 +84,7 @@ GCODE.renderer = (function(){
             viewportChanged = false;
         }
     }
-    
+
     var reRender = function(){
         if (!model) return;
 
@@ -587,7 +587,7 @@ GCODE.renderer = (function(){
         // alpha value (100% if current layer is being rendered, 30% otherwise)
         // Note - If showing currently layer as preview - also render it at 30% and draw the progress over the top at 100%
         var alpha = (renderOptions['showNextLayer'] || renderOptions['showCurrentLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
-        
+
         var colorLine = {};
         var colorMove = {};
         var colorRetract = {};
@@ -726,7 +726,7 @@ GCODE.renderer = (function(){
             prevX = x;
             prevY = y;
         }
-        
+
         if (prevPathType != "fill") {
             ctx.stroke();
         }
@@ -863,7 +863,7 @@ GCODE.renderer = (function(){
             ctx.translate(translationX, -translationY);
 
             ctx.scale(viewportRatio, viewportRatio);
-            
+
             offsetModelX = 0;
             offsetModelY = 0;
             offsetBedX = 0;
@@ -904,7 +904,7 @@ GCODE.renderer = (function(){
         },
         render: function(layerNum, fromProgress, toProgress){
             if (!initialized) this.init();
-            
+
             layerNumStore = layerNum;
             progressStore.from = fromProgress;
             progressStore.to = toProgress;

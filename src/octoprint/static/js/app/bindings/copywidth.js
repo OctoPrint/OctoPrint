@@ -46,4 +46,3 @@ ko.bindingHandlers.copyWidth = {
         });
     }
 };
-

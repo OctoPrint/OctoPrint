@@ -16,4 +16,3 @@
     OctoPrintClient.registerPluginComponent("pi_support", OctoPrintPiSupportClient);
     return OctoPrintPiSupportClient;
 });
-

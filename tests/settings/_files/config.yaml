@@ -12,4 +12,3 @@ server:
 devel:
   virtualPrinter:
     enabled: true
-

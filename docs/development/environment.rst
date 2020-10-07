@@ -35,10 +35,11 @@ below.
        binaries cannot be found on your ``PATH`` like this you'll need to specify the full paths to them here,
        e.g. ``virtualenv --python=/path/to/python2/bin/python venv2``
 
-  * Activate one of the virtual environments:
+  * Activate one of the virtual environments (the Python 3 venv should be considered the
+    primary one at this point):
 
-    * PY2: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
     * PY3: ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+    * PY2: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
 
   * Update ``pip`` in the virtual environment:
 
@@ -49,10 +50,16 @@ below.
 
       * ``pip install -e '.[develop,plugins]'``
 
+  * Set up the pre-commit hooks that make sure any changes you do adhere to the styling rules:
+
+      * ``pre-commit install``
+
 When the virtual environment is activated you can then:
 
   * run the OctoPrint server via ``octoprint serve``
   * run the test suite from the checked out source folder via ``pytest``
+  * trigger the pre-commit check suite manually from the checked out source folder via
+    ``pre-commit run --all-files``
 
 To switch the activated virtual environment, simply activate the new environment as described above.
 
@@ -106,6 +113,7 @@ Then:
    source ./venv3/bin/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins,docs]
+   pre-commit install
 
 You can then start OctoPrint via ``octoprint`` after activating one of the two virtual environments.
 
@@ -149,6 +157,7 @@ Open the Git Bash you just installed and in that:
    source ./venv3/Scripts/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins,docs]
+   pre-commit install
 
 .. _sec-development-environment-mac:
 
@@ -198,6 +207,7 @@ You'll need a user account with administrator privileges.
        source venv/bin/activate
        pip install --upgrade pip
        pip install -e .[develop,plugins]
+       pre-commit install
 
 .. _sec-development-environment-ides:
 

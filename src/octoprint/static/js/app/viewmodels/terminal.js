@@ -341,7 +341,7 @@ $(function() {
 
         self.clearAllLogs = function() {
             self.log([]);
-            self.plainLogLines([]);            
+            self.plainLogLines([]);
         };
         // command matching regex
         // (Example output for inputs G0, G1, G28.1, M117 test)

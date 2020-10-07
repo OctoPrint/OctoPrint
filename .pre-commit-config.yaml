@@ -1,0 +1,23 @@
+exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|tests/static/js/lib|docs/|scripts/|translations/|.*\.css|.*\.svg)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+        args: ['--config', 'black.toml']
+        language_version: python3.7
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.5.4
+    hooks:
+      - id: isort
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.1
+    hooks:
+      - id: flake8
