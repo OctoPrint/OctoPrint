@@ -356,6 +356,9 @@ and branching strategy.
 
    in the OctoPrint checkout folder. If you install the pre-commit hooks via
    `pre-commit install` this will even be taken care of for you prior to committing.
+
+   An [automatic build workflow](https://github.com/OctoPrint/OctoPrint/actions?query=workflow%3ABuild)
+   is in place that will run these checks - if they fail your PR will be marked accordingly.
 9. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
