@@ -11,18 +11,19 @@ Tests for OctoPrint's Settings class
      * tests for settings migration
 """
 
-import io
-import unittest
-import shutil
 import contextlib
+import hashlib
+import io
 import os
+import re
+import shutil
 import sys
 import tempfile
-import yaml
-import hashlib
-import ddt
 import time
-import re
+import unittest
+
+import ddt
+import yaml
 
 import octoprint.settings
 

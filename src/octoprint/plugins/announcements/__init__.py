@@ -6,33 +6,33 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import octoprint.plugin
-
 import calendar
 import io
 import os
 import re
-import time
-import threading
 import sys
+import threading
+import time
+
+import octoprint.plugin
 
 PY2 = sys.version_info[0] < 3
 
-import feedparser
-import flask
-
 from collections import OrderedDict
 
+import feedparser
+import flask
+from flask_babel import gettext
+
+from octoprint import __version__ as OCTOPRINT_VERSION
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import (
+    check_etag,
     no_firstrun_access,
     with_revalidation_checking,
-    check_etag,
 )
-from octoprint.util import utmify, count, monotonic_time
-from flask_babel import gettext
-from octoprint import __version__ as OCTOPRINT_VERSION
+from octoprint.util import count, monotonic_time, utmify
 
 
 class AnnouncementPlugin(
@@ -278,8 +278,8 @@ class AnnouncementPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
     def channel_command(self, channel):
-        from octoprint.server.util.flask import get_json_command_from_request
         from octoprint.server import NO_CONTENT
+        from octoprint.server.util.flask import get_json_command_from_request
 
         valid_commands = {"read": ["until"], "toggle": []}
 

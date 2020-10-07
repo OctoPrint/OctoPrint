@@ -4,17 +4,17 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
 import logging
 
+from flask import jsonify
+from flask_babel import gettext
+
+import octoprint.plugin
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util.version import (
     get_octoprint_version_string,
     is_released_octoprint_version,
 )
-
-from flask import jsonify
-from flask_babel import gettext
 
 SENTRY_URL_SERVER = (
     "https://d479a74f172d4ac2b959a9a7d0536a82@o118517.ingest.sentry.io/1373987"
@@ -31,9 +31,10 @@ SETTINGS_DEFAULTS = {
     "url_coreui": SENTRY_URL_COREUI,
 }
 
-import serial
-import requests.exceptions
 import errno
+
+import requests.exceptions
+import serial
 import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
@@ -168,6 +169,7 @@ def _enable_errortracking():
 
     if _is_enabled(enabled, enabled_unreleased):
         import sentry_sdk
+
         from octoprint.plugin import plugin_manager
 
         def _before_send(event, hint):

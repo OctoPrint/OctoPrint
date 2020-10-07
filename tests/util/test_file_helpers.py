@@ -5,15 +5,15 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
-import unittest
-import mock
 import os
-import ddt
 import sys
+import unittest
+
+import ddt
+import mock
+from past.builtins import unicode
 
 import octoprint.util
-
-from past.builtins import unicode
 
 
 class BomAwareOpenTest(unittest.TestCase):

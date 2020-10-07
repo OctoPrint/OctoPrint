@@ -5,27 +5,24 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import logging
 import os
 import threading
-import logging
 
-from flask import request, jsonify, url_for, make_response
+from flask import jsonify, make_response, request, url_for
 
 import octoprint.timelapse
 import octoprint.util as util
-from octoprint.settings import settings, valid_boolean_trues
-
-from octoprint.server import admin_permission, printer
+from octoprint.access.permissions import Permissions
+from octoprint.server import NO_CONTENT, admin_permission, printer
+from octoprint.server.api import api
 from octoprint.server.util.flask import (
-    redirect_to_tornado,
-    no_firstrun_access,
     get_json_command_from_request,
+    no_firstrun_access,
+    redirect_to_tornado,
     with_revalidation_checking,
 )
-from octoprint.server.api import api
-
-from octoprint.server import NO_CONTENT
-from octoprint.access.permissions import Permissions
+from octoprint.settings import settings, valid_boolean_trues
 
 _DATA_FORMAT_VERSION = "v2"
 

@@ -5,50 +5,47 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import copy
+import io
+import logging
+import os
+import re
+import shutil
+import sys
+import tempfile
+import threading
+import time
+from datetime import datetime
+
+import filetype
+import pkg_resources
+import requests
+import sarge
+from flask import jsonify, make_response
+from flask_babel import gettext
 from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.plugin.core
-
-from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import (
-    no_firstrun_access,
-    with_revalidation_checking,
-    check_etag,
-)
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.util import to_bytes, to_native_str, TemporaryDirectory
+from octoprint.events import Events
+from octoprint.server.util.flask import (
+    check_etag,
+    no_firstrun_access,
+    with_revalidation_checking,
+)
+from octoprint.settings import valid_boolean_trues
+from octoprint.util import TemporaryDirectory, to_bytes, to_native_str
+from octoprint.util.net import download_file
 from octoprint.util.pip import LocalPipCaller
+from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.util.version import (
-    get_octoprint_version_string,
     get_octoprint_version,
+    get_octoprint_version_string,
     is_octoprint_compatible,
     is_python_compatible,
 )
-from octoprint.util.platform import get_os, is_os_compatible
-from octoprint.util.net import download_file
-from octoprint.events import Events
-
-from flask import jsonify, make_response
-from flask_babel import gettext
-
-import io
-import logging
-import sarge
-import sys
-import requests
-import re
-import os
-import copy
-import time
-import threading
-import tempfile
-import shutil
-import filetype
-import pkg_resources
-
-from datetime import datetime
 
 try:
     from os import scandir

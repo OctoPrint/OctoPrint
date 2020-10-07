@@ -5,6 +5,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import unittest
+
 import ddt
 
 try:
@@ -14,8 +15,7 @@ except ImportError:
 
 import os
 import time
-
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 
 _stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
 _entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")

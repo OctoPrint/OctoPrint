@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import _fixups
-
 import unittest
+
+import _fixups
 import mock
 
 import octoprint.daemon

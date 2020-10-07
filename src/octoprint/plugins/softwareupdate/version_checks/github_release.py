@@ -7,8 +7,9 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import requests
 import logging
+
+import requests
 
 from octoprint.util import sv
 from octoprint.util.version import get_comparable_version

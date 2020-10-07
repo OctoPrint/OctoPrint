@@ -2,12 +2,12 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
+
+import _fixups
 import ddt
 import mock
 
 from octoprint.util.platform import CLOSE_FDS
-
-import _fixups
 
 OCTOPI_VERSION = "0.14.0"
 

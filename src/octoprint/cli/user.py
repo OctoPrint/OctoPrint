@@ -5,13 +5,14 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import click
 import logging
 
+import click
+
 from octoprint import init_settings
-from octoprint.cli import get_ctx_obj_option
 from octoprint.access.groups import FilebasedGroupManager
 from octoprint.access.users import FilebasedUserManager, UnknownUser, UserAlreadyExists
+from octoprint.cli import get_ctx_obj_option
 from octoprint.util import get_class, sv
 
 click.disable_unicode_literals_warning = True

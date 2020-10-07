@@ -4,8 +4,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.server.api import api
 from flask import redirect, url_for
+
+from octoprint.server.api import api
 
 # NOTE: The redirects here should rather be 308 PERMANENT REDIRECT, however RFC7538 doesn't seem to be supported
 # by all browsers yet. So we stick to 307 TEMPORARY REDIRECT as defined in RFC7231 although it's definitely not a

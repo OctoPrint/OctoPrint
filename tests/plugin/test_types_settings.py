@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
+
 import mock
 
 import octoprint.plugin
@@ -124,7 +125,6 @@ class TestSettingsPlugin(unittest.TestCase):
         from octoprint.settings import NoSuchSettingsPath
 
         ### setup
-
         # simulate no settings stored in config.yaml
         self.settings.get_all_data.side_effect = NoSuchSettingsPath()
 

@@ -4,37 +4,35 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import datetime
+import fnmatch
 import io
 import logging
 import os
+import shutil
+import sys
 import threading
 import time
-import fnmatch
-import datetime
-import sys
-import shutil
 
 try:
     import queue
 except ImportError:
     import Queue as queue
+
+import collections
+import re
+
 import requests
+import sarge
 
 import octoprint.plugin
 import octoprint.util as util
-
-from octoprint.settings import settings
-from octoprint.events import eventManager, Events
+from octoprint.events import Events, eventManager
 from octoprint.plugin import plugin_manager
-from octoprint.util import monotonic_time
+from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import sv
+from octoprint.util import monotonic_time, sv
 from octoprint.util.commandline import CommandlineCaller
-
-import sarge
-import collections
-
-import re
 
 try:
     from os import scandir

@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import flask
-import threading
-import os
-import yaml
 import io
+import os
+import threading
 import time
 import uuid
 from collections import defaultdict
+
+import flask
+import yaml
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import restricted_access, no_firstrun_access
-from octoprint.server import NO_CONTENT, current_user, admin_permission
-from octoprint.util import atomic_write, monotonic_time, ResettableTimer, generate_api_key
-
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.server import NO_CONTENT, admin_permission, current_user
+from octoprint.server.util.flask import no_firstrun_access, restricted_access
+from octoprint.settings import valid_boolean_trues
+from octoprint.util import ResettableTimer, atomic_write, generate_api_key, monotonic_time
 
 CUTOFF_TIME = 10 * 60  # 10min
 POLL_TIMEOUT = 5  # 5 seconds

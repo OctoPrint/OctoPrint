@@ -25,21 +25,20 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import os
-import io
-from collections import defaultdict, namedtuple, OrderedDict
-import logging
 import fnmatch
 import inspect
+import io
+import logging
+import os
 import sys
+from collections import OrderedDict, defaultdict, namedtuple
 
 import pkg_resources
 import pkginfo
-
 from past.builtins import unicode
 
-from octoprint.util import to_unicode, sv, time_this
-from octoprint.util.version import is_python_compatible, get_python_version_string
+from octoprint.util import sv, time_this, to_unicode
+from octoprint.util.version import get_python_version_string, is_python_compatible
 
 try:
     from os import scandir
@@ -911,9 +910,9 @@ class PluginManager(object):
         self._detect_python_environment()
 
     def _detect_python_environment(self):
+        import sys
         from distutils.command.install import install as cmd_install
         from distutils.dist import Distribution
-        import sys
 
         cmd = cmd_install(Distribution())
         cmd.finalize_options()

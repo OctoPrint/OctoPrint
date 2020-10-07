@@ -19,15 +19,14 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import os
 import logging
+import os
 import threading
 
-from octoprint.settings import settings as s
-from octoprint.plugin.core import PluginInfo, PluginManager, Plugin
-from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
+from octoprint.plugin.core import Plugin, PluginInfo, PluginManager
 from octoprint.plugin.types import *  # noqa: F403 ## used by multiple other modules
-
+from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
+from octoprint.settings import settings as s
 from octoprint.util import deprecated, to_native_str
 
 # singleton

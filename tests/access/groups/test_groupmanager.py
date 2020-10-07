@@ -8,13 +8,12 @@ Unit tests for octoprint.access.groups.GroupManager
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import unittest
-import tempfile
-import os
 import contextlib
+import os
+import tempfile
+import unittest
 
 import octoprint.access.groups
-
 from octoprint.access.permissions import OctoPrintPermission
 
 TEST_PERMISSION_1 = OctoPrintPermission("Test 1", "Test permission 1", "p1")

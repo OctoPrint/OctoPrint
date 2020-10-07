@@ -10,58 +10,57 @@ import logging
 
 from flask import (
     Blueprint,
-    request,
-    jsonify,
     abort,
     current_app,
-    session,
-    make_response,
     g,
+    jsonify,
+    make_response,
+    request,
+    session,
 )
-from flask_login import login_user, logout_user, current_user
+from flask_login import current_user, login_user, logout_user
 from werkzeug.exceptions import HTTPException
-from octoprint.vendor.flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.access.users
-import octoprint.util.net as util_net
-import octoprint.server
 import octoprint.plugin
+import octoprint.server
+import octoprint.util.net as util_net
+from octoprint.access.permissions import Permissions
+from octoprint.events import Events, eventManager
 from octoprint.server import NO_CONTENT
-from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import (
-    noCachingExceptGetResponseHandler,
-    loginFromApiKeyRequestHandler,
-    loginFromAuthorizationHeaderRequestHandler,
     corsRequestHandler,
     corsResponseHandler,
+    loginFromApiKeyRequestHandler,
+    loginFromAuthorizationHeaderRequestHandler,
+    noCachingExceptGetResponseHandler,
 )
 from octoprint.server.util.flask import (
-    no_firstrun_access,
     get_json_command_from_request,
-    passive_login,
     get_remote_address,
+    no_firstrun_access,
+    passive_login,
 )
-from octoprint.access.permissions import Permissions
-from octoprint.events import eventManager, Events
-
+from octoprint.settings import settings as s
+from octoprint.settings import valid_boolean_trues
+from octoprint.vendor.flask_principal import AnonymousIdentity, Identity, identity_changed
 
 # ~~ init api blueprint, including sub modules
 
 api = Blueprint("api", __name__)
 
-from . import printer as api_printer
-from . import job as api_job
+from . import access as api_access
 from . import connection as api_connection
 from . import files as api_files
-from . import settings as api_settings
-from . import timelapse as api_timelapse
-from . import access as api_access
-from . import users as api_users
-from . import slicing as api_slicing
-from . import printer_profiles as api_printer_profiles
+from . import job as api_job
 from . import languages as api_languages
+from . import printer as api_printer
+from . import printer_profiles as api_printer_profiles
+from . import settings as api_settings
+from . import slicing as api_slicing
 from . import system as api_system
-
+from . import timelapse as api_timelapse
+from . import users as api_users
 
 VERSION = "0.1"
 
@@ -409,6 +408,7 @@ def utilTest():
 
 def _test_path(data):
     import os
+
     from octoprint.util.paths import normalize
 
     path = normalize(data["path"], real=False)
@@ -530,6 +530,7 @@ def _test_path(data):
 
 def _test_url(data):
     import requests
+
     from octoprint import util as util
 
     class StatusCodeRange(object):

@@ -1,15 +1,16 @@
 #!/usr/bin/env python2
 # coding=utf-8
 
-from distutils.command.build_py import build_py as _build_py
 import os
+import sys
+from distutils.command.build_py import build_py as _build_py
+
 import versioneer
 
-import sys
-
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
-import octoprint_setuptools
 import setuptools
+
+import octoprint_setuptools
 
 # ----------------------------------------------------------------------------------------
 

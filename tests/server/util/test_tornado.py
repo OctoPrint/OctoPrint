@@ -11,9 +11,9 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import unittest
-import mock
-from ddt import ddt, data, unpack
 
+import mock
+from ddt import data, ddt, unpack
 
 ##~~ _parse_header
 

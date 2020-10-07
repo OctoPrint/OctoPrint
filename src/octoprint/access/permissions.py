@@ -5,18 +5,18 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from future.utils import with_metaclass
-from flask import g, abort
-from flask_babel import gettext
-from octoprint.vendor.flask_principal import Permission, PermissionDenied, RoleNeed, Need
-
-from functools import wraps
 from collections import OrderedDict, defaultdict
+from functools import wraps
+
+from flask import abort, g
+from flask_babel import gettext
+from future.utils import with_metaclass
 
 # noinspection PyCompatibility
 from past.builtins import basestring
 
-from octoprint.access import ADMIN_GROUP, USER_GROUP, READONLY_GROUP
+from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
+from octoprint.vendor.flask_principal import Need, Permission, PermissionDenied, RoleNeed
 
 
 class OctoPrintPermission(Permission):

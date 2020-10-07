@@ -26,21 +26,21 @@ try:
 except ImportError:
     from scandir import scandir
 
-import octoprint.plugin
+import logging
+
 import octoprint.events
+import octoprint.plugin
 import octoprint.util
 from octoprint.settings import settings
 
-import logging
-
 from .exceptions import (
-    UnknownSlicer,
-    SlicerNotConfigured,
-    SlicingCancelled,
+    CouldNotDeleteProfile,
     ProfileAlreadyExists,
     ProfileException,
-    CouldNotDeleteProfile,
+    SlicerNotConfigured,
+    SlicingCancelled,
     UnknownProfile,
+    UnknownSlicer,
 )
 
 

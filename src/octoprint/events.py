@@ -13,12 +13,13 @@ try:
     import queue
 except ImportError:
     import Queue as queue
-import threading
+
 import collections
 import re
+import threading
 
-from octoprint.settings import settings
 import octoprint.plugin
+from octoprint.settings import settings
 
 # singleton
 _instance = None

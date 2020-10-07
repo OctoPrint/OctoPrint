@@ -4,15 +4,15 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import socket
-import sys
-import netaddr
-import logging
-import threading
 import io
+import logging
 import os
 import re
+import socket
+import sys
+import threading
 
+import netaddr
 import netifaces
 import requests
 import werkzeug.http
@@ -217,6 +217,7 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 
 def resolve_host(host):
     import socket
+
     from octoprint.util import to_unicode
 
     try:

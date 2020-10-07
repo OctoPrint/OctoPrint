@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from typing import Union
+
 from past.builtins import basestring, unicode
 
 from octoprint.logging import handlers
-
-from typing import Union
 
 
 def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args):

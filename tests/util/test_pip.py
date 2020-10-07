@@ -4,14 +4,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import site
 import unittest
+
 import ddt
 import mock
+import pkg_resources
 
 import octoprint.util.pip
-
-import site
-import pkg_resources
 
 
 @ddt.ddt

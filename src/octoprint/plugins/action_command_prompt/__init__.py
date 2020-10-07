@@ -4,15 +4,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
+import flask
+from flask_babel import gettext
 
-from octoprint.server import user_permission
+import octoprint.plugin
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-
-import flask
-from flask_babel import gettext
+from octoprint.server import user_permission
 
 
 class Prompt(object):

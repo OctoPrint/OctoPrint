@@ -5,30 +5,28 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import copy
 import io
 import logging
 import os
-import shutil
 import re
+import shutil
+
 import pylru
-import copy
 
 try:
     from os import scandir, walk
 except ImportError:
     from scandir import scandir, walk
 
-from octoprint.util import atomic_write, time_this
 from contextlib import contextmanager
 
+from emoji import demojize
 from past.builtins import basestring
 
-from emoji import demojize
-from octoprint.vendor.awesome_slugify import Slugify
-
 import octoprint.filemanager
-
-from octoprint.util import is_hidden_path, to_unicode, to_bytes
+from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
+from octoprint.vendor.awesome_slugify import Slugify
 
 
 class StorageInterface(object):
@@ -1911,8 +1909,9 @@ class LocalFileStorage(StorageInterface):
 
     def _migrate_metadata(self, path):
         # we switched to json in 1.3.9 - if we still have yaml here, migrate it now
-        import yaml
         import json
+
+        import yaml
 
         with self._get_persisted_metadata_lock(path):
             metadata_path_yaml = os.path.join(path, ".metadata.yaml")

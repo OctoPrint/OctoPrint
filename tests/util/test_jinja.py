@@ -5,11 +5,11 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import unittest
 import os
-import jinja2
+import unittest
 
-from ddt import ddt, data, unpack
+import jinja2
+from ddt import data, ddt, unpack
 
 import octoprint.util.jinja
 

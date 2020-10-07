@@ -9,25 +9,25 @@ OctoPrint's source code.
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
-import io
-import os
-import traceback
-import past.builtins
-import sys
-import re
-import tempfile
-import logging
-import shutil
-import threading
-from functools import wraps
-import warnings
-import contextlib
 import collections
-import frozendict
+import contextlib
 import copy
+import io
+import logging
+import os
+import re
+import shutil
+import sys
+import tempfile
+import threading
 import time
-
+import traceback
+import warnings
+from functools import wraps
 from typing import Union
+
+import frozendict
+import past.builtins
 
 try:
     import queue
@@ -37,11 +37,9 @@ except ImportError:
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
-
 from octoprint import UMASK
-from octoprint.util.net import interface_addresses, address_for_client, server_reachable
 from octoprint.util.connectivity import ConnectivityChecker
-
+from octoprint.util.net import address_for_client, interface_addresses, server_reachable
 
 logger = logging.getLogger(__name__)
 
@@ -1185,8 +1183,8 @@ def atomic_write(
 
 @contextlib.contextmanager
 def tempdir(ignore_errors=False, onerror=None, **kwargs):
-    import tempfile
     import shutil
+    import tempfile
 
     dirpath = tempfile.mkdtemp(**kwargs)
     try:
@@ -1349,8 +1347,9 @@ def utmify(link, source=None, medium=None, name=None, term=None, content=None):
     from collections import OrderedDict
 
     try:
-        import urlparse
         from urllib import urlencode
+
+        import urlparse
     except ImportError:
         # python 3
         import urllib.parse as urlparse
@@ -1876,8 +1875,8 @@ def time_this(
 
 def generate_api_key():
     # noinspection PyCompatibility
-    from builtins import bytes
     import uuid
+    from builtins import bytes
 
     return "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
 

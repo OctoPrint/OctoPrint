@@ -8,8 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 import shutil
-import time
 import threading
+import time
+
 import watchdog.events
 
 import octoprint.filemanager
@@ -26,9 +27,8 @@ def fix_scandir():
 
     except ImportError:
         # not natively available, use backport
-        from scandir import scandir
-
         import watchdog.utils.dirsnapshot
+        from scandir import scandir
 
         OriginalDirectorySnapshot = watchdog.utils.dirsnapshot.DirectorySnapshot
 

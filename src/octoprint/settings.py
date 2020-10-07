@@ -23,19 +23,20 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
-import sys
-import os
-import yaml
-import yaml.parser
-import logging
-import re
-import uuid
 import copy
+import io
+import logging
+import os
+import re
+import sys
 import time
+import uuid
 
 # noinspection PyCompatibility
 from builtins import bytes
+
+import yaml
+import yaml.parser
 
 # noinspection PyCompatibility
 from past.builtins import basestring
@@ -51,11 +52,11 @@ except ImportError:
     from collections import KeysView
 
 from octoprint.util import (
-    atomic_write,
-    is_hidden_path,
-    dict_merge,
     CaseInsensitiveSet,
+    atomic_write,
+    dict_merge,
     generate_api_key,
+    is_hidden_path,
 )
 
 _APPNAME = "OctoPrint"
@@ -688,9 +689,9 @@ class Settings(object):
         return folder
 
     def _init_script_templating(self):
-        from jinja2 import Environment, BaseLoader, ChoiceLoader, TemplateNotFound
-        from jinja2.nodes import Include
+        from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
         from jinja2.ext import Extension
+        from jinja2.nodes import Include
 
         from octoprint.util.jinja import FilteredFileSystemLoader
 
@@ -1585,7 +1586,7 @@ class Settings(object):
             self._logger.exception("Error while saving config.yaml!")
             raise
         else:
-            from octoprint.events import eventManager, Events
+            from octoprint.events import Events, eventManager
 
             self.load()
 

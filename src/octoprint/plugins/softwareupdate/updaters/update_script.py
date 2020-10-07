@@ -5,12 +5,12 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import sys
 import logging
-
-from ..exceptions import ConfigurationInvalid, UpdateError, CannotUpdateOffline
+import sys
 
 from octoprint.util.commandline import CommandlineCaller, CommandlineError
+
+from ..exceptions import CannotUpdateOffline, ConfigurationInvalid, UpdateError
 
 
 def _get_caller(log_cb=None):

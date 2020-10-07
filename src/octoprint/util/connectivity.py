@@ -5,11 +5,11 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import threading
 import logging
+import threading
 import time
 
-from octoprint.util.net import server_reachable, resolve_host
+from octoprint.util.net import resolve_host, server_reachable
 
 
 class ConnectivityChecker(object):

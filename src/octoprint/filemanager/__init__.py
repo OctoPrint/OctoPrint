@@ -5,24 +5,22 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import logging
 import io
+import logging
 import os
-
-import octoprint.plugin
-import octoprint.util
-
-from octoprint.events import eventManager, Events
-
-from .destinations import FileDestinations
-from .analysis import QueueEntry, AnalysisQueue
-from .storage import LocalFileStorage
-from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
-from octoprint.util import get_fully_qualified_classname as fqcn
-
 from collections import namedtuple
 
 from past.builtins import basestring
+
+import octoprint.plugin
+import octoprint.util
+from octoprint.events import Events, eventManager
+from octoprint.util import get_fully_qualified_classname as fqcn
+
+from .analysis import AnalysisQueue, QueueEntry
+from .destinations import FileDestinations
+from .storage import LocalFileStorage
+from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
@@ -937,7 +935,9 @@ class FileManager(object):
 
     def save_recovery_data(self, origin, path, pos):
         import time
+
         import yaml
+
         from octoprint.util import atomic_write
 
         data = {

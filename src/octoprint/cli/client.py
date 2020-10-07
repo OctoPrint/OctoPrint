@@ -11,12 +11,11 @@ click.disable_unicode_literals_warning = True
 import io
 import json
 
-import octoprint_client
-
-from octoprint.cli import get_ctx_obj_option, bulk_options
-from octoprint import init_settings, FatalStartupError
-
 from past.builtins import unicode
+
+import octoprint_client
+from octoprint import FatalStartupError, init_settings
+from octoprint.cli import bulk_options, get_ctx_obj_option
 
 
 class JsonStringParamType(click.ParamType):

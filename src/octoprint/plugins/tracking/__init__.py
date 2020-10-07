@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
-
-from flask_babel import gettext
-
-import requests
 import hashlib
 import logging
+
+import requests
+from flask_babel import gettext
+
+import octoprint.plugin
 
 try:
     # noinspection PyCompatibility
@@ -21,9 +21,9 @@ except ImportError:
 # noinspection PyCompatibility
 import concurrent.futures
 
+from octoprint.events import Events
 from octoprint.util import RepeatedTimer, monotonic_time
 from octoprint.util.version import get_octoprint_version_string
-from octoprint.events import Events
 
 TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
 

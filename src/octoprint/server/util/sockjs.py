@@ -5,31 +5,29 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import json
 import logging
 import threading
-import octoprint.vendor.sockjs.tornado
-import octoprint.vendor.sockjs.tornado.session
-import octoprint.vendor.sockjs.tornado.proto
-import octoprint.vendor.sockjs.tornado.util
 import time
 
-import octoprint.timelapse
-import octoprint.server
+import wrapt
+
+import octoprint.access.users
 import octoprint.events
 import octoprint.plugin
-import octoprint.access.users
-
-from octoprint.events import Events
-from octoprint.settings import settings
+import octoprint.printer
+import octoprint.server
+import octoprint.timelapse
+import octoprint.vendor.sockjs.tornado
+import octoprint.vendor.sockjs.tornado.proto
+import octoprint.vendor.sockjs.tornado.session
+import octoprint.vendor.sockjs.tornado.util
+from octoprint.access.groups import GroupChangeListener
 from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener
-from octoprint.access.groups import GroupChangeListener
+from octoprint.events import Events
+from octoprint.settings import settings
 from octoprint.util.json import JsonEncoding
-
-import octoprint.printer
-
-import wrapt
-import json
 
 
 class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):

@@ -7,8 +7,9 @@ This module provides a bunch of utility methods and helpers for version handling
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
-import pkg_resources
 import logging
+
+import pkg_resources
 
 from octoprint import __version__
 

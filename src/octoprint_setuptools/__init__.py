@@ -7,12 +7,12 @@ __author__ = u"Gina Häußge <osd@foosel.net>"
 __license__ = u"GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = u"Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import glob
 import os
 import shutil
-import glob
+from distutils.command.clean import clean as _clean
 
 from setuptools import Command
-from distutils.command.clean import clean as _clean
 
 
 def package_data_dirs(source, sub_folders):

@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from ..exceptions import ConfigurationInvalid, CannotCheckOffline
+from ..exceptions import CannotCheckOffline, ConfigurationInvalid
 from ..util import execute
 
 

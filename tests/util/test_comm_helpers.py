@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import unittest
 
-from ddt import ddt, data, unpack
+from ddt import data, ddt, unpack
 
 
 @ddt

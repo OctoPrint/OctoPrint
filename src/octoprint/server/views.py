@@ -5,53 +5,49 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import os
+import base64
 import datetime
 import io
+import logging
+import os
+import re
+from collections import defaultdict
 
+from flask import (
+    Response,
+    abort,
+    g,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
+)
 from past.builtins import basestring
 
-from collections import defaultdict
-from flask import (
-    request,
-    g,
-    url_for,
-    make_response,
-    render_template,
-    send_from_directory,
-    redirect,
-    abort,
-    Response,
-)
-
 import octoprint.plugin
-
+from octoprint.access.permissions import OctoPrintPermission, Permissions
+from octoprint.filemanager import full_extension_tree, get_all_extensions
 from octoprint.server import (
+    BRANCH,
+    DISPLAY_VERSION,
+    LOCALES,
+    NOT_MODIFIED,
+    VERSION,
     app,
-    userManager,
+    debug,
+    gettext,
     groupManager,
     pluginManager,
-    gettext,
-    debug,
-    LOCALES,
-    VERSION,
-    DISPLAY_VERSION,
-    BRANCH,
     preemptiveCache,
-    NOT_MODIFIED,
+    userManager,
 )
-from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.settings import settings
-from octoprint.filemanager import full_extension_tree, get_all_extensions
-from octoprint.util import to_unicode, to_bytes, sv
+from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
 
-import re
-import base64
-
 from . import util
-
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -1604,8 +1600,8 @@ def _compute_date_for_i18n(locale, domain):
 
 def _compute_date(files):
     # Note, we do not expect everything in 'files' to exist.
-    from datetime import datetime
     import stat
+    from datetime import datetime
 
     max_timestamp = 0
     for path in files:
@@ -1689,6 +1685,7 @@ def _get_all_translationfiles(locale, domain):
 
 def _get_translations(locale, domain):
     from babel.messages.pofile import read_po
+
     from octoprint.util import dict_merge
 
     messages = {}

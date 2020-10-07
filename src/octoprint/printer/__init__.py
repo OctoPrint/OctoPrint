@@ -23,9 +23,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
+from octoprint.filemanager import FileDestinations
 from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key
-from octoprint.filemanager import FileDestinations
 
 
 @deprecated(

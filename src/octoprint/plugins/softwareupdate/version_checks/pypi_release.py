@@ -5,14 +5,15 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+
 import pkg_resources
 import requests
 
 from octoprint.util import to_native_str
 from octoprint.util.version import (
-    is_python_compatible,
     get_comparable_version,
     is_prerelease,
+    is_python_compatible,
 )
 
 INFO_URL = "https://pypi.org/pypi/{package}/json"

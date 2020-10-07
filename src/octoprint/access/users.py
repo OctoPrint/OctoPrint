@@ -4,36 +4,28 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask_login import UserMixin, AnonymousUserMixin
-from werkzeug.local import LocalProxy
 import hashlib
 import io
-import os
-import yaml
-import uuid
-import wrapt
-import time
-
 import logging
+import os
+import time
+import uuid
 
 # noinspection PyCompatibility
-from builtins import range, bytes
+from builtins import bytes, range
 
-from octoprint.settings import settings as s
-
-from octoprint.util import (
-    atomic_write,
-    to_bytes,
-    deprecated,
-    monotonic_time,
-    generate_api_key,
-)
-from octoprint.util import get_fully_qualified_classname as fqcn
-
-from octoprint.access.permissions import Permissions, OctoPrintPermission
-from octoprint.access.groups import GroupChangeListener, Group
-
+import wrapt
+import yaml
+from flask_login import AnonymousUserMixin, UserMixin
 from past.builtins import basestring
+from werkzeug.local import LocalProxy
+
+from octoprint.access.groups import Group, GroupChangeListener
+from octoprint.access.permissions import OctoPrintPermission, Permissions
+from octoprint.settings import settings as s
+from octoprint.util import atomic_write, deprecated, generate_api_key
+from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import monotonic_time, to_bytes
 
 
 class UserManager(GroupChangeListener, object):

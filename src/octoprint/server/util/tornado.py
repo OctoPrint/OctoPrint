@@ -6,26 +6,25 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
-import os
 import mimetypes
+import os
 import re
 import sys
 
 import tornado
-import tornado.web
-import tornado.gen
 import tornado.escape
-import tornado.httputil
-import tornado.httpserver
-import tornado.httpclient
+import tornado.gen
 import tornado.http1connection
+import tornado.httpclient
+import tornado.httpserver
+import tornado.httputil
 import tornado.iostream
 import tornado.tcpserver
 import tornado.util
+import tornado.web
+from past.builtins import unicode
 
 import octoprint.util
-
-from past.builtins import unicode
 
 try:
     from urllib.parse import urlparse  # py3
@@ -41,8 +40,9 @@ def fix_json_encode():
     serialization of globally registered types like frozendict and others.
     """
 
-    from octoprint.util.json import JsonEncoding
     import json
+
+    from octoprint.util.json import JsonEncoding
 
     def fixed_json_encode(value):
         return json.dumps(value, default=JsonEncoding.encode, allow_nan=False).replace(
@@ -758,8 +758,9 @@ class WsgiInputContainer(object):
         :param request: the ``tornado.httpserver.HTTPServerRequest`` to derive the WSGI environment from
         :param body: an optional body  to use as ``wsgi.input`` instead of ``request.body``, can be a string or a stream
         """
-        from tornado.wsgi import to_wsgi_str
         import io
+
+        from tornado.wsgi import to_wsgi_str
 
         # determine the request_body to supply as wsgi.input
         if body is not None:

@@ -4,10 +4,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import requests
 import logging
 
-from ..exceptions import ConfigurationInvalid, NetworkError, CannotCheckOffline
+import requests
+
+from ..exceptions import CannotCheckOffline, ConfigurationInvalid, NetworkError
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.etag")
 

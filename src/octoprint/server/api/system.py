@@ -6,21 +6,19 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import collections
 import logging
-import sarge
 import threading
 
-from flask import request, make_response, jsonify, url_for
+import psutil
+import sarge
+from flask import jsonify, make_response, request, url_for
 from flask_babel import gettext
 
-import psutil
-
-from octoprint.settings import settings as s
-
-from octoprint.server import NO_CONTENT
-from octoprint.server.api import api
-from octoprint.server.util.flask import no_firstrun_access, get_remote_address
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
+from octoprint.server import NO_CONTENT
+from octoprint.server.api import api
+from octoprint.server.util.flask import get_remote_address, no_firstrun_access
+from octoprint.settings import settings as s
 from octoprint.util.platform import CLOSE_FDS
 
 

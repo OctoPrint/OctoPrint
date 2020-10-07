@@ -1554,8 +1554,9 @@ class SettingsPlugin(OctoPrintPlugin):
 
         :return: the current settings of the plugin, as a dictionary
         """
-        from flask_login import current_user
         import copy
+
+        from flask_login import current_user
 
         from octoprint.access.permissions import Permissions
 

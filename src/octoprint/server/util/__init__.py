@@ -10,22 +10,19 @@ import sys
 
 PY3 = sys.version_info[0] == 3
 
-from octoprint.settings import settings
-import octoprint.timelapse
-import octoprint.server
-
-from octoprint.util import deprecated, to_unicode
-from octoprint.plugin import plugin_manager
+import logging
 
 import flask as _flask
 import flask_login
-import octoprint.vendor.flask_principal as flask_principal
-import logging
 
-from . import flask
-from . import sockjs
-from . import tornado
-from . import watchdog
+import octoprint.server
+import octoprint.timelapse
+import octoprint.vendor.flask_principal as flask_principal
+from octoprint.plugin import plugin_manager
+from octoprint.settings import settings
+from octoprint.util import deprecated, to_unicode
+
+from . import flask, sockjs, tornado, watchdog
 
 
 @deprecated(

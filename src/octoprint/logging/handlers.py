@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+# noinspection PyCompatibility
+import concurrent.futures
 import logging.handlers
 import os
 import re
 import time
-
-# noinspection PyCompatibility
-import concurrent.futures
 
 
 class AsyncLogHandlerMixin(logging.Handler):

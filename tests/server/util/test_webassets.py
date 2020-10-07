@@ -11,6 +11,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import unittest
+
 import ddt
 
 from octoprint.server.util.webassets import replace_url

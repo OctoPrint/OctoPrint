@@ -5,13 +5,13 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
 
+import collections
 import io
-import time
+import math
 import os
 import re
 import threading
-import math
-import collections
+import time
 
 try:
     import queue
@@ -24,20 +24,19 @@ except ImportError:
     from scandir import scandir
 
 # noinspection PyCompatibility
-from past.builtins import basestring
+from typing import Any
 
+from past.builtins import basestring
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
 from octoprint.util import (
     RepeatedTimer,
+    get_dos_filename,
     monotonic_time,
     to_bytes,
     to_unicode,
-    get_dos_filename,
 )
-
-from typing import Any
 
 
 # noinspection PyBroadException

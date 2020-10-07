@@ -6,11 +6,11 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from .exceptions import ScriptError
-
 import logging
 
 from octoprint.util.platform import CLOSE_FDS
+
+from .exceptions import ScriptError
 
 
 def execute(command, cwd=None, evaluate_returncode=True, **kwargs):

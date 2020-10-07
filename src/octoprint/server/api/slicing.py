@@ -5,23 +5,21 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, make_response, url_for
+from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
 
-from octoprint.server import slicingManager
-from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
-from octoprint.server.api import api, NO_CONTENT
 from octoprint.access.permissions import Permissions
-
-from octoprint.settings import settings as s, valid_boolean_trues
-
+from octoprint.server import slicingManager
+from octoprint.server.api import NO_CONTENT, api
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
+from octoprint.settings import settings as s
+from octoprint.settings import valid_boolean_trues
 from octoprint.slicing import (
-    UnknownSlicer,
+    CouldNotDeleteProfile,
     SlicerNotConfigured,
     UnknownProfile,
-    CouldNotDeleteProfile,
+    UnknownSlicer,
 )
-
 
 _DATA_FORMAT_VERSION = "v2"
 

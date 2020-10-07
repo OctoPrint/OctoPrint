@@ -10,8 +10,10 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 
     click.disable_unicode_literals_warning = True
     import sys
+
     import requests.exceptions
-    from octoprint.cli.client import create_client, client_options
+
+    from octoprint.cli.client import client_options, create_client
 
     @click.command("check")
     @click.option("--force", is_flag=True, help="Ignore the cache for the update check")

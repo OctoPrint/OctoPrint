@@ -147,11 +147,11 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import io
-import os
 import copy
-import re
+import io
 import logging
+import os
+import re
 
 try:
     from os import scandir
@@ -159,7 +159,7 @@ except ImportError:
     from scandir import scandir
 
 from octoprint.settings import settings
-from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys, is_hidden_path
+from octoprint.util import dict_contains_keys, dict_merge, dict_sanitize, is_hidden_path
 
 
 class SaveError(Exception):
@@ -370,7 +370,7 @@ class PrinterProfileManager(object):
 
         removed = self._remove_from_path(self._get_profile_path(identifier))
         if removed and trigger_event:
-            from octoprint.events import eventManager, Events
+            from octoprint.events import Events, eventManager
 
             payload = {"identifier": identifier}
             eventManager().fire(Events.PRINTER_PROFILE_DELETED, payload=payload)
@@ -406,7 +406,7 @@ class PrinterProfileManager(object):
         if self._current is not None and self._current["id"] == identifier:
             self.select(identifier)
 
-        from octoprint.events import eventManager, Events
+        from octoprint.events import Events, eventManager
 
         if trigger_event:
             payload = {"identifier": identifier}
@@ -544,8 +544,9 @@ class PrinterProfileManager(object):
                 "Profile %s already exists and not allowed to overwrite" % profile["id"]
             )
 
-        from octoprint.util import atomic_write
         import yaml
+
+        from octoprint.util import atomic_write
 
         try:
             with atomic_write(path, mode="wt", max_permissions=0o666) as f:

@@ -7,20 +7,18 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from flask import request, jsonify, make_response, abort
+from flask import abort, jsonify, make_response, request
 from flask_login import current_user
 from werkzeug.exceptions import BadRequest
 
-from octoprint.events import eventManager, Events
-from octoprint.settings import settings, valid_boolean_trues
-
-from octoprint.server import admin_permission, printer, pluginManager
-from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
-from octoprint.access.permissions import Permissions
-
 import octoprint.plugin
 import octoprint.util
+from octoprint.access.permissions import Permissions
+from octoprint.events import Events, eventManager
+from octoprint.server import admin_permission, pluginManager, printer
+from octoprint.server.api import NO_CONTENT, api
+from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
+from octoprint.settings import settings, valid_boolean_trues
 
 # ~~ settings
 

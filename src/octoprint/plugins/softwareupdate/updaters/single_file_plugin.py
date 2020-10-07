@@ -4,15 +4,16 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import logging
-import shutil
-import os
 import ast
 import io
+import logging
+import os
+import shutil
 
+from octoprint.settings import settings
 from octoprint.util import TemporaryDirectory
 from octoprint.util.net import download_file
-from octoprint.settings import settings
+
 from .. import exceptions
 
 logger = logging.getLogger(

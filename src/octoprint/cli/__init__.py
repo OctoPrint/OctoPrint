@@ -8,8 +8,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 
 click.disable_unicode_literals_warning = True
-import octoprint
 import sys
+
+import octoprint
 
 # ~~ click context
 
@@ -46,6 +47,7 @@ def hidden_option(*param_decls, **attrs):
     """
 
     import inspect
+
     from click.decorators import _param_memo
 
     def decorator(f):
@@ -197,12 +199,12 @@ legacy_options = bulk_options(
 
 # ~~ "octoprint" command, merges server_commands and plugin_commands groups
 
-from .server import server_commands
-from .plugins import plugin_commands
-from .dev import dev_commands
+from .analysis import analysis_commands
 from .client import client_commands
 from .config import config_commands
-from .analysis import analysis_commands
+from .dev import dev_commands
+from .plugins import plugin_commands
+from .server import server_commands
 from .user import user_commands
 
 

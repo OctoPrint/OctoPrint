@@ -5,40 +5,37 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, make_response, url_for
-
-from octoprint.filemanager.destinations import FileDestinations
-from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import (
-    printer,
-    fileManager,
-    slicingManager,
-    eventManager,
-    NO_CONTENT,
-    current_user,
-)
-from octoprint.server.util.flask import (
-    no_firstrun_access,
-    get_json_command_from_request,
-    with_revalidation_checking,
-)
-from octoprint.server.api import api
-from octoprint.events import Events
-from octoprint.access.permissions import Permissions
-
-import octoprint.filemanager
-import octoprint.filemanager.util
-import octoprint.filemanager.storage
-import octoprint.slicing
-
-from octoprint.util import sv, time_this
-
-import os
-import psutil
 import hashlib
 import logging
+import os
 import threading
 
+import psutil
+from flask import jsonify, make_response, request, url_for
+
+import octoprint.filemanager
+import octoprint.filemanager.storage
+import octoprint.filemanager.util
+import octoprint.slicing
+from octoprint.access.permissions import Permissions
+from octoprint.events import Events
+from octoprint.filemanager.destinations import FileDestinations
+from octoprint.server import (
+    NO_CONTENT,
+    current_user,
+    eventManager,
+    fileManager,
+    printer,
+    slicingManager,
+)
+from octoprint.server.api import api
+from octoprint.server.util.flask import (
+    get_json_command_from_request,
+    no_firstrun_access,
+    with_revalidation_checking,
+)
+from octoprint.settings import settings, valid_boolean_trues
+from octoprint.util import sv, time_this
 
 # ~~ GCODE file handling
 

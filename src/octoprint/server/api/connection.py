@@ -5,13 +5,13 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, make_response
+from flask import jsonify, make_response, request
 
-from octoprint.settings import settings
-from octoprint.server import printer, printerProfileManager, NO_CONTENT
-from octoprint.server.api import api
-from octoprint.server.util.flask import no_firstrun_access, get_json_command_from_request
 from octoprint.access.permissions import Permissions
+from octoprint.server import NO_CONTENT, printer, printerProfileManager
+from octoprint.server.api import api
+from octoprint.server.util.flask import get_json_command_from_request, no_firstrun_access
+from octoprint.settings import settings
 
 
 @api.route("/connection", methods=["GET"])

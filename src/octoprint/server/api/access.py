@@ -5,17 +5,16 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, abort, make_response
-from werkzeug.exceptions import BadRequest
+from flask import abort, jsonify, make_response, request
 from flask_login import current_user
+from werkzeug.exceptions import BadRequest
 
 import octoprint.access.groups as groups
 import octoprint.access.users as users
-
+from octoprint.access.permissions import Permissions
 from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access
-from octoprint.access.permissions import Permissions
 
 # ~~ permission api
 

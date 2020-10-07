@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 
 import unittest
+
 import ddt
 
 import octoprint.util

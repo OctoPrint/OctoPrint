@@ -11,15 +11,13 @@ import os
 from functools import partial
 
 import yaml
-
 from past.builtins import basestring
 
+from octoprint.access import ADMIN_GROUP, GUEST_GROUP, READONLY_GROUP, USER_GROUP
+from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings
 from octoprint.util import atomic_write
-from octoprint.access import ADMIN_GROUP, USER_GROUP, GUEST_GROUP, READONLY_GROUP
-from octoprint.access.permissions import Permissions, OctoPrintPermission
 from octoprint.vendor.flask_principal import Need, Permission
-
 
 GroupNeed = partial(Need, "group")
 GroupNeed.__doc__ = """A need with the method preset to `"group"`."""

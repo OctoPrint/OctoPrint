@@ -14,11 +14,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import errno
 import io
+import logging
 import os
 import re
 import subprocess
 import sys
-import logging
 
 
 def get_keywords():

@@ -6,17 +6,17 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import sarge
 import logging
 import re
 import time
 
-from . import to_unicode, to_native_str
-from .platform import get_os
-
+import sarge
 from past.builtins import unicode
 
 from octoprint.util.platform import CLOSE_FDS
+
+from . import to_native_str, to_unicode
+from .platform import get_os
 
 try:
     import queue

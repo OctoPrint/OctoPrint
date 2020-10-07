@@ -4,13 +4,15 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
-
-import sys
 import inspect
+import sys
+
 from flask_babel import gettext
+
+import octoprint.plugin
 from octoprint.access import ADMIN_GROUP, USER_GROUP
 from octoprint.util import to_native_str
+
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class ServerCommandsSubwizard(object):
@@ -77,8 +79,9 @@ class AclSubwizard(object):
 
     @octoprint.plugin.BlueprintPlugin.route("/acl", methods=["POST"])
     def acl_wizard_api(self):
-        from flask import request, abort
-        from octoprint.server.api import valid_boolean_trues, NO_CONTENT
+        from flask import abort, request
+
+        from octoprint.server.api import NO_CONTENT, valid_boolean_trues
 
         if (
             not self._settings.global_get(["server", "firstRun"])

@@ -26,8 +26,9 @@ class OctoPrintDevelCommands(click.MultiCommand):
     def __init__(self, *args, **kwargs):
         click.MultiCommand.__init__(self, *args, **kwargs)
 
-        from octoprint.util.commandline import CommandlineCaller
         from functools import partial
+
+        from octoprint.util.commandline import CommandlineCaller
 
         def log_util(f):
             def log(*lines):
@@ -171,8 +172,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
             # that tries to fix such permissions
             def onerror(func, path, exc_info):
                 """Originally from http://stackoverflow.com/a/2656405/2028598"""
-                import stat
                 import os
+                import stat
 
                 if not os.access(path, os.W_OK):
                     os.chmod(path, stat.S_IWUSR)

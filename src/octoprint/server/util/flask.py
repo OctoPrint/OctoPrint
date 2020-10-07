@@ -7,41 +7,37 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import tornado.web
+import collections
+import functools
+import io
+import logging
+import os
+import threading
+import time
+import uuid
+
 import flask
 import flask.json
 import flask.sessions
-import flask_login
-import octoprint.vendor.flask_principal as flask_principal
 import flask_assets
+import flask_login
+import netaddr
+import tornado.web
 import webassets.updater
 import webassets.utils
-import functools
-import time
-import uuid
-import threading
-import logging
-import netaddr
-import os
-import io
-import collections
+from cachelib import BaseCache
+from past.builtins import basestring, long
+from werkzeug.local import LocalProxy
 
-from octoprint.settings import settings
-from octoprint.util import deprecated
-import octoprint.server
 import octoprint.access.users
 import octoprint.plugin
-
-from octoprint.util import DefaultOrderedDict
+import octoprint.server
+import octoprint.vendor.flask_principal as flask_principal
+from octoprint.events import Events, eventManager
+from octoprint.settings import settings
+from octoprint.util import DefaultOrderedDict, deprecated
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
-
-from octoprint.events import eventManager, Events
-
-from werkzeug.local import LocalProxy
-from cachelib import BaseCache
-
-from past.builtins import basestring, long
 
 try:
     from os import scandir, walk
@@ -53,9 +49,10 @@ except ImportError:
 
 def enable_additional_translations(default_locale="en", additional_folders=None):
     import os
-    from flask import _request_ctx_stack
-    from babel import support, Locale
+
     import flask_babel
+    from babel import Locale, support
+    from flask import _request_ctx_stack
 
     if additional_folders is None:
         additional_folders = []
@@ -186,9 +183,9 @@ def fix_webassets_cache():
 
     def fixed_set(self, key, data):
         import os
-        import tempfile
         import pickle
         import shutil
+        import tempfile
 
         if not os.path.exists(self.directory):
             error_logger.warning(
@@ -209,9 +206,10 @@ def fix_webassets_cache():
             raise
 
     def fixed_get(self, key):
-        import os
         import errno
+        import os
         import warnings
+
         from webassets.cache import make_md5
 
         if not os.path.exists(self.directory):
@@ -254,7 +252,7 @@ def fix_webassets_cache():
 
 
 def fix_webassets_filtertool():
-    from webassets.merge import FilterTool, log, MemoryHunk
+    from webassets.merge import FilterTool, MemoryHunk, log
 
     error_logger = logging.getLogger(__name__ + ".fix_webassets_filtertool")
 
@@ -1050,8 +1048,9 @@ class PreemptiveCache(object):
         return cache_data.get(root, list())
 
     def set_all_data(self, data):
-        from octoprint.util import atomic_write
         import yaml
+
+        from octoprint.util import atomic_write
 
         with self._lock:
             try:
@@ -1468,8 +1467,9 @@ def get_flask_user_from_request(request):
     :param request: flask request from which to retrieve the current user
     :return: the user (might be an anonymous user)
     """
-    import octoprint.server.util
     import flask_login
+
+    import octoprint.server.util
 
     user = None
 

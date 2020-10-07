@@ -8,14 +8,13 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import io
 import unittest
+
+import _fixups
 import mock
 
 import octoprint.filemanager
 import octoprint.filemanager.util
-
 import octoprint.settings
-
-import _fixups
 
 
 class FilemanagerMethodTest(unittest.TestCase):
@@ -144,9 +143,9 @@ class FilemanagerMethodTest(unittest.TestCase):
 
 class FileManagerTest(unittest.TestCase):
     def setUp(self):
-        import octoprint.slicing
         import octoprint.filemanager.storage
         import octoprint.printer.profile
+        import octoprint.slicing
 
         self.addCleanup(self.cleanUp)
 
@@ -481,6 +480,7 @@ class FileManagerTest(unittest.TestCase):
     @mock.patch("os.path.isfile", return_value=True)
     def test_get_recovery_data(self, mock_isfile):
         import os
+
         import yaml
 
         recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")

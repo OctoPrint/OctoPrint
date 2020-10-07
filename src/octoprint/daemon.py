@@ -7,7 +7,11 @@ Generic linux daemon base class
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-import io, sys, os, time, signal
+import io
+import os
+import signal
+import sys
+import time
 
 
 class Daemon:

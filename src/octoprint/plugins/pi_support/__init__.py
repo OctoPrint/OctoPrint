@@ -4,20 +4,18 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import flask
 import io
 import os
+
+import flask
 import sarge
-
 from flask_babel import gettext
-from octoprint.util import RepeatedTimer
 
-from octoprint.access.permissions import Permissions
-from octoprint.access.groups import USER_GROUP
-
-import octoprint.plugin
 import octoprint.events
-
+import octoprint.plugin
+from octoprint.access.groups import USER_GROUP
+from octoprint.access.permissions import Permissions
+from octoprint.util import RepeatedTimer
 from octoprint.util.platform import CLOSE_FDS
 
 _PROC_DT_MODEL_PATH = "/proc/device-tree/model"

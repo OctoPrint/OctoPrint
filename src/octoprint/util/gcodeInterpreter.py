@@ -6,13 +6,13 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
 
 
+import base64
+import codecs
+import io
+import logging
 import math
 import os
-import io
-import base64
 import zlib
-import logging
-import codecs
 
 
 class Vector3D(object):

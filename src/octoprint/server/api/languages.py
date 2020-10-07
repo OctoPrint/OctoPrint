@@ -6,10 +6,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
+import logging
 import os
 import tarfile
 import zipfile
-import logging
 
 try:
     from os import scandir
@@ -18,17 +18,14 @@ except ImportError:
 
 from collections import defaultdict
 
-from flask import request, jsonify, make_response
+from flask import jsonify, make_response, request
+from flask_babel import Locale
 
-from octoprint.settings import settings
-
+from octoprint.access.permissions import Permissions
+from octoprint.plugin import plugin_manager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access
-
-from octoprint.plugin import plugin_manager
-from octoprint.access.permissions import Permissions
-
-from flask_babel import Locale
+from octoprint.settings import settings
 
 
 @api.route("/languages", methods=["GET"])

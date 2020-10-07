@@ -5,10 +5,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
-import requests
-import time
 import json
+import time
 
+import requests
 import websocket
 
 
@@ -323,8 +323,8 @@ class Client(object):
         )
 
     def create_socket(self, **kwargs):
-        import uuid
         import random
+        import uuid
 
         # creates websocket URL for SockJS according to
         # - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-37

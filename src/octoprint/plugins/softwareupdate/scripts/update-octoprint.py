@@ -9,8 +9,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import errno
 import sys
-import traceback
 import time
+import traceback
 
 from past.builtins import unicode
 
@@ -223,8 +223,8 @@ def _rescue_changes(git_executable, folder):
         )
     if stdout and "".join(stdout).strip():
         # we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
-        import time
         import os
+        import time
 
         timestamp = time.strftime("%Y%m%d%H%M")
         patch = os.path.join(folder, "{}-preupdate.patch".format(timestamp))

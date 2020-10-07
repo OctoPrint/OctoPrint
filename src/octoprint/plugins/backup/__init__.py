@@ -5,23 +5,22 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import octoprint.plugin
-
-from octoprint.settings import default_settings
-from octoprint.plugin.core import FolderOrigin
-from octoprint.server import admin_permission, NO_CONTENT
-from octoprint.server.util.flask import no_firstrun_access
-from octoprint.events import Events
-from octoprint.util import is_hidden_path, to_bytes
-from octoprint.util.version import (
-    get_octoprint_version_string,
-    get_octoprint_version,
-    get_comparable_version,
-    is_octoprint_compatible,
-)
-from octoprint.util.platform import is_os_compatible
-from octoprint.util.pip import LocalPipCaller
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.events import Events
+from octoprint.plugin.core import FolderOrigin
+from octoprint.server import NO_CONTENT, admin_permission
+from octoprint.server.util.flask import no_firstrun_access
+from octoprint.settings import default_settings
+from octoprint.util import is_hidden_path, to_bytes
+from octoprint.util.pip import LocalPipCaller
+from octoprint.util.platform import is_os_compatible
+from octoprint.util.version import (
+    get_comparable_version,
+    get_octoprint_version,
+    get_octoprint_version_string,
+    is_octoprint_compatible,
+)
 
 try:
     from os import scandir
@@ -34,25 +33,24 @@ except ImportError:
     zlib = None
 
 
-from flask_babel import gettext
-
 import io
-import flask
+import json
 import logging
 import os
-import requests
-import sarge
 import shutil
+import sys
 import tempfile
 import threading
 import time
-import zipfile
-import json
-import sys
 import traceback
+import zipfile
+
+import flask
+import requests
+import sarge
+from flask_babel import gettext
 
 from octoprint.settings import valid_boolean_trues
-
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
@@ -428,14 +426,14 @@ class BackupPlugin(
     ##~~ tornado hook
 
     def route_hook(self, *args, **kwargs):
+        from octoprint.server import app
+        from octoprint.server.util.flask import admin_validator
         from octoprint.server.util.tornado import (
             LargeResponseHandler,
+            access_validation_factory,
             path_validation_factory,
         )
         from octoprint.util import is_hidden_path
-        from octoprint.server import app
-        from octoprint.server.util.tornado import access_validation_factory
-        from octoprint.server.util.flask import admin_validator
 
         return [
             (

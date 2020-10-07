@@ -6,9 +6,9 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 import unittest
 
-import octoprint.util
-
 from past.builtins import unicode
+
+import octoprint.util
 
 
 class StringHelperTest(unittest.TestCase):

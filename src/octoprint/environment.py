@@ -9,9 +9,9 @@ import logging
 import os
 import sys
 import threading
-import yaml
 
 import psutil
+import yaml
 
 from octoprint.plugin import EnvironmentDetectionPlugin
 from octoprint.util.platform import get_os

@@ -94,6 +94,7 @@ class VirtualPrinterPlugin(
             return None
 
         import logging.handlers
+
         from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
 
         seriallog_handler = CleaningTimedRotatingFileHandler(

@@ -8,14 +8,14 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 
 click.disable_unicode_literals_warning = True
+import json
 import logging
-
-from octoprint import init_settings, FatalStartupError
-from octoprint.cli import standard_options, bulk_options, get_ctx_obj_option
+import pprint
 
 import yaml
-import json
-import pprint
+
+from octoprint import FatalStartupError, init_settings
+from octoprint.cli import bulk_options, get_ctx_obj_option, standard_options
 
 
 def _to_settings_path(path):

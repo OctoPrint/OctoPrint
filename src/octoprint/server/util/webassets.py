@@ -5,8 +5,8 @@ __author__ = "Gina Häußge <gina@octoprint.org>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import logging
 import gzip
+import logging
 import os
 import re
 
@@ -15,11 +15,11 @@ try:
 except ImportError:
     import urlparse
 
+import webassets.filter.cssrewrite.urlpath as urlpath
 from webassets.bundle import Bundle
-from webassets.merge import MemoryHunk, BaseHunk
 from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
-import webassets.filter.cssrewrite.urlpath as urlpath
+from webassets.merge import BaseHunk, MemoryHunk
 
 
 def replace_url(source_url, output_url, url):

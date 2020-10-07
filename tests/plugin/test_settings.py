@@ -7,10 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import unittest
-import mock
 import warnings
 
-from ddt import ddt, unpack, data
+import mock
+from ddt import data, ddt, unpack
 
 import octoprint.plugin
 import octoprint.settings

@@ -4,23 +4,21 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
-from octoprint.settings import settings
-
-from octoprint.server import NO_CONTENT
-from octoprint.server.util.flask import redirect_to_tornado, no_firstrun_access
-from octoprint.access import ADMIN_GROUP
-from octoprint.access.permissions import Permissions
-
-from flask import request, jsonify, url_for, make_response
-from flask_babel import gettext
-
-from werkzeug.utils import secure_filename
-from werkzeug.exceptions import BadRequest
-import yaml
-
 import io
 import os
+
+import yaml
+from flask import jsonify, make_response, request, url_for
+from flask_babel import gettext
+from werkzeug.exceptions import BadRequest
+from werkzeug.utils import secure_filename
+
+import octoprint.plugin
+from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
+from octoprint.server import NO_CONTENT
+from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
+from octoprint.settings import settings
 
 try:
     from os import scandir

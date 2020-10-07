@@ -7,10 +7,12 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import logging
+
 import pkg_resources
 
 from octoprint.util.pip import PipCaller, UnknownPip
 from octoprint.util.version import get_comparable_version
+
 from .. import exceptions
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip")

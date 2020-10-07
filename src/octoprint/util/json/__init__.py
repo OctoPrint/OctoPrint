@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 
 import collections
+
 import frozendict
 
 from octoprint.util import to_unicode

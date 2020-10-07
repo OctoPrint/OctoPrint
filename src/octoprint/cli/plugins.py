@@ -11,7 +11,7 @@ click.disable_unicode_literals_warning = True
 import logging
 import logging.config
 
-from octoprint.cli import pass_octoprint_ctx, OctoPrintContext, get_ctx_obj_option
+from octoprint.cli import OctoPrintContext, get_ctx_obj_option, pass_octoprint_ctx
 from octoprint.util import dict_merge
 
 LOGGING_CONFIG = {
@@ -78,7 +78,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
         # initialize settings and plugin manager based on provided
         # context (basedir and configfile)
-        from octoprint import init_settings, init_pluginsystem, FatalStartupError
+        from octoprint import FatalStartupError, init_pluginsystem, init_settings
 
         try:
             self.settings = init_settings(

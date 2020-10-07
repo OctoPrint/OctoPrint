@@ -6,7 +6,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 import unittest
 
-from ddt import ddt, data, unpack
+from ddt import data, ddt, unpack
 
 from octoprint.timelapse import TimelapseRenderJob
 

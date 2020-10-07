@@ -7,18 +7,19 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import io
-import sarge
-import sys
 import logging
-import site
-import threading
 import os
+import site
+import sys
+import threading
 
 import pkg_resources
+import sarge
+
+from octoprint.util import to_native_str, to_unicode
+from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
-from octoprint.util import to_unicode, to_native_str
-from octoprint.util.platform import CLOSE_FDS
 
 _cache = {"version": {}, "setup": {}}
 _cache_mutex = threading.RLock()
@@ -537,8 +538,8 @@ class LocalPipCaller(PipCaller):
         return self.autodetect_pip(), False
 
     def _check_pip_setup(self, pip_command):
-        import sys
         import os
+        import sys
         from distutils.sysconfig import get_python_lib
 
         virtual_env = hasattr(sys, "real_prefix")

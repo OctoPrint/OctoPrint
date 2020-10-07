@@ -15,14 +15,13 @@ except ImportError:
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import (
+    BaseLoader,
+    ChoiceLoader,
     FileSystemLoader,
     PrefixLoader,
-    ChoiceLoader,
-    BaseLoader,
     TemplateNotFound,
     split_template_path,
 )
-
 from webassets import Bundle
 
 

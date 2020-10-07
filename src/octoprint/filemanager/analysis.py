@@ -12,15 +12,17 @@ try:
     import queue
 except ImportError:
     import Queue as queue
+
+import collections
 import os
 import threading
-import collections
 import time
 
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
+from octoprint.util import dict_merge
+from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import monotonic_time
-from octoprint.util import get_fully_qualified_classname as fqcn, dict_merge
 from octoprint.util.platform import CLOSE_FDS
 
 
@@ -391,8 +393,9 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         self._reenqueue = False
 
     def _do_analysis(self, high_priority=False):
-        import sarge
         import sys
+
+        import sarge
         import yaml
 
         if self._current.analysis and all(

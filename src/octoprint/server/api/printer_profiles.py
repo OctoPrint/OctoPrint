@@ -9,17 +9,15 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
+from past.builtins import basestring
 from werkzeug.exceptions import BadRequest
 
-from past.builtins import basestring
-
-from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
+from octoprint.access.permissions import Permissions
+from octoprint.printer.profile import CouldNotOverwriteError, InvalidProfileError
+from octoprint.server import printerProfileManager
+from octoprint.server.api import NO_CONTENT, api, valid_boolean_trues
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.util import dict_merge
-
-from octoprint.server import printerProfileManager
-from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError
-from octoprint.access.permissions import Permissions
 
 
 def _lastmodified():

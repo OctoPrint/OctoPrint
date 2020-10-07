@@ -48,7 +48,9 @@ def gcode_command(
     """Runs a GCODE file analysis."""
 
     import time
+
     import yaml
+
     from octoprint.util import monotonic_time
     from octoprint.util.gcodeInterpreter import gcode
 

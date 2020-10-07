@@ -15,28 +15,26 @@ import os
 import threading
 import time
 
+from frozendict import frozendict
 from past.builtins import basestring, long
 
-from frozendict import frozendict
-
 from octoprint import util as util
-from octoprint.events import eventManager, Events
+from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
-from octoprint.plugin import plugin_manager, ProgressPlugin
+from octoprint.plugin import ProgressPlugin, plugin_manager
 from octoprint.printer import (
-    PrinterInterface,
-    PrinterCallback,
-    UnknownScript,
     InvalidFileLocation,
     InvalidFileType,
+    PrinterCallback,
+    PrinterInterface,
+    UnknownScript,
 )
 from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.settings import settings
-from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
-from octoprint.util import to_unicode
-from octoprint.util import monotonic_time
+from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import monotonic_time, to_unicode
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):

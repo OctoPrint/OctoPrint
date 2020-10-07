@@ -7,8 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
 import functools
-import warnings
 import sys
+import warnings
 
 
 def patch_sarge_async_on_py2():

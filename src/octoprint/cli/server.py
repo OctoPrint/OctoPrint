@@ -13,9 +13,9 @@ import sys
 
 from octoprint.cli import (
     bulk_options,
-    standard_options,
-    set_ctx_obj_option,
     get_ctx_obj_option,
+    set_ctx_obj_option,
+    standard_options,
 )
 
 
@@ -35,7 +35,7 @@ def run_server(
 ):
     """Initializes the environment and starts up the server."""
 
-    from octoprint import init_platform, __display_version__, FatalStartupError
+    from octoprint import FatalStartupError, __display_version__, init_platform
 
     def log_startup(recorder=None, safe_mode=None, **kwargs):
         from octoprint.logging import get_divider_line
@@ -85,7 +85,7 @@ def run_server(
     def log_register_rollover(
         safe_mode=None, plugin_manager=None, environment_detector=None, **kwargs
     ):
-        from octoprint.logging import get_handler, log_to_handler, get_divider_line
+        from octoprint.logging import get_divider_line, get_handler, log_to_handler
         from octoprint.logging.handlers import OctoPrintLogHandler
 
         def rollover_callback():
@@ -248,7 +248,7 @@ def server_commands():
 @click.pass_context
 def enable_safemode(ctx, **kwargs):
     """Sets the safe mode flag for the next start."""
-    from octoprint import init_settings, FatalStartupError
+    from octoprint import FatalStartupError, init_settings
 
     logging.basicConfig(
         level=logging.DEBUG

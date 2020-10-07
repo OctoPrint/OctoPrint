@@ -7,9 +7,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import errno
+import logging
 import subprocess
 import sys
-import logging
 
 from ..exceptions import ConfigurationInvalid
 

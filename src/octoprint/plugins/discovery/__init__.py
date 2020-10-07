@@ -11,11 +11,11 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 For a spec see http://www.upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.0.pdf
 """
 
-import flask
-from flask_babel import gettext
-
 # noinspection PyCompatibility
 from builtins import range
+
+import flask
+from flask_babel import gettext
 
 import octoprint.plugin
 import octoprint.util
@@ -28,10 +28,10 @@ except ImportError:
     # python 2: vendored version with some backported fixes
     import octoprint.vendor.zeroconf as zeroconf
 
-import time
 import collections
-import socket
 import platform
+import socket
+import time
 
 
 def __plugin_load__():
@@ -420,8 +420,8 @@ class DiscoveryPlugin(
                  supplied to the callback instead)
         """
 
-        import threading
         import io
+        import threading
 
         try:
             # noinspection PyCompatibility

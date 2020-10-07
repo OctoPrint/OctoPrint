@@ -5,56 +5,54 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import uuid
-from octoprint.vendor.sockjs.tornado import SockJSRouter
-from flask import (
-    Flask,
-    g,
-    request,
-    session,
-    Blueprint,
-    Request,
-    Response,
-    current_app,
-    make_response,
-)
-from flask_login import LoginManager, current_user, session_protected, user_logged_out
-from octoprint.vendor.flask_principal import (
-    Principal,
-    Permission,
-    RoleNeed,
-    identity_loaded,
-    identity_changed,
-    UserNeed,
-    Identity,
-    AnonymousIdentity,
-)
-from flask_babel import Babel, gettext, ngettext
-from flask_assets import Environment, Bundle
-from babel import Locale
-from watchdog.observers import Observer
-from watchdog.observers.polling import PollingObserver
-from collections import defaultdict, OrderedDict
-
-from builtins import bytes, range
-from past.builtins import basestring, unicode
-
-import octoprint.util
-import octoprint.util.net
-
-from octoprint.server import util
-from octoprint.util.json import JsonEncoding
-
+import atexit
+import base64
 import io
-import os
-import sys
 import logging
 import logging.config
 import mimetypes
-import atexit
-import signal
-import base64
+import os
 import re
+import signal
+import sys
+import uuid
+from builtins import bytes, range
+from collections import OrderedDict, defaultdict
+
+from babel import Locale
+from flask import (
+    Blueprint,
+    Flask,
+    Request,
+    Response,
+    current_app,
+    g,
+    make_response,
+    request,
+    session,
+)
+from flask_assets import Bundle, Environment
+from flask_babel import Babel, gettext, ngettext
+from flask_login import LoginManager, current_user, session_protected, user_logged_out
+from past.builtins import basestring, unicode
+from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
+
+import octoprint.util
+import octoprint.util.net
+from octoprint.server import util
+from octoprint.util.json import JsonEncoding
+from octoprint.vendor.flask_principal import (
+    AnonymousIdentity,
+    Identity,
+    Permission,
+    Principal,
+    RoleNeed,
+    UserNeed,
+    identity_changed,
+    identity_loaded,
+)
+from octoprint.vendor.sockjs.tornado import SockJSRouter
 
 try:
     import fcntl
@@ -91,8 +89,8 @@ connectivityChecker = None
 
 principals = Principal(app)
 
-import octoprint.access.permissions as permissions
 import octoprint.access.groups as groups
+import octoprint.access.permissions as permissions
 
 # we set admin_permission to a GroupPermission with the default admin group
 admin_permission = octoprint.util.variable_deprecated(
@@ -106,27 +104,28 @@ user_permission = octoprint.util.variable_deprecated(
     since="1.4.0",
 )(groups.GroupPermission(groups.USER_GROUP))
 
+import octoprint._version
+import octoprint.access.groups as groups
+import octoprint.access.users as users
+import octoprint.events as events
+import octoprint.filemanager.analysis
+import octoprint.filemanager.storage
+import octoprint.plugin
+import octoprint.slicing
+import octoprint.timelapse
+
 # only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
-from octoprint import __version__, __branch__, __display_version__, __revision__
+from octoprint import __branch__, __display_version__, __revision__, __version__
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
-from octoprint.settings import settings
-import octoprint.access.users as users
-import octoprint.access.groups as groups
-import octoprint.events as events
-import octoprint.plugin
-import octoprint.timelapse
-import octoprint._version
-import octoprint.filemanager.storage
-import octoprint.filemanager.analysis
-import octoprint.slicing
 from octoprint.server.util import (
-    loginFromApiKeyRequestHandler,
     corsRequestHandler,
     corsResponseHandler,
+    loginFromApiKeyRequestHandler,
     requireLoginRequestHandler,
 )
 from octoprint.server.util.flask import PreemptiveCache
+from octoprint.settings import settings
 
 VERSION = __version__
 BRANCH = __branch__
@@ -581,8 +580,9 @@ class Server(object):
 
             components_copy = dict(components)
             if "printer" in components:
-                import wrapt
                 import functools
+
+                import wrapt
 
                 def tagwrap(f):
                     @functools.wraps(f)
@@ -1379,11 +1379,11 @@ class Server(object):
 
     def _setup_app(self, app):
         from octoprint.server.util.flask import (
-            ReverseProxiedEnvironment,
             OctoPrintFlaskRequest,
             OctoPrintFlaskResponse,
             OctoPrintJsonEncoder,
             OctoPrintSessionInterface,
+            ReverseProxiedEnvironment,
         )
 
         s = settings()
@@ -1567,6 +1567,7 @@ class Server(object):
 
         # configure additional template folders for jinja2
         import jinja2
+
         import octoprint.util.jinja
 
         filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader(
@@ -1613,8 +1614,9 @@ class Server(object):
         pluginLifecycleManager.add_callback("disabled", template_disabled)
 
     def _execute_preemptive_flask_caching(self, preemptive_cache):
-        from werkzeug.test import EnvironBuilder
         import time
+
+        from werkzeug.test import EnvironBuilder
 
         # we clean up entries from our preemptive cache settings that haven't been
         # accessed longer than server.preemptiveCache.until days
@@ -1772,8 +1774,8 @@ class Server(object):
             self._template_searchpaths.remove(folder)
 
     def _setup_blueprints(self):
-        from octoprint.server.api import api
         import octoprint.server.views  # do not remove or the index view won't be found
+        from octoprint.server.api import api
 
         blueprints = OrderedDict()
         blueprints["/api"] = api
@@ -1939,8 +1941,8 @@ class Server(object):
 
         # clean the folder
         if self._settings.getBoolean(["devel", "webassets", "clean_on_startup"]):
-            import shutil
             import errno
+            import shutil
 
             for entry in ("webassets", ".webassets-cache"):
                 path = os.path.join(base_folder, entry)
@@ -2117,15 +2119,16 @@ class Server(object):
         ]
 
         # a couple of custom filters
-        from octoprint.server.util.webassets import (
-            LessImportRewrite,
-            JsDelimiterBundler,
-            SourceMapRewrite,
-            SourceMapRemove,
-            JsPluginBundle,
-            GzipFile,
-        )
         from webassets.filter import register_filter
+
+        from octoprint.server.util.webassets import (
+            GzipFile,
+            JsDelimiterBundler,
+            JsPluginBundle,
+            LessImportRewrite,
+            SourceMapRemove,
+            SourceMapRewrite,
+        )
 
         register_filter(LessImportRewrite)
         register_filter(SourceMapRewrite)
@@ -2340,13 +2343,13 @@ class Server(object):
     def _start_intermediary_server(self):
         try:
             # noinspection PyCompatibility
-            from http.server import HTTPServer, BaseHTTPRequestHandler
+            from http.server import BaseHTTPRequestHandler, HTTPServer
         except ImportError:
             # noinspection PyCompatibility
             from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
-        import threading
         import socket
+        import threading
 
         host = self._host
         port = self._port

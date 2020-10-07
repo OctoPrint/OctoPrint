@@ -6,17 +6,17 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from . import (
+    always_current,
+    bitbucket_commit,
     commandline,
     git_commit,
     github_commit,
     github_release,
-    bitbucket_commit,
-    python_checker,
-    never_current,
-    always_current,
-    pypi_release,
     httpheader,
     jsondata,
+    never_current,
+    pypi_release,
+    python_checker,
 )
 
 

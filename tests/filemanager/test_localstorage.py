@@ -6,12 +6,12 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
-import unittest
 import os
-import mock
 import os.path
+import unittest
 
-from ddt import ddt, unpack, data
+import mock
+from ddt import data, ddt, unpack
 
 from octoprint.filemanager.storage import LocalFileStorage, StorageError
 

@@ -6,39 +6,37 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import octoprint.plugin
-
-import io
 import copy
-import flask
+import hashlib
+import io
+import logging
+import logging.handlers
 import os
 import threading
 import time
-import logging
-import logging.handlers
-import hashlib
-import requests
 
 # noinspection PyCompatibility
 from concurrent import futures
 
-from . import version_checks, updaters, exceptions, util, cli
-
+import flask
+import requests
 from flask_babel import gettext
 
+import octoprint.plugin
+import octoprint.settings
+from octoprint.access import ADMIN_GROUP, USER_GROUP
+from octoprint.access.permissions import Permissions
+from octoprint.server import BRANCH, NO_CONTENT, REVISION, VERSION
 from octoprint.server.util.flask import (
+    check_etag,
     no_firstrun_access,
     with_revalidation_checking,
-    check_etag,
 )
-from octoprint.server import VERSION, REVISION, BRANCH, NO_CONTENT
-from octoprint.access import USER_GROUP, ADMIN_GROUP
-from octoprint.access.permissions import Permissions
-from octoprint.util import dict_merge, to_unicode, get_formatted_size
-from octoprint.util.version import get_comparable_version, get_python_version_string
+from octoprint.util import dict_merge, get_formatted_size, to_unicode
 from octoprint.util.pip import LocalPipCaller
-import octoprint.settings
+from octoprint.util.version import get_comparable_version, get_python_version_string
 
+from . import cli, exceptions, updaters, util, version_checks
 
 # OctoPi 0.15+
 MINIMUM_PYTHON = "2.7.9"
@@ -318,6 +316,7 @@ class SoftwareUpdatePlugin(
     def _check_storage(self):
         import distutils.sysconfig
         import tempfile
+
         import psutil
 
         storage_info = {}
@@ -455,8 +454,9 @@ class SoftwareUpdatePlugin(
 
     def _save_version_cache(self):
         import yaml
-        from octoprint.util import atomic_write
+
         from octoprint._version import get_versions
+        from octoprint.util import atomic_write
 
         octoprint_version = get_versions()["version"]
         self._version_cache["__version"] = octoprint_version

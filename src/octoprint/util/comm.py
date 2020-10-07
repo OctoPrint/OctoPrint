@@ -10,50 +10,47 @@ The code in this file is based on Cura.util.machineCom from the Cura project fro
 (https://github.com/daid/Cura).
 """
 
-import os
-import glob
-import fnmatch
-import time
-import re
-import threading
 import contextlib
 import copy
+import fnmatch
+import glob
+import os
+import re
+import threading
+import time
 
 try:
     import queue
 except ImportError:
     import Queue as queue
-from past.builtins import basestring, unicode
 
 import logging
-
-import serial
-
-import wrapt
-
-import octoprint.plugin
-
 from collections import deque
 
-from octoprint.settings import settings, default_settings
-from octoprint.events import eventManager, Events
+import serial
+import wrapt
+from past.builtins import basestring, unicode
+
+import octoprint.plugin
+from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.settings import default_settings, settings
 from octoprint.util import (
-    get_exception_string,
-    sanitize_ascii,
-    filter_non_ascii,
     CountedEvent,
-    RepeatedTimer,
-    to_unicode,
-    bom_aware_open,
-    TypedQueue,
     PrependableQueue,
-    TypeAlreadyInQueue,
-    chunks,
+    RepeatedTimer,
     ResettableTimer,
-    monotonic_time,
+    TypeAlreadyInQueue,
+    TypedQueue,
+    bom_aware_open,
+    chunks,
+    filter_non_ascii,
     filter_non_utf8,
+    get_exception_string,
+    monotonic_time,
+    sanitize_ascii,
+    to_unicode,
 )
 from octoprint.util.platform import get_os, set_close_exec
 
@@ -6347,6 +6344,7 @@ def upload_cli():
     """
 
     import sys
+
     from octoprint.util import Object
 
     logging.basicConfig(
