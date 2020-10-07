@@ -12,10 +12,13 @@ repos:
     hooks:
       - id: codemod_dict_to_literal
         args: ['--ignore', 'src/octoprint/vendor']
+        stages: ['manual']
       - id: codemod_set_to_literal
         args: ['--ignore', 'src/octoprint/vendor']
+        stages: ['manual']
       - id: codemod_not_in
         args: ['--ignore', 'src/octoprint/vendor']
+        stages: ['manual']
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.5.4
     hooks:
