@@ -351,27 +351,27 @@ and branching strategy.
    by running
 
    ```
-   pre-commit run --all-files
+   pre-commit run --hook-stage manual --all-files
    ```
 
    in the OctoPrint checkout folder. If you install the pre-commit hooks via
-   `pre-commit install` this will even be taken care of for you prior to committing.
+   `pre-commit install` (which you really should!) this will even be taken care of for you prior to committing.
 
    An [automatic build workflow](https://github.com/OctoPrint/OctoPrint/actions?query=workflow%3ABuild)
    is in place that will run these checks - if they fail your PR will be marked accordingly.
-9. **Test your changes thoroughly**. That also means testing with usage
-   scenarios you don't normally use, e.g. if you only use access control, test
-   without and vice versa. If you only test with your printer, test with the
-   virtual printer and vice versa. State in your pull request how you tested
-   your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
-   department, but we are trying to change that, so any new code already covered
-   with a test suite helps a lot!
-10. In your pull request's description, **state what your pull request does**,
+10. **Test your changes thoroughly**. That also means testing with usage
+    scenarios you don't normally use, e.g. if you only use access control, test
+    without and vice versa. If you only test with your printer, test with the
+    virtual printer and vice versa. State in your pull request how you tested
+    your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
+    department, but we are trying to change that, so any new code already covered
+    with a test suite helps a lot!
+11. In your pull request's description, **state what your pull request does**,
     as in, what feature does it implement, what bug does it fix. The more
     thoroughly you explain your intent behind the PR here, the higher the
     chances it will get merged fast. There is a template provided below
     that can help you here.
-11. Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
+12. Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
     file** :)
 
 Template to use for Pull Request descriptions:
