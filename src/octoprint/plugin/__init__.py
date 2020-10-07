@@ -21,10 +21,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import threading
 
-from octoprint.plugin.core import Plugin, PluginInfo, PluginManager
-from octoprint.plugin.types import *  # noqa: F403 ## used by multiple other modules
+from octoprint.plugin.core import Plugin, PluginInfo, PluginManager  # noqa: F401
+from octoprint.plugin.types import *  # noqa: F401,F403 ## used by multiple other modules
 from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
 from octoprint.settings import settings as s
 from octoprint.util import deprecated, to_native_str
@@ -428,16 +427,16 @@ class PluginSettings(object):
             return result
 
         def add_getter_kwargs(kwargs):
-            if not "defaults" in kwargs and self.defaults is not None:
+            if "defaults" not in kwargs and self.defaults is not None:
                 kwargs.update(defaults=self.defaults)
-            if not "preprocessors" in kwargs:
+            if "preprocessors" not in kwargs:
                 kwargs.update(preprocessors=self.get_preprocessors)
             return kwargs
 
         def add_setter_kwargs(kwargs):
-            if not "defaults" in kwargs and self.defaults is not None:
+            if "defaults" not in kwargs and self.defaults is not None:
                 kwargs.update(defaults=self.defaults)
-            if not "preprocessors" in kwargs:
+            if "preprocessors" not in kwargs:
                 kwargs.update(preprocessors=self.set_preprocessors)
             return kwargs
 

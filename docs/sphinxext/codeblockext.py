@@ -73,7 +73,7 @@ class CodeBlockExt(CodeBlock):
     code blocks.
     """
 
-    option_spec = _merge_dict(CodeBlock.option_spec, dict(whitespace=directives.flag))
+    option_spec = _merge_dict(CodeBlock.option_spec, {"whitespace": directives.flag})
 
     def run(self):
         # type: () -> List[nodes.Node]
@@ -280,4 +280,4 @@ def setup(app):
     handler = (visit_literal_block_ext, depart_literal_block_ext)
     app.add_node(literal_block_ext, html=handler, latex=handler, text=handler)
 
-    return dict(version="0.1")
+    return {"version": "0.1"}

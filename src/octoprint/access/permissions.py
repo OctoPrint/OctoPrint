@@ -157,7 +157,7 @@ class PluginIdentityContext(object):
         self.key = key
         self.http_exception = http_exception
         """The permission of this principal
-		"""
+        """
 
     @property
     def identity(self):

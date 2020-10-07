@@ -13,17 +13,13 @@ import re
 import sys
 import threading
 import time
-
-import octoprint.plugin
-
-PY2 = sys.version_info[0] < 3
-
 from collections import OrderedDict
 
 import feedparser
 import flask
 from flask_babel import gettext
 
+import octoprint.plugin
 from octoprint import __version__ as OCTOPRINT_VERSION
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
@@ -33,6 +29,8 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.util import count, monotonic_time, utmify
+
+PY2 = sys.version_info[0] < 3
 
 
 class AnnouncementPlugin(
@@ -161,7 +159,7 @@ class AnnouncementPlugin(
             if "_spotlight" in enabled:
                 add_blog = True
                 enabled.remove("_spotlight")
-            if add_blog and not "_blog" in enabled:
+            if add_blog and "_blog" not in enabled:
                 enabled.append("_blog")
             self._settings.set(["enabled_channels"], enabled)
 
@@ -359,7 +357,7 @@ class AnnouncementPlugin(
                 configs = self._settings.get(["channels"], merged=True)
                 order = self._settings.get(["channel_order"])
                 all_keys = order + [
-                    key for key in sorted(configs.keys()) if not key in order
+                    key for key in sorted(configs.keys()) if key not in order
                 ]
 
                 result = OrderedDict()
@@ -394,10 +392,10 @@ class AnnouncementPlugin(
 
         all_channels = {}
         for key, config in channels.items():
-            if not key in enabled and not key in forced:
+            if key not in enabled and key not in forced:
                 continue
 
-            if not "url" in config:
+            if "url" not in config:
                 continue
 
             data = self._get_channel_data(key, config, force=force)

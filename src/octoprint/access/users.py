@@ -8,7 +8,6 @@ import hashlib
 import io
 import logging
 import os
-import time
 import uuid
 
 # noinspection PyCompatibility
@@ -94,7 +93,7 @@ class UserManager(GroupChangeListener, object):
         self._session_users_by_session[user.session] = user
 
         userid = user.get_id()
-        if not userid in self._sessionids_by_userid:
+        if userid not in self._sessionids_by_userid:
             self._sessionids_by_userid[userid] = set()
 
         self._sessionids_by_userid[userid].add(user.session)
@@ -552,7 +551,7 @@ class FilebasedUserManager(UserManager):
                         groups = {self._group_manager.user_group}
 
                     # migrate from roles to permissions
-                    if "roles" in attributes and not "permissions" in attributes:
+                    if "roles" in attributes and "permissions" not in attributes:
                         self._logger.info(
                             "Migrating user {} to new granular permission system".format(
                                 name
@@ -791,7 +790,7 @@ class FilebasedUserManager(UserManager):
                 self._trigger_on_user_modified(username)
 
     def change_user_password(self, username, password):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         passwordHash = UserManager.create_password_hash(password, settings=self._settings)
@@ -802,7 +801,7 @@ class FilebasedUserManager(UserManager):
             self._save()
 
     def change_user_setting(self, username, key, value):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
@@ -813,7 +812,7 @@ class FilebasedUserManager(UserManager):
             self._save()
 
     def change_user_settings(self, username, new_settings):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
@@ -824,21 +823,21 @@ class FilebasedUserManager(UserManager):
         self._save()
 
     def get_all_user_settings(self, username):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
         return user.get_all_settings()
 
     def get_user_setting(self, username, key):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
         return user.get_setting(key)
 
     def generate_api_key(self, username):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
@@ -848,7 +847,7 @@ class FilebasedUserManager(UserManager):
         return user._apikey
 
     def delete_api_key(self, username):
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         user = self._users[username]
@@ -859,7 +858,7 @@ class FilebasedUserManager(UserManager):
     def remove_user(self, username):
         UserManager.remove_user(self, username)
 
-        if not username in self._users:
+        if username not in self._users:
             raise UnknownUser(username)
 
         del self._users[username]

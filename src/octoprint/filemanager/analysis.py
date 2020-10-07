@@ -90,7 +90,7 @@ class AnalysisQueue(object):
         if entry is None:
             return False
 
-        if not entry.type in self._queues:
+        if entry.type not in self._queues:
             return False
 
         self._queues[entry.type].enqueue(entry, high_priority=high_priority)
@@ -100,7 +100,7 @@ class AnalysisQueue(object):
         if entry is None:
             return False
 
-        if not entry.type in self._queues:
+        if entry.type not in self._queues:
             return False
 
         self._queues[entry.type].dequeue(entry.location, entry.path)
@@ -121,7 +121,7 @@ class AnalysisQueue(object):
         for callback in self._callbacks:
             try:
                 callback(entry, result)
-            except:
+            except Exception:
                 self._logger.exception(
                     "Error while pushing analysis data to callback {}".format(callback),
                     extra={"callback": fqcn(callback)},
@@ -477,7 +477,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
             output = p.stdout.text
             self._logger.debug("Got output: {!r}".format(output))
 
-            if not "RESULTS:" in output:
+            if "RESULTS:" not in output:
                 raise RuntimeError("No analysis result found")
 
             _, output = output.split("RESULTS:")

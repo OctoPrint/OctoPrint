@@ -67,10 +67,10 @@ def getInstalledLanguagePacks():
                             meta["last_update"] - datetime.datetime(1970, 1, 1)
                         ).total_seconds()
 
-            l = Locale.parse(locale)
+            loc = Locale.parse(locale)
             meta["locale"] = locale
-            meta["locale_display"] = l.display_name
-            meta["locale_english"] = l.english_name
+            meta["locale_display"] = loc.display_name
+            meta["locale_english"] = loc.english_name
             return meta
 
         if entry.name == "_plugins":
@@ -78,7 +78,7 @@ def getInstalledLanguagePacks():
                 if not plugin_entry.is_dir():
                     continue
 
-                if not plugin_entry.name in plugin_manager().plugins:
+                if plugin_entry.name not in plugin_manager().plugins:
                     continue
 
                 plugin_info = plugin_manager().plugins[plugin_entry.name]
@@ -134,7 +134,7 @@ def uploadLanguagePack():
     input_upload_name = (
         input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
     )
-    if not input_upload_path in request.values or not input_upload_name in request.values:
+    if input_upload_path not in request.values or input_upload_name not in request.values:
         return make_response("No file included", 400)
 
     upload_name = request.values[input_upload_name]

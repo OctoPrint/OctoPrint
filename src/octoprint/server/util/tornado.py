@@ -527,7 +527,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         for name, part in self._parts.items():
             if "filename" in part:
                 # add form fields for filename, path, size and content_type for all files contained in the request
-                if not "path" in part:
+                if "path" not in part:
                     continue
 
                 parameters = {
@@ -736,7 +736,7 @@ class WsgiInputContainer(object):
         headers = [
             (header, value)
             for header, value in headers
-            if not header.lower() in self.removed_headers
+            if header.lower() not in self.removed_headers
         ]
 
         start_line = tornado.httputil.ResponseStartLine("HTTP/1.1", status_code, reason)
@@ -1432,7 +1432,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
 
     def transform_first_chunk(self, status_code, headers, chunk, finishing):
         for header, value in self.HEADERS.items():
-            if not header in headers:
+            if header not in headers:
                 headers[header] = value
         for header, value in self.FORCED_HEADERS.items():
             headers[header] = value

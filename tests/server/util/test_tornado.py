@@ -12,7 +12,6 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 import unittest
 
-import mock
 from ddt import data, ddt, unpack
 
 ##~~ _parse_header
@@ -21,10 +20,10 @@ from ddt import data, ddt, unpack
 @ddt
 class ParseHeaderTest(unittest.TestCase):
     @data(
-        ("form-data; filename=test.gco", "form-data", dict(filename="test.gco")),
-        ('form-data; filename="test.gco"', "form-data", dict(filename="test.gco")),
-        ("form-data; filename=test\\\\.gco", "form-data", dict(filename="test\\\\.gco")),
-        ('form-data; filename="test\\\\.gco"', "form-data", dict(filename="test\\.gco")),
+        ("form-data; filename=test.gco", "form-data", {"filename": "test.gco"}),
+        ('form-data; filename="test.gco"', "form-data", {"filename": "test.gco"}),
+        ("form-data; filename=test\\\\.gco", "form-data", {"filename": "test\\\\.gco"}),
+        ('form-data; filename="test\\\\.gco"', "form-data", {"filename": "test\\.gco"}),
     )
     @unpack
     def test_parse_header_strip_quotes(self, value, expected_key, expected_dict):
@@ -36,18 +35,18 @@ class ParseHeaderTest(unittest.TestCase):
         self.assertDictEqual(expected_dict, actual_dict)
 
     @data(
-        ("form-data; filename=test.gco", "form-data", dict(filename="test.gco")),
-        ('form-data; filename="test.gco"', "form-data", dict(filename='"test.gco"')),
-        ("form-data; filename=test\\\\.gco", "form-data", dict(filename="test\\\\.gco")),
+        ("form-data; filename=test.gco", "form-data", {"filename": "test.gco"}),
+        ('form-data; filename="test.gco"', "form-data", {"filename": '"test.gco"'}),
+        ("form-data; filename=test\\\\.gco", "form-data", {"filename": "test\\\\.gco"}),
         (
             'form-data; filename="test\\\\.gco"',
             "form-data",
-            dict(filename='"test\\\\.gco"'),
+            {"filename": '"test\\\\.gco"'},
         ),
         (
             "form-data; filename=iso-8859-1'en'test.gco",
             "form-data",
-            dict(filename="iso-8859-1'en'test.gco"),
+            {"filename": "iso-8859-1'en'test.gco"},
         ),
     )
     @unpack

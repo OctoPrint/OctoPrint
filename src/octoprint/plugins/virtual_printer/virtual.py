@@ -462,7 +462,7 @@ class VirtualPrinter(object):
             if (
                 self._writingToSd
                 and self._writingToSdHandle is not None
-                and not "M29" in data
+                and "M29" not in data
             ):
                 self._writingToSdHandle.write(data)
                 self._sendOk()
@@ -908,79 +908,79 @@ class VirtualPrinter(object):
         # type: (str) -> None
         if data == "" or data == "help" or data == "?":
             usage = """
-			OctoPrint Virtual Printer debug commands
+            OctoPrint Virtual Printer debug commands
 
-			help
-			?
-			| This help.
+            help
+            ?
+            | This help.
 
-			# Action Triggers
+            # Action Triggers
 
-			action_pause
-			| Sends a "// action:pause" action trigger to the host.
-			action_resume
-			| Sends a "// action:resume" action trigger to the host.
-			action_disconnect
-			| Sends a "// action:disconnect" action trigger to the
-			| host.
-			action_custom <action>[ <parameters>]
-			| Sends a custom "// action:<action> <parameters>"
-			| action trigger to the host.
+            action_pause
+            | Sends a "// action:pause" action trigger to the host.
+            action_resume
+            | Sends a "// action:resume" action trigger to the host.
+            action_disconnect
+            | Sends a "// action:disconnect" action trigger to the
+            | host.
+            action_custom <action>[ <parameters>]
+            | Sends a custom "// action:<action> <parameters>"
+            | action trigger to the host.
 
-			# Communication Errors
+            # Communication Errors
 
-			dont_answer
-			| Will not acknowledge the next command.
-			go_awol
-			| Will completely stop replying
-			trigger_resend_lineno
-			| Triggers a resend error with a line number mismatch
-			trigger_resend_checksum
-			| Triggers a resend error with a checksum mismatch
-			trigger_missing_checksum
-			| Triggers a resend error with a missing checksum
-			trigger_missing_lineno
-			| Triggers a "no line number with checksum" error w/o resend request
-			trigger_fatal_error_marlin
-			| Triggers a fatal error/simulated heater fail, Marlin style
-			trigger_fatal_error_repetier
-			| Triggers a fatal error/simulated heater fail, Repetier style
-			drop_connection
-			| Drops the serial connection
-			prepare_ok <broken ok>
-			| Will cause <broken ok> to be enqueued for use,
-			| will be used instead of actual "ok"
-			rerequest_last
-			| Will cause the last line number + 1 to be rerequest add infinitum
+            dont_answer
+            | Will not acknowledge the next command.
+            go_awol
+            | Will completely stop replying
+            trigger_resend_lineno
+            | Triggers a resend error with a line number mismatch
+            trigger_resend_checksum
+            | Triggers a resend error with a checksum mismatch
+            trigger_missing_checksum
+            | Triggers a resend error with a missing checksum
+            trigger_missing_lineno
+            | Triggers a "no line number with checksum" error w/o resend request
+            trigger_fatal_error_marlin
+            | Triggers a fatal error/simulated heater fail, Marlin style
+            trigger_fatal_error_repetier
+            | Triggers a fatal error/simulated heater fail, Repetier style
+            drop_connection
+            | Drops the serial connection
+            prepare_ok <broken ok>
+            | Will cause <broken ok> to be enqueued for use,
+            | will be used instead of actual "ok"
+            rerequest_last
+            | Will cause the last line number + 1 to be rerequest add infinitum
 
-			# Reply Timing / Sleeping
+            # Reply Timing / Sleeping
 
-			sleep <int:seconds>
-			| Sleep <seconds> s
-			sleep_after <str:command> <int:seconds>
-			| Sleeps <seconds> s after each execution of <command>
-			sleep_after_next <str:command> <int:seconds>
-			| Sleeps <seconds> s after execution of next <command>
+            sleep <int:seconds>
+            | Sleep <seconds> s
+            sleep_after <str:command> <int:seconds>
+            | Sleeps <seconds> s after each execution of <command>
+            sleep_after_next <str:command> <int:seconds>
+            | Sleeps <seconds> s after execution of next <command>
 
-			# SD printing
+            # SD printing
 
-			start_sd <str:file>
-			| Select and start printing file <file> from SD
-			select_sd <str:file>
-			| Select file <file> from SD, don't start printing it yet. Use
-			| start_sd to start the print
-			cancel_sd
-			| Cancels an ongoing SD print
+            start_sd <str:file>
+            | Select and start printing file <file> from SD
+            select_sd <str:file>
+            | Select file <file> from SD, don't start printing it yet. Use
+            | start_sd to start the print
+            cancel_sd
+            | Cancels an ongoing SD print
 
-			# Misc
+            # Misc
 
-			send <str:message>
-			| Sends back <message>
-			reset
-			| Simulates a reset. Internal state will be lost.
-			unbusy
-			| Unsets the busy loop.
-			"""
+            send <str:message>
+            | Sends back <message>
+            reset
+            | Simulates a reset. Internal state will be lost.
+            unbusy
+            | Unsets the busy loop.
+            """
             for line in usage.split("\n"):
                 self._send("echo: {}".format(line.strip()))
         elif data == "action_pause":
@@ -1299,12 +1299,12 @@ class VirtualPrinter(object):
         only_wait_if_higher = True
         try:
             self.chamberTargetTemp = float(re.search("S([0-9]+)", line).group(1))
-        except:
+        except Exception:
             if support_r:
                 try:
                     self.chamberTargetTemp = float(re.search("R([0-9]+)", line).group(1))
                     only_wait_if_higher = False
-                except:
+                except Exception:
                     pass
 
         if wait:
@@ -1851,7 +1851,7 @@ class CharCountingQueue(queue.Queue):
     def _len(self, item):
         return len(item)
 
-    def _qsize(self, l=len):
+    def _qsize(self, l=len):  # noqa: E741
         return self._size
 
     # Put a new item in the queue

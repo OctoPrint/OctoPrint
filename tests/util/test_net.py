@@ -21,15 +21,15 @@ def patched_ifaddresses(addr):
     if addr == "eth0":
         return {
             socket.AF_INET: [
-                dict(addr="192.168.123.10", netmask="255.255.255.0"),
-                dict(addr="12.1.1.10", netmask="255.0.0.0"),
+                {"addr": "192.168.123.10", "netmask": "255.255.255.0"},
+                {"addr": "12.1.1.10", "netmask": "255.0.0.0"},
             ],
             socket.AF_INET6: [
-                dict(addr="2a01:4f8:1c0c:6958::1", netmask="ffff:ffff:ffff:ffff::/64")
+                {"addr": "2a01:4f8:1c0c:6958::1", "netmask": "ffff:ffff:ffff:ffff::/64"}
             ],
         }
 
-    return dict()
+    return {}
 
 
 @ddt.ddt

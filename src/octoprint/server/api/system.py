@@ -53,7 +53,7 @@ def performSystemAction():
     if data is None:
         data = request.values
 
-    if not "action" in data:
+    if "action" not in data:
         return make_response("action to perform is not defined", 400)
 
     return executeSystemCommand("custom", data["action"])
@@ -96,7 +96,7 @@ def executeSystemCommand(source, command):
     if not command_spec:
         return make_response("Command {}:{} not found".format(source, command), 404)
 
-    if not "command" in command_spec:
+    if "command" not in command_spec:
         return make_response(
             "Command {}:{} does not define a command to execute, can't proceed".format(
                 source, command
@@ -175,7 +175,7 @@ def executeSystemCommand(source, command):
 def _to_client_specs(specs):
     result = list()
     for spec in specs.values():
-        if not "action" in spec or not "source" in spec:
+        if "action" not in spec or "source" not in spec:
             continue
         copied = dict(
             (k, v)
@@ -249,7 +249,7 @@ def _get_core_command_specs():
 
 def _get_core_command_spec(action):
     available_actions = _get_core_command_specs()
-    if not action in available_actions:
+    if action not in available_actions:
         logging.getLogger(__name__).warning(
             "Command for core action {} is not configured, you need to configure the command before it can be used".format(
                 action
@@ -264,7 +264,7 @@ def _get_custom_command_specs():
     specs = collections.OrderedDict()
     dividers = 0
     for spec in s().get(["system", "actions"]):
-        if not "action" in spec:
+        if "action" not in spec:
             continue
         copied = dict(spec)
         copied["source"] = "custom"
@@ -279,7 +279,7 @@ def _get_custom_command_specs():
 
 def _get_custom_command_spec(action):
     available_actions = _get_custom_command_specs()
-    if not action in available_actions:
+    if action not in available_actions:
         return None
 
     return available_actions[action]

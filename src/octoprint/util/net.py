@@ -7,10 +7,8 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import io
 import logging
 import os
-import re
 import socket
 import sys
-import threading
 
 import netaddr
 import netifaces

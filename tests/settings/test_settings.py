@@ -17,7 +17,6 @@ import io
 import os
 import re
 import shutil
-import sys
 import tempfile
 import time
 import unittest
@@ -302,7 +301,7 @@ class TestSettings(unittest.TestCase):
             data = settings.get(["devel", "virtualPrinter"])
 
             self.assertEqual(len(data), 1)
-            self.assertDictEqual(dict(enabled=True), data)
+            self.assertDictEqual({"enabled": True}, data)
 
     def test_get_map_merged(self):
         with self.mocked_config():
@@ -311,7 +310,7 @@ class TestSettings(unittest.TestCase):
             data = settings.get(["devel", "virtualPrinter"], merged=True)
 
             self.assertGreater(len(data), 1)
-            test_dict = dict(enabled=True, sendWait=True, waitInterval=1.0)
+            test_dict = {"enabled": True, "sendWait": True, "waitInterval": 1.0}
             test_data = dict((k, v) for k, v in data.items() if k in test_dict)
             self.assertEqual(test_dict, test_data)
 
@@ -362,7 +361,7 @@ class TestSettings(unittest.TestCase):
             settings = octoprint.settings.Settings()
 
             server_port = settings.getInt(
-                ["server", "port"], config=dict(server=dict(port=9090))
+                ["server", "port"], config={"server": {"port": 9090}}
             )
 
             self.assertEqual(9090, server_port)
@@ -372,7 +371,7 @@ class TestSettings(unittest.TestCase):
             settings = octoprint.settings.Settings()
 
             api_enabled = settings.getBoolean(
-                ["api", "enabled"], defaults=dict(api=dict(enabled=False))
+                ["api", "enabled"], defaults={"api": {"enabled": False}}
             )
 
             self.assertFalse(api_enabled)
@@ -453,7 +452,7 @@ class TestSettings(unittest.TestCase):
                 True, settings._config["devel"]["virtualPrinter"]["repetierStyleResends"]
             )
 
-    @ddt.data("0", "no", "false", ["some", "list"], dict(a="dictionary"), lambda: None)
+    @ddt.data("0", "no", "false", ["some", "list"], {"a": "dictionary"}, lambda: None)
     def test_set_boolean_convert_any_false(self, value):
         with self.mocked_config():
             settings = octoprint.settings.Settings()
@@ -574,9 +573,9 @@ class TestSettings(unittest.TestCase):
 
     def test_get_preprocessor(self):
         with self.mocked_config():
-            config = dict()
-            defaults = dict(test="some string")
-            preprocessors = dict(test=lambda x: x.upper())
+            config = {}
+            defaults = {"test": "some string"}
+            preprocessors = {"test": lambda x: x.upper()}
 
             settings = octoprint.settings.Settings()
             value = settings.get(
@@ -587,9 +586,9 @@ class TestSettings(unittest.TestCase):
 
     def test_set_preprocessor(self):
         with self.mocked_config():
-            config = dict()
-            defaults = dict(foo=dict(bar="fnord"))
-            preprocessors = dict(foo=dict(bar=lambda x: x.upper()))
+            config = {}
+            defaults = {"foo": {"bar": "fnord"}}
+            preprocessors = {"foo": {"bar": lambda x: x.upper()}}
 
             settings = octoprint.settings.Settings()
             settings.set(

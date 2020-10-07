@@ -19,14 +19,8 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import os
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
 import logging
+import os
 
 import octoprint.events
 import octoprint.plugin
@@ -225,7 +219,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.SlicerNotConfigured: The ``slicer`` is not yet configured and ``require_configured`` was set to True.
         """
 
-        if not slicer in self._slicers:
+        if slicer not in self._slicers:
             raise UnknownSlicer(slicer)
 
         if require_configured and not self._slicers[slicer].is_slicer_configured():
@@ -313,8 +307,8 @@ class SlicingManager(object):
         if callback_kwargs is None:
             callback_kwargs = {}
 
-        if not slicer_name in self.configured_slicers:
-            if not slicer_name in self.registered_slicers:
+        if slicer_name not in self.configured_slicers:
+            if slicer_name not in self.registered_slicers:
                 error = "No such slicer: {slicer_name}".format(**locals())
                 exc = UnknownSlicer(slicer_name)
             else:
@@ -428,7 +422,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.UnknownProfile: The profile for slicer ``slicer`` named ``name`` does not exist.
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         try:
@@ -485,7 +479,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.ProfileAlreadyExists: A profile with name ``name`` already exists for ``slicer`` and ``allow_overwrite`` is
                 False.
         """
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         if not isinstance(profile, SlicingProfile):
@@ -534,7 +528,7 @@ class SlicingManager(object):
         return profile
 
     def _temporary_profile(self, slicer, name=None, overrides=None):
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         profile = self._get_default_profile(slicer)
@@ -564,7 +558,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.CouldNotDeleteProfile: There was an error while deleting the profile.
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         if not name:
@@ -613,15 +607,15 @@ class SlicingManager(object):
                 was unknown for slicer ``slicer`` and ``require_exists`` was
                 true.
         """
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
-        if require_configured and not slicer in self.configured_slicers:
+        if require_configured and slicer not in self.configured_slicers:
             raise SlicerNotConfigured(slicer)
 
         if not name:
             raise ValueError("name must be set")
 
-        if require_exists and not name in self.all_profiles(
+        if require_exists and name not in self.all_profiles(
             slicer, require_configured=require_configured
         ):
             raise UnknownProfile(slicer, name)
@@ -654,9 +648,9 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.SlicerNotConfigured: The slicer ``slicer`` is not configured and ``require_configured`` was True.
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
-        if require_configured and not slicer in self.configured_slicers:
+        if require_configured and slicer not in self.configured_slicers:
             raise SlicerNotConfigured(slicer)
 
         slicer_profile_path = self.get_slicer_profile_path(slicer)
@@ -675,7 +669,7 @@ class SlicingManager(object):
             (float) the time stamp of the last modification of the slicer's profiles
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         slicer_profile_path = self.get_slicer_profile_path(slicer)
@@ -697,7 +691,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.UnknownSlicer: The slicer ``slicer`` is unknown.
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         path = os.path.join(self._profile_path, slicer)
@@ -725,7 +719,7 @@ class SlicingManager(object):
             ~octoprint.slicing.exceptions.UnknownProfile: The profile named ``name`` doesn't exist and ``must_exist`` was True.
         """
 
-        if not slicer in self.registered_slicers:
+        if slicer not in self.registered_slicers:
             raise UnknownSlicer(slicer)
 
         if not name:

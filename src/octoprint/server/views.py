@@ -29,7 +29,7 @@ from past.builtins import basestring
 import octoprint.plugin
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.filemanager import full_extension_tree, get_all_extensions
-from octoprint.server import (
+from octoprint.server import (  # noqa: F401
     BRANCH,
     DISPLAY_VERSION,
     LOCALES,
@@ -161,7 +161,7 @@ def _add_additional_assets(hook):
             assets = hook()
             if isinstance(assets, (tuple, list)):
                 result += assets
-        except:
+        except Exception:
             _logger.exception(
                 "Error fetching theming CSS to include from plugin {}".format(name),
                 extra={"plugin": name},
@@ -222,7 +222,7 @@ def login():
         additional_assets += _add_additional_assets("octoprint.plugin.loginui.theming")
 
         render_kwargs.update({"theming": additional_assets})
-    except:
+    except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
     return render_template("login.jinja2", **render_kwargs)
@@ -245,7 +245,7 @@ def recovery():
     try:
         additional_assets = _add_additional_assets("octoprint.theming.recovery")
         render_kwargs.update({"theming": additional_assets})
-    except:
+    except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
     return render_template("recovery.jinja2", **render_kwargs)
@@ -713,12 +713,12 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
     first_run = settings().getBoolean(["server", "firstRun"])
 
     locales = {}
-    for l in LOCALES:
+    for loc in LOCALES:
         try:
-            locales[l.language] = {
-                "language": l.language,
-                "display": l.display_name,
-                "english": l.english_name,
+            locales[loc.language] = {
+                "language": loc.language,
+                "display": loc.display_name,
+                "english": loc.english_name,
             }
         except Exception:
             _logger.exception("Error while collecting available locales")
@@ -1277,8 +1277,8 @@ def fetch_template_data(refresh=False):
                 x = plugin_aliases[t][x]
             if (
                 x in templates[t]["entries"]
-                and not x in configured_disabled
-                and not x in result
+                and x not in configured_disabled
+                and x not in result
             ):
                 result.append(x)
         templates[t]["order"] = result
@@ -1287,9 +1287,9 @@ def fetch_template_data(refresh=False):
         templates[t]["order"] += [
             x
             for x in default_order
-            if not x in templates[t]["order"]
+            if x not in templates[t]["order"]
             and x in templates[t]["entries"]
-            and not x in configured_disabled
+            and x not in configured_disabled
         ]
 
         all_ordered = set(templates[t]["order"])
@@ -1421,13 +1421,13 @@ def _process_template_configs(name, implementation, configs, rules):
     for config in configs:
         if not isinstance(config, dict):
             continue
-        if not "type" in config:
+        if "type" not in config:
             continue
 
         template_type = config["type"]
         del config["type"]
 
-        if not template_type in rules:
+        if template_type not in rules:
             continue
         rule = rules[template_type]
 
@@ -1465,14 +1465,14 @@ def _process_template_configs(name, implementation, configs, rules):
 def _process_template_config(name, implementation, rule, config=None, counter=1):
     if "mandatory" in rule:
         for mandatory in rule["mandatory"]:
-            if not mandatory in config:
+            if mandatory not in config:
                 return None
 
     if config is None:
         config = {}
     data = dict(config)
 
-    if not "suffix" in data and counter > 1:
+    if "suffix" not in data and counter > 1:
         data["suffix"] = "_%d" % counter
 
     if "div" in data:
@@ -1489,13 +1489,13 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
             )
             return None
 
-    if not "template" in data:
+    if "template" not in data:
         data["template"] = rule["template"](name)
 
-    if not "name" in data:
+    if "name" not in data:
         data["name"] = implementation._plugin_name
 
-    if not "custom_bindings" in data or data["custom_bindings"]:
+    if "custom_bindings" not in data or data["custom_bindings"]:
         data_bind = "allowBindings: true"
         if "data_bind" in data:
             data_bind = data_bind + ", " + data["data_bind"]

@@ -522,7 +522,7 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 
         expected_suffix = "_P5000"
         if scriptroot is not None:
-            environ.update(dict(SCRIPT_NAME=scriptroot))
+            environ.update({"SCRIPT_NAME": scriptroot})
             expected_suffix += "_R" + scriptroot.replace("/", "|")
 
         request = OctoPrintFlaskRequest(environ)
@@ -535,9 +535,9 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
             expected_path_set = scriptroot + expected_path_set
 
         if path is not None:
-            kwargs = dict(path=path)
+            kwargs = {"path": path}
         else:
-            kwargs = dict()
+            kwargs = {}
 
         with mock.patch("flask.request", new=request):
             with mock.patch("octoprint.server.util.flask.settings") as settings_mock:

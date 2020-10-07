@@ -12,8 +12,6 @@ import unittest
 
 from ddt import data, ddt, unpack
 
-import octoprint.printer
-
 
 @ddt
 class EstimationTestCase(unittest.TestCase):

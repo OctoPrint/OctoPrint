@@ -7,9 +7,7 @@ Unit tests for octoprint.access.permissions
 
 import unittest
 
-import ddt
-
-from octoprint.access.permissions import OctoPrintPermission, Permissions
+from octoprint.access.permissions import Permissions
 
 
 class PermissionsTest(unittest.TestCase):

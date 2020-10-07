@@ -50,8 +50,8 @@ class BlueprintPluginTest(unittest.TestCase):
         self.assertListEqual(
             test_method._blueprint_rules["test_method"],
             [
-                ("/test/method", dict(methods=["GET"])),
-                ("/test/method/{foo}", dict(methods=["PUT"])),
+                ("/test/method", {"methods": ["GET"]}),
+                ("/test/method/{foo}", {"methods": ["PUT"]}),
             ],
         )
 
@@ -69,10 +69,10 @@ class BlueprintPluginTest(unittest.TestCase):
     def test_get_blueprint_kwargs(self):
         import os
 
-        expected = dict(
-            static_folder=os.path.join(self.basefolder, "static"),
-            template_folder=os.path.join(self.basefolder, "templates"),
-        )
+        expected = {
+            "static_folder": os.path.join(self.basefolder, "static"),
+            "template_folder": os.path.join(self.basefolder, "templates"),
+        }
 
         result = self.plugin.get_blueprint_kwargs()
 
@@ -81,10 +81,10 @@ class BlueprintPluginTest(unittest.TestCase):
     def test_get_blueprint_kwargs_assetplugin(self):
         import os
 
-        expected = dict(
-            static_folder=self.assetplugin.get_asset_folder(),
-            template_folder=os.path.join(self.basefolder, "templates"),
-        )
+        expected = {
+            "static_folder": self.assetplugin.get_asset_folder(),
+            "template_folder": os.path.join(self.basefolder, "templates"),
+        }
 
         result = self.assetplugin.get_blueprint_kwargs()
 
@@ -93,10 +93,10 @@ class BlueprintPluginTest(unittest.TestCase):
     def test_get_blueprint_kwargs_templateplugin(self):
         import os
 
-        expected = dict(
-            static_folder=os.path.join(self.basefolder, "static"),
-            template_folder=self.templateplugin.get_template_folder(),
-        )
+        expected = {
+            "static_folder": os.path.join(self.basefolder, "static"),
+            "template_folder": self.templateplugin.get_template_folder(),
+        }
 
         result = self.templateplugin.get_blueprint_kwargs()
 
@@ -105,10 +105,10 @@ class BlueprintPluginTest(unittest.TestCase):
     def test_get_blueprint(self):
         import os
 
-        expected_kwargs = dict(
-            static_folder=os.path.join(self.basefolder, "static"),
-            template_folder=os.path.join(self.basefolder, "templates"),
-        )
+        expected_kwargs = {
+            "static_folder": os.path.join(self.basefolder, "static"),
+            "template_folder": os.path.join(self.basefolder, "templates"),
+        }
 
         class MyPlugin(octoprint.plugin.BlueprintPlugin):
             @octoprint.plugin.BlueprintPlugin.route("/some/path", methods=["GET"])

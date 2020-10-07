@@ -42,7 +42,7 @@ def printerState():
     result = {}
 
     # add temperature information
-    if not "temperature" in excludes:
+    if "temperature" not in excludes:
         processor = lambda x: x
         heated_bed = printerProfileManager.get_current_or_default()["heatedBed"]
         heated_chamber = printerProfileManager.get_current_or_default()["heatedChamber"]
@@ -56,11 +56,11 @@ def printerState():
         result.update({"temperature": _get_temperature_data(processor)})
 
     # add sd information
-    if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
+    if "sd" not in excludes and settings().getBoolean(["feature", "sdSupport"]):
         result.update({"sd": {"ready": printer.is_sd_ready()}})
 
     # add state information
-    if not "state" in excludes:
+    if "state" not in excludes:
         state = printer.get_current_data()["state"]
         result.update({"state": state})
 
@@ -348,7 +348,7 @@ def printerPrintheadCommand():
         validated_values = []
         axes = data["axes"]
         for axis in axes:
-            if not axis in valid_axes:
+            if axis not in valid_axes:
                 return make_response("Invalid axis: %s" % axis, 400)
             validated_values.append(axis)
 
@@ -417,7 +417,7 @@ def printerCommand():
     if not printer.is_operational():
         return make_response("Printer is not operational", 409)
 
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content type JSON", 400)
 
     try:

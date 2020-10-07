@@ -38,8 +38,12 @@ except ImportError:
 from past.builtins import basestring, unicode
 
 from octoprint import UMASK
-from octoprint.util.connectivity import ConnectivityChecker
-from octoprint.util.net import address_for_client, interface_addresses, server_reachable
+from octoprint.util.connectivity import ConnectivityChecker  # noqa: F401
+from octoprint.util.net import (  # noqa: F401
+    address_for_client,
+    interface_addresses,
+    server_reachable,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -638,7 +642,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
     full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
     result = full_name_format.format(filename=filename, extension=extension)
-    if len(filename) <= 8 and not result in existing_filenames:
+    if len(filename) <= 8 and result not in existing_filenames:
         # early exit
         return result
 
@@ -709,7 +713,7 @@ def filter_non_utf8(line):
         return True
 
 
-def chunks(l, n):
+def chunks(l, n):  # noqa: E741
     """
     Yield successive n-sized chunks from l.
 
@@ -840,7 +844,7 @@ def dict_sanitize(a, b):
 
     result = deepcopy(a)
     for k, v in a.items():
-        if not k in b:
+        if k not in b:
             del result[k]
         elif isinstance(v, dict):
             result[k] = dict_sanitize(v, b[k])
@@ -942,7 +946,7 @@ def dict_contains_keys(keys, dictionary):
         return False
 
     for k, v in keys.items():
-        if not k in dictionary:
+        if k not in dictionary:
             return False
         elif isinstance(v, dict):
             if not dict_contains_keys(v, dictionary[k]):
@@ -1850,11 +1854,11 @@ def time_this(
                 timing = (time.time() - start) * 1000.0
                 func = fqfn(f)
 
-                l = logtarget
+                lt = logtarget
                 if expand_logtarget:
-                    l += "." + func
+                    lt += "." + func
 
-                logger = logging.getLogger(l)
+                logger = logging.getLogger(lt)
                 if logger.isEnabledFor(logging.DEBUG):
                     data = {"func": func, "timing": timing}
                     if incl_func_args:

@@ -215,7 +215,7 @@ def readGcodeFilesForOrigin(origin):
     or request.values.get("_refresh", False),
 )
 def readGcodeFile(target, filename):
-    if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
         return make_response("Unknown target: %s" % target, 404)
 
     recursive = False
@@ -446,7 +446,7 @@ def uploadGcodeFile(target):
         input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
     )
     if input_upload_name in request.values and input_upload_path in request.values:
-        if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+        if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
             return make_response("Unknown target: %s" % target, 404)
 
         upload = octoprint.filemanager.util.DiskFileWrapper(
@@ -684,7 +684,7 @@ def uploadGcodeFile(target):
     elif "foldername" in request.values:
         foldername = request.values["foldername"]
 
-        if not target in [FileDestinations.LOCAL]:
+        if target not in [FileDestinations.LOCAL]:
             return make_response("Unknown target: %s" % target, 400)
 
         canonPath, canonName = fileManager.canonicalize(target, foldername)
@@ -741,7 +741,7 @@ def uploadGcodeFile(target):
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @no_firstrun_access
 def gcodeFileCommand(filename, target):
-    if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
         return make_response("Unknown target: %s" % target, 404)
 
     # valid file commands, dict mapping command name to mandatory parameters
@@ -1025,7 +1025,7 @@ def gcodeFileCommand(filename, target):
     elif command == "copy" or command == "move":
         with Permissions.FILES_UPLOAD.require(403):
             # Copy and move are only possible on local storage
-            if not target in [FileDestinations.LOCAL]:
+            if target not in [FileDestinations.LOCAL]:
                 return make_response(
                     "Unsupported target for {}: {}".format(command, target), 400
                 )
@@ -1160,7 +1160,7 @@ def deleteGcodeFile(filename, target):
         )
 
     if _verifyFileExists(target, filename):
-        if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+        if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
             return make_response("Unknown target: %s" % target, 400)
 
         if _isBusy(target, filename):
@@ -1184,7 +1184,7 @@ def deleteGcodeFile(filename, target):
             fileManager.remove_file(target, filename)
 
     elif _verifyFolderExists(target, filename):
-        if not target in [FileDestinations.LOCAL]:
+        if target not in [FileDestinations.LOCAL]:
             return make_response("Unknown target: %s" % target, 400)
 
         if _isBusy(target, filename):

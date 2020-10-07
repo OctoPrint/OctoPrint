@@ -21,24 +21,24 @@ class TestSettingsPlugin(unittest.TestCase):
         ### setup
 
         # settings defaults
-        defaults = dict(
-            foo=dict(a=1, b=2, l1=["some", "list"], l2=["another", "list"]),
-            bar=True,
-            fnord=None,
-        )
+        defaults = {
+            "foo": {"a": 1, "b": 2, "l1": ["some", "list"], "l2": ["another", "list"]},
+            "bar": True,
+            "fnord": None,
+        }
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
         # stored config, containing one redundant entry (bar=True, same as default)
-        in_config = dict(
-            foo=dict(
-                l1=["some", "other", "list"],
-                l2=["another", "list"],
-                l3=["a", "third", "list"],
-            ),
-            bar=True,
-            fnord=dict(c=3, d=4),
-        )
+        in_config = {
+            "foo": {
+                "l1": ["some", "other", "list"],
+                "l2": ["another", "list"],
+                "l3": ["a", "third", "list"],
+            },
+            "bar": True,
+            "fnord": {"c": 3, "d": 4},
+        }
         self.settings.get_all_data.return_value = in_config
 
         ### execute
@@ -48,10 +48,10 @@ class TestSettingsPlugin(unittest.TestCase):
         ### assert
 
         # minimal config (current without redundant value) should have been set
-        expected = dict(
-            foo=dict(l1=["some", "other", "list"], l3=["a", "third", "list"]),
-            fnord=dict(c=3, d=4),
-        )
+        expected = {
+            "foo": {"l1": ["some", "other", "list"], "l3": ["a", "third", "list"]},
+            "fnord": {"c": 3, "d": 4},
+        }
         self.settings.set.assert_called_once_with([], expected)
 
     def test_on_settings_cleanup_configversion(self):
@@ -59,11 +59,11 @@ class TestSettingsPlugin(unittest.TestCase):
 
         ### setup
 
-        defaults = dict(foo="fnord")
+        defaults = {"foo": "fnord"}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
-        in_config = dict(_config_version=1, foo="fnord")
+        in_config = {"_config_version": 1, "foo": "fnord"}
         self.settings.get_all_data.return_value = in_config
 
         ### execute
@@ -73,19 +73,19 @@ class TestSettingsPlugin(unittest.TestCase):
         ### assert
 
         # minimal config incl. config version should have been set
-        self.settings.set.assert_called_once_with([], dict(_config_version=1))
+        self.settings.set.assert_called_once_with([], {"_config_version": 1})
 
     def test_on_settings_cleanup_noconfigversion(self):
         """Tests that config versions of None are cleaned from stored data."""
 
         ### setup
 
-        defaults = dict(foo="bar")
+        defaults = {"foo": "bar"}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
         # stored config version is None
-        in_config = dict(_config_version=None, foo="fnord")
+        in_config = {"_config_version": None, "foo": "fnord"}
         self.settings.get_all_data.return_value = in_config
 
         ### execute
@@ -95,19 +95,19 @@ class TestSettingsPlugin(unittest.TestCase):
         ### assert
 
         # minimal config without config version should have been set
-        self.settings.set.assert_called_once_with([], dict(foo="fnord"))
+        self.settings.set.assert_called_once_with([], {"foo": "fnord"})
 
     def test_on_settings_cleanup_emptydiff(self):
         """Tests that settings are cleaned up if the diff data <-> defaults is empty."""
 
         ### setup
 
-        defaults = dict(foo="bar")
+        defaults = {"foo": "bar"}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
         # current stored config, same as defaults
-        in_config = dict(foo="bar")
+        in_config = {"foo": "bar"}
         self.settings.get_all_data.return_value = in_config
 
         ### execute
@@ -162,22 +162,22 @@ class TestSettingsPlugin(unittest.TestCase):
 
         ### setup
 
-        current = dict(foo="bar")
+        current = {"foo": "bar"}
         self.settings.get_all_data.return_value = current
 
-        defaults = dict(foo="foo", bar=dict(a=1, b=2))
+        defaults = {"foo": "foo", "bar": {"a": 1, "b": 2}}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
         ### execute
 
-        data = dict(foo="fnord", bar=dict(a=1, b=2))
+        data = {"foo": "fnord", "bar": {"a": 1, "b": 2}}
         diff = self.plugin.on_settings_save(data)
 
         ### assert
 
         # the minimal diff should have been saved
-        expected = dict(foo="fnord")
+        expected = {"foo": "fnord"}
         self.settings.set.assert_called_once_with([], expected)
 
         self.assertEqual(diff, expected)
@@ -189,19 +189,19 @@ class TestSettingsPlugin(unittest.TestCase):
 
         self.settings.get_all_data.return_value = None
 
-        defaults = dict(foo="bar", bar=dict(a=1, b=2, l=["some", "list"]))
+        defaults = {"foo": "bar", "bar": {"a": 1, "b": 2, "l": ["some", "list"]}}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
         ### execute
 
-        data = dict(foo="bar")
+        data = {"foo": "bar"}
         diff = self.plugin.on_settings_save(data)
 
         ### assert
 
         self.settings.clean_all_data.assert_called_once_with()
-        self.assertEqual(diff, dict())
+        self.assertEqual(diff, {})
 
     def test_on_settings_save_configversion(self):
         """Tests that saved data gets stripped config version and set correct one."""
@@ -210,7 +210,7 @@ class TestSettingsPlugin(unittest.TestCase):
 
         self.settings.get_all_data.return_value = None
 
-        defaults = dict(foo="bar")
+        defaults = {"foo": "bar"}
         self.plugin.get_settings_defaults = mock.MagicMock()
         self.plugin.get_settings_defaults.return_value = defaults
 
@@ -220,13 +220,13 @@ class TestSettingsPlugin(unittest.TestCase):
 
         ### execute
 
-        data = dict(_config_version=None, foo="bar")
+        data = {"_config_version": None, "foo": "bar"}
         diff = self.plugin.on_settings_save(data)
 
         ### assert
 
-        expected_diff = dict()
-        expected_set = dict(_config_version=version)
+        expected_diff = {}
+        expected_set = {"_config_version": version}
 
         # while there was no diff, we should still have saved the new config version
         self.settings.set.assert_called_once_with([], expected_set)
@@ -239,9 +239,11 @@ class TestSettingsPlugin(unittest.TestCase):
         ### setup
 
         # current data incl. config version
-        current = dict(
-            _config_version=3, foo="bar", fnord=dict(a=1, b=2, l=["some", "list"])
-        )
+        current = {
+            "_config_version": 3,
+            "foo": "bar",
+            "fnord": {"a": 1, "b": 2, "l": ["some", "list"]},
+        }
 
         # expected is current without _config_version - we make the copy now
         # since our current dict will be modified by the test

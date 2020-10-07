@@ -48,7 +48,7 @@ def _get_pip_caller(command=None):
     if command is None:
         key = "__default"
 
-    if not key in _pip_callers:
+    if key not in _pip_callers:
         try:
             _pip_callers[key] = PipCaller(configured=command)
         except UnknownPip:

@@ -5,17 +5,17 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import click
-
-click.disable_unicode_literals_warning = True
 import json
 import logging
 import pprint
 
+import click
 import yaml
 
 from octoprint import FatalStartupError, init_settings
-from octoprint.cli import bulk_options, get_ctx_obj_option, standard_options
+from octoprint.cli import get_ctx_obj_option, standard_options
+
+click.disable_unicode_literals_warning = True
 
 
 def _to_settings_path(path):
@@ -191,7 +191,7 @@ def remove_value_command(ctx, path, value, as_json=False):
         click.echo("Cannot remove value from non-list value at given path", err=True)
         ctx.exit(-1)
 
-    if not value in current:
+    if value not in current:
         click.echo("Value is not contained in list at given path")
         ctx.exit()
 

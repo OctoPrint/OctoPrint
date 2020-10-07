@@ -98,7 +98,7 @@ class CleanCommand(_clean):
         if eggs is None:
             eggs = []
         return type(cls)(
-            cls.__name__, (cls,), dict(source_folder=source_folder, eggs=eggs)
+            cls.__name__, (cls,), {"source_folder": source_folder, "eggs": eggs}
         )
 
     def initialize_options(self):
@@ -176,7 +176,7 @@ class NewTranslation(Command):
             raise ValueError("output_dir must not be None")
 
         return type(cls)(
-            cls.__name__, (cls,), dict(pot_file=pot_file, output_dir=output_dir)
+            cls.__name__, (cls,), {"pot_file": pot_file, "output_dir": output_dir}
         )
 
     def __init__(self, dist, **kw):
@@ -229,13 +229,13 @@ class ExtractTranslation(Command):
         return type(cls)(
             cls.__name__,
             (cls,),
-            dict(
-                mapping_file=mapping_file,
-                pot_file=pot_file,
-                input_dirs=input_dirs,
-                mail_address=mail_address,
-                copyright_holder=copyright_holder,
-            ),
+            {
+                "mapping_file": mapping_file,
+                "pot_file": pot_file,
+                "input_dirs": input_dirs,
+                "mail_address": mail_address,
+                "copyright_holder": copyright_holder,
+            },
         )
 
     def __init__(self, dist, **kw):
@@ -295,14 +295,14 @@ class RefreshTranslation(Command):
         return type(cls)(
             cls.__name__,
             (cls,),
-            dict(
-                mapping_file=mapping_file,
-                pot_file=pot_file,
-                input_dirs=input_dirs,
-                mail_address=mail_address,
-                copyright_holder=copyright_holder,
-                output_dir=output_dir,
-            ),
+            {
+                "mapping_file": mapping_file,
+                "pot_file": pot_file,
+                "input_dirs": input_dirs,
+                "mail_address": mail_address,
+                "copyright_holder": copyright_holder,
+                "output_dir": output_dir,
+            },
         )
 
     def __init__(self, dist, **kw):
@@ -347,7 +347,7 @@ class CompileTranslation(Command):
         if output_dir is None:
             raise ValueError("output_dir must not be None")
 
-        return type(cls)(cls.__name__, (cls,), dict(output_dir=output_dir))
+        return type(cls)(cls.__name__, (cls,), {"output_dir": output_dir})
 
     def __init__(self, dist, **kw):
         from babel.messages import frontend as babel
@@ -382,7 +382,7 @@ class BundleTranslation(Command):
             raise ValueError("target_dir must not be None")
 
         return type(cls)(
-            cls.__name__, (cls,), dict(source_dir=source_dir, target_dir=target_dir)
+            cls.__name__, (cls,), {"source_dir": source_dir, "target_dir": target_dir}
         )
 
     def initialize_options(self):
@@ -439,11 +439,11 @@ class PackTranslation(Command):
         return type(cls)(
             cls.__name__,
             (cls,),
-            dict(
-                source_dir=source_dir,
-                pack_name_prefix=pack_name_prefix,
-                pack_path_prefix=pack_path_prefix,
-            ),
+            {
+                "source_dir": source_dir,
+                "pack_name_prefix": pack_name_prefix,
+                "pack_path_prefix": pack_path_prefix,
+            },
         )
 
     def initialize_options(self):
@@ -518,16 +518,16 @@ def get_babel_commandclasses(
     mail_address="i18n@octoprint.org",
     copyright_holder="The OctoPrint Project",
 ):
-    result = dict(
-        babel_new=NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
-        babel_extract=ExtractTranslation.for_options(
+    result = {
+        "babel_new": NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
+        "babel_extract": ExtractTranslation.for_options(
             mapping_file=mapping_file,
             pot_file=pot_file,
             input_dirs=input_dirs,
             mail_address=mail_address,
             copyright_holder=copyright_holder,
         ),
-        babel_refresh=RefreshTranslation.for_options(
+        "babel_refresh": RefreshTranslation.for_options(
             mapping_file=mapping_file,
             pot_file=pot_file,
             input_dirs=input_dirs,
@@ -535,13 +535,13 @@ def get_babel_commandclasses(
             mail_address=mail_address,
             copyright_holder=copyright_holder,
         ),
-        babel_compile=CompileTranslation.for_options(output_dir=output_dir),
-        babel_pack=PackTranslation.for_options(
+        "babel_compile": CompileTranslation.for_options(output_dir=output_dir),
+        "babel_pack": PackTranslation.for_options(
             source_dir=output_dir,
             pack_name_prefix=pack_name_prefix,
             pack_path_prefix=pack_path_prefix,
         ),
-    )
+    }
 
     if bundled_dir is not None:
         result["babel_bundle"] = BundleTranslation.for_options(
@@ -596,12 +596,12 @@ def create_plugin_setup_parameters(
         requires = ["OctoPrint"] + list(requires)
 
     if extra_requires is None:
-        extra_requires = dict()
+        extra_requires = {}
     if not isinstance(extra_requires, dict):
         raise ValueError("extra_requires must be a dict")
 
     if cmdclass is None:
-        cmdclass = dict()
+        cmdclass = {}
     if not isinstance(cmdclass, dict):
         raise ValueError("cmdclass must be a dict")
 
@@ -617,11 +617,11 @@ def create_plugin_setup_parameters(
         eggs = [egg] + eggs
 
     cmdclass.update(
-        dict(
-            clean=CleanCommand.for_options(
+        {
+            "clean": CleanCommand.for_options(
                 source_folder=os.path.join(source_folder, package), eggs=eggs
             )
-        )
+        }
     )
 
     translation_dir = os.path.join(source_folder, "translations")
@@ -651,35 +651,35 @@ def create_plugin_setup_parameters(
     )
     print("Found packages: {packages!r}".format(**locals()))
 
-    return dict(
-        name=name,
-        version=version,
-        description=description,
-        author=author,
-        author_email=mail,
-        url=url,
-        license=license,
+    return {
+        "name": name,
+        "version": version,
+        "description": description,
+        "author": author,
+        "author_email": mail,
+        "url": url,
+        "license": license,
         # adding new commands
-        cmdclass=cmdclass,
+        "cmdclass": cmdclass,
         # we only have our plugin package to install
-        packages=packages,
+        "packages": packages,
         # we might have additional data files in sub folders that need to be installed too
-        package_data={
+        "package_data": {
             package: package_data_dirs(
                 os.path.join(source_folder, package),
                 ["static", "templates", "translations"] + additional_data,
             )
         },
-        include_package_data=True,
+        "include_package_data": True,
         # If you have any package data that needs to be accessible on the file system, such as templates or static assets
         # this plugin is not zip_safe.
-        zip_safe=False,
-        install_requires=requires,
-        extras_require=extra_requires,
-        dependency_links=dependency_links,
+        "zip_safe": False,
+        "install_requires": requires,
+        "extras_require": extra_requires,
+        "dependency_links": dependency_links,
         # Hook the plugin into the "octoprint.plugin" entry point, mapping the plugin_identifier to the plugin_package.
         # That way OctoPrint will be able to find the plugin and load it.
-        entry_points={
+        "entry_points": {
             "octoprint.plugin": ["{identifier} = {package}".format(**locals())]
         },
-    )
+    }

@@ -6,11 +6,8 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
-import sys
-
-PY3 = sys.version_info[0] == 3
-
 import logging
+import sys
 
 import flask as _flask
 import flask_login
@@ -22,7 +19,9 @@ from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import deprecated, to_unicode
 
-from . import flask, sockjs, tornado, watchdog
+from . import flask, sockjs, tornado, watchdog  # noqa: F401
+
+PY3 = sys.version_info[0] == 3
 
 
 @deprecated(

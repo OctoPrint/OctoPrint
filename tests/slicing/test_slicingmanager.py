@@ -21,9 +21,11 @@ class TestSlicingManager(unittest.TestCase):
         self.profile_path = tempfile.mkdtemp()
 
         self.slicer_plugin = mock.MagicMock()
-        self.slicer_plugin.get_slicer_properties.return_value = dict(
-            type="mock", name="Mock", same_device=True
-        )
+        self.slicer_plugin.get_slicer_properties.return_value = {
+            "type": "mock",
+            "name": "Mock",
+            "same_device": True,
+        }
         self.slicer_plugin.is_slicer_configured.return_value = True
 
         # mock plugin manager
@@ -63,7 +65,7 @@ class TestSlicingManager(unittest.TestCase):
 
             if octoprint.plugin.SlicerPlugin in types:
                 return plugins
-            return dict()
+            return {}
 
         self.plugin_manager.return_value.get_implementations.side_effect = (
             get_implementations
@@ -108,12 +110,12 @@ class TestSlicingManager(unittest.TestCase):
 
         # mock retrieval of default profile
         def get(path):
-            return dict()
+            return {}
 
         self.settings.get.side_effect = get
 
         default_profile = octoprint.slicing.SlicingProfile(
-            "mock", "default", dict(layer_height=0.2, fill_density=40)
+            "mock", "default", {"layer_height": 0.2, "fill_density": 40}
         )
         self.slicer_plugin.get_slicer_default_profile.return_value = default_profile
 
@@ -141,7 +143,7 @@ class TestSlicingManager(unittest.TestCase):
         self.slicer_plugin.do_slice.return_value = True, None
 
         # mock printer profile manager
-        printer_profile = dict(_id="mock_printer", _name="Mock Printer Profile")
+        printer_profile = {"_id": "mock_printer", "_name": "Mock Printer Profile"}
 
         def get_printer_profile(printer_profile_id):
             self.assertEqual("mock_printer", printer_profile_id)
@@ -155,11 +157,11 @@ class TestSlicingManager(unittest.TestCase):
         dest_path = "prefix/dest.file"
         profile_name = "dummy_profile"
         printer_profile_id = "mock_printer"
-        position = dict(x=10, y=20)
+        position = {"x": 10, "y": 20}
         callback = mock.MagicMock()
         callback_args = ("one", "two", "three")
-        callback_kwargs = dict(foo="bar")
-        overrides = dict(layer_height=0.5)
+        callback_kwargs = {"foo": "bar"}
+        overrides = {"layer_height": 0.5}
 
         self.slicing_manager.slice(
             slicer_name,

@@ -29,7 +29,7 @@ def all_events():
     return [
         getattr(Events, name)
         for name in Events.__dict__
-        if not name.startswith("_") and not name in ("register_event",)
+        if not name.startswith("_") and name not in ("register_event",)
     ]
 
 
@@ -357,10 +357,10 @@ class CommandTrigger(GenericEventListener):
                 continue
 
             if (
-                not "event" in subscription
-                or not "command" in subscription
-                or not "type" in subscription
-                or not subscription["type"] in ["system", "gcode"]
+                "event" not in subscription
+                or "command" not in subscription
+                or "type" not in subscription
+                or subscription["type"] not in ["system", "gcode"]
             ):
                 self._logger.info(
                     "Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(
@@ -402,7 +402,7 @@ class CommandTrigger(GenericEventListener):
 
         GenericEventListener.eventCallback(self, event, payload)
 
-        if not event in self._subscriptions:
+        if event not in self._subscriptions:
             return
 
         for command, commandType, debug in self._subscriptions[event]:

@@ -39,26 +39,26 @@ class MiscTestCase(unittest.TestCase):
     @ddt.data(
         (
             "http://example.com",
-            dict(source="source"),
+            {"source": "source"},
             "http://example.com?utm_source=source",
         ),
         (
             "http://example.com?q=1",
-            dict(source="source"),
+            {"source": "source"},
             "http://example.com?q=1&utm_source=source",
         ),
         (
             "http://example.com",
-            dict(source="source", medium="medium"),
+            {"source": "source", "medium": "medium"},
             "http://example.com?utm_source=source&utm_medium=medium",
         ),
         (
             "http://example.com",
-            dict(source="source", medium="medium", content="content with spaces"),
+            {"source": "source", "medium": "medium", "content": "content with spaces"},
             "http://example.com?utm_source=source&utm_medium=medium&utm_content=content+with+spaces",
         ),
         # no handling
-        ("http://example.com", dict(), "http://example.com"),
+        ("http://example.com", {}, "http://example.com"),
     )
     @ddt.unpack
     def test_utmify(self, link, kwargs, expected):
@@ -66,16 +66,19 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     @ddt.data(
-        (frozendict(a=1, b=2, c=3), dict(a=1, b=2, c=3)),
+        (frozendict(a=1, b=2, c=3), {"a": 1, "b": 2, "c": 3}),
         (
             frozendict(a=1, b=2, c=frozendict(c1=1, c2=2)),
-            dict(a=1, b=2, c=dict(c1=1, c2=2)),
+            {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2}},
         ),
-        (dict(a=1, b=2, c=3), dict(a=1, b=2, c=3)),
-        (dict(a=1, b=2, c=frozendict(c1=1, c2=2)), dict(a=1, b=2, c=dict(c1=1, c2=2))),
+        ({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 3}),
         (
-            dict(a=1, b=2, c=dict(c1=1, c2=2, c3=frozendict(c11=11, c12=12))),
-            dict(a=1, b=2, c=dict(c1=1, c2=2, c3=dict(c11=11, c12=12))),
+            {"a": 1, "b": 2, "c": frozendict(c1=1, c2=2)},
+            {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2}},
+        ),
+        (
+            {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2, "c3": frozendict(c11=11, c12=12)}},
+            {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2, "c3": {"c11": 11, "c12": 12}}},
         ),
     )
     @ddt.unpack

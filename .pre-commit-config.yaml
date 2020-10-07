@@ -7,16 +7,24 @@ repos:
       - id: trailing-whitespace
       - id: check-yaml
       - id: check-toml
+  - repo: https://github.com/OctoPrint/codemods
+    rev: main
+    hooks:
+      - id: codemod_dict_to_literal
+        args: ['--ignore', 'src/octoprint/vendor']
+      - id: codemod_set_to_literal
+        args: ['--ignore', 'src/octoprint/vendor']
+      - id: codemod_not_in
+        args: ['--ignore', 'src/octoprint/vendor']
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.5.4
+    hooks:
+      - id: isort
   - repo: https://github.com/psf/black
     rev: stable
     hooks:
       - id: black
         args: ['--config', 'black.toml']
-        language_version: python3.7
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.5.4
-    hooks:
-      - id: isort
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.1
     hooks:

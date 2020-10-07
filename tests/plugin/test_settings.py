@@ -26,17 +26,17 @@ class SettingsTestCase(unittest.TestCase):
 
         self.settings = mock.create_autospec(octoprint.settings.Settings)
 
-        self.defaults = dict(
-            some_raw_key="some_raw_value",
-            some_int_key=1,
-            some_float_key=2.5,
-            some_boolean_key=True,
-            preprocessed=dict(get="PreProcessed", set="PreProcessed"),
-        )
+        self.defaults = {
+            "some_raw_key": "some_raw_value",
+            "some_int_key": 1,
+            "some_float_key": 2.5,
+            "some_boolean_key": True,
+            "preprocessed": {"get": "PreProcessed", "set": "PreProcessed"},
+        }
 
-        self.get_preprocessors = dict(preprocessed=dict(get=lambda x: x.upper()))
+        self.get_preprocessors = {"preprocessed": {"get": lambda x: x.upper()}}
 
-        self.set_preprocessors = dict(preprocessed=dict(set=lambda x: x.lower()))
+        self.set_preprocessors = {"preprocessed": {"set": lambda x: x.lower()}}
 
         self.plugin_settings = octoprint.plugin.PluginSettings(
             self.settings,
@@ -54,7 +54,7 @@ class SettingsTestCase(unittest.TestCase):
                     "some_raw_key",
                 ],
             ),
-            dict(),
+            {},
             "get",
         ),
         (
@@ -64,7 +64,7 @@ class SettingsTestCase(unittest.TestCase):
                     "some_raw_key",
                 ],
             ),
-            dict(merged=True),
+            {"merged": True},
             "get",
         ),
         (
@@ -74,7 +74,7 @@ class SettingsTestCase(unittest.TestCase):
                     "some_raw_key",
                 ],
             ),
-            dict(asdict=True),
+            {"asdict": True},
             "get",
         ),
         (
@@ -84,11 +84,11 @@ class SettingsTestCase(unittest.TestCase):
                     "some_raw_key",
                 ],
             ),
-            dict(merged=True, asdict=True),
+            {"merged": True, "asdict": True},
             "get",
         ),
-        ("get_int", (["some_int_key,"],), dict(), "getInt"),
-        ("get_float", (["some_float_key"],), dict(), "getFloat"),
+        ("get_int", (["some_int_key,"],), {}, "getInt"),
+        ("get_float", (["some_float_key"],), {}, "getFloat"),
         (
             "get_boolean",
             (
@@ -96,7 +96,7 @@ class SettingsTestCase(unittest.TestCase):
                     "some_boolean_key",
                 ],
             ),
-            dict(),
+            {},
             "getBoolean",
         ),
     )
@@ -111,21 +111,21 @@ class SettingsTestCase(unittest.TestCase):
         forwarded_args = (["plugins", self.plugin_key] + getter_args[0],)
         forwarded_kwargs = getter_kwargs
         forwarded_kwargs.update(
-            dict(
-                defaults=dict(plugins=dict(test_plugin=self.defaults)),
-                preprocessors=dict(plugins=dict(test_plugin=self.get_preprocessors)),
-            )
+            {
+                "defaults": {"plugins": {"test_plugin": self.defaults}},
+                "preprocessors": {"plugins": {"test_plugin": self.get_preprocessors}},
+            }
         )
         forwarded_method.assert_called_once_with(*forwarded_args, **forwarded_kwargs)
 
     @data(
-        ("global_get", (["some_raw_key"],), dict(), "get"),
-        ("global_get", (["some_raw_key"],), dict(merged=True), "get"),
-        ("global_get", (["some_raw_key"],), dict(asdict=True), "get"),
-        ("global_get", (["some_raw_key"],), dict(merged=True, asdict=True), "get"),
-        ("global_get_int", (["some_int_key"],), dict(), "getInt"),
-        ("global_get_float", (["some_float_key"],), dict(), "getFloat"),
-        ("global_get_boolean", (["some_boolean_key"],), dict(), "getBoolean"),
+        ("global_get", (["some_raw_key"],), {}, "get"),
+        ("global_get", (["some_raw_key"],), {"merged": True}, "get"),
+        ("global_get", (["some_raw_key"],), {"asdict": True}, "get"),
+        ("global_get", (["some_raw_key"],), {"merged": True, "asdict": True}, "get"),
+        ("global_get_int", (["some_int_key"],), {}, "getInt"),
+        ("global_get_float", (["some_float_key"],), {}, "getFloat"),
+        ("global_get_boolean", (["some_boolean_key"],), {}, "getBoolean"),
     )
     @unpack
     def test_global_getter(self, getter, getter_args, getter_kwargs, forwarded):
@@ -150,7 +150,7 @@ class SettingsTestCase(unittest.TestCase):
             # further mock out our mocked function so things work as they should
             called_method.__name__ = to_native_str(forwarded)
             called_method.__qualname__ = to_native_str(forwarded)
-            called_method.__annotations__ = dict()
+            called_method.__annotations__ = {}
 
             method = getattr(self.plugin_settings, deprecated)
             self.assertTrue(callable(method))
@@ -158,8 +158,8 @@ class SettingsTestCase(unittest.TestCase):
 
             called_method.assert_called_once_with(
                 ["plugins", self.plugin_key, "some_raw_key"],
-                defaults=dict(plugins=dict(test_plugin=self.defaults)),
-                preprocessors=dict(plugins=dict(test_plugin=self.get_preprocessors)),
+                defaults={"plugins": {"test_plugin": self.defaults}},
+                preprocessors={"plugins": {"test_plugin": self.get_preprocessors}},
             )
 
             self.assertEqual(1, len(w))
@@ -178,7 +178,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(),
+            {},
             "set",
         ),
         (
@@ -189,7 +189,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(force=True),
+            {"force": True},
             "set",
         ),
         (
@@ -200,7 +200,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(),
+            {},
             "setInt",
         ),
         (
@@ -211,7 +211,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(force=True),
+            {"force": True},
             "setInt",
         ),
         (
@@ -222,7 +222,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(),
+            {},
             "setFloat",
         ),
         (
@@ -233,7 +233,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(force=True),
+            {"force": True},
             "setFloat",
         ),
         (
@@ -244,7 +244,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(),
+            {},
             "setBoolean",
         ),
         (
@@ -255,7 +255,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(force=True),
+            {"force": True},
             "setBoolean",
         ),
     )
@@ -270,10 +270,10 @@ class SettingsTestCase(unittest.TestCase):
         forwarded_args = (["plugins", self.plugin_key] + setter_args[0], setter_args[1])
         forwarded_kwargs = setter_kwargs
         forwarded_kwargs.update(
-            dict(
-                defaults=dict(plugins=dict(test_plugin=self.defaults)),
-                preprocessors=dict(plugins=dict(test_plugin=self.set_preprocessors)),
-            )
+            {
+                "defaults": {"plugins": {"test_plugin": self.defaults}},
+                "preprocessors": {"plugins": {"test_plugin": self.set_preprocessors}},
+            }
         )
         forwarded_method.assert_called_once_with(*forwarded_args, **forwarded_kwargs)
 
@@ -286,7 +286,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(),
+            {},
             "set",
         ),
         (
@@ -297,7 +297,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(force=True),
+            {"force": True},
             "set",
         ),
         (
@@ -308,7 +308,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(),
+            {},
             "setInt",
         ),
         (
@@ -319,7 +319,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(force=True),
+            {"force": True},
             "setInt",
         ),
         (
@@ -330,7 +330,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(),
+            {},
             "setFloat",
         ),
         (
@@ -341,7 +341,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(force=True),
+            {"force": True},
             "setFloat",
         ),
         (
@@ -352,7 +352,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(),
+            {},
             "setBoolean",
         ),
         (
@@ -363,7 +363,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(force=True),
+            {"force": True},
             "setBoolean",
         ),
     )
@@ -390,7 +390,7 @@ class SettingsTestCase(unittest.TestCase):
             # further mock out our mocked function so things work as they should
             called_method.__name__ = to_native_str(forwarded)
             called_method.__qualname__ = to_native_str(forwarded)
-            called_method.__annotations__ = dict()
+            called_method.__annotations__ = {}
 
             method = getattr(self.plugin_settings, deprecated)
             self.assertTrue(callable(method))
@@ -399,8 +399,8 @@ class SettingsTestCase(unittest.TestCase):
             called_method.assert_called_once_with(
                 ["plugins", self.plugin_key, "some_raw_key"],
                 value,
-                defaults=dict(plugins=dict(test_plugin=self.defaults)),
-                preprocessors=dict(plugins=dict(test_plugin=self.set_preprocessors)),
+                defaults={"plugins": {"test_plugin": self.defaults}},
+                preprocessors={"plugins": {"test_plugin": self.set_preprocessors}},
             )
 
             self.assertEqual(1, len(w))

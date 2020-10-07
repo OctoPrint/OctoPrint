@@ -198,8 +198,8 @@ def _get_comparable_version_semantic(version_string, force_base=True):
 
 def _get_sanitized_compare_type(compare_type, custom=None):
     if (
-        not compare_type
-        in (
+        compare_type
+        not in (
             "python",
             "python_unequal",
             "semantic",

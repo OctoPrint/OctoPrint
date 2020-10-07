@@ -4,18 +4,17 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import click
-
-click.disable_unicode_literals_warning = True
-
 import io
 import json
 
+import click
 from past.builtins import unicode
 
 import octoprint_client
 from octoprint import FatalStartupError, init_settings
 from octoprint.cli import bulk_options, get_ctx_obj_option
+
+click.disable_unicode_literals_warning = True
 
 
 class JsonStringParamType(click.ParamType):

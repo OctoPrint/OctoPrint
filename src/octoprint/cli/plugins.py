@@ -5,15 +5,15 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import click
-
-click.disable_unicode_literals_warning = True
 import logging
 import logging.config
+
+import click
 
 from octoprint.cli import OctoPrintContext, get_ctx_obj_option, pass_octoprint_ctx
 from octoprint.util import dict_merge
 
+click.disable_unicode_literals_warning = True
 LOGGING_CONFIG = {
     "version": 1,
     "formatters": {"brief": {"format": "%(message)s"}},

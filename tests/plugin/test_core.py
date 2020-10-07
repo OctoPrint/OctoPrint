@@ -153,13 +153,13 @@ class PluginTestCase(unittest.TestCase):
 
     def test_plugin_initializing(self):
         def test_factory(name, implementation):
-            return dict(test_factory="test_factory_%s" % name)
+            return {"test_factory": "test_factory_%s" % name}
 
         def verify_injection_order(name, implementation):
             self.assertTrue(hasattr(implementation, "_basefolder"))
-            return dict()
+            return {}
 
-        additional_injects = dict(additional_inject="additional_inject")
+        additional_injects = {"additional_inject": "additional_inject"}
         additional_inject_factories = [test_factory, verify_injection_order]
         self.plugin_manager.initialize_implementations(
             additional_injects=additional_injects,
@@ -427,7 +427,7 @@ class PluginTestCase(unittest.TestCase):
     )
     @ddt.unpack
     def test_mixins_matching_bases(self, bases_to_set, bases_to_check, expected):
-        Foo = type(to_native_str("Foo"), bases_to_set, dict())
+        Foo = type(to_native_str("Foo"), bases_to_set, {})
         actual = octoprint.plugin.core.PluginManager.mixins_matching_bases(
             Foo, *bases_to_check
         )

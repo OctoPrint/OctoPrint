@@ -113,7 +113,7 @@ class LoggingPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_LOGGING_MANAGE.require(403)
     def set_logging_levels_api(self):
-        if not "application/json" in request.headers["Content-Type"]:
+        if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
 
         try:

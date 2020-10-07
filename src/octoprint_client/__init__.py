@@ -58,7 +58,7 @@ class SocketClient(object):
         # prepare a bunch of callback methods
         import functools
 
-        callbacks = dict()
+        callbacks = {}
         for callback in ("on_open", "on_message", "on_error", "on_close"):
             # now, normally we could just use functools.partial for something like
             # this, but websocket does a type check against a python function type
@@ -272,7 +272,7 @@ class Client(object):
         return self.post(path, data, encoding="json", params=params, timeout=timeout)
 
     def post_command(self, path, command, additional=None, timeout=None):
-        data = dict(command=command)
+        data = {"command": command}
         if additional:
             data.update(additional)
         return self.post_json(path, data, params=data, timeout=timeout)
@@ -299,9 +299,9 @@ class Client(object):
 
         with io.open(file_path, "rb") as fp:
             if content_type:
-                files = dict(file=(file_name, fp, content_type))
+                files = {"file": (file_name, fp, content_type)}
             else:
-                files = dict(file=(file_name, fp))
+                files = {"file": (file_name, fp)}
 
             response = self.request(
                 "POST", path, data=additional, files=files, params=params, timeout=timeout

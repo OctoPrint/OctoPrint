@@ -28,9 +28,9 @@ except ImportError:  # pragma: no cover
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
 _ANSI_CSI_PATTERN = (
-    b"\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+    b"\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 )
-_ANSI_OSC_PATTERN = b"\001?\033\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
+_ANSI_OSC_PATTERN = b"\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
 _ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN]))
 
 
@@ -224,11 +224,11 @@ class CommandlineCaller(object):
         def process_lines(lines, logger):
             if not lines:
                 return []
-            l = self._preprocess_lines(
+            processed = self._preprocess_lines(
                 *map(lambda x: to_unicode(x, errors="replace"), lines)
             )
-            logger(*l)
-            return list(l)
+            logger(*processed)
+            return list(processed)
 
         def process_stdout(lines):
             return process_lines(lines, self._log_stdout)

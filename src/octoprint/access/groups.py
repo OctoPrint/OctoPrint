@@ -235,7 +235,7 @@ class FilebasedGroupManager(GroupManager):
                 with io.open(self._groupfile, "rt", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
 
-                if not "groups" in data:
+                if "groups" not in data:
                     groups = data
                     data = {"groups": groups}
 
@@ -283,8 +283,8 @@ class FilebasedGroupManager(GroupManager):
                     default_permissions = self.default_permissions_for_group(key)
                     for permission in default_permissions:
                         if (
-                            not permission.key in tracked_permissions
-                            and not permission in permissions
+                            permission.key not in tracked_permissions
+                            and permission not in permissions
                         ):
                             permissions.append(permission)
 
@@ -326,7 +326,7 @@ class FilebasedGroupManager(GroupManager):
                 "subgroups": self._from_groups(*group._subgroups),
                 "default": group._default,
             }
-            if not key in self._default_groups:
+            if key not in self._default_groups:
                 groups[key]["name"] = group.get_name()
                 groups[key]["description"] = group.get_description()
 

@@ -5,12 +5,14 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import click
-
-click.disable_unicode_literals_warning = True
 import sys
 
+import click
+
 import octoprint
+
+click.disable_unicode_literals_warning = True
+
 
 # ~~ click context
 
@@ -199,13 +201,13 @@ legacy_options = bulk_options(
 
 # ~~ "octoprint" command, merges server_commands and plugin_commands groups
 
-from .analysis import analysis_commands
-from .client import client_commands
-from .config import config_commands
-from .dev import dev_commands
-from .plugins import plugin_commands
-from .server import server_commands
-from .user import user_commands
+from .analysis import analysis_commands  # noqa: E402
+from .client import client_commands  # noqa: E402
+from .config import config_commands  # noqa: E402
+from .dev import dev_commands  # noqa: E402
+from .plugins import plugin_commands  # noqa: E402
+from .server import server_commands  # noqa: E402
+from .user import user_commands  # noqa: E402
 
 
 @click.group(

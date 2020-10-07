@@ -5,12 +5,12 @@ import os
 import sys
 from distutils.command.build_py import build_py as _build_py
 
-import versioneer
+import versioneer  # noqa: F401
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
-import setuptools
+import setuptools  # noqa: F401,E402
 
-import octoprint_setuptools
+import octoprint_setuptools  # noqa: F401,E402
 
 # ----------------------------------------------------------------------------------------
 
@@ -86,35 +86,29 @@ INSTALL_REQUIRES_OSX = [
 ]
 
 # Additional requirements for optional install options
-EXTRA_REQUIRES = dict(
-    # Dependencies for developing OctoPrint
-    develop=[
+EXTRA_REQUIRES = {
+    "develop": [
         # Testing dependencies
         "mock>=3.0.5,<4",
         "pytest==4.6.10",
         "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
-        # linter
-        "flake8",
-        # formatters
-        "black",
-        "isort",
         # pre-commit
         "pre-commit",
         # profiler
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    plugins=["cookiecutter>=1.7.2,<1.8"],
+    "plugins": ["cookiecutter>=1.7.2,<1.8"],
     # Dependencies for building the documentation - Python 3 required!
-    docs=[
+    "docs": [
         "sphinx>=3,<4",
         "sphinxcontrib-httpdomain",
         "sphinxcontrib-mermaid",
         "sphinx_rtd_theme",
         "readthedocs-sphinx-ext",
     ],
-)
+}
 
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
@@ -154,7 +148,7 @@ def read_file_contents(path):
 
 def md_to_html_build_py_factory(files, baseclass):
     class md_to_html_build_py(baseclass):
-        files = dict()
+        files = {}
 
         def run(self):
             print("RUNNING md_to_html_build_py")
@@ -180,7 +174,7 @@ def md_to_html_build_py_factory(files, baseclass):
             baseclass.run(self)
 
     return type(md_to_html_build_py)(
-        md_to_html_build_py.__name__, (md_to_html_build_py,), dict(files=files)
+        md_to_html_build_py.__name__, (md_to_html_build_py,), {"files": files}
     )
 
 
@@ -192,11 +186,11 @@ def get_cmdclass():
 
     # add clean command
     cmdclass.update(
-        dict(
-            clean=octoprint_setuptools.CleanCommand.for_options(
+        {
+            "clean": octoprint_setuptools.CleanCommand.for_options(
                 source_folder="src", eggs=["OctoPrint*.egg-info"]
             )
-        )
+        }
     )
 
     # add translation commands

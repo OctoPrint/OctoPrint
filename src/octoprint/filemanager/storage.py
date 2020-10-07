@@ -577,9 +577,9 @@ class LocalFileStorage(StorageInterface):
 
             if entry.is_file() and octoprint.filemanager.valid_file_type(entry.name):
                 if (
-                    not entry.name in metadata
+                    entry.name not in metadata
                     or not isinstance(metadata[entry.name], dict)
-                    or not "analysis" in metadata[entry.name]
+                    or "analysis" not in metadata[entry.name]
                 ):
                     printer_profile_rels = self.get_link(entry.path, "printerprofile")
                     if printer_profile_rels:
@@ -909,12 +909,12 @@ class LocalFileStorage(StorageInterface):
         file_hash = self._create_hash(file_path)
         metadata = self._get_metadata_entry(path, name, default={})
         metadata_dirty = False
-        if not "hash" in metadata or metadata["hash"] != file_hash:
+        if "hash" not in metadata or metadata["hash"] != file_hash:
             # hash changed -> throw away old metadata
             metadata = {"hash": file_hash}
             metadata_dirty = True
 
-        if not "display" in metadata and display_name != name:
+        if "display" not in metadata and display_name != name:
             # display name is not the same as file name -> store in metadata
             metadata["display"] = display_name
             metadata_dirty = True
@@ -1062,7 +1062,7 @@ class LocalFileStorage(StorageInterface):
         path, name = self.sanitize(path)
         metadata = self._get_metadata(path)
 
-        if not name in metadata:
+        if name not in metadata:
             return
 
         return metadata[name].get(key)
@@ -1072,12 +1072,12 @@ class LocalFileStorage(StorageInterface):
         metadata = self._get_metadata(path)
         metadata_dirty = False
 
-        if not name in metadata:
+        if name not in metadata:
             return
 
         metadata = self._copied_metadata(metadata, name)
 
-        if not key in metadata[name] or overwrite:
+        if key not in metadata[name] or overwrite:
             metadata[name][key] = data
             metadata_dirty = True
         elif (
@@ -1100,10 +1100,10 @@ class LocalFileStorage(StorageInterface):
         path, name = self.sanitize(path)
         metadata = self._get_metadata(path)
 
-        if not name in metadata:
+        if name not in metadata:
             return
 
-        if not key in metadata[name]:
+        if key not in metadata[name]:
             return
 
         metadata = self._copied_metadata(metadata, name)
@@ -1262,10 +1262,10 @@ class LocalFileStorage(StorageInterface):
     def _add_history(self, name, path, data):
         metadata = self._copied_metadata(self._get_metadata(path), name)
 
-        if not "hash" in metadata[name]:
+        if "hash" not in metadata[name]:
             metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
 
-        if not "history" in metadata[name]:
+        if "history" not in metadata[name]:
             metadata[name]["history"] = []
 
         metadata[name]["history"].append(data)
@@ -1275,7 +1275,7 @@ class LocalFileStorage(StorageInterface):
     def _update_history(self, name, path, index, data):
         metadata = self._get_metadata(path)
 
-        if not name in metadata or not "history" in metadata[name]:
+        if name not in metadata or "history" not in metadata[name]:
             return
 
         metadata = self._copied_metadata(metadata, name)
@@ -1290,7 +1290,7 @@ class LocalFileStorage(StorageInterface):
     def _delete_history(self, name, path, index):
         metadata = self._get_metadata(path)
 
-        if not name in metadata or not "history" in metadata[name]:
+        if name not in metadata or "history" not in metadata[name]:
             return
 
         metadata = self._copied_metadata(metadata, name)
@@ -1306,7 +1306,7 @@ class LocalFileStorage(StorageInterface):
         if metadata is None:
             metadata = self._copied_metadata(self._get_metadata(path), name)
 
-        if not "history" in metadata[name]:
+        if "history" not in metadata[name]:
             return
 
         # collect data from history
@@ -1315,10 +1315,10 @@ class LocalFileStorage(StorageInterface):
 
         for history_entry in metadata[name]["history"]:
             if (
-                not "printTime" in history_entry
-                or not "success" in history_entry
+                "printTime" not in history_entry
+                or "success" not in history_entry
                 or not history_entry["success"]
-                or not "printerProfile" in history_entry
+                or "printerProfile" not in history_entry
             ):
                 continue
 
@@ -1337,12 +1337,12 @@ class LocalFileStorage(StorageInterface):
                 )
                 continue
 
-            if not printer_profile in former_print_times:
+            if printer_profile not in former_print_times:
                 former_print_times[printer_profile] = []
             former_print_times[printer_profile].append(print_time)
 
             if (
-                not printer_profile in last_print
+                printer_profile not in last_print
                 or last_print[printer_profile] is None
                 or (
                     "timestamp" in history_entry
@@ -1378,14 +1378,14 @@ class LocalFileStorage(StorageInterface):
         metadata = self._get_metadata(path)
         result = []
 
-        if not name in metadata:
+        if name not in metadata:
             return result
 
-        if not "links" in metadata[name]:
+        if "links" not in metadata[name]:
             return result
 
         for data in metadata[name]["links"]:
-            if not "rel" in data or not data["rel"] == searched_rel:
+            if "rel" not in data or not data["rel"] == searched_rel:
                 continue
             result.append(data)
         return result
@@ -1398,10 +1398,10 @@ class LocalFileStorage(StorageInterface):
         metadata = self._copied_metadata(self._get_metadata(path), name)
         metadata_dirty = False
 
-        if not "hash" in metadata[name]:
+        if "hash" not in metadata[name]:
             metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
 
-        if not "links" in metadata[name]:
+        if "links" not in metadata[name]:
             metadata[name]["links"] = []
 
         for rel, data in links:
@@ -1423,7 +1423,7 @@ class LocalFileStorage(StorageInterface):
                     hash = metadata[data["name"]]["hash"]
                 else:
                     hash = self._create_hash(ref_path)
-                    if not data["name"] in metadata:
+                    if data["name"] not in metadata:
                         metadata[data["name"]] = {"hash": hash, "links": []}
                     else:
                         metadata[data["name"]]["hash"] = hash
@@ -1432,7 +1432,7 @@ class LocalFileStorage(StorageInterface):
                     # file doesn't have the correct hash, we won't create the link
                     continue
 
-                if not "links" in metadata[data["name"]]:
+                if "links" not in metadata[data["name"]]:
                     metadata[data["name"]]["links"] = []
 
                 # add reverse link to link target file
@@ -1491,7 +1491,7 @@ class LocalFileStorage(StorageInterface):
 
                     matches = True
                     for k, v in data.items():
-                        if not k in link or not link[k] == v:
+                        if k not in link or not link[k] == v:
                             matches = False
                             break
 
@@ -1594,7 +1594,7 @@ class LocalFileStorage(StorageInterface):
                             ):
                                 entry_metadata = metadata[entry_name]
                                 if (
-                                    not "display" in entry_metadata
+                                    "display" not in entry_metadata
                                     and entry_display != entry_name
                                 ):
                                     if not metadata_dirty:
@@ -1639,7 +1639,7 @@ class LocalFileStorage(StorageInterface):
                             ):
                                 entry_metadata = metadata[entry_name]
                                 if (
-                                    not "display" in entry_metadata
+                                    "display" not in entry_metadata
                                     and entry_display != entry_name
                                 ):
                                     if not metadata_dirty:
@@ -1761,7 +1761,7 @@ class LocalFileStorage(StorageInterface):
     def _remove_metadata_entry(self, path, name):
         with self._get_metadata_lock(path):
             metadata = self._get_metadata(path)
-            if not name in metadata:
+            if name not in metadata:
                 return
 
             metadata = copy.copy(metadata)
@@ -1769,7 +1769,7 @@ class LocalFileStorage(StorageInterface):
             if "hash" in metadata[name]:
                 hash = metadata[name]["hash"]
                 for m in metadata.values():
-                    if not "links" in m:
+                    if "links" not in m:
                         continue
                     links_hash = (
                         lambda link: "hash" in link
@@ -1840,7 +1840,7 @@ class LocalFileStorage(StorageInterface):
             try:
                 json.dumps(value, allow_nan=False)
                 return True
-            except:
+            except Exception:
                 return False
 
         if isinstance(metadata, dict):

@@ -10,7 +10,7 @@ import os
 try:
     from os import scandir, walk
 except ImportError:
-    from scandir import scandir, walk
+    from scandir import scandir, walk  # noqa: F401
 
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -77,7 +77,7 @@ class SelectedFilesLoader(BaseLoader):
         self.encoding = encoding
 
     def get_source(self, environment, template):
-        if not template in self.files:
+        if template not in self.files:
             raise TemplateNotFound(template)
 
         from jinja2.loaders import open_if_exists

@@ -9,7 +9,7 @@ from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.plugin.core import FolderOrigin
-from octoprint.server import NO_CONTENT, admin_permission
+from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
 from octoprint.util import is_hidden_path, to_bytes
@@ -989,7 +989,7 @@ class BackupPlugin(
             if callable(on_backup_done):
                 on_backup_done(name, final_path, exclude)
 
-        except Exception as exc:  ## noqa: F841
+        except Exception as exc:  # noqa: F841
             # TODO py3: use the exception, not sys.exc_info()
             if callable(on_backup_error):
                 exc_info = sys.exc_info()
@@ -1278,8 +1278,8 @@ class BackupPlugin(
         return (
             is_os_compatible(["!windows"])
             and not settings.get_boolean(["restore_unsupported"])
-            and not os.environ.get("OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED", False)
-            in valid_boolean_trues
+            and os.environ.get("OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED", False)
+            not in valid_boolean_trues
         )
 
     def _send_client_message(self, message, payload=None):

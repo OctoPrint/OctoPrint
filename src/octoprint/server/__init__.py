@@ -15,12 +15,12 @@ import os
 import re
 import signal
 import sys
-import uuid
+import uuid  # noqa: F401
 from builtins import bytes, range
 from collections import OrderedDict, defaultdict
 
 from babel import Locale
-from flask import (
+from flask import (  # noqa: F401
     Blueprint,
     Flask,
     Request,
@@ -32,8 +32,13 @@ from flask import (
     session,
 )
 from flask_assets import Bundle, Environment
-from flask_babel import Babel, gettext, ngettext
-from flask_login import LoginManager, current_user, session_protected, user_logged_out
+from flask_babel import Babel, gettext, ngettext  # noqa: F401
+from flask_login import (  # noqa: F401
+    LoginManager,
+    current_user,
+    session_protected,
+    user_logged_out,
+)
 from past.builtins import basestring, unicode
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -42,7 +47,7 @@ import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
 from octoprint.util.json import JsonEncoding
-from octoprint.vendor.flask_principal import (
+from octoprint.vendor.flask_principal import (  # noqa: F401
     AnonymousIdentity,
     Identity,
     Permission,
@@ -89,8 +94,8 @@ connectivityChecker = None
 
 principals = Principal(app)
 
-import octoprint.access.groups as groups
-import octoprint.access.permissions as permissions
+import octoprint.access.groups as groups  # noqa: E402
+import octoprint.access.permissions as permissions  # noqa: E402
 
 # we set admin_permission to a GroupPermission with the default admin group
 admin_permission = octoprint.util.variable_deprecated(
@@ -104,15 +109,15 @@ user_permission = octoprint.util.variable_deprecated(
     since="1.4.0",
 )(groups.GroupPermission(groups.USER_GROUP))
 
-import octoprint._version
-import octoprint.access.groups as groups
-import octoprint.access.users as users
-import octoprint.events as events
-import octoprint.filemanager.analysis
-import octoprint.filemanager.storage
-import octoprint.plugin
-import octoprint.slicing
-import octoprint.timelapse
+import octoprint._version  # noqa: E402
+import octoprint.access.groups as groups  # noqa: E402
+import octoprint.access.users as users  # noqa: E402
+import octoprint.events as events  # noqa: E402
+import octoprint.filemanager.analysis  # noqa: E402
+import octoprint.filemanager.storage  # noqa: E402
+import octoprint.plugin  # noqa: E402
+import octoprint.slicing  # noqa: E402
+import octoprint.timelapse  # noqa: E402
 
 # only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __branch__, __display_version__, __revision__, __version__
@@ -1068,8 +1073,8 @@ class Server(object):
                         if not isinstance(entry, tuple) or not len(entry) == 3:
                             continue
                         if (
-                            not entry[0]
-                            in util.tornado.UploadStorageFallbackHandler.BODY_METHODS
+                            entry[0]
+                            not in util.tornado.UploadStorageFallbackHandler.BODY_METHODS
                         ):
                             continue
                         if not isinstance(entry[2], int):
@@ -1210,7 +1215,7 @@ class Server(object):
             else:
                 self._logger.info(
                     "Listening on http://{}:{}".format(
-                        self._host if not ":" in self._host else "[" + self._host + "]",
+                        self._host if ":" not in self._host else "[" + self._host + "]",
                         self._port,
                     )
                 )
@@ -1533,10 +1538,10 @@ class Server(object):
         def externalize_links(text):
             def repl(match):
                 tag = match.group("tag")
-                if not "href" in tag:
+                if "href" not in tag:
                     return match.group(0)
 
-                if not "target=" in tag and not "rel=" in tag:
+                if "target=" not in tag and "rel=" not in tag:
                     tag += ' target="_blank" rel="noreferrer noopener"'
 
                 content = match.group("content")
@@ -1765,7 +1770,7 @@ class Server(object):
 
     def _register_additional_template_plugin(self, plugin):
         folder = plugin.get_template_folder()
-        if folder is not None and not folder in self._template_searchpaths:
+        if folder is not None and folder not in self._template_searchpaths:
             self._template_searchpaths.append(folder)
 
     def _unregister_additional_template_plugin(self, plugin):
@@ -1774,7 +1779,8 @@ class Server(object):
             self._template_searchpaths.remove(folder)
 
     def _setup_blueprints(self):
-        import octoprint.server.views  # do not remove or the index view won't be found
+        # do not remove or the index view won't be found
+        import octoprint.server.views  # noqa: F401
         from octoprint.server.api import api
 
         blueprints = OrderedDict()
@@ -2476,7 +2482,7 @@ class Server(object):
         else:
             self._logger.debug(
                 "Starting intermediary server on http://{}:{}".format(
-                    host if not ":" in host else "[" + host + "]", port
+                    host if ":" not in host else "[" + host + "]", port
                 )
             )
 
@@ -2612,7 +2618,7 @@ class Server(object):
                     if not isinstance(p, dict):
                         continue
 
-                    if not "key" in p or not "name" in p:
+                    if "key" not in p or "name" not in p:
                         continue
 
                     if not key_whitelist.match(p["key"]):

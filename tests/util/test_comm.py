@@ -35,7 +35,7 @@ class TestCommErrorHandling(unittest.TestCase):
         self._comm._lastCommError = None
         self._comm._errorValue = None
         self._comm._clear_to_send = mock.Mock()
-        self._comm._error_message_hooks = dict()
+        self._comm._error_message_hooks = {}
         self._comm._trigger_emergency_stop = mock.Mock()
 
         # settings

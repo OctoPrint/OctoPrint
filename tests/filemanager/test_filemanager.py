@@ -25,29 +25,29 @@ class FilemanagerMethodTest(unittest.TestCase):
 
         self.plugin_manager = mock.MagicMock()
 
-        hook_extensions = dict(
-            some_plugin=lambda: dict(dict(machinecode=dict(foo=["foo", "f"]))),
-            other_plugin=lambda: dict(dict(model=dict(amf=["amf"]))),
-            mime_map=lambda: dict(
-                mime_map=dict(
-                    mime_map_yes=octoprint.filemanager.ContentTypeMapping(
+        hook_extensions = {
+            "some_plugin": lambda: dict({"machinecode": {"foo": ["foo", "f"]}}),
+            "other_plugin": lambda: dict({"model": {"amf": ["amf"]}}),
+            "mime_map": lambda: {
+                "mime_map": {
+                    "mime_map_yes": octoprint.filemanager.ContentTypeMapping(
                         ["mime_map_yes"], "application/mime_map_yes"
                     )
-                )
-            ),
-            mime_detect=lambda: dict(
-                dict(
-                    machinecode=dict(
-                        mime_detect_yes=octoprint.filemanager.ContentTypeDetector(
+                }
+            },
+            "mime_detect": lambda: dict(
+                {
+                    "machinecode": {
+                        "mime_detect_yes": octoprint.filemanager.ContentTypeDetector(
                             ["mime_detect_yes"], lambda x: "application/mime_detect_yes"
                         ),
-                        mime_detect_no=octoprint.filemanager.ContentTypeDetector(
+                        "mime_detect_no": octoprint.filemanager.ContentTypeDetector(
                             ["mime_detect_no"], lambda x: None
                         ),
-                    )
-                )
+                    }
+                }
             ),
-        )
+        }
         self.plugin_manager.get_hooks.return_value = hook_extensions
 
         self.plugin_manager_getter.return_value = self.plugin_manager
@@ -130,7 +130,7 @@ class FilemanagerMethodTest(unittest.TestCase):
         def hook():
             raise RuntimeError("Boo!")
 
-        self.plugin_manager.get_hooks.return_value = dict(hook=hook)
+        self.plugin_manager.get_hooks.return_value = {"hook": hook}
 
         with mock.patch("octoprint.filemanager.logging") as patched_logging:
             logger = mock.MagicMock()
@@ -181,7 +181,7 @@ class FileManagerTest(unittest.TestCase):
         )
         self.local_storage.analysis_backlog = iter([])
 
-        self.storage_managers = dict()
+        self.storage_managers = {}
         self.storage_managers[
             octoprint.filemanager.FileDestinations.LOCAL
         ] = self.local_storage
@@ -205,7 +205,7 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
 
-        test_profile = dict(id="_default", name="My Default Profile")
+        test_profile = {"id": "_default", "name": "My Default Profile"}
         self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
         file_path = self.file_manager.add_file(
@@ -225,16 +225,14 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.FILE_ADDED,
-                dict(
-                    storage=octoprint.filemanager.FileDestinations.LOCAL,
-                    name="test.gcode",
-                    path="test.gcode",
-                    type=["machinecode", "gcode"],
-                ),
+                {
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                    "name": "test.gcode",
+                    "path": "test.gcode",
+                    "type": ["machinecode", "gcode"],
+                },
             ),
-            mock.call(
-                octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables")
-            ),
+            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
         ]
         self.fire_event.call_args_list = expected_events
 
@@ -245,7 +243,7 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
 
-        test_profile = dict(id="_default", name="My Default Profile")
+        test_profile = {"id": "_default", "name": "My Default Profile"}
         self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
         file_path = self.file_manager.add_file(
@@ -278,16 +276,14 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.FILE_REMOVED,
-                dict(
-                    storage=octoprint.filemanager.FileDestinations.LOCAL,
-                    name="test.gcode",
-                    path="test.gcode",
-                    type=["machinecode", "gcode"],
-                ),
+                {
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                    "name": "test.gcode",
+                    "path": "test.gcode",
+                    "type": ["machinecode", "gcode"],
+                },
             ),
-            mock.call(
-                octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables")
-            ),
+            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
         ]
         self.fire_event.call_args_list = expected_events
 
@@ -307,15 +303,13 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.FOLDER_ADDED,
-                dict(
-                    storage=octoprint.filemanager.FileDestinations.LOCAL,
-                    name="test_folder",
-                    path="test_folder",
-                ),
+                {
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                    "name": "test_folder",
+                    "path": "test_folder",
+                },
             ),
-            mock.call(
-                octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables")
-            ),
+            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
         ]
         self.fire_event.call_args_list = expected_events
 
@@ -363,15 +357,13 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.FOLDER_REMOVED,
-                dict(
-                    storage=octoprint.filemanager.FileDestinations.LOCAL,
-                    name="test_folder",
-                    path="test_folder",
-                ),
+                {
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                    "name": "test_folder",
+                    "path": "test_folder",
+                },
             ),
-            mock.call(
-                octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables")
-            ),
+            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
         ]
         self.fire_event.call_args_list = expected_events
 
@@ -412,12 +404,12 @@ class FileManagerTest(unittest.TestCase):
                 recovery_file, max_permissions=0o666, mode="wt"
             )
 
-        expected = dict(
-            origin=octoprint.filemanager.FileDestinations.LOCAL,
-            path=path,
-            pos=pos,
-            date=now,
-        )
+        expected = {
+            "origin": octoprint.filemanager.FileDestinations.LOCAL,
+            "path": path,
+            "pos": pos,
+            "date": now,
+        }
 
         mock_yaml_safe_dump.assert_called_with(
             expected,
@@ -433,8 +425,6 @@ class FileManagerTest(unittest.TestCase):
     def test_save_recovery_data_with_error(
         self, mock_time, mock_yaml_safe_dump, mock_atomic_write
     ):
-        import os
-
         path = "some_file.gco"
         pos = 1234
 
@@ -485,7 +475,12 @@ class FileManagerTest(unittest.TestCase):
 
         recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
-        data = dict(path="some_path.gco", origin="local", pos=1234, date=123456789)
+        data = {
+            "path": "some_path.gco",
+            "origin": "local",
+            "pos": 1234,
+            "date": 123456789,
+        }
         text_data = yaml.dump(data)
 
         with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(read_data=text_data)) as m:
@@ -524,7 +519,7 @@ class FileManagerTest(unittest.TestCase):
         mock_remove.assert_called_with(recovery_file)
 
     def test_get_metadata(self):
-        expected = dict(key="value")
+        expected = {"key": "value"}
         self.local_storage.get_metadata.return_value = expected
 
         metadata = self.file_manager.get_metadata(
@@ -558,11 +553,11 @@ class FileManagerTest(unittest.TestCase):
         mocked_tempfile.return_value = temp_file
 
         # mock metadata on local storage
-        metadata = dict(hash="aabbccddeeff")
+        metadata = {"hash": "aabbccddeeff"}
         self.local_storage.get_metadata.return_value = metadata
 
         # mock printer profile
-        expected_printer_profile = dict(id="_default", name="My Default Profile")
+        expected_printer_profile = {"id": "_default", "name": "My Default Profile"}
         self.printer_profile_manager.get_current_or_default.return_value = (
             expected_printer_profile
         )
@@ -677,7 +672,7 @@ class FileManagerTest(unittest.TestCase):
         self.fire_event.call_args_list = expected_events
 
         # assert that model links were added
-        expected_links = [("model", dict(name="source.file"))]
+        expected_links = [("model", {"name": "source.file"})]
         self.local_storage.add_file.assert_called_once_with(
             "dest.file",
             mock.ANY,

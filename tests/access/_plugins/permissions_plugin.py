@@ -4,16 +4,16 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 def plugin_permissions(components):
     return [
-        dict(
-            name="fancy permission",
-            description="My Fancy new Permission",
-            roles=["fancy"],
-        ),
-        dict(
-            name="fancy permission with two roles",
-            description="My Fancy new Permission with two roles",
-            roles=["fancy1", "fancy2"],
-        ),
+        {
+            "name": "fancy permission",
+            "description": "My Fancy new Permission",
+            "roles": ["fancy"],
+        },
+        {
+            "name": "fancy permission with two roles",
+            "description": "My Fancy new Permission with two roles",
+            "roles": ["fancy1", "fancy2"],
+        },
     ]
 
 

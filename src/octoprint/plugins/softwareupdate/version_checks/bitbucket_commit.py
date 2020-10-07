@@ -38,7 +38,7 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
         return None
 
     reference = r.json()
-    if not "hash" in reference:
+    if "hash" not in reference:
         return None
 
     return reference["hash"]

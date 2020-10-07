@@ -49,7 +49,7 @@ from octoprint.util.version import (
 
 try:
     from os import scandir
-except:
+except ImportError:
     from scandir import scandir
 
 _DATA_FORMAT_VERSION = "v3"
@@ -61,7 +61,7 @@ def map_repository_entry(entry):
 
     result = copy.deepcopy(entry)
 
-    if not "follow_dependency_links" in result:
+    if "follow_dependency_links" not in result:
         result["follow_dependency_links"] = False
 
     result["is_compatible"] = {"octoprint": True, "os": True, "python": True}
@@ -538,7 +538,7 @@ class PluginManagerPlugin(
 
         elif command == "uninstall":
             plugin_name = data["plugin"]
-            if not plugin_name in self._plugin_manager.plugins:
+            if plugin_name not in self._plugin_manager.plugins:
                 return make_response("Unknown plugin: %s" % plugin_name, 404)
 
             plugin = self._plugin_manager.plugins[plugin_name]
@@ -559,7 +559,7 @@ class PluginManagerPlugin(
 
         elif command == "enable" or command == "disable":
             plugin_name = data["plugin"]
-            if not plugin_name in self._plugin_manager.plugins:
+            if plugin_name not in self._plugin_manager.plugins:
                 return make_response("Unknown plugin: %s" % plugin_name, 404)
 
             plugin = self._plugin_manager.plugins[plugin_name]
@@ -924,7 +924,7 @@ class PluginManagerPlugin(
         try:
             self._log_call("cp {} {}".format(path, destination))
             shutil.copy(path, destination)
-        except:
+        except Exception:
             self._logger.exception("Installing plugin from {} failed".format(source))
             result = {
                 "result": False,
@@ -1442,7 +1442,7 @@ class PluginManagerPlugin(
                 fallback=[],
             )
         )
-        if not plugin.key in disabled_list:
+        if plugin.key not in disabled_list:
             disabled_list.append(plugin.key)
             self._settings.global_set(["plugins", "_disabled"], disabled_list)
             self._settings.save(force=True)
@@ -1493,8 +1493,6 @@ class PluginManagerPlugin(
     def _fetch_repository_from_disk(self):
         repo_data = None
         if os.path.isfile(self._repository_cache_path):
-            import time
-
             mtime = os.path.getmtime(self._repository_cache_path)
             if self._is_repository_cache_valid(mtime=mtime):
                 try:
@@ -1590,8 +1588,6 @@ class PluginManagerPlugin(
     def _fetch_notices_from_disk(self):
         notice_data = None
         if os.path.isfile(self._notices_cache_path):
-            import time
-
             mtime = os.path.getmtime(self._notices_cache_path)
             if self._is_notices_cache_valid(mtime=mtime):
                 try:
@@ -1654,7 +1650,7 @@ class PluginManagerPlugin(
 
         notices = {}
         for notice in notice_data:
-            if not "plugin" in notice or not "text" in notice or not "date" in notice:
+            if "plugin" not in notice or "text" not in notice or "date" not in notice:
                 continue
 
             key = notice["plugin"]
@@ -1676,7 +1672,7 @@ class PluginManagerPlugin(
                 )
                 continue
 
-            if not key in notices:
+            if key not in notices:
                 notices[key] = []
             notices[key].append(notice)
 

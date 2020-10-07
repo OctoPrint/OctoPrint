@@ -305,8 +305,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             if (
                 progress is None
                 or not self._selectedFile
-                or not "sd" in self._selectedFile
-                or not "filename" in self._selectedFile
+                or "sd" not in self._selectedFile
+                or "filename" not in self._selectedFile
             ):
                 return
 
@@ -452,7 +452,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             raise ValueError("At least one axis to jog must be provided")
 
         for axis in axes:
-            if not axis in PrinterInterface.valid_axes:
+            if axis not in PrinterInterface.valid_axes:
                 raise ValueError(
                     "Invalid axis {}, valid axes are {}".format(
                         axis, ", ".join(PrinterInterface.valid_axes)

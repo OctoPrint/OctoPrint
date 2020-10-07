@@ -438,7 +438,7 @@ def init_pluginsystem(
     import os
 
     # we need this so that octoprint.plugins is in sys.modules and no warnings are caused when loading bundled plugins
-    import octoprint.plugins
+    import octoprint.plugins  # noqa: F401
 
     logger = log.getLogger(__name__ + ".startup")
 
@@ -529,7 +529,7 @@ def init_pluginsystem(
         disabled_list = pm.plugin_disabled_list
         already_processed = []
         for name, addons, _ in sorted_disabled_from_overlays:
-            if not name in disabled_list and not name.endswith("disabled"):
+            if name not in disabled_list and not name.endswith("disabled"):
                 for addon in addons:
                     if addon in disabled_list:
                         continue
@@ -541,7 +541,7 @@ def init_pluginsystem(
                             )
                         )
 
-                    if not addon in already_processed and not addon in disabled_list:
+                    if addon not in already_processed and addon not in disabled_list:
                         disabled_list.append(addon)
                         logger.info(
                             "Disabling plugin {} as defined by plugin {}".format(
@@ -593,7 +593,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
             return result
 
         for entry in entries:
-            if not "plugin" in entry:
+            if "plugin" not in entry:
                 continue
 
             if "octoversions" in entry and not is_octoprint_compatible(

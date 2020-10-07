@@ -25,7 +25,7 @@ if False:
     # For type annotation
     from typing import Any, List  # NOQA
 
-cache = dict()
+cache = {}
 
 
 class OnlineIncludeReader(LiteralIncludeReader):

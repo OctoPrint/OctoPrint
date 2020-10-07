@@ -17,12 +17,12 @@ import os
 import time
 from collections import OrderedDict, namedtuple
 
-_stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
-_entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
-
 import octoprint.plugin
 import octoprint.settings
 import octoprint.timelapse
+
+_stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
+_entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
 
 
 @ddt.ddt
@@ -44,7 +44,7 @@ class TimelapseTest(unittest.TestCase):
         def extension_factory(*args, **kwargs):
             return ["gif"]
 
-        hooks = dict(test=extension_factory)
+        hooks = {"test": extension_factory}
         self.plugin_manager.get_hooks.return_value = hooks
 
         self.now = time.time()
@@ -142,7 +142,7 @@ class TimelapseTest(unittest.TestCase):
 
         mocked_path = "/path/to/timelapse"
 
-        files = dict()
+        files = {}
         files["one.mpg"] = _stat(st_size=1024, st_ctime=self.now, st_mtime=self.now)
         files["nope.jpg"] = _stat(st_size=100, st_ctime=self.now, st_mtime=self.now)
         files["two.mpg"] = _stat(st_size=2048, st_ctime=self.now, st_mtime=self.now)
@@ -164,7 +164,7 @@ class TimelapseTest(unittest.TestCase):
     @mock.patch("octoprint.timelapse.scandir")
     def test_unrendered_timelapses(self, mock_scandir):
         ## prepare
-        files = dict()
+        files = {}
         files["one-0.jpg"] = _stat(
             st_size=1, st_ctime=self.now - 1, st_mtime=self.now - 1
         )

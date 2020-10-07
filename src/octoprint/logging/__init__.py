@@ -5,7 +5,7 @@ from typing import Union
 
 from past.builtins import basestring, unicode
 
-from octoprint.logging import handlers
+from octoprint.logging import handlers  # noqa: F401
 
 
 def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args):

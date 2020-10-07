@@ -164,7 +164,7 @@ def slicingGetSlicerProfile(slicer, name):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:
@@ -207,7 +207,7 @@ def slicingAddSlicerProfile(slicer, name):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:

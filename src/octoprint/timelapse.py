@@ -348,7 +348,7 @@ def _create_render_always_handler(name, gcode=None):
 
 
 def register_callback(callback):
-    if not callback in _update_callbacks:
+    if callback not in _update_callbacks:
         _update_callbacks.append(callback)
 
 

@@ -22,7 +22,7 @@ I don't know anything about).
 
 sys.path.insert(0, os.path.join(basedir, "src"))
 
-import octoprint
+import octoprint  # noqa: E402
 
 if len(sys.argv) == 1:
     sys.argv.append("serve")

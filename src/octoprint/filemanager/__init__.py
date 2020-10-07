@@ -17,10 +17,10 @@ import octoprint.util
 from octoprint.events import Events, eventManager
 from octoprint.util import get_fully_qualified_classname as fqcn
 
-from .analysis import AnalysisQueue, QueueEntry
-from .destinations import FileDestinations
-from .storage import LocalFileStorage
-from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper
+from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
+from .destinations import FileDestinations  # noqa: F401
+from .storage import LocalFileStorage  # noqa: F401
+from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
@@ -348,7 +348,7 @@ class FileManager(object):
         self._determine_analysis_backlog(storage_type, storage_manager)
 
     def remove_storage(self, type):
-        if not type in self._storage_managers:
+        if type not in self._storage_managers:
             return
         del self._storage_managers[type]
 
@@ -1028,14 +1028,14 @@ class FileManager(object):
         return self._storage(destination).last_modified(path=path, recursive=recursive)
 
     def _storage(self, destination):
-        if not destination in self._storage_managers:
+        if destination not in self._storage_managers:
             raise NoSuchStorage(
                 "No storage configured for destination {destination}".format(**locals())
             )
         return self._storage_managers[destination]
 
     def _add_analysis_result(self, destination, path, result):
-        if not destination in self._storage_managers:
+        if destination not in self._storage_managers:
             return
 
         storage_manager = self._storage_managers[destination]

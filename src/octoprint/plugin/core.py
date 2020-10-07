@@ -183,23 +183,23 @@ class PluginInfo(object):
 
     attr_pythoncompat = "__plugin_pythoncompat__"
     """
-	Module attribute from which to retrieve the plugin's python compatibility string.
+    Module attribute from which to retrieve the plugin's python compatibility string.
 
-	If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
-	Python 2 but not Python 3.
+    If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
+    Python 2 but not Python 3.
 
-	To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
+    To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
 
-	Bundled plugins will automatically be assumed to be compatible.
-	"""
+    Bundled plugins will automatically be assumed to be compatible.
+    """
 
     attr_hidden = "__plugin_hidden__"
     """
-	Module attribute from which to determine if the plugin's hidden or not.
+    Module attribute from which to determine if the plugin's hidden or not.
 
-	Only evaluated for bundled plugins, in order to hide them from the Plugin Manager
-	and similar places.
-	"""
+    Only evaluated for bundled plugins, in order to hide them from the Plugin Manager
+    and similar places.
+    """
 
     attr_hooks = "__plugin_hooks__"
     """ Module attribute from which to retrieve the plugin's provided hooks. """
@@ -209,15 +209,15 @@ class PluginInfo(object):
 
     attr_implementations = "__plugin_implementations__"
     """
-	Module attribute from which to retrieve the plugin's provided implementations.
+    Module attribute from which to retrieve the plugin's provided implementations.
 
-	This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_implementation`. Only the
-	first entry will be evaluated.
+    This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_implementation`. Only the
+    first entry will be evaluated.
 
-	.. deprecated:: 1.2.0-dev-694
+    .. deprecated:: 1.2.0-dev-694
 
-	   Use :attr:`attr_implementation` instead.
-	"""
+       Use :attr:`attr_implementation` instead.
+    """
 
     attr_helpers = "__plugin_helpers__"
     """ Module attribute from which to retrieve the plugin's provided helpers. """
@@ -227,14 +227,14 @@ class PluginInfo(object):
 
     attr_init = "__plugin_init__"
     """
-	Module attribute which to call when loading the plugin.
+    Module attribute which to call when loading the plugin.
 
-	This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_load`.
+    This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_load`.
 
-	.. deprecated:: 1.2.0-dev-720
+    .. deprecated:: 1.2.0-dev-720
 
-	   Use :attr:`attr_load` instead.
-	"""
+       Use :attr:`attr_load` instead.
+    """
 
     attr_load = "__plugin_load__"
     """ Module attribute which to call when loading the plugin. """
@@ -267,9 +267,9 @@ class PluginInfo(object):
 
         self.origin = None
         """
-		The origin from which this plugin was loaded, either a :class:`EntryPointOrigin`, :class:`FolderOrigin`
-		or :class:`ModuleOrigin` instance. Set during loading, initially ``None``.
-		"""
+        The origin from which this plugin was loaded, either a :class:`EntryPointOrigin`, :class:`FolderOrigin`
+        or :class:`ModuleOrigin` instance. Set during loading, initially ``None``.
+        """
 
         self.enabled = True
         """Whether the plugin is enabled."""
@@ -464,7 +464,7 @@ class PluginInfo(object):
             callable or None: Handler for the requested ``hook`` or None if no handler is registered.
         """
 
-        if not hook in self.hooks:
+        if hook not in self.hooks:
             return None
         return self.hooks[hook]
 
@@ -1091,9 +1091,9 @@ class PluginManager(object):
         import sys
 
         if site.ENABLE_USER_SITE:
-            if not site.USER_SITE in working_set.entries:
+            if site.USER_SITE not in working_set.entries:
                 working_set.add_entry(site.USER_SITE)
-            if not site.USER_SITE in sys.path:
+            if site.USER_SITE not in sys.path:
                 site.addsitedir(site.USER_SITE)
 
         if not isinstance(groups, (list, tuple)):
@@ -1376,7 +1376,7 @@ class PluginManager(object):
 
         added, found = self.find_plugins(
             existing=dict(
-                (k, v) for k, v in self.plugins.items() if not k in force_reload
+                (k, v) for k, v in self.plugins.items() if k not in force_reload
             ),
             incl_all_found=True,
         )
@@ -1475,7 +1475,7 @@ class PluginManager(object):
                 name (str): plugin identifier
                 **flags (dict): dictionary of flag names and values
         """
-        if not name in self.plugins:
+        if name not in self.plugins:
             self.logger.debug(
                 "Trying to mark an unknown plugin {name}".format(**locals())
             )
@@ -1484,7 +1484,7 @@ class PluginManager(object):
             if value is None:
                 continue
 
-            if value and not name in self.marked_plugins[key]:
+            if value and name not in self.marked_plugins[key]:
                 self.marked_plugins[key].append(name)
             elif not value and name in self.marked_plugins[key]:
                 self.marked_plugins[key].remove(name)
@@ -1500,7 +1500,7 @@ class PluginManager(object):
         Returns:
                 (boolean): True if the plugin has been flagged, False otherwise
         """
-        if not name in self.plugins:
+        if name not in self.plugins:
             return False
 
         return name in self.marked_plugins[flag]
@@ -1508,7 +1508,7 @@ class PluginManager(object):
     def load_plugin(
         self, name, plugin=None, startup=False, initialize_implementation=True
     ):
-        if not name in self.plugins:
+        if name not in self.plugins:
             self.logger.warning(
                 "Trying to load an unknown plugin {name}".format(**locals())
             )
@@ -1535,7 +1535,7 @@ class PluginManager(object):
             self.logger.exception("There was an error loading plugin %s" % name)
 
     def unload_plugin(self, name):
-        if not name in self.plugins:
+        if name not in self.plugins:
             self.logger.warning(
                 "Trying to unload unknown plugin {name}".format(**locals())
             )
@@ -1569,14 +1569,14 @@ class PluginManager(object):
             # make sure the plugin is NOT in the list of enabled plugins but in the list of disabled plugins
             if name in self.enabled_plugins:
                 del self.enabled_plugins[name]
-            if not name in self.disabled_plugins:
+            if name not in self.disabled_plugins:
                 self.disabled_plugins[name] = plugin
 
     def enable_plugin(
         self, name, plugin=None, initialize_implementation=True, startup=False
     ):
         """Enables a plugin"""
-        if not name in self.disabled_plugins:
+        if name not in self.disabled_plugins:
             self.logger.warning(
                 "Tried to enable plugin {name}, however it is not disabled".format(
                     **locals()
@@ -1630,7 +1630,7 @@ class PluginManager(object):
 
     def disable_plugin(self, name, plugin=None):
         """Disables a plugin"""
-        if not name in self.enabled_plugins:
+        if name not in self.enabled_plugins:
             self.logger.warning(
                 "Tried to disable plugin {name}, however it is not enabled".format(
                     **locals()
@@ -2116,7 +2116,7 @@ class PluginManager(object):
             dict: A dict containing all registered handlers mapped by their plugin's identifier.
         """
 
-        if not hook in self.plugin_hooks:
+        if hook not in self.plugin_hooks:
             return {}
 
         result = OrderedDict()
@@ -2220,7 +2220,7 @@ class PluginManager(object):
                 registered with the system.
         """
 
-        if not name in self.enabled_plugins:
+        if name not in self.enabled_plugins:
             return None
         plugin = self.enabled_plugins[name]
 

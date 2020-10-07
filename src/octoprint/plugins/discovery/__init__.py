@@ -269,7 +269,7 @@ class DiscoveryPlugin(
         reg_type = self._format_zeroconf_service_type(reg_type)
 
         key = (reg_type, port)
-        if not key in self._zeroconf_registrations:
+        if key not in self._zeroconf_registrations:
             return
 
         infos = self._zeroconf_registrations.pop(key)
@@ -277,7 +277,7 @@ class DiscoveryPlugin(
             for info in infos:
                 self._zeroconf.unregister_service(info)
             self._logger.debug("Unregistered {} on port {}".format(reg_type, port))
-        except:
+        except Exception:
             self._logger.exception(
                 "Could not (fully) unregister {} on port {}".format(reg_type, port)
             )

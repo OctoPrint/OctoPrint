@@ -151,7 +151,6 @@ import copy
 import io
 import logging
 import os
-import re
 
 try:
     from os import scandir
@@ -454,7 +453,7 @@ class PrinterProfileManager(object):
 
     def set_default(self, identifier):
         all_identifiers = self._load_all_identifiers()
-        if identifier is not None and not identifier in all_identifiers:
+        if identifier is not None and identifier not in all_identifiers:
             return
 
         settings().set(["printerProfiles", "default"], identifier)
@@ -592,7 +591,7 @@ class PrinterProfileManager(object):
         if (
             "volume" in profile
             and "formFactor" in profile["volume"]
-            and not "origin" in profile["volume"]
+            and "origin" not in profile["volume"]
         ):
             profile["volume"]["origin"] = (
                 BedOrigin.CENTER
@@ -601,11 +600,11 @@ class PrinterProfileManager(object):
             )
             modified = True
 
-        if "volume" in profile and not "custom_box" in profile["volume"]:
+        if "volume" in profile and "custom_box" not in profile["volume"]:
             profile["volume"]["custom_box"] = False
             modified = True
 
-        if "extruder" in profile and not "sharedNozzle" in profile["extruder"]:
+        if "extruder" in profile and "sharedNozzle" not in profile["extruder"]:
             profile["extruder"]["sharedNozzle"] = False
             modified = True
 
@@ -617,7 +616,7 @@ class PrinterProfileManager(object):
             profile["extruder"]["offsets"] = [(0.0, 0.0)]
             modified = True
 
-        if not "heatedChamber" in profile:
+        if "heatedChamber" not in profile:
             profile["heatedChamber"] = False
             modified = True
 
@@ -637,11 +636,11 @@ class PrinterProfileManager(object):
         def convert_value(profile, path, converter):
             value = profile
             for part in path[:-1]:
-                if not isinstance(value, dict) or not part in value:
+                if not isinstance(value, dict) or part not in value:
                     raise RuntimeError("%s is not contained in profile" % ".".join(path))
                 value = value[part]
 
-            if not isinstance(value, dict) or not path[-1] in value:
+            if not isinstance(value, dict) or path[-1] not in value:
                 raise RuntimeError("%s is not contained in profile" % ".".join(path))
 
             value[path[-1]] = converter(value[path[-1]])
@@ -698,7 +697,7 @@ class PrinterProfileManager(object):
                 return False
 
         # validate form factor
-        if not profile["volume"]["formFactor"] in BedFormFactor.values():
+        if profile["volume"]["formFactor"] not in BedFormFactor.values():
             self._logger.warning(
                 "Profile has invalid value volume.formFactor: {formFactor}".format(
                     formFactor=profile["volume"]["formFactor"]
@@ -707,7 +706,7 @@ class PrinterProfileManager(object):
             return False
 
         # validate origin type
-        if not profile["volume"]["origin"] in BedOrigin.values():
+        if profile["volume"]["origin"] not in BedOrigin.values():
             self._logger.warning(
                 "Profile has invalid value in volume.origin: {origin}".format(
                     origin=profile["volume"]["origin"]

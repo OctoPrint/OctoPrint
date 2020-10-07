@@ -9,7 +9,7 @@ import logging
 import pkg_resources
 import requests
 
-from octoprint.util import to_native_str
+from octoprint.util import to_native_str  # noqa: F401
 from octoprint.util.version import (
     get_comparable_version,
     is_prerelease,
@@ -79,7 +79,7 @@ def _get_latest_release(package, include_prerelease):
         return None
 
     data = r.json()
-    if not "info" in data or not "version" in data["info"]:
+    if "info" not in data or "version" not in data["info"]:
         return None
 
     requires_python = data["info"].get("requires_python")

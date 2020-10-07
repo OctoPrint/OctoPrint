@@ -27,6 +27,7 @@ from octoprint.util.version import get_octoprint_version_string
 
 TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
 
+
 # noinspection PyMissingConstructor
 class TrackingPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -352,7 +353,7 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["events", "commerror"]):
             return
 
-        if not "reason" in payload or not "error" in payload:
+        if "reason" not in payload or "error" not in payload:
             return
 
         track_event = "commerror_{}".format(payload["reason"])

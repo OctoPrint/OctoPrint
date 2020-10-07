@@ -24,7 +24,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "/path/to/output.mpg",
                 "mpeg2video",
             ),
-            dict(),
+            {},
             '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p [out]\' "/path/to/output.mpg"',
         ),
         (
@@ -37,7 +37,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "/path/to/output.mp4",
                 "libx264",
             ),
-            dict(),
+            {},
             '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec libx264 -threads 1 -r 25 -y -b 10000k -f mp4 -vf \'[in] format=yuv420p [out]\' "/path/to/output.mp4"',
         ),
         (
@@ -50,7 +50,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "/path/to/output.mpg",
                 "mpeg2video",
             ),
-            dict(hflip=True),
+            {"hflip": True},
             '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p,hflip [out]\' "/path/to/output.mpg"',
         ),
         (
@@ -63,7 +63,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "/path/to/output.mpg",
                 "mpeg2video",
             ),
-            dict(rotate=True, watermark="/path/to/watermark.png"),
+            {"rotate": True, "watermark": "/path/to/watermark.png"},
             '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 4 -r 25 -y -b 20000k -f vob -vf \'[in] format=yuv420p,transpose=2 [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]\' "/path/to/output.mpg"',
         ),
     )
@@ -73,22 +73,22 @@ class TimelapseRenderJobTest(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     @data(
-        (dict(), "[in] format=yuv420p [out]"),
-        (dict(pixfmt="test"), "[in] format=test [out]"),
-        (dict(hflip=True), "[in] format=yuv420p,hflip [out]"),
-        (dict(vflip=True), "[in] format=yuv420p,vflip [out]"),
-        (dict(rotate=True), "[in] format=yuv420p,transpose=2 [out]"),
-        (dict(vflip=True, rotate=True), "[in] format=yuv420p,vflip,transpose=2 [out]"),
+        ({}, "[in] format=yuv420p [out]"),
+        ({"pixfmt": "test"}, "[in] format=test [out]"),
+        ({"hflip": True}, "[in] format=yuv420p,hflip [out]"),
+        ({"vflip": True}, "[in] format=yuv420p,vflip [out]"),
+        ({"rotate": True}, "[in] format=yuv420p,transpose=2 [out]"),
+        ({"vflip": True, "rotate": True}, "[in] format=yuv420p,vflip,transpose=2 [out]"),
         (
-            dict(vflip=True, hflip=True, rotate=True),
+            {"vflip": True, "hflip": True, "rotate": True},
             "[in] format=yuv420p,hflip,vflip,transpose=2 [out]",
         ),
         (
-            dict(watermark="/path/to/watermark.png"),
+            {"watermark": "/path/to/watermark.png"},
             "[in] format=yuv420p [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]",
         ),
         (
-            dict(hflip=True, watermark="/path/to/watermark.png"),
+            {"hflip": True, "watermark": "/path/to/watermark.png"},
             "[in] format=yuv420p,hflip [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]",
         ),
     )

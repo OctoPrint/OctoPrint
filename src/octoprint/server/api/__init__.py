@@ -43,24 +43,24 @@ from octoprint.server.util.flask import (
 )
 from octoprint.settings import settings as s
 from octoprint.settings import valid_boolean_trues
-from octoprint.vendor.flask_principal import AnonymousIdentity, Identity, identity_changed
+from octoprint.vendor.flask_principal import Identity, identity_changed
 
 # ~~ init api blueprint, including sub modules
 
 api = Blueprint("api", __name__)
 
-from . import access as api_access
-from . import connection as api_connection
-from . import files as api_files
-from . import job as api_job
-from . import languages as api_languages
-from . import printer as api_printer
-from . import printer_profiles as api_printer_profiles
-from . import settings as api_settings
-from . import slicing as api_slicing
-from . import system as api_system
-from . import timelapse as api_timelapse
-from . import users as api_users
+from . import access as api_access  # noqa: F401,E402
+from . import connection as api_connection  # noqa: F401,E402
+from . import files as api_files  # noqa: F401,E402
+from . import job as api_job  # noqa: F401,E402
+from . import languages as api_languages  # noqa: F401,E402
+from . import printer as api_printer  # noqa: F401,E402
+from . import printer_profiles as api_printer_profiles  # noqa: F401,E402
+from . import settings as api_settings  # noqa: F401,E402
+from . import slicing as api_slicing  # noqa: F401,E402
+from . import system as api_system  # noqa: F401,E402
+from . import timelapse as api_timelapse  # noqa: F401,E402
+from . import users as api_users  # noqa: F401,E402
 
 VERSION = "0.1"
 
@@ -211,7 +211,7 @@ def wizardFinish():
     if data is None:
         abort(400)
 
-    if not "handled" in data:
+    if "handled" not in data:
         abort(400)
     handled = data["handled"]
 

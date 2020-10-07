@@ -30,10 +30,6 @@ import os
 import re
 import sys
 import time
-import uuid
-
-# noinspection PyCompatibility
-from builtins import bytes
 
 import yaml
 import yaml.parser
@@ -558,7 +554,7 @@ class HierarchicalChainMap(ChainMap):
     def _get_next(cls, key, node, only_local=False):
         if isinstance(node, dict):
             return node[key]
-        elif only_local and not key in node.maps[0]:
+        elif only_local and key not in node.maps[0]:
             raise KeyError(key)
         else:
             return cls._hierarchy_for_key(key, node)
@@ -752,7 +748,7 @@ class Settings(object):
             def get_source(self, environment, template):
                 if self._sep in template:
                     prefix, name = template.split(self._sep, 1)
-                    if not prefix in self._mapping:
+                    if prefix not in self._mapping:
                         raise TemplateNotFound(template)
                     return self._mapping[prefix].get_source(environment, name)
                 return self._default.get_source(environment, template)
@@ -1125,7 +1121,7 @@ class Settings(object):
                 or "extruderOffsets" in printer_parameters
             ):
                 dirty = True
-                if not "extruder" in default_profile:
+                if "extruder" not in default_profile:
                     default_profile["extruder"] = {}
 
                 if "numExtruders" in printer_parameters:
@@ -1144,7 +1140,7 @@ class Settings(object):
             if "bedDimensions" in printer_parameters:
                 dirty = True
                 bed_dimensions = printer_parameters["bedDimensions"]
-                if not "volume" in default_profile:
+                if "volume" not in default_profile:
                     default_profile["volume"] = {}
 
                 if (
@@ -1166,7 +1162,7 @@ class Settings(object):
                 del config["printerParameters"]["bedDimensions"]
 
         if dirty:
-            if not "printerProfiles" in config:
+            if "printerProfiles" not in config:
                 config["printerProfiles"] = {}
             config["printerProfiles"]["defaultProfile"] = default_profile
         return dirty
@@ -1191,7 +1187,7 @@ class Settings(object):
                 scheme = config["server"]["scheme"]
                 del config["server"]["scheme"]
 
-            if not "reverseProxy" in config["server"] or not isinstance(
+            if "reverseProxy" not in config["server"] or not isinstance(
                 config["server"]["reverseProxy"], dict
             ):
                 config["server"]["reverseProxy"] = {}
@@ -1357,13 +1353,13 @@ class Settings(object):
                 migrate_to = migration_map.get(action)
                 if migrate_to is not None:
                     if (
-                        not "server" in config
-                        or not "commands" in config["server"]
-                        or not migrate_to in config["server"]["commands"]
+                        "server" not in config
+                        or "commands" not in config["server"]
+                        or migrate_to not in config["server"]["commands"]
                     ):
-                        if not "server" in config:
+                        if "server" not in config:
                             config["server"] = {}
-                        if not "commands" in config["server"]:
+                        if "commands" not in config["server"]:
                             config["server"]["commands"] = {}
                         config["server"]["commands"][migrate_to] = command
                         self._logger.info(
@@ -1528,9 +1524,9 @@ class Settings(object):
             and "enabled" in config["gcodeViewer"]
             and not config["gcodeViewer"]["enabled"]
         ):
-            if not "plugins" in config:
+            if "plugins" not in config:
                 config["plugins"] = {}
-            if not "_disabled" in config["plugins"]:
+            if "_disabled" not in config["plugins"]:
                 config["plugins"]["_disabled"] = []
             config["plugins"]["_disabled"].append("gcodeviewer")
             del config["gcodeViewer"]["enabled"]

@@ -43,7 +43,7 @@ class PipCaller(CommandlineCaller):
 
         # strip --process-dependency-links for versions that don't support it
         if (
-            not pip_version in cls.process_dependency_links
+            pip_version not in cls.process_dependency_links
             and "--process-dependency-links" in args
         ):
             logger.debug(
@@ -54,7 +54,7 @@ class PipCaller(CommandlineCaller):
             args.remove("--process-dependency-links")
 
         # strip --no-cache-dir for versions that don't support it
-        if not pip_version in cls.no_cache_dir and "--no-cache-dir" in args:
+        if pip_version not in cls.no_cache_dir and "--no-cache-dir" in args:
             logger.debug(
                 "Found --no-cache-dir flag, version {} doesn't support that yet though, removing.".format(
                     pip_version
@@ -64,7 +64,7 @@ class PipCaller(CommandlineCaller):
 
         # strip --disable-pip-version-check for versions that don't support it
         if (
-            not pip_version in cls.disable_pip_version_check
+            pip_version not in cls.disable_pip_version_check
             and "--disable-pip-version-check" in args
         ):
             logger.debug(
@@ -75,7 +75,7 @@ class PipCaller(CommandlineCaller):
             args.remove("--disable-pip-version-check")
 
         # add --no-use-wheel for versions that otherwise break
-        if pip_version in cls.no_use_wheel and not "--no-use-wheel" in args:
+        if pip_version in cls.no_use_wheel and "--no-use-wheel" not in args:
             logger.debug(
                 "Version {} needs --no-use-wheel to properly work.".format(pip_version)
             )

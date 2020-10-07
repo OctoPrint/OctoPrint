@@ -22,10 +22,10 @@ NEW_VERSION = "2.0.0"
 
 class Foo(object):
     def get_latest(self, target, check, full_data=None):
-        information = dict(
-            local=dict(name=OLD_VERSION, value=OLD_VERSION),
-            remote=dict(name=NEW_VERSION, value=NEW_VERSION),
-        )
+        information = {
+            "local": {"name": OLD_VERSION, "value": OLD_VERSION},
+            "remote": {"name": NEW_VERSION, "value": NEW_VERSION},
+        }
         current = False
         return information, current
 
@@ -81,15 +81,15 @@ class Foo(object):
 
 def get_update_information():
     foo = Foo()
-    return dict(
-        always_update=dict(
-            displayName=NAME,
-            displayVersion=OLD_VERSION,
-            type="python_checker",
-            python_checker=foo,
-            python_updater=foo,
-        )
-    )
+    return {
+        "always_update": {
+            "displayName": NAME,
+            "displayVersion": OLD_VERSION,
+            "type": "python_checker",
+            "python_checker": foo,
+            "python_updater": foo,
+        }
+    }
 
 
 __plugin_name__ = NAME

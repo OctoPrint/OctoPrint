@@ -27,7 +27,7 @@ class GetFolderUsageTest(unittest.TestCase):
 
             with mock.patch("octoprint.server.api.system.s") as settings_mock:
                 settings = mock.MagicMock()
-                settings.get.return_value = dict(uploads="mocked")
+                settings.get.return_value = {"uploads": "mocked"}
                 settings.getBaseFolder.return_value = "mocked"
                 settings_mock.return_value = settings
 

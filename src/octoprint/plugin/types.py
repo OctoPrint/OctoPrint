@@ -1114,7 +1114,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
             return False
 
         name = implementation._identifier
-        if not name in seen_wizards:
+        if name not in seen_wizards:
             return False
 
         seen = seen_wizards[name]
@@ -1527,9 +1527,9 @@ class SettingsPlugin(OctoPrintPlugin):
     def __init__(self):
         self._settings = None
         """
-		The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
-		the plugin core system upon initialization of the implementation.
-		"""
+        The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
+        the plugin core system upon initialization of the implementation.
+        """
 
     def on_settings_load(self):
         """
@@ -1578,7 +1578,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
             if len(path) > 1:
                 for entry in path[:-1]:
-                    if not entry in node:
+                    if entry not in node:
                         return
                     node = node[entry]
 

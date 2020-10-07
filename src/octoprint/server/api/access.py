@@ -38,7 +38,7 @@ def get_groups():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def add_group():
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:
@@ -46,11 +46,11 @@ def add_group():
     except BadRequest:
         return make_response("Malformed JSON body in request", 400)
 
-    if not "key" in data:
+    if "key" not in data:
         return make_response("Missing mandatory key field", 400)
-    if not "name" in data:
+    if "name" not in data:
         return make_response("Missing mandatory name field", 400)
-    if not "permissions" in data:
+    if "permissions" not in data:
         return make_response("Missing mandatory permissions field", 400)
 
     key = data["key"]
@@ -154,7 +154,7 @@ def add_user():
     if not userManager.enabled:
         return jsonify(SUCCESS)
 
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:
@@ -165,11 +165,11 @@ def add_user():
     if data is None:
         return make_response("Malformed JSON body in request", 400)
 
-    if not "name" in data:
+    if "name" not in data:
         return make_response("Missing mandatory name field", 400)
-    if not "password" in data:
+    if "password" not in data:
         return make_response("Missing mandatory password field", 400)
-    if not "active" in data:
+    if "active" not in data:
         return make_response("Missing mandatory active field", 400)
 
     name = data["name"]
@@ -218,7 +218,7 @@ def update_user(username):
 
     user = userManager.find_user(username)
     if user is not None:
-        if not "application/json" in request.headers["Content-Type"]:
+        if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
 
         try:
@@ -275,7 +275,7 @@ def change_password_for_user(username):
         and not current_user.is_anonymous
         and (current_user.get_name() == username or current_user.is_admin)
     ):
-        if not "application/json" in request.headers["Content-Type"]:
+        if "application/json" not in request.headers["Content-Type"]:
             return make_response("Expected content-type JSON", 400)
 
         try:
@@ -286,7 +286,7 @@ def change_password_for_user(username):
         if data is None:
             return make_response("Malformed JSON body in request", 400)
 
-        if not "password" in data or not data["password"]:
+        if "password" not in data or not data["password"]:
             return make_response("password is missing from request", 400)
 
         try:

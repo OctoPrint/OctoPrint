@@ -578,7 +578,7 @@ class IsHiddenPathTest(unittest.TestCase):
 
 
 try:
-    from glob import escape
+    from glob import escape  # noqa: F401
 
 except ImportError:
     # no glob.escape - tests for our ported implementation

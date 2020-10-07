@@ -59,7 +59,7 @@ def printerProfilesList():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:
@@ -70,7 +70,7 @@ def printerProfilesAdd():
     if json_data is None:
         return make_response("Malformed JSON body in request", 400)
 
-    if not "profile" in json_data:
+    if "profile" not in json_data:
         return make_response("No profile included in request", 400)
 
     base_profile = printerProfileManager.get_default()
@@ -94,9 +94,9 @@ def printerProfilesAdd():
 
     profile = dict_merge(base_profile, new_profile)
 
-    if not "id" in profile:
+    if "id" not in profile:
         return make_response("Profile does not contain mandatory 'id' field", 400)
-    if not "name" in profile:
+    if "name" not in profile:
         return make_response("Profile does not contain mandatory 'name' field", 400)
 
     try:
@@ -151,7 +151,7 @@ def printerProfilesDelete(identifier):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:
@@ -162,7 +162,7 @@ def printerProfilesUpdate(identifier):
     if json_data is None:
         return make_response("Malformed JSON body in request", 400)
 
-    if not "profile" in json_data:
+    if "profile" not in json_data:
         return make_response("No profile included in request", 400)
 
     profile = printerProfileManager.get(identifier)

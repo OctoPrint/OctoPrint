@@ -7,14 +7,12 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import collections
 import functools
 import io
 import logging
 import os
 import threading
 import time
-import uuid
 
 import flask
 import flask.json
@@ -28,6 +26,7 @@ import webassets.utils
 from cachelib import BaseCache
 from past.builtins import basestring, long
 from werkzeug.local import LocalProxy
+from werkzeug.utils import cached_property
 
 import octoprint.access.users
 import octoprint.plugin
@@ -42,7 +41,7 @@ from octoprint.util.net import is_lan_address
 try:
     from os import scandir, walk
 except ImportError:
-    from scandir import scandir, walk
+    from scandir import scandir, walk  # noqa: F401
 
 # ~~ monkey patching
 
@@ -130,24 +129,21 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                             )
                         except Exception:
                             logger.exception(
-                                "Error while trying to load translations for plugin {name}".format(
-                                    **locals()
-                                )
+                                "Error while trying to load translations "
+                                "for plugin {name}".format(**locals())
                             )
                         else:
                             if isinstance(plugin_translations, support.Translations):
                                 translations = translations.merge(plugin_translations)
                                 logger.debug(
-                                    "Using translation plugin folder {dirname} from plugin {name} for locale {locale}".format(
-                                        **locals()
-                                    )
+                                    "Using translation plugin folder {dirname} from "
+                                    "plugin {name} for locale {locale}".format(**locals())
                                 )
                                 break
                     else:
                         logger.debug(
-                            "No translations for locale {locale} from plugin {name}".format(
-                                **locals()
-                            )
+                            "No translations for locale {locale} "
+                            "from plugin {name}".format(**locals())
                         )
 
                 # core translations
@@ -158,9 +154,8 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     core_translations = support.Translations.load(dirname, [locale])
                     if isinstance(core_translations, support.Translations):
                         logger.debug(
-                            "Using translation core folder {dirname} for locale {locale}".format(
-                                **locals()
-                            )
+                            "Using translation core folder {dirname} "
+                            "for locale {locale}".format(**locals())
                         )
                         break
                 else:
@@ -262,7 +257,7 @@ def fix_webassets_filtertool():
             if not self.no_cache_read:
                 log.debug("Checking cache for key %s", key)
                 content = self.cache.get(key)
-                if not content in (False, None):
+                if content not in (False, None):
                     log.debug("Using cached result for %s", key)
                     return MemoryHunk(content)
 
@@ -513,8 +508,6 @@ class ReverseProxiedEnvironment(object):
 
 # ~~ request and response versions
 
-from werkzeug.utils import cached_property
-
 
 class OctoPrintFlaskRequest(flask.Request):
     environment_wrapper = staticmethod(lambda x: x)
@@ -678,7 +671,7 @@ def passive_login():
             settings().getBoolean(["accessControl", "autologinLocal"])
             and settings().get(["accessControl", "autologinAs"]) is not None
             and settings().get(["accessControl", "localNetworks"]) is not None
-            and not "active_logout" in flask.request.cookies
+            and "active_logout" not in flask.request.cookies
             and remote_address
         ):
             # attempt local autologin
@@ -873,7 +866,7 @@ def cached(
                         path=flask.request.path, key=cache_key
                     )
                 )
-                if not "X-From-Cache" in rv.headers:
+                if "X-From-Cache" not in rv.headers:
                     rv.headers["X-From-Cache"] = "true"
                 return rv
 
@@ -1087,7 +1080,7 @@ class PreemptiveCache(object):
         with self._lock:
             cache_data = self.get_all_data()
 
-            if not root in cache_data:
+            if root not in cache_data:
                 cache_data[root] = []
 
             existing, other = split_matched_and_unmatched(data, cache_data[root])
@@ -1195,7 +1188,7 @@ def lastmodified(date):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
             rv = f(*args, **kwargs)
-            if not "Last-Modified" in rv.headers:
+            if "Last-Modified" not in rv.headers:
                 try:
                     result = date
                     if callable(result):
@@ -1585,7 +1578,7 @@ def get_remote_address(request):
 
 def get_json_command_from_request(request, valid_commands):
     content_type = request.headers.get("Content-Type", None)
-    if content_type is None or not "application/json" in content_type:
+    if content_type is None or "application/json" not in content_type:
         return None, None, make_response("Expected content-type JSON", 400)
 
     data = request.get_json()
@@ -1595,12 +1588,12 @@ def get_json_command_from_request(request, valid_commands):
             None,
             make_response("Malformed JSON body or wrong content-type in request", 400),
         )
-    if not "command" in data or not data["command"] in valid_commands:
+    if "command" not in data or data["command"] not in valid_commands:
         return None, None, make_response("Expected valid command", 400)
 
     command = data["command"]
     for parameter in valid_commands[command]:
-        if not parameter in data:
+        if parameter not in data:
             return (
                 None,
                 None,
@@ -1654,8 +1647,6 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
         return self._delegate.needs_rebuild(bundle, ctx) or self.changed_settings(ctx)
 
     def changed_settings(self, ctx):
-        import json
-
         if not ctx.cache:
             return False
 
@@ -1666,13 +1657,11 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
         # then we actually return "no update needed". This is because
         # otherwise if no cache / a dummy cache is used, then we would be
         # rebuilding every single time.
-        if not cached_hash is None:
+        if cached_hash is not None:
             return cached_hash != current_hash
         return False
 
     def build_done(self, bundle, ctx):
-        import json
-
         self._delegate.build_done(bundle, ctx)
         if not ctx.cache:
             return
@@ -1825,7 +1814,7 @@ def collect_plugin_assets(preferred_stylesheet="css"):
                 )
         else:
             for stylesheet in supported_stylesheets:
-                if not stylesheet in all_assets:
+                if stylesheet not in all_assets:
                     continue
 
                 for asset in all_assets[stylesheet]:

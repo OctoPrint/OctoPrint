@@ -14,8 +14,7 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
-from octoprint.events import Events, eventManager
-from octoprint.server import admin_permission, pluginManager, printer
+from octoprint.server import pluginManager, printer
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
@@ -359,7 +358,7 @@ def _get_plugin_settings():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def setSettings():
-    if not "application/json" in request.headers["Content-Type"]:
+    if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
     try:

@@ -4,8 +4,6 @@ from __future__ import absolute_import, unicode_literals
 import io
 import os
 import threading
-import time
-import uuid
 from collections import defaultdict
 
 import flask
@@ -161,7 +159,7 @@ class AppKeysPlugin(
         if data is None:
             return flask.make_response("Missing key request", 400)
 
-        if not "app" in data:
+        if "app" not in data:
             return flask.make_response("No app name provided", 400)
 
         app_name = data["app"]
@@ -209,7 +207,7 @@ class AppKeysPlugin(
     @restricted_access
     def handle_decision(self, user_token):
         data = flask.request.json
-        if not "decision" in data:
+        if "decision" not in data:
             return flask.make_response("No decision provided", 400)
         decision = data["decision"] in valid_boolean_trues
         user_id = current_user.get_name()

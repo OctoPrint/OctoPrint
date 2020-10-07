@@ -274,7 +274,7 @@ class SoftwareUpdatePlugin(
                 config_checks = self._settings.get(["checks"])
                 plugin_and_not_enabled = (
                     lambda k: k in check_providers
-                    and not check_providers[k] in self._plugin_manager.enabled_plugins
+                    and check_providers[k] not in self._plugin_manager.enabled_plugins
                 )
                 obsolete_plugin_checks = list(
                     filter(plugin_and_not_enabled, config_checks.keys())
@@ -332,7 +332,7 @@ class SoftwareUpdatePlugin(
             try:
                 data = psutil.disk_usage(path)
                 info["free"] = data.free
-            except:
+            except Exception:
                 self._logger.exception(
                     "Error while determining disk usage of {}".format(path)
                 )
@@ -747,7 +747,7 @@ class SoftwareUpdatePlugin(
                 octoprint_check = dict(configured_checks["octoprint"])
 
                 if (
-                    not "method" in octoprint_check
+                    "method" not in octoprint_check
                     and octoprint_check.get("type") == "git_commit"
                 ):
                     defaults = {
@@ -1076,7 +1076,7 @@ class SoftwareUpdatePlugin(
         if not self._storage_sufficient:
             return flask.make_response("Not enough free disk space for updating", 409)
 
-        if not "application/json" in flask.request.headers["Content-Type"]:
+        if "application/json" not in flask.request.headers["Content-Type"]:
             return flask.make_response("Expected content-type JSON", 400)
 
         json_data = flask.request.get_json(silent=True)
@@ -1110,7 +1110,7 @@ class SoftwareUpdatePlugin(
 
         settings_dirty = False
         for target, data in json_data.items():
-            if not target in checks:
+            if target not in checks:
                 continue
 
             try:
@@ -1259,7 +1259,7 @@ class SoftwareUpdatePlugin(
 
                 with futures.ThreadPoolExecutor(max_workers=5) as executor:
                     for target, check in checks.items():
-                        if not target in check_targets:
+                        if target not in check_targets:
                             continue
 
                         if not check:
@@ -1606,14 +1606,14 @@ class SoftwareUpdatePlugin(
             ### iterate over all configured targets
 
             for target in check_targets:
-                if not target in checks:
+                if target not in checks:
                     continue
                 check = checks[target]
 
                 if "enabled" in check and not check["enabled"]:
                     continue
 
-                if not target in check_targets:
+                if target not in check_targets:
                     continue
 
                 target_error, target_result = self._perform_update(target, check, force)
@@ -1793,7 +1793,7 @@ class SoftwareUpdatePlugin(
             )
             trigger_event(False)
 
-            if not "ignorable" in populated_check or not populated_check["ignorable"]:
+            if "ignorable" not in populated_check or not populated_check["ignorable"]:
                 target_error = True
 
             if isinstance(e, exceptions.UpdateError):
@@ -1867,7 +1867,7 @@ class SoftwareUpdatePlugin(
     def _populated_check(self, target, check):
         from flask_babel import gettext
 
-        if not "type" in check:
+        if "type" not in check:
             raise exceptions.UnknownCheckType()
 
         result = dict(check)
@@ -1977,7 +1977,7 @@ class SoftwareUpdatePlugin(
 
         if "pip" in result:
             if (
-                not "pip_command" in check
+                "pip_command" not in check
                 and self._settings.get(["pip_command"]) is not None
             ):
                 result["pip_command"] = self._settings.get(["pip_command"])
@@ -2006,7 +2006,7 @@ class SoftwareUpdatePlugin(
         if version checker cannot be determined.
         """
 
-        if not "type" in check:
+        if "type" not in check:
             raise exceptions.ConfigurationInvalid("no check type defined")
 
         check_type = check["type"]
@@ -2038,7 +2038,7 @@ class SoftwareUpdatePlugin(
             elif "python_updater" in check:
                 method = "python_updater"
 
-        if method is None or (valid_methods and not method in valid_methods):
+        if method is None or (valid_methods and method not in valid_methods):
             raise exceptions.UnknownUpdateType()
 
         return method
@@ -2063,7 +2063,7 @@ class SoftwareUpdatePlugin(
         if checks is None:
             checks = self._get_configured_checks()
 
-        if not "octoprint" in checks:
+        if "octoprint" not in checks:
             return None
 
         if "checkout_folder" in checks["octoprint"]:
@@ -2077,7 +2077,7 @@ class SoftwareUpdatePlugin(
         if checks is None:
             checks = self._get_configured_checks()
 
-        if not "octoprint" in checks:
+        if "octoprint" not in checks:
             return None
 
         return checks["octoprint"].get("branch")
@@ -2086,7 +2086,7 @@ class SoftwareUpdatePlugin(
         if checks is None:
             checks = self._get_configured_checks()
 
-        if not "octoprint" in checks:
+        if "octoprint" not in checks:
             return None
 
         return checks["octoprint"].get("pip")

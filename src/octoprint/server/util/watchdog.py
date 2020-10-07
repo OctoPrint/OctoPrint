@@ -186,7 +186,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 # noinspection PyBroadException
                 try:
                     shutil.move(path, "{}.failed".format(path))
-                except:
+                except Exception:
                     # something went really wrong here.... but we can't do anything about it, so just log it
                     self._logger.exception(
                         "There was an error while trying to mark {} as failed in the watched folder".format(

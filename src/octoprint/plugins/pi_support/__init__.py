@@ -180,7 +180,7 @@ def get_vcgencmd_throttled_state(command):
     else:
         output = sarge.get_stdout(command, close_fds=CLOSE_FDS)
 
-    if not "throttled=0x" in output:
+    if "throttled=0x" not in output:
         raise ValueError('cannot parse "{}" output: {}'.format(command, output))
 
     value = output[len("throttled=") :].strip(" \t\r\n\0")

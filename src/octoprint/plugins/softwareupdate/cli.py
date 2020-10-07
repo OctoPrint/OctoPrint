@@ -161,7 +161,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
                 return
 
             plugin_message = msg["data"]
-            if not "type" in plugin_message:
+            if "type" not in plugin_message:
                 return
 
             plugin_message_type = plugin_message["type"]
@@ -241,7 +241,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         checks = data["checks"]
         click.echo("Update in progress, updating:")
         for name in to_be_updated:
-            click.echo("\t{}".format(name if not name in checks else checks[name]))
+            click.echo("\t{}".format(name if name not in checks else checks[name]))
 
         socket.wait()
 

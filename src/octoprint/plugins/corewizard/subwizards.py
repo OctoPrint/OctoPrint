@@ -113,7 +113,7 @@ class AclSubwizard(object):
                 [USER_GROUP, ADMIN_GROUP],
                 overwrite=True,
             )
-        elif "ac" in data and not data["ac"] in valid_boolean_trues:
+        elif "ac" in data and data["ac"] not in valid_boolean_trues:
             # disable access control
             self._settings.global_set_boolean(["accessControl", "enabled"], False)
             self._user_manager.disable()

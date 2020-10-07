@@ -11,7 +11,6 @@ import octoprint.plugin
 from octoprint.access import USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.server import user_permission
 
 
 class Prompt(object):
@@ -224,7 +223,7 @@ class ActionCommandPromptPlugin(
         ):
             return
 
-        if not "S" in cmd:
+        if "S" not in cmd:
             # we only force-send M876 Sx
             return
 

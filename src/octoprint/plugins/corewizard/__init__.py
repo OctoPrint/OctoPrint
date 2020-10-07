@@ -47,7 +47,7 @@ class CoreWizardPlugin(
             if not method():
                 continue
 
-            if not key in names:
+            if key not in names:
                 continue
 
             name = names[key]()

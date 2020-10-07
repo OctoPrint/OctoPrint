@@ -35,7 +35,7 @@ def _get_latest_commit(user, repo, branch):
         return None
 
     reference = r.json()
-    if not "object" in reference or not "sha" in reference["object"]:
+    if "object" not in reference or "sha" not in reference["object"]:
         return None
 
     return reference["object"]["sha"]

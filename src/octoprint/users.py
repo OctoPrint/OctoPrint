@@ -7,18 +7,18 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 # Wrapper to the new access.users location
 
-from octoprint.access.users import *  # noqa: F403 ## possibly used by other modules
-from octoprint.access.users import User, deprecated
-
-AccessUser = User
-
 import warnings
+
+from octoprint.access.users import *  # noqa: F401, F403 ## possibly used by other modules
+from octoprint.access.users import User, deprecated
 
 warnings.warn(
     "octoprint.users is deprecated, use octoprint.access.users instead",
     DeprecationWarning,
     stacklevel=2,
 )
+
+AccessUser = User
 
 
 class User(AccessUser):

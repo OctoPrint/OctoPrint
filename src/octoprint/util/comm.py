@@ -29,13 +29,13 @@ from collections import deque
 
 import serial
 import wrapt
-from past.builtins import basestring, unicode
+from past.builtins import basestring
 
 import octoprint.plugin
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.settings import default_settings, settings
+from octoprint.settings import settings
 from octoprint.util import (
     CountedEvent,
     PrependableQueue,
@@ -1264,7 +1264,7 @@ class MachineCom(object):
             else:
                 if retval is None:
                     continue
-                if not isinstance(retval, (list, tuple)) or not len(retval) in [2, 3, 4]:
+                if not isinstance(retval, (list, tuple)) or len(retval) not in [2, 3, 4]:
                     continue
 
                 def to_list(data, t):
@@ -1743,7 +1743,7 @@ class MachineCom(object):
             self.STATE_RESUMING,
         )
 
-        if not self._state in valid_paused_states + valid_running_states:
+        if self._state not in valid_paused_states + valid_running_states:
             return
 
         with self._jobLock:
@@ -2015,7 +2015,7 @@ class MachineCom(object):
 
             for n in range(maxToolNum + 1):
                 tool = "T%d" % n
-                if not tool in parsedTemps:
+                if tool not in parsedTemps:
                     if shared_nozzle:
                         actual, target = shared_temp
                     else:
@@ -2077,7 +2077,7 @@ class MachineCom(object):
             self._changeState(self.STATE_DETECT_SERIAL)
             self._perform_detection_step(init=True)
 
-        if not self._state in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
+        if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
             # we got cancelled during connection, bail
             return
 
@@ -2257,7 +2257,7 @@ class MachineCom(object):
 
                 ##~~ SD file list
                 # if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
-                if self._sdFileList and not "End file list" in line:
+                if self._sdFileList and "End file list" not in line:
                     preprocessed_line = line
                     fileinfo = preprocessed_line.split(None, 2)
                     if len(fileinfo) == 3:
@@ -2364,7 +2364,7 @@ class MachineCom(object):
                         or not self._dwelling_until
                         or now > self._dwelling_until
                     )
-                    and not self._state in (self.STATE_DETECT_SERIAL,)
+                    and self._state not in (self.STATE_DETECT_SERIAL,)
                 ):
                     # We have two timeout variants:
                     #
@@ -2452,7 +2452,7 @@ class MachineCom(object):
                     or line.startswith("T:")
                     or " T0:" in line
                     or line.startswith("T0:")
-                    or ((" B:" in line or line.startswith("B:")) and not "A:" in line)
+                    or ((" B:" in line or line.startswith("B:")) and "A:" not in line)
                 ):
 
                     if (
@@ -2733,7 +2733,7 @@ class MachineCom(object):
                         try:
                             current = int(match.group("current"))
                             total = int(match.group("total"))
-                        except:
+                        except Exception:
                             self._logger.exception("Error while parsing SD status report")
                         else:
                             if (
@@ -2850,7 +2850,7 @@ class MachineCom(object):
                 if (
                     feedback_controls
                     and feedback_matcher
-                    and not "_all" in feedback_errors
+                    and "_all" not in feedback_errors
                 ):
                     try:
                         self._process_registered_message(
@@ -2985,7 +2985,7 @@ class MachineCom(object):
 
         self._finish_heatup()
 
-        if not self._state in self.OPERATIONAL_STATES:
+        if self._state not in self.OPERATIONAL_STATES:
             return
 
         if self._resendDelta is not None and self._resendNextCommand():
@@ -3242,7 +3242,7 @@ class MachineCom(object):
             try:
                 feedback_key = match_key[len("group") :]
                 if (
-                    not feedback_key in feedback_controls
+                    feedback_key not in feedback_controls
                     or feedback_key in feedback_errors
                     or feedback_match.group(match_key) is None
                 ):
@@ -4435,7 +4435,7 @@ class MachineCom(object):
                     )
 
                     # make sure we don't allow multi entry results in anything but the queuing phase
-                    if not phase in ("queuing",) and len(normalized) > 1:
+                    if phase not in ("queuing",) and len(normalized) > 1:
                         self._logger.error(
                             "Error while processing hook {name} for phase {phase} and command {command}: "
                             "Hook returned multi-entry result for phase {phase} and command {command}. "
@@ -5076,7 +5076,7 @@ class MachineCom(object):
         return not self._sanity_check_tools or (
             tool
             < self._printerProfileManager.get_current_or_default()["extruder"]["count"]
-            and not tool in self._knownInvalidTools
+            and tool not in self._knownInvalidTools
         )
 
     def _reset_position_timers(self):
@@ -5090,13 +5090,13 @@ class MachineCom(object):
     def _atcommand_pause_queuing(self, command, parameters, tags=None, *args, **kwargs):
         if tags is None:
             tags = set()
-        if not "script:afterPrintPaused" in tags:
+        if "script:afterPrintPaused" not in tags:
             self.setPause(True, tags={"trigger:atcommand_pause"})
 
     def _atcommand_cancel_queuing(self, command, parameters, tags=None, *args, **kwargs):
         if tags is None:
             tags = set()
-        if not "script:afterPrintCancelled" in tags:
+        if "script:afterPrintCancelled" not in tags:
             self.cancelPrint(tags={"trigger:atcommand_cancel"})
 
     _atcommand_abort_queuing = _atcommand_cancel_queuing
@@ -5104,7 +5104,7 @@ class MachineCom(object):
     def _atcommand_resume_queuing(self, command, parameters, tags=None, *args, **kwargs):
         if tags is None:
             tags = set()
-        if not "script:beforePrintResumed" in tags:
+        if "script:beforePrintResumed" not in tags:
             self.setPause(False, tags={"trigger:atcommand_resume"})
 
     ##~~ command phase handlers
@@ -5129,8 +5129,8 @@ class MachineCom(object):
             if (
                 self.isPrinting()
                 and gcode in self._pausing_commands
-                and not "trigger:cancel" in tags
-                and not "trigger:pause" in tags
+                and "trigger:cancel" not in tags
+                and "trigger:pause" not in tags
             ):
                 self._logger.info("Pausing print job due to command {}".format(gcode))
                 self.setPause(True)
@@ -5682,7 +5682,7 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         return line
 
     groups = match.groupdict()
-    if not "temperature" in groups or groups["temperature"] is None:
+    if "temperature" not in groups or groups["temperature"] is None:
         return line
 
     offset = 0
@@ -5716,7 +5716,7 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
 
 
 def strip_comment(line):
-    if not ";" in line:
+    if ";" not in line:
         # shortcut
         return line
 
@@ -5747,7 +5747,7 @@ def convert_pause_triggers(configured_triggers):
 
     triggers = {"enable": [], "disable": [], "toggle": []}
     for trigger in configured_triggers:
-        if not "regex" in trigger or not "type" in trigger:
+        if "regex" not in trigger or "type" not in trigger:
             continue
 
         try:
@@ -5850,7 +5850,7 @@ def canonicalize_temperatures(parsed, current):
     """
 
     reported_extruders = list(filter(lambda x: x.startswith("T"), parsed.keys()))
-    if not "T" in reported_extruders:
+    if "T" not in reported_extruders:
         # Our reported_extruders are either empty or consist purely
         # of Tn keys, no need for any action
         return parsed
@@ -6014,7 +6014,7 @@ def parse_capability_line(line):
         return None
 
     capability, flag = parts
-    if not flag in ("0", "1"):
+    if flag not in ("0", "1"):
         # wrong format, can't parse this
         return None
 

@@ -120,7 +120,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.stl",
             "bp_case.stl",
             FILE_BP_CASE_STL,
-            links=[("web", dict(href=href, retrieved=retrieved))],
+            links=[("web", {"href": href, "retrieved": retrieved})],
         )
         stl_metadata = self.storage.get_metadata(stl_name)
 
@@ -141,7 +141,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", dict(name=stl_name))],
+            links=[("model", {"name": stl_name})],
         )
 
         stl_metadata = self.storage.get_metadata(stl_name)
@@ -173,7 +173,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", dict(name=stl_name))],
+            links=[("model", {"name": stl_name})],
         )
 
         stl_metadata = self.storage.get_metadata(stl_name)
@@ -372,7 +372,7 @@ class LocalStorageTest(unittest.TestCase):
         after_metadata = self.storage.get_metadata("folder")
 
         self.assertIsNotNone(before_metadata)
-        self.assertDictEqual(before_metadata, dict(display="földer"))
+        self.assertDictEqual(before_metadata, {"display": "földer"})
         self.assertIsNone(after_metadata)
 
     def test_copy_folder(self):
@@ -458,7 +458,7 @@ class LocalStorageTest(unittest.TestCase):
 
         self.assertIsNone(before_metadata)
         self.assertIsNotNone(after_metadata)
-        self.assertDictEqual(after_metadata, dict(display="földer"))
+        self.assertDictEqual(after_metadata, {"display": "földer"})
 
     @data("copy_folder", "move_folder")
     def test_copy_move_folder_different_display(self, operation):
@@ -469,7 +469,7 @@ class LocalStorageTest(unittest.TestCase):
         after_metadata = self.storage.get_metadata("test")
 
         self.assertIsNotNone(before_metadata)
-        self.assertDictEqual(before_metadata, dict(display="földer"))
+        self.assertDictEqual(before_metadata, {"display": "földer"})
         self.assertIsNone(after_metadata)
 
     @data("copy_folder", "move_folder")
@@ -521,7 +521,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", dict(name=bp_case_stl))],
+            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -568,7 +568,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", dict(name=bp_case_stl))],
+            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -609,7 +609,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", dict(name=bp_case_stl))],
+            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -642,7 +642,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE
         )
 
-        self.storage.add_link(gcode_name, "model", dict(name=stl_name))
+        self.storage.add_link(gcode_name, "model", {"name": stl_name})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         gcode_metadata = self.storage.get_metadata(gcode_name)
@@ -673,7 +673,7 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE
         )
 
-        self.storage.add_link(stl_name, "machinecode", dict(name=gcode_name))
+        self.storage.add_link(stl_name, "machinecode", {"name": gcode_name})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         gcode_metadata = self.storage.get_metadata(gcode_name)
@@ -701,18 +701,18 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
         )
 
-        self.storage.add_link(stl_name, "web", dict(href="http://www.example.com"))
-        self.storage.add_link(stl_name, "web", dict(href="http://www.example2.com"))
+        self.storage.add_link(stl_name, "web", {"href": "http://www.example.com"})
+        self.storage.add_link(stl_name, "web", {"href": "http://www.example2.com"})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         self.assertEqual(2, len(stl_metadata["links"]))
 
-        self.storage.remove_link(stl_name, "web", dict(href="http://www.example.com"))
+        self.storage.remove_link(stl_name, "web", {"href": "http://www.example.com"})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         self.assertEqual(1, len(stl_metadata["links"]))
 
-        self.storage.remove_link(stl_name, "web", dict(href="wrong_href"))
+        self.storage.remove_link(stl_name, "web", {"href": "wrong_href"})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         self.assertEqual(1, len(stl_metadata["links"]))
@@ -725,8 +725,8 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE
         )
 
-        self.storage.add_link(stl_name, "machinecode", dict(name=gcode_name))
-        self.storage.add_link(stl_name, "web", dict(href="http://www.example.com"))
+        self.storage.add_link(stl_name, "machinecode", {"name": gcode_name})
+        self.storage.add_link(stl_name, "web", {"href": "http://www.example.com"})
 
         stl_metadata = self.storage.get_metadata(stl_name)
         gcode_metadata = self.storage.get_metadata(gcode_name)
@@ -735,7 +735,7 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(2, len(stl_metadata["links"]))
 
         self.storage.remove_link(
-            gcode_name, "model", dict(name=stl_name, hash=FILE_BP_CASE_STL.hash)
+            gcode_name, "model", {"name": stl_name, "hash": FILE_BP_CASE_STL.hash}
         )
 
         stl_metadata = self.storage.get_metadata(stl_name)

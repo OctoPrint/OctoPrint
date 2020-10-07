@@ -21,7 +21,7 @@ class SessionUserTestCase(unittest.TestCase):
             True,
             permissions=[],
             apikey="apikey",
-            settings=dict(key="value"),
+            settings={"key": "value"},
         )
 
     def test_two_sessions(self):
@@ -40,13 +40,13 @@ class SessionUserTestCase(unittest.TestCase):
         # change should propagate from User to SessionUser
         self.user.set_setting("otherkey", "othervalue")
         self.assertDictEqual(
-            dict(key="value", otherkey="othervalue"), session1.get_all_settings()
+            {"key": "value", "otherkey": "othervalue"}, session1.get_all_settings()
         )
 
         # change should propagate from SessionUser to SessionUser
         session2.set_setting("otherkey", "yetanothervalue")
         self.assertDictEqual(
-            dict(key="value", otherkey="yetanothervalue"), session1.get_all_settings()
+            {"key": "value", "otherkey": "yetanothervalue"}, session1.get_all_settings()
         )
 
     def test_repr(self):

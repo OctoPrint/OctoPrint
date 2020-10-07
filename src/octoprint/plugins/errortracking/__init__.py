@@ -4,13 +4,17 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import errno
 import logging
 
+import requests.exceptions
+import serial
+import tornado.websocket
 from flask import jsonify
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import get_fully_qualified_classname as fqcn  # noqa: F401
 from octoprint.util.version import (
     get_octoprint_version_string,
     is_released_octoprint_version,
@@ -30,12 +34,6 @@ SETTINGS_DEFAULTS = {
     "url_server": SENTRY_URL_SERVER,
     "url_coreui": SENTRY_URL_COREUI,
 }
-
-import errno
-
-import requests.exceptions
-import serial
-import tornado.websocket
 
 IGNORED_EXCEPTIONS = [
     # serial exceptions in octoprint.util.comm
@@ -173,7 +171,7 @@ def _enable_errortracking():
         from octoprint.plugin import plugin_manager
 
         def _before_send(event, hint):
-            if not "exc_info" in hint:
+            if "exc_info" not in hint:
                 # we only want exceptions
                 return None
 
@@ -205,7 +203,7 @@ def _enable_errortracking():
                 handled = not any(
                     map(
                         lambda x: x.get("mechanism")
-                        and x["mechanism"].get("handled", True) == False,
+                        and not x["mechanism"].get("handled", True),
                         event["exception"]["values"],
                     )
                 )
