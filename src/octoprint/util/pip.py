@@ -449,7 +449,9 @@ class PipCaller(CommandlineCaller):
                         stderr=sarge.Capture(),
                         cwd=testballoon,
                         env={
-                            "TESTBALLOON_OUTPUT": to_native_str(testballoon_output_file)
+                            to_native_str("TESTBALLOON_OUTPUT"): to_native_str(
+                                testballoon_output_file
+                            )
                         },
                     )
                 except Exception:

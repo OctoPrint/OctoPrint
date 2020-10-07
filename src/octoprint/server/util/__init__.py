@@ -9,6 +9,8 @@ import base64
 import logging
 import sys
 
+PY3 = sys.version_info[0] == 3
+
 import flask as _flask
 import flask_login
 
@@ -20,8 +22,6 @@ from octoprint.settings import settings
 from octoprint.util import deprecated, to_unicode
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
-
-PY3 = sys.version_info[0] == 3
 
 
 @deprecated(
