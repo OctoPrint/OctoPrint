@@ -10,16 +10,24 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [**.py]
-indent_style = tab
-indent_size = 4
-
-[src/octoprint/vendor/sockjs/**.py]
 indent_style = space
 indent_size = 4
 
 [src/octoprint/static/js/app/**.js]
 indent_style = space
 indent_size = 4
+
+[src/octoprint/static/js/login/**.js]
+indent_style = space
+indent_size = 4
+
+[src/octoprint/static/js/recovery/**.js]
+indent_style = space
+indent_size = 4
+
+[src/octoprint/static/less/octoprint.less]
+indent_style = space
+indent_size = 2
 
 [.travis.yml]
 indent_style = space

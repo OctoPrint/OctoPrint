@@ -4,77 +4,102 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import unittest
 import ddt
 
+
 @ddt.ddt
 class NotificationFilterTest(unittest.TestCase):
+    @ddt.data(
+        (
+            dict(plugin="foo", text="text", date="2020-09-15 00:00:00Z"),
+            "1.0.0",
+            "1.5.0",
+            True,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                pluginversions=[">=1.0.0"],
+            ),
+            "1.0.0",
+            "1.5.0",
+            True,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                pluginversions=[">=2.0.0", "0.9.0", "0.9.1", "1.0.0"],
+            ),
+            "1.0.0",
+            "1.5.0",
+            True,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                pluginversions=[">=2.0.0", "0.9.0", "0.9.1", "1.0.0"],
+            ),
+            "1.1.0",
+            "1.5.0",
+            False,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                versions=["0.9.0", "0.9.1", "1.0.0", "1.0.1"],
+            ),
+            "1.0.0",
+            "1.5.0",
+            True,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                versions=["0.9.0", "0.9.1", "1.0.0", "1.0.1"],
+            ),
+            "1.1.0",
+            "1.5.0",
+            False,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                octoversions=["1.5.0"],
+            ),
+            "1.0.0",
+            "1.5.0",
+            True,
+        ),
+        (
+            dict(
+                plugin="foo",
+                text="text",
+                date="2020-09-15 00:00:00Z",
+                octoversions=["==1.4.2"],
+            ),
+            "1.0.0",
+            "1.5.0",
+            False,
+        ),
+    )
+    @ddt.unpack
+    def test_notification_filter(
+        self, notification, plugin_version, octoprint_version, expected
+    ):
+        from octoprint.plugins.pluginmanager import _filter_relevant_notification
 
-	@ddt.data(
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z"),
-		 "1.0.0",
-		 "1.5.0",
-		 True),
+        result = _filter_relevant_notification(
+            notification, plugin_version, octoprint_version
+        )
 
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      pluginversions=[">=1.0.0"]),
-		 "1.0.0",
-		 "1.5.0",
-		 True),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      pluginversions=[">=2.0.0", "0.9.0", "0.9.1", "1.0.0"]),
-		 "1.0.0",
-		 "1.5.0",
-		 True),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      pluginversions=[">=2.0.0", "0.9.0", "0.9.1", "1.0.0"]),
-		 "1.1.0",
-		 "1.5.0",
-		 False),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      versions=["0.9.0", "0.9.1", "1.0.0", "1.0.1"]),
-		 "1.0.0",
-		 "1.5.0",
-		 True),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      versions=["0.9.0", "0.9.1", "1.0.0", "1.0.1"]),
-		 "1.1.0",
-		 "1.5.0",
-		 False),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      octoversions=["1.5.0"]),
-		 "1.0.0",
-		 "1.5.0",
-		 True),
-
-		(dict(plugin="foo",
-		      text="text",
-		      date="2020-09-15 00:00:00Z",
-		      octoversions=["==1.4.2"]),
-		 "1.0.0",
-		 "1.5.0",
-		 False),
-	)
-	@ddt.unpack
-	def test_notification_filter(self, notification, plugin_version, octoprint_version, expected):
-		from octoprint.plugins.pluginmanager import _filter_relevant_notification
-
-		result = _filter_relevant_notification(notification, plugin_version, octoprint_version)
-
-		self.assertEqual(expected, result)
+        self.assertEqual(expected, result)
