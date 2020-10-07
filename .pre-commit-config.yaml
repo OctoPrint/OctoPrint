@@ -5,8 +5,12 @@ repos:
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: check-case-conflict
+      - id: check-json
       - id: check-yaml
       - id: check-toml
+      - id: check-merge-conflict
+      - id: fix-encoding-pragma
   - repo: https://github.com/OctoPrint/codemods
     rev: main
     hooks:

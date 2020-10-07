@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
