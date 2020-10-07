@@ -16,8 +16,8 @@
  * @type {Cypress.PluginConfig}
  */
 module.exports = (on, config) => {
-  // `on` is used to hook into various events Cypress emits
-  // `config` is the resolved Cypress config
-  require("cypress-terminal-report/src/installLogsPrinter")(on);
-  require("cypress-plugin-retries/lib/plugin")(on);
-}
+    // `on` is used to hook into various events Cypress emits
+    // `config` is the resolved Cypress config
+    require("cypress-terminal-report/src/installLogsPrinter")(on);
+    require("cypress-plugin-retries/lib/plugin")(on);
+};

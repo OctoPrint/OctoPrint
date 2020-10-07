@@ -6,7 +6,7 @@ on:
       - master
   workflow_dispatch:
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: "0 */12 * * *"
 
 jobs:
   install-branch:
@@ -35,14 +35,14 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful'
+          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"
       - name: 📧 Discord failure notification
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed'
+          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` failed"
 
   install-latest:
     name: Install latest release
@@ -69,11 +69,11 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` was successful'
+          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` was successful"
       - name: 📧 Discord failure notification
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` failed'
+          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` failed"

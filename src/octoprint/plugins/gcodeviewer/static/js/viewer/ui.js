@@ -6,7 +6,7 @@
 
 var GCODE = {};
 
-GCODE.ui = (function(){
+GCODE.ui = (function () {
     var uiOptions = {
         container: undefined,
         toolOffsets: undefined,
@@ -16,13 +16,13 @@ GCODE.ui = (function(){
         onLayerSelected: undefined
     };
 
-    var setProgress = function(type, progress) {
+    var setProgress = function (type, progress) {
         if (uiOptions["onProgress"]) {
             uiOptions.onProgress(type, progress);
         }
     };
 
-    var switchLayer = function(layerNum, onlyInfo) {
+    var switchLayer = function (layerNum, onlyInfo) {
         if (!onlyInfo) {
             var segmentCount = GCODE.renderer.getLayerNumSegments(layerNum);
             GCODE.renderer.render(layerNum, 0, segmentCount - 1);
@@ -41,17 +41,17 @@ GCODE.ui = (function(){
         }
     };
 
-    var switchCommands = function(layerNum, first, last) {
+    var switchCommands = function (layerNum, first, last) {
         GCODE.renderer.render(layerNum, first, last);
     };
 
-    var processMessage = function(e){
+    var processMessage = function (e) {
         var data = e.data;
         switch (data.cmd) {
             case "returnModel":
                 GCODE.ui.worker.postMessage({
-                    "cmd":"analyzeModel",
-                    "msg":{}
+                    cmd: "analyzeModel",
+                    msg: {}
                 });
                 break;
 
@@ -93,34 +93,36 @@ GCODE.ui = (function(){
         }
     };
 
-    var checkCapabilities = function(){
+    var checkCapabilities = function () {
         var warnings = [];
         var fatal = [];
 
         var errorList = document.getElementById("errorList");
-        if(fatal.length>0){
+        if (fatal.length > 0) {
             if (errorList) {
-                errorList.innerHTML = '<ul>' + fatal.join('') + '</ul>';
+                errorList.innerHTML = "<ul>" + fatal.join("") + "</ul>";
             }
-            console.log("Initialization failed: unsupported browser.")
+            console.log("Initialization failed: unsupported browser.");
             return false;
         }
 
-        if(!Modernizr.webgl && GCODE.renderer3d){
-            warnings.push("<li>Your browser doesn't seem to support HTML5 Web GL, 3d mode is not recommended, going to be SLOW!</li>");
+        if (!Modernizr.webgl && GCODE.renderer3d) {
+            warnings.push(
+                "<li>Your browser doesn't seem to support HTML5 Web GL, 3d mode is not recommended, going to be SLOW!</li>"
+            );
             GCODE.renderer3d.setOption({rendererType: "canvas"});
         }
 
-        if(warnings.length>0){
+        if (warnings.length > 0) {
             if (errorList) {
-                errorList.innerHTML = '<ul>' + warnings.join('') + '</ul>';
+                errorList.innerHTML = "<ul>" + warnings.join("") + "</ul>";
             }
             console.log("Initialization succeeded with warnings.", warnings);
         }
         return true;
     };
 
-    var setOptions = function(options) {
+    var setOptions = function (options) {
         if (!options) return;
         for (var opt in options) {
             if (options[opt] === undefined) continue;
@@ -132,7 +134,7 @@ GCODE.ui = (function(){
 
     return {
         worker: undefined,
-        init: function(options){
+        init: function (options) {
             if (options) setOptions(options);
             if (!options.container) {
                 return false;
@@ -146,7 +148,7 @@ GCODE.ui = (function(){
             setProgress("", 0);
 
             this.worker = new Worker(GCODE_WORKER);
-            this.worker.addEventListener('message', processMessage, false);
+            this.worker.addEventListener("message", processMessage, false);
 
             GCODE.renderer.setOption({
                 container: options.container,
@@ -161,7 +163,7 @@ GCODE.ui = (function(){
             return true;
         },
 
-        clear: function() {
+        clear: function () {
             GCODE.gCodeReader.clear();
             GCODE.renderer.clear();
 
@@ -174,11 +176,11 @@ GCODE.ui = (function(){
             }
         },
 
-        updateLayerInfo: function(layerNum){
+        updateLayerInfo: function (layerNum) {
             switchLayer(layerNum, true);
         },
 
-        updateOptions: function(options) {
+        updateOptions: function (options) {
             setOptions(options.ui);
             if (options.reader) {
                 GCODE.gCodeReader.setOption(options.reader);
@@ -188,12 +190,12 @@ GCODE.ui = (function(){
             }
         },
 
-        changeSelectedLayer: function(newLayerNum) {
+        changeSelectedLayer: function (newLayerNum) {
             switchLayer(newLayerNum);
         },
 
-        changeSelectedCommands: function(layerNum, first, last) {
+        changeSelectedCommands: function (layerNum, first, last) {
             switchCommands(layerNum, first, last);
         }
-    }
-}());
+    };
+})();

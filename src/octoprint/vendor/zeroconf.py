@@ -1612,12 +1612,10 @@ class ZeroconfServiceTypes(object):
 
 
 def get_all_addresses(address_family):
-    return list(set(
-        addr['addr']
+    return list({addr['addr']
         for iface in netifaces.interfaces()
         for addr in netifaces.ifaddresses(iface).get(address_family, [])
-        if addr.get('netmask') != HOST_ONLY_NETWORK_MASK
-    ))
+        if addr.get('netmask') != HOST_ONLY_NETWORK_MASK})
 
 
 def normalize_interface_choice(choice, address_family):

@@ -1,18 +1,37 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from . import commandline, git_commit, github_commit, github_release, bitbucket_commit, \
-	python_checker, never_current, always_current, pypi_release, httpheader, jsondata
+from . import (  # noqa: F401
+    always_current,
+    bitbucket_commit,
+    commandline,
+    git_commit,
+    github_commit,
+    github_release,
+    httpheader,
+    jsondata,
+    never_current,
+    pypi_release,
+    python_checker,
+)
+
 
 def log_github_ratelimit(logger, r):
-	ratelimit = r.headers["X-RateLimit-Limit"] if "X-RateLimit-Limit" in r.headers else "?"
-	remaining = r.headers["X-RateLimit-Remaining"] if "X-RateLimit-Remaining" in r.headers else "?"
-	reset = r.headers["X-RateLimit-Reset"] if "X-RateLimit-Reset" in r.headers else None
-	try:
-		import time
-		reset = time.strftime("%Y-%m-%d %H:%M", time.gmtime(int(reset)))
-	except Exception:
-		reset = "?"
+    ratelimit = (
+        r.headers["X-RateLimit-Limit"] if "X-RateLimit-Limit" in r.headers else "?"
+    )
+    remaining = (
+        r.headers["X-RateLimit-Remaining"]
+        if "X-RateLimit-Remaining" in r.headers
+        else "?"
+    )
+    reset = r.headers["X-RateLimit-Reset"] if "X-RateLimit-Reset" in r.headers else None
+    try:
+        import time
 
-	logger.debug("Github rate limit: %s/%s, reset at %s" % (remaining, ratelimit, reset))
+        reset = time.strftime("%Y-%m-%d %H:%M", time.gmtime(int(reset)))
+    except Exception:
+        reset = "?"
+
+    logger.debug("Github rate limit: %s/%s, reset at %s" % (remaining, ratelimit, reset))

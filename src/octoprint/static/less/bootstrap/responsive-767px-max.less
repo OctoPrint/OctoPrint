@@ -2,9 +2,7 @@
 // Responsive: Landscape phone to desktop/tablet
 // --------------------------------------------------
 
-
 @media (max-width: 767px) {
-
   // Padding to set content in a bit
   body {
     padding-left: 20px;
@@ -102,24 +100,24 @@
   // Modals
   .modal {
     position: fixed;
-    top:   20px;
-    left:  20px;
+    top: 20px;
+    left: 20px;
     right: 20px;
     width: auto;
     margin: 0;
-    &.fade  { top: -100px; }
-    &.fade.in { top: 20px; }
+    &.fade {
+      top: -100px;
+    }
+    &.fade.in {
+      top: 20px;
+    }
   }
-
 }
-
-
 
 // UP TO LANDSCAPE PHONE
 // ---------------------
 
 @media (max-width: 480px) {
-
   // Smooth out the collapsing/expanding nav
   .nav-collapse {
     -webkit-transform: translate3d(0, 0, 0); // activate the GPU
@@ -163,7 +161,7 @@
   // Medias
   // Reset float and spacing to stack
   .media .pull-left,
-  .media .pull-right  {
+  .media .pull-right {
     float: none;
     display: block;
     margin-bottom: 10px;
@@ -176,8 +174,8 @@
 
   // Modals
   .modal {
-    top:   10px;
-    left:  10px;
+    top: 10px;
+    left: 10px;
     right: 10px;
   }
   .modal-header .close {
@@ -189,5 +187,4 @@
   .carousel-caption {
     position: static;
   }
-
 }

@@ -4,17 +4,17 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
-    var OctoPrintBackupClient = function(base) {
+})(this, function (OctoPrintClient) {
+    var OctoPrintBackupClient = function (base) {
         this.base = base;
         this.url = this.base.getBlueprintUrl("backup");
     };
 
-    OctoPrintBackupClient.prototype.get = function(refresh, opts) {
+    OctoPrintBackupClient.prototype.get = function (refresh, opts) {
         return this.base.get(this.url, opts);
     };
 
-    OctoPrintBackupClient.prototype.createBackup = function(exclude, opts) {
+    OctoPrintBackupClient.prototype.createBackup = function (exclude, opts) {
         exclude = exclude || [];
 
         var data = {
@@ -24,11 +24,11 @@
         return this.base.postJson(this.url + "backup", data, opts);
     };
 
-    OctoPrintBackupClient.prototype.deleteBackup = function(backup, opts) {
+    OctoPrintBackupClient.prototype.deleteBackup = function (backup, opts) {
         return this.base.delete(this.url + "backup/" + backup, opts);
     };
 
-    OctoPrintBackupClient.prototype.restoreBackup = function(backup, opts) {
+    OctoPrintBackupClient.prototype.restoreBackup = function (backup, opts) {
         var data = {
             path: backup
         };

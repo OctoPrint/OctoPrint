@@ -33,7 +33,8 @@ below.
        binary cannot be found on your ``PATH`` like this you'll need to specify the full path to it here,
        e.g. ``virtualenv --python=/path/to/python3/bin/python venv``
 
-  * Activate one of the virtual environments:
+  * Activate one of the virtual environments (the Python 3 venv should be considered the
+    primary one at this point):
 
     * ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
 
@@ -46,10 +47,20 @@ below.
 
       * ``pip install -e '.[develop,plugins,docs]'``
 
+  * Set up the pre-commit hooks that make sure any changes you do adhere to the styling rules:
+
+      * ``pre-commit install``
+
+  * Tell ``git`` where to find the file with revisions to exclude for ``git blame``:
+
+      * ``git config blame.ignoreRevsFile .git-blame-ignore-revs``
+
 When the virtual environment is activated you can then:
 
   * run the OctoPrint server via ``octoprint serve``
   * run the test suite from the checked out source folder via ``pytest``
+  * trigger the pre-commit check suite manually from the checked out source folder via
+    ``pre-commit run --hook-stage manual --all-files``
 
 To switch the activated virtual environment, simply activate the new environment as described above.
 
@@ -95,14 +106,12 @@ Then:
    cd ~/devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=python2 venv2
-   virtualenv --python=python3 venv3
-   source ./venv2/bin/activate
-   pip install --upgrade pip
-   pip install -e .[develop,plugins]
-   source ./venv3/bin/activate
+   virtualenv --python=python3 venv
+   source ./venv/bin/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins,docs]
+   pre-commit install
+   git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 You can then start OctoPrint via ``octoprint`` after activating one of the two virtual environments.
 
@@ -133,14 +142,12 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:\Python27\python.exe venv2
-   virtualenv --python=C:\Python38\python.exe venv3
-   source ./venv2/Scripts/activate
-   pip install --upgrade pip
-   pip install -e .[develop,plugins]
-   source ./venv3/Scripts/activate
+   virtualenv --python=C:\Python38\python.exe venv
+   source ./venv/Scripts/activate
    pip install --upgrade pip
    pip install -e .[develop,plugins,docs]
+   pre-commit install
+   git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 .. _sec-development-environment-mac:
 
@@ -190,6 +197,8 @@ You'll need a user account with administrator privileges.
        source venv/bin/activate
        pip install --upgrade pip
        pip install -e .[develop,plugins]
+       pre-commit install
+       git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 .. _sec-development-environment-ides:
 
@@ -211,11 +220,9 @@ PyCharm
   - Register virtual environments:
 
     - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...",
-      select OctoPrint ``venv2`` folder (e.g. ``~/devel/OctoPrint/venv2`` or ``C:\Devel\OctoPrint\venv2``).
+      select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``).
     - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
-      "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv2`` folder (e.g. ``~/devel/OctoPrint/venv2``).
-
-    Repeat for the ``venv3`` folder.
+      "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv``).
 
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
@@ -260,13 +267,25 @@ PyCharm
     * Module name: ``sphinx.cmd.build``
     * Parameters: ``-v -T -E ./docs ./docs/_build -b html``
     * Project: ``OctoPrint``
-    * Python interpreter: ``venv3`` environment (the docs build requires Python 3)
+    * Python interpreter: ``venv`` environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * Just like with the run configuration for the server you can also have the dependencies auto-update when building
       the documentation, see above on how to set this up.
 
     Note that this requires you to also have installed the additional ``docs`` dependencies into the Python 3 venv as
     described above via ``pip install -e .[develop,plugins,docs]``.
+
+  - Settings > Tools > File Watchers (you might have to enable this, it's a bundled plugin), add new:
+
+    * Name: pre-commit
+    * File type: Python
+    * Scope: Module 'OctoPrint'
+    * Program: ``$PyInterpreterDirectory$/bin/pre-commit`` (Linux) or ``$PyInterpreterDirectory$/Scripts/pre-commit`` (Windows)
+    * Arguments: ``run --hook-stage manual --files $FilePath$``
+    * Output paths to refresh: ``$FilePath$``
+    * Working directory: ``$ProjectFileDir$``
+    * disable "Auto-save edited files to trigger the watched"
+    * enable "Trigger the watched on external changes"
 
 To switch between Python 2 and 3, all you need to do now is change the Project Default Interpreter and restart
 OctoPrint. On current PyCharm versions you can do that right from a small selection field in the footer of the IDE.

@@ -1,8 +1,8 @@
 ko.bindingHandlers.invisible = {
-    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
         if (!valueAccessor()) return;
-        ko.bindingHandlers.style.update(element, function() {
-            return { visibility: 'hidden' };
-        })
+        ko.bindingHandlers.style.update(element, function () {
+            return {visibility: "hidden"};
+        });
     }
 };
