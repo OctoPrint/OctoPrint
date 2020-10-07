@@ -2,315 +2,260 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
+
 import mock
 
 import octoprint.plugin
 
+
 class TestSettingsPlugin(unittest.TestCase):
+    def setUp(self):
+        self.settings = mock.MagicMock()
 
-	def setUp(self):
-		self.settings = mock.MagicMock()
-
-		self.plugin = octoprint.plugin.SettingsPlugin()
-		self.plugin._settings = self.settings
-
-	def test_on_settings_cleanup(self):
-		"""Tests that after cleanup only minimal config is left in storage."""
-
-		### setup
-
-		# settings defaults
-		defaults = dict(
-			foo=dict(
-				a=1,
-				b=2,
-				l1=["some", "list"],
-				l2=["another", "list"]
-			),
-			bar=True,
-			fnord=None
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
-
-		# stored config, containing one redundant entry (bar=True, same as default)
-		in_config = dict(
-			foo=dict(
-				l1=["some", "other", "list"],
-				l2=["another", "list"],
-				l3=["a", "third", "list"]
-			),
-			bar=True,
-			fnord=dict(
-				c=3,
-				d=4
-			)
-		)
-		self.settings.get_all_data.return_value = in_config
+        self.plugin = octoprint.plugin.SettingsPlugin()
+        self.plugin._settings = self.settings
 
-		### execute
+    def test_on_settings_cleanup(self):
+        """Tests that after cleanup only minimal config is left in storage."""
 
-		self.plugin.on_settings_cleanup()
+        ### setup
 
-		### assert
+        # settings defaults
+        defaults = {
+            "foo": {"a": 1, "b": 2, "l1": ["some", "list"], "l2": ["another", "list"]},
+            "bar": True,
+            "fnord": None,
+        }
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		# minimal config (current without redundant value) should have been set
-		expected = dict(
-			foo=dict(
-				l1=["some", "other", "list"],
-				l3=["a", "third", "list"]
-			),
-			fnord=dict(
-				c=3,
-				d=4
-			)
-		)
-		self.settings.set.assert_called_once_with([], expected)
+        # stored config, containing one redundant entry (bar=True, same as default)
+        in_config = {
+            "foo": {
+                "l1": ["some", "other", "list"],
+                "l2": ["another", "list"],
+                "l3": ["a", "third", "list"],
+            },
+            "bar": True,
+            "fnord": {"c": 3, "d": 4},
+        }
+        self.settings.get_all_data.return_value = in_config
 
-	def test_on_settings_cleanup_configversion(self):
-		"""Tests that set config version is always left stored."""
+        ### execute
 
-		### setup
+        self.plugin.on_settings_cleanup()
 
-		defaults = dict(
-			foo="fnord"
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+        ### assert
 
-		in_config = dict(
-			_config_version=1,
-			foo="fnord"
-		)
-		self.settings.get_all_data.return_value = in_config
+        # minimal config (current without redundant value) should have been set
+        expected = {
+            "foo": {"l1": ["some", "other", "list"], "l3": ["a", "third", "list"]},
+            "fnord": {"c": 3, "d": 4},
+        }
+        self.settings.set.assert_called_once_with([], expected)
 
-		### execute
+    def test_on_settings_cleanup_configversion(self):
+        """Tests that set config version is always left stored."""
 
-		self.plugin.on_settings_cleanup()
+        ### setup
 
-		### assert
+        defaults = {"foo": "fnord"}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		# minimal config incl. config version should have been set
-		self.settings.set.assert_called_once_with([], dict(_config_version=1))
+        in_config = {"_config_version": 1, "foo": "fnord"}
+        self.settings.get_all_data.return_value = in_config
 
-	def test_on_settings_cleanup_noconfigversion(self):
-		"""Tests that config versions of None are cleaned from stored data."""
+        ### execute
 
-		### setup
+        self.plugin.on_settings_cleanup()
 
-		defaults = dict(
-			foo="bar"
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+        ### assert
 
-		# stored config version is None
-		in_config = dict(
-			_config_version=None,
-			foo="fnord"
-		)
-		self.settings.get_all_data.return_value = in_config
+        # minimal config incl. config version should have been set
+        self.settings.set.assert_called_once_with([], {"_config_version": 1})
 
-		### execute
+    def test_on_settings_cleanup_noconfigversion(self):
+        """Tests that config versions of None are cleaned from stored data."""
 
-		self.plugin.on_settings_cleanup()
+        ### setup
 
-		### assert
+        defaults = {"foo": "bar"}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		# minimal config without config version should have been set
-		self.settings.set.assert_called_once_with([], dict(foo="fnord"))
+        # stored config version is None
+        in_config = {"_config_version": None, "foo": "fnord"}
+        self.settings.get_all_data.return_value = in_config
 
-	def test_on_settings_cleanup_emptydiff(self):
-		"""Tests that settings are cleaned up if the diff data <-> defaults is empty."""
+        ### execute
 
-		### setup
+        self.plugin.on_settings_cleanup()
 
-		defaults = dict(
-			foo="bar"
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+        ### assert
 
-		# current stored config, same as defaults
-		in_config = dict(
-			foo="bar"
-		)
-		self.settings.get_all_data.return_value = in_config
+        # minimal config without config version should have been set
+        self.settings.set.assert_called_once_with([], {"foo": "fnord"})
 
-		### execute
+    def test_on_settings_cleanup_emptydiff(self):
+        """Tests that settings are cleaned up if the diff data <-> defaults is empty."""
 
-		self.plugin.on_settings_cleanup()
+        ### setup
 
-		### assert
+        defaults = {"foo": "bar"}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		# should have been cleared
-		self.settings.clean_all_data.assert_called_once_with()
+        # current stored config, same as defaults
+        in_config = {"foo": "bar"}
+        self.settings.get_all_data.return_value = in_config
 
-	def test_on_settings_cleanup_nosuchpath(self):
-		"""Tests that no processing is done if nothing is stored in settings."""
+        ### execute
 
-		from octoprint.settings import NoSuchSettingsPath
+        self.plugin.on_settings_cleanup()
 
-		### setup
+        ### assert
 
-		# simulate no settings stored in config.yaml
-		self.settings.get_all_data.side_effect = NoSuchSettingsPath()
+        # should have been cleared
+        self.settings.clean_all_data.assert_called_once_with()
 
-		### execute
+    def test_on_settings_cleanup_nosuchpath(self):
+        """Tests that no processing is done if nothing is stored in settings."""
 
-		self.plugin.on_settings_cleanup()
+        from octoprint.settings import NoSuchSettingsPath
 
-		### assert
+        ### setup
+        # simulate no settings stored in config.yaml
+        self.settings.get_all_data.side_effect = NoSuchSettingsPath()
 
-		# only get_all_data should have been called
-		self.settings.get_all_data.assert_called_once_with(merged=False, incl_defaults=False, error_on_path=True)
-		self.assertTrue(len(self.settings.method_calls) == 1)
+        ### execute
 
-	def test_on_settings_cleanup_none(self):
-		"""Tests the None entries in config get cleaned up."""
+        self.plugin.on_settings_cleanup()
 
-		### setup
+        ### assert
 
-		# simulate None entry in config.yaml
-		self.settings.get_all_data.return_value = None
+        # only get_all_data should have been called
+        self.settings.get_all_data.assert_called_once_with(
+            merged=False, incl_defaults=False, error_on_path=True
+        )
+        self.assertTrue(len(self.settings.method_calls) == 1)
 
-		### execute
+    def test_on_settings_cleanup_none(self):
+        """Tests the None entries in config get cleaned up."""
 
-		self.plugin.on_settings_cleanup()
+        ### setup
 
-		### assert
+        # simulate None entry in config.yaml
+        self.settings.get_all_data.return_value = None
 
-		# should have been cleaned
-		self.settings.clean_all_data.assert_called_once_with()
+        ### execute
 
-	def test_on_settings_save(self):
-		"""Tests that only the diff is saved."""
+        self.plugin.on_settings_cleanup()
 
-		### setup
+        ### assert
 
-		current = dict(
-			foo="bar"
-		)
-		self.settings.get_all_data.return_value = current
+        # should have been cleaned
+        self.settings.clean_all_data.assert_called_once_with()
 
-		defaults = dict(
-			foo="foo",
-			bar=dict(
-				a=1,
-				b=2
-			)
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+    def test_on_settings_save(self):
+        """Tests that only the diff is saved."""
 
-		### execute
+        ### setup
 
-		data = dict(
-			foo="fnord",
-			bar=dict(
-				a=1,
-				b=2
-			)
-		)
-		diff = self.plugin.on_settings_save(data)
+        current = {"foo": "bar"}
+        self.settings.get_all_data.return_value = current
 
-		### assert
+        defaults = {"foo": "foo", "bar": {"a": 1, "b": 2}}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		# the minimal diff should have been saved
-		expected = dict(
-			foo="fnord"
-		)
-		self.settings.set.assert_called_once_with([], expected)
+        ### execute
 
-		self.assertEqual(diff, expected)
+        data = {"foo": "fnord", "bar": {"a": 1, "b": 2}}
+        diff = self.plugin.on_settings_save(data)
 
-	def test_on_settings_save_nodiff(self):
-		"""Tests that data is cleaned if there's not difference between data and defaults."""
+        ### assert
 
-		### setup
+        # the minimal diff should have been saved
+        expected = {"foo": "fnord"}
+        self.settings.set.assert_called_once_with([], expected)
 
-		self.settings.get_all_data.return_value = None
+        self.assertEqual(diff, expected)
 
-		defaults = dict(
-			foo="bar",
-			bar=dict(
-				a=1,
-				b=2,
-				l=["some", "list"]
-			)
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+    def test_on_settings_save_nodiff(self):
+        """Tests that data is cleaned if there's not difference between data and defaults."""
 
-		### execute
+        ### setup
 
-		data = dict(foo="bar")
-		diff = self.plugin.on_settings_save(data)
+        self.settings.get_all_data.return_value = None
 
-		### assert
+        defaults = {"foo": "bar", "bar": {"a": 1, "b": 2, "l": ["some", "list"]}}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		self.settings.clean_all_data.assert_called_once_with()
-		self.assertEqual(diff, dict())
+        ### execute
 
-	def test_on_settings_save_configversion(self):
-		"""Tests that saved data gets stripped config version and set correct one."""
+        data = {"foo": "bar"}
+        diff = self.plugin.on_settings_save(data)
 
-		### setup
+        ### assert
 
-		self.settings.get_all_data.return_value = None
+        self.settings.clean_all_data.assert_called_once_with()
+        self.assertEqual(diff, {})
 
-		defaults = dict(
-			foo="bar"
-		)
-		self.plugin.get_settings_defaults = mock.MagicMock()
-		self.plugin.get_settings_defaults.return_value = defaults
+    def test_on_settings_save_configversion(self):
+        """Tests that saved data gets stripped config version and set correct one."""
 
-		version = 1
-		self.plugin.get_settings_version = mock.MagicMock()
-		self.plugin.get_settings_version.return_value = version
+        ### setup
 
-		### execute
+        self.settings.get_all_data.return_value = None
 
-		data = dict(_config_version=None, foo="bar")
-		diff = self.plugin.on_settings_save(data)
+        defaults = {"foo": "bar"}
+        self.plugin.get_settings_defaults = mock.MagicMock()
+        self.plugin.get_settings_defaults.return_value = defaults
 
-		### assert
+        version = 1
+        self.plugin.get_settings_version = mock.MagicMock()
+        self.plugin.get_settings_version.return_value = version
 
-		expected_diff = dict()
-		expected_set = dict(_config_version=version)
+        ### execute
 
-		# while there was no diff, we should still have saved the new config version
-		self.settings.set.assert_called_once_with([], expected_set)
+        data = {"_config_version": None, "foo": "bar"}
+        diff = self.plugin.on_settings_save(data)
 
-		self.assertEqual(diff, expected_diff)
+        ### assert
 
-	def test_on_settings_load(self):
-		"""Tests that on_settings_load returns what's stored in the config, without config version."""
+        expected_diff = {}
+        expected_set = {"_config_version": version}
 
-		### setup
+        # while there was no diff, we should still have saved the new config version
+        self.settings.set.assert_called_once_with([], expected_set)
 
-		# current data incl. config version
-		current = dict(
-			_config_version=3,
-			foo="bar",
-			fnord=dict(
-				a=1,
-				b=2,
-				l=["some", "list"]
-			)
-		)
+        self.assertEqual(diff, expected_diff)
 
-		# expected is current without _config_version - we make the copy now
-		# since our current dict will be modified by the test
-		expected = dict(current)
-		del expected["_config_version"]
+    def test_on_settings_load(self):
+        """Tests that on_settings_load returns what's stored in the config, without config version."""
 
-		self.settings.get_all_data.return_value = expected
+        ### setup
 
-		### execute
+        # current data incl. config version
+        current = {
+            "_config_version": 3,
+            "foo": "bar",
+            "fnord": {"a": 1, "b": 2, "l": ["some", "list"]},
+        }
 
-		result = self.plugin.on_settings_load()
+        # expected is current without _config_version - we make the copy now
+        # since our current dict will be modified by the test
+        expected = dict(current)
+        del expected["_config_version"]
 
-		### assert
+        self.settings.get_all_data.return_value = expected
 
-		self.assertEqual(result, expected)
+        ### execute
+
+        result = self.plugin.on_settings_load()
+
+        ### assert
+
+        self.assertEqual(result, expected)

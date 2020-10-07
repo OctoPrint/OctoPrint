@@ -1,12 +1,16 @@
 #  OctoPrint
 
-
 ![GitHub release](https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white)
 ![PyPI](https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/octoprint.svg)](https://pypi.python.org/pypi/octoprint/)
 ![Build status](https://img.shields.io/github/workflow/status/OctoPrint/OctoPrint/Build)
 [![Community Forum](https://img.shields.io/discourse/users?logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org)](https://community.octoprint.org)
 [![Discord](https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white)](https://discord.octoprint.org)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1)](https://pycqa.github.io/isort/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software

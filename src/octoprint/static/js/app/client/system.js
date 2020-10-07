@@ -4,11 +4,11 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
+})(this, function (OctoPrintClient) {
     var url = "api/system";
     var commandUrl = "api/system/commands";
 
-    var OctoPrintSystemClient = function(base) {
+    var OctoPrintSystemClient = function (base) {
         this.base = base;
     };
 

@@ -17,7 +17,7 @@ or request features within OctoPrint (not OctoPi, not any OctoPrint
 plugins and not unofficial OctoPrint versions).
 
 Do not seek support here ("I need help with ...", "I have a
-question ..."), that belongs on the community forum at 
+question ..."), that belongs on the community forum at
 community.octoprint.org, NOT here.
 
 Mark requests with a "[Request]" prefix in the title please. For bug
@@ -37,7 +37,7 @@ Thank you!
 
 #### What were you doing?
 
-<!-- 
+<!--
 Please be as specific as possible here. The maintainers will need to
 reproduce your issue in order to fix it and that is not possible if they
 don't know what you did to get it to happen in the first place.
@@ -61,7 +61,7 @@ to also include a link to a file with which to reproduce the problem.
 
 #### Did the same happen when running OctoPrint in safe mode?
 
-<!-- 
+<!--
 Test if you can reproduce your problem in safe mode. You can find information
 on how to enable safe mode in the Contribution Guidelines.
 

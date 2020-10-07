@@ -5,26 +5,26 @@
         global.OctoPrintClient = factory(global.$, global._);
         global.OctoPrint = new global.OctoPrintClient();
     }
-})(this, function($, _) {
-    var PluginRegistry = function(base) {
+})(this, function ($, _) {
+    var PluginRegistry = function (base) {
         this.base = base;
         this.components = {};
     };
 
-    var OctoPrintClient = function(options) {
+    var OctoPrintClient = function (options) {
         this.options = options || {
-            "baseurl": undefined,
-            "apikey": undefined,
-            "locale": undefined
+            baseurl: undefined,
+            apikey: undefined,
+            locale: undefined
         };
 
         this.components = {};
         this.plugins = new PluginRegistry(this);
     };
 
-    OctoPrintClient.registerComponent = function(name, component) {
+    OctoPrintClient.registerComponent = function (name, component) {
         Object.defineProperty(OctoPrintClient.prototype, name, {
-            get: function() {
+            get: function () {
                 if (this.components[name] !== undefined) {
                     return this.components[name];
                 }
@@ -32,15 +32,15 @@
                 var instance = new component(this);
                 this.components[name] = instance;
                 return instance;
-           },
+            },
             enumerable: false,
             configurable: false
         });
     };
 
-    OctoPrintClient.registerPluginComponent = function(name, component) {
+    OctoPrintClient.registerPluginComponent = function (name, component) {
         Object.defineProperty(PluginRegistry.prototype, name, {
-            get: function() {
+            get: function () {
                 if (this.components[name] !== undefined) {
                     return this.components[name];
                 }
@@ -54,7 +54,7 @@
         });
     };
 
-    var noCache = function(opts) {
+    var noCache = function (opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
@@ -64,7 +64,7 @@
         return params;
     };
 
-    var contentTypeJson = function(opts) {
+    var contentTypeJson = function (opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
@@ -73,7 +73,7 @@
         return params;
     };
 
-    var contentTypeFalse = function(opts) {
+    var contentTypeFalse = function (opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
@@ -82,7 +82,7 @@
         return params;
     };
 
-    var noProcessData = function(opts) {
+    var noProcessData = function (opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
@@ -91,7 +91,7 @@
         return params;
     };
 
-    var replaceUndefinedWithNull = function(key, value) {
+    var replaceUndefinedWithNull = function (key, value) {
         if (value === undefined) {
             return null;
         } else {
@@ -99,7 +99,7 @@
         }
     };
 
-    OctoPrintClient.prototype.getBaseUrl = function() {
+    OctoPrintClient.prototype.getBaseUrl = function () {
         var url = this.options.baseurl;
         if (!_.endsWith(url, "/")) {
             url = url + "/";
@@ -107,7 +107,7 @@
         return url;
     };
 
-    OctoPrintClient.prototype.getRequestHeaders = function(additional) {
+    OctoPrintClient.prototype.getRequestHeaders = function (additional) {
         additional = additional || {};
 
         var headers = $.extend({}, additional);
@@ -122,7 +122,7 @@
         return headers;
     };
 
-    OctoPrintClient.prototype.ajax = function(method, url, opts) {
+    OctoPrintClient.prototype.ajax = function (method, url, opts) {
         opts = opts || {};
 
         method = opts.method || method || "GET";
@@ -144,7 +144,7 @@
         return $.ajax(urlToCall, params);
     };
 
-    OctoPrintClient.prototype.ajaxWithData = function(method, url, data, opts) {
+    OctoPrintClient.prototype.ajaxWithData = function (method, url, data, opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
@@ -153,58 +153,70 @@
         return this.ajax(method, url, params);
     };
 
-    OctoPrintClient.prototype.get = function(url, opts) {
+    OctoPrintClient.prototype.get = function (url, opts) {
         return this.ajax("GET", url, opts);
     };
 
-    OctoPrintClient.prototype.getWithQuery = function(url, data, opts) {
+    OctoPrintClient.prototype.getWithQuery = function (url, data, opts) {
         return this.ajaxWithData("GET", url, data, opts);
     };
 
-    OctoPrintClient.prototype.post = function(url, data, opts) {
+    OctoPrintClient.prototype.post = function (url, data, opts) {
         return this.ajaxWithData("POST", url, data, noCache(opts));
     };
 
-    OctoPrintClient.prototype.postForm = function(url, data, opts) {
+    OctoPrintClient.prototype.postForm = function (url, data, opts) {
         var form = new FormData();
-        _.each(data, function(value, key) {
+        _.each(data, function (value, key) {
             form.append(key, value);
         });
 
         return this.post(url, form, contentTypeFalse(noProcessData(opts)));
     };
 
-    OctoPrintClient.prototype.postJson = function(url, data, opts) {
-        return this.post(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
+    OctoPrintClient.prototype.postJson = function (url, data, opts) {
+        return this.post(
+            url,
+            JSON.stringify(data, replaceUndefinedWithNull),
+            contentTypeJson(opts)
+        );
     };
 
-    OctoPrintClient.prototype.put = function(url, data, opts) {
+    OctoPrintClient.prototype.put = function (url, data, opts) {
         return this.ajaxWithData("PUT", url, data, noCache(opts));
     };
 
-    OctoPrintClient.prototype.putJson = function(url, data, opts) {
-        return this.put(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
+    OctoPrintClient.prototype.putJson = function (url, data, opts) {
+        return this.put(
+            url,
+            JSON.stringify(data, replaceUndefinedWithNull),
+            contentTypeJson(opts)
+        );
     };
 
-    OctoPrintClient.prototype.patch = function(url, data, opts) {
+    OctoPrintClient.prototype.patch = function (url, data, opts) {
         return this.ajaxWithData("PATCH", url, data, noCache(opts));
     };
 
-    OctoPrintClient.prototype.patchJson = function(url, data, opts) {
-        return this.patch(url, JSON.stringify(data, replaceUndefinedWithNull), contentTypeJson(opts));
+    OctoPrintClient.prototype.patchJson = function (url, data, opts) {
+        return this.patch(
+            url,
+            JSON.stringify(data, replaceUndefinedWithNull),
+            contentTypeJson(opts)
+        );
     };
 
-    OctoPrintClient.prototype.delete = function(url, opts) {
+    OctoPrintClient.prototype.delete = function (url, opts) {
         return this.ajax("DELETE", url, opts);
     };
 
-    OctoPrintClient.prototype.download = function(url, opts) {
+    OctoPrintClient.prototype.download = function (url, opts) {
         var params = $.extend({}, opts || {});
         params.dataType = "text";
         return this.get(url, params);
     };
 
-    OctoPrintClient.prototype.upload = function(url, file, filename, additional) {
+    OctoPrintClient.prototype.upload = function (url, file, filename, additional) {
         additional = additional || {};
 
         var fileData;
@@ -222,19 +234,20 @@
         var form = new FormData();
         form.append("file", fileData, filename);
 
-        _.each(additional, function(value, key) {
+        _.each(additional, function (value, key) {
             form.append(key, value);
         });
 
         var deferred = $.Deferred();
 
         var request = new XMLHttpRequest();
-        request.onreadystatechange = function() {
+        request.onreadystatechange = function () {
             if (request.readyState == 4) {
                 deferred.notify({loaded: filesize, total: filesize});
 
-                var success = request.status >= 200 && request.status < 300
-                    || request.status === 304;
+                var success =
+                    (request.status >= 200 && request.status < 300) ||
+                    request.status === 304;
                 var error, json, statusText;
 
                 try {
@@ -256,16 +269,16 @@
                 }
             }
         };
-        request.ontimeout = function() {
+        request.ontimeout = function () {
             deferred.reject([request, "timeout", "Timeout"]);
         };
-        request.upload.addEventListener("loadstart", function(e) {
+        request.upload.addEventListener("loadstart", function (e) {
             deferred.notify({loaded: e.loaded, total: e.total});
         });
-        request.upload.addEventListener("progress", function(e) {
+        request.upload.addEventListener("progress", function (e) {
             deferred.notify({loaded: e.loaded, total: e.total});
         });
-        request.upload.addEventListener("loadend", function(e) {
+        request.upload.addEventListener("loadend", function (e) {
             deferred.notify({loaded: e.loaded, total: e.total});
         });
 
@@ -277,7 +290,7 @@
         }
 
         request.open("POST", urlToCall);
-        _.each(headers, function(value, key) {
+        _.each(headers, function (value, key) {
             request.setRequestHeader(key, value);
         });
         request.send(form);
@@ -285,7 +298,7 @@
         return deferred.promise();
     };
 
-    OctoPrintClient.prototype.issueCommand = function(url, command, payload, opts) {
+    OctoPrintClient.prototype.issueCommand = function (url, command, payload, opts) {
         payload = payload || {};
 
         var data = $.extend({}, payload);
@@ -294,38 +307,48 @@
         return this.postJson(url, data, opts);
     };
 
-    OctoPrintClient.prototype.getSimpleApiUrl = function(plugin) {
+    OctoPrintClient.prototype.getSimpleApiUrl = function (plugin) {
         return "api/plugin/" + plugin;
     };
 
-    OctoPrintClient.prototype.simpleApiGet = function(plugin, opts) {
+    OctoPrintClient.prototype.simpleApiGet = function (plugin, opts) {
         return this.get(OctoPrintClient.prototype.getSimpleApiUrl(plugin), opts);
     };
 
-    OctoPrintClient.prototype.simpleApiCommand = function(plugin, command, payload, opts) {
-        return this.issueCommand(OctoPrintClient.prototype.getSimpleApiUrl(plugin), command, payload, opts);
+    OctoPrintClient.prototype.simpleApiCommand = function (
+        plugin,
+        command,
+        payload,
+        opts
+    ) {
+        return this.issueCommand(
+            OctoPrintClient.prototype.getSimpleApiUrl(plugin),
+            command,
+            payload,
+            opts
+        );
     };
 
-    OctoPrintClient.prototype.getBlueprintUrl = function(plugin) {
+    OctoPrintClient.prototype.getBlueprintUrl = function (plugin) {
         return "plugin/" + plugin + "/";
     };
 
-    OctoPrintClient.createRejectedDeferred = function() {
+    OctoPrintClient.createRejectedDeferred = function () {
         var deferred = $.Deferred();
         deferred.reject(arguments);
         return deferred;
     };
 
-    OctoPrintClient.createCustomException = function(name) {
+    OctoPrintClient.createCustomException = function (name) {
         var constructor;
 
         if (_.isFunction(name)) {
             constructor = name;
         } else {
-            constructor = function(message) {
+            constructor = function (message) {
                 this.name = name;
                 this.message = message;
-                this.stack = (new Error()).stack;
+                this.stack = new Error().stack;
             };
         }
 
@@ -335,23 +358,61 @@
         return constructor;
     };
 
-    OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException("InvalidArgumentError");
+    OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException(
+        "InvalidArgumentError"
+    );
 
     OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
-        return function() {
-            console.warn(deprecatedFct + " is deprecated, please use the new " + newFct + " function instead");
+        return function () {
+            console.warn(
+                deprecatedFct +
+                    " is deprecated, please use the new " +
+                    newFct +
+                    " function instead"
+            );
             return fn.apply(this, arguments);
         };
     };
 
-    OctoPrintClient.deprecatedMethod = function(object, oldNamespace, oldFct, newNamespace, newFct, fn) {
-        object[oldFct] = OctoPrintClient.deprecated(oldNamespace + "." + oldFct, newNamespace + "." + newFct, fn);
+    OctoPrintClient.deprecatedMethod = function (
+        object,
+        oldNamespace,
+        oldFct,
+        newNamespace,
+        newFct,
+        fn
+    ) {
+        object[oldFct] = OctoPrintClient.deprecated(
+            oldNamespace + "." + oldFct,
+            newNamespace + "." + newFct,
+            fn
+        );
     };
 
-    OctoPrintClient.deprecatedVariable = function(object, oldNamespace, oldVar, newNamespace, newVar, getter, setter) {
+    OctoPrintClient.deprecatedVariable = function (
+        object,
+        oldNamespace,
+        oldVar,
+        newNamespace,
+        newVar,
+        getter,
+        setter
+    ) {
         Object.defineProperty(object, oldVar, {
-            get: function() { return OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, getter)(); },
-            set: function(val) { OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, setter)(val); }
+            get: function () {
+                return OctoPrintClient.deprecated(
+                    oldNamespace + "." + oldVar,
+                    newNamespace + "." + newVar,
+                    getter
+                )();
+            },
+            set: function (val) {
+                OctoPrintClient.deprecated(
+                    oldNamespace + "." + oldVar,
+                    newNamespace + "." + newVar,
+                    setter
+                )(val);
+            }
         });
     };
 

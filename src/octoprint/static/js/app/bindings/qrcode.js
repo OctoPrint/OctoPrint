@@ -1,5 +1,5 @@
 ko.bindingHandlers.qrcode = {
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    update: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
         var val = ko.utils.unwrapObservable(valueAccessor());
 
         var defaultOptions = {
@@ -15,7 +15,7 @@ ko.bindingHandlers.qrcode = {
         };
 
         var options = {};
-        _.each(defaultOptions, function(value, key) {
+        _.each(defaultOptions, function (value, key) {
             options[key] = ko.utils.unwrapObservable(val[key]) || value;
         });
 

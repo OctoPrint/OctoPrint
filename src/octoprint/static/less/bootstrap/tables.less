@@ -2,7 +2,6 @@
 // Tables
 // --------------------------------------------------
 
-
 // BASE TABLES
 // -----------------
 
@@ -55,8 +54,6 @@ table {
   }
 }
 
-
-
 // CONDENSED TABLE W/ HALF PADDING
 // -------------------------------
 
@@ -66,7 +63,6 @@ table {
     padding: 4px 5px;
   }
 }
-
 
 // BORDERED VERSION
 // ----------------
@@ -143,11 +139,7 @@ table {
   colgroup + tbody tr:first-child td:last-child {
     .border-top-right-radius(@baseBorderRadius);
   }
-
 }
-
-
-
 
 // ZEBRA-STRIPING
 // --------------
@@ -162,7 +154,6 @@ table {
   }
 }
 
-
 // HOVER EFFECT
 // ------------
 // Placed here since it has to come after the potential zebra striping
@@ -174,7 +165,6 @@ table {
     }
   }
 }
-
 
 // TABLE CELL SIZING
 // -----------------
@@ -192,21 +182,43 @@ table th[class*="span"],
 // Change the column widths to account for td/th padding
 .table td,
 .table th {
-  &.span1     { .tableColumns(1); }
-  &.span2     { .tableColumns(2); }
-  &.span3     { .tableColumns(3); }
-  &.span4     { .tableColumns(4); }
-  &.span5     { .tableColumns(5); }
-  &.span6     { .tableColumns(6); }
-  &.span7     { .tableColumns(7); }
-  &.span8     { .tableColumns(8); }
-  &.span9     { .tableColumns(9); }
-  &.span10    { .tableColumns(10); }
-  &.span11    { .tableColumns(11); }
-  &.span12    { .tableColumns(12); }
+  &.span1 {
+    .tableColumns(1);
+  }
+  &.span2 {
+    .tableColumns(2);
+  }
+  &.span3 {
+    .tableColumns(3);
+  }
+  &.span4 {
+    .tableColumns(4);
+  }
+  &.span5 {
+    .tableColumns(5);
+  }
+  &.span6 {
+    .tableColumns(6);
+  }
+  &.span7 {
+    .tableColumns(7);
+  }
+  &.span8 {
+    .tableColumns(8);
+  }
+  &.span9 {
+    .tableColumns(9);
+  }
+  &.span10 {
+    .tableColumns(10);
+  }
+  &.span11 {
+    .tableColumns(11);
+  }
+  &.span12 {
+    .tableColumns(12);
+  }
 }
-
-
 
 // TABLE BACKGROUNDS
 // -----------------
