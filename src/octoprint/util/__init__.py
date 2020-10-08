@@ -1553,6 +1553,7 @@ class ResettableTimer(threading.Thread):
         kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
         on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
         on_reset (callable): Callback to call when the timer is reset.
+        daemon (bool): daemon flag to set on underlying thread.
     """
 
     def __init__(
