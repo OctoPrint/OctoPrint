@@ -11,7 +11,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            let labels = []:
+            let labels = [];
             context.issue.labels.forEach(label => { labels.push(label.name) });
 
             if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
