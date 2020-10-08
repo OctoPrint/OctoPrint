@@ -172,9 +172,10 @@ Controls
        turn the button red.
    * - ``enabled``
      - (Optional) A JavaScript snippet returning either ``true`` or ``false`` determining whether the control
-       should be enabled or not. This allow to override the default logic for this (disabled if printer is offline
-       or currently printing). The JavaScript snippet is ``eval``'d and processed in a context where the control
-       it is part of is provided as local variable ``data`` and the ``ControlViewModel`` is available as ``self``.
+       should be enabled or not. This allows to override the default logic for the enable state
+       of the control (disabled if printer is offline). The JavaScript snippet is ``eval``'d and processed
+       in a context where the control it is part of is provided as local variable ``data`` and the
+       ``ControlViewModel`` is available as ``self``.
    * - ``input``
      - (Optional) A list of definitions of input parameters for a ``command`` or ``commands``, to be rendered as
        additional input fields. ``command``/``commands`` may contain placeholders to be replaced by the values obtained

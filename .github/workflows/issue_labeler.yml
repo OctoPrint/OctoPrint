@@ -12,22 +12,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             let labels = [];
+            context.payload.issue.labels.forEach(label => { labels.push(label.name) });
 
             if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
-              labels.push('type:request');
+              labels.push('request');
+              labels = labels.filter(label => label !== 'triage');
             }
             if (context.payload.issue.title.match(/\[brainstorming\]/i)) {
-              labels.push('type:brainstorming');
+              labels.push('brainstorming');
+              labels = labels.filter(label => label !== 'triage');
             }
             if (context.payload.issue.title.match(/\[rc feedback\]/i)) {
-              labels.push('type:rc feedback');
+              labels.push('rc feedback');
+              labels = labels.filter(label => label !== 'triage');
             }
 
-            if (labels.length > 0) {
-              github.issues.addLabels({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                labels: labels
-              })
+            if (labels.length === 0) {
+              labels.push('triage');
             }
+
+            github.issues.setLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels
+            })
