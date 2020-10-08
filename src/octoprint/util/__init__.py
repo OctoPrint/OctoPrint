@@ -990,7 +990,7 @@ class fallback_dict(dict):
     def values(self):
         result = set()
         for dictionary in self._all():
-            for k, v in dictionary.items():
+            for k in dictionary:
                 if k in result:
                     continue
                 result.add(k)

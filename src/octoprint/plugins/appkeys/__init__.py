@@ -433,7 +433,7 @@ class AppKeysPlugin(
     def _all_api_keys(self):
         with self._keys_lock:
             result = []
-            for user_id, keys in self._keys.items():
+            for keys in self._keys.values():
                 result += keys
         return result
 

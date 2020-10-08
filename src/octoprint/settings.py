@@ -942,7 +942,7 @@ class Settings(object):
                     self._mtime = self.last_modified
 
                 except yaml.YAMLError as e:
-                    details = e.message
+                    details = str(e)
 
                     if hasattr(e, "problem_mark"):
                         line = e.problem_mark.line

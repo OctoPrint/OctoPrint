@@ -599,7 +599,7 @@ class Server(object):
                         kwargs["tags"] = tags
                         return f(*args, **kwargs)
 
-                    setattr(wrapper, "__tagwrapped__", True)
+                    wrapper.__tagwrapped__ = True
                     return wrapper
 
                 class TaggedFuncsPrinter(wrapt.ObjectProxy):

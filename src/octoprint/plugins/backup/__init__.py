@@ -969,7 +969,7 @@ class BackupPlugin(
                 # add list of installed plugins
                 plugins = []
                 plugin_folder = settings.global_get_basefolder("plugins")
-                for key, plugin in plugin_manager.plugins.items():
+                for plugin in plugin_manager.plugins.values():
                     if plugin.bundled or (
                         isinstance(plugin.origin, FolderOrigin)
                         and plugin.origin.folder == plugin_folder

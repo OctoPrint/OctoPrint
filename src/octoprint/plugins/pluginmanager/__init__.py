@@ -1312,7 +1312,7 @@ class PluginManagerPlugin(
                 existing={}, ignore_uninstalled=False
             )
 
-        for key, plugin in plugins.items():
+        for plugin in plugins.values():
             if plugin.origin is None or plugin.origin.type != "entry_point":
                 continue
 
@@ -1400,7 +1400,7 @@ class PluginManagerPlugin(
                 "loglines": [{"line": line, "stream": stream} for line in lines],
             },
         )
-        for line in lines:
+        for line in lines:  # noqa: B007
             self._console_logger.debug("{prefix} {line}".format(**locals()))
 
     def _mark_plugin_enabled(self, plugin, needs_restart=False):

@@ -46,8 +46,8 @@ IGNORED_EXCEPTIONS = [
     # IOErrors of any kind due to a full file system
     (
         IOError,
-        lambda exc, logger, plugin, cb: getattr(exc, "errno")
-        and exc.errno in (getattr(errno, "ENOSPC"),),
+        lambda exc, logger, plugin, cb: exc.errorgetattr(exc, "errno")  # noqa: B009
+        and exc.errno in (getattr(errno, "ENOSPC"),),  # noqa: B009
     ),
     # RequestExceptions of any kind
     requests.exceptions.RequestException,

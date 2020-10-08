@@ -67,7 +67,7 @@ def config(ctx):
             get_ctx_obj_option(ctx, "configfile", None),
         )
     except FatalStartupError as e:
-        click.echo(e.message, err=True)
+        click.echo(str(e), err=True)
         click.echo("There was a fatal error initializing the settings manager.", err=True)
         ctx.exit(-1)
 
@@ -87,7 +87,7 @@ def set_command(ctx, path, value, as_bool, as_float, as_int, as_json):
         try:
             value = json.loads(value)
         except Exception as e:
-            click.echo(e.message, err=True)
+            click.echo(str(e), err=True)
             ctx.exit(-1)
 
     data_type = None
@@ -124,7 +124,7 @@ def append_value_command(ctx, path, value, as_json=False):
         try:
             value = json.loads(value)
         except Exception as e:
-            click.echo(e.message, err=True)
+            click.echo(str(e), err=True)
             ctx.exit(-1)
 
     current = ctx.obj.settings.get(path)
@@ -153,7 +153,7 @@ def insert_value_command(ctx, path, index, value, as_json=False):
         try:
             value = json.loads(value)
         except Exception as e:
-            click.echo(e.message, err=True)
+            click.echo(str(e), err=True)
             ctx.exit(-1)
 
     current = ctx.obj.settings.get(path)
@@ -181,7 +181,7 @@ def remove_value_command(ctx, path, value, as_json=False):
         try:
             value = json.loads(value)
         except Exception as e:
-            click.echo(e.message, err=True)
+            click.echo(str(e), err=True)
             ctx.exit(-1)
 
     current = ctx.obj.settings.get(path)

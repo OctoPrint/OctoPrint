@@ -106,7 +106,7 @@ def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
         )
 
     except FatalStartupError as e:
-        click.echo(e.message, err=True)
+        click.echo(str(e), err=True)
         click.echo("There was a fatal error initializing the client.", err=True)
         ctx.exit(-1)
 

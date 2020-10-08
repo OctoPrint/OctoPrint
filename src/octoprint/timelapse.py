@@ -730,7 +730,7 @@ class Timelapse(object):
 
     def _perform_capture(self, filename, onerror=None):
         # pre-capture hook
-        for name, hook in self._pre_capture_hooks.items():
+        for hook in self._pre_capture_hooks.values():
             try:
                 hook(filename)
             except Exception:
@@ -771,7 +771,7 @@ class Timelapse(object):
             err = None
 
         # post-capture hook
-        for name, hook in self._post_capture_hooks.items():
+        for hook in self._post_capture_hooks.values():
             try:
                 hook(filename, err is None)
             except Exception:

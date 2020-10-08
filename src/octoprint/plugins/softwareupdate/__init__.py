@@ -874,7 +874,7 @@ class SoftwareUpdatePlugin(
         if delete is None:
             delete = []
 
-        for k, v in data.items():
+        for k in data:
             if k in defaults and defaults[k] == data[k]:
                 delete.append(k)
 

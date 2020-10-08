@@ -468,7 +468,7 @@ def init_pluginsystem(
 
         def validator(phase, plugin_info):
             if phase in ("before_import", "before_load", "before_enable"):
-                setattr(plugin_info, "safe_mode_victim", not plugin_info.bundled)
+                plugin_info.safe_mode_victim = not plugin_info.bundled
                 if not plugin_info.bundled:
                     return False
             return True
@@ -497,7 +497,7 @@ def init_pluginsystem(
             plugin.needs_restart = True
 
             # plugin has a settings overlay, inject it
-            overlay_definition = getattr(plugin.instance, "__plugin_settings_overlay__")
+            overlay_definition = plugin.instance.__plugin_settings_overlay__
             if isinstance(overlay_definition, (tuple, list)):
                 overlay_definition, order = overlay_definition
             else:

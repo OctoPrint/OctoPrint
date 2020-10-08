@@ -80,7 +80,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
         # translations from plugins
         plugins = octoprint.plugin.plugin_manager().enabled_plugins
-        for name, plugin in plugins.items():
+        for plugin in plugins.values():
             plugin_translation_dir = os.path.join(plugin.location, "translations")
             if not os.path.isdir(plugin_translation_dir):
                 continue
@@ -1127,7 +1127,7 @@ class PreemptiveCache(object):
         if not isinstance(data, dict):
             return False
 
-        for root, entries in data.items():
+        for entries in data.values():
             if not isinstance(entries, list):
                 return False
 
