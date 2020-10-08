@@ -238,6 +238,11 @@ getAdditionalControls()
    Your view model may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
    interface. See :ref:`the custom control feature<sec-features-custom_controls>`.
 
+   .. note::
+
+      Controls injected from a view model do not support feedback controls (as defined by
+      ``regex`` and ``template``).
+
 onSettingsShown()
    Called when the settings dialog is shown.
 
