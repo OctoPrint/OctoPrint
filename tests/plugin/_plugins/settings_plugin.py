@@ -5,7 +5,7 @@ import octoprint.plugin
 
 
 class TestSettingsPlugin(octoprint.plugin.SettingsPlugin):
-	pass
+    pass
 
 
 __plugin_name__ = "Settings Plugin"

@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function NavigationViewModel(parameters) {
         var self = this;
 
@@ -9,19 +9,25 @@ $(function() {
         self.system = parameters[4];
         self.access = parameters[5];
 
-        self.appearanceClasses = ko.pureComputed(function() {
+        self.appearanceClasses = ko.pureComputed(function () {
             var classes = self.appearance.color();
             if (self.appearance.colorTransparent()) {
                 classes += " transparent";
             }
             return classes;
         });
-
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: NavigationViewModel,
-        dependencies: ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel", "systemViewModel", "accessViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "appearanceViewModel",
+            "settingsViewModel",
+            "userSettingsViewModel",
+            "systemViewModel",
+            "accessViewModel"
+        ],
         elements: ["#navbar"]
     });
 });

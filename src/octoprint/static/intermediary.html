@@ -93,7 +93,7 @@
                     opacity: 0.5;
                 }
                 50% {
-                    opacity: 1.0;
+                    opacity: 1;
                 }
                 100% {
                     opacity: 0.5;
@@ -102,9 +102,14 @@
         </style>
         <script>
             if (!String.prototype.endsWith) {
-                String.prototype.endsWith = function(searchString, position) {
+                String.prototype.endsWith = function (searchString, position) {
                     var subjectString = this.toString();
-                    if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+                    if (
+                        typeof position !== "number" ||
+                        !isFinite(position) ||
+                        Math.floor(position) !== position ||
+                        position > subjectString.length
+                    ) {
                         position = subjectString.length;
                     }
                     position -= searchString.length;
@@ -127,11 +132,11 @@
 
                 console.log("Pinging " + url);
 
-                img.onload = function() {
+                img.onload = function () {
                     callback("load");
                     calledBack = true;
                 };
-                img.onerror = function() {
+                img.onerror = function () {
                     if (!calledBack) {
                         callback("error");
                         calledBack = true;
@@ -139,7 +144,7 @@
                 };
 
                 img.src = urlToUse;
-                setTimeout(function() {
+                setTimeout(function () {
                     if (!calledBack) {
                         callback("timeout");
                         calledBack = true;
@@ -147,7 +152,7 @@
                 }, timeout);
             }
 
-            window.onload = function() {
+            window.onload = function () {
                 var intervals = [1, 1, 2, 3, 5, 8];
                 var timeout = 1500;
 
@@ -180,7 +185,7 @@
                 var reloadnow = window.document.getElementById("reloadnow");
                 var reloadnowlink = window.document.getElementById("reloadnowlink");
 
-                var reload = function() {
+                var reload = function () {
                     var reloadUrl = baseUrl + currentQuery + currentFragment;
                     if (reloadUrl == window.location.href) {
                         window.location.reload(false);
@@ -190,7 +195,7 @@
                 };
 
                 var indexCached = false;
-                var indexCachedCallback = function(result) {
+                var indexCachedCallback = function (result) {
                     if (indexCached) return;
 
                     if (result == "load") {
@@ -207,20 +212,21 @@
                         reload();
                     } else {
                         // cached.gif still not available, let's look at it again in a second
-                        cachedTimeout = setTimeout(function() {
+                        cachedTimeout = setTimeout(function () {
                             ping(indexCachedUrl, timeout, indexCachedCallback);
-                        }, 1000)
+                        }, 1000);
                     }
                 };
 
                 var serverIsOnline = false;
-                var serverOnlineCallback = function(result) {
+                var serverOnlineCallback = function (result) {
                     if (result == "load") {
                         // our online.gif loaded, so the server is up, let's wait for it to become ready
                         serverIsOnline = true;
 
-                        message.innerText = "OctoPrint server started, waiting for it to get ready...";
-                        reloadnowlink.onclick = function() {
+                        message.innerText =
+                            "OctoPrint server started, waiting for it to get ready...";
+                        reloadnowlink.onclick = function () {
                             indexCached = true; // not really, but we fake it
 
                             message.className = "pulsate1";
@@ -238,20 +244,20 @@
                         if (intervals.length) {
                             interval = intervals.shift();
                         }
-                        serverTimeout = setTimeout(function() {
+                        serverTimeout = setTimeout(function () {
                             ping(serverOnlineUrl, timeout, serverOnlineCallback);
-                        }, interval * 1000)
+                        }, interval * 1000);
                     }
                 };
 
                 var backendOfflineCounter = 0;
-                var backendOnlineCallback = function(result) {
+                var backendOnlineCallback = function (result) {
                     if (serverIsOnline) {
                         return;
                     }
 
                     if (result == "load") {
-                        setTimeout(function() {
+                        setTimeout(function () {
                             ping(backendOnlineUrl, timeout, backendOnlineCallback);
                         }, 1000);
                         return;
@@ -267,9 +273,10 @@
                         }
 
                         message.className = "red";
-                        message.innerHTML = "Looks like something went wrong during startup, the server is gone again. You should check <code>octoprint.log</code>.";
+                        message.innerHTML =
+                            "Looks like something went wrong during startup, the server is gone again. You should check <code>octoprint.log</code>.";
                     } else {
-                        setTimeout(function() {
+                        setTimeout(function () {
                             ping(backendOnlineUrl, timeout, backendOnlineCallback);
                         }, 1000);
                     }
@@ -277,7 +284,7 @@
 
                 ping(backendOnlineUrl, timeout, backendOnlineCallback);
                 ping(serverOnlineUrl, timeout, serverOnlineCallback);
-            }
+            };
         </script>
     </head>
     <body>
@@ -287,8 +294,17 @@
                 <div class="outer">
                     <div class="inner">
                         <div class="content">
-                            <h1 id="message" class="pulsate3">OctoPrint is still starting up, please wait...</h1>
-                            <small id="reloadnow" style="display: none"><a id="reloadnowlink" class="normal" href="javascript:void(0)">Don't wait, reload now!</a></small>
+                            <h1 id="message" class="pulsate3">
+                                OctoPrint is still starting up, please wait...
+                            </h1>
+                            <small id="reloadnow" style="display: none"
+                                ><a
+                                    id="reloadnowlink"
+                                    class="normal"
+                                    href="javascript:void(0)"
+                                    >Don't wait, reload now!</a
+                                ></small
+                            >
                         </div>
                     </div>
                 </div>

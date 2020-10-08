@@ -1,2 +1,2 @@
-import 'cypress-wait-until';
-import 'cypress-file-upload';
+import "cypress-wait-until";
+import "cypress-file-upload";

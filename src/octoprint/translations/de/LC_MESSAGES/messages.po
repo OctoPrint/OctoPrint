@@ -9252,4 +9252,3 @@ msgstr "Zeitrafferaufnahme rendern"
 
 #~ msgid "Autodetection timeout (further tries)"
 #~ msgstr "Autodetectiontimeout (weitere Versuche)"
-

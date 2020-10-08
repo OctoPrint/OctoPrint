@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 """
 Unit tests for ``octoprint.server.api`` system.
 """
@@ -6,15 +6,16 @@ Unit tests for ``octoprint.server.api`` system.
 from __future__ import absolute_import, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import mock
 import unittest
 
-class GetFolderUsageTest(unittest.TestCase):
+import mock
 
+
+class GetFolderUsageTest(unittest.TestCase):
     def test_readUsageForFolder(self):
         from octoprint.server.api.system import _usageForFolders
 
@@ -26,10 +27,10 @@ class GetFolderUsageTest(unittest.TestCase):
 
             with mock.patch("octoprint.server.api.system.s") as settings_mock:
                 settings = mock.MagicMock()
-                settings.get.return_value = dict(uploads="mocked")
+                settings.get.return_value = {"uploads": "mocked"}
                 settings.getBaseFolder.return_value = "mocked"
                 settings_mock.return_value = settings
 
                 data = _usageForFolders()
-                self.assertEqual(data['uploads']['free'], 50)
-                self.assertEqual(data['uploads']['total'], 512)
+                self.assertEqual(data["uploads"]["free"], 50)
+                self.assertEqual(data["uploads"]["total"], 512)

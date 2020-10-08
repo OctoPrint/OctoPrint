@@ -4,18 +4,18 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
+})(this, function (OctoPrintClient) {
     var url = "api/setup/wizard";
 
-    var OctoPrintWizardClient = function(base) {
+    var OctoPrintWizardClient = function (base) {
         this.base = base;
     };
 
-    OctoPrintWizardClient.prototype.get = function(opts) {
+    OctoPrintWizardClient.prototype.get = function (opts) {
         return this.base.get(url, opts);
     };
 
-    OctoPrintWizardClient.prototype.finish = function(handled, opts) {
+    OctoPrintWizardClient.prototype.finish = function (handled, opts) {
         return this.base.postJson(url, {handled: handled || []}, opts);
     };
 

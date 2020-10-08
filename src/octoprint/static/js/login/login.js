@@ -3,12 +3,12 @@
  * web application.
  */
 
-$(function() {
+$(function () {
     var OctoPrint = window.OctoPrint;
 
     OctoPrint.loginui = {
         startedUp: false
-    }
+    };
 
     var overlayElement = $("#login-overlay");
     var errorElement = $("#login-error");
@@ -16,7 +16,7 @@ $(function() {
     var buttonElement = $("#login-button");
     var reconnectElement = $("#login-reconnect");
 
-    buttonElement.click(function() {
+    buttonElement.click(function () {
         var usernameElement = $("#login-user");
         var passwordElement = $("#login-password");
         var rememberElement = $("#login-remember");
@@ -28,11 +28,12 @@ $(function() {
         overlayElement.addClass("in");
         errorElement.removeClass("in");
 
-        OctoPrint.browser.login(username, password, remember)
-            .done(function() {
+        OctoPrint.browser
+            .login(username, password, remember)
+            .done(function () {
                 window.location.href = REDIRECT_URL;
             })
-            .fail(function() {
+            .fail(function () {
                 usernameElement.val("");
                 passwordElement.val("");
 
@@ -45,17 +46,17 @@ $(function() {
 
     OctoPrint.options.baseurl = BASE_URL;
 
-    OctoPrint.socket.onConnected = function() {
+    OctoPrint.socket.onConnected = function () {
         buttonElement.prop("disabled", false);
         offlineElement.removeClass("in");
     };
 
-    OctoPrint.socket.onDisconnected = function() {
+    OctoPrint.socket.onDisconnected = function () {
         buttonElement.prop("disabled", true);
         offlineElement.addClass("in");
     };
 
-    reconnectElement.click(function() {
+    reconnectElement.click(function () {
         OctoPrint.socket.reconnect();
     });
 

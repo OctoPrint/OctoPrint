@@ -5,4 +5,3 @@ host = https://www.transifex.com
 file_filter = translations/<lang>/LC_MESSAGES/messages.po
 source_file = translations/messages.pot
 source_lang = en
-

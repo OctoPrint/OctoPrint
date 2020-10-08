@@ -4,8 +4,8 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
-    var OctoPrintSoftwareUpdateClient = function(base) {
+})(this, function (OctoPrintClient) {
+    var OctoPrintSoftwareUpdateClient = function (base) {
         this.base = base;
 
         var url = this.base.getBlueprintUrl("softwareupdate");
@@ -14,7 +14,11 @@
         this.configureUrl = url + "configure";
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
+    OctoPrintSoftwareUpdateClient.prototype.checkEntries = function (
+        entries,
+        force,
+        opts
+    ) {
         if (arguments.length == 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             entries = params.entries;
@@ -37,7 +41,7 @@
         return this.base.getWithQuery(this.checkUrl, data, opts);
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
+    OctoPrintSoftwareUpdateClient.prototype.check = function (force, opts) {
         if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
@@ -47,7 +51,7 @@
         return this.checkEntries({entries: [], force: force, opts: opts});
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.update = function(targets, force, opts) {
+    OctoPrintSoftwareUpdateClient.prototype.update = function (targets, force, opts) {
         if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             targets = params.targets;
@@ -67,7 +71,7 @@
         return this.base.postJson(this.updateUrl, data, opts);
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
+    OctoPrintSoftwareUpdateClient.prototype.updateAll = function (force, opts) {
         if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
@@ -80,10 +84,13 @@
         return this.base.postJson(this.updateUrl, data, opts);
     };
 
-    OctoPrintSoftwareUpdateClient.prototype.configure = function(data, opts) {
+    OctoPrintSoftwareUpdateClient.prototype.configure = function (data, opts) {
         return this.base.postJson(this.configureUrl, data, opts);
-    }
+    };
 
-    OctoPrintClient.registerPluginComponent("softwareupdate", OctoPrintSoftwareUpdateClient);
+    OctoPrintClient.registerPluginComponent(
+        "softwareupdate",
+        OctoPrintSoftwareUpdateClient
+    );
     return OctoPrintSoftwareUpdateClient;
 });

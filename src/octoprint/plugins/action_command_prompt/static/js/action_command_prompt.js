@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function ActionCommandPromptViewModel(parameters) {
         var self = this;
 
@@ -10,21 +10,25 @@ $(function() {
         self.text = ko.observable();
         self.buttons = ko.observableArray([]);
 
-        self.active = ko.pureComputed(function() {
+        self.active = ko.pureComputed(function () {
             return self.text() !== undefined;
         });
-        self.visible = ko.pureComputed(function() {
+        self.visible = ko.pureComputed(function () {
             return self.modal() !== undefined;
         });
 
-        self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
+        self.requestData = function () {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT
+                )
+            )
+                return;
 
-            OctoPrint.plugins.action_command_prompt.get()
-                .done(self.fromResponse);
+            OctoPrint.plugins.action_command_prompt.get().done(self.fromResponse);
         };
 
-        self.fromResponse = function(data) {
+        self.fromResponse = function (data) {
             if (data.hasOwnProperty("text") && data.hasOwnProperty("choices")) {
                 self.text(data.text);
                 self.buttons(data.choices);
@@ -35,7 +39,7 @@ $(function() {
             }
         };
 
-        self.showPrompt = function() {
+        self.showPrompt = function () {
             var text = self.text();
             var buttons = self.buttons();
 
@@ -44,12 +48,12 @@ $(function() {
                 message: text,
                 selections: buttons,
                 maycancel: true, // see #3171
-                onselect: function(index) {
+                onselect: function (index) {
                     if (index > -1) {
                         self._select(index);
                     }
                 },
-                onclose: function() {
+                onclose: function () {
                     self.modal(undefined);
                 }
             };
@@ -57,23 +61,28 @@ $(function() {
             self.modal(showSelectionDialog(opts));
         };
 
-        self._select = function(index) {
+        self._select = function (index) {
             OctoPrint.plugins.action_command_prompt.select(index);
         };
 
-        self._closePrompt = function() {
+        self._closePrompt = function () {
             var modal = self.modal();
             if (modal) {
                 modal.modal("hide");
             }
         };
 
-        self.onStartupComplete = function() {
+        self.onStartupComplete = function () {
             self.requestData();
         };
 
-        self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT)) return;
+        self.onDataUpdaterPluginMessage = function (plugin, data) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT
+                )
+            )
+                return;
             if (plugin !== "action_command_prompt") {
                 return;
             }
@@ -92,8 +101,7 @@ $(function() {
                     break;
                 }
             }
-        }
-
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     var save = {};
 
     // Using the theme color (for the top bar), also recolor the favicon tentacle.
@@ -16,9 +16,10 @@ $(function() {
 
         // try to get the best quality ico possible; prefer svg, the apple-touch pngs are more difficult,
         // but all three of the others give a high-quality ico.
-        var faviconUrl = document.querySelector("link[rel~='mask-icon-theme']").href
-            || link.href
-            || window.location.origin + "/favicon.ico";
+        var faviconUrl =
+            document.querySelector("link[rel~='mask-icon-theme']").href ||
+            link.href ||
+            window.location.origin + "/favicon.ico";
 
         function onImageLoaded() {
             var icosize = 256;
@@ -32,11 +33,19 @@ $(function() {
             function grayscale() {
                 var imageData = context.getImageData(0, 0, canvas.width, canvas.height),
                     pixels = imageData.data,
-                    i, l, r, g, b, a, luma;
+                    i,
+                    l,
+                    r,
+                    g,
+                    b,
+                    a,
+                    luma;
 
                 for (i = 0, l = pixels.length; i < l; i += 4) {
                     a = pixels[i + 3];
-                    if (a === 0) { continue; }
+                    if (a === 0) {
+                        continue;
+                    }
 
                     r = pixels[i];
                     g = pixels[i + 1];
@@ -62,7 +71,7 @@ $(function() {
             context.drawImage(img, 0, 0, canvas.width, canvas.height);
             if (save.colorName !== "default") {
                 grayscale();
-                colorize(save.colorName, .3);
+                colorize(save.colorName, 0.3);
             }
             link.type = "image/x-icon";
             link.href = canvas.toDataURL();
@@ -92,28 +101,22 @@ $(function() {
         self.colorIcon.subscribe(updateIcon);
         updateIcon();
 
-        self.brand = ko.pureComputed(function() {
-            if (self.name())
-                return self.name();
-            else
-                return gettext("OctoPrint");
+        self.brand = ko.pureComputed(function () {
+            if (self.name()) return self.name();
+            else return gettext("OctoPrint");
         });
 
-        self.fullbrand = ko.pureComputed(function() {
-            if (self.name())
-                return gettext("OctoPrint") + ": " + self.name();
-            else
-                return gettext("OctoPrint");
+        self.fullbrand = ko.pureComputed(function () {
+            if (self.name()) return gettext("OctoPrint") + ": " + self.name();
+            else return gettext("OctoPrint");
         });
 
-        self.title = ko.pureComputed(function() {
-            if (self.name())
-                return self.name() + " [" + gettext("OctoPrint") + "]";
-            else
-                return gettext("OctoPrint");
+        self.title = ko.pureComputed(function () {
+            if (self.name()) return self.name() + " [" + gettext("OctoPrint") + "]";
+            else return gettext("OctoPrint");
         });
 
-        self.theme_color = ko.pureComputed(function() {
+        self.theme_color = ko.pureComputed(function () {
             switch (self.color()) {
                 case "red":
                     return "#bb645f";

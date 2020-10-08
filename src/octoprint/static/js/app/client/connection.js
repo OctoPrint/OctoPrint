@@ -4,26 +4,26 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
+})(this, function (OctoPrintClient) {
     var url = "api/connection";
 
-    var OctoPrintConnectionClient = function(base) {
+    var OctoPrintConnectionClient = function (base) {
         this.base = base;
     };
 
-    OctoPrintConnectionClient.prototype.getSettings = function(opts) {
+    OctoPrintConnectionClient.prototype.getSettings = function (opts) {
         return this.base.get(url, opts);
     };
 
-    OctoPrintConnectionClient.prototype.connect = function(data, opts) {
+    OctoPrintConnectionClient.prototype.connect = function (data, opts) {
         return this.base.issueCommand(url, "connect", data || {}, opts);
     };
 
-    OctoPrintConnectionClient.prototype.disconnect = function(opts) {
+    OctoPrintConnectionClient.prototype.disconnect = function (opts) {
         return this.base.issueCommand(url, "disconnect", {}, opts);
     };
 
-    OctoPrintConnectionClient.prototype.fakeAck = function(opts) {
+    OctoPrintConnectionClient.prototype.fakeAck = function (opts) {
         return this.base.issueCommand(url, "fake_ack", {}, opts);
     };
 

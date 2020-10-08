@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function AnnouncementsViewModel(parameters) {
         var self = this;
 
@@ -9,15 +9,22 @@ $(function() {
         self.channels = new ItemListHelper(
             "plugin.announcements.channels",
             {
-                "channel": function (a, b) {
+                channel: function (a, b) {
                     // sorts ascending
-                    if (a["channel"].toLocaleLowerCase() < b["channel"].toLocaleLowerCase()) return -1;
-                    if (a["channel"].toLocaleLowerCase() > b["channel"].toLocaleLowerCase()) return 1;
+                    if (
+                        a["channel"].toLocaleLowerCase() <
+                        b["channel"].toLocaleLowerCase()
+                    )
+                        return -1;
+                    if (
+                        a["channel"].toLocaleLowerCase() >
+                        b["channel"].toLocaleLowerCase()
+                    )
+                        return 1;
                     return 0;
                 }
             },
-            {
-            },
+            {},
             "name",
             [],
             [],
@@ -32,30 +39,34 @@ $(function() {
         self.announcementDialogContent = undefined;
         self.announcementDialogTabs = undefined;
 
-        self.setupTabLink = function(item) {
+        self.setupTabLink = function (item) {
             $("a[data-toggle='tab']", item).on("show", self.resetContentScroll);
         };
 
-        self.resetContentScroll = function() {
+        self.resetContentScroll = function () {
             self.announcementDialogContent.scrollTop(0);
         };
 
-        self.toggleButtonCss = function(data) {
+        self.toggleButtonCss = function (data) {
             var icon = data.enabled ? "fa fa-toggle-on" : "fa fa-toggle-off";
-            var disabled = (self.enableToggle(data)) ? "" : " disabled";
+            var disabled = self.enableToggle(data) ? "" : " disabled";
 
             return icon + disabled;
         };
 
-        self.toggleButtonTitle = function(data) {
-            return data.forced ? gettext("Cannot be toggled") : (data.enabled ? gettext("Disable Channel") : gettext("Enable Channel"));
+        self.toggleButtonTitle = function (data) {
+            return data.forced
+                ? gettext("Cannot be toggled")
+                : data.enabled
+                ? gettext("Disable Channel")
+                : gettext("Enable Channel");
         };
 
-        self.enableToggle = function(data) {
+        self.enableToggle = function (data) {
             return !data.forced;
         };
 
-        self.cleanedLink = function(data) {
+        self.cleanedLink = function (data) {
             // Strips any query parameters from the link and returns it
             var link = data.link;
             if (!link) return link;
@@ -67,8 +78,13 @@ $(function() {
             return link;
         };
 
-        self.markRead = function(channel, until, reload) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
+        self.markRead = function (channel, until, reload) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
 
             reload = !!reload;
 
@@ -85,16 +101,21 @@ $(function() {
                 dataType: "json",
                 data: JSON.stringify(payload),
                 contentType: "application/json; charset=UTF-8",
-                success: function() {
+                success: function () {
                     if (reload) {
-                        self.retrieveData()
+                        self.retrieveData();
                     }
                 }
-            })
+            });
         };
 
-        self.toggleChannel = function(channel) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_MANAGE)) return;
+        self.toggleChannel = function (channel) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_MANAGE
+                )
+            )
+                return;
 
             var url = PLUGIN_BASEURL + "announcements/channels/" + channel;
 
@@ -108,18 +129,23 @@ $(function() {
                 dataType: "json",
                 data: JSON.stringify(payload),
                 contentType: "application/json; charset=UTF-8",
-                success: function() {
-                    self.retrieveData()
+                success: function () {
+                    self.retrieveData();
                 }
-            })
+            });
         };
 
-        self.refreshAnnouncements = function() {
+        self.refreshAnnouncements = function () {
             self.retrieveData(true);
         };
 
-        self.retrieveData = function(force) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
+        self.retrieveData = function (force) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
 
             var url = PLUGIN_BASEURL + "announcements/channels";
             if (force) {
@@ -130,20 +156,25 @@ $(function() {
                 url: url,
                 type: "GET",
                 dataType: "json",
-                success: function(data) {
+                success: function (data) {
                     self.fromResponse(data);
                 }
             });
         };
 
-        self.fromResponse = function(data) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
+        self.fromResponse = function (data) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
 
             var currentTab = $("li.active a", self.announcementDialogTabs).attr("href");
 
             var unread = 0;
             var channels = [];
-            _.each(data.channels, function(value) {
+            _.each(data.channels, function (value) {
                 value.last = value.data.length ? value.data[0].published : undefined;
                 value.count = value.data.length;
                 unread += value.unread;
@@ -157,8 +188,13 @@ $(function() {
             self.selectTab(currentTab);
         };
 
-        self.showAnnouncementDialog = function(channel) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
+        self.showAnnouncementDialog = function (channel) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
 
             // lazy load images that still need lazy-loading
             $("#plugin_announcements_dialog_content article img").lazyload();
@@ -166,12 +202,18 @@ $(function() {
             self.announcementDialogContent.scrollTop(0);
 
             if (!self.announcementDialog.hasClass("in")) {
-                self.announcementDialog.modal({
-                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-                }).css({
-                    width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
-                });
+                self.announcementDialog
+                    .modal({
+                        minHeight: function () {
+                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                        }
+                    })
+                    .css({
+                        "width": "auto",
+                        "margin-left": function () {
+                            return -($(this).width() / 2);
+                        }
+                    });
             }
 
             var tab = undefined;
@@ -183,24 +225,29 @@ $(function() {
             return false;
         };
 
-        self.selectTab = function(tab) {
+        self.selectTab = function (tab) {
             if (tab != undefined) {
                 if (!_.startsWith(tab, "#")) {
                     tab = "#" + tab;
                 }
                 $('a[href="' + tab + '"]', self.announcementDialogTabs).tab("show");
             } else {
-                $('a:first', self.announcementDialogTabs).tab("show");
+                $("a:first", self.announcementDialogTabs).tab("show");
             }
         };
 
-        self.displayAnnouncements = function(channels) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) return;
+        self.displayAnnouncements = function (channels) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
 
             var displayLimit = self.settings.settings.plugins.announcements.display_limit();
             var maxLength = self.settings.settings.plugins.announcements.summary_limit();
 
-            var cutAfterNewline = function(text) {
+            var cutAfterNewline = function (text) {
                 text = text.trim();
 
                 var firstNewlinePos = text.indexOf("\n");
@@ -211,7 +258,7 @@ $(function() {
                 return text;
             };
 
-            var stripParagraphs = function(text) {
+            var stripParagraphs = function (text) {
                 if (_.startsWith(text, "<p>")) {
                     text = text.substr("<p>".length);
                 }
@@ -219,10 +266,10 @@ $(function() {
                     text = text.substr(0, text.length - "</p>".length);
                 }
 
-                return text.replace(/<\/p>\s*<p>/ig, "<br>");
+                return text.replace(/<\/p>\s*<p>/gi, "<br>");
             };
 
-            _.each(channels, function(value) {
+            _.each(channels, function (value) {
                 var key = value.key;
                 var channel = value.channel;
                 var priority = value.priority;
@@ -233,7 +280,9 @@ $(function() {
                     return;
                 }
 
-                var newItems = _.filter(items, function(entry) { return !entry.read; });
+                var newItems = _.filter(items, function (entry) {
+                    return !entry.read;
+                });
                 if (newItems.length == 0) {
                     // no new items at all, we don't display anything for this channel
                     return;
@@ -248,23 +297,48 @@ $(function() {
                 var rest = newItems.length - displayedItems.length;
 
                 var text = "<ul style='margin-top: 10px; margin-bottom: 10px'>";
-                _.each(displayedItems, function(item) {
-                    var limitedSummary = stripParagraphs(item.summary_without_images.trim());
+                _.each(displayedItems, function (item) {
+                    var limitedSummary = stripParagraphs(
+                        item.summary_without_images.trim()
+                    );
                     if (limitedSummary.length > maxLength) {
                         limitedSummary = limitedSummary.substr(0, maxLength);
-                        limitedSummary = limitedSummary.substr(0, Math.min(limitedSummary.length, limitedSummary.lastIndexOf(" ")));
+                        limitedSummary = limitedSummary.substr(
+                            0,
+                            Math.min(
+                                limitedSummary.length,
+                                limitedSummary.lastIndexOf(" ")
+                            )
+                        );
                         limitedSummary += "...";
                     }
 
-                    text += "<li><a href='" + item.link + "' target='_blank' rel='noreferrer noopener'>" + cutAfterNewline(item.title) + "</a><br><small>" + formatTimeAgo(item.published) + "</small><p>" + limitedSummary + "</p></li>";
+                    text +=
+                        "<li><a href='" +
+                        item.link +
+                        "' target='_blank' rel='noreferrer noopener'>" +
+                        cutAfterNewline(item.title) +
+                        "</a><br><small>" +
+                        formatTimeAgo(item.published) +
+                        "</small><p>" +
+                        limitedSummary +
+                        "</p></li>";
                 });
                 text += "</ul>";
 
                 if (rest) {
-                    text += "<p>"  + gettext(_.sprintf("... and %(rest)d more.", {rest: rest})) + "</p>";
+                    text +=
+                        "<p>" +
+                        gettext(_.sprintf("... and %(rest)d more.", {rest: rest})) +
+                        "</p>";
                 }
 
-                text += "<small>" + gettext("You can edit your announcement subscriptions under Settings > Announcements.") + "</small>";
+                text +=
+                    "<small>" +
+                    gettext(
+                        "You can edit your announcement subscriptions under Settings > Announcements."
+                    ) +
+                    "</small>";
 
                 var options = {
                     title: channel,
@@ -272,27 +346,31 @@ $(function() {
                     hide: false,
                     confirm: {
                         confirm: true,
-                        buttons: [{
-                            text: gettext("Later"),
-                            click: function(notice) {
-                                notice.remove();
-                                self.hiddenChannels.push(key);
+                        buttons: [
+                            {
+                                text: gettext("Later"),
+                                click: function (notice) {
+                                    notice.remove();
+                                    self.hiddenChannels.push(key);
+                                }
+                            },
+                            {
+                                text: gettext("Mark read"),
+                                click: function (notice) {
+                                    notice.remove();
+                                    self.markRead(key, value.last);
+                                }
+                            },
+                            {
+                                text: gettext("Read..."),
+                                addClass: "btn-primary",
+                                click: function (notice) {
+                                    notice.remove();
+                                    self.showAnnouncementDialog(key);
+                                    self.markRead(key, value.last);
+                                }
                             }
-                        }, {
-                            text: gettext("Mark read"),
-                            click: function(notice) {
-                                notice.remove();
-                                self.markRead(key, value.last);
-                            }
-                        }, {
-                            text: gettext("Read..."),
-                            addClass: "btn-primary",
-                            click: function(notice) {
-                                notice.remove();
-                                self.showAnnouncementDialog(key);
-                                self.markRead(key, value.last);
-                            }
-                        }]
+                        ]
                     },
                     buttons: {
                         sticker: false,
@@ -311,41 +389,48 @@ $(function() {
             });
         };
 
-        self.hideAnnouncements = function() {
-            _.each(self.channelNotifications, function(notification, key) {
+        self.hideAnnouncements = function () {
+            _.each(self.channelNotifications, function (notification, key) {
                 notification.remove();
             });
             self.channelNotifications = {};
         };
 
-        self.configureAnnouncements = function() {
+        self.configureAnnouncements = function () {
             self.settings.show("settings_plugin_announcements");
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ)) {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            ) {
                 self.hideAnnouncements();
             } else {
                 self.retrieveData();
             }
         };
 
-        self.onStartup = function() {
+        self.onStartup = function () {
             self.announcementDialog = $("#plugin_announcements_dialog");
             self.announcementDialogContent = $("#plugin_announcements_dialog_content");
             self.announcementDialogTabs = $("#plugin_announcements_dialog_tabs");
         };
 
-        self.onEventConnectivityChanged = function(payload) {
+        self.onEventConnectivityChanged = function (payload) {
             if (!payload || !payload.new) return;
             self.retrieveData();
-        }
-
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: AnnouncementsViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
-        elements: ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
+        elements: [
+            "#plugin_announcements_dialog",
+            "#settings_plugin_announcements",
+            "#navbar_plugin_announcements"
+        ]
     });
 });
