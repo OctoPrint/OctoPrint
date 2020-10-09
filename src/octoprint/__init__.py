@@ -228,12 +228,7 @@ def init_settings(basedir, configfile):
     try:
         return settings(init=True, basedir=basedir, configfile=configfile)
     except InvalidSettings as e:
-        message = "Error parsing the configuration file, it appears to be invalid YAML."
-        if e.line is not None and e.column is not None:
-            message += " The parser reported an error on line {}, column {}.".format(
-                e.line, e.column
-            )
-        raise FatalStartupError(message)
+        raise FatalStartupError(str(e))
 
 
 def preinit_logging(

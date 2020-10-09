@@ -21,6 +21,9 @@ from octoprint.settings import settings, valid_boolean_trues
 
 # ~~ settings
 
+FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
+FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
+
 
 def _lastmodified():
     return settings().last_modified
@@ -444,18 +447,33 @@ def _saveSettings(data):
 
     if "folder" in data:
         try:
-            if "uploads" in data["folder"]:
-                s.setBaseFolder("uploads", data["folder"]["uploads"])
-            if "timelapse" in data["folder"]:
-                s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-            if "timelapseTmp" in data["folder"]:
-                s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-            if "logs" in data["folder"]:
-                s.setBaseFolder("logs", data["folder"]["logs"])
-            if "watched" in data["folder"]:
-                s.setBaseFolder("watched", data["folder"]["watched"])
-        except IOError:
-            return make_response("One of the configured folders is invalid", 400)
+            folders = dict(
+                (FOLDER_MAPPING.get(folder, folder), path)
+                for folder, path in data["folder"].items()
+            )
+            future = {}
+            for folder in FOLDER_TYPES:
+                future[folder] = s.getBaseFolder(folder)
+                if folder in folders:
+                    future[folder] = data["folder"][folder]
+
+            for folder in data["folder"]:
+                if folder not in FOLDER_TYPES:
+                    continue
+                for other_folder in FOLDER_TYPES:
+                    if folder == other_folder:
+                        continue
+                    if future[folder] == future[other_folder]:
+                        # duplicate detected, raise
+                        raise ValueError(
+                            "Duplicate folder path for {} and {}".format(
+                                folder, other_folder
+                            )
+                        )
+
+                s.setBaseFolder(folder, future[folder])
+        except Exception:
+            return make_response("At least one of the configured folders is invalid", 400)
 
     if "api" in data:
         if "allowCrossOrigin" in data["api"]:
