@@ -69,6 +69,7 @@ class VirtualPrinterPlugin(
                 "mintemp": "MINTEMP triggered!",
                 "command_unknown": "Unknown command {}",
             },
+            "enable_eeprom": True,
         }
 
     def get_settings_version(self):
@@ -109,6 +110,7 @@ class VirtualPrinterPlugin(
 
         serial_obj = virtual.VirtualPrinter(
             self._settings,
+            data_folder=self.get_plugin_data_folder(),
             seriallog_handler=seriallog_handler,
             read_timeout=float(read_timeout),
             faked_baudrate=baudrate,

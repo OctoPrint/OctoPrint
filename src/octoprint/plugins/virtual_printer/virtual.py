@@ -7,6 +7,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import collections
 import io
+import json
 import math
 import os
 import re
@@ -55,6 +56,7 @@ class VirtualPrinter(object):
     def __init__(
         self,
         settings,
+        data_folder,
         seriallog_handler=None,
         read_timeout=5.0,
         write_timeout=10.0,
@@ -68,6 +70,7 @@ class VirtualPrinter(object):
 
         self._settings = settings
         self._faked_baudrate = faked_baudrate
+        self._plugin_data_folder = data_folder
 
         self._seriallog = logging.getLogger(
             "octoprint.plugin.virtual_printer.VirtualPrinter.serial"
@@ -148,6 +151,12 @@ class VirtualPrinter(object):
         self._newSdFilePos = None
 
         self._heatingUp = False
+
+        self._virtual_eeprom = (
+            VirtualEEPROM(self._plugin_data_folder)
+            if self._settings.get_boolean(["enable_eeprom"])
+            else None
+        )
 
         self._okBeforeCommandOutput = self._settings.get_boolean(
             ["okBeforeCommandOutput"]
@@ -245,6 +254,9 @@ class VirtualPrinter(object):
             self._selectedSdFile = None
             self._selectedSdFileSize = None
             self._selectedSdFilePos = None
+
+            # read eeprom from disk
+            self._virtual_eeprom.read_settings()
 
             if self._writingToSdHandle:
                 try:
@@ -864,6 +876,113 @@ class VirtualPrinter(object):
                 self._send("busy:processing")
         else:
             time.sleep(timeout)
+
+    # EEPROM management
+    def _gcode_M500(self, data):
+        # Stores settings to disk
+        if self._virtual_eeprom:
+            self._virtual_eeprom.save_settings()
+        else:
+            self._send(self._error("command_unknown", "M500"))
+
+    def _gcode_M501(self, data):
+        # Read from EEPROM
+        if self._virtual_eeprom:
+            self._virtual_eeprom.read_settings()
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M501"))
+
+    def _construct_eeprom_values(self):
+        lines = []
+        # Iterate over the dict, and echo each command/value etc.
+        for key, value in self._virtual_eeprom.eeprom.items():
+            # echo, name, newline, echo, command, params
+            line = "echo:; " + value["description"] + "\necho: " + value["command"]
+            for param, saved_value in value["params"].items():
+                line = line + " " + param + str(saved_value)
+            lines.append(line)
+        return lines
+
+    def _gcode_M502(self, data):
+        # reset to default values
+        if self._virtual_eeprom:
+            self._virtual_eeprom.load_defaults()
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M502"))
+
+    # EEPROM Values
+
+    def _gcode_M92(self, data):
+        # Steps per unit
+        if "X" not in data or "Y" in data or "Z" in data or "E" in data:
+            # no params, report values
+            config = self._virtual_eeprom.eeprom["steps"]["params"]
+            self._send(
+                "echo: M92 X"
+                + str(config["X"])
+                + " Y"
+                + str(config["Y"])
+                + " Z"
+                + str(config["Z"])
+                + " E"
+                + str(config["E"])
+            )
+        else:
+            matchX = re.search(r"X([0-9]+)", data)
+            matchY = re.search(r"Y([0-9]+)", data)
+            matchZ = re.search(r"Z([0-9]+)", data)
+            matchE = re.search(r"E([0-9]+)", data)
+
+            if matchX:
+                self._virtual_eeprom.eeprom["steps"]["params"]["X"] = int(matchX.group(1))
+            if matchY:
+                self._virtual_eeprom.eeprom["steps"]["params"]["Y"] = int(matchY.group(1))
+            if matchZ:
+                self._virtual_eeprom.eeprom["steps"]["params"]["Z"] = int(matchZ.group(1))
+            if matchE:
+                self._virtual_eeprom.eeprom["steps"]["params"]["E"] = int(matchE.group(1))
+
+    def _gcode_M203(self, data):
+        # Maximum feedrates (units/s)
+        if "X" not in data or "Y" in data or "Z" in data or "E" in data:
+            # no params, report values
+            config = self._virtual_eeprom.eeprom["feedrate"]["params"]
+            self._send(
+                "echo: M302 X"
+                + str(config["X"])
+                + " Y"
+                + str(config["Y"])
+                + " Z"
+                + str(config["Z"])
+                + " E"
+                + str(config["E"])
+            )
+        else:
+            matchX = re.search(r"X([0-9]+)", data)
+            matchY = re.search(r"Y([0-9]+)", data)
+            matchZ = re.search(r"Z([0-9]+)", data)
+            matchE = re.search(r"E([0-9]+)", data)
+
+            if matchX:
+                self._virtual_eeprom.eeprom["feedrate"]["params"]["X"] = int(
+                    matchX.group(1)
+                )
+            if matchY:
+                self._virtual_eeprom.eeprom["feedrate"]["params"]["Y"] = int(
+                    matchY.group(1)
+                )
+            if matchZ:
+                self._virtual_eeprom.eeprom["feedrate"]["params"]["Z"] = int(
+                    matchZ.group(1)
+                )
+            if matchE:
+                self._virtual_eeprom.eeprom["feedrate"]["params"]["E"] = int(
+                    matchE.group(1)
+                )
 
     ##~~ further helpers
 
@@ -1801,6 +1920,66 @@ class VirtualPrinter(object):
     def _error(self, error, *args, **kwargs):
         # type: (str, Any, Any) -> str
         return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
+
+
+class VirtualEEPROM:
+    def __init__(self, data_folder):
+        self._data_folder = data_folder
+        self._eeprom_file_path = os.path.join(self._data_folder, "eeprom.json")
+        self._eeprom = self._initialise_eeprom()
+
+    def _initialise_eeprom(self):
+        if os.path.exists(self._eeprom_file_path):
+            # file exists, read it
+            with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+                data = json.load(eeprom_file)
+            return data
+        else:
+            # no eeprom file, make new one with defaults
+            data = self.get_default_settings()
+            with io.open(self._eeprom_file_path, "wt") as eeprom_file:
+                json.dump(data, eeprom_file)
+            return data
+
+    @staticmethod
+    def get_default_settings():
+        return {
+            "steps": {
+                "command": "M92",
+                "description": "Steps per unit:",
+                "params": {
+                    "X": 80,
+                    "Y": 80,
+                    "Z": 800,
+                    "E": 90,
+                },
+            },
+            "feedrate": {
+                "command": "M203",
+                "description": "Maximum feedrates (units/s):",
+                "params": {
+                    "X": 500,
+                    "Y": 500,
+                    "Z": 5,
+                    "E": 25,
+                },
+            },
+        }
+
+    def save_settings(self):
+        with io.open(self._eeprom_file_path, "wt") as eeprom_file:
+            json.dump(self._eeprom, eeprom_file)
+
+    def read_settings(self):
+        with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+            self._eeprom = json.load(eeprom_file)
+
+    def load_defaults(self):
+        self._eeprom = self.get_default_settings()
+
+    @property
+    def eeprom(self):
+        return self._eeprom
 
 
 # noinspection PyUnresolvedReferences
