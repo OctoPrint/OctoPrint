@@ -157,6 +157,7 @@ class VirtualPrinter(object):
             if self._settings.get_boolean(["enable_eeprom"])
             else None
         )
+        self._support_M503 = self._settings.get_boolean(["support_M503"])
 
         self._okBeforeCommandOutput = self._settings.get_boolean(
             ["okBeforeCommandOutput"]
@@ -877,7 +878,7 @@ class VirtualPrinter(object):
         else:
             time.sleep(timeout)
 
-    # EEPROM management
+    # EEPROM management commands
     def _gcode_M500(self, data):
         # Stores settings to disk
         if self._virtual_eeprom:
@@ -894,17 +895,6 @@ class VirtualPrinter(object):
         else:
             self._send(self._error("command_unknown", "M501"))
 
-    def _construct_eeprom_values(self):
-        lines = []
-        # Iterate over the dict, and echo each command/value etc.
-        for key, value in self._virtual_eeprom.eeprom.items():
-            # echo, name, newline, echo, command, params
-            line = "echo:; " + value["description"] + "\necho: " + value["command"]
-            for param, saved_value in value["params"].items():
-                line = line + " " + param + str(saved_value)
-            lines.append(line)
-        return lines
-
     def _gcode_M502(self, data):
         # reset to default values
         if self._virtual_eeprom:
@@ -914,75 +904,80 @@ class VirtualPrinter(object):
         else:
             self._send(self._error("command_unknown", "M502"))
 
-    # EEPROM Values
+    def _gcode_M503(self, data):
+        # echo all eeprom data
+        if self._virtual_eeprom and self._support_M503:
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M503"))
+
+    def _gcode_M504(self, data):
+        if self._virtual_eeprom:
+            self._send("echo:EEPROM OK")
+        else:
+            self._send(self._error("command_unknown", "M504"))
+
+    # EEPROM settings commands
 
     def _gcode_M92(self, data):
         # Steps per unit
-        if "X" not in data or "Y" in data or "Z" in data or "E" in data:
+        if not self._check_param_letters("XYZE", data):
             # no params, report values
-            config = self._virtual_eeprom.eeprom["steps"]["params"]
-            self._send(
-                "echo: M92 X"
-                + str(config["X"])
-                + " Y"
-                + str(config["Y"])
-                + " Z"
-                + str(config["Z"])
-                + " E"
-                + str(config["E"])
-            )
+            self._send(self._construct_echo_values("steps", "XYZE"))
         else:
-            matchX = re.search(r"X([0-9]+)", data)
-            matchY = re.search(r"Y([0-9]+)", data)
-            matchZ = re.search(r"Z([0-9]+)", data)
-            matchE = re.search(r"E([0-9]+)", data)
-
-            if matchX:
-                self._virtual_eeprom.eeprom["steps"]["params"]["X"] = int(matchX.group(1))
-            if matchY:
-                self._virtual_eeprom.eeprom["steps"]["params"]["Y"] = int(matchY.group(1))
-            if matchZ:
-                self._virtual_eeprom.eeprom["steps"]["params"]["Z"] = int(matchZ.group(1))
-            if matchE:
-                self._virtual_eeprom.eeprom["steps"]["params"]["E"] = int(matchE.group(1))
+            for key, value in self._parse_eeprom_params("XYZE", data).items():
+                self._virtual_eeprom.eeprom["steps"]["params"][key] = int(value)
 
     def _gcode_M203(self, data):
         # Maximum feedrates (units/s)
-        if "X" not in data or "Y" in data or "Z" in data or "E" in data:
+        if not self._check_param_letters("XYZE", data):
             # no params, report values
-            config = self._virtual_eeprom.eeprom["feedrate"]["params"]
-            self._send(
-                "echo: M302 X"
-                + str(config["X"])
-                + " Y"
-                + str(config["Y"])
-                + " Z"
-                + str(config["Z"])
-                + " E"
-                + str(config["E"])
-            )
+            self._send(self._construct_echo_values("feedrate", "XYZE"))
         else:
-            matchX = re.search(r"X([0-9]+)", data)
-            matchY = re.search(r"Y([0-9]+)", data)
-            matchZ = re.search(r"Z([0-9]+)", data)
-            matchE = re.search(r"E([0-9]+)", data)
+            for key, value in self._parse_eeprom_params("XYZE", data).items():
+                self._virtual_eeprom.eeprom["feedrate"]["params"][key] = int(value)
 
-            if matchX:
-                self._virtual_eeprom.eeprom["feedrate"]["params"]["X"] = int(
-                    matchX.group(1)
-                )
-            if matchY:
-                self._virtual_eeprom.eeprom["feedrate"]["params"]["Y"] = int(
-                    matchY.group(1)
-                )
-            if matchZ:
-                self._virtual_eeprom.eeprom["feedrate"]["params"]["Z"] = int(
-                    matchZ.group(1)
-                )
-            if matchE:
-                self._virtual_eeprom.eeprom["feedrate"]["params"]["E"] = int(
-                    matchE.group(1)
-                )
+    # EEPROM Helpers
+    def _construct_eeprom_values(self):
+        lines = []
+        # Iterate over the dict, and echo each command/value etc.
+        for key, value in self._virtual_eeprom.eeprom.items():
+            # echo, name, newline, echo, command, params
+            lines.append("echo:; " + value["description"])
+            line = "echo: " + value["command"]
+            for param, saved_value in value["params"].items():
+                line = line + " " + param + str(saved_value)
+            lines.append(line)
+        return lines
+
+    @staticmethod
+    def _parse_eeprom_params(letters, line):
+        # letters provided in a string (eg "XYZ") and line (eg. M92 X20 Y20 Z20)
+        # are parsed into a dict
+        params = list(letters)
+        output = {}
+        for param in params:
+            match = re.search(param + r"([0-9]+)", line)
+            if match:
+                output[param] = match.group(1)
+        return output
+
+    def _construct_echo_values(self, name, letters):
+        # Construct a line like 'echo: M92 X100 Y120 Z130' based on type & letters
+        config = self._virtual_eeprom.eeprom[name]
+        line = "echo: " + config["command"]
+        for param in list(letters):
+            line = line + " " + param + str(config["params"][param])
+        return line
+
+    @staticmethod
+    def _check_param_letters(letters, data):
+        # Checks if any of the params (letters) are included in data
+        # Purely for saving typing :)
+        for param in list(letters):
+            if param in data:
+                return True
 
     ##~~ further helpers
 

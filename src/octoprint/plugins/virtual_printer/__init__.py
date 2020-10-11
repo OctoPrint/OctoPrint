@@ -70,6 +70,7 @@ class VirtualPrinterPlugin(
                 "command_unknown": "Unknown command {}",
             },
             "enable_eeprom": True,
+            "support_M503": True,
         }
 
     def get_settings_version(self):
