@@ -922,6 +922,9 @@ class VirtualPrinter(object):
 
     def _gcode_M92(self, data):
         # Steps per unit
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M92"))
+            return
         if not self._check_param_letters("XYZE", data):
             # no params, report values
             self._send(self._construct_echo_values("steps", "XYZE"))
@@ -931,6 +934,9 @@ class VirtualPrinter(object):
 
     def _gcode_M203(self, data):
         # Maximum feedrates (units/s)
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M203"))
+            return
         if not self._check_param_letters("XYZE", data):
             # no params, report values
             self._send(self._construct_echo_values("feedrate", "XYZE"))
