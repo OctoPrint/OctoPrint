@@ -222,7 +222,7 @@ class SoftwareUpdatePlugin(
                             check_providers[key] = name
 
                             yaml_config = {}
-                            effective_config = default_config
+                            effective_config = copy.deepcopy(default_config)
 
                             if key in overlays:
                                 effective_config = dict_merge(
