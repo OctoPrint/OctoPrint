@@ -860,41 +860,25 @@ $(function () {
 
         var optionsLocalStorageKey = "core.gcodeviewer.options";
         self._toLocalStorage = function () {
-            if (!Modernizr.localstorage) return;
-
-            var current = {};
-            current["centerViewport"] = self.renderer_centerViewport();
-            current["zoomOnModel"] = self.renderer_zoomOnModel();
-            current["showMoves"] = self.renderer_showMoves();
-            current["showRetracts"] = self.renderer_showRetracts();
-            current["showPrinthead"] = self.renderer_showPrinthead();
-            current["showPrevious"] = self.renderer_showPrevious();
-            current["showCurrent"] = self.renderer_showCurrent();
-            current["showNext"] = self.renderer_showNext();
-            current["showFullsize"] = self.renderer_showFullSize();
-            current["showBoundingBox"] = self.renderer_showBoundingBox();
-            current["hideEmptyLayers"] = self.reader_hideEmptyLayers();
-            current["sortLayers"] = self.reader_sortLayers();
-
-            localStorage[optionsLocalStorageKey] = JSON.stringify(current);
+            saveToLocalStorage(optionsLocalStorageKey, {
+                centerViewPort: self.renderer_centerViewport(),
+                zoomOnModel: self.renderer_zoomOnModel(),
+                showMoves: self.renderer_showMoves(),
+                showRetracts: self.renderer_showRetracts(),
+                showPrinthead: self.renderer_showPrinthead(),
+                showPrevious: self.renderer_showPrevious(),
+                showCurrent: self.renderer_showCurrent(),
+                showNext: self.renderer_showNext(),
+                showFullsize: self.renderer_showFullSize(),
+                showBoundingBox: self.renderer_showBoundingBox(),
+                hideEmptyLayers: self.reader_hideEmptyLayers(),
+                sortLayers: self.reader_sortLayers()
+            });
         };
         self._fromLocalStorage = function () {
             self.resetOptions();
 
-            if (!Modernizr.localstorage) return;
-
-            var currentString = localStorage[optionsLocalStorageKey];
-            var current;
-            if (currentString === undefined) {
-                current = {};
-            } else {
-                try {
-                    current = JSON.parse(currentString);
-                } catch (ex) {
-                    current = {};
-                }
-            }
-
+            var current = loadFromLocalStorage(optionsLocalStorageKey);
             if (current["centerViewport"] !== undefined)
                 self.renderer_centerViewport(current["centerViewport"]);
             if (current["zoomOnModel"] !== undefined)
