@@ -218,6 +218,7 @@ def getSettings():
             "blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
             "useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
             "sanityCheckTools": s.getBoolean(["serial", "sanityCheckTools"]),
+            "notifySuppressedCommands": s.get(["serial", "notifySuppressedCommands"]),
             "sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
             "disableSdPrintingDetection": s.getBoolean(
                 ["serial", "disableSdPrintingDetection"]
@@ -797,6 +798,10 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "sanityCheckTools"], data["serial"]["sanityCheckTools"]
             )
+        if "notifySuppressedCommands" in data["serial"]:
+            value = data["serial"]["notifySuppressedCommands"]
+            if value in ("info", "warn", "never"):
+                s.set(["serial", "notifySuppressedCommands"], value)
         if "sendM112OnError" in data["serial"]:
             s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
         if "disableSdPrintingDetection" in data["serial"]:

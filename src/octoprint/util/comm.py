@@ -2683,11 +2683,16 @@ class MachineCom(object):
 
                         if self._sanity_check_tools:
                             # log to terminal and remember as invalid
-                            self._log(
-                                "T{} reported as invalid, reverting to T{}".format(
-                                    invalid_tool, fallback_tool
-                                )
+                            message = "T{} reported as invalid, reverting to T{}".format(
+                                invalid_tool, fallback_tool
                             )
+                            self._log("Warn: " + message)
+                            self._logger.warning(message)
+                            eventManager().fire(
+                                Events.INVALID_TOOL_REPORTED,
+                                {"tool": invalid_tool, "fallback": fallback_tool},
+                            )
+
                             self._knownInvalidTools.add(invalid_tool)
 
                             # we actually do send a T command here instead of just settings self._currentTool just in case
@@ -4684,9 +4689,19 @@ class MachineCom(object):
             new_tool = int(toolMatch.group("value"))
 
             if not self._validate_tool(new_tool):
-                self._log(
+                message = (
                     "Not queuing T{}, that tool doesn't exist according to the printer profile or "
-                    "was reported as invalid by the firmware".format(new_tool)
+                    "was reported as invalid by the firmware. Make sure your "
+                    "printer profile is set up correctly.".format(new_tool)
+                )
+                self._log("Warn: " + message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "warn",
+                    },
                 )
                 return (None,)
 
@@ -4718,9 +4733,21 @@ class MachineCom(object):
         if toolMatch:
             new_tool = int(toolMatch.group("value"))
             if not self._validate_tool(new_tool):
-                self._log(
-                    "Not sending T{}, that tool doesn't exist according to the printer profile or "
-                    "was reported as invalid by the firmware".format(new_tool)
+                message = (
+                    "Not sending T{}, that tool doesn't exist according to "
+                    "the printer profile or was reported as invalid by the "
+                    "firmware. Make sure your printer profile is set up "
+                    "correctly.".format(new_tool)
+                )
+                self._log("Warn: " + message)
+                self._logger.warning(message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "warn",
+                    },
                 )
                 return (None,)
 
@@ -4798,8 +4825,16 @@ class MachineCom(object):
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
         if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
-            self._log(
-                'Warn: Not sending "{}", printer profile has no heated bed'.format(cmd)
+            message = (
+                'Not sending "{}", printer profile has no heated bed. Either '
+                "configure a heated bed or remove bed commands from your "
+                "GCODE.".format(cmd)
+            )
+            self._log("Warn: " + message)
+            self._logger.warning(message)
+            eventManager().fire(
+                Events.COMMAND_SUPPRESSED,
+                {"command": cmd, "message": message, "severity": "warn"},
             )
             return (None,)  # Don't send bed commands if we don't have a heated bed
 
@@ -4809,10 +4844,16 @@ class MachineCom(object):
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
         if not self._printerProfileManager.get_current_or_default()["heatedChamber"]:
-            self._log(
-                'Warn: Not sending "{}", printer profile has no heated chamber'.format(
-                    cmd
-                )
+            message = (
+                'Not sending "{}", printer profile has no heated chamber. Either '
+                "configure a heated chamber or remove chamber commands from your "
+                "GCODE.".format(cmd)
+            )
+            self._log("Warn: " + message)
+            self._logger.warning(message)
+            eventManager().fire(
+                Events.COMMAND_SUPPRESSED,
+                {"command": cmd, "message": message, "severity": "warn"},
             )
             return (
                 None,
@@ -5136,10 +5177,18 @@ class MachineCom(object):
                 self.setPause(True)
 
             if gcode in self._blocked_commands:
-                self._logger.info(
-                    "Not sending {} to printer, it's configured as a blocked command".format(
-                        gcode
-                    )
+                message = "Not sending {} to printer, it's configured as a blocked command".format(
+                    gcode
+                )
+                self._log("Info: " + message)
+                self._logger.info(message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "warn",
+                    },
                 )
                 return (None,)
 

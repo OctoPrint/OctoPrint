@@ -606,6 +606,32 @@ ToolChange
 
    .. versionadded:: 1.3.5
 
+CommandSuppressed
+   A command was suppressed by OctoPrint due to according configuration and will not be
+   sent to the printer.
+
+   Payload:
+
+     * ``command``: the command that was suppressed
+     * ``message``: a message containing an explanation of the command suppression
+     * ``severity``: a severity level, either ``warn`` or ``info`` - ``warn`` indicates
+       that the command was suppressed probably due to a misconfiguration either inside
+       OctoPrint or the firmware and that it should be investigated by the user
+
+   .. versionadded:: 1.5.0
+
+InvalidToolReported
+   The firmware reported a tool as invalid upon trying to select it. It has thus been marked
+   as invalid and further attempts to select said tool will result in the tool command
+   to get suppressed (and ``SuppressedCommand`` to be generated).
+
+   Payload:
+
+     * ``tool``: the tool number that was reported as invalid by the firmware
+     * ``fallback``: the tool number that OctoPrint will revert to
+
+   .. versionadded:: 1.5.0
+
 .. _sec-events-available_events-timelapses:
 
 Timelapses

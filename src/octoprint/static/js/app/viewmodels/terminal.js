@@ -509,6 +509,54 @@ $(function () {
         self.onBrowserTabVisibilityChange = function (status) {
             self.updateOutput();
         };
+
+        self.onEventCommandSuppressed = function (payload) {
+            var setting = self.settings.settings.serial.notifySuppressedCommands();
+
+            if (
+                setting === "never" ||
+                (setting === "warn" && payload.severity === "info")
+            ) {
+                return;
+            }
+
+            var severity = payload.severity;
+            if (severity === "warn") {
+                severity = "error";
+            } else if (severity === "info") {
+                severity = "warn";
+            }
+
+            var text =
+                "<p>" +
+                gettext(
+                    "The command <code>%(command)s</code> was not sent " +
+                        "to the printer:"
+                ) +
+                "</p><p><pre>%(message)s</pre></p>";
+
+            new PNotify({
+                title: gettext("Suppressed command"),
+                text: _.sprintf(text, payload),
+                type: severity,
+                hide: false
+            });
+        };
+
+        self.onEventInvalidToolReported = function (payload) {
+            new PNotify({
+                title: gettext("Invalid tool reported"),
+                text: _.sprintf(
+                    gettext(
+                        "Your printer reported tool T%(tool)d as invalid, " +
+                            "reverting back to T%(fallback)d"
+                    ),
+                    payload
+                ),
+                type: "error",
+                hide: false
+            });
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

@@ -161,6 +161,7 @@ default_settings = {
         "disableSdPrintingDetection": False,
         "ackMax": 1,
         "sanityCheckTools": True,
+        "notifySuppressedCommands": "warn",
         "capabilities": {
             "autoreport_temp": True,
             "autoreport_sdstatus": True,
