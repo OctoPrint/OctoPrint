@@ -288,11 +288,26 @@ $(function () {
             self.updateOutput();
         };
 
-        self._toInternalFormat = function (line, type) {
-            if (type == undefined) {
-                type = "line";
+        self._toInternalFormat = function (line, display, type) {
+            if (display === undefined) {
+                display = "line";
             }
-            return {line: escapeUnprintableCharacters(line), type: type};
+
+            if (type === undefined) {
+                if (line.startsWith("Recv:")) {
+                    type = "recv";
+                } else if (line.startsWith("Send:")) {
+                    type = "send";
+                } else if (line.startsWith("Warn:")) {
+                    type = "warn";
+                }
+            }
+
+            return {
+                line: escapeUnprintableCharacters(line),
+                display: display,
+                type: type
+            };
         };
 
         self._processStateData = function (data) {
