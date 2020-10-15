@@ -1176,7 +1176,7 @@ $(function () {
             // map local observables based on our existing data
             var dataFromObservables = mapFromObservables(data, specialMappings);
 
-            data = _.extend(data, dataFromObservables);
+            data = _.merge(data, dataFromObservables);
             return data;
         };
 
