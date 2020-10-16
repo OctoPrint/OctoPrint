@@ -1,13 +1,20 @@
-#  OctoPrint
+<p align="center"><img src="https://octoprint.org/assets/img/logo.png" alt="OctoPrint's logo" /></p>
 
+<h1 align="center">OctoPrint</h1>
 
-![GitHub release](https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white)
-![PyPI](https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white)
-![Build status](https://img.shields.io/github/workflow/status/OctoPrint/OctoPrint/Build)
-[![Community Forum](https://img.shields.io/discourse/users?logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org)](https://community.octoprint.org)
-[![Discord](https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white)](https://discord.octoprint.org)
-[![Twitter Follow](https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow)](https://twitter.com/OctoPrint3d)
-
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/OctoPrint/OctoPrint?logo=github&logoColor=white" alt="GitHub release"/>
+  <img src="https://img.shields.io/pypi/v/OctoPrint?logo=python&logoColor=white" alt="PyPI"/>
+  <img src="https://img.shields.io/github/workflow/status/OctoPrint/OctoPrint/Build" alt="Build status"/>
+  <a href="https://community.octoprint.org"><img src="https://img.shields.io/discourse/users?logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org" alt="Community Forum"/></a>
+  <a href="https://discord.octoprint.org"><img src="https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white" alt="Discord"/></a>
+  <a href="https://twitter.com/OctoPrint3d"><img src="https://img.shields.io/twitter/follow/OctoPrint3d.svg?style=social&label=Follow" alt="Twitter Follow"/></a>
+  <a href="https://octoprint.org/conduct/"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" alt="Contributor Covenant"/></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"/></a>
+  <a href="https://github.com/prettier/prettier"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square" alt="Code style: prettier"/></a>
+  <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1" alt="Imports: isort"/></a>
+  <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white" alt="pre-commit"/></a>
+</p>
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
@@ -27,7 +34,7 @@ The official plugin repository can be reached at [plugins.octoprint.org](https:/
 **OctoPrint's development wouldn't be possible without the [financial support by its community](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
-![Screenshot](http://i.imgur.com/dF3noFp.png)
+![Screenshot](https://octoprint.org/assets/img/screenshot-readme.png)
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
