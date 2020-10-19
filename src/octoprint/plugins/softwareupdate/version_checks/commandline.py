@@ -12,7 +12,7 @@ from ..exceptions import CannotCheckOffline, ConfigurationInvalid
 from ..util import execute
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, *args, **kwargs):
     command = check.get("command")
     if command is None:
         raise ConfigurationInvalid(

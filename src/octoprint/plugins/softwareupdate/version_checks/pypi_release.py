@@ -99,7 +99,7 @@ def _is_current(release_information):
     return remote_version <= local_version
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, *args, **kwargs):
     from ..exceptions import CannotUpdateOffline
 
     if not online and not check.get("offline", False):

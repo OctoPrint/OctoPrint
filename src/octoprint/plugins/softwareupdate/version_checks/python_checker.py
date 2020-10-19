@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from ..exceptions import CannotCheckOffline, ConfigurationInvalid
 
 
-def get_latest(target, check, full_data=False, online=True):
+def get_latest(target, check, full_data=False, online=True, *args, **kwargs):
     python_checker = check.get("python_checker")
     if python_checker is None or not hasattr(python_checker, "get_latest"):
         raise ConfigurationInvalid(
