@@ -1497,17 +1497,33 @@ class SoftwareUpdatePlugin(
             update_possible = False
             information["needs_online"] = True
         except exceptions.UnknownCheckType:
-            self._logger.warning("Unknown check type %s for %s" % (check["type"], target))
+            self._logger.warning(
+                "Unknown check type {} for {}".format(check["type"], target)
+            )
             update_possible = False
             error = "unknown_check"
         except exceptions.NetworkError:
             self._logger.warning(
-                "Could not check %s for updates due to a network error" % target
+                "Could not check {} for updates due to a network error".format(target)
             )
             update_possible = False
             error = "network"
+        except exceptions.RateLimitCheckError as exc:
+            self._logger.warning(
+                "Could not check {} for updates due to running into a rate limit: {}".format(
+                    target, exc
+                )
+            )
+            update_possible = False
+            error = "ratelimit"
+        except exceptions.CheckError:
+            self._logger.warning(
+                "Could not check {} for updates due to a check error".format(target)
+            )
+            update_possible = False
+            error = "check"
         except Exception:
-            self._logger.exception("Could not check %s for updates" % target)
+            self._logger.exception("Could not check {} for updates".format(target))
             update_possible = False
             error = "unknown"
         else:

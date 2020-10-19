@@ -577,6 +577,14 @@ $(function () {
                 case "network": {
                     return gettext("Network error while checking for update");
                 }
+                case "ratelimit": {
+                    return gettext(
+                        "Rate limit exceeded while checking for update, please try again later"
+                    );
+                }
+                case "check": {
+                    return gettext("Check internal error while checking for update");
+                }
                 case "unknown": {
                     return gettext(
                         "Unknown error while checking for update, please check the logs"
