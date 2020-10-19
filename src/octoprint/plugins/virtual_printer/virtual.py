@@ -257,7 +257,8 @@ class VirtualPrinter(object):
             self._selectedSdFilePos = None
 
             # read eeprom from disk
-            self._virtual_eeprom.read_settings()
+            if self._virtual_eeprom:
+                self._virtual_eeprom.read_settings()
 
             if self._writingToSdHandle:
                 try:
