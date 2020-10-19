@@ -29,7 +29,9 @@ def produce_output(stream):
     cmd.finalize_options()
 
     install_dir = cmd.install_lib
-    virtual_env = hasattr(sys, "real_prefix")
+    virtual_env = hasattr(sys, "real_prefix") or (
+        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
+    )
     writable = os.access(install_dir, os.W_OK)
 
     lines = [
