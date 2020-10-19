@@ -1368,6 +1368,15 @@ class MachineCom(object):
         if tags is None:
             tags = set()
 
+        if "source:plugin" in tags:
+            for tag in tags:
+                if tag.startswith("plugin:"):
+                    self._logger.info(
+                        "Starting job on behalf of plugin {}".format(tag[7:])
+                    )
+        elif "source:api" in tags:
+            self._logger.info("Starting job on behalf of user {}".format(user))
+
         try:
             with self._jobLock:
                 self._consecutive_not_sd_printing = 0
@@ -1598,6 +1607,9 @@ class MachineCom(object):
         tags=None,
         external_sd=False,
     ):
+        if tags is None:
+            tags = set()
+
         if not self.isOperational():
             return
 
@@ -1605,13 +1617,19 @@ class MachineCom(object):
             # we aren't even printing, nothing to cancel...
             return
 
+        if "source:plugin" in tags:
+            for tag in tags:
+                if tag.startswith("plugin:"):
+                    self._logger.info(
+                        "Cancelling job on behalf of plugin {}".format(tag[7:])
+                    )
+        elif "source:api" in tags:
+            self._logger.info("Cancelling job on behalf of user {}".format(user))
+
         if self.isStreaming():
             # we are streaming, we handle cancelling that differently...
             self.cancelFileTransfer()
             return
-
-        if tags is None:
-            tags = set()
 
         def _on_M400_sent():
             # we don't call on_print_job_cancelled on our callback here
@@ -1735,6 +1753,15 @@ class MachineCom(object):
 
         if tags is None:
             tags = set()
+
+        if "source:plugin" in tags:
+            for tag in tags:
+                if tag.startswith("plugin:"):
+                    self._logger.info(
+                        "Pausing/resuming job on behalf of plugin {}".format(tag[7:])
+                    )
+        elif user:
+            self._logger.info("Pausing/resuming job on behalf of user {}".format(user))
 
         valid_paused_states = (self.STATE_PAUSED, self.STATE_PAUSING)
         valid_running_states = (
