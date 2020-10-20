@@ -534,7 +534,11 @@ class SoftwareUpdatePlugin(
             "minimum_free_storage": 150,
             "check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
             "check_overlay_ttl": 6 * 60,
-            "credentials": {},
+            "credentials": {
+                "github": None,
+                "bitbucket_user": None,
+                "bitbucket_password": None,
+            },
         }
 
     def on_settings_load(self):
