@@ -11,7 +11,6 @@ from ddt import data, ddt, unpack
 
 import octoprint.plugin
 import octoprint.settings
-from octoprint.util import to_native_str
 
 
 @ddt
@@ -145,8 +144,8 @@ class SettingsTestCase(unittest.TestCase):
             called_method = getattr(self.settings, forwarded)
 
             # further mock out our mocked function so things work as they should
-            called_method.__name__ = to_native_str(forwarded)
-            called_method.__qualname__ = to_native_str(forwarded)
+            called_method.__name__ = forwarded
+            called_method.__qualname__ = forwarded
             called_method.__annotations__ = {}
 
             method = getattr(self.plugin_settings, deprecated)
@@ -385,8 +384,8 @@ class SettingsTestCase(unittest.TestCase):
             called_method = getattr(self.settings, forwarded)
 
             # further mock out our mocked function so things work as they should
-            called_method.__name__ = to_native_str(forwarded)
-            called_method.__qualname__ = to_native_str(forwarded)
+            called_method.__name__ = forwarded
+            called_method.__qualname__ = forwarded
             called_method.__annotations__ = {}
 
             method = getattr(self.plugin_settings, deprecated)

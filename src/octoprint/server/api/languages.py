@@ -7,13 +7,8 @@ import logging
 import os
 import tarfile
 import zipfile
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
 from collections import defaultdict
+from os import scandir
 
 from flask import jsonify, make_response, request
 from flask_babel import Locale

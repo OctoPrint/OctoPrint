@@ -3,15 +3,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import logging
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
 import collections
+import logging
 import os
+import queue
 import threading
 import time
 

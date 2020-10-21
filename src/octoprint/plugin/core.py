@@ -27,28 +27,16 @@ import inspect
 import io
 import logging
 import os
-import sys
 from collections import OrderedDict, defaultdict, namedtuple
+from os import scandir
 
 import pkg_resources
 import pkginfo
 from past.builtins import unicode
 
+import octoprint.vendor.imp as imp
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
-
-if sys.version_info[0] == 2:
-    # noinspection PyDeprecation
-    import imp
-else:
-    # deprecated in Python 3.4+ and hence vendored for now
-    import octoprint.vendor.imp as imp
 
 
 # noinspection PyDeprecation

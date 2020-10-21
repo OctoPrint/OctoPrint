@@ -28,30 +28,7 @@ urllib3_ssl = True
    a sound SSL environment or not."""
 
 version_info = sys.version_info
-if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 9:
-    try:
-        # make sure our requests version of urllib3 is properly patched (if possible)
-        import requests.packages.urllib3.contrib.pyopenssl
-
-        requests.packages.urllib3.contrib.pyopenssl.inject_into_urllib3()
-    except ImportError:
-        urllib3_ssl = False
-
-    try:
-        import urllib3
-
-        # only proceed if urllib3 is even installed on its own
-        try:
-            # urllib3 is there, let's patch that too
-            import urllib3.contrib.pyopenssl
-
-            urllib3.contrib.pyopenssl.inject_into_urllib3()
-        except ImportError:
-            urllib3_ssl = False
-    except ImportError:
-        pass
-
-elif version_info.major == 3 and version_info.minor >= 8 and sys.platform == "win32":
+if version_info.major == 3 and version_info.minor >= 8 and sys.platform == "win32":
     # Python 3.8 makes proactor event loop the default on Windows, Tornado doesn't like that
     #
     # see https://github.com/tornadoweb/tornado/issues/2608

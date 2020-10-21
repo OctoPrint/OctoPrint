@@ -10,6 +10,7 @@ import logging
 import os
 import threading
 import time
+from os import scandir
 
 import flask
 import flask.json
@@ -34,11 +35,6 @@ from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk  # noqa: F401
 
 # ~~ monkey patching
 

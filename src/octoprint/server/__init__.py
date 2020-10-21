@@ -2338,15 +2338,9 @@ class Server:
         loginManager.init_app(app, add_context_processor=False)
 
     def _start_intermediary_server(self):
-        try:
-            # noinspection PyCompatibility
-            from http.server import BaseHTTPRequestHandler, HTTPServer
-        except ImportError:
-            # noinspection PyCompatibility
-            from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-
         import socket
         import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
 
         host = self._host
         port = self._port

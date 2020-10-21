@@ -7,6 +7,7 @@ import mimetypes
 import os
 import re
 import sys
+from urllib.parse import urlparse
 
 import tornado
 import tornado.escape
@@ -22,11 +23,6 @@ import tornado.web
 from past.builtins import unicode
 
 import octoprint.util
-
-try:
-    from urllib.parse import urlparse  # py3
-except ImportError:
-    from urlparse import urlparse  # py2
 
 from . import PY3
 
@@ -1415,7 +1411,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
             removed_headers = []
 
         return type(
-            octoprint.util.to_native_str(name),
+            name,
             (GlobalHeaderTransform,),
             {
                 "HEADERS": headers,

@@ -595,12 +595,7 @@ def _strip_tags(text):
     >>> _strip_tags("&#62; &#x3E; Foo") # doctest: +ALLOW_UNICODE
     '&#62; &#x3E; Foo'
     """
-    try:
-        # noinspection PyCompatibility
-        from html.parser import HTMLParser
-    except ImportError:
-        # noinspection PyCompatibility
-        from HTMLParser import HTMLParser
+    from html.parser import HTMLParser
 
     class TagStripper(HTMLParser):
         def __init__(self, **kw):

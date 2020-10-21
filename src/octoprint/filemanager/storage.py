@@ -8,16 +8,10 @@ import logging
 import os
 import re
 import shutil
+from contextlib import contextmanager
+from os import scandir, walk
 
 import pylru
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk
-
-from contextlib import contextmanager
-
 from emoji import demojize
 from past.builtins import basestring
 

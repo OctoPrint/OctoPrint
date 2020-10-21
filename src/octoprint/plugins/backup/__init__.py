@@ -1,6 +1,8 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from os import scandir
+
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
@@ -18,11 +20,6 @@ from octoprint.util.version import (
     get_octoprint_version_string,
     is_octoprint_compatible,
 )
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 try:
     import zlib  # check if zlib is available

@@ -3,11 +3,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import logging
 import os
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk  # noqa: F401
+from os import walk
 
 from jinja2 import nodes
 from jinja2.ext import Extension

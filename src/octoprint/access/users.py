@@ -1035,11 +1035,6 @@ class MethodReplacedByBooleanProperty:
         return self._attr != other
 
     def __bool__(self):
-        # Python 3
-        return self._attr
-
-    def __nonzero__(self):
-        # Python 2
         return self._attr
 
     def __hash__(self):

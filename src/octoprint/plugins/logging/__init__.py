@@ -3,6 +3,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import io
 import os
+from os import scandir
 
 import yaml
 from flask import jsonify, make_response, request, url_for
@@ -16,11 +17,6 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 
 class LoggingPlugin(

@@ -6,11 +6,7 @@ import gzip
 import logging
 import os
 import re
-
-try:
-    from urllib import parse as urlparse
-except ImportError:
-    import urlparse
+from urllib import parse as urlparse
 
 import webassets.filter.cssrewrite.urlpath as urlpath
 from webassets.bundle import Bundle

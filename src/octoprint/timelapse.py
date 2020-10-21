@@ -1,23 +1,18 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import collections
 import datetime
 import fnmatch
 import io
 import logging
 import os
+import queue
+import re
 import shutil
 import sys
 import threading
 import time
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-import collections
-import re
 
 import requests
 import sarge

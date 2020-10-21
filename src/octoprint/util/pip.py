@@ -13,7 +13,7 @@ import threading
 import pkg_resources
 import sarge
 
-from octoprint.util import to_native_str, to_unicode
+from octoprint.util import to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
@@ -445,11 +445,7 @@ class PipCaller(CommandlineCaller):
                         stdout=sarge.Capture(),
                         stderr=sarge.Capture(),
                         cwd=testballoon,
-                        env={
-                            to_native_str("TESTBALLOON_OUTPUT"): to_native_str(
-                                testballoon_output_file
-                            )
-                        },
+                        env={"TESTBALLOON_OUTPUT": testballoon_output_file},
                     )
                 except Exception:
                     self._logger.exception(

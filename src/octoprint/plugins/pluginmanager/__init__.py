@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime
+from os import scandir
 
 import filetype
 import pkg_resources
@@ -33,7 +34,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import TemporaryDirectory, to_bytes, to_native_str
+from octoprint.util import TemporaryDirectory, to_bytes
 from octoprint.util.net import download_file
 from octoprint.util.pip import LocalPipCaller
 from octoprint.util.platform import get_os, is_os_compatible
@@ -43,11 +44,6 @@ from octoprint.util.version import (
     is_octoprint_compatible,
     is_python_compatible,
 )
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 _DATA_FORMAT_VERSION = "v3"
 
@@ -568,7 +564,7 @@ class PluginManagerPlugin(
         if ext in PluginManagerPlugin.ARCHIVE_EXTENSIONS:
             return True
 
-        kind = filetype.guess(to_native_str(path))
+        kind = filetype.guess(path)
         if kind:
             return ".{}".format(kind.extension) in PluginManagerPlugin.ARCHIVE_EXTENSIONS
         return False

@@ -2,17 +2,12 @@ __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import collections
 import datetime
 import logging
-import subprocess
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-import collections
+import queue
 import re
+import subprocess
 import threading
 
 import octoprint.plugin

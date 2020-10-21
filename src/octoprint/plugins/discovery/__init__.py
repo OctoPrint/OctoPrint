@@ -8,27 +8,20 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 For a spec see http://www.upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.0.pdf
 """
 
-# noinspection PyCompatibility
-from builtins import range
-
-import flask
-from flask_babel import gettext
-
-import octoprint.plugin
-import octoprint.util
-
-try:
-    # python 3
-    import zeroconf
-
-except ImportError:
-    # python 2: vendored version with some backported fixes
-    import octoprint.vendor.zeroconf as zeroconf
-
 import collections
 import platform
 import socket
 import time
+
+# noinspection PyCompatibility
+from builtins import range
+
+import flask
+import zeroconf
+from flask_babel import gettext
+
+import octoprint.plugin
+import octoprint.util
 
 
 def __plugin_load__():
@@ -187,20 +180,15 @@ class DiscoveryPlugin(
     # ZeroConf
 
     def _format_zeroconf_service_type(self, service_type):
-        service_type = octoprint.util.to_native_str(service_type)
-        if not service_type.endswith(octoprint.util.to_native_str(".")):
-            service_type += octoprint.util.to_native_str(".")
-        if not service_type.endswith(octoprint.util.to_native_str("local.")):
-            service_type += octoprint.util.to_native_str("local.")
+        if not service_type.endswith("."):
+            service_type += "."
+        if not service_type.endswith("local."):
+            service_type += "local."
         return service_type
 
     def _format_zeroconf_name(self, name, service_type):
         service_type = self._format_zeroconf_service_type(service_type)
-        return (
-            octoprint.util.to_native_str(name)
-            + octoprint.util.to_native_str(".")
-            + service_type
-        )
+        return name + "." + service_type
 
     def _format_zeroconf_txt(self, record):
         result = {}
@@ -686,13 +674,7 @@ class DiscoveryPlugin(
                         alive message
         """
 
-        try:
-            # noinspection PyCompatibility
-            from http.server import BaseHTTPRequestHandler
-        except ImportError:
-            # noinspection PyCompatibility
-            from BaseHTTPServer import BaseHTTPRequestHandler
-
+        from http.server import BaseHTTPRequestHandler
         from io import BytesIO
 
         socket.setdefaulttimeout(timeout)

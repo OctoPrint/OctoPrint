@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import logging
+import queue
 import re
 import time
 
@@ -12,13 +13,7 @@ from past.builtins import unicode
 
 from octoprint.util.platform import CLOSE_FDS
 
-from . import to_native_str, to_unicode
-from .platform import get_os
-
-try:
-    import queue
-except ImportError:  # pragma: no cover
-    import Queue as queue
+from . import to_unicode
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
@@ -170,10 +165,6 @@ class CommandlineCaller:
             joined_command = command
         self._logger.debug("Calling: {}".format(joined_command))
         self.on_log_call(joined_command)
-
-        # if we are running under windows, make sure there are no unicode strings in the env
-        if get_os() == "windows" and "env" in kwargs:
-            kwargs["env"] = dict((k, to_native_str(v)) for k, v in kwargs["env"].items())
 
         delimiter = kwargs.get("delimiter", b"\n")
         try:

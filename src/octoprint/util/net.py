@@ -5,7 +5,6 @@ import io
 import logging
 import os
 import socket
-import sys
 
 import netaddr
 import netifaces
@@ -41,13 +40,8 @@ if hasattr(socket, "IPPROTO_IPV6") and hasattr(socket, "IPV6_V6ONLY"):
     IPPROTO_IPV6 = socket.IPPROTO_IPV6
     IPV6_V6ONLY = socket.IPV6_V6ONLY
 else:
-    if sys.platform == "win32":
-        # Python 2.7 on Windows lacks IPPROTO_IPV6, but supports the socket options just fine, let's redefine it
-        IPPROTO_IPV6 = 41
-        IPV6_V6ONLY = 27
-    else:
-        # Whatever we are running on here, we don't want to use V6 on here due to lack of dual stack support
-        HAS_V6 = False
+    # Whatever we are running on here, we don't want to use V6 on here due to lack of dual stack support
+    HAS_V6 = False
 
 
 def is_lan_address(address, additional_private=None):

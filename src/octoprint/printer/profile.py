@@ -148,11 +148,7 @@ import copy
 import io
 import logging
 import os
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
+from os import scandir
 
 from octoprint.settings import settings
 from octoprint.util import dict_contains_keys, dict_merge, dict_sanitize, is_hidden_path

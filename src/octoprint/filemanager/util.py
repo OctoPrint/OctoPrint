@@ -239,8 +239,7 @@ class LineProcessorStream(io.RawIOBase):
         wrapper `input_stream`.
 
         Arguments:
-            line (bytes): The line as read from `self.input_stream` in byte representation (str under Python 2 and
-              bytes under Python 3)
+            line (bytes): The line as read from `self.input_stream` in byte representation
 
         Returns:
             bytes or None: The processed version of the line (might also be multiple lines), or None if the line is to be

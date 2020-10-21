@@ -27,17 +27,13 @@ import os
 import re
 import sys
 import time
+from collections import ChainMap
 
 import yaml
 import yaml.parser
 
 # noinspection PyCompatibility
 from past.builtins import basestring
-
-try:
-    from collections import ChainMap
-except ImportError:
-    from chainmap import ChainMap
 
 try:
     from collections.abc import KeysView

@@ -6,14 +6,10 @@ import collections
 import io
 import math
 import os
+import queue
 import re
 import threading
 import time
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 try:
     from os import scandir

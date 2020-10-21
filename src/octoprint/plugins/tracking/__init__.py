@@ -1,23 +1,16 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+# noinspection PyCompatibility
+import concurrent.futures
 import hashlib
 import logging
+from urllib.parse import urlencode
 
 import requests
 from flask_babel import gettext
 
 import octoprint.plugin
-
-try:
-    # noinspection PyCompatibility
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
-
-# noinspection PyCompatibility
-import concurrent.futures
-
 from octoprint.events import Events
 from octoprint.util import RepeatedTimer, monotonic_time
 from octoprint.util.version import get_octoprint_version_string

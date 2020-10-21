@@ -8,7 +8,6 @@ from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP, USER_GROUP
-from octoprint.util import to_native_str
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -164,7 +163,7 @@ class PrinterProfileSubwizard:
 
 
 Subwizards = type(
-    to_native_str("Subwizards"),
+    "Subwizards",
     tuple(
         cls
         for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)

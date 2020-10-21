@@ -12,6 +12,7 @@ import copy
 import io
 import logging
 import os
+import queue
 import re
 import shutil
 import sys
@@ -21,15 +22,12 @@ import time
 import traceback
 import warnings
 from functools import wraps
+from glob import escape
+from time import monotonic as monotonic_time  # noqa: F401
 from typing import Union
 
 import frozendict
 import past.builtins
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
@@ -93,16 +91,8 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
         return s_or_u
 
 
-def to_native_str(s_or_u):
-    # type: (Union[unicode, bytes]) -> str
-    """
-    Make sure ``s_or_u`` is a native 'str' for the current Python version
-
-    Will ensure a byte string under Python 2 and a unicode string under Python 3."""
-    if sys.version_info[0] == 2:
-        return to_bytes(s_or_u)
-    else:
-        return to_unicode(s_or_u)
+to_native_str = to_unicode
+"""Synonym for to_unicode, deprecated"""
 
 
 def sortable_value(value, default_value=""):
@@ -1291,40 +1281,7 @@ def is_hidden_path(path):
     return False
 
 
-try:
-    from glob import escape
-
-    glob_escape = escape
-except ImportError:
-    # no glob.escape - we need to implement our own
-    _glob_escape_check = re.compile("([*?[])")
-    _glob_escape_check_bytes = re.compile(b"([*?[])")
-
-    def glob_escape(pathname):
-        """
-        Ported from Python 3.4
-
-        See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
-        """
-
-        drive, pathname = os.path.splitdrive(pathname)
-        if isinstance(pathname, bytes):
-            pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
-        else:
-            pathname = _glob_escape_check.sub(r"[\1]", pathname)
-        return drive + pathname
-
-
-try:
-    # py3
-    from time import monotonic as monotonic_time
-except ImportError:
-    try:
-        # py2 w/ suitable source for monotonic time
-        from monotonic import monotonic as monotonic_time
-    except RuntimeError:
-        # no source of monotonic time available, nothing left but using time.time *cringe*
-        monotonic_time = time.time
+glob_escape = escape
 
 
 def thaw_frozendict(obj):
