@@ -126,7 +126,7 @@ def get_all_extensions(subtree=None):
 
     result = []
     if isinstance(subtree, dict):
-        for key, value in subtree.items():
+        for value in subtree.values():
             if isinstance(value, dict):
                 result += get_all_extensions(value)
             elif isinstance(value, (ContentTypeMapping, ContentTypeDetector)):
@@ -164,7 +164,7 @@ def get_content_type_mapping_for_extension(extension, subtree=None):
     if subtree is None:
         subtree = full_extension_tree()
 
-    for key, value in subtree.items():
+    for value in subtree.values():
         content_extension_matches = (
             isinstance(value, (ContentTypeMapping, ContentTypeDetector))
             and extension in value.extensions
@@ -310,7 +310,7 @@ class FileManager:
         if root is not None:
             backlog_generator = storage_manager.analysis_backlog_for_path(path=root)
 
-        for entry, path, printer_profile in backlog_generator:
+        for entry, path, _ in backlog_generator:
             file_type = get_file_type(path)[-1]
             file_name = storage_manager.split_path(path)
 

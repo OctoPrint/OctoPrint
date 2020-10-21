@@ -43,7 +43,7 @@ class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
                     return orig_send_pack(*args, **kwargs)
 
             handler.send_pack = send_pack
-            setattr(handler, "__orig_send_pack", orig_send_pack)
+            handler.__orig_send_pack = orig_send_pack
 
         return octoprint.vendor.sockjs.tornado.session.Session.set_handler(
             self, handler, start_heartbeat=start_heartbeat
@@ -55,7 +55,7 @@ class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
         )
 
         if getattr(handler, "__orig_send_pack", None) is not None:
-            handler.send_pack = getattr(handler, "__orig_send_pack")
+            handler.send_pack = handler.__orig_send_pack
             delattr(handler, "__orig_send_pack")
 
         return result

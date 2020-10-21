@@ -1,10 +1,10 @@
 name: "Issue Labeler"
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, edited, closed, reopened]
 
 jobs:
-  apply-label:
+  label-opened-and-edited:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v2
@@ -12,19 +12,50 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             let labels = [];
+            let setLabels = false;
+            context.payload.issue.labels.forEach(label => { labels.push(label.name) });
 
-            if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
-              labels.push('type:request');
-            }
-            if (context.payload.issue.title.match(/\[brainstorming\]/i)) {
-              labels.push('type:brainstorming');
-            }
-            if (context.payload.issue.title.match(/\[rc feedback\]/i)) {
-              labels.push('type:rc feedback');
+            switch (context.payload.action) {
+
+              case 'opened':
+              case 'edited': {
+                if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
+                  labels.push('request');
+                  labels = labels.filter(label => label !== 'triage');
+                  setLabels = true;
+                }
+                if (context.payload.issue.title.match(/\[rc feedback\]/i)) {
+                  labels.push('rc feedback');
+                  labels = labels.filter(label => label !== 'triage');
+                  setLabels = true;
+                }
+
+                if (labels.length === 0) {
+                  labels.push('triage');
+                  setLabels = true;
+                }
+                break;
+              }
+
+              case 'closed': {
+                if (labels.includes('bug') || labels.includes('request') || labels.includes('improvement')) {
+                  labels.push('done');
+                  setLabels = true;
+                }
+                break;
+              }
+
+              case 'reopened': {
+                if (labels.includes('done')) {
+                  labels = labels.filter(label => label !== 'done');
+                  setLabels = true;
+                }
+                break;
+              }
             }
 
-            if (labels.length > 0) {
-              github.issues.addLabels({
+            if (setLabels) {
+              github.issues.setLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,

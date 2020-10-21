@@ -7,6 +7,10 @@ $(function () {
         self.settings = parameters[2];
 
         self.notifications = ko.observableArray([]);
+        self.sortDesc = ko.observable(false);
+        self.sortDesc.subscribe(function () {
+            self._toLocalStorage();
+        });
 
         self.toDateTimeString = function (timestamp) {
             return formatDate(timestamp);
@@ -24,7 +28,11 @@ $(function () {
         };
 
         self.fromResponse = function (response) {
-            self.notifications(response.notifications);
+            var notifications = response.notifications;
+            if (self.sortDesc()) {
+                notifications.reverse();
+            }
+            self.notifications(notifications);
         };
 
         self.clear = function () {
@@ -36,6 +44,11 @@ $(function () {
                 return;
 
             OctoPrint.plugins.action_command_notification.clear();
+        };
+
+        self.toggleSorting = function () {
+            self.sortDesc(!self.sortDesc());
+            self.requestData();
         };
 
         self.onStartup = self.onUserLoggedIn = self.onUserLoggedOut = function () {
@@ -71,6 +84,20 @@ $(function () {
                 });
             }
         };
+
+        var optionsLocalStorageKey = "core.gcodeviewer.options";
+        self._toLocalStorage = function () {
+            saveToLocalStorage(optionsLocalStorageKey, {sortDesc: self.sortDesc()});
+        };
+
+        self._fromLocalStorage = function () {
+            var data = loadFromLocalStorage(optionsLocalStorageKey);
+            if (data["sortDesc"] !== undefined) {
+                self.sortDesc(!!data["sortDesc"]);
+            }
+        };
+
+        self._fromLocalStorage();
     }
 
     OCTOPRINT_VIEWMODELS.push({

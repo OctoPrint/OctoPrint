@@ -225,12 +225,7 @@ def init_settings(basedir, configfile):
     try:
         return settings(init=True, basedir=basedir, configfile=configfile)
     except InvalidSettings as e:
-        message = "Error parsing the configuration file, it appears to be invalid YAML."
-        if e.line is not None and e.column is not None:
-            message += " The parser reported an error on line {}, column {}.".format(
-                e.line, e.column
-            )
-        raise FatalStartupError(message)
+        raise FatalStartupError(str(e))
 
 
 def preinit_logging(
@@ -465,7 +460,7 @@ def init_pluginsystem(
 
         def validator(phase, plugin_info):
             if phase in ("before_import", "before_load", "before_enable"):
-                setattr(plugin_info, "safe_mode_victim", not plugin_info.bundled)
+                plugin_info.safe_mode_victim = not plugin_info.bundled
                 if not plugin_info.bundled:
                     return False
             return True
@@ -494,7 +489,7 @@ def init_pluginsystem(
             plugin.needs_restart = True
 
             # plugin has a settings overlay, inject it
-            overlay_definition = getattr(plugin.instance, "__plugin_settings_overlay__")
+            overlay_definition = plugin.instance.__plugin_settings_overlay__
             if isinstance(overlay_definition, (tuple, list)):
                 overlay_definition, order = overlay_definition
             else:

@@ -110,10 +110,7 @@ def requireLoginRequestHandler():
     if _flask.request.endpoint.endswith(".static"):
         return
 
-    if not (
-        octoprint.server.userManager.enabled
-        and octoprint.server.userManager.has_been_customized()
-    ):
+    if not octoprint.server.userManager.has_been_customized():
         return
 
     user = flask_login.current_user
@@ -208,11 +205,10 @@ def get_user_for_apikey(apikey):
             # master key was used
             return octoprint.server.userManager.api_user_factory()
 
-        if octoprint.server.userManager.enabled:
-            user = octoprint.server.userManager.find_user(apikey=apikey)
-            if user is not None:
-                # user key was used
-                return user
+        user = octoprint.server.userManager.find_user(apikey=apikey)
+        if user is not None:
+            # user key was used
+            return user
 
         apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
         for name, hook in apikey_hooks.items():
@@ -230,9 +226,6 @@ def get_user_for_apikey(apikey):
 
 
 def get_user_for_remote_user_header(request):
-    if not octoprint.server.userManager.enabled:
-        return None
-
     if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
         return None
 

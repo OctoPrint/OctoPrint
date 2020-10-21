@@ -13,13 +13,19 @@ logger = logging.getLogger(
 )
 
 
-def _get_latest_commit(user, repo, branch):
+def _get_latest_commit(user, repo, branch, apikey=None):
     from ..exceptions import NetworkError
+
+    headers = {}
+    if apikey:
+        auth = "token " + apikey
+        headers = {"Authorization": auth}
 
     try:
         r = requests.get(
             BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch),
             timeout=(3.05, 30),
+            headers=headers,
         )
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
@@ -38,7 +44,7 @@ def _get_latest_commit(user, repo, branch):
     return reference["object"]["sha"]
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
     from ..exceptions import ConfigurationInvalid
 
     user = check.get("user")
@@ -70,7 +76,13 @@ def get_latest(target, check, online=True):
     if not online and information["needs_online"]:
         return information, True
 
-    remote_commit = _get_latest_commit(check["user"], check["repo"], branch)
+    apikey = None
+    if credentials:
+        apikey = credentials.get("github")
+
+    remote_commit = _get_latest_commit(
+        check["user"], check["repo"], branch, apikey=apikey
+    )
     remote_name = (
         "Commit {commit}".format(commit=remote_commit)
         if remote_commit is not None

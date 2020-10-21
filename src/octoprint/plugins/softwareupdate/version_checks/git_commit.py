@@ -48,7 +48,7 @@ def _git(args, cwd, hide_stderr=False):
     return p.returncode, stdout
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, *args, **kwargs):
     checkout_folder = check.get("checkout_folder")
     if checkout_folder is None:
         raise ConfigurationInvalid(

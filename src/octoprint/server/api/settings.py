@@ -11,12 +11,15 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
-from octoprint.server import pluginManager, printer
+from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
 
 # ~~ settings
+
+FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
+FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
 
 
 def _lastmodified():
@@ -77,11 +80,13 @@ def _etag(lm=None):
     etag_factory=_etag,
     lastmodified_factory=_lastmodified,
     unless=lambda: request.values.get("force", "false") in valid_boolean_trues
-    or settings().getBoolean(["server", "firstRun"]),
+    or settings().getBoolean(["server", "firstRun"])
+    or not userManager.has_been_customized(),
 )
 def getSettings():
-    if not Permissions.SETTINGS_READ.can() and not settings().getBoolean(
-        ["server", "firstRun"]
+    if not Permissions.SETTINGS_READ.can() and not (
+        settings().getBoolean(["server", "firstRun"])
+        or not userManager.has_been_customized()
     ):
         abort(403)
 
@@ -212,6 +217,7 @@ def getSettings():
             "blockWhileDwelling": s.getBoolean(["serial", "blockWhileDwelling"]),
             "useParityWorkaround": s.get(["serial", "useParityWorkaround"]),
             "sanityCheckTools": s.getBoolean(["serial", "sanityCheckTools"]),
+            "notifySuppressedCommands": s.get(["serial", "notifySuppressedCommands"]),
             "sendM112OnError": s.getBoolean(["serial", "sendM112OnError"]),
             "disableSdPrintingDetection": s.getBoolean(
                 ["serial", "disableSdPrintingDetection"]
@@ -441,18 +447,33 @@ def _saveSettings(data):
 
     if "folder" in data:
         try:
-            if "uploads" in data["folder"]:
-                s.setBaseFolder("uploads", data["folder"]["uploads"])
-            if "timelapse" in data["folder"]:
-                s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-            if "timelapseTmp" in data["folder"]:
-                s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-            if "logs" in data["folder"]:
-                s.setBaseFolder("logs", data["folder"]["logs"])
-            if "watched" in data["folder"]:
-                s.setBaseFolder("watched", data["folder"]["watched"])
-        except IOError:
-            return make_response("One of the configured folders is invalid", 400)
+            folders = dict(
+                (FOLDER_MAPPING.get(folder, folder), path)
+                for folder, path in data["folder"].items()
+            )
+            future = {}
+            for folder in FOLDER_TYPES:
+                future[folder] = s.getBaseFolder(folder)
+                if folder in folders:
+                    future[folder] = data["folder"][folder]
+
+            for folder in data["folder"]:
+                if folder not in FOLDER_TYPES:
+                    continue
+                for other_folder in FOLDER_TYPES:
+                    if folder == other_folder:
+                        continue
+                    if future[folder] == future[other_folder]:
+                        # duplicate detected, raise
+                        raise ValueError(
+                            "Duplicate folder path for {} and {}".format(
+                                folder, other_folder
+                            )
+                        )
+
+                s.setBaseFolder(folder, future[folder])
+        except Exception:
+            return make_response("At least one of the configured folders is invalid", 400)
 
     if "api" in data:
         if "allowCrossOrigin" in data["api"]:
@@ -776,6 +797,10 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "sanityCheckTools"], data["serial"]["sanityCheckTools"]
             )
+        if "notifySuppressedCommands" in data["serial"]:
+            value = data["serial"]["notifySuppressedCommands"]
+            if value in ("info", "warn", "never"):
+                s.set(["serial", "notifySuppressedCommands"], value)
         if "sendM112OnError" in data["serial"]:
             s.setBoolean(["serial", "sendM112OnError"], data["serial"]["sendM112OnError"])
         if "disableSdPrintingDetection" in data["serial"]:

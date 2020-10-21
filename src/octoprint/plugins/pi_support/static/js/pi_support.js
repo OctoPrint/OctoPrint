@@ -4,6 +4,7 @@ $(function () {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
+        self.settings = parameters[2];
 
         self.model = ko.observable();
 
@@ -26,6 +27,42 @@ $(function () {
             OctoPrint.plugins.pi_support.get().done(function (response) {
                 // Raspberry Pi model
                 self.model(response.model);
+
+                // Unrecommended model
+                if (
+                    response.model_unrecommended &&
+                    !self.settings.settings.plugins.pi_support.ignore_unrecommended_model()
+                ) {
+                    var warning = gettext(
+                        "OctoPrint does not and never has supported the " +
+                            "RPi Zero or Zero W. Use at least a Raspberry Pi 3, or " +
+                            "risk bad performance and failed prints."
+                    );
+                    var faq = gettext(
+                        "" +
+                            'You can read more <a href="%(url)s" target="_blank">in the FAQ</a>.'
+                    );
+                    var remove = gettext(
+                        "You can disable this message via Settings > " +
+                            "Pi Support > Ignore warning on unsupported hardware"
+                    );
+                    new PNotify({
+                        title: gettext("Unsupported hardware detected"),
+                        text:
+                            "<p>" +
+                            warning +
+                            "</p><p>" +
+                            _.sprintf(faq, {
+                                url: "https://faq.octoprint.org/recommended-hardware"
+                            }) +
+                            "</p><p>" +
+                            "<small>" +
+                            remove +
+                            "</small></p>",
+                        type: "error",
+                        hide: false
+                    });
+                }
 
                 // Throttle state
                 self.fromThrottleState(response.throttle_state);
@@ -130,6 +167,6 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: PiSupportViewModel,
         elements: ["#navbar_plugin_pi_support"],
-        dependencies: ["loginStateViewModel", "accessViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"]
     });
 });

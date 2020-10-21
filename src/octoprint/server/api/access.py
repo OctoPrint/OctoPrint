@@ -138,9 +138,6 @@ def remove_group(key):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def get_users():
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     return jsonify(users=list(map(lambda u: u.as_dict(), userManager.get_all_users())))
 
 
@@ -148,9 +145,6 @@ def get_users():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def add_user():
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     if "application/json" not in request.headers["Content-Type"]:
         return make_response("Expected content-type JSON", 400)
 
@@ -186,9 +180,6 @@ def add_user():
 @api.route("/access/users/<username>", methods=["GET"])
 @no_firstrun_access
 def get_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     if (
         current_user is not None
         and not current_user.is_anonymous
@@ -210,9 +201,6 @@ def get_user(username):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def update_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     user = userManager.find_user(username)
     if user is not None:
         if "application/json" not in request.headers["Content-Type"]:
@@ -251,9 +239,6 @@ def update_user(username):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def remove_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     try:
         userManager.remove_user(username)
         return get_users()
@@ -299,9 +284,6 @@ def change_password_for_user(username):
 @api.route("/access/users/<username>/settings", methods=["GET"])
 @no_firstrun_access
 def get_settings_for_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     if (
         current_user is None
         or current_user.is_anonymous
@@ -321,9 +303,6 @@ def get_settings_for_user(username):
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
 @no_firstrun_access
 def change_settings_for_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     if (
         current_user is None
         or current_user.is_anonymous
@@ -352,9 +331,6 @@ def change_settings_for_user(username):
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
 @no_firstrun_access
 def delete_apikey_for_user(username):
-    if not userManager.enabled:
-        return jsonify(SUCCESS)
-
     if (
         current_user is not None
         and not current_user.is_anonymous

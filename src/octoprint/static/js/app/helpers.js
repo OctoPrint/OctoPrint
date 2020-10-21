@@ -1563,3 +1563,25 @@ var determineWebcamStreamType = function (streamUrl) {
         throw "Empty streamUrl. Cannot determine stream type.";
     }
 };
+
+var saveToLocalStorage = function (key, data) {
+    if (!Modernizr.localstorage) return;
+    localStorage[key] = JSON.stringify(data);
+};
+
+var loadFromLocalStorage = function (key) {
+    if (!Modernizr.localstorage) return {};
+
+    var currentString = localStorage[key];
+    var current;
+    if (currentString === undefined) {
+        current = {};
+    } else {
+        try {
+            current = JSON.parse(currentString);
+        } catch (ex) {
+            current = {};
+        }
+    }
+    return current;
+};

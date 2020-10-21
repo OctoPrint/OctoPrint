@@ -159,7 +159,11 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-    if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
+    if (
+        not s().getBoolean(["server", "firstRun"])
+        and octoprint.server.userManager.has_been_customized()
+        and not Permissions.ADMIN.can()
+    ):
         abort(403)
 
     seen_wizards = s().get(["server", "seenWizards"])
@@ -196,7 +200,11 @@ def wizardState():
 
 @api.route("/setup/wizard", methods=["POST"])
 def wizardFinish():
-    if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
+    if (
+        not s().getBoolean(["server", "firstRun"])
+        and octoprint.server.userManager.has_been_customized()
+        and not Permissions.ADMIN.can()
+    ):
         abort(403)
 
     data = {}
@@ -275,7 +283,7 @@ def login():
     if not data:
         data = request.values
 
-    if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
+    if "user" in data and "pass" in data:
         username = data["user"]
         password = data["pass"]
 
@@ -293,10 +301,10 @@ def login():
                 if not user.is_active:
                     return make_response(("Your account is deactivated", 403, []))
 
-                if octoprint.server.userManager.enabled:
-                    user = octoprint.server.userManager.login_user(user)
-                    session["usersession.id"] = user.session
-                    g.user = user
+                user = octoprint.server.userManager.login_user(user)
+                session["usersession.id"] = user.session
+                g.user = user
+
                 login_user(user, remember=remember)
                 identity_changed.send(
                     current_app._get_current_object(), identity=Identity(user.get_id())

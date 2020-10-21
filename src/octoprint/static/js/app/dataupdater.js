@@ -301,6 +301,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
             var type = event.data["type"];
             var payload = event.data["payload"];
 
+            var title, text, severity;
+
             log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
             if (type === "PrintCancelling" && payload.firmwareError) {
@@ -319,9 +321,6 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     hide: false
                 });
             } else if (type === "Error" && payload.error) {
-                var title = undefined,
-                    text = undefined;
-
                 switch (payload.reason) {
                     case "firmware": {
                         title = gettext("Error reported by printer");
@@ -393,8 +392,6 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     });
                 }
             } else if (type === "PrinterReset") {
-                var severity = undefined,
-                    text = undefined;
                 if (payload.idle) {
                     text = gettext(
                         "It looks like your printer reset while a connection was active. If this was intentional you may safely ignore this message. Otherwise you should investigate why your printer reset itself, since this will interrupt prints and also file transfers to your printer's SD."

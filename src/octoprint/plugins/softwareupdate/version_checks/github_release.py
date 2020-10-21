@@ -95,14 +95,27 @@ def _filter_out_latest(releases, sort_key=None, include_prerelease=False, commit
 
 
 def _get_latest_release(
-    user, repo, compare_type, include_prerelease=False, commitish=None, force_base=True
+    user,
+    repo,
+    compare_type,
+    include_prerelease=False,
+    commitish=None,
+    force_base=True,
+    apikey=None,
 ):
     from ..exceptions import NetworkError
 
     nothing = None, None, None
 
+    headers = {}
+    if apikey:
+        auth = "token " + apikey
+        headers = {"Authorization": auth}
+
     try:
-        r = requests.get(RELEASE_URL.format(user=user, repo=repo), timeout=(3.05, 30))
+        r = requests.get(
+            RELEASE_URL.format(user=user, repo=repo), timeout=(3.05, 30), headers=headers
+        )
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
@@ -273,7 +286,9 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
         return True
 
 
-def get_latest(target, check, custom_compare=None, online=True):
+def get_latest(
+    target, check, custom_compare=None, online=True, credentials=None, *args, **kwargs
+):
     from ..exceptions import ConfigurationInvalid
 
     user = check.get("user", None)
@@ -314,6 +329,10 @@ def get_latest(target, check, custom_compare=None, online=True):
         check.get("release_compare", "python"), custom=custom_compare
     )
 
+    apikey = None
+    if credentials:
+        apikey = credentials.get("github")
+
     remote_name, remote_tag, release_notes = _get_latest_release(
         check["user"],
         check["repo"],
@@ -321,6 +340,7 @@ def get_latest(target, check, custom_compare=None, online=True):
         include_prerelease=include_prerelease,
         commitish=commitish,
         force_base=force_base,
+        apikey=apikey,
     )
 
     if not remote_name:

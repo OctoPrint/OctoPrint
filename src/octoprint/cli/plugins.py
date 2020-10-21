@@ -86,7 +86,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
                 self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
             )
         except FatalStartupError as e:
-            click.echo(e.message, err=True)
+            click.echo(str(e), err=True)
             click.echo(
                 "There was a fatal error initializing the settings or the plugin system.",
                 err=True,
