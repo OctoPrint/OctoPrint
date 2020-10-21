@@ -23,8 +23,6 @@ import tornado.web
 
 import octoprint.util
 
-from . import PY3
-
 
 def fix_json_encode():
     """
@@ -633,12 +631,7 @@ def _extended_header_value(value):
         except ImportError:
             from urllib.parse import unquote
         encoding, _, value = value.split("'", 2)
-        if PY3:
-            return unquote(value, encoding=encoding)
-        else:
-            return unquote(octoprint.util.to_bytes(value, encoding="iso-8859-1")).decode(
-                encoding
-            )
+        return unquote(value, encoding=encoding)
     else:
         # no encoding provided, strip potentially present quotes and call it a day
         return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
