@@ -30,7 +30,7 @@ from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, to_unicode
+from octoprint.util import to_unicode
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -1852,7 +1852,7 @@ class StateMonitor:
         self._state_lock = threading.Lock()
         self._progress_lock = threading.Lock()
 
-        self._last_update = monotonic_time()
+        self._last_update = time.monotonic()
         self._worker = threading.Thread(target=self._work)
         self._worker.daemon = True
         self._worker.start()
@@ -1918,7 +1918,7 @@ class StateMonitor:
             while True:
                 self._change_event.wait()
 
-                now = monotonic_time()
+                now = time.monotonic()
                 delta = now - self._last_update
                 additional_wait_time = self._interval - delta
                 if additional_wait_time > 0:
@@ -1927,7 +1927,7 @@ class StateMonitor:
                 with self._state_lock:
                     data = self.get_current_data()
                     self._update_callback(data)
-                    self._last_update = monotonic_time()
+                    self._last_update = time.monotonic()
                     self._change_event.clear()
         except Exception:
             logging.getLogger(__name__).exception(

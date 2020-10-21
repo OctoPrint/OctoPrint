@@ -14,7 +14,6 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import dict_merge
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time
 from octoprint.util.platform import CLOSE_FDS
 
 
@@ -290,7 +289,7 @@ class AbstractAnalysisQueue:
         self._current_progress = 0
 
         try:
-            start_time = monotonic_time()
+            start_time = time.monotonic()
             self._logger.info("Starting analysis of {}".format(entry))
             eventManager().fire(
                 Events.METADATA_ANALYSIS_STARTED,
@@ -307,7 +306,7 @@ class AbstractAnalysisQueue:
                 result = self._do_analysis()
             self._logger.info(
                 "Analysis of entry {} finished, needed {:.2f}s".format(
-                    entry, monotonic_time() - start_time
+                    entry, time.monotonic() - start_time
                 )
             )
             self._finished_callback(self._current, result)

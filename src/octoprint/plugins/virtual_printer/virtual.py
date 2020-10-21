@@ -18,13 +18,7 @@ from typing import Any
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import (
-    RepeatedTimer,
-    get_dos_filename,
-    monotonic_time,
-    to_bytes,
-    to_unicode,
-)
+from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
 
 
 # noinspection PyBroadException
@@ -110,7 +104,7 @@ class VirtualPrinter:
         self.bedTargetTemp = 0.0
         self.chamberTemp = self._ambient_temperature
         self.chamberTargetTemp = 0.0
-        self.lastTempAt = monotonic_time()
+        self.lastTempAt = time.monotonic()
 
         self._relative = True
         self._lastX = 0.0
@@ -316,7 +310,7 @@ class VirtualPrinter:
             pass
 
     def _processIncoming(self):
-        next_wait_timeout = monotonic_time() + self._waitInterval
+        next_wait_timeout = time.monotonic() + self._waitInterval
         buf = b""
         while self.incoming is not None and not self._killed:
             self._simulateTemps()
@@ -330,9 +324,9 @@ class VirtualPrinter:
                 data = to_bytes(data, encoding="ascii", errors="replace")
                 self.incoming.task_done()
             except queue.Empty:
-                if self._sendWait and monotonic_time() > next_wait_timeout:
+                if self._sendWait and time.monotonic() > next_wait_timeout:
                     self._send("wait")
-                    next_wait_timeout = monotonic_time() + self._waitInterval
+                    next_wait_timeout = time.monotonic() + self._waitInterval
                 continue
             except Exception:
                 if self.incoming is None:
@@ -348,7 +342,7 @@ class VirtualPrinter:
                 else:
                     continue
 
-            next_wait_timeout = monotonic_time() + self._waitInterval
+            next_wait_timeout = time.monotonic() + self._waitInterval
 
             if data is None:
                 continue
@@ -831,8 +825,8 @@ class VirtualPrinter:
             _timeout = float(matchS.group(1))
 
         if self._sendBusy and self._busyInterval > 0:
-            until = monotonic_time() + _timeout
-            while monotonic_time() < until:
+            until = time.monotonic() + _timeout
+            while time.monotonic() < until:
                 time.sleep(self._busyInterval)
                 self._send("busy:processing")
         else:
@@ -846,8 +840,8 @@ class VirtualPrinter:
         timeout = 60
 
         if self._sendBusy and self._busyInterval > 0:
-            until = monotonic_time() + timeout
-            while monotonic_time() < until:
+            until = time.monotonic() + timeout
+            while time.monotonic() < until:
                 time.sleep(self._busyInterval)
                 self._send("busy:processing")
         else:
@@ -1545,7 +1539,7 @@ class VirtualPrinter:
         # type: (str, bool) -> None
         delta = 1
         delay = 1
-        last_busy = monotonic_time()
+        last_busy = time.monotonic()
 
         self._heatingUp = True
         try:
@@ -1573,9 +1567,9 @@ class VirtualPrinter:
             while not self._killed and self._heatingUp and test():
                 self._simulateTemps(delta=delta)
                 self._send(output())
-                if self._sendBusy and monotonic_time() - last_busy >= self._busyInterval:
+                if self._sendBusy and time.monotonic() - last_busy >= self._busyInterval:
                     self._send("echo:busy: processing")
-                    last_busy = monotonic_time()
+                    last_busy = time.monotonic()
                 time.sleep(delay)
         except AttributeError:
             if self.outgoing is not None:
@@ -1597,8 +1591,8 @@ class VirtualPrinter:
             os.remove(file["path"])
 
     def _simulateTemps(self, delta=0.5):
-        timeDiff = self.lastTempAt - monotonic_time()
-        self.lastTempAt = monotonic_time()
+        timeDiff = self.lastTempAt - time.monotonic()
+        self.lastTempAt = time.monotonic()
 
         def simulate(actual, target, ambient):
             if target > 0:
@@ -1820,9 +1814,9 @@ class CharCountingQueue(queue.Queue):
             elif timeout < 0:
                 raise ValueError("'timeout' must be a positive number")
             else:
-                endtime = monotonic_time() + timeout
+                endtime = time.monotonic() + timeout
                 while not self._will_it_fit(item):
-                    remaining = endtime - monotonic_time()
+                    remaining = endtime - time.monotonic()
                     if remaining <= 0.0:
                         raise queue.Full
                     self.not_full.wait(remaining)

@@ -4,8 +4,6 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import time
 
-from octoprint.util import monotonic_time
-
 
 def can_perform_update(target, check, online=True):
     return True
@@ -14,9 +12,9 @@ def can_perform_update(target, check, online=True):
 def perform_update(target, check, target_version, log_cb=None, online=True):
     duration = check.get("duration", 30)
 
-    now = monotonic_time()
+    now = time.monotonic()
     end = now + duration
     while now < end:
         log_cb(["{}s left...".format(end - now)], prefix=">", stream="output")
         time.sleep(5)
-        now = monotonic_time()
+        now = time.monotonic()

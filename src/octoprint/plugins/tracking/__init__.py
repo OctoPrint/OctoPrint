@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import concurrent.futures
 import hashlib
 import logging
+import time
 from urllib.parse import urlencode
 
 import requests
@@ -12,7 +13,7 @@ from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.events import Events
-from octoprint.util import RepeatedTimer, monotonic_time
+from octoprint.util import RepeatedTimer
 from octoprint.util.version import get_octoprint_version_string
 
 TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
@@ -41,7 +42,7 @@ class TrackingPlugin(
 
         self._record_next_firmware_info = False
 
-        self._startup_time = monotonic_time()
+        self._startup_time = time.monotonic()
 
     def initialize(self):
         self._init_id()
@@ -230,7 +231,7 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["enabled"]):
             return
 
-        uptime = int(monotonic_time() - self._startup_time)
+        uptime = int(time.monotonic() - self._startup_time)
         self._track("ping", octoprint_uptime=uptime)
 
     def _track_pong(self):

@@ -26,13 +26,13 @@ def duration_log(context=None, log=None):
 
         log = logging.getLogger(__name__).debug
 
-    import octoprint.util
+    import time
 
-    start = octoprint.util.monotonic_time()
+    start = time.monotonic()
     try:
         yield
     finally:
-        end = octoprint.util.monotonic_time()
+        end = time.monotonic()
         duration = end - start
 
         if context:

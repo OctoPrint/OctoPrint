@@ -39,7 +39,6 @@ from octoprint.util import (
     filter_non_ascii,
     filter_non_utf8,
     get_exception_string,
-    monotonic_time,
     sanitize_ascii,
     to_unicode,
 )
@@ -980,7 +979,7 @@ class MachineCom:
             return None
         else:
             return (
-                monotonic_time()
+                time.monotonic()
                 - self._currentFile.getStartTime()
                 - self._pauseWaitTimeLost
             )
@@ -1109,11 +1108,11 @@ class MachineCom:
                 self.sendGcodeScript("beforePrinterDisconnected")
                 if wait:
                     if timeout is not None:
-                        stop = monotonic_time() + timeout
+                        stop = time.monotonic() + timeout
                         while (
                             self._command_queue.unfinished_tasks
                             or self._send_queue.unfinished_tasks
-                        ) and monotonic_time() < stop:
+                        ) and time.monotonic() < stop:
                             time.sleep(0.1)
                     else:
                         self._command_queue.join()
@@ -1346,7 +1345,7 @@ class MachineCom:
         if self._currentFile is None:
             raise ValueError("No file selected for printing")
 
-        self._heatupWaitStartTime = None if not self._heating else monotonic_time()
+        self._heatupWaitStartTime = None if not self._heating else time.monotonic()
         self._heatupWaitTimeLost = 0.0
         self._pauseWaitStartTime = 0
         self._pauseWaitTimeLost = 0.0
@@ -1763,7 +1762,7 @@ class MachineCom:
             if not pause and self._state in valid_paused_states:
                 if self._pauseWaitStartTime:
                     self._pauseWaitTimeLost = self._pauseWaitTimeLost + (
-                        monotonic_time() - self._pauseWaitStartTime
+                        time.monotonic() - self._pauseWaitStartTime
                     )
                     self._pauseWaitStartTime = None
 
@@ -1796,7 +1795,7 @@ class MachineCom:
 
             elif pause and self._state in valid_running_states:
                 if not self._pauseWaitStartTime:
-                    self._pauseWaitStartTime = monotonic_time()
+                    self._pauseWaitStartTime = time.monotonic()
 
                 self._changeState(self.STATE_PAUSING)
                 if self.isSdFileSelected() and local_handling:
@@ -2117,7 +2116,7 @@ class MachineCom:
                 if line is None:
                     break
 
-                now = monotonic_time()
+                now = time.monotonic()
 
                 if line.strip() != "":
                     self._consecutive_timeouts = 0
@@ -2477,7 +2476,7 @@ class MachineCom:
                     ):
                         self._logger.info("Externally triggered heatup detected")
                         self._heating = True
-                        self._heatupWaitStartTime = monotonic_time()
+                        self._heatupWaitStartTime = time.monotonic()
 
                     self._processTemperatures(line)
                     self._callback.on_comm_temperature_update(
@@ -2901,7 +2900,7 @@ class MachineCom:
 
                 ### Serial detection
                 if self._state == self.STATE_DETECT_SERIAL:
-                    if line == "" or monotonic_time() > self._ok_timeout:
+                    if line == "" or time.monotonic() > self._ok_timeout:
                         self._perform_detection_step()
                     elif "start" in line or line.startswith("ok"):
                         self._onConnected()
@@ -2918,7 +2917,7 @@ class MachineCom:
                             # if it was a wait we probably missed an ok, so let's simulate that now
                             self._handle_ok()
                         self._onConnected()
-                    elif monotonic_time() > self._timeout:
+                    elif time.monotonic() > self._timeout:
                         if try_hello and self._hello_sent < 3:
                             self._log(
                                 "No answer from the printer within the connection timeout, trying another hello"
@@ -3139,7 +3138,7 @@ class MachineCom:
             try:
                 if self._serial.timeout != timeout:
                     self._serial.timeout = timeout
-                self._timeout = self._ok_timeout = monotonic_time() + timeout
+                self._timeout = self._ok_timeout = time.monotonic() + timeout
             except Exception:
                 self._log(
                     "Unexpected error while setting timeout {}: {}".format(
@@ -3210,7 +3209,7 @@ class MachineCom:
         if self._heating:
             if self._heatupWaitStartTime:
                 self._heatupWaitTimeLost = self._heatupWaitTimeLost + (
-                    monotonic_time() - self._heatupWaitStartTime
+                    time.monotonic() - self._heatupWaitStartTime
                 )
                 self._heatupWaitStartTime = None
             self._heating = False
@@ -3516,7 +3515,7 @@ class MachineCom:
         return max(comm_timeout, temperature_timeout + 1)
 
     def _get_new_communication_timeout(self):
-        return monotonic_time() + self._get_communication_timeout_interval()
+        return time.monotonic() + self._get_communication_timeout_interval()
 
     def _send_from_command_queue(self):
         # We loop here to make sure that if we do NOT send the first command
@@ -4007,7 +4006,7 @@ class MachineCom:
             #
             # this it to prevent the log from getting flooded for extremely bad communication issues
             if self._log_resends:
-                now = monotonic_time()
+                now = time.monotonic()
                 new_rate_window = (
                     self._log_resends_rate_start is None
                     or self._log_resends_rate_start + self._log_resends_rate_frame < now
@@ -4255,7 +4254,7 @@ class MachineCom:
                         break
 
                     # sleep if we are dwelling
-                    now = monotonic_time()
+                    now = time.monotonic()
                     if (
                         self._blockWhileDwelling
                         and self._dwelling_until
@@ -4971,7 +4970,7 @@ class MachineCom:
     def _gcode_M109_sent(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        self._heatupWaitStartTime = monotonic_time()
+        self._heatupWaitStartTime = time.monotonic()
         self._long_running_command = True
         self._heating = True
         self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
@@ -4979,7 +4978,7 @@ class MachineCom:
     def _gcode_M190_sent(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        self._heatupWaitStartTime = monotonic_time()
+        self._heatupWaitStartTime = time.monotonic()
         self._long_running_command = True
         self._heating = True
         self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
@@ -4987,7 +4986,7 @@ class MachineCom:
     def _gcode_M191_sent(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        self._heatupWaitStartTime = monotonic_time()
+        self._heatupWaitStartTime = time.monotonic()
         self._long_running_command = True
         self._heating = True
         self._gcode_M141_sent(cmd, cmd_type, wait=True, support_r=True)
@@ -4995,7 +4994,7 @@ class MachineCom:
     def _gcode_M116_sent(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        self._heatupWaitStartTime = monotonic_time()
+        self._heatupWaitStartTime = time.monotonic()
         self._long_running_command = True
         self._heating = True
 
@@ -5109,7 +5108,7 @@ class MachineCom:
             _timeout = float(s_match.group("value"))
 
         self._timeout = self._get_new_communication_timeout() + _timeout
-        self._dwelling_until = monotonic_time() + _timeout
+        self._dwelling_until = time.monotonic() + _timeout
 
     def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
         # only jump the queue with our command if the EMERGENCY_PARSER capability is available
@@ -5344,7 +5343,7 @@ class PrintingFileInformation:
         """
         Marks the print job as started and remembers the start time.
         """
-        self._start_time = monotonic_time()
+        self._start_time = time.monotonic()
         self._done = False
 
     def close(self):
@@ -5511,7 +5510,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         return process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 
     def _report_stats(self):
-        duration = monotonic_time() - self._start_time
+        duration = time.monotonic() - self._start_time
         self._logger.info("Finished in {:.3f} s.".format(duration))
         pass
 
@@ -5524,7 +5523,7 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
     def start(self):
         PrintingGcodeFileInformation.start(self)
-        self._start_time = monotonic_time()
+        self._start_time = time.monotonic()
 
     def getLocalFilename(self):
         return self._localFilename
@@ -5536,7 +5535,7 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         return process_gcode_line(line)
 
     def _report_stats(self):
-        duration = monotonic_time() - self._start_time
+        duration = time.monotonic() - self._start_time
         read_lines = self._read_lines
         if duration > 0 and read_lines > 0:
             stats = {

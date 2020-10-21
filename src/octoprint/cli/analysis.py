@@ -48,7 +48,6 @@ def gcode_command(
 
     import yaml
 
-    from octoprint.util import monotonic_time
     from octoprint.util.gcodeInterpreter import gcode
 
     throttle_callback = None
@@ -68,7 +67,7 @@ def gcode_command(
     if len(offsets) < maxt:
         offsets += [(0, 0)] * (maxt - len(offsets))
 
-    start_time = monotonic_time()
+    start_time = time.monotonic()
 
     progress_callback = None
     if progress:
@@ -88,7 +87,7 @@ def gcode_command(
         g90_extruder=g90_extruder,
     )
 
-    click.echo("DONE:{}s".format(monotonic_time() - start_time))
+    click.echo("DONE:{}s".format(time.monotonic() - start_time))
     click.echo("RESULTS:")
     click.echo(
         yaml.safe_dump(

@@ -1701,7 +1701,7 @@ class Server:
                     kwargs.update(additional_request_data)
 
                     try:
-                        start = octoprint.util.monotonic_time()
+                        start = time.monotonic()
                         if plugin:
                             logger.info(
                                 "Preemptively caching {} (ui {}) for {!r}".format(
@@ -1724,9 +1724,7 @@ class Server:
                         app(builder.get_environ(), lambda *a, **kw: None)
 
                         logger.info(
-                            "... done in {:.2f}s".format(
-                                octoprint.util.monotonic_time() - start
-                            )
+                            "... done in {:.2f}s".format(time.monotonic() - start)
                         )
                     except Exception:
                         logger.exception(

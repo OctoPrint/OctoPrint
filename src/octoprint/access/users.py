@@ -5,6 +5,7 @@ import hashlib
 import io
 import logging
 import os
+import time
 import uuid
 
 # noinspection PyCompatibility
@@ -20,7 +21,7 @@ from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
 from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, to_bytes
+from octoprint.util import to_bytes
 
 
 class UserManager(GroupChangeListener):
@@ -131,7 +132,7 @@ class UserManager(GroupChangeListener):
         for session, user in list(self._session_users_by_session.items()):
             if not isinstance(user, SessionUser):
                 continue
-            if user.created + (24 * 60 * 60) < monotonic_time():
+            if user.created + (24 * 60 * 60) < time.monotonic():
                 self._logger.info(
                     "Cleaning up user session {} for user {}".format(
                         session, user.get_id()
@@ -1374,8 +1375,8 @@ class SessionUser(wrapt.ObjectProxy):
         wrapt.ObjectProxy.__init__(self, user)
 
         self._self_session = "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
-        self._self_created = monotonic_time()
-        self._self_touched = monotonic_time()
+        self._self_created = time.monotonic()
+        self._self_touched = time.monotonic()
 
     @property
     def session(self):
@@ -1390,7 +1391,7 @@ class SessionUser(wrapt.ObjectProxy):
         return self._self_touched
 
     def touch(self):
-        self._self_touched = monotonic_time()
+        self._self_touched = time.monotonic()
 
     @deprecated(
         "SessionUser.get_session() has been deprecated, use SessionUser.session instead",

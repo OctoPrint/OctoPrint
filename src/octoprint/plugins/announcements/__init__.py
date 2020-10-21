@@ -25,7 +25,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import count, monotonic_time, utmify
+from octoprint.util import count, utmify
 
 PY2 = sys.version_info[0] < 3
 
@@ -452,12 +452,12 @@ class AnnouncementPlugin(
 
         url = config["url"]
         try:
-            start = monotonic_time()
+            start = time.monotonic()
             r = requests.get(url, timeout=30)
             r.raise_for_status()
             self._logger.info(
                 "Loaded channel {} from {} in {:.2}s".format(
-                    key, config["url"], monotonic_time() - start
+                    key, config["url"], time.monotonic() - start
                 )
             )
         except Exception:

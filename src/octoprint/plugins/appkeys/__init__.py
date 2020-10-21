@@ -1,6 +1,7 @@
 import io
 import os
 import threading
+import time
 from collections import defaultdict
 
 import flask
@@ -13,7 +14,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT, admin_permission, current_user
 from octoprint.server.util.flask import no_firstrun_access, restricted_access
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import ResettableTimer, atomic_write, generate_api_key, monotonic_time
+from octoprint.util import ResettableTimer, atomic_write, generate_api_key
 
 CUTOFF_TIME = 10 * 60  # 10min
 POLL_TIMEOUT = 5  # 5 seconds
@@ -29,7 +30,7 @@ class PendingDecision:
         self.app_token = app_token
         self.user_id = user_id
         self.user_token = user_token
-        self.created = monotonic_time()
+        self.created = time.monotonic()
 
         if callable(timeout_callback):
             self.poll_timeout = ResettableTimer(
@@ -339,7 +340,7 @@ class AppKeysPlugin(
 
     def _remove_stale_pending(self):
         with self._pending_lock:
-            cutoff = monotonic_time() - CUTOFF_TIME
+            cutoff = time.monotonic() - CUTOFF_TIME
             len_before = len(self._pending_decisions)
             self._pending_decisions = list(
                 filter(lambda x: x.created >= cutoff, self._pending_decisions)

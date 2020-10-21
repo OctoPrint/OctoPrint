@@ -4,6 +4,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 import collections
 import datetime
 import fnmatch
+import glob
 import io
 import logging
 import os
@@ -23,7 +24,7 @@ from octoprint.events import Events, eventManager
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, sv
+from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
 
 try:
@@ -194,7 +195,7 @@ def get_unrendered_timelapses():
 def delete_unrendered_timelapse(name):
     global _cleanup_lock
 
-    pattern = "{}*.jpg".format(util.glob_escape(name))
+    pattern = "{}*.jpg".format(glob.escape(name))
 
     basedir = settings().getBaseFolder("timelapse_tmp")
     with _cleanup_lock:
@@ -853,7 +854,7 @@ class ZTimelapse(Timelapse):
                 return
 
         # check if last picture has been less than min_delay ago, if so don't take a picture (anti vase mode...)
-        now = monotonic_time()
+        now = time.monotonic()
         if (
             self._min_delay
             and self._last_snapshot

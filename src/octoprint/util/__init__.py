@@ -9,6 +9,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 import collections
 import contextlib
 import copy
+import glob
 import io
 import logging
 import os
@@ -22,8 +23,6 @@ import time
 import traceback
 import warnings
 from functools import wraps
-from glob import escape
-from time import monotonic as monotonic_time  # noqa: F401
 from typing import Union
 
 import frozendict
@@ -85,10 +84,6 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
         return s_or_u.decode(encoding, errors=errors)
     else:
         return s_or_u
-
-
-to_native_str = to_unicode
-"""Synonym for to_unicode, deprecated"""
 
 
 def sortable_value(value, default_value=""):
@@ -314,6 +309,12 @@ to_str = deprecated(
     since="1.3.11",
 )(to_bytes)
 
+to_native_str = deprecated(
+    "to_native_str is no longer needed",
+    includedoc="to_native_str is no longer needed, use to_unicode",
+    since="2.0.0",
+)(to_unicode)
+
 
 def get_formatted_size(num):
     """
@@ -387,6 +388,13 @@ def get_formatted_datetime(d):
         return None
 
     return d.strftime("%Y-%m-%d %H:%M")
+
+
+monotonic_time = deprecated(
+    "monotonic_time is natively available as time.monotonic in Python 3",
+    includedoc="Replaced by :func:`time.monotonic`",
+    since="2.0.0",
+)(time.monotonic)
 
 
 def get_class(name):
@@ -1277,7 +1285,11 @@ def is_hidden_path(path):
     return False
 
 
-glob_escape = escape
+glob_escape = deprecated(
+    "glob_escape is available natively under Python 3 as glob.escape",
+    includedoc="Replaced by :func:`glob.escape`",
+    since="2.0.0",
+)(glob.escape)
 
 
 def thaw_frozendict(obj):

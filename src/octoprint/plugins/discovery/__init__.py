@@ -596,8 +596,7 @@ class DiscoveryPlugin(
 
         if (
             alive
-            and self._ssdp_last_notify + self._ssdp_notify_timeout
-            > octoprint.util.monotonic_time()
+            and self._ssdp_last_notify + self._ssdp_notify_timeout > time.monotonic()
         ):
             # we just sent an alive, no need to send another one now
             return
@@ -664,7 +663,7 @@ class DiscoveryPlugin(
             except Exception:
                 pass
 
-        self._ssdp_last_notify = octoprint.util.monotonic_time()
+        self._ssdp_last_notify = time.monotonic()
 
     def _ssdp_monitor(self, timeout=5):
         """
