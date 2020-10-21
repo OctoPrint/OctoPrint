@@ -1,7 +1,5 @@
 from typing import Union
 
-from past.builtins import basestring, unicode
-
 from octoprint.logging import handlers  # noqa: F401
 
 
@@ -128,7 +126,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
             formatted divider line
     """
 
-    assert isinstance(c, basestring), "c is not text"
+    assert isinstance(c, str), "c is not text"
     assert len(c) == 1, "c is not a single character"
     assert isinstance(length, int), "length is not an int"
     assert isinstance(indent, int), "indent is not an int"
@@ -136,7 +134,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
     if message is None:
         return c * length
 
-    assert isinstance(message, basestring), "message is not text"
+    assert isinstance(message, str), "message is not text"
 
     space = length - 2 * (indent + 1)
     if space >= len(message):
@@ -146,7 +144,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
 
 
 def prefix_multilines(text, prefix=": "):
-    # type: (Union[unicode, bytes], unicode) -> unicode
+    # type: (Union[str, bytes], str) -> str
     from octoprint.util import to_unicode
 
     lines = text.splitlines()

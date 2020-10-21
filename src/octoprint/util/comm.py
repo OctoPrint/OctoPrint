@@ -21,7 +21,6 @@ from collections import deque
 
 import serial
 import wrapt
-from past.builtins import basestring
 
 import octoprint.plugin
 from octoprint.events import Events, eventManager
@@ -1257,7 +1256,7 @@ class MachineCom:
                     continue
 
                 def to_list(data, t):
-                    if isinstance(data, basestring):
+                    if isinstance(data, str):
                         data = list(s.strip() for s in data.split("\n"))
 
                     if isinstance(data, (list, tuple)):
@@ -1292,7 +1291,7 @@ class MachineCom:
             if (
                 isinstance(line, tuple)
                 and len(line) == 2
-                and isinstance(line[0], basestring)
+                and isinstance(line[0], str)
                 and isinstance(line[1], set)
             ):
                 tags = line[1]
@@ -1323,13 +1322,13 @@ class MachineCom:
             if (
                 isinstance(line, tuple)
                 and len(line) == 2
-                and isinstance(line[0], basestring)
+                and isinstance(line[0], str)
                 and isinstance(line[1], set)
             ):
                 # 2-tuple: line + tags
                 ttu = tags_to_use | line[1]
                 line = line[0]
-            elif isinstance(line, basestring):
+            elif isinstance(line, str):
                 # just a line
                 ttu = tags_to_use
             else:
@@ -1338,9 +1337,7 @@ class MachineCom:
 
             self.sendCommand(line, part_of_job=part_of_job, tags=ttu)
 
-        return "\n".join(
-            map(lambda x: x if isinstance(x, basestring) else x[0], scriptLines)
-        )
+        return "\n".join(map(lambda x: x if isinstance(x, str) else x[0], scriptLines))
 
     def startPrint(self, pos=None, tags=None, external_sd=False, user=None):
         if not self.isOperational() or self.isPrinting():
@@ -4736,7 +4733,7 @@ class MachineCom:
                     # noinspection PyCompatibility
                     if isinstance(d, tuple) and len(d) == 2:
                         result.append((d[0], None, d[1]))
-                    elif isinstance(d, basestring):
+                    elif isinstance(d, str):
                         result.append(d)
                 return result
 
@@ -6284,7 +6281,7 @@ def _normalize_command_handler_result(
             # copy the tags
             tags = set(tags)
 
-        if isinstance(handler_result, basestring):
+        if isinstance(handler_result, str):
             # entry is just a string, replace command with it
             command = handler_result
 

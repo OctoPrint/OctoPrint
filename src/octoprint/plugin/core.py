@@ -32,7 +32,6 @@ from os import scandir
 
 import pkg_resources
 import pkginfo
-from past.builtins import unicode
 
 import octoprint.vendor.imp as imp
 from octoprint.util import sv, time_this, to_unicode
@@ -426,7 +425,7 @@ class PluginInfo:
         else:
             ret = ""
 
-        ret += unicode(self)
+        ret += str(self)
 
         if show_bundled:
             ret += (
@@ -2038,7 +2037,7 @@ class PluginManager:
                         show_enabled=show_enabled,
                         enabled_strs=enabled_str,
                     ),
-                    sorted(self.plugins.values(), key=lambda x: unicode(x).lower()),
+                    sorted(self.plugins.values(), key=lambda x: str(x).lower()),
                 )
             )
             legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(

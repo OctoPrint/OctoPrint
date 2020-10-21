@@ -21,7 +21,6 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from past.builtins import basestring
 
 import octoprint.plugin
 from octoprint.access.permissions import OctoPrintPermission, Permissions
@@ -501,7 +500,7 @@ def index():
                         )
                     )
 
-            if lastmodified and not isinstance(lastmodified, basestring):
+            if lastmodified and not isinstance(lastmodified, str):
                 from werkzeug.http import http_date
 
                 lastmodified = http_date(lastmodified)
@@ -1564,7 +1563,7 @@ def _compute_etag_for_i18n(locale, domain, files=None, lastmodified=None):
         files = _get_all_translationfiles(locale, domain)
     if lastmodified is None:
         lastmodified = _compute_date(files)
-    if lastmodified and not isinstance(lastmodified, basestring):
+    if lastmodified and not isinstance(lastmodified, str):
         from werkzeug.http import http_date
 
         lastmodified = http_date(lastmodified)

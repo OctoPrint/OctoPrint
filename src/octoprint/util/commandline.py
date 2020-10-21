@@ -9,7 +9,6 @@ import re
 import time
 
 import sarge
-from past.builtins import unicode
 
 from octoprint.util.platform import CLOSE_FDS
 
@@ -31,10 +30,10 @@ def clean_ansi(line):
     Removes ANSI control codes from ``line``.
 
     Parameters:
-        line (bytes or unicode): the line to process
+        line (bytes or str): the line to process
 
     Returns:
-        (bytes or unicode) The line without any ANSI control codes
+        (bytes or str) The line without any ANSI control codes
 
     Example::
 
@@ -45,7 +44,7 @@ def clean_ansi(line):
         >>> clean_ansi(text) # doctest: +ALLOW_BYTES
         'We hide the cursor here and then show it again here'
     """
-    if isinstance(line, unicode):
+    if isinstance(line, str):
         return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
     return _ANSI_REGEX.sub(b"", line)
 

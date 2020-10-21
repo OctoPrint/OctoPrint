@@ -32,9 +32,6 @@ from collections import ChainMap
 import yaml
 import yaml.parser
 
-# noinspection PyCompatibility
-from past.builtins import basestring
-
 try:
     from collections.abc import KeysView
 except ImportError:
@@ -768,7 +765,7 @@ class Settings:
                                 lambda x: key + "/" + x, self._get_templates(scripts[key])
                             )
                         )
-                    elif isinstance(scripts[key], basestring):
+                    elif isinstance(scripts[key], str):
                         templates.append(key)
                 return templates
 
@@ -1011,7 +1008,7 @@ class Settings:
                 self._logger.exception("Error loading overlay from callable")
                 return
 
-        if isinstance(overlay, basestring):
+        if isinstance(overlay, str):
             if os.path.exists(overlay) and os.path.isfile(overlay):
                 with io.open(overlay, "rt", encoding="utf-8", errors="replace") as f:
                     config = yaml.safe_load(f)
@@ -1828,7 +1825,7 @@ class Settings:
             return value
         if isinstance(value, (int, float)):
             return value != 0
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value.lower() in valid_boolean_trues
         return value is not None
 
@@ -2083,7 +2080,7 @@ class Settings:
     def setBoolean(self, path, value, **kwargs):
         if value is None or isinstance(value, bool):
             self.set(path, value, **kwargs)
-        elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
+        elif isinstance(value, str) and value.lower() in valid_boolean_trues:
             self.set(path, True, **kwargs)
         else:
             self.set(path, False, **kwargs)

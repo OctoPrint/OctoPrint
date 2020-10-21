@@ -60,11 +60,9 @@ def has_requirement(requirement, requirements):
     if requirement is None or requirements is None:
         return False
 
-    # from past.builtins import basestring
-
-    # assert isinstance(requirement, basestring)
+    # assert isinstance(requirement, str)
     # assert isinstance(requirements, (list, tuple))
-    # assert all(list(map(lambda x: x is not None and isinstance(x, basestring), requirements)))
+    # assert all(list(map(lambda x: x is not None and isinstance(x, str), requirements)))
 
     requirement = requirement.lower()
     requirements = [r.lower() for r in requirements]

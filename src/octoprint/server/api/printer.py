@@ -5,7 +5,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import re
 
 from flask import Response, jsonify, make_response, request
-from past.builtins import basestring, long, unicode
 from werkzeug.exceptions import BadRequest
 
 from octoprint.access.permissions import Permissions
@@ -92,7 +91,7 @@ def printerToolCommand():
     ##~~ tool selection
     if command == "select":
         tool = data["tool"]
-        if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
+        if not isinstance(tool, str) or re.match(validation_regex, tool) is None:
             return make_response("Invalid tool: %s" % tool, 400)
         if not tool.startswith("tool"):
             return make_response("Invalid tool for selection: %s" % tool, 400)
@@ -110,7 +109,7 @@ def printerToolCommand():
                 return make_response(
                     "Invalid target for setting temperature: %s" % tool, 400
                 )
-            if not isinstance(value, (int, long, float)):
+            if not isinstance(value, (int, float)):
                 return make_response("Not a number for %s: %r" % (tool, value), 400)
             validated_values[tool] = value
 
@@ -129,7 +128,7 @@ def printerToolCommand():
                 return make_response(
                     "Invalid target for setting temperature: %s" % tool, 400
                 )
-            if not isinstance(value, (int, long, float)):
+            if not isinstance(value, (int, float)):
                 return make_response("Not a number for %s: %r" % (tool, value), 400)
             if not -50 <= value <= 50:
                 return make_response(
@@ -148,13 +147,13 @@ def printerToolCommand():
 
         amount = data["amount"]
         speed = data.get("speed", None)
-        if not isinstance(amount, (int, long, float)):
+        if not isinstance(amount, (int, float)):
             return make_response("Not a number for extrusion amount: %r" % amount, 400)
         printer.extrude(amount, speed=speed, tags=tags)
 
     elif command == "flowrate":
         factor = data["factor"]
-        if not isinstance(factor, (int, long, float)):
+        if not isinstance(factor, (int, float)):
             return make_response("Not a number for flow rate: %r" % factor, 400)
         try:
             printer.flow_rate(factor, tags=tags)
@@ -199,7 +198,7 @@ def printerBedCommand():
         target = data["target"]
 
         # make sure the target is a number
-        if not isinstance(target, (int, long, float)):
+        if not isinstance(target, (int, float)):
             return make_response("Not a number: %r" % target, 400)
 
         # perform the actual temperature command
@@ -210,7 +209,7 @@ def printerBedCommand():
         offset = data["offset"]
 
         # make sure the offset is valid
-        if not isinstance(offset, (int, long, float)):
+        if not isinstance(offset, (int, float)):
             return make_response("Not a number: %r" % offset, 400)
         if not -50 <= offset <= 50:
             return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
@@ -263,7 +262,7 @@ def printerChamberCommand():
         target = data["target"]
 
         # make sure the target is a number
-        if not isinstance(target, (int, long, float)):
+        if not isinstance(target, (int, float)):
             return make_response("Not a number: %r" % target, 400)
 
         # perform the actual temperature command
@@ -274,7 +273,7 @@ def printerChamberCommand():
         offset = data["offset"]
 
         # make sure the offset is valid
-        if not isinstance(offset, (int, long, float)):
+        if not isinstance(offset, (int, float)):
             return make_response("Not a number: %r" % offset, 400)
         if not -50 <= offset <= 50:
             return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
@@ -328,7 +327,7 @@ def printerPrintheadCommand():
         for axis in valid_axes:
             if axis in data:
                 value = data[axis]
-                if not isinstance(value, (int, long, float)):
+                if not isinstance(value, (int, float)):
                     return make_response(
                         "Not a number for axis %s: %r" % (axis, value), 400
                     )
@@ -354,7 +353,7 @@ def printerPrintheadCommand():
 
     elif command == "feedrate":
         factor = data["factor"]
-        if not isinstance(factor, (int, long, float)):
+        if not isinstance(factor, (int, float)):
             return make_response("Not a number for feed rate: %r" % factor, 400)
         try:
             printer.feed_rate(factor, tags=tags)
@@ -489,7 +488,7 @@ def _get_temperature_data(preprocessor):
         tempHistory = printer.get_temperature_history()
 
         limit = 300
-        if "limit" in request.values and unicode(request.values["limit"]).isnumeric():
+        if "limit" in request.values and str(request.values["limit"]).isnumeric():
             limit = int(request.values["limit"])
 
         history = list(tempHistory)

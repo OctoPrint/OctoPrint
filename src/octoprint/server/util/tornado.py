@@ -20,7 +20,6 @@ import tornado.iostream
 import tornado.tcpserver
 import tornado.util
 import tornado.web
-from past.builtins import unicode
 
 import octoprint.util
 
@@ -757,7 +756,7 @@ class WsgiInputContainer:
 
         # determine the request_body to supply as wsgi.input
         if body is not None:
-            if isinstance(body, (bytes, str, unicode)):
+            if isinstance(body, (bytes, str)):
                 request_body = io.BytesIO(tornado.escape.utf8(body))
             else:
                 request_body = body

@@ -27,10 +27,6 @@ from time import monotonic as monotonic_time  # noqa: F401
 from typing import Union
 
 import frozendict
-import past.builtins
-
-# noinspection PyCompatibility
-from past.builtins import basestring, unicode
 
 from octoprint import UMASK
 from octoprint.util.connectivity import ConnectivityChecker  # noqa: F401
@@ -44,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[unicode, bytes], str, str) -> bytes
+    # type: (Union[str, bytes], str, str) -> Union[bytes, None]
     """
     Make sure ``s_or_u`` is a byte string.
 
@@ -58,17 +54,17 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
     if s_or_u is None:
         return s_or_u
 
-    if not isinstance(s_or_u, basestring):
+    if not isinstance(s_or_u, (str, bytes)):
         s_or_u = str(s_or_u)
 
-    if isinstance(s_or_u, unicode):
+    if isinstance(s_or_u, str):
         return s_or_u.encode(encoding, errors=errors)
     else:
         return s_or_u
 
 
 def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[unicode, bytes], str, str) -> unicode
+    # type: (Union[str, bytes], str, str) -> Union[str, None]
     """
     Make sure ``s_or_u`` is a unicode string.
 
@@ -82,7 +78,7 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
     if s_or_u is None:
         return s_or_u
 
-    if not isinstance(s_or_u, basestring):
+    if not isinstance(s_or_u, (str, bytes)):
         s_or_u = str(s_or_u)
 
     if isinstance(s_or_u, bytes):
@@ -665,9 +661,9 @@ def silent_remove(file):
 
 
 def sanitize_ascii(line):
-    if not isinstance(line, basestring):
+    if not isinstance(line, (str, bytes)):
         raise ValueError(
-            "Expected either str or unicode but got {} instead".format(
+            "Expected either str or bytes but got {} instead".format(
                 line.__class__.__name__ if line is not None else None
             )
         )
@@ -1099,8 +1095,8 @@ def guess_mime_type(data):
 def parse_mime_type(mime):
     import cgi
 
-    if not mime or not isinstance(mime, basestring):
-        raise ValueError("mime must be a non empty str or unicode")
+    if not mime or not isinstance(mime, (str, bytes)):
+        raise ValueError("mime must be a non empty str or bytes")
 
     mime, params = cgi.parse_header(mime)
 
@@ -1761,12 +1757,10 @@ class CaseInsensitiveSet(collections.Set):
     """
 
     def __init__(self, *args):
-        self.data = {
-            x.lower() if isinstance(x, past.builtins.basestring) else x for x in args
-        }
+        self.data = {x.lower() if isinstance(x, str) else x for x in args}
 
     def __contains__(self, item):
-        if isinstance(item, past.builtins.basestring):
+        if isinstance(item, str):
             return item.lower() in self.data
         else:
             return item in self.data

@@ -10,16 +10,11 @@ import queue
 import re
 import threading
 import time
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
+from os import scandir
 
 # noinspection PyCompatibility
 from typing import Any
 
-from past.builtins import basestring
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
@@ -430,7 +425,7 @@ class VirtualPrinter:
                     if callable(prepared):
                         prepared(linenumber, self.lastN, data)
                         continue
-                    elif isinstance(prepared, basestring):
+                    elif isinstance(prepared, str):
                         self._send(prepared)
                         continue
                 elif self._rerequest_last:

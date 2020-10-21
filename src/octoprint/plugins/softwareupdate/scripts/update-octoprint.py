@@ -9,8 +9,6 @@ import sys
 import time
 import traceback
 
-from past.builtins import unicode
-
 # default close_fds settings
 if sys.platform == "win32" and sys.version_info < (3, 7):
     CLOSE_FDS = False
@@ -53,7 +51,7 @@ def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 
 def _to_bytes(s_or_u, encoding="utf-8", errors="strict"):
     """Make sure ``s_or_u`` is a str."""
-    if isinstance(s_or_u, unicode):
+    if isinstance(s_or_u, (str, bytes)):
         return s_or_u.encode(encoding, errors=errors)
     else:
         return s_or_u
@@ -202,7 +200,7 @@ def _to_error(*lines):
     if len(lines) == 1:
         if isinstance(lines[0], (list, tuple)):
             lines = lines[0]
-        elif not isinstance(lines[0], (str, unicode)):
+        elif not isinstance(lines[0], (str, bytes)):
             lines = [
                 repr(lines[0]),
             ]

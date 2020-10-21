@@ -7,8 +7,6 @@ import click
 
 click.disable_unicode_literals_warning = True
 
-from past.builtins import basestring
-
 
 class OctoPrintDevelCommands(click.MultiCommand):
     """
@@ -122,7 +120,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     if key in options:
                         val = options[key]
                     else:
-                        if not isinstance(raw, basestring):
+                        if not isinstance(raw, str):
                             raw = str(raw)
                         val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 

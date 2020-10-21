@@ -22,7 +22,6 @@ import tornado.web
 import webassets.updater
 import webassets.utils
 from cachelib import BaseCache
-from past.builtins import basestring, long
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -1187,7 +1186,7 @@ def lastmodified(date):
                     if callable(result):
                         result = result(rv)
 
-                    if not isinstance(result, basestring):
+                    if not isinstance(result, str):
                         from werkzeug.http import http_date
 
                         result = http_date(result)
@@ -1304,7 +1303,7 @@ def with_revalidation_checking(
 
             # set last modified header if not already set
             if lm and response.headers.get("Last-Modified", None) is None:
-                if not isinstance(lm, basestring):
+                if not isinstance(lm, str):
                     from werkzeug.http import http_date
 
                     lm = http_date(lm)
@@ -1335,7 +1334,7 @@ def check_lastmodified(lastmodified):
 
     from datetime import datetime
 
-    if isinstance(lastmodified, (int, long, float)):
+    if isinstance(lastmodified, (int, float)):
         # max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
         # present in CPython 3.6.x up to 3.7.1.
         #

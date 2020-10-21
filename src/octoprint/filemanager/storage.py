@@ -13,7 +13,6 @@ from os import scandir, walk
 
 import pylru
 from emoji import demojize
-from past.builtins import basestring
 
 import octoprint.filemanager
 from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
@@ -1135,7 +1134,7 @@ class LocalFileStorage(StorageInterface):
 
     def canonicalize(self, path):
         name = None
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             path = to_unicode(path)
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]
@@ -1234,7 +1233,7 @@ class LocalFileStorage(StorageInterface):
     def path_in_storage(self, path):
         if isinstance(path, (tuple, list)):
             path = self.join_path(*path)
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             path = to_unicode(path)
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]

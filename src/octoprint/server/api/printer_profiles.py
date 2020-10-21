@@ -6,7 +6,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
-from past.builtins import basestring
 from werkzeug.exceptions import BadRequest
 
 from octoprint.access.permissions import Permissions
@@ -71,7 +70,7 @@ def printerProfilesAdd():
         return make_response("No profile included in request", 400)
 
     base_profile = printerProfileManager.get_default()
-    if "basedOn" in json_data and isinstance(json_data["basedOn"], basestring):
+    if "basedOn" in json_data and isinstance(json_data["basedOn"], str):
         other_profile = printerProfileManager.get(json_data["basedOn"])
         if other_profile is not None:
             base_profile = other_profile
