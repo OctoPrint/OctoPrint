@@ -28,14 +28,10 @@ import re
 import sys
 import time
 from collections import ChainMap
+from collections.abc import KeysView
 
 import yaml
 import yaml.parser
-
-try:
-    from collections.abc import KeysView
-except ImportError:
-    from collections import KeysView
 
 from octoprint.util import (
     CaseInsensitiveSet,

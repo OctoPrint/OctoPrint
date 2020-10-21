@@ -1636,11 +1636,7 @@ class CountedEvent:
 
 class InvariantContainer:
     def __init__(self, initial_data=None, guarantee_invariant=None):
-        try:
-            from collections import Iterable
-        except ImportError:
-            # Python >= 3.8
-            from collections.abc import Iterable
+        from collections.abc import Iterable
         from threading import RLock
 
         if guarantee_invariant is None:
