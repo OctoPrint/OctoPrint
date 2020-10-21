@@ -18,10 +18,7 @@ $(function () {
                     self.access.permissions.STATUS,
                     self.access.permissions.SETTINGS_READ
                 ) &&
-                (!CONFIG_FIRST_RUN ||
-                    (self.coreWizardAcl &&
-                        self.coreWizardAcl.setup() &&
-                        self.coreWizardAcl.decision()))
+                CONFIG_ACCESS_CONTROL_ACTIVE
             ) {
                 location.reload();
             }

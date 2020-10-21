@@ -377,7 +377,6 @@ default_settings = {
     "controls": [],
     "system": {"actions": []},
     "accessControl": {
-        "enabled": True,
         "salt": None,
         "userManager": "octoprint.access.users.FilebasedUserManager",
         "groupManager": "octoprint.access.groups.FilebasedGroupManager",

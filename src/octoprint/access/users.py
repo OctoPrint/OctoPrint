@@ -35,7 +35,6 @@ class UserManager(GroupChangeListener, object):
         self._logger = logging.getLogger(__name__)
         self._session_users_by_session = {}
         self._sessionids_by_userid = {}
-        self._enabled = True
 
         if settings is None:
             settings = s()
@@ -50,29 +49,14 @@ class UserManager(GroupChangeListener, object):
         self._login_status_listeners.remove(listener)
 
     def anonymous_user_factory(self):
-        if self.enabled:
-            return AnonymousUser([self._group_manager.guest_group])
-        else:
-            return AdminUser(
-                [self._group_manager.admin_group, self._group_manager.user_group]
-            )
+        return AnonymousUser([self._group_manager.guest_group])
 
     def api_user_factory(self):
         return ApiUser([self._group_manager.admin_group, self._group_manager.user_group])
 
     @property
     def enabled(self):
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value):
-        self._enabled = value
-
-    def enable(self):
-        self._enabled = True
-
-    def disable(self):
-        self._enabled = False
+        return True
 
     def login_user(self, user):
         self._cleanup_sessions()
@@ -112,7 +96,7 @@ class UserManager(GroupChangeListener, object):
         return user
 
     def logout_user(self, user, stale=False):
-        if user is None or user.is_anonymous or isinstance(user, AdminUser):
+        if user is None or user.is_anonymous:
             return
 
         if isinstance(user, LocalProxy):
@@ -1444,11 +1428,3 @@ class SessionUser(wrapt.ObjectProxy):
 class ApiUser(User):
     def __init__(self, groups):
         User.__init__(self, "_api", "", True, [], groups)
-
-
-##~~ User object to use when access control is disabled
-
-
-class AdminUser(User):
-    def __init__(self, groups):
-        User.__init__(self, "_admin", "", True, [], groups)

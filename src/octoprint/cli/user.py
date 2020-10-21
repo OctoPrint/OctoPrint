@@ -71,8 +71,6 @@ def user(ctx):
                 err=True,
             )
             user_manager = FilebasedUserManager(group_manager, settings=settings)
-        finally:
-            user_manager.enabled = settings.getBoolean(["accessControl", "enabled"])
 
         ctx.obj.user_manager = user_manager
 

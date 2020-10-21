@@ -14,7 +14,7 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
-from octoprint.server import pluginManager, printer
+from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
@@ -83,11 +83,13 @@ def _etag(lm=None):
     etag_factory=_etag,
     lastmodified_factory=_lastmodified,
     unless=lambda: request.values.get("force", "false") in valid_boolean_trues
-    or settings().getBoolean(["server", "firstRun"]),
+    or settings().getBoolean(["server", "firstRun"])
+    or not userManager.has_been_customized(),
 )
 def getSettings():
-    if not Permissions.SETTINGS_READ.can() and not settings().getBoolean(
-        ["server", "firstRun"]
+    if not Permissions.SETTINGS_READ.can() and not (
+        settings().getBoolean(["server", "firstRun"])
+        or not userManager.has_been_customized()
     ):
         abort(403)
 
