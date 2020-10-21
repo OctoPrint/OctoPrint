@@ -6,6 +6,15 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.pi_support.ignore_unrecommended_model"> {{ _('Disable warning about unsupported hardware') }} <label class="label label-important">{{ _('Warning') }}</label>
+            </label>
+            <span class="help-block">{{ _('If you check this, you will no longer get warned if you run OctoPrint on Raspberry Pi models that are not officially supported due to bad performance that can lead to failed prints. Do so at your own risk.') }}</span>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.pi_support.vcgencmd_throttle_check_enabled"> {{ _('Enable under voltage and overheat detection via <code>vcgencmd get_throttled</code>') }}
             </label>
             <span class="help-block">{{ _('This will regularly check with the Pi if something is amiss either with power regulation or CPU/GPU temperature.') }}</span>

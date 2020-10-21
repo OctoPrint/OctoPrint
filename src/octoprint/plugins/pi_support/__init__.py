@@ -252,8 +252,14 @@ class PiSupportPlugin(
     def on_api_get(self, request):
         if not Permissions.PLUGIN_PI_SUPPORT_STATUS.can():
             return flask.abort(403)
-        result = {"throttle_state": self._throttle_state.as_dict()}
-        result.update(self.get_additional_environment())
+
+        environment = self.get_additional_environment()
+
+        result = {
+            "throttle_state": self._throttle_state.as_dict(),
+            "model_unrecommended": "zero" in environment.get("model").lower(),
+        }
+        result.update(environment)
         return flask.jsonify(**result)
 
     # ~~ AssetPlugin
@@ -309,6 +315,7 @@ class PiSupportPlugin(
         return {
             "vcgencmd_throttle_check_enabled": True,
             "vcgencmd_throttle_check_command": _VCGENCMD_THROTTLE,
+            "ignore_unrecommended_model": False,
         }
 
     def get_settings_restricted_paths(self):
