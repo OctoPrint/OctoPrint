@@ -1155,25 +1155,20 @@ def atomic_write(
     # Ensure we create the file in the target dir so our move is atomic. See #3719
     dir = os.path.dirname(filename)
 
-    # NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
-    fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    temp_config = tempfile.NamedTemporaryFile(
+        mode=mode, prefix=prefix, suffix=suffix, delete=False, encoding=encoding, dir=dir
+    )
     try:
-        os.close(fd)
-
-        if "b" in mode:
-            fd = io.open(path, mode=mode)
-        else:
-            fd = io.open(path, mode=mode, encoding=encoding)
-
         try:
-            yield fd
+            yield temp_config
         finally:
-            fd.close()
-        os.chmod(fd.name, permissions)
-        shutil.move(fd.name, filename)
+            temp_config.close()
+
+        os.chmod(temp_config.name, permissions)
+        shutil.move(temp_config.name, filename)
     finally:
         # just in case something went wrong and the temporary file is still there, nuke it now
-        silent_remove(path)
+        silent_remove(temp_config.name)
 
 
 @contextlib.contextmanager
