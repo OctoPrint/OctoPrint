@@ -124,6 +124,10 @@ appearance or to modify the order and presence of the various UI components:
      # acrylic for its frame ;)
      colorTransparent: false
 
+     # Show the internal filename in the files sidebar, if necessary
+     # UI change only
+     showInternalFilename: true
+
      # Configures the order and availability of the UI components
      components:
 

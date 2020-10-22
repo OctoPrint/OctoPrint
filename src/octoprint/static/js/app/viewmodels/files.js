@@ -10,6 +10,8 @@ $(function () {
         self.access = parameters[5];
 
         self.filesListVisible = ko.observable(true);
+        self.showInternalFilename = ko.observable(true);
+
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
@@ -1573,6 +1575,16 @@ $(function () {
             }
             self._dragNDropTarget = e.target;
             self._dragNDropLastOver = Date.now();
+        };
+        self.onEventSettingsUpdated = function () {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
+        };
+        self.onBeforeBinding = function () {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
         };
     }
 

@@ -144,6 +144,7 @@ $(function () {
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
         self.appearance_fuzzyTimes = ko.observable(undefined);
         self.appearance_closeModalsWithClick = ko.observable(undefined);
+        self.appearance_showInternalFilename = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
