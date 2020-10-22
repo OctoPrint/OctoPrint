@@ -3,8 +3,6 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 import unittest
 
-from past.builtins import unicode
-
 import octoprint.util
 
 
@@ -12,18 +10,18 @@ class StringHelperTest(unittest.TestCase):
     def test_to_unicode_unicode(self):
         result = octoprint.util.to_unicode("test")
         self.assertEqual(result, "test")
-        self.assertIsInstance(result, unicode)
+        self.assertIsInstance(result, str)
 
     def test_to_unicode_bytes(self):
         result = octoprint.util.to_unicode(b"test")
         self.assertEqual(result, "test")
-        self.assertIsInstance(result, unicode)
+        self.assertIsInstance(result, str)
 
     def test_to_unicode_bytes_utf8(self):
         data = "äöüß"
         result = octoprint.util.to_unicode(data.encode("utf-8"), encoding="utf-8")
         self.assertEqual(result, data)
-        self.assertIsInstance(result, unicode)
+        self.assertIsInstance(result, str)
 
     def test_to_unicode_bytes_utf8_vs_ascii(self):
         self.assertRaises(
@@ -39,7 +37,7 @@ class StringHelperTest(unittest.TestCase):
             data.encode("utf-8"), encoding="ascii", errors="replace"
         )
         self.assertEqual(result, data.encode("utf-8").decode("ascii", errors="replace"))
-        self.assertIsInstance(result, unicode)
+        self.assertIsInstance(result, str)
 
     def test_to_bytes_bytes(self):
         result = octoprint.util.to_bytes(b"test")

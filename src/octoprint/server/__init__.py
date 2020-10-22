@@ -13,7 +13,6 @@ import re
 import signal
 import sys
 import uuid  # noqa: F401
-from builtins import bytes, range
 from collections import OrderedDict, defaultdict
 
 from babel import Locale
