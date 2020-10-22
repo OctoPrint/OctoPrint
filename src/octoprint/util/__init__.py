@@ -1158,7 +1158,12 @@ def atomic_write(
     dir = os.path.dirname(filename)
 
     temp_config = tempfile.NamedTemporaryFile(
-        mode=mode, prefix=prefix, suffix=suffix, delete=False, encoding=encoding, dir=dir
+        mode=mode,
+        prefix=prefix,
+        suffix=suffix,
+        delete=False,
+        dir=dir,
+        encoding=encoding if "b" not in mode else None,
     )
     try:
         try:
