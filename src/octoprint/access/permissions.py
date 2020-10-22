@@ -25,7 +25,6 @@ class OctoPrintPermission(Permission):
     def convert_to_needs(cls, needs):
         result = []
         for need in needs:
-            # noinspection PyCompatibility
             if isinstance(need, Need):
                 result.append(need)
             elif isinstance(need, Permission):

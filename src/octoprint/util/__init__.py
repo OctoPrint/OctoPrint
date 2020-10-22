@@ -1831,9 +1831,7 @@ def time_this(
 
 
 def generate_api_key():
-    # noinspection PyCompatibility
     import uuid
-    from builtins import bytes
 
     return "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
 

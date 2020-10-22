@@ -13,9 +13,6 @@ import platform
 import socket
 import time
 
-# noinspection PyCompatibility
-from builtins import range
-
 import flask
 import zeroconf
 from flask_babel import gettext

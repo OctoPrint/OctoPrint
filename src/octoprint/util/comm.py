@@ -1317,7 +1317,6 @@ class MachineCom:
             "script:{}".format(scriptName),
         }
         for line in scriptLines:
-            # noinspection PyCompatibility
             if (
                 isinstance(line, tuple)
                 and len(line) == 2

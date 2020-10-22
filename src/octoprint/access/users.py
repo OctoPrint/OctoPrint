@@ -8,9 +8,6 @@ import os
 import time
 import uuid
 
-# noinspection PyCompatibility
-from builtins import bytes, range
-
 import wrapt
 import yaml
 from flask_login import AnonymousUserMixin, UserMixin

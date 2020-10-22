@@ -11,8 +11,6 @@ import re
 import threading
 import time
 from os import scandir
-
-# noinspection PyCompatibility
 from typing import Any
 
 from serial import SerialTimeoutException

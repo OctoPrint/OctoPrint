@@ -1,4 +1,3 @@
-# noinspection PyCompatibility
 import concurrent.futures
 import logging.handlers
 import os
