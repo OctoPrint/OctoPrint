@@ -2004,11 +2004,7 @@ class SlicerPlugin(OctoPrintPlugin):
         ..versionadded:: 1.3.0
         """
         import os
-
-        try:
-            from os import scandir
-        except ImportError:
-            from scandir import scandir
+        from os import scandir
 
         lms = [os.stat(profile_path).st_mtime]
         lms += [

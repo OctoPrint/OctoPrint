@@ -14,6 +14,7 @@ import shutil
 import sys
 import threading
 import time
+from os import scandir
 
 import requests
 import sarge
@@ -26,12 +27,6 @@ from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
 
 # currently configured timelapse
 current = None

@@ -668,12 +668,7 @@ class PluginManagerPlugin(
                 409,
             )
 
-        try:
-            # Py3
-            from urllib.parse import quote as url_quote
-        except ImportError:
-            # Py2
-            from urllib import quote as url_quote
+        from urllib.parse import quote as url_quote
 
         path = os.path.abspath(path)
         if os.sep != "/":

@@ -1310,16 +1310,9 @@ def utmify(link, source=None, medium=None, name=None, term=None, content=None):
     if source is None:
         return link
 
+    import urllib.parse as urlparse
     from collections import OrderedDict
-
-    try:
-        from urllib import urlencode
-
-        import urlparse
-    except ImportError:
-        # python 3
-        import urllib.parse as urlparse
-        from urllib.parse import urlencode
+    from urllib.parse import urlencode
 
     # inspired by https://stackoverflow.com/a/2506477
     parts = list(urlparse.urlparse(link))

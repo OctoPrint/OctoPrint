@@ -407,13 +407,7 @@ class DiscoveryPlugin(
 
         import io
         import threading
-
-        try:
-            # noinspection PyCompatibility
-            from http.client import HTTPResponse  # py3
-        except ImportError:
-            # noinspection PyCompatibility
-            from httplib import HTTPResponse  # py2
+        from http.client import HTTPResponse
 
         class Response(HTTPResponse):
             def __init__(self, response_text):

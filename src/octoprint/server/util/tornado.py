@@ -626,10 +626,8 @@ def _extended_header_value(value):
 
     if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
         # RFC 5987 section 3.2
-        try:
-            from urllib import unquote
-        except ImportError:
-            from urllib.parse import unquote
+        from urllib.parse import unquote
+
         encoding, _, value = value.split("'", 2)
         return unquote(value, encoding=encoding)
     else:
