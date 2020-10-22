@@ -758,13 +758,17 @@ $(function () {
             if (event) {
                 var element = $(event.currentTarget);
                 if (element.length) {
-                    var icon = $("i.fa-trash-o", element);
+                    var icon = $("i.fa-trash-alt", element);
                     if (icon.length) {
                         activateSpinner = function () {
-                            icon.removeClass("fa-trash-o").addClass("fa-spinner fa-spin");
+                            icon.removeClass("fa-trash-alt").addClass(
+                                "fa-spinner fa-spin"
+                            );
                         };
                         finishSpinner = function () {
-                            icon.removeClass("fa-spinner fa-spin").addClass("fa-trash-o");
+                            icon.removeClass("fa-spinner fa-spin").addClass(
+                                "fa-trash-alt"
+                            );
                         };
                     }
                 }

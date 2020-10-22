@@ -13,7 +13,8 @@
 
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/v4-shims.min") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/recovery.css") }}">
 
     {% for url in theming %}
@@ -105,7 +106,7 @@
 
                         <div class="control-group">
                             <div class="controls">
-                                <button class="btn btn-primary" data-bind="enable: !workInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _('Create backup now') }}</button>
+                                <button class="btn btn-primary" data-bind="enable: !workInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _('Create backup now') }}</button>
                             </div>
                         </div>
                     </form>
