@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import os
 import sys
 from distutils.command.build_py import build_py as _build_py
@@ -14,7 +12,7 @@ import octoprint_setuptools  # noqa: F401,E402
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.6,<4"
+PYTHON_REQUIRES = ">=3.7,<4"
 
 # Requirements for setup.py
 SETUP_REQUIRES = [
@@ -55,7 +53,7 @@ INSTALL_REQUIRES = [
     "psutil>=5.7,<6",
     "Click>=7.1.2,<8",
     "feedparser>=5.2.1,<6",
-    "future>=0.18.2,<1",
+    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
     "websocket-client>=0.57,<1",
     "wrapt>=1.12.1,<2",
     "emoji>=0.5.4,<1",
@@ -87,7 +85,7 @@ EXTRA_REQUIRES = {
     ],
     # Dependencies for developing OctoPrint plugins
     "plugins": ["cookiecutter>=1.7.2,<1.8"],
-    # Dependencies for building the documentation - Python 3 required!
+    # Dependencies for building the documentation
     "docs": [
         "sphinx>=3,<4",
         "sphinxcontrib-httpdomain",
