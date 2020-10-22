@@ -104,6 +104,8 @@ class Events(object):
     FIRMWARE_DATA = "FirmwareData"
     TOOL_CHANGE = "ToolChange"
     REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
+    COMMAND_SUPPRESSED = "CommandSuppressed"
+    INVALID_TOOL_REPORTED = "InvalidToolReported"
 
     # Timelapse
     CAPTURE_START = "CaptureStart"

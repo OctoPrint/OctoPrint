@@ -969,7 +969,7 @@ class BackupPlugin(
                 # add list of installed plugins
                 plugins = []
                 plugin_folder = settings.global_get_basefolder("plugins")
-                for key, plugin in plugin_manager.plugins.items():
+                for plugin in plugin_manager.plugins.values():
                     if plugin.bundled or (
                         isinstance(plugin.origin, FolderOrigin)
                         and plugin.origin.folder == plugin_folder
@@ -1101,14 +1101,13 @@ class BackupPlugin(
                     with io.open(configfile, "rt", encoding="utf-8") as f:
                         configdata = yaml.safe_load(f)
 
-                    if configdata.get("accessControl", {}).get("enabled", True):
-                        userfile = os.path.join(temp, "basedir", "users.yaml")
-                        if not os.path.exists(userfile):
-                            if callable(on_invalid_backup):
-                                on_invalid_backup("Backup lacks users.yaml")
-                            if callable(on_restore_failed):
-                                on_restore_failed(path)
-                            return False
+                    userfile = os.path.join(temp, "basedir", "users.yaml")
+                    if not os.path.exists(userfile):
+                        if callable(on_invalid_backup):
+                            on_invalid_backup("Backup lacks users.yaml")
+                        if callable(on_restore_failed):
+                            on_restore_failed(path)
+                        return False
 
                     if callable(on_log_progress):
                         on_log_progress("Unpacked")

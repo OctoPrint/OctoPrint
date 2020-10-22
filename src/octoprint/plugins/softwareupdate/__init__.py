@@ -222,7 +222,7 @@ class SoftwareUpdatePlugin(
                             check_providers[key] = name
 
                             yaml_config = {}
-                            effective_config = default_config
+                            effective_config = copy.deepcopy(default_config)
 
                             if key in overlays:
                                 effective_config = dict_merge(
@@ -534,6 +534,11 @@ class SoftwareUpdatePlugin(
             "minimum_free_storage": 150,
             "check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
             "check_overlay_ttl": 6 * 60,
+            "credentials": {
+                "github": None,
+                "bitbucket_user": None,
+                "bitbucket_password": None,
+            },
         }
 
     def on_settings_load(self):
@@ -590,6 +595,9 @@ class SoftwareUpdatePlugin(
         data["pip_enable_check"] = "pip" in checks
 
         return data
+
+    def get_settings_restricted_paths(self):
+        return {"never": [["credentials"]]}
 
     def on_settings_save(self, data):
         # ~~ plugin settings
@@ -874,7 +882,7 @@ class SoftwareUpdatePlugin(
         if delete is None:
             delete = []
 
-        for k, v in data.items():
+        for k in data:
             if k in defaults and defaults[k] == data[k]:
                 delete.append(k)
 
@@ -1247,6 +1255,8 @@ class SoftwareUpdatePlugin(
         update_possible = False
         information = {}
 
+        credentials = self._settings.get(["credentials"], merged=True)
+
         # we don't want to do the same work twice, so let's use a lock
         if self._get_versions_mutex.acquire(False):
             self._get_versions_data_ready.clear()
@@ -1272,6 +1282,7 @@ class SoftwareUpdatePlugin(
                                 target,
                                 populated_check,
                                 force=force,
+                                credentials=credentials,
                             )
                             futures_to_result[future] = (target, populated_check)
                         except exceptions.UnknownCheckType:
@@ -1445,7 +1456,9 @@ class SoftwareUpdatePlugin(
         hash_update(dict_to_sorted_repr(check))
         return hash.hexdigest()
 
-    def _get_current_version(self, target, check, force=False, online=None):
+    def _get_current_version(
+        self, target, check, force=False, online=None, credentials=None
+    ):
         """
         Determines the current version information for one target based on its check configuration.
         """
@@ -1478,7 +1491,7 @@ class SoftwareUpdatePlugin(
         try:
             version_checker = self._get_version_checker(target, check)
             information, is_current = version_checker.get_latest(
-                target, check, online=online
+                target, check, online=online, credentials=credentials
             )
             if information is not None:
                 if (
@@ -1497,17 +1510,33 @@ class SoftwareUpdatePlugin(
             update_possible = False
             information["needs_online"] = True
         except exceptions.UnknownCheckType:
-            self._logger.warning("Unknown check type %s for %s" % (check["type"], target))
+            self._logger.warning(
+                "Unknown check type {} for {}".format(check["type"], target)
+            )
             update_possible = False
             error = "unknown_check"
         except exceptions.NetworkError:
             self._logger.warning(
-                "Could not check %s for updates due to a network error" % target
+                "Could not check {} for updates due to a network error".format(target)
             )
             update_possible = False
             error = "network"
+        except exceptions.RateLimitCheckError as exc:
+            self._logger.warning(
+                "Could not check {} for updates due to running into a rate limit: {}".format(
+                    target, exc
+                )
+            )
+            update_possible = False
+            error = "ratelimit"
+        except exceptions.CheckError:
+            self._logger.warning(
+                "Could not check {} for updates due to a check error".format(target)
+            )
+            update_possible = False
+            error = "check"
         except Exception:
-            self._logger.exception("Could not check %s for updates" % target)
+            self._logger.exception("Could not check {} for updates".format(target))
             update_possible = False
             error = "unknown"
         else:
@@ -1597,6 +1626,8 @@ class SoftwareUpdatePlugin(
 
         restart_type = None
 
+        credentials = self._settings.get(["credentials"], merged=True)
+
         try:
             self._update_in_progress = True
 
@@ -1616,7 +1647,9 @@ class SoftwareUpdatePlugin(
                 if target not in check_targets:
                     continue
 
-                target_error, target_result = self._perform_update(target, check, force)
+                target_error, target_result = self._perform_update(
+                    target, check, force, credentials=credentials
+                )
                 error = error or target_error
                 if target_result is not None:
                     target_results[target] = target_result
@@ -1689,11 +1722,11 @@ class SoftwareUpdatePlugin(
             else:
                 self._send_client_message("success", {"results": target_results})
 
-    def _perform_update(self, target, check, force):
+    def _perform_update(self, target, check, force, credentials=None):
         online = self._connectivity_checker.online
 
         information, update_available, update_possible, _, _ = self._get_current_version(
-            target, check, online=online
+            target, check, online=online, credentials=credentials
         )
 
         if not update_available and not force:

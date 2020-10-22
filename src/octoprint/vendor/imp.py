@@ -10,9 +10,6 @@ completely removed.
 Licensed under the PSF LICENSE AGREEMENT <https://docs.python.org/3/license.html>
 """
 
-import sys
-assert sys.version_info[0] == 3 and sys.version_info[1] >= 5 # this only works on Python 3.5+
-
 # (Probably) need to stay in _imp
 # noinspection PyCompatibility
 from _imp import (lock_held, acquire_lock, release_lock,

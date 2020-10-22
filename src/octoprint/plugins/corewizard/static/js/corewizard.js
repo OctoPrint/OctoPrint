@@ -9,20 +9,19 @@ $(function () {
         self.confirmedPassword = ko.observable(undefined);
 
         self.setup = ko.observable(false);
-        self.decision = ko.observable();
 
         self.required = false;
 
         self.passwordMismatch = ko.pureComputed(function () {
-            return self.password() != self.confirmedPassword();
+            return self.password() !== self.confirmedPassword();
         });
 
         self.validUsername = ko.pureComputed(function () {
-            return self.username() && self.username().trim() != "";
+            return self.username() && self.username().trim() !== "";
         });
 
         self.validPassword = ko.pureComputed(function () {
-            return self.password() && self.password().trim() != "";
+            return self.password() && self.password().trim() !== "";
         });
 
         self.validData = ko.pureComputed(function () {
@@ -31,11 +30,10 @@ $(function () {
             );
         });
 
-        self.keepAccessControl = function () {
+        self.createAccount = function () {
             if (!self.validData()) return;
 
             var data = {
-                ac: true,
                 user: self.username(),
                 pass1: self.password(),
                 pass2: self.confirmedPassword()
@@ -43,35 +41,27 @@ $(function () {
             self._sendData(data);
         };
 
-        self.disableAccessControl = function () {
-            var message = gettext(
-                "If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>"
-            );
-            showConfirmationDialog({
-                message: message,
-                onproceed: function (e) {
-                    var data = {
-                        ac: false
-                    };
-                    self._sendData(data);
-                }
-            });
-        };
-
         self._sendData = function (data, callback) {
             OctoPrint.postJson("plugin/corewizard/acl", data).done(function () {
                 self.setup(true);
-                self.decision(data.ac);
-                if (data.ac) {
-                    // we now log the user in
-                    var user = data.user;
-                    var pass = data.pass1;
-                    self.loginStateViewModel.login(user, pass, true).done(function () {
-                        if (callback) callback();
-                    });
-                } else {
+
+                // we now log the user in
+                var user = data.user;
+                var pass = data.pass1;
+                self.loginStateViewModel.login(user, pass, true).done(function () {
                     if (callback) callback();
-                }
+                });
+            });
+        };
+
+        self._showDecisionNeededDialog = function () {
+            showMessageDialog({
+                title: gettext("Please set up Access Control"),
+                message: gettext(
+                    "You haven't yet set up access control. You need to setup a " +
+                        'username and password and click "Create Account" before ' +
+                        "continuing."
+                )
             });
         };
 
@@ -85,12 +75,17 @@ $(function () {
             ) {
                 return true;
             }
-            showMessageDialog({
-                title: gettext("Please set up Access Control"),
-                message: gettext(
-                    'You haven\'t yet set up access control. You need to either setup a username and password and click "Keep Access Control Enabled" or click "Disable Access Control" before continuing'
-                )
-            });
+
+            self._showDecisionNeededDialog();
+            return false;
+        };
+
+        self.onBeforeWizardFinish = function () {
+            if (!self.required) return true;
+
+            if (self.setup()) return true;
+
+            self._showDecisionNeededDialog();
             return false;
         };
 
@@ -101,14 +96,6 @@ $(function () {
                 response.corewizard.details &&
                 response.corewizard.details.acl &&
                 response.corewizard.details.acl.required;
-        };
-
-        self.onWizardFinish = function () {
-            if (!self.required) return;
-
-            if (!self.decision()) {
-                return "reload";
-            }
         };
     }
 

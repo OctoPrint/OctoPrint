@@ -13,7 +13,7 @@ from ..exceptions import CannotCheckOffline, ConfigurationInvalid, NetworkError
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.etag")
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, *args, **kwargs):
     if not online:
         raise CannotCheckOffline()
 

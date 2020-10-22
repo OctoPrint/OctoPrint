@@ -161,6 +161,7 @@ default_settings = {
         "disableSdPrintingDetection": False,
         "ackMax": 1,
         "sanityCheckTools": True,
+        "notifySuppressedCommands": "warn",
         "capabilities": {
             "autoreport_temp": True,
             "autoreport_sdstatus": True,
@@ -376,7 +377,6 @@ default_settings = {
     "controls": [],
     "system": {"actions": []},
     "accessControl": {
-        "enabled": True,
         "salt": None,
         "userManager": "octoprint.access.users.FilebasedUserManager",
         "groupManager": "octoprint.access.groups.FilebasedGroupManager",
@@ -455,11 +455,51 @@ class NoSuchSettingsPath(Exception):
 
 
 class InvalidSettings(Exception):
-    def __init__(self, message, line=None, column=None, details=None):
-        self.message = message
+    pass
+
+
+class InvalidYaml(InvalidSettings):
+    def __init__(self, file, line=None, column=None, details=None):
+        self.file = file
         self.line = line
         self.column = column
         self.details = details
+
+    def __str__(self):
+        message = (
+            "Error parsing the configuration file {}, "
+            "it is invalid YAML.".format(self.file)
+        )
+        if self.line and self.column:
+            message += " The parser reported an error on line {}, column {}.".format(
+                self.line, self.column
+            )
+        return message
+
+
+class DuplicateFolderPaths(InvalidSettings):
+    def __init__(self, folders):
+        self.folders = folders
+
+        self.duplicates = {}
+        for folder, path in folders.items():
+            duplicates = []
+            for other_folder, other_path in folders.items():
+                if other_folder == folder:
+                    continue
+                if other_path == path:
+                    duplicates.append(other_folder)
+            if len(duplicates):
+                self.duplicates[folder] = duplicates
+
+    def __str__(self):
+        duplicates = [
+            "{} (duplicates: {})".format(folder, ", ".join(dupes))
+            for folder, dupes in self.duplicates.items()
+        ]
+        return "There are duplicate folder paths configured: {}".format(
+            ", ".join(duplicates)
+        )
 
 
 class HierarchicalChainMap(ChainMap):
@@ -942,7 +982,7 @@ class Settings(object):
                     self._mtime = self.last_modified
 
                 except yaml.YAMLError as e:
-                    details = e.message
+                    details = str(e)
 
                     if hasattr(e, "problem_mark"):
                         line = e.problem_mark.line
@@ -951,8 +991,8 @@ class Settings(object):
                         line = None
                         column = None
 
-                    raise InvalidSettings(
-                        "Invalid YAML file: {}".format(self._configfile),
+                    raise InvalidYaml(
+                        self._configfile,
                         details=details,
                         line=line,
                         column=column,
@@ -964,6 +1004,7 @@ class Settings(object):
 
         if migrate:
             self._migrate_config()
+        self._validate_config()
 
         self._forget_hashes()
 
@@ -1532,6 +1573,15 @@ class Settings(object):
             del config["gcodeViewer"]["enabled"]
             return True
         return False
+
+    def _validate_config(self):
+        # validate uniqueness of folder paths
+        folder_keys = self.get(["folder"], merged=True).keys()
+        folders = dict(
+            (folder_key, self.getBaseFolder(folder_key)) for folder_key in folder_keys
+        )
+        if len(folders.values()) != len(set(folders.values())):
+            raise DuplicateFolderPaths(folders)
 
     def backup(self, suffix=None, path=None, ext=None, hidden=False):
         import shutil

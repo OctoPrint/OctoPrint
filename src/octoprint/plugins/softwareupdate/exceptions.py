@@ -37,10 +37,29 @@ class NetworkError(Exception):
             return "NetworkError"
 
 
+class CheckError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class RateLimitCheckError(CheckError):
+    def __init__(self, message, remaining=None, limit=None, reset=None):
+        super(RateLimitCheckError, self).__init__(message)
+        self.remaining = remaining
+        self.limit = limit
+        self.reset = reset
+
+
 class UpdateError(Exception):
     def __init__(self, message, data):
         self.message = message
         self.data = data
+
+    def __str__(self):
+        return self.message
 
 
 class ScriptError(Exception):

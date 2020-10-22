@@ -62,7 +62,7 @@ $(function () {
 
             var regex = self.filterRegex();
             var lineVisible = function (entry) {
-                return regex == undefined || !entry.line.match(regex);
+                return regex === undefined || !entry.line.match(regex);
             };
 
             var filtered = false;
@@ -95,7 +95,7 @@ $(function () {
 
             var regex = self.filterRegex();
             var lineVisible = function (entry) {
-                return regex == undefined || !entry.line.match(regex);
+                return regex === undefined || !entry.line.match(regex);
             };
 
             var lines = self.log();
@@ -237,7 +237,7 @@ $(function () {
                 var last = self.plainLogLines()[self.plainLogLines().length - 1];
                 var disabled =
                     "--- client too slow, log output disabled while printing ---";
-                if (last != disabled) {
+                if (last !== disabled) {
                     self.plainLogLines.push(disabled);
                 }
                 return;
@@ -265,7 +265,7 @@ $(function () {
                     return self._toInternalFormat(line);
                 })
             );
-            if (newData.length != data.length) {
+            if (newData.length !== data.length) {
                 var cutoff = "--- too many lines to buffer, cut off ---";
                 newLog.push(self._toInternalFormat(cutoff, "cut"));
             }
@@ -280,19 +280,30 @@ $(function () {
 
         self._processHistoryLogData = function (data) {
             self.plainLogLines(data);
-            self.log(
-                _.map(data, function (line) {
-                    return self._toInternalFormat(line);
-                })
-            );
+            self.log(_.map(data, self._toInternalFormat));
             self.updateOutput();
         };
 
-        self._toInternalFormat = function (line, type) {
-            if (type == undefined) {
-                type = "line";
+        self._toInternalFormat = function (line, display, type) {
+            if (display === undefined) {
+                display = "line";
             }
-            return {line: escapeUnprintableCharacters(line), type: type};
+
+            if (type === undefined) {
+                if (line.startsWith("Recv:")) {
+                    type = "recv";
+                } else if (line.startsWith("Send:")) {
+                    type = "send";
+                } else if (line.startsWith("Warn:")) {
+                    type = "warn";
+                }
+            }
+
+            return {
+                line: escapeUnprintableCharacters(line),
+                display: display,
+                type: type
+            };
         };
 
         self._processStateData = function (data) {
@@ -307,7 +318,7 @@ $(function () {
 
         self.updateFilterRegex = function () {
             var filterRegexStr = self.activeFilters().join("|").trim();
-            if (filterRegexStr == "") {
+            if (filterRegexStr === "") {
                 self.filterRegex(undefined);
             } else {
                 self.filterRegex(new RegExp(filterRegexStr));
@@ -446,15 +457,15 @@ $(function () {
         self.handleKeyDown = function (event) {
             var keyCode = event.keyCode;
 
-            if (keyCode == 38 || keyCode == 40) {
+            if (keyCode === 38 || keyCode === 40) {
                 if (
-                    keyCode == 38 &&
+                    keyCode === 38 &&
                     self.cmdHistory.length > 0 &&
                     self.cmdHistoryIdx > 0
                 ) {
                     self.cmdHistoryIdx--;
                 } else if (
-                    keyCode == 40 &&
+                    keyCode === 40 &&
                     self.cmdHistoryIdx < self.cmdHistory.length - 1
                 ) {
                     self.cmdHistoryIdx++;
@@ -478,7 +489,7 @@ $(function () {
         };
 
         self.handleKeyUp = function (event) {
-            if (event.keyCode == 13) {
+            if (event.keyCode === 13) {
                 self.sendCommand();
             }
 
@@ -487,12 +498,60 @@ $(function () {
         };
 
         self.onAfterTabChange = function (current, previous) {
-            self.tabActive = current == "#term";
+            self.tabActive = current === "#term";
             self.updateOutput();
         };
 
         self.onBrowserTabVisibilityChange = function (status) {
             self.updateOutput();
+        };
+
+        self.onEventCommandSuppressed = function (payload) {
+            var setting = self.settings.settings.serial.notifySuppressedCommands();
+
+            if (
+                setting === "never" ||
+                (setting === "warn" && payload.severity === "info")
+            ) {
+                return;
+            }
+
+            var severity = payload.severity;
+            if (severity === "warn") {
+                severity = "error";
+            } else if (severity === "info") {
+                severity = "warn";
+            }
+
+            var text =
+                "<p>" +
+                gettext(
+                    "The command <code>%(command)s</code> was not sent " +
+                        "to the printer:"
+                ) +
+                "</p><p><pre>%(message)s</pre></p>";
+
+            new PNotify({
+                title: gettext("Suppressed command"),
+                text: _.sprintf(text, payload),
+                type: severity,
+                hide: false
+            });
+        };
+
+        self.onEventInvalidToolReported = function (payload) {
+            new PNotify({
+                title: gettext("Invalid tool reported"),
+                text: _.sprintf(
+                    gettext(
+                        "Your printer reported tool T%(tool)d as invalid, " +
+                            "reverting back to T%(fallback)d"
+                    ),
+                    payload
+                ),
+                type: "error",
+                hide: false
+            });
         };
     }
 

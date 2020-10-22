@@ -262,7 +262,7 @@ def enable_safemode(ctx, **kwargs):
             get_ctx_obj_option(ctx, "configfile", None),
         )
     except FatalStartupError as e:
-        click.echo(e.message, err=True)
+        click.echo(str(e), err=True)
         click.echo("There was a fatal error initializing the settings manager.", err=True)
         ctx.exit(-1)
     else:

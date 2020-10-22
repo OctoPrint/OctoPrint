@@ -44,7 +44,7 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
     return reference["hash"]
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
     from ..exceptions import ConfigurationInvalid
 
     if "user" not in check or "repo" not in check:
@@ -59,6 +59,10 @@ def get_latest(target, check, online=True):
 
     api_user = check.get("api_user")
     api_password = check.get("api_password")
+
+    if api_user is None and api_password is None and credentials:
+        api_user = credentials.get("bitbucket_user")
+        api_password = credentials.get("bitbucket_password")
 
     current = check.get("current")
 

@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -99,7 +99,7 @@ def _is_current(release_information):
     return remote_version <= local_version
 
 
-def get_latest(target, check, online=True):
+def get_latest(target, check, online=True, *args, **kwargs):
     from ..exceptions import CannotUpdateOffline
 
     if not online and not check.get("offline", False):

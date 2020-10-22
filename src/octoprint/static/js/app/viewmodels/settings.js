@@ -312,13 +312,45 @@ $(function () {
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
+
+        var checkForDuplicateFolders = function () {
+            _.each(folderTypes, function (folderType) {
+                var path = self["folder_" + folderType]();
+                var duplicate = false;
+                _.each(folderTypes, function (otherFolderType) {
+                    if (folderType !== otherFolderType) {
+                        duplicate =
+                            duplicate || path === self["folder_" + otherFolderType]();
+                    }
+                });
+                self.testFolderConfigDuplicate[folderType](duplicate);
+            });
+        };
+
         self.testFolderConfigText = {};
         self.testFolderConfigOk = {};
         self.testFolderConfigBroken = {};
+        self.testFolderConfigDuplicate = {};
+        self.testFolderConfigError = {};
+        self.testFolderConfigSuccess = {};
         _.each(folderTypes, function (folderType) {
             self.testFolderConfigText[folderType] = ko.observable("");
             self.testFolderConfigOk[folderType] = ko.observable(false);
             self.testFolderConfigBroken[folderType] = ko.observable(false);
+            self.testFolderConfigDuplicate[folderType] = ko.observable(false);
+            self.testFolderConfigError[folderType] = ko.pureComputed(function () {
+                return (
+                    self.testFolderConfigBroken[folderType]() ||
+                    self.testFolderConfigDuplicate[folderType]()
+                );
+            });
+            self.testFolderConfigSuccess[folderType] = ko.pureComputed(function () {
+                return (
+                    self.testFolderConfigOk[folderType]() &&
+                    !self.testFolderConfigDuplicate[folderType]()
+                );
+            });
+            self["folder_" + folderType].subscribe(checkForDuplicateFolders);
         });
         self.testFolderConfigReset = function () {
             _.each(folderTypes, function (folderType) {
@@ -327,6 +359,13 @@ $(function () {
                 self.testFolderConfigBroken[folderType](false);
             });
         };
+        self.testFoldersDuplicate = ko.pureComputed(function () {
+            var foundDupe = false;
+            _.each(folderTypes, function (folderType) {
+                foundDupe = foundDupe || self.testFolderConfigDuplicate[folderType]();
+            });
+            return foundDupe;
+        });
 
         self.observableCopies = {
             feature_waitForStart: "serial_waitForStart",
@@ -1137,7 +1176,7 @@ $(function () {
             // map local observables based on our existing data
             var dataFromObservables = mapFromObservables(data, specialMappings);
 
-            data = _.extend(data, dataFromObservables);
+            data = _.merge(data, dataFromObservables);
             return data;
         };
 
@@ -1311,18 +1350,26 @@ $(function () {
             } else {
                 options = {
                     success: successCallback,
-                    sending: setAsSending == true
+                    sending: setAsSending === true
                 };
             }
 
             self.settingsDialog.trigger("beforeSave");
 
             self.sawUpdateEventWhileSending = false;
-            self.sending(data == undefined || options.sending || false);
+            self.sending(data === undefined || options.sending || false);
 
-            if (data == undefined) {
+            if (data === undefined) {
                 // we also only send data that actually changed when no data is specified
-                data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
+                var localData = self.getLocalData();
+                data = getOnlyChangedData(localData, self.lastReceivedSettings);
+            }
+
+            // final validation
+            if (self.testFoldersDuplicate()) {
+                // duplicate folders configured, we refuse to send any folder config
+                // to the server
+                delete data.folder;
             }
 
             self.active = true;

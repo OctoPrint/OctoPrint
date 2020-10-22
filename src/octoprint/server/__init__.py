@@ -175,7 +175,7 @@ def on_user_logged_out(sender, user=None):
 
 
 def load_user(id):
-    if id is None or not userManager.enabled:
+    if id is None:
         return None
 
     if id == "_api":
@@ -553,10 +553,6 @@ class Server(object):
                     "falling back to FilebasedUserManager!".format(user_manager_name)
                 )
                 userManager = octoprint.access.users.FilebasedUserManager(groupManager)
-            finally:
-                userManager.enabled = self._settings.getBoolean(
-                    ["accessControl", "enabled"]
-                )
         components.update({"user_manager": userManager})
 
         # create printer instance
@@ -599,7 +595,7 @@ class Server(object):
                         kwargs["tags"] = tags
                         return f(*args, **kwargs)
 
-                    setattr(wrapper, "__tagwrapped__", True)
+                    wrapper.__tagwrapped__ = True
                     return wrapper
 
                 class TaggedFuncsPrinter(wrapt.ObjectProxy):
@@ -1349,7 +1345,7 @@ class Server(object):
         if "X-Locale" in request.headers:
             return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
 
-        if hasattr(g, "identity") and g.identity and userManager.enabled:
+        if hasattr(g, "identity") and g.identity:
             userid = g.identity.id
             try:
                 user_language = userManager.get_user_setting(

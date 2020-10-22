@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -71,8 +71,6 @@ def user(ctx):
                 err=True,
             )
             user_manager = FilebasedUserManager(group_manager, settings=settings)
-        finally:
-            user_manager.enabled = settings.getBoolean(["accessControl", "enabled"])
 
         ctx.obj.user_manager = user_manager
 

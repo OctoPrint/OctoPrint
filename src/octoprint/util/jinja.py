@@ -121,7 +121,7 @@ def get_all_template_paths(loader):
     def walk_folder(folder):
         files = []
         walk_dir = walk(folder, followlinks=True)
-        for dirpath, dirnames, filenames in walk_dir:
+        for dirpath, _, filenames in walk_dir:
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
                 files.append(path)

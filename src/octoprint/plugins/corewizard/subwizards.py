@@ -63,10 +63,10 @@ class WebcamSubwizard(object):
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class AclSubwizard(object):
     def _is_acl_wizard_firstrunonly(self):
-        return True
+        return False
 
     def _is_acl_wizard_required(self):
-        return self._user_manager.enabled and not self._user_manager.has_been_customized()
+        return not self._user_manager.has_been_customized()
 
     def _get_acl_wizard_details(self):
         return {"required": self._is_acl_wizard_required()}
@@ -81,11 +81,11 @@ class AclSubwizard(object):
     def acl_wizard_api(self):
         from flask import abort, request
 
-        from octoprint.server.api import NO_CONTENT, valid_boolean_trues
+        from octoprint.server.api import NO_CONTENT
 
         if (
             not self._settings.global_get(["server", "firstRun"])
-            or self._user_manager.has_been_customized()
+            and self._user_manager.has_been_customized()
         ):
             abort(404)
 
@@ -94,17 +94,12 @@ class AclSubwizard(object):
             data = request.values
 
         if (
-            "ac" in data
-            and data["ac"] in valid_boolean_trues
-            and "user" in data
+            "user" in data
             and "pass1" in data
             and "pass2" in data
             and data["pass1"] == data["pass2"]
         ):
             # configure access control
-            self._settings.global_set_boolean(["accessControl", "enabled"], True)
-            self._user_manager.enable()
-
             self._user_manager.add_user(
                 data["user"],
                 data["pass1"],
@@ -113,10 +108,6 @@ class AclSubwizard(object):
                 [USER_GROUP, ADMIN_GROUP],
                 overwrite=True,
             )
-        elif "ac" in data and data["ac"] not in valid_boolean_trues:
-            # disable access control
-            self._settings.global_set_boolean(["accessControl", "enabled"], False)
-            self._user_manager.disable()
         self._settings.save()
         return NO_CONTENT
 

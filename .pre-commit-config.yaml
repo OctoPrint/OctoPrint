@@ -5,8 +5,12 @@ repos:
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: check-case-conflict
+      - id: check-json
       - id: check-yaml
       - id: check-toml
+      - id: check-merge-conflict
+      - id: fix-encoding-pragma
   - repo: https://github.com/OctoPrint/codemods
     rev: main
     hooks:
@@ -32,6 +36,8 @@ repos:
     rev: 3.8.1
     hooks:
       - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
   - repo: https://github.com/prettier/prettier
     rev: master
     hooks:

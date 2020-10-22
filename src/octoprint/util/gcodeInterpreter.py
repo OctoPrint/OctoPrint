@@ -534,13 +534,13 @@ class gcode(object):
                     )
 
                     if len(currentE) <= currentExtruder:
-                        for i in range(len(currentE), currentExtruder + 1):
+                        for _ in range(len(currentE), currentExtruder + 1):
                             currentE.append(0.0)
                     if len(maxExtrusion) <= currentExtruder:
-                        for i in range(len(maxExtrusion), currentExtruder + 1):
+                        for _ in range(len(maxExtrusion), currentExtruder + 1):
                             maxExtrusion.append(0.0)
                     if len(totalExtrusion) <= currentExtruder:
-                        for i in range(len(totalExtrusion), currentExtruder + 1):
+                        for _ in range(len(totalExtrusion), currentExtruder + 1):
                             totalExtrusion.append(0.0)
 
             if throttle is not None:

@@ -332,7 +332,6 @@ def index():
 
     if (
         request.headers.get("X-Preemptive-Recording", "no") == "no"
-        and userManager.enabled
         and userManager.has_been_customized()
     ):
         if not _has_permissions(Permissions.STATUS, Permissions.SETTINGS_READ):
@@ -376,7 +375,6 @@ def index():
 
     now = datetime.datetime.utcnow()
 
-    enable_accesscontrol = userManager.enabled
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
     enable_sd_support = settings().get(["feature", "sdSupport"])
@@ -387,19 +385,12 @@ def index():
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
     def default_template_filter(template_type, template_key):
-        if template_type == "navbar":
-            return template_key != "login" or enable_accesscontrol
-        elif template_type == "tab":
+        if template_type == "tab":
             return template_key != "timelapse" or enable_timelapse
-        elif template_type == "settings":
-            return template_key != "accesscontrol" or enable_accesscontrol
-        elif template_type == "usersettings":
-            return enable_accesscontrol
         else:
             return True
 
     default_additional_etag = [
-        enable_accesscontrol,
         enable_timelapse,
         enable_loading_animation,
         enable_sd_support,
@@ -613,7 +604,7 @@ def index():
         )
 
         wizard = wizard_active(filtered_templates)
-        accesscontrol_active = enable_accesscontrol and userManager.has_been_customized()
+        accesscontrol_active = userManager.has_been_customized()
 
         render_kwargs = _get_render_kwargs(
             filtered_templates, _plugin_names, _plugin_vars, now
@@ -622,7 +613,7 @@ def index():
             {
                 "enableWebcam": enable_webcam,
                 "enableTemperatureGraph": enable_temperature_graph,
-                "enableAccessControl": enable_accesscontrol,
+                "enableAccessControl": True,
                 "accessControlActive": accesscontrol_active,
                 "enableLoadingAnimation": enable_loading_animation,
                 "enableSdSupport": enable_sd_support,

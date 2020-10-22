@@ -100,6 +100,7 @@ class ActionCommandNotificationPlugin(
                 "name": gettext("Printer Notifications"),
                 "icon": "bell-o",
                 "styles_wrapper": ["display: none"],
+                "template_header": "action_command_notification_sidebar_header.jinja2",
                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
                 " && settings.settings.plugins.action_command_notification.enable()",
             },

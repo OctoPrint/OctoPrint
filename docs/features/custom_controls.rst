@@ -172,9 +172,10 @@ Controls
        turn the button red.
    * - ``enabled``
      - (Optional) A JavaScript snippet returning either ``true`` or ``false`` determining whether the control
-       should be enabled or not. This allow to override the default logic for this (disabled if printer is offline
-       or currently printing). The JavaScript snippet is ``eval``'d and processed in a context where the control
-       it is part of is provided as local variable ``data`` and the ``ControlViewModel`` is available as ``self``.
+       should be enabled or not. This allows to override the default logic for the enable state
+       of the control (disabled if printer is offline). The JavaScript snippet is ``eval``'d and processed
+       in a context where the control it is part of is provided as local variable ``data`` and the
+       ``ControlViewModel`` is available as ``self``.
    * - ``input``
      - (Optional) A list of definitions of input parameters for a ``command`` or ``commands``, to be rendered as
        additional input fields. ``command``/``commands`` may contain placeholders to be replaced by the values obtained
@@ -213,16 +214,27 @@ Controls
      - (Optional) A :ref:`regular expression <re-syntax>` to
        match against lines received from the printer to retrieve information from it (e.g. specific output). Together
        with ``template`` this allows rendition of received data from the printer within the UI.
+
+       **Please also read the note below**.
    * - ``template``
      - (Optional) A template to use for rendering the match of ``regex``. May contain placeholders in
        :ref:`Python Format String Syntax <formatstrings>` for either named
        groups within the regex (e.g. ``Temperature: {temperature}`` for a regex ``T:\s*(?P<temperature>\d+(\.\d*)``)
        or positional groups within the regex (e.g. ``Position: X={0}, Y={1}, Z={2}, E={3}`` for a regex
        ``X:([0-9.]+) Y:([0-9.]+) Z:([0-9.]+) E:([0-9.]+)``).
+
+       **Please also read the note below**.
    * - ``confirm``
      - (Optional) A text to display to the user to confirm his button press. Can be used with sensitive custom controls
        like changing EEPROM values in order to prevent accidental clicks. The text will be displayed in a confirmation
        dialog like in :numref:`fig-configuration-customcontrols-confirm`.
+
+.. note::
+
+   ``regex`` and ``template`` are only supported for controls that are defined through
+   ``config.yaml``. These control properties aren't supported for controls added only in
+   the frontend by the :ref:`getAdditionalControls <sec-plugins-viewmodels-callbacks>`
+   view model callback.
 
 .. _fig-configuration-customcontrols-confirm:
 .. figure:: ../images/features-custom_controls-confirm.png
