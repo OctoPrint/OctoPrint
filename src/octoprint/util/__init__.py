@@ -38,8 +38,9 @@ from octoprint.util.net import (  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[str, bytes], str, str) -> Union[bytes, None]
+def to_bytes(
+    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+) -> Union[bytes, None]:
     """
     Make sure ``s_or_u`` is a byte string.
 
@@ -62,8 +63,9 @@ def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
         return s_or_u
 
 
-def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[str, bytes], str, str) -> Union[str, None]
+def to_unicode(
+    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+) -> Union[str, None]:
     """
     Make sure ``s_or_u`` is a unicode string.
 

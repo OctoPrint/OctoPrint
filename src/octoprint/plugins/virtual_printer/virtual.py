@@ -508,8 +508,7 @@ class VirtualPrinter:
     ##~~ command implementations
 
     # noinspection PyUnusedLocal
-    def _gcode_T(self, code, data):
-        # type: (str, str) -> None
+    def _gcode_T(self, code: str, data: str) -> None:
         t = int(code)
         if 0 <= t < self.extruderCount:
             self.currentExtruder = t
@@ -519,7 +518,6 @@ class VirtualPrinter:
 
     # noinspection PyUnusedLocal
     def _gcode_F(self, code, data):
-        # type: (str, str) -> bool
         if self._supportF:
             self._send("echo:changed F value")
             return False
@@ -527,77 +525,64 @@ class VirtualPrinter:
             self._send(self._error("command_unknown", "F"))
             return True
 
-    def _gcode_M104(self, data):
-        # type: (str) -> None
+    def _gcode_M104(self, data: str) -> None:
         self._parseHotendCommand(data)
 
-    def _gcode_M109(self, data):
-        # type: (str) -> None
+    def _gcode_M109(self, data: str) -> None:
         self._parseHotendCommand(data, wait=True, support_r=True)
 
-    def _gcode_M140(self, data):
-        # type: (str) -> None
+    def _gcode_M140(self, data: str) -> None:
         self._parseBedCommand(data)
 
-    def _gcode_M190(self, data):
-        # type: (str) -> None
+    def _gcode_M190(self, data: str) -> None:
         self._parseBedCommand(data, wait=True, support_r=True)
 
-    def _gcode_M141(self, data):
+    def _gcode_M141(self, data: str) -> None:
         self._parseChamberCommand(data)
 
-    def _gcode_M191(self, data):
+    def _gcode_M191(self, data: str) -> None:
         self._parseChamberCommand(data, wait=True, support_r=True)
 
     # noinspection PyUnusedLocal
-    def _gcode_M105(self, data):
-        # type: (str) -> bool
+    def _gcode_M105(self, data: str) -> bool:
         self._processTemperatureQuery()
         return True
 
     # noinspection PyUnusedLocal
-    def _gcode_M20(self, data):
-        # type: (str) -> None
+    def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
             self._listSd()
 
     # noinspection PyUnusedLocal
-    def _gcode_M21(self, data):
-        # type: (str) -> None
+    def _gcode_M21(self, data: str) -> None:
         self._sdCardReady = True
         self._send("SD card ok")
 
     # noinspection PyUnusedLocal
-    def _gcode_M22(self, data):
-        # type: (str) -> None
+    def _gcode_M22(self, data: str) -> None:
         self._sdCardReady = False
 
-    def _gcode_M23(self, data):
-        # type: (str) -> None
+    def _gcode_M23(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._selectSdFile(filename)
 
     # noinspection PyUnusedLocal
-    def _gcode_M24(self, data):
-        # type: (str) -> None
+    def _gcode_M24(self, data: str) -> None:
         if self._sdCardReady:
             self._startSdPrint()
 
     # noinspection PyUnusedLocal
-    def _gcode_M25(self, data):
-        # type: (str) -> None
+    def _gcode_M25(self, data: str) -> None:
         if self._sdCardReady:
             self._pauseSdPrint()
 
-    def _gcode_M26(self, data):
-        # type: (str) -> None
+    def _gcode_M26(self, data: str) -> None:
         if self._sdCardReady:
             pos = int(re.search(r"S([0-9]+)", data).group(1))
             self._setSdPos(pos)
 
-    def _gcode_M27(self, data):
-        # type: (str) -> None
+    def _gcode_M27(self, data: str) -> None:
         def report():
             if self._sdCardReady:
                 self._reportSdStatus()
@@ -616,26 +601,22 @@ class VirtualPrinter:
 
         report()
 
-    def _gcode_M28(self, data):
-        # type: (str) -> None
+    def _gcode_M28(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._writeSdFile(filename)
 
     # noinspection PyUnusedLocal
-    def _gcode_M29(self, data):
-        # type: (str) -> None
+    def _gcode_M29(self, data: str) -> None:
         if self._sdCardReady:
             self._finishSdFile()
 
-    def _gcode_M30(self, data):
-        # type: (str) -> None
+    def _gcode_M30(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._deleteSdFile(filename)
 
-    def _gcode_M33(self, data):
-        # type: (str) -> None
+    def _gcode_M33(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             if filename.startswith("/"):
@@ -645,8 +626,7 @@ class VirtualPrinter:
             if file is not None:
                 self._send(file["name"])
 
-    def _gcode_M113(self, data):
-        # type: (str) -> None
+    def _gcode_M113(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -654,8 +634,7 @@ class VirtualPrinter:
                 self._busyInterval = interval
 
     # noinspection PyUnusedLocal
-    def _gcode_M114(self, data):
-        # type: (str) -> bool
+    def _gcode_M114(self, data: str) -> bool:
         m114FormatString = self._settings.get(["m114FormatString"])
         e = dict((index, value) for index, value in enumerate(self._lastE))
         e["current"] = self._lastE[self.currentExtruder]
@@ -684,8 +663,7 @@ class VirtualPrinter:
         return True
 
     # noinspection PyUnusedLocal
-    def _gcode_M115(self, data):
-        # type: (str) -> None
+    def _gcode_M115(self, data: str) -> None:
         output = self._m115FormatString.format(firmware_name=self._firmwareName)
         self._send(output)
 
@@ -693,14 +671,12 @@ class VirtualPrinter:
             for cap, enabled in self._capabilities.items():
                 self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
 
-    def _gcode_M117(self, data):
-        # type: (str) -> None
+    def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
             self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
 
-    def _gcode_M155(self, data):
-        # type: (str) -> None
+    def _gcode_M155(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -715,26 +691,22 @@ class VirtualPrinter:
             else:
                 self._temperature_reporter = None
 
-    def _gcode_M220(self, data):
-        # type: (str) -> None
+    def _gcode_M220(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             self._feedrate_multiplier = float(matchS.group(1))
 
-    def _gcode_M221(self, data):
-        # type: (str) -> None
+    def _gcode_M221(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             self._flowrate_multiplier = float(matchS.group(1))
 
     # noinspection PyUnusedLocal
-    def _gcode_M400(self, data):
-        # type: (str) -> None
+    def _gcode_M400(self, data: str) -> None:
         self.buffered.join()
 
     # noinspection PyUnusedLocal
-    def _gcode_M600(self, data):
-        # type: (str) -> None
+    def _gcode_M600(self, data: str) -> bool:
         self._send("//action:paused")
         self._showPrompt(
             "Heater Timeout",
@@ -746,21 +718,18 @@ class VirtualPrinter:
         return True  # handled as we don't want to send an ok now, only when finishing the busy
 
     # noinspection PyUnusedLocal
-    def _gcode_M876(self, data):
-        # type: (str) -> None
+    def _gcode_M876(self, data: str) -> None:
         self._hidePrompt()
         if self._busy == "paused for user":
             self._busy = None
 
     # noinspection PyUnusedLocal
-    def _gcode_M999(self, data):
-        # type: (str) -> None
+    def _gcode_M999(self, data: str) -> None:
         # mirror Marlin behaviour
         self._send("Resend: 1")
 
     # noinspection PyUnusedLocal
-    def _gcode_G20(self, data):
-        # type: (str) -> None
+    def _gcode_G20(self, data: str) -> None:
         self._unitModifier = 1.0 / 2.54
         if self._lastX is not None:
             self._lastX *= 2.54
@@ -772,8 +741,7 @@ class VirtualPrinter:
             self._lastE = [e * 2.54 if e is not None else None for e in self._lastE]
 
     # noinspection PyUnusedLocal
-    def _gcode_G21(self, data):
-        # type: (str) -> None
+    def _gcode_G21(self, data: str) -> None:
         self._unitModifier = 1.0
         if self._lastX is not None:
             self._lastX /= 2.54
@@ -785,25 +753,20 @@ class VirtualPrinter:
             self._lastE = [e / 2.54 if e is not None else None for e in self._lastE]
 
     # noinspection PyUnusedLocal
-    def _gcode_G90(self, data):
-        # type: (str) -> None
+    def _gcode_G90(self, data: str) -> None:
         self._relative = False
 
     # noinspection PyUnusedLocal
-    def _gcode_G91(self, data):
-        # type: (str) -> None
+    def _gcode_G91(self, data: str) -> None:
         self._relative = True
 
-    def _gcode_G92(self, data):
-        # type: (str) -> None
+    def _gcode_G92(self, data: str) -> None:
         self._setPosition(data)
 
-    def _gcode_G28(self, data):
-        # type: (str) -> None
+    def _gcode_G28(self, data: str) -> None:
         self._home(data)
 
-    def _gcode_G0(self, data):
-        # type: (str) -> None
+    def _gcode_G0(self, data: str) -> None:
         # simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
         self.buffered.put(data)
 
@@ -811,8 +774,7 @@ class VirtualPrinter:
     _gcode_G2 = _gcode_G0
     _gcode_G3 = _gcode_G0
 
-    def _gcode_G4(self, data):
-        # type: (str) -> None
+    def _gcode_G4(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         matchP = re.search(r"P([0-9]+)", data)
 
@@ -831,8 +793,7 @@ class VirtualPrinter:
             time.sleep(_timeout)
 
     # noinspection PyUnusedLocal
-    def _gcode_G33(self, data):
-        # type: (str) -> None
+    def _gcode_G33(self, data: str) -> None:
         self._send("G33 Auto Calibrate")
         self._send("Will take ~60s")
         timeout = 60
@@ -848,8 +809,7 @@ class VirtualPrinter:
     ##~~ further helpers
 
     # noinspection PyMethodMayBeStatic
-    def _calculate_checksum(self, line):
-        # type: (bytes) -> int
+    def _calculate_checksum(self, line: bytes) -> int:
         checksum = 0
         for c in bytearray(line):
             checksum ^= c
@@ -861,8 +821,9 @@ class VirtualPrinter:
         self._killed = True
         self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
-    def _triggerResend(self, expected=None, actual=None, checksum=None):
-        # type: (int, int, int) -> None
+    def _triggerResend(
+        self, expected: int = None, actual: int = None, checksum: int = None
+    ) -> None:
         with self._incoming_lock:
             if expected is None:
                 expected = self.lastN + 1
@@ -884,8 +845,7 @@ class VirtualPrinter:
 
             request_resend()
 
-    def _debugTrigger(self, data):
-        # type: (str) -> None
+    def _debugTrigger(self, data: str) -> None:
         if data == "" or data == "help" or data == "?":
             usage = """
             OctoPrint Virtual Printer debug commands
@@ -1112,8 +1072,7 @@ class VirtualPrinter:
             }
         return result
 
-    def _selectSdFile(self, filename, check_already_open=False):
-        # type: (str, bool) -> None
+    def _selectSdFile(self, filename: str, check_already_open: bool = False) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
 
@@ -1225,8 +1184,9 @@ class VirtualPrinter:
                 output = "{} {}".format(ok, output)
         self._send(output)
 
-    def _parseHotendCommand(self, line, wait=False, support_r=False):
-        # type: (str, bool, bool) -> None
+    def _parseHotendCommand(
+        self, line: str, wait: bool = False, support_r: bool = False
+    ) -> None:
         only_wait_if_higher = True
         tool = 0
         toolMatch = re.search(r"T([0-9]+)", line)
@@ -1290,8 +1250,7 @@ class VirtualPrinter:
         if wait:
             self._waitForHeatup("chamber", only_wait_if_higher)
 
-    def _performMove(self, line):
-        # type: (str) -> None
+    def _performMove(self, line: str) -> None:
         matchX = re.search(r"X(-?[0-9.]+)", line)
         matchY = re.search(r"Y(-?[0-9.]+)", line)
         matchZ = re.search(r"Z(-?[0-9.]+)", line)
@@ -1451,8 +1410,7 @@ class VirtualPrinter:
             if e:
                 self._lastE = 0
 
-    def _writeSdFile(self, filename):
-        # type: (str) -> None
+    def _writeSdFile(self, filename: str) -> None:
         filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
@@ -1575,8 +1533,7 @@ class VirtualPrinter:
         finally:
             self._heatingUp = False
 
-    def _deleteSdFile(self, filename):
-        # type: (str) -> None
+    def _deleteSdFile(self, filename: str) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
         files = self._mappedSdList()
@@ -1671,8 +1628,7 @@ class VirtualPrinter:
     def _hidePrompt(self):
         self._send("//action:prompt_end")
 
-    def write(self, data):
-        # type: (bytes) -> int
+    def write(self, data: str) -> int:
         data = to_bytes(data, errors="replace")
         u_data = to_unicode(data, errors="replace")
 
@@ -1706,8 +1662,7 @@ class VirtualPrinter:
                 )
                 raise SerialTimeoutException()
 
-    def readline(self):
-        # type: () -> bytes
+    def readline(self) -> bytes:
         if self._debug_awol:
             time.sleep(self._read_timeout)
             return b""
@@ -1778,8 +1733,7 @@ class VirtualPrinter:
             ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize()
         )
 
-    def _error(self, error, *args, **kwargs):
-        # type: (str, Any, Any) -> str
+    def _error(self, error: str, *args: Any, **kwargs: Any) -> str:
         return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 

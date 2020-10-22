@@ -143,8 +143,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
         return c * indent + " " + message
 
 
-def prefix_multilines(text, prefix=": "):
-    # type: (Union[str, bytes], str) -> str
+def prefix_multilines(text: Union[str, bytes], prefix: str = ": ") -> str:
     from octoprint.util import to_unicode
 
     lines = text.splitlines()
