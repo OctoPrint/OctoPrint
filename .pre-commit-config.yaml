@@ -18,6 +18,12 @@ repos:
       - id: codemod_remove_future_imports
         args: ["--ignore", "src/octoprint/vendor"]
         stages: ["manual"]
+      - id: codemod_remove_builtins_imports
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
+      - id: codemod_detect_past_builtins_imports
+        args: ["--ignore", "src/octoprint/vendor"]
+        stages: ["manual"]
       - id: codemod_dict_to_literal
         args: ["--ignore", "src/octoprint/vendor"]
         stages: ["manual"]
