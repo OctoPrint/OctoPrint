@@ -12,7 +12,7 @@ repos:
       - id: check-merge-conflict
       - id: fix-encoding-pragma
   - repo: https://github.com/OctoPrint/codemods
-    rev: main
+    rev: devel
     hooks:
       - id: codemod_dict_to_literal
         args: ["--ignore", "src/octoprint/vendor"]
