@@ -62,16 +62,16 @@ class FilemanagerMethodTest(unittest.TestCase):
             )
         )
         self.assertSetEqual(
-            set(["gcode", "gco", "g"]), set(full["machinecode"]["gcode"].extensions)
+            {"gcode", "gco", "g"}, set(full["machinecode"]["gcode"].extensions)
         )
         self.assertTrue("foo" in full["machinecode"])
         self.assertTrue(isinstance(full["machinecode"]["foo"], list))
-        self.assertSetEqual(set(["f", "foo"]), set(full["machinecode"]["foo"]))
+        self.assertSetEqual({"f", "foo"}, set(full["machinecode"]["foo"]))
 
         self.assertTrue("model" in full)
         self.assertTrue("amf" in full["model"])
         self.assertTrue(isinstance(full["model"]["amf"], list))
-        self.assertSetEqual(set(["amf"]), set(full["model"]["amf"]))
+        self.assertSetEqual({"amf"}, set(full["model"]["amf"]))
 
     def test_get_mimetype(self):
         self.assertEqual(octoprint.filemanager.get_mime_type("foo.gcode"), "text/plain")
