@@ -707,6 +707,8 @@ $(function () {
 
     var bindViewModels = function () {
         try {
+            ko.options.createChildContextWithAs = true;
+            ko.options.foreachHidesDestroyed = true;
             log.info("Going to bind " + allViewModelData.length + " view models...");
             _.each(allViewModelData, function (viewModelData) {
                 try {
