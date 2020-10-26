@@ -8,6 +8,11 @@ $(function () {
 
     _.mixin({sprintf: sprintf, vsprintf: vsprintf});
 
+    //~~ Knockout setup
+
+    ko.options.createChildContextWithAs = true;
+    ko.options.foreachHidesDestroyed = true;
+
     //~~ Logging setup
 
     log.setLevel(CONFIG_DEBUG ? log.levels.DEBUG : log.levels.INFO);
