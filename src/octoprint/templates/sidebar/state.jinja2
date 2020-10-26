@@ -26,7 +26,7 @@
 </div>
 
 <div class="row-fluid print-control" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.PRINT)">
-    <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="fa" data-bind="css: {'fa-print': !isPaused(), 'fa-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart')|esq }}' : '{{ _('Print')|esq }}')">{{ _('Print')|esq }}</span></button>
-    <button class="btn span4" id="job_pause" data-bind="click: function() { isPaused() ? onlyResume() : onlyPause(); }, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i class="fa" data-bind="css: {'fa-pause': !isPaused(), 'fa-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
-    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: enableCancel" title="{{ _('Cancels the print job')|edq }}"><i class="fa fa-stop"></i> {{ _('Cancel') }}</button>
+    <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="fas" data-bind="css: {'fa-print': !isPaused(), 'fa-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart')|esq }}' : '{{ _('Print')|esq }}')">{{ _('Print')|esq }}</span></button>
+    <button class="btn span4" id="job_pause" data-bind="click: function() { isPaused() ? onlyResume() : onlyPause(); }, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i class="fas" data-bind="css: {'fa-pause': !isPaused(), 'fa-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
+    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: enableCancel" title="{{ _('Cancels the print job')|edq }}"><i class="fas fa-stop"></i> {{ _('Cancel') }}</button>
 </div>
