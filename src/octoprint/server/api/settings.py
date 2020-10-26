@@ -114,6 +114,7 @@ def getSettings():
             "showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"]),
             "fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"]),
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
+            "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
         "printer": {
             "defaultExtrusionLength": s.getInt(
@@ -508,6 +509,11 @@ def _saveSettings(data):
             s.setBoolean(
                 ["appearance", "closeModalsWithClick"],
                 data["appearance"]["closeModalsWithClick"],
+            )
+        if "showInternalFilename" in data["appearance"]:
+            s.setBoolean(
+                ["appearance", "showInternalFilename"],
+                data["appearance"]["showInternalFilename"],
             )
 
     if "printer" in data:

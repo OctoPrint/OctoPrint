@@ -304,6 +304,7 @@ default_settings = {
         "showFahrenheitAlso": False,
         "fuzzyTimes": True,
         "closeModalsWithClick": True,
+        "showInternalFilename": True,
         "components": {
             "order": {
                 "navbar": [
