@@ -1136,7 +1136,7 @@ class VirtualPrinter(object):
         params = list(letters)
         output = {}
         for param in params:
-            match = re.search(param + r"([0-9]+(\.|\,)[0-9]{2})", line)
+            match = re.search(param + r"([0-9]+(\.[0-9]{1,2})?)", line)
             if match:
                 output[param] = match.group(1)
         return output
@@ -2104,14 +2104,14 @@ class VirtualEEPROM:
     def _initialise_eeprom(self):
         if os.path.exists(self._eeprom_file_path):
             # file exists, read it
-            with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+            with io.open(self._eeprom_file_path, "rt", encoding="utf-8") as eeprom_file:
                 data = json.load(eeprom_file)
             return data
         else:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
-            with io.open(self._eeprom_file_path, "wt") as eeprom_file:
-                json.dump(data, eeprom_file)
+            with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+                eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
     @staticmethod
@@ -2221,8 +2221,8 @@ class VirtualEEPROM:
 
     def save_settings(self):
         # M500 behind-the-scenes
-        with io.open(self._eeprom_file_path, "wt") as eeprom_file:
-            json.dump(self._eeprom, eeprom_file)
+        with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):
         # M501 - if the file has disappeared, then recreate it
