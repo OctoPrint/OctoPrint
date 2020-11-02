@@ -319,7 +319,8 @@ Upload file or create folder
    Upload a file to the selected ``location`` or create a new empty folder on it.
 
    Other than most of the other requests on OctoPrint's API which are expected as JSON, this request is expected as
-   ``Content-Type: multipart/form-data`` due to the included file upload.
+   ``Content-Type: multipart/form-data`` due to the included file upload. A ``Content-Length`` header specifying
+   the full length of the request body is required as well.
 
    To upload a file, the request body must at least contain the ``file`` form field with the
    contents and file name of the file to upload.
@@ -341,6 +342,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
+      Content-Length: 430
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="file"; filename="whistle_v2.gcode"
@@ -350,7 +352,7 @@ Upload file or create folder
       T0
       G21
       G90
-      ...
+
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="select"
 
@@ -400,6 +402,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
+      Content-Length: 263
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="file"; filename*=utf-8''20mm-%C3%BCml%C3%A4ut-b%C3%B6x.gcode
@@ -409,7 +412,7 @@ Upload file or create folder
       T0
       G21
       G90
-      ...
+
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC--
 
    .. sourcecode:: http
@@ -440,6 +443,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMD
+      Content-Length: 246
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMD
       Content-Disposition: form-data; name="foldername"
