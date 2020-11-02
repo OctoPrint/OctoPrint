@@ -240,7 +240,10 @@ class PiSupportPlugin(
     # ~~ EnvironmentDetectionPlugin
 
     def get_additional_environment(self):
-        result = {"model": get_proc_dt_model()}
+        result = {
+            "model": get_proc_dt_model(),
+            "throttle_state": self._throttle_state.as_dict(),
+        }
 
         if is_octopi():
             result.update({"octopi_version": get_octopi_version()})
