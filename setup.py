@@ -55,7 +55,6 @@ INSTALL_REQUIRES = [
     "semantic_version>=2.8.5,<3",
     "psutil>=5.7,<6",
     "Click>=7.1.2,<8",
-    "feedparser>=5.2.1,<6",
     "future>=0.18.2,<1",
     "websocket-client>=0.57,<1",
     "wrapt>=1.12.1,<2",
@@ -70,6 +69,7 @@ INSTALL_REQUIRES = [
 
 # Python 2 specific requirements
 INSTALL_REQUIRES_PYTHON2 = [
+    "feedparser>=5.2.1,<6",  # newer versions require Python 3
     "futures>=3.3,<4",
     "monotonic>=1.5,<2",
     "scandir>=1.10,<2",
@@ -78,7 +78,7 @@ INSTALL_REQUIRES_PYTHON2 = [
 ]
 
 # Python 3 specific requirements
-INSTALL_REQUIRES_PYTHON3 = ["zeroconf>=0.24,<0.25"]
+INSTALL_REQUIRES_PYTHON3 = ["feedparser>=6.0.2,<7", "zeroconf>=0.24,<0.25"]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
