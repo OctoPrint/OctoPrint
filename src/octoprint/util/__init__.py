@@ -961,10 +961,8 @@ def dict_flatten(dictionary, prefix="", separator="."):
 
     Example::
         >>> data = {'a': {'a1': 'a1', 'a2': 'a2'}, 'b': 'b'}
-        >>> expected = {'a.a1': 'a1', 'a.a2': 'a2', 'b': 'b'}
-        >>> actual = dict_flatten(data)
-        >>> expected == data
-        True
+        >>> dict_flatten(data)
+        dict(a.a1='a1', a.a2='a2', b='b')
 
     Args:
         dictionary: the dictionary to flatten
