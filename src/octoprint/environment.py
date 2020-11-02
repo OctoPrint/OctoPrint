@@ -70,7 +70,11 @@ class EnvironmentDetector(object):
                 return self._cache
 
     def _detect_os(self):
-        return {"id": get_os(), "platform": sys.platform}
+        return {
+            "id": get_os(),
+            "platform": sys.platform,
+            "bits": 64 if sys.maxsize > 2 ** 32 else 32,
+        }
 
     def _detect_python(self):
         result = {"version": "unknown", "pip": "unknown"}
