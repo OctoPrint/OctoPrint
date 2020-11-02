@@ -311,7 +311,7 @@ class Permissions(with_metaclass(PermissionsMetaClass)):
         "System",
         gettext(
             "Allows to run system commands, e.g. restart OctoPrint, "
-            "shutdown or reboot the system"
+            "shutdown or reboot the system, and to retrieve system and usage information"
         ),
         RoleNeed("system"),
         dangerous=True,

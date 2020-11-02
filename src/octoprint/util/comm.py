@@ -2642,6 +2642,10 @@ class MachineCom(object):
                                     extra={"plugin": name},
                                 )
 
+                        self._callback.on_comm_firmware_info(
+                            firmware_name, copy.copy(data)
+                        )
+
                 ##~~ Firmware capability report triggered by M115
                 elif lower_line.startswith("cap:"):
                     parsed = parse_capability_line(lower_line)
@@ -5296,6 +5300,9 @@ class MachineComPrintCallback(object):
         pass
 
     def on_comm_record_fileposition(self, origin, name, pos):
+        pass
+
+    def on_comm_firmware_info(self, firmware_name, firmware_data):
         pass
 
 

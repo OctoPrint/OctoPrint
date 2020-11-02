@@ -85,6 +85,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._printAfterSelect = False
         self._posAfterSelect = None
 
+        self._firmware_info = None
+
         # sd handling
         self._sdPrinting = False
         self._sdStreaming = False
@@ -182,6 +184,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     job_type = "local"
 
         self._estimator = self._estimator_factory(job_type)
+
+    @property
+    def firmware_info(self):
+        return frozendict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -350,6 +356,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 "serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log"
             )
 
+        self._firmware_info = None
         self._comm = comm.MachineCom(
             port,
             baudrate,
@@ -367,6 +374,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             self._comm.close()
         else:
             eventManager().fire(Events.DISCONNECTED)
+        self._firmware_info = None
 
     def get_transport(self, *args, **kwargs):
 
@@ -1768,6 +1776,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             pass
         except Exception:
             self._logger.exception("Error while trying to persist print recovery data")
+
+    def on_comm_firmware_info(self, firmware_name, firmware_data):
+        self._firmware_info = {"name": firmware_name, "data": firmware_data}
 
     def _payload_for_print_job_event(
         self,

@@ -207,6 +207,7 @@ from .config import config_commands  # noqa: E402
 from .dev import dev_commands  # noqa: E402
 from .plugins import plugin_commands  # noqa: E402
 from .server import server_commands  # noqa: E402
+from .systeminfo import systeminfo_commands  # noqa: E402
 from .user import user_commands  # noqa: E402
 
 
@@ -222,6 +223,7 @@ from .user import user_commands  # noqa: E402
         config_commands,
         analysis_commands,
         user_commands,
+        systeminfo_commands,
     ],
 )
 @standard_options()

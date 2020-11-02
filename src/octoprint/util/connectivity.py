@@ -166,6 +166,19 @@ class ConnectivityChecker(object):
                 )
             )
 
+    def as_dict(self):
+        result = {
+            "online": self.online,
+            "enabled": self.enabled,
+            "connection_ok": self._connection_working,
+            "connection_check": "{}:{}".format(self._host, self._port),
+        }
+        if self._name:
+            result.update(
+                resolution_ok=self._resolution_working, resolution_check=self._name
+            )
+        return result
+
     def _run(self):
         from octoprint.util import RepeatedTimer
 

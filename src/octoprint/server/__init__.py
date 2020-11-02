@@ -91,6 +91,7 @@ preemptiveCache = None
 jsonEncoder = None
 jsonDecoder = None
 connectivityChecker = None
+environmentDetector = None
 
 principals = Principal(app)
 
@@ -293,6 +294,7 @@ class Server(object):
         global jsonEncoder
         global jsonDecoder
         global connectivityChecker
+        global environmentDetector
         global debug
         global safe_mode
 
@@ -440,6 +442,7 @@ class Server(object):
             )
 
         connectivityChecker = self._connectivity_checker
+        environmentDetector = self._environment_detector
 
         def on_settings_update(*args, **kwargs):
             # make sure our connectivity checker runs with the latest settings

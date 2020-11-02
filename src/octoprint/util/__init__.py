@@ -955,6 +955,34 @@ def dict_contains_keys(keys, dictionary):
     return True
 
 
+def dict_flatten(dictionary, prefix="", separator="."):
+    """
+    Flatten a dictionary.
+
+    Example::
+        >>> data = {'a': {'a1': 'a1', 'a2': 'a2'}, 'b': 'b'}
+        >>> expected = {'a.a1': 'a1', 'a.a2': 'a2', 'b': 'b'}
+        >>> actual = dict_flatten(data)
+        >>> expected == data
+        True
+
+    Args:
+        dictionary: the dictionary to flatten
+        prefix: the key prefix, initially an empty string
+        separator: key separator, '.' by default
+
+    Returns: a flattened dict
+    """
+    result = {}
+    for k, v in dictionary.items():
+        key = prefix + separator + k if prefix else k
+        if isinstance(v, collections.MutableMapping):
+            result.update(dict_flatten(v, prefix=key, separator=separator))
+        else:
+            result[key] = v
+    return result
+
+
 class fallback_dict(dict):
     def __init__(self, custom, *fallbacks):
         self.custom = custom

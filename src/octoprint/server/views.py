@@ -1179,6 +1179,16 @@ def fetch_template_data(refresh=False):
                 "custom_bindings": False,
             },
         ),
+        "systeminfo": (
+            "System Information",
+            {
+                "template": "dialogs/about/systeminfo.jinja2",
+                "_div": "about_systeminfo",
+                "custom_bindings": False,
+                "styles": ["display: none;"],
+                "data_bind": "visible: loginState.hasPermissionKo(access.permissions.SYSTEM)",
+            },
+        ),
     }
 
     # extract data from template plugins
