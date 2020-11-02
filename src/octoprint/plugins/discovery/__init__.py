@@ -99,6 +99,8 @@ class DiscoveryPlugin(
                 "vendor": None,
                 "vendorUrl": None,
             },
+            "addresses": None,
+            "interfaces": None,
         }
 
     ##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
@@ -235,7 +237,7 @@ class DiscoveryPlugin(
 
         key = (reg_type, port)
         addresses = list(
-            map(lambda x: socket.inet_aton(x), octoprint.util.net.interface_addresses())
+            map(lambda x: socket.inet_aton(x), self.get_interface_addresses())
         )
 
         try:
@@ -457,7 +459,7 @@ class DiscoveryPlugin(
             )
 
             for _ in range(retries):
-                for addr in octoprint.util.interface_addresses():
+                for addr in self.get_interface_addresses():
                     try:
                         sock = socket.socket(
                             socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
@@ -621,7 +623,7 @@ class DiscoveryPlugin(
             # the monitor already shut down, alive messages don't make sense anymore as byebye will shortly follow
             return
 
-        for addr in octoprint.util.interface_addresses():
+        for addr in self.get_interface_addresses():
             try:
                 sock = socket.socket(
                     socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
@@ -754,14 +756,14 @@ class DiscoveryPlugin(
                         )
                         and request.headers["MAN"] == '"ssdp:discover"'
                     ):
-                        interface_address = octoprint.util.address_for_client(*address)
+                        interface_address = octoprint.util.address_for_client(
+                            *address,
+                            addresses=self._settings.get(["addresses"]),
+                            interfaces=self._settings.get(["interfaces"])
+                        )
                         if not interface_address:
-                            self._logger.warning(
-                                "Can't determine address to user for client {}, not sending a M-SEARCH reply".format(
-                                    address
-                                )
-                            )
                             continue
+
                         message = location_message.format(
                             uuid=self.get_uuid(),
                             location="http://{host}:{port}/plugin/discovery/discovery.xml".format(
@@ -804,6 +806,15 @@ class DiscoveryPlugin(
             return 'OctoPrint instance "{}"'.format(name)
         else:
             return "OctoPrint instance on {}".format(socket.gethostname())
+
+    def get_interface_addresses(self):
+        addresses = self._settings.get(["addresses"])
+        if addresses:
+            return addresses
+        else:
+            return octoprint.util.interface_addresses(
+                interfaces=self._settings.get(["interfaces"])
+            )
 
 
 __plugin_name__ = "Discovery"
