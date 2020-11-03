@@ -961,8 +961,11 @@ def dict_flatten(dictionary, prefix="", separator="."):
 
     Example::
         >>> data = {'a': {'a1': 'a1', 'a2': 'a2'}, 'b': 'b'}
-        >>> dict_flatten(data)
-        dict(a.a1='a1', a.a2='a2', b='b')
+        >>> expected = {'a.a1': 'a1', 'a.a2': 'a2', 'b': 'b'}
+        >>> actual = dict_flatten(data)
+        >>> shared = {(k, actual[k]) for k in actual if k in expected and actual[k] == expected[k]}
+        >>> len(shared) == len(expected)
+        True
 
     Args:
         dictionary: the dictionary to flatten
