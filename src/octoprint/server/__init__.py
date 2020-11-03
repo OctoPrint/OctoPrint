@@ -577,128 +577,17 @@ class Server(object):
             printer = Printer(fileManager, analysisQueue, printerProfileManager)
         components.update({"printer": printer})
 
-        def octoprint_plugin_inject_factory(name, implementation):
-            """Factory for injections for all OctoPrintPlugins"""
-            if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
-                return None
-
-            components_copy = dict(components)
-            if "printer" in components:
-                import functools
-
-                import wrapt
-
-                def tagwrap(f):
-                    @functools.wraps(f)
-                    def wrapper(*args, **kwargs):
-                        tags = kwargs.get("tags", set()) | {
-                            "source:plugin",
-                            "plugin:{}".format(name),
-                        }
-                        kwargs["tags"] = tags
-                        return f(*args, **kwargs)
-
-                    wrapper.__tagwrapped__ = True
-                    return wrapper
-
-                class TaggedFuncsPrinter(wrapt.ObjectProxy):
-                    def __getattribute__(self, attr):
-                        __wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__(
-                            "__wrapped__"
-                        )
-                        if attr == "__wrapped__":
-                            return __wrapped__
-
-                        item = getattr(__wrapped__, attr)
-                        if (
-                            callable(item)
-                            and (
-                                "tags" in item.__code__.co_varnames
-                                or "kwargs" in item.__code__.co_varnames
-                            )
-                            and not getattr(item, "__tagwrapped__", False)
-                        ):
-                            return tagwrap(item)
-                        else:
-                            return item
-
-                components_copy["printer"] = TaggedFuncsPrinter(components["printer"])
-
-            props = {}
-            props.update(components_copy)
-            props.update(
-                {"data_folder": os.path.join(self._settings.getBaseFolder("data"), name)}
-            )
-            return props
-
-        def settings_plugin_inject_factory(name, implementation):
-            """Factory for additional injections/initializations depending on plugin type"""
-            if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
-                return
-
-            default_settings_overlay = {"plugins": {}}
-            default_settings_overlay["plugins"][
-                name
-            ] = implementation.get_settings_defaults()
-            self._settings.add_overlay(default_settings_overlay, at_end=True)
-
-            plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(
-                name, implementation
-            )
-            if plugin_settings is None:
-                return
-
-            return {"settings": plugin_settings}
-
-        def settings_plugin_config_migration_and_cleanup(identifier, implementation):
-            """Take care of migrating and cleaning up any old settings"""
-
-            if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
-                return
-
-            settings_version = implementation.get_settings_version()
-            settings_migrator = implementation.on_settings_migrate
-
-            if settings_version is not None and settings_migrator is not None:
-                stored_version = implementation._settings.get_int(
-                    [octoprint.plugin.SettingsPlugin.config_version_key]
-                )
-                if stored_version is None or stored_version < settings_version:
-                    settings_migrator(settings_version, stored_version)
-                    implementation._settings.set_int(
-                        [octoprint.plugin.SettingsPlugin.config_version_key],
-                        settings_version,
-                        force=True,
-                    )
-
-            implementation.on_settings_cleanup()
-            implementation._settings.save()
-
-            implementation.on_settings_initialized()
-
-        custom_events_hooks = pluginManager.get_hooks(
-            "octoprint.events.register_custom_events"
+        from octoprint import (
+            init_custom_events,
+            init_settings_plugin_config_migration_and_cleanup,
         )
-        for name, hook in custom_events_hooks.items():
-            try:
-                result = hook()
-                if isinstance(result, (list, tuple)):
-                    for event in result:
-                        constant, value = octoprint.events.Events.register_event(
-                            event, prefix="plugin_{}_".format(name)
-                        )
-                        self._logger.debug(
-                            'Registered event {} of plugin {} as Events.{} = "{}"'.format(
-                                event, name, constant, value
-                            )
-                        )
-            except Exception:
-                self._logger.exception(
-                    "Error while retrieving custom event list from plugin {}".format(
-                        name
-                    ),
-                    extra={"plugin": name},
-                )
+        from octoprint import octoprint_plugin_inject_factory as opif
+        from octoprint import settings_plugin_inject_factory as spif
+
+        init_custom_events(pluginManager)
+
+        octoprint_plugin_inject_factory = opif(self._settings, components)
+        settings_plugin_inject_factory = spif(self._settings)
 
         pluginManager.implementation_inject_factories = [
             octoprint_plugin_inject_factory,
@@ -706,24 +595,7 @@ class Server(object):
         ]
         pluginManager.initialize_implementations()
 
-        settingsPlugins = pluginManager.get_implementations(
-            octoprint.plugin.SettingsPlugin
-        )
-        for implementation in settingsPlugins:
-            try:
-                settings_plugin_config_migration_and_cleanup(
-                    implementation._identifier, implementation
-                )
-            except Exception:
-                self._logger.exception(
-                    "Error while trying to migrate settings for "
-                    "plugin {}, ignoring it".format(implementation._identifier),
-                    extra={"plugin": implementation._identifier},
-                )
-
-        pluginManager.implementation_post_inits = [
-            settings_plugin_config_migration_and_cleanup
-        ]
+        init_settings_plugin_config_migration_and_cleanup(pluginManager)
 
         pluginManager.log_all_plugins()
 
