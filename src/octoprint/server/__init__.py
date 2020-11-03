@@ -379,9 +379,6 @@ class Server(object):
         ###
         ### See also issues #2035 and #2090
 
-        # then initialize the plugin manager
-        pluginManager.reload_plugins(startup=True, initialize_implementations=False)
-
         printerProfileManager = PrinterProfileManager()
         eventManager = self._event_manager
 
