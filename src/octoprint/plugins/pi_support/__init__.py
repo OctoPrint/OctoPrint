@@ -74,7 +74,7 @@ class ThrottleState(object):
     @classmethod
     def from_value(cls, value=0):
         if value == 0:
-            return ThrottleState()
+            return ThrottleState(raw_value=value)
 
         kwargs = {
             "undervoltage": _FLAG_UNDERVOLTAGE & value == _FLAG_UNDERVOLTAGE,
@@ -138,6 +138,14 @@ class ThrottleState(object):
     def past_issue(self):
         return self._past_undervoltage or self._past_freq_capped or self._past_throttled
 
+    @property
+    def raw_value(self):
+        return self._raw_value
+
+    @property
+    def raw_value_hex(self):
+        return "0x{:X}".format(self._raw_value)
+
     def __eq__(self, other):
         if not isinstance(other, ThrottleState):
             return False
@@ -149,6 +157,7 @@ class ThrottleState(object):
             and self._past_undervoltage == other._past_undervoltage
             and self._past_freq_capped == other._past_freq_capped
             and self._past_throttled == other._past_throttled
+            and self._raw_value == other._raw_value
         )
 
     def as_dict(self):
@@ -242,13 +251,14 @@ class PiSupportPlugin(
     # ~~ EnvironmentDetectionPlugin
 
     def get_additional_environment(self):
-        result = {
-            "model": get_proc_dt_model(),
-            "throttle_state": self._throttle_state.as_dict(),
-        }
+        result = {"model": get_proc_dt_model()}
+
+        self._check_throttled_state()
+        if self._throttle_functional:
+            result["throttle_state"] = self._throttle_state.raw_value_hex
 
         if is_octopi():
-            result.update({"octopi_version": get_octopi_version()})
+            result["octopi_version"] = get_octopi_version()
 
         return result
 
