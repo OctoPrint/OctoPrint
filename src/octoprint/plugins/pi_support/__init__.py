@@ -25,7 +25,9 @@ _VCGENCMD_THROTTLE = "/usr/bin/vcgencmd get_throttled"
 _CHECK_INTERVAL_OK = 300
 _CHECK_INTERVAL_THROTTLED = 30
 
-__LOCAL_DEBUG = False
+__LOCAL_DEBUG = os.path.exists(
+    os.path.realpath(os.path.join(os.path.dirname(__file__), ".local_debug"))
+)
 
 if __LOCAL_DEBUG:
     ### mocks & settings for local debugging
