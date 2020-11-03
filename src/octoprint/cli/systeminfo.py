@@ -9,7 +9,7 @@ import logging
 
 import click
 
-from octoprint.cli import get_ctx_obj_option, standard_options
+from octoprint.cli import init_platform_for_cli, standard_options
 
 click.disable_unicode_literals_warning = True
 
@@ -43,20 +43,8 @@ def systeminfo_commands():
 @click.pass_context
 def systeminfo_command(ctx, **kwargs):
     """Retrieves and prints the system info."""
-    from octoprint import FatalStartupError, init_platform
-
     logging.disable(logging.ERROR)
     try:
-        components = init_platform(
-            get_ctx_obj_option(ctx, "basedir", None),
-            get_ctx_obj_option(ctx, "configfile", None),
-            safe_mode=True,
-        )
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the settings manager.", err=True)
-        ctx.exit(-1)
-    else:
         (
             settings,
             logger,
@@ -65,8 +53,14 @@ def systeminfo_command(ctx, **kwargs):
             connectivity_checker,
             plugin_manager,
             environment_detector,
-        ) = components
+        ) = init_platform_for_cli(ctx)
+    except Exception as e:
+        click.echo(str(e), err=True)
+        click.echo("There was a fatal error initializing the platform.", err=True)
+        ctx.exit(-1)
+    else:
         systeminfo = get_systeminfo(environment_detector, connectivity_checker)
 
         for k in sorted(systeminfo.keys()):
             click.echo("{}: {}".format(k, systeminfo[k]))
+    ctx.exit(0)
