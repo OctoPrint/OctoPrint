@@ -52,6 +52,7 @@ class VirtualPrinter(object):
     set_ambient_regex = re.compile(r"set_ambient ([-+]?[0-9]*\.?[0-9]+)")
     start_sd_regex = re.compile(r"start_sd (.*)")
     select_sd_regex = re.compile(r"select_sd (.*)")
+    resend_ratio_regex = re.compile(r"resend_ratio (\d+)")
 
     def __init__(
         self,
@@ -199,6 +200,10 @@ class VirtualPrinter(object):
         self._sleepAfter = {}
         self._rerequest_last = False
 
+        self._received_lines = 0
+        self._resend_every_n = 0
+        self._calculate_resend_every_n(self._settings.get(["resend_ratio"]))
+
         self._dont_answer = False
 
         self._debug_drop_connection = False
@@ -232,6 +237,9 @@ class VirtualPrinter(object):
             write_timeout=self._write_timeout,
             options=self._settings.get([]),
         )
+
+    def _calculate_resend_every_n(self, resend_ratio):
+        self._resend_every_n = (100 // resend_ratio) if resend_ratio else 0
 
     def _reset(self):
         with self._incoming_lock:
@@ -383,6 +391,8 @@ class VirtualPrinter(object):
                 self._dont_answer = False
                 continue
 
+            self._received_lines += 1
+
             # strip checksum
             if b"*" in data:
                 checksum = int(data[data.rfind(b"*") + 1 :])
@@ -470,6 +480,10 @@ class VirtualPrinter(object):
                 if data.startswith("!!DEBUG:"):
                     debug_command = data[len("!!DEBUG:") :].strip()
                 self._debugTrigger(debug_command)
+                continue
+
+            if self._resend_every_n and self._received_lines % self._resend_every_n == 0:
+                self._triggerResend(checksum=True)
                 continue
 
             # shortcut for writing to SD
@@ -1244,6 +1258,9 @@ class VirtualPrinter(object):
             | will be used instead of actual "ok"
             rerequest_last
             | Will cause the last line number + 1 to be rerequest add infinitum
+            resend_ratio <int:percentage>
+            | Sets the resend ratio to the given percentage, simulating noisy lines.
+            | Set to 0 to disable noise simulation.
 
             # Reply Timing / Sleeping
 
@@ -1340,6 +1357,7 @@ class VirtualPrinter(object):
                 set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
                 start_sd_match = VirtualPrinter.start_sd_regex.match(data)
                 select_sd_match = VirtualPrinter.select_sd_regex.match(data)
+                resend_ratio_match = VirtualPrinter.resend_ratio_regex.match(data)
 
                 if sleep_match is not None:
                     interval = int(sleep_match.group(1))
@@ -1387,6 +1405,10 @@ class VirtualPrinter(object):
                     self._startSdPrint()
                 elif select_sd_match is not None:
                     self._selectSdFile(select_sd_match.group(1))
+                elif resend_ratio_match is not None:
+                    resend_ratio = int(resend_ratio_match.group(1))
+                    if 0 <= resend_ratio <= 100:
+                        self._calculate_resend_every_n(resend_ratio)
             except Exception:
                 self._logger.exception("While handling %r", data)
 
