@@ -6,7 +6,9 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import collections
 import logging
+import threading
 
 import pkg_resources
 
@@ -25,6 +27,7 @@ _POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
 _POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
 
 _pip_callers = {}
+_pip_caller_mutex = collections.defaultdict(threading.RLock)
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 
@@ -44,17 +47,21 @@ def can_perform_update(target, check, online=True):
 
 
 def _get_pip_caller(command=None):
+    global _pip_callers
+    global _pip_caller_mutex
+
     key = command
     if command is None:
         key = "__default"
 
-    if key not in _pip_callers:
-        try:
-            _pip_callers[key] = create_pip_caller(command=command)
-        except UnknownPip:
-            _pip_callers[key] = None
+    with _pip_caller_mutex[key]:
+        if key not in _pip_callers:
+            try:
+                _pip_callers[key] = create_pip_caller(command=command)
+            except UnknownPip:
+                pass
 
-    return _pip_callers[key]
+        return _pip_callers.get(key)
 
 
 def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
