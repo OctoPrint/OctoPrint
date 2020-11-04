@@ -10,7 +10,7 @@ import logging
 
 import pkg_resources
 
-from octoprint.util.pip import PipCaller, UnknownPip
+from octoprint.util.pip import UnknownPip, create_pip_caller
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -50,7 +50,7 @@ def _get_pip_caller(command=None):
 
     if key not in _pip_callers:
         try:
-            _pip_callers[key] = PipCaller(configured=command)
+            _pip_callers[key] = create_pip_caller(command=command)
         except UnknownPip:
             _pip_callers[key] = None
 
@@ -58,13 +58,8 @@ def _get_pip_caller(command=None):
 
 
 def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
-    pip_command = None
-    if "pip_command" in check:
-        pip_command = check["pip_command"]
-
-    pip_working_directory = None
-    if "pip_cwd" in check:
-        pip_working_directory = check["pip_cwd"]
+    pip_command = check.get("pip_command")
+    pip_working_directory = check.get("pip_cwd")
 
     if not online and not check.get("offline", False):
         raise exceptions.CannotUpdateOffline()

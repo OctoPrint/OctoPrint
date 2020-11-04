@@ -13,7 +13,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
 from octoprint.util import is_hidden_path, to_bytes
-from octoprint.util.pip import LocalPipCaller
+from octoprint.util.pip import create_pip_caller
 from octoprint.util.platform import is_os_compatible
 from octoprint.util.version import (
     get_comparable_version,
@@ -344,7 +344,13 @@ class BackupPlugin(
                 self._logger.info("Installing plugin {}".format(plugin["id"]))
                 self._send_client_message("installing_plugin", {"plugin": plugin["id"]})
                 self.__class__._install_plugin(
-                    plugin, force_user=force_user, pip_args=pip_args, on_log=on_log
+                    plugin,
+                    force_user=force_user,
+                    pip_command=self._settings.global_get(
+                        ["server", "commands", "localPipCommand"]
+                    ),
+                    pip_args=pip_args,
+                    on_log=on_log,
                 )
 
         def on_report_unknown_plugins(plugins):
@@ -585,7 +591,13 @@ class BackupPlugin(
 
                     click.echo("Installing plugin {}".format(plugin["id"]))
                     self.__class__._install_plugin(
-                        plugin, force_user=force_user, pip_args=pip_args, on_log=log
+                        plugin,
+                        force_user=force_user,
+                        pip_command=settings.global_get(
+                            ["server", "commands", "localPipCommand"]
+                        ),
+                        pip_args=pip_args,
+                        on_log=log,
                     )
 
             def on_report_unknown_plugins(plugins):
@@ -768,7 +780,9 @@ class BackupPlugin(
         )
 
     @classmethod
-    def _install_plugin(cls, plugin, force_user=False, pip_args=None, on_log=None):
+    def _install_plugin(
+        cls, plugin, force_user=False, pip_command=None, pip_args=None, on_log=None
+    ):
         if pip_args is None:
             pip_args = []
 
@@ -790,7 +804,9 @@ class BackupPlugin(
             log("!", *lines)
 
         if cls._pip_caller is None:
-            cls._pip_caller = LocalPipCaller(force_user=force_user)
+            cls._pip_caller = create_pip_caller(
+                command=pip_command, force_user=force_user
+            )
 
         cls._pip_caller.on_log_call = log_call
         cls._pip_caller.on_log_stdout = log_stdout

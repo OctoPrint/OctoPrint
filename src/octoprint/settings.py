@@ -204,6 +204,7 @@ default_settings = {
             "systemShutdownCommand": None,
             "systemRestartCommand": None,
             "serverRestartCommand": None,
+            "localPipCommand": None,
         },
         "onlineCheck": {
             "enabled": None,

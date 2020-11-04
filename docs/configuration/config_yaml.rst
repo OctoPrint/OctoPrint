@@ -945,6 +945,12 @@ Use the following settings to configure the server:
        # Command to shut down the system OctoPrint is running on, defaults to being unset
        systemShutdownCommand: sudo shutdown -h now
 
+       # pip command associated with OctoPrint, used for installing plugins and updates,
+       # if unset (default) the command will be autodetected based on the current python
+       # executable - unless you have a really special setup this is the right way to do
+       # it and there should be no need to ever even touch this setting
+       localPipCommand: None
+
      # Configuration of the regular online connectivity check
      onlineCheck:
        # whether the online check is enabled, defaults to false due to valid privacy concerns
