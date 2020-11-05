@@ -512,6 +512,7 @@ class TrackingPlugin(
         payload = {
             "version": get_octoprint_version_string(),
             "os": self._environment["os"]["id"],
+            "bits": self._environment["os"]["bits"],
             "python": self._environment["python"]["version"],
             "pip": self._environment["python"]["pip"],
             "cores": self._environment["hardware"]["cores"],
