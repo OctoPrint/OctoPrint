@@ -242,6 +242,7 @@ def getSettings():
             "capEmergencyParser": s.getBoolean(
                 ["serial", "capabilities", "emergency_parser"]
             ),
+            "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -865,6 +866,10 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "capabilities", "emergency_parser"],
                 data["serial"]["capEmergencyParser"],
+            )
+        if "resendRatioThreshold" in data["serial"]:
+            s.setInt(
+                ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
             )
 
         oldLog = s.getBoolean(["serial", "log"])

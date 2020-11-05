@@ -7,6 +7,15 @@ $(function () {
         self.access = parameters[2];
 
         self.stateString = ko.observable(undefined);
+
+        self.resendCount = ko.observable(0);
+        self.resendTotalTransmitted = ko.observable(0);
+        self.resendRatio = ko.observable(0);
+        self.resendRatioCritical = ko.pureComputed(function () {
+            return self.resendRatio() >= self.settings.serial_resendRatioThreshold();
+        });
+        self.resendRatioNotification = undefined;
+
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
@@ -270,6 +279,9 @@ $(function () {
             self._processProgressData(data.progress);
             self._processZData(data.currentZ);
             self._processBusyFiles(data.busyFiles);
+            self._processResends(data.resends);
+
+            self._checkResendRatioCriticality();
         };
 
         self._processStateData = function (data) {
@@ -371,6 +383,38 @@ $(function () {
                 }
             });
             self.busyFiles(busyFiles);
+        };
+
+        self._processResends = function (data) {
+            self.resendCount(data.count);
+            self.resendRatio(data.ratio);
+        };
+
+        self._checkResendRatioCriticality = function () {
+            if (self.resendRatioCritical()) {
+                if (self.resendRatioNotification === undefined) {
+                    var message = gettext(
+                        "<p>%(ratio)d%% of transmitted lines have triggered resend " +
+                            "requests. The communication with the printer is unreliable " +
+                            "and this will cause print artefacts and failures.</p><p>Please " +
+                            "see <a href='%(url)s' target='_blank'>this FAQ entry</a> " +
+                            "on tips on how to solve this.</p>"
+                    );
+                    message = _.sprintf(message, {
+                        ratio: self.resendRatio(),
+                        url: "https://faq.octoprint.org/communication-errors"
+                    });
+                    self.resendRatioNotification = new PNotify({
+                        title: gettext("Critical resend ratio!"),
+                        text: message,
+                        type: "error",
+                        hide: false
+                    });
+                }
+            } else if (self.resendRatioNotification !== undefined) {
+                self.resendRatioNotification.remove();
+                self.resendRatioNotification = undefined;
+            }
         };
 
         self.print = function () {

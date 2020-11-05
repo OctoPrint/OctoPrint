@@ -168,6 +168,7 @@ default_settings = {
             "busy_protocol": True,
             "emergency_parser": True,
         },
+        "resendRatioThreshold": 10,
         # command specific flags
         "triggerOkForM29": True,
     },

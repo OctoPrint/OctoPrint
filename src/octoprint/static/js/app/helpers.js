@@ -428,6 +428,13 @@ function formatSize(bytes) {
     return _.sprintf("%.1f%s", bytes, "TB");
 }
 
+function formatHuman(number) {
+    if (number === undefined) return "-";
+    if (number < 1000) return number;
+
+    return _.sprintf("%.1fK", number / 1000);
+}
+
 function bytesFromSize(size) {
     if (size === undefined || size.trim() === "") return undefined;
 

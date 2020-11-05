@@ -515,6 +515,18 @@
                     </div>
                 </div>
             </fieldset>
+            <fieldset>
+                <legend>{{ _('Resend Tracking') }}</legend>
+                <div class="control-group" title="{{ _('Resend ratio threshold. Percentage of resend requests among all sent lines to consider critical.')|edq }}">
+                    <label class="control-label" for="settings-serialResendRatioThreshold">{{ _('Critical resend ratio') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" min="0" max="100" step="1" class="input-mini text-right" id="settings-serialResendRatioThreshold" data-bind="value: serial_resendRatioThreshold">
+                            <span class="add-on">%</span>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
         </div>
     </div>
 </form>

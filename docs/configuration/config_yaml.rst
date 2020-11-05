@@ -806,6 +806,9 @@ Use the following settings to configure the serial connection to the printer:
      # the response skips on the ok)
      triggerOkForM29: true
 
+     # Percentage of resend requests among all sent lines that should be considered critical
+     resendRatioThreshold: 10
+
      capabilities:
 
        # Whether to enable temperature autoreport in the firmware if its support is detected

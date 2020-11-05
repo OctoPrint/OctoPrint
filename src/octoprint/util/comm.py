@@ -662,6 +662,13 @@ class MachineCom(object):
 
         self._job_queue = JobQueue()
 
+        self._transmitted_lines = 0
+        self._received_resend_requests = 0
+        self._resend_ratio_threshold = (
+            settings().getInt(["serial", "resendRatioThreshold"]) / 100.0
+        )
+        self._resend_ratio_reported = False
+
         # hooks
         self._pluginManager = octoprint.plugin.plugin_manager()
 
@@ -798,6 +805,38 @@ class MachineCom(object):
         return self._capability_support.get(
             cap, False
         ) and self._firmware_capabilities.get(cap, False)
+
+    @property
+    def received_resends(self):
+        return self._received_resend_requests
+
+    @property
+    def transmitted_lines(self):
+        return self._transmitted_lines
+
+    @property
+    def resend_ratio(self):
+        if self._transmitted_lines:
+            return self._received_resend_requests / self._transmitted_lines
+        else:
+            return 0.0
+
+    def _reevaluate_resend_ratio(self):
+        resend_ratio = self.resend_ratio
+        if (
+            resend_ratio >= self._resend_ratio_threshold
+            and not self._resend_ratio_reported
+        ):
+            message = (
+                "Over {}% of transmitted lines have triggered resend requests "
+                "({:.2f}%). The communication with the printers is unreliable. "
+                "Please see https://faq.octoprint.org/communication-errors.".format(
+                    self._resend_ratio_threshold, resend_ratio
+                )
+            )
+            self._log(message)
+            self._logger.warning(message)
+            self._resend_ratio_reported = True
 
     ##~~ internal state management
 
@@ -3929,6 +3968,9 @@ class MachineCom(object):
         return False
 
     def _handle_resend_request(self, line):
+        self._received_resend_requests += 1
+        self._reevaluate_resend_ratio()
+
         try:
             lineToResend = parse_resend_line(line)
             if lineToResend is None:
@@ -4706,6 +4748,8 @@ class MachineCom(object):
                 # period each time we fail until either we write the data or run out of retry attempts.
                 if passes > 1:
                     time.sleep((passes - 1) / 10.0)
+
+        self._transmitted_lines += 1
 
     ##~~ command handlers
 
