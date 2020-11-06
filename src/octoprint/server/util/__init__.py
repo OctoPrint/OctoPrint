@@ -334,3 +334,59 @@ def get_plugin_hash():
     plugin_hash = hashlib.sha1()
     plugin_hash.update(",".join(ui_plugins).encode("utf-8"))
     return plugin_hash.hexdigest()
+
+
+def has_permissions(*permissions):
+    """
+    Determines if the current user (either from the session, api key or authorization
+    header) has all of the requested permissions.
+
+    Args:
+        *permissions: list of all permissions required to pass the check
+
+    Returns: True if the user has all permissions, False otherwise
+    """
+    logged_in = False
+
+    try:
+        if loginUserFromApiKey():
+            logged_in = True
+    except InvalidApiKeyException:
+        pass  # ignored
+
+    if not logged_in:
+        loginUserFromAuthorizationHeader()
+
+    flask.passive_login()
+    return all(map(lambda p: p.can(), permissions))
+
+
+def require_login(*permissions):
+    """
+    Returns a redirect response to the login view if the permission requirements are
+    not met.
+
+    Args:
+        *permissions: a list of permissions required to pass the check
+
+    Returns: a flask redirect response to return if a login is required, or None
+    """
+    from octoprint.server import userManager
+
+    if not permissions:
+        return None
+
+    if (
+        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        and userManager.has_been_customized()
+    ):
+        if not has_permissions(*permissions):
+            return _flask.redirect(
+                _flask.url_for(
+                    "login",
+                    redirect=_flask.request.script_root + _flask.request.full_path,
+                    permissions=",".join([x.key for x in permissions]),
+                )
+            )
+
+    return None
