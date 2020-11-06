@@ -1567,7 +1567,7 @@ class ResettableTimer(threading.Thread):
        def hello():
            print("Ran hello() at {}").format(time.time())
 
-       t = ResettableTimers(60.0, hello)
+       t = ResettableTimer(60.0, hello)
        t.start()
        print("Started at {}").format(time.time())
        time.sleep(30)
