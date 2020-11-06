@@ -20,6 +20,7 @@ class ResettableTimerTest(unittest.TestCase):
 		timer_task = mock.MagicMock()
 
 		timer = ResettableTimer(10, timer_task)
+		timer.daemon = True
 		timer.start()
 
 		# wait for it

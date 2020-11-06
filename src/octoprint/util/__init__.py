@@ -1424,9 +1424,10 @@ class ResettableTimer(threading.Thread):
 	    kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
 	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
 	    on_reset (callable): Callback to call when the timer is reset.
+	    daemon (bool): daemon flag to set on underlying thread.
 	"""
 
-	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None, daemon=True):
 		threading.Thread.__init__(self)
 		self._event = threading.Event()
 		self._mutex = threading.Lock()
@@ -1443,6 +1444,7 @@ class ResettableTimer(threading.Thread):
 		self.kwargs = kwargs
 		self.on_cancelled = on_cancelled
 		self.on_reset = on_reset
+		self.daemon = daemon
 
 
 	def run(self):

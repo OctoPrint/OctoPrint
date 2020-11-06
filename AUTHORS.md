@@ -123,6 +123,7 @@ date of first contribution):
   * [Khoi Pham](https://github.com/osubuu)
   * [Federico Nembrini](https://github.com/FedericoNembrini)
   * [Brian Vanderbusch](https://github.com/LongLiveCHIEF)
+  * [Christopher Brown](https://github.com/snecklifter)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
