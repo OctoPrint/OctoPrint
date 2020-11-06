@@ -560,3 +560,10 @@ class LocalPipCaller(PipCaller):
         self._logger.info("==> pip ok -> {}".format("yes" if ok else "NO!"))
 
         return ok, user_flag, virtual_env, install_dir
+
+
+def create_pip_caller(command=None, **kwargs):
+    if command is None:
+        return LocalPipCaller(**kwargs)
+    else:
+        return PipCaller(configured=command, **kwargs)

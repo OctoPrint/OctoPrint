@@ -204,7 +204,7 @@
                     </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group" title="{{ _('Time to wait after opening the serial connection before starting baudrate detection')|edq }}">
                             <label class="control-label" for="settings-serialTimeoutBaudrateDetectionPause">{{ _('Initial baudrate detection pause') }}</label>
@@ -321,7 +321,7 @@
                     </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group">
                             <div class="controls">
@@ -408,7 +408,7 @@
                         <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.') }}</span>                    </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.')|edq }}">
                             <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
@@ -504,14 +504,26 @@
                     <label class="control-label">{{ _('Display notifications for suppressed commands')}}</label>
                     <div class="controls">
                         <label class="radio">
-                            <input type="radio" name="notifySuppressedCommandsGroup" value="info" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands"> {{ _('Show notifications of severity "info" and "warning"') }}
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="info" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-info"> {{ _('Show notifications of severity "info" and "warning"') }}
                         </label>
                         <label class="radio">
-                            <input type="radio" name="notifySuppressedCommandsGroup" value="warn" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands"> {{ _('Show notifications of severity "warning"') }}
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="warn" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-warn"> {{ _('Show notifications of severity "warning"') }}
                         </label>
                         <label class="radio">
-                            <input type="radio" name="notifySuppressedCommandsGroup" value="never" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands"> {{ _('Never show notifications') }}
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="never" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-never"> {{ _('Never show notifications') }}
                         </label>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Resend Tracking') }}</legend>
+                <div class="control-group" title="{{ _('Resend ratio threshold. Percentage of resend requests among all sent lines to consider critical.')|edq }}">
+                    <label class="control-label" for="settings-serialResendRatioThreshold">{{ _('Critical resend ratio') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" min="0" max="100" step="1" class="input-mini text-right" id="settings-serialResendRatioThreshold" data-bind="value: serial_resendRatioThreshold">
+                            <span class="add-on">%</span>
+                        </div>
                     </div>
                 </div>
             </fieldset>

@@ -144,6 +144,7 @@ $(function () {
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
         self.appearance_fuzzyTimes = ko.observable(undefined);
         self.appearance_closeModalsWithClick = ko.observable(undefined);
+        self.appearance_showInternalFilename = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -233,6 +234,7 @@ $(function () {
         self.serial_sendM112OnError = ko.observable(undefined);
         self.serial_disableSdPrintingDetection = ko.observable(undefined);
         self.serial_ackMax = ko.observable(undefined);
+        self.serial_resendRatioThreshold = ko.observable(100);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

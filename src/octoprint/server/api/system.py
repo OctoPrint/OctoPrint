@@ -26,6 +26,33 @@ def readUsageForFolders():
     return jsonify(usage=_usageForFolders())
 
 
+@api.route("/system/info", methods=["GET"])
+@no_firstrun_access
+@Permissions.SYSTEM.require(403)
+def getSystemInfo():
+    from octoprint.cli.systeminfo import get_systeminfo
+    from octoprint.server import (
+        connectivityChecker,
+        environmentDetector,
+        printer,
+        safe_mode,
+    )
+    from octoprint.util import dict_flatten
+
+    systeminfo = get_systeminfo(environmentDetector, connectivityChecker)
+    systeminfo["browser.user_agent"] = request.headers.get("User-Agent")
+    systeminfo["octoprint.safe_mode"] = safe_mode is not None
+
+    if printer and printer.is_operational():
+        firmware_info = printer.firmware_info
+        if firmware_info:
+            systeminfo.update(
+                dict_flatten({"firmware": firmware_info["name"]}, prefix="printer")
+            )
+
+    return jsonify(systeminfo=systeminfo)
+
+
 def _usageForFolders():
     data = {}
     for folder_name in s().get(["folder"]).keys():

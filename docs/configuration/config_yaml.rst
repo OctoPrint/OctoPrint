@@ -124,6 +124,10 @@ appearance or to modify the order and presence of the various UI components:
      # acrylic for its frame ;)
      colorTransparent: false
 
+     # Show the internal filename in the files sidebar, if necessary
+     # UI change only
+     showInternalFilename: true
+
      # Configures the order and availability of the UI components
      components:
 
@@ -802,6 +806,9 @@ Use the following settings to configure the serial connection to the printer:
      # the response skips on the ok)
      triggerOkForM29: true
 
+     # Percentage of resend requests among all sent lines that should be considered critical
+     resendRatioThreshold: 10
+
      capabilities:
 
        # Whether to enable temperature autoreport in the firmware if its support is detected
@@ -940,6 +947,12 @@ Use the following settings to configure the server:
 
        # Command to shut down the system OctoPrint is running on, defaults to being unset
        systemShutdownCommand: sudo shutdown -h now
+
+       # pip command associated with OctoPrint, used for installing plugins and updates,
+       # if unset (default) the command will be autodetected based on the current python
+       # executable - unless you have a really special setup this is the right way to do
+       # it and there should be no need to ever even touch this setting
+       localPipCommand: None
 
      # Configuration of the regular online connectivity check
      onlineCheck:

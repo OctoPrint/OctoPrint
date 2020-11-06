@@ -3,11 +3,13 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import collections
 import logging
+import threading
 
 import pkg_resources
 
-from octoprint.util.pip import PipCaller, UnknownPip
+from octoprint.util.pip import UnknownPip, create_pip_caller
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -22,6 +24,7 @@ _POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
 _POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
 
 _pip_callers = {}
+_pip_caller_mutex = collections.defaultdict(threading.RLock)
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 
@@ -41,27 +44,26 @@ def can_perform_update(target, check, online=True):
 
 
 def _get_pip_caller(command=None):
+    global _pip_callers
+    global _pip_caller_mutex
+
     key = command
     if command is None:
         key = "__default"
 
-    if key not in _pip_callers:
-        try:
-            _pip_callers[key] = PipCaller(configured=command)
-        except UnknownPip:
-            _pip_callers[key] = None
+    with _pip_caller_mutex[key]:
+        if key not in _pip_callers:
+            try:
+                _pip_callers[key] = create_pip_caller(command=command)
+            except UnknownPip:
+                pass
 
-    return _pip_callers[key]
+        return _pip_callers.get(key)
 
 
 def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
-    pip_command = None
-    if "pip_command" in check:
-        pip_command = check["pip_command"]
-
-    pip_working_directory = None
-    if "pip_cwd" in check:
-        pip_working_directory = check["pip_cwd"]
+    pip_command = check.get("pip_command")
+    pip_working_directory = check.get("pip_cwd")
 
     if not online and not check.get("offline", False):
         raise exceptions.CannotUpdateOffline()

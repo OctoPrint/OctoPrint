@@ -28,7 +28,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.util import dict_merge, get_formatted_size, to_unicode
-from octoprint.util.pip import LocalPipCaller
+from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import get_comparable_version, get_python_version_string
 
 from . import cli, exceptions, updaters, util, version_checks
@@ -287,7 +287,9 @@ class SoftwareUpdatePlugin(
     def _check_environment(self):
         import pkg_resources
 
-        local_pip = LocalPipCaller()
+        local_pip = create_pip_caller(
+            command=self._settings.global_get(["server", "commands", "localPipCommand"])
+        )
 
         # check python and setuptools version
         versions = {
@@ -1965,6 +1967,12 @@ class SoftwareUpdatePlugin(
                     elif check.get("pip", None):
                         # we force python unequality check for pip installs, to be able to downgrade
                         result["release_compare"] = "python_unequal"
+                        result["pip_command"] = check.get(
+                            "pip_command",
+                            self._settings.global_get(
+                                ["server", "commands", "localPipCommand"]
+                            ),
+                        )
 
         elif target == "pip":
             import pkg_resources
@@ -1982,6 +1990,11 @@ class SoftwareUpdatePlugin(
                 if distribution:
                     displayVersion = distribution.version
             result["displayVersion"] = to_unicode(displayVersion, errors="replace")
+
+            result["pip_command"] = check.get(
+                "pip_command",
+                self._settings.global_get(["server", "commands", "localPipCommand"]),
+            )
 
         else:
             result["displayName"] = to_unicode(check.get("displayName"), errors="replace")

@@ -41,6 +41,9 @@ $(function () {
         // system commands
         self.systemCommands = ko.observableArray([]);
 
+        // systen info
+        self.systemInfo = ko.observableArray([]);
+
         // printer
         self.printerConnected = ko.observable(false);
         self.jobInProgress = ko.observable(false);
@@ -68,6 +71,14 @@ $(function () {
 
             OctoPrint.system.getCommandsForSource("core").done(function (resp) {
                 self.systemCommands(resp);
+            });
+
+            OctoPrint.system.getInfo().done(function (resp) {
+                var systeminfo = [];
+                _.forOwn(resp.systeminfo, function (value, key) {
+                    systeminfo.push({key: key, value: value});
+                });
+                self.systemInfo(systeminfo);
             });
 
             OctoPrint.printer
@@ -114,6 +125,14 @@ $(function () {
             } else {
                 process();
             }
+        };
+
+        self.copySystemInfo = function () {
+            var text = "";
+            _.each(self.systemInfo(), function (entry) {
+                text += entry.key + ": " + entry.value + "\r\n";
+            });
+            copyToClipboard(text);
         };
 
         self.cancelPrint = function () {

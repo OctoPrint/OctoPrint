@@ -137,7 +137,7 @@ def unmap_v4_as_v6(address):
     return address
 
 
-def interface_addresses(family=None):
+def interface_addresses(family=None, interfaces=None):
     """
     Retrieves all of the host's network interface addresses.
     """
@@ -147,7 +147,10 @@ def interface_addresses(family=None):
     if not family:
         family = netifaces.AF_INET
 
-    for interface in netifaces.interfaces():
+    if interfaces is None:
+        interfaces = netifaces.interfaces()
+
+    for interface in interfaces:
         try:
             ifaddresses = netifaces.ifaddresses(interface)
         except Exception:
@@ -158,12 +161,15 @@ def interface_addresses(family=None):
                     yield ifaddress["addr"]
 
 
-def address_for_client(host, port, timeout=3.05):
+def address_for_client(host, port, timeout=3.05, addresses=None, interfaces=None):
     """
     Determines the address of the network interface on this host needed to connect to the indicated client host and port.
     """
 
-    for address in interface_addresses():
+    if addresses is None:
+        addresses = interface_addresses(interfaces=interfaces)
+
+    for address in addresses:
         try:
             if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
                 return address

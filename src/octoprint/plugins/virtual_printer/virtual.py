@@ -4,6 +4,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import collections
 import io
+import json
 import math
 import os
 import queue
@@ -31,10 +32,12 @@ class VirtualPrinter:
     set_ambient_regex = re.compile(r"set_ambient ([-+]?[0-9]*\.?[0-9]+)")
     start_sd_regex = re.compile(r"start_sd (.*)")
     select_sd_regex = re.compile(r"select_sd (.*)")
+    resend_ratio_regex = re.compile(r"resend_ratio (\d+)")
 
     def __init__(
         self,
         settings,
+        data_folder,
         seriallog_handler=None,
         read_timeout=5.0,
         write_timeout=10.0,
@@ -48,6 +51,7 @@ class VirtualPrinter:
 
         self._settings = settings
         self._faked_baudrate = faked_baudrate
+        self._plugin_data_folder = data_folder
 
         self._seriallog = logging.getLogger(
             "octoprint.plugin.virtual_printer.VirtualPrinter.serial"
@@ -129,6 +133,13 @@ class VirtualPrinter:
 
         self._heatingUp = False
 
+        self._virtual_eeprom = (
+            VirtualEEPROM(self._plugin_data_folder)
+            if self._settings.get_boolean(["enable_eeprom"])
+            else None
+        )
+        self._support_M503 = self._settings.get_boolean(["support_M503"])
+
         self._okBeforeCommandOutput = self._settings.get_boolean(
             ["okBeforeCommandOutput"]
         )
@@ -169,6 +180,10 @@ class VirtualPrinter:
         self._sleepAfter = {}
         self._rerequest_last = False
 
+        self._received_lines = 0
+        self._resend_every_n = 0
+        self._calculate_resend_every_n(self._settings.get(["resend_ratio"]))
+
         self._dont_answer = False
 
         self._debug_drop_connection = False
@@ -203,6 +218,9 @@ class VirtualPrinter:
             options=self._settings.get([]),
         )
 
+    def _calculate_resend_every_n(self, resend_ratio):
+        self._resend_every_n = (100 // resend_ratio) if resend_ratio else 0
+
     def _reset(self):
         with self._incoming_lock:
             self._relative = True
@@ -225,6 +243,10 @@ class VirtualPrinter:
             self._selectedSdFile = None
             self._selectedSdFileSize = None
             self._selectedSdFilePos = None
+
+            # read eeprom from disk
+            if self._virtual_eeprom:
+                self._virtual_eeprom.read_settings()
 
             if self._writingToSdHandle:
                 try:
@@ -349,6 +371,8 @@ class VirtualPrinter:
                 self._dont_answer = False
                 continue
 
+            self._received_lines += 1
+
             # strip checksum
             if b"*" in data:
                 checksum = int(data[data.rfind(b"*") + 1 :])
@@ -435,6 +459,10 @@ class VirtualPrinter:
                 if data.startswith("!!DEBUG:"):
                     debug_command = data[len("!!DEBUG:") :].strip()
                 self._debugTrigger(debug_command)
+                continue
+
+            if self._resend_every_n and self._received_lines % self._resend_every_n == 0:
+                self._triggerResend(checksum=True)
                 continue
 
             # shortcut for writing to SD
@@ -805,6 +833,284 @@ class VirtualPrinter:
         else:
             time.sleep(timeout)
 
+    # EEPROM management commands
+
+    def _gcode_M500(self, data):
+        # Stores settings to disk
+        if self._virtual_eeprom:
+            self._virtual_eeprom.save_settings()
+        else:
+            self._send(self._error("command_unknown", "M500"))
+
+    def _gcode_M501(self, data):
+        # Read from EEPROM
+        if self._virtual_eeprom:
+            self._virtual_eeprom.read_settings()
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M501"))
+
+    def _gcode_M502(self, data):
+        # reset to default values
+        if self._virtual_eeprom:
+            self._virtual_eeprom.load_defaults()
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M502"))
+
+    def _gcode_M503(self, data):
+        # echo all eeprom data
+        if self._virtual_eeprom and self._support_M503:
+            for line in self._construct_eeprom_values():
+                self._send(line)
+        else:
+            self._send(self._error("command_unknown", "M503"))
+
+    def _gcode_M504(self, data):
+        if self._virtual_eeprom:
+            self._send("echo:EEPROM OK")
+        else:
+            self._send(self._error("command_unknown", "M504"))
+
+    # EEPROM settings commands
+
+    def _gcode_M92(self, data):
+        # Steps per unit
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M92"))
+            return
+        if not self._check_param_letters("XYZE", data):
+            # no params, report values
+            self._send(self._construct_echo_values("steps", "XYZE"))
+        else:
+            for key, value in self._parse_eeprom_params("XYZE", data).items():
+                self._virtual_eeprom.eeprom["steps"]["params"][key] = float(value)
+
+    def _gcode_M203(self, data):
+        # Maximum feedrates (units/s)
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M203"))
+            return
+        if not self._check_param_letters("XYZE", data):
+            # no params, report values
+            self._send(self._construct_echo_values("feedrate", "XYZE"))
+        else:
+            for key, value in self._parse_eeprom_params("XYZE", data).items():
+                self._virtual_eeprom.eeprom["feedrate"]["params"][key] = float(value)
+
+    def _gcode_M201(self, data):
+        # Maximum Acceleration (units/s2)
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M201"))
+            return
+        if not self._check_param_letters("EXYZ", data):
+            # no params, report values
+            self._send(self._construct_echo_values("max_accel", "EXYZ"))
+        else:
+            for key, value in self._parse_eeprom_params("EXYZ", data).items():
+                self._virtual_eeprom.eeprom["max_accel"]["params"][key] = float(value)
+
+    def _gcode_M204(self, data):
+        # Starting Acceleration (units/s2)
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M204"))
+            return
+        if not self._check_param_letters("PRTS", data):
+            # no params, report values
+            self._send(self._construct_echo_values("start_accel", "PRTS"))
+        else:
+            for key, value in self._parse_eeprom_params("PRTS", data).items():
+                self._virtual_eeprom.eeprom["start_accel"]["params"][key] = float(value)
+
+    def _gcode_M206(self, data):
+        # Home offset
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M206"))
+            return
+        if not self._check_param_letters("XYZ", data):
+            # no params, report values
+            self._send(self._construct_echo_values("home_offset", "XYZ"))
+        else:
+            for key, value in self._parse_eeprom_params("XYZ", data).items():
+                self._virtual_eeprom.eeprom["home_offset"]["params"][key] = float(value)
+
+    def _gcode_M851(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M851"))
+            return
+        if not self._check_param_letters("XYZ", data):
+            self._send(self._construct_echo_values("probe_offset", "XYZ"))
+        else:
+            for key, value in self._parse_eeprom_params("XYZ", data).items():
+                self._virtual_eeprom.eeprom["probe_offset"]["params"][key] = float(value)
+
+    def _gcode_M200(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M200"))
+            return
+        if not self._check_param_letters("DS", data):
+            self._send(self._construct_echo_values("filament", "DS"))
+        else:
+            for key, value in self._parse_eeprom_params("DS", data).items():
+                self._virtual_eeprom.eeprom["filament"]["params"][key] = float(value)
+
+    def _gcode_M666(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M666"))
+            return
+        if not self._check_param_letters("XYZ", data):
+            self._send(self._construct_echo_values("endstop", "XYZ"))
+        else:
+            for key, value in self._parse_eeprom_params("XYZ", data).items():
+                self._virtual_eeprom.eeprom["endstop"]["params"][key] = float(value)
+
+    def _gcode_M665(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M665"))
+            return
+        if not self._check_param_letters("BHLRSXYZ", data):
+            self._send(self._construct_echo_values("delta", "BHLRSXYZ"))
+        else:
+            for key, value in self._parse_eeprom_params("BHLRSXYZ", data).items():
+                self._virtual_eeprom.eeprom["delta"]["params"][key] = float(value)
+
+    def _gcode_M420(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M420"))
+            return
+        if not self._check_param_letters("SZ", data):
+            self._send(self._construct_echo_values("auto_level", "SZ"))
+        else:
+            for key, value in self._parse_eeprom_params("SZ", data).items():
+                self._virtual_eeprom.eeprom["auto_level"]["params"][key] = float(value)
+
+    def _gcode_M900(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M900"))
+            return
+        if not self._check_param_letters("K", data):
+            self._send(self._construct_echo_values("linear_advance", "K"))
+        else:
+            for key, value in self._parse_eeprom_params("K", data).items():
+                self._virtual_eeprom.eeprom["linear_advance"]["params"][key] = float(
+                    value
+                )
+
+    def _gcode_M205(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M205"))
+            return
+        if not self._check_param_letters("BSTXYZEJ", data):
+            self._send(self._construct_echo_values("advanced", "BSTXYZEJ"))
+        else:
+            for key, value in self._parse_eeprom_params("BSTXYZEJ", data).items():
+                self._virtual_eeprom.eeprom["advanced"]["params"][key] = float(value)
+
+    def _gcode_M145(self, data):
+        # M145 is a bit special, since it refers to 2 sets of values under the same params
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M145"))
+            return
+        if not self._check_param_letters("S", data):
+            config = self._virtual_eeprom.eeprom["material"]
+            for material in ["0", "1"]:
+                line = "echo: " + config["command"] + " S" + material
+                for param, saved_value in config["params"][material].items():
+                    line = line + " " + param + str(saved_value)
+                self._send(line)
+        else:
+            parsed = self._parse_eeprom_params("SBFH", data)
+            try:
+                material_no = parsed["S"]
+            except KeyError:
+                self._send("Need to specify a material (S0/S1)")
+                return
+            for key, value in parsed.items():
+                if key == "S":
+                    pass
+                else:
+                    self._virtual_eeprom.eeprom["advanced"]["params"][material_no][
+                        key
+                    ] = float(value)
+
+    def _gcode_M301(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M301"))
+            return
+        if not self._check_param_letters("PID", data):
+            self._send(self._construct_echo_values("pid", "PID"))
+        else:
+            for key, value in self._parse_eeprom_params("PID", data).items():
+                self._virtual_eeprom.eeprom["pid"]["params"][key] = float(value)
+
+    def _gcode_M304(self, data):
+        if not self._virtual_eeprom:
+            self._send(self._error("command_unknown", "M304"))
+            return
+        if not self._check_param_letters("PID", data):
+            self._send(self._construct_echo_values("pid_bed", "PID"))
+        else:
+            for key, value in self._parse_eeprom_params("PID", data).items():
+                self._virtual_eeprom.eeprom["pid_bed"]["params"][key] = float(value)
+
+    # EEPROM Helpers
+
+    def _construct_eeprom_values(self):
+        lines = []
+        # Iterate over the dict, and echo each command/value etc.
+        for key, value in self._virtual_eeprom.eeprom.items():
+            # echo, description
+            lines.append("echo:; " + value["description"])
+            if key == "material":  # material gets special handling...
+                lines.extend(self._m145_handling())
+            else:
+                # echo, command, params
+                line = "echo: " + value["command"]
+                for param, saved_value in value["params"].items():
+                    line = line + " " + param + str(saved_value)
+                lines.append(line)
+        return lines
+
+    def _m145_handling(self):
+        config = self._virtual_eeprom.eeprom["material"]
+        lines = []
+        for material in ["0", "1"]:
+            line = "echo: " + config["command"] + "S" + material
+            for param, saved_value in config["params"][material].items():
+                line = line + " " + param + str(saved_value)
+            lines.append(line)
+        return lines
+
+    @staticmethod
+    def _parse_eeprom_params(letters, line):
+        # letters provided in a string (eg "XYZ") and line (eg. M92 X20 Y20 Z20)
+        # are parsed into a dict
+        params = list(letters)
+        output = {}
+        for param in params:
+            match = re.search(param + r"([0-9]+(\.[0-9]{1,2})?)", line)
+            if match:
+                output[param] = match.group(1)
+        return output
+
+    def _construct_echo_values(self, name, letters):
+        # Construct a line like 'echo: M92 X100 Y120 Z130' based on type & letters
+        config = self._virtual_eeprom.eeprom[name]
+        line = "echo: " + config["command"]
+        for param in list(letters):
+            line = line + " " + param + str(config["params"][param])
+        return line
+
+    @staticmethod
+    def _check_param_letters(letters, data):
+        # Checks if any of the params (letters) are included in data
+        # Purely for saving typing :)
+        for param in list(letters):
+            if param in data:
+                return True
+
     ##~~ further helpers
 
     # noinspection PyMethodMayBeStatic
@@ -891,6 +1197,9 @@ class VirtualPrinter:
             | will be used instead of actual "ok"
             rerequest_last
             | Will cause the last line number + 1 to be rerequest add infinitum
+            resend_ratio <int:percentage>
+            | Sets the resend ratio to the given percentage, simulating noisy lines.
+            | Set to 0 to disable noise simulation.
 
             # Reply Timing / Sleeping
 
@@ -987,6 +1296,7 @@ class VirtualPrinter:
                 set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
                 start_sd_match = VirtualPrinter.start_sd_regex.match(data)
                 select_sd_match = VirtualPrinter.select_sd_regex.match(data)
+                resend_ratio_match = VirtualPrinter.resend_ratio_regex.match(data)
 
                 if sleep_match is not None:
                     interval = int(sleep_match.group(1))
@@ -1034,6 +1344,10 @@ class VirtualPrinter:
                     self._startSdPrint()
                 elif select_sd_match is not None:
                     self._selectSdFile(select_sd_match.group(1))
+                elif resend_ratio_match is not None:
+                    resend_ratio = int(resend_ratio_match.group(1))
+                    if 0 <= resend_ratio <= 100:
+                        self._calculate_resend_every_n(resend_ratio)
             except Exception:
                 self._logger.exception("While handling %r", data)
 
@@ -1734,6 +2048,152 @@ class VirtualPrinter:
 
     def _error(self, error: str, *args: Any, **kwargs: Any) -> str:
         return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
+
+
+class VirtualEEPROM:
+    def __init__(self, data_folder):
+        self._data_folder = data_folder
+        self._eeprom_file_path = os.path.join(self._data_folder, "eeprom.json")
+        self._eeprom = self._initialise_eeprom()
+
+    def _initialise_eeprom(self):
+        if os.path.exists(self._eeprom_file_path):
+            # file exists, read it
+            with io.open(self._eeprom_file_path, "rt", encoding="utf-8") as eeprom_file:
+                data = json.load(eeprom_file)
+            return data
+        else:
+            # no eeprom file, make new one with defaults
+            data = self.get_default_settings()
+            with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+                eeprom_file.write(to_unicode(json.dumps(data)))
+            return data
+
+    @staticmethod
+    def get_default_settings():
+        return {
+            "steps": {
+                "command": "M92",
+                "description": "Steps per unit:",
+                "params": {"X": 80.0, "Y": 80.0, "Z": 800.0, "E": 90.0},
+            },
+            "feedrate": {
+                "command": "M203",
+                "description": "Maximum feedrates (units/s):",
+                "params": {"X": 500.0, "Y": 500.0, "Z": 5.0, "E": 25.0},
+            },
+            "max_accel": {
+                "command": "M201",
+                "description": "Maximum Acceleration (units/s2):",
+                "params": {"E": 74.0, "X": 2000.0, "Y": 2000.0, "Z": 10.0},
+            },
+            "start_accel": {
+                "command": "M204",
+                "description": "Acceleration (units/s2): P<print_accel> R<retract_accel>"
+                " T<travel_accel>",
+                "params": {"P": 750.0, "R": 1000.0, "T": 300.0, "S": 300.0},
+                # S is deprecated, use P & T instead
+            },
+            "home_offset": {
+                "command": "M206",
+                "description": "Home offset:",
+                "params": {"X": 0.0, "Y": 0.0, "Z": 0.0},
+            },  # TODO below are not yet implemented in gcode, just settings
+            "probe_offset": {
+                "command": "M851",
+                "description": "Z-Probe Offset (mm):",
+                "params": {"X": 5.0, "Y": 5.0, "Z": 0.2},
+            },
+            "filament": {
+                "command": "M200",
+                "description": "Filament settings: Disabled",
+                "params": {"D": 1.75, "S": 0},
+            },
+            "endstop": {
+                "command": "M666",
+                "description": "Enstop adjustment:",  # TODO description needed
+                "params": {"X": -1.0, "Y": 0.0, "Z": 0.0},
+            },
+            "delta": {
+                "command": "M665",
+                "description": "Delta config:",  # TODO description
+                "params": {
+                    "B": 0.0,
+                    "H": 100.0,
+                    "L": 25.0,
+                    "R": 6.5,
+                    "S": 100.0,
+                    "X": 20.0,
+                    "Y": 20.0,
+                    "Z": 20.0,
+                },
+            },
+            "auto_level": {
+                "command": "M420",
+                "description": "Bed Levelling:",
+                "params": {"S": 0, "Z": 0.0},
+            },
+            "linear_advance": {
+                "command": "M900",
+                "description": "Linear Advance:",
+                "params": {"K": 0.01},
+            },
+            "advanced": {
+                "command": "M205",
+                "description": "Advanced: B<min_segment_time_us> S<min_feedrate> "
+                "T<min_travel_feedrate> X<max_x_jerk> Y<max_y_jerk> "
+                "Z<max_z_jerk> E<max_e_jerk>",
+                "params": {
+                    "B": 20000.0,
+                    "S": 0.0,
+                    "T": 0.0,
+                    "X": 10.0,
+                    "Y": 10.0,
+                    "Z": 0.3,
+                    "E": 5.0,
+                    "J": 0.0,
+                },
+            },
+            "material": {  # TODO This ones going to need some special handling...
+                "command": "M145",
+                "description": "Material heatup parameters:",
+                "params": {
+                    "0": {"B": 50, "F": 255, "H": "205"},
+                    "1": {"B": 75, "F": 0, "H": 240},
+                },
+            },
+            "pid": {
+                "command": "M301",
+                "description": "PID settings:",
+                "params": {"P": 27.08, "I": 2.51, "D": 73.09},
+            },
+            "pid_bed": {
+                "command": "M304",
+                "description": "PID settings:",
+                "params": {"P": 131.06, "I": 11.79, "D": 971.23},
+            },
+        }
+
+    def save_settings(self):
+        # M500 behind-the-scenes
+        with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
+
+    def read_settings(self):
+        # M501 - if the file has disappeared, then recreate it
+        if not os.path.exists(self._eeprom_file_path):
+            self.load_defaults()
+            self.save_settings()
+        with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+            self._eeprom = json.load(eeprom_file)
+
+    def load_defaults(self):
+        # M502
+        self._eeprom = self.get_default_settings()
+
+    @property
+    def eeprom(self):
+        return self._eeprom
 
 
 # noinspection PyUnresolvedReferences

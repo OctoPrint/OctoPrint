@@ -35,7 +35,7 @@ from octoprint.server.util.flask import (
 from octoprint.settings import valid_boolean_trues
 from octoprint.util import TemporaryDirectory, to_bytes
 from octoprint.util.net import download_file
-from octoprint.util.pip import LocalPipCaller
+from octoprint.util.pip import create_pip_caller
 from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.util.version import (
     get_octoprint_version,
@@ -193,8 +193,9 @@ class PluginManagerPlugin(
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
         self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
-        self._pip_caller = LocalPipCaller(
-            force_user=self._settings.get_boolean(["pip_force_user"])
+        self._pip_caller = create_pip_caller(
+            command=self._settings.global_get(["server", "commands", "localPipCommand"]),
+            force_user=self._settings.get_boolean(["pip_force_user"]),
         )
         self._pip_caller.on_log_call = self._log_call
         self._pip_caller.on_log_stdout = self._log_stdout

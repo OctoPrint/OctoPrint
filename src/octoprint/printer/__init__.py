@@ -598,6 +598,10 @@ class PrinterInterface:
         """
         raise NotImplementedError()
 
+    @property
+    def firmware_info(self):
+        raise NotImplementedError()
+
 
 class PrinterCallback:
     def on_printer_add_log(self, data):

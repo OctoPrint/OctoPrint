@@ -177,6 +177,15 @@ Data model
      - 0..*
      - List of String
      - Lines for the serial communication log (special messages)
+   * - ``resends``
+     - 1
+     - :ref:`Resend stats <sec-api-datamodel-printer-resends>`
+     - Current resend statistics for the connection
+   * - ``plugins``
+     - 0..1
+     - Map of plugin identifiers to additional data
+     - Additional data injected by plugins via the :ref:`octoprint.printer.additional_state_data hook <sec-plugins-hooks-plugin-printer-additional_state_data>`,
+       indexed by plugin identifier. Structure of additional data is determined by the plugin.
 
 .. _sec-api-push-datamodel-event:
 

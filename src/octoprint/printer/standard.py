@@ -81,6 +81,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._printAfterSelect = False
         self._posAfterSelect = None
 
+        self._firmware_info = None
+
         # sd handling
         self._sdPrinting = False
         self._sdStreaming = False
@@ -138,6 +140,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             on_add_log=self._sendAddLogCallbacks,
             on_add_message=self._sendAddMessageCallbacks,
             on_get_progress=self._updateProgressDataCallback,
+            on_get_resends=self._updateResendDataCallback,
         )
         self._stateMonitor.reset(
             state=self._dict(text=self.get_state_string(), flags=self._getStateFlags()),
@@ -157,6 +160,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             ),
             current_z=None,
             offsets=self._dict(),
+            resends=self._dict(count=0, ratio=0),
         )
 
         eventManager().subscribe(
@@ -178,6 +182,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     job_type = "local"
 
         self._estimator = self._estimator_factory(job_type)
+
+    @property
+    def firmware_info(self):
+        return frozendict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -346,6 +354,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 "serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log"
             )
 
+        self._firmware_info = None
         self._comm = comm.MachineCom(
             port,
             baudrate,
@@ -363,6 +372,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             self._comm.close()
         else:
             eventManager().fire(Events.DISCONNECTED)
+        self._firmware_info = None
 
     def get_transport(self, *args, **kwargs):
 
@@ -1133,6 +1143,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             printTimeLeftOrigin=printTimeLeftOrigin,
         )
 
+    def _updateResendDataCallback(self):
+        if not self._comm:
+            return self._dict(count=0, ratio=0)
+        return self._dict(
+            count=self._comm.received_resends,
+            ratio=int(self._comm.resend_ratio * 100.0),
+        )
+
     def _addTemperatureData(self, tools=None, bed=None, chamber=None, custom=None):
         if tools is None:
             tools = {}
@@ -1574,7 +1592,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             eventManager().fire(Events.PRINT_DONE, payload)
             self._logger_job.info(
                 "Print job done - origin: {}, path: {}, owner: {}".format(
-                    payload.get("origin"), payload.get("path"), payload.get("owner")
+                    payload.get("origin"),
+                    payload.get("path"),
+                    payload.get("owner"),
                 )
             )
 
@@ -1765,6 +1785,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         except Exception:
             self._logger.exception("Error while trying to persist print recovery data")
 
+    def on_comm_firmware_info(self, firmware_name, firmware_data):
+        self._firmware_info = {"name": firmware_name, "data": firmware_data}
+
     def _payload_for_print_job_event(
         self,
         location=None,
@@ -1832,6 +1855,7 @@ class StateMonitor:
         on_add_log=None,
         on_add_message=None,
         on_get_progress=None,
+        on_get_resends=None,
     ):
         self._interval = interval
         self._update_callback = on_update
@@ -1839,18 +1863,22 @@ class StateMonitor:
         self._on_add_log = on_add_log
         self._on_add_message = on_add_message
         self._on_get_progress = on_get_progress
+        self._on_get_resends = on_get_resends
 
         self._state = None
         self._job_data = None
         self._current_z = None
         self._offsets = {}
         self._progress = None
+        self._resends = None
 
         self._progress_dirty = False
+        self._resends_dirty = False
 
         self._change_event = threading.Event()
         self._state_lock = threading.Lock()
         self._progress_lock = threading.Lock()
+        self._resends_lock = threading.Lock()
 
         self._last_update = time.monotonic()
         self._worker = threading.Thread(target=self._work)
@@ -1862,14 +1890,26 @@ class StateMonitor:
             return self._on_get_progress()
         return self._progress
 
+    def _get_current_resends(self):
+        if callable(self._on_get_resends):
+            return self._on_get_resends()
+        return self._resends
+
     def reset(
-        self, state=None, job_data=None, progress=None, current_z=None, offsets=None
+        self,
+        state=None,
+        job_data=None,
+        progress=None,
+        current_z=None,
+        offsets=None,
+        resends=None,
     ):
         self.set_state(state)
         self.set_job_data(job_data)
         self.set_progress(progress)
         self.set_current_z(current_z)
         self.set_temp_offsets(offsets)
+        self.set_resends(resends)
 
     def add_temperature(self, temperature):
         self._on_add_temperature(temperature)
@@ -1877,6 +1917,8 @@ class StateMonitor:
 
     def add_log(self, log):
         self._on_add_log(log)
+        with self._resends_lock:
+            self._resends_dirty = True
         self._change_event.set()
 
     def add_message(self, message):
@@ -1905,6 +1947,12 @@ class StateMonitor:
         with self._progress_lock:
             self._progress_dirty = False
             self._progress = progress
+            self._change_event.set()
+
+    def set_resends(self, resend_ratio):
+        with self._resends_lock:
+            self._resends_dirty = False
+            self._resends = resend_ratio
             self._change_event.set()
 
     def set_temp_offsets(self, offsets):
@@ -1942,12 +1990,18 @@ class StateMonitor:
                 self._progress = self._get_current_progress()
                 self._progress_dirty = False
 
+        with self._resends_lock:
+            if self._resends_dirty:
+                self._resends = self._get_current_resends()
+                self._resends_dirty = False
+
         return {
             "state": self._state,
             "job": self._job_data,
             "currentZ": self._current_z,
             "progress": self._progress,
             "offsets": self._offsets,
+            "resends": self._resends,
         }
 
 

@@ -111,6 +111,7 @@ def getSettings():
             "showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"]),
             "fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"]),
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
+            "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
         "printer": {
             "defaultExtrusionLength": s.getInt(
@@ -238,6 +239,7 @@ def getSettings():
             "capEmergencyParser": s.getBoolean(
                 ["serial", "capabilities", "emergency_parser"]
             ),
+            "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -505,6 +507,11 @@ def _saveSettings(data):
             s.setBoolean(
                 ["appearance", "closeModalsWithClick"],
                 data["appearance"]["closeModalsWithClick"],
+            )
+        if "showInternalFilename" in data["appearance"]:
+            s.setBoolean(
+                ["appearance", "showInternalFilename"],
+                data["appearance"]["showInternalFilename"],
             )
 
     if "printer" in data:
@@ -856,6 +863,10 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "capabilities", "emergency_parser"],
                 data["serial"]["capEmergencyParser"],
+            )
+        if "resendRatioThreshold" in data["serial"]:
+            s.setInt(
+                ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
             )
 
         oldLog = s.getBoolean(["serial", "log"])

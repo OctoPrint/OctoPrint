@@ -934,6 +934,28 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         """
         return default_template_filter
 
+    # noinspection PyMethodMayBeStatic
+    def get_ui_permissions(self):
+        """
+        Determines a list of permissions that need to be on the current user session. If
+        these requirements are not met, OctoPrint will instead redirect to a login
+        screen.
+
+        Plugins may override this with their own set of permissions. Returning an empty
+        list will instruct OctoPrint to never show a login dialog when this UiPlugin's
+        view renders, in which case it will fall to your plugin to implement its own
+        login logic.
+
+        Returns:
+            (list) A list of permissions which to check the current user session against.
+            May be empty to indicate that no permission checks should be made by OctoPrint.
+
+        ..versionadded: 1.5.0
+        """
+        from octoprint.access.permissions import Permissions
+
+        return [Permissions.STATUS, Permissions.SETTINGS_READ]
+
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
     """

@@ -154,6 +154,7 @@ default_settings = {
             "busy_protocol": True,
             "emergency_parser": True,
         },
+        "resendRatioThreshold": 10,
         # command specific flags
         "triggerOkForM29": True,
     },
@@ -190,6 +191,7 @@ default_settings = {
             "systemShutdownCommand": None,
             "systemRestartCommand": None,
             "serverRestartCommand": None,
+            "localPipCommand": None,
         },
         "onlineCheck": {
             "enabled": None,
@@ -290,6 +292,7 @@ default_settings = {
         "showFahrenheitAlso": False,
         "fuzzyTimes": True,
         "closeModalsWithClick": True,
+        "showInternalFilename": True,
         "components": {
             "order": {
                 "navbar": [

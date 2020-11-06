@@ -39,6 +39,7 @@ from octoprint.server import (  # noqa: F401
     preemptiveCache,
     userManager,
 )
+from octoprint.server.util import has_permissions, require_login
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -165,22 +166,6 @@ def _add_additional_assets(hook):
     return result
 
 
-def _has_permissions(*permissions):
-    logged_in = False
-
-    try:
-        if util.loginUserFromApiKey():
-            logged_in = True
-    except util.InvalidApiKeyException:
-        pass  # ignored
-
-    if not logged_in and util.loginUserFromAuthorizationHeader():
-        logged_in = True
-
-    util.flask.passive_login()
-    return all(map(lambda p: p.can(), permissions))
-
-
 @app.route("/login")
 @app.route("/login/")
 def login():
@@ -200,7 +185,7 @@ def login():
     if not permissions:
         permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
-    if _has_permissions(*permissions):
+    if has_permissions(*permissions):
         return redirect(redirect_url)
 
     render_kwargs = {
@@ -227,14 +212,9 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-    if not _has_permissions(Permissions.ADMIN):
-        return redirect(
-            url_for(
-                "login",
-                redirect=request.script_root + request.full_path,
-                permissions=Permissions.ADMIN.key,
-            )
-        )
+    response = require_login(Permissions.ADMIN)
+    if response:
+        return response
 
     render_kwargs = {"theming": []}
 
@@ -325,21 +305,6 @@ def in_cache():
 @app.route("/")
 def index():
     from octoprint.server import printer
-
-    if (
-        request.headers.get("X-Preemptive-Recording", "no") == "no"
-        and userManager.has_been_customized()
-    ):
-        if not _has_permissions(Permissions.STATUS, Permissions.SETTINGS_READ):
-            return redirect(
-                url_for(
-                    "login",
-                    redirect=request.script_root + request.full_path,
-                    permissions=",".join(
-                        [Permissions.STATUS.key, Permissions.SETTINGS_READ.key]
-                    ),
-                )
-            )
 
     global _templates, _plugin_names, _plugin_vars
 
@@ -633,6 +598,8 @@ def index():
         preemptively_cached = get_preemptively_cached_view("_default", cached, {}, {})
         return preemptively_cached()
 
+    default_permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
+
     response = None
 
     forced_view = request.headers.get("X-Force-View", None)
@@ -645,13 +612,20 @@ def index():
             if plugin is not None and isinstance(
                 plugin.implementation, octoprint.plugin.UiPlugin
             ):
-                response = plugin_view(plugin.implementation)
-                if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
-                    response.headers["X-Ui-Plugin"] = plugin._identifier
+                permissions = plugin.get_ui_permissions()
+                response = require_login(*permissions)
+                if not response:
+                    response = plugin_view(plugin.implementation)
+                    if _logger.isEnabledFor(logging.DEBUG) and isinstance(
+                        response, Response
+                    ):
+                        response.headers["X-Ui-Plugin"] = plugin._identifier
         else:
-            response = default_view()
-            if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
-                response.headers["X-Ui-Plugin"] = "_default"
+            response = require_login(*default_permissions)
+            if not response:
+                response = default_view()
+                if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+                    response.headers["X-Ui-Plugin"] = "_default"
 
     else:
         # select view from plugins and fall back on default view if no plugin will handle it
@@ -662,19 +636,22 @@ def index():
             try:
                 if plugin.will_handle_ui(request):
                     # plugin claims responsibility, let it render the UI
-                    response = plugin_view(plugin)
-                    if response is not None:
-                        if _logger.isEnabledFor(logging.DEBUG) and isinstance(
-                            response, Response
-                        ):
-                            response.headers["X-Ui-Plugin"] = plugin._identifier
-                        break
-                    else:
-                        _logger.warning(
-                            "UiPlugin {} returned an empty response".format(
-                                plugin._identifier
+                    permissions = plugin.get_ui_permissions()
+                    response = require_login(*permissions)
+                    if not response:
+                        response = plugin_view(plugin)
+                        if response is not None:
+                            if _logger.isEnabledFor(logging.DEBUG) and isinstance(
+                                response, Response
+                            ):
+                                response.headers["X-Ui-Plugin"] = plugin._identifier
+                            break
+                        else:
+                            _logger.warning(
+                                "UiPlugin {} returned an empty response".format(
+                                    plugin._identifier
+                                )
                             )
-                        )
             except Exception:
                 _logger.exception(
                     "Error while calling plugin {}, skipping it".format(
@@ -683,9 +660,11 @@ def index():
                     extra={"plugin": plugin._identifier},
                 )
         else:
-            response = default_view()
-            if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
-                response.headers["X-Ui-Plugin"] = "_default"
+            response = require_login(*default_permissions)
+            if not response:
+                response = default_view()
+                if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
+                    response.headers["X-Ui-Plugin"] = "_default"
 
     if response is None:
         return abort(404)
@@ -1173,6 +1152,16 @@ def fetch_template_data(refresh=False):
                 "template": "dialogs/about/supporters.jinja2",
                 "_div": "about_sponsors",
                 "custom_bindings": False,
+            },
+        ),
+        "systeminfo": (
+            "System Information",
+            {
+                "template": "dialogs/about/systeminfo.jinja2",
+                "_div": "about_systeminfo",
+                "custom_bindings": False,
+                "styles": ["display: none;"],
+                "data_bind": "visible: loginState.hasPermissionKo(access.permissions.SYSTEM)",
             },
         ),
     }

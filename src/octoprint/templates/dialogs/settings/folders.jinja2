@@ -5,7 +5,7 @@
         <div class="controls">
             <div class="input-append input-block-level">
                 <input type="text" data-bind="value: folder_uploads, valueUpdate: 'input'" id="settings-folderUploads">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('uploads'); }, enable: folder_uploads() && !testFolderConfigBusy(), css: {disabled: !folder_uploads() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('uploads'); }, enable: folder_uploads() && !testFolderConfigBusy(), css: {disabled: !folder_uploads() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
             </div>
             <span class="help-block" data-bind="visible: testFolderConfigBroken.uploads() || testFolderConfigOk.uploads(), text: testFolderConfigText.uploads"></span>
         </div>
@@ -15,7 +15,7 @@
         <div class="controls">
             <div class="input-append input-block-level">
                 <input type="text" class="input-block-level" data-bind="value: folder_timelapse, valueUpdate: 'input'" id="settings-folderTimelapse">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapse'); }, enable: folder_timelapse() && !testFolderConfigBusy(), css: {disabled: !folder_timelapse() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapse'); }, enable: folder_timelapse() && !testFolderConfigBusy(), css: {disabled: !folder_timelapse() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
             </div>
             <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapse() || testFolderConfigOk.timelapse(), text: testFolderConfigText.timelapse"></span>
         </div>
@@ -25,7 +25,7 @@
         <div class="controls">
             <div class="input-append input-block-level">
                 <input type="text" data-bind="value: folder_timelapseTmp, valueUpdate: 'input'" id="settings-folderTimelapseTemp">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapseTmp'); }, enable: folder_timelapseTmp() && !testFolderConfigBusy(), css: {disabled: !folder_timelapseTmp() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapseTmp'); }, enable: folder_timelapseTmp() && !testFolderConfigBusy(), css: {disabled: !folder_timelapseTmp() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
             </div>
             <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapseTmp() || testFolderConfigOk.timelapseTmp(), text: testFolderConfigText.timelapseTmp"></span>
         </div>
@@ -35,7 +35,7 @@
         <div class="controls">
             <div class="input-append input-block-level">
                 <input type="text" data-bind="value: folder_logs, valueUpdate: 'input'" id="settings-folderLogs">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('logs'); }, enable: folder_logs() && !testFolderConfigBusy(), css: {disabled: !folder_logs() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('logs'); }, enable: folder_logs() && !testFolderConfigBusy(), css: {disabled: !folder_logs() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
             </div>
             <span class="help-block" data-bind="visible: testFolderConfigBroken.logs() || testFolderConfigOk.logs(), text: testFolderConfigText.logs"></span>
         </div>
@@ -45,7 +45,7 @@
         <div class="controls">
             <div class="input-append input-block-level">
                 <input type="text" data-bind="value: folder_watched, valueUpdate: 'input'" id="settings-folderWatched">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('watched'); }, enable: folder_watched() && !testFolderConfigBusy(), css: {disabled: !folder_watched() || testFolderConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <a class="btn add-on" data-bind="click: function() { testFolderConfig('watched'); }, enable: folder_watched() && !testFolderConfigBusy(), css: {disabled: !folder_watched() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
             </div>
             <span class="help-block" data-bind="visible: testFolderConfigBroken.watched() || testFolderConfigOk.watched(), text: testFolderConfigText.watched"></span>
         </div>

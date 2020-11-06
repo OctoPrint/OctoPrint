@@ -27,6 +27,74 @@ class OctoPrintContext:
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 """Decorator to pass in the :class:`OctoPrintContext` instance."""
 
+# ~~ Basic CLI initialization for plugins
+
+
+def init_platform_for_cli(ctx):
+    """
+    Performs a basic platform initialization for the CLI.
+
+    Plugin implementations will be initialized, but only with a subset of the usual
+    property injections:
+
+       * _identifier and everything else parsed from metadata
+       * _logger
+       * _connectivity_checker
+       * _environment_detector
+       * _event_bus
+       * _plugin_manager
+       * _settings
+
+    Returns: the same list of components as returned by ``init_platform``
+    """
+
+    from octoprint import (
+        init_custom_events,
+        init_platform,
+        init_settings_plugin_config_migration_and_cleanup,
+    )
+    from octoprint import octoprint_plugin_inject_factory as opif
+    from octoprint import settings_plugin_inject_factory as spif
+
+    components = init_platform(
+        get_ctx_obj_option(ctx, "basedir", None),
+        get_ctx_obj_option(ctx, "configfile", None),
+        safe_mode=True,
+    )
+
+    (
+        settings,
+        logger,
+        safe_mode,
+        event_manager,
+        connectivity_checker,
+        plugin_manager,
+        environment_detector,
+    ) = components
+
+    init_custom_events(plugin_manager)
+    octoprint_plugin_inject_factory = opif(
+        settings,
+        {
+            "plugin_manager": plugin_manager,
+            "event_bus": event_manager,
+            "connectivity_checker": connectivity_checker,
+            "environment_detector": environment_detector,
+        },
+    )
+    settings_plugin_inject_factory = spif(settings)
+
+    plugin_manager.implementation_inject_factories = [
+        octoprint_plugin_inject_factory,
+        settings_plugin_inject_factory,
+    ]
+    plugin_manager.initialize_implementations()
+
+    init_settings_plugin_config_migration_and_cleanup(plugin_manager)
+
+    return components
+
+
 # ~~ Custom click option to hide from help
 
 
@@ -204,6 +272,7 @@ from .config import config_commands  # noqa: E402
 from .dev import dev_commands  # noqa: E402
 from .plugins import plugin_commands  # noqa: E402
 from .server import server_commands  # noqa: E402
+from .systeminfo import systeminfo_commands  # noqa: E402
 from .user import user_commands  # noqa: E402
 
 
@@ -219,6 +288,7 @@ from .user import user_commands  # noqa: E402
         config_commands,
         analysis_commands,
         user_commands,
+        systeminfo_commands,
     ],
 )
 @standard_options()

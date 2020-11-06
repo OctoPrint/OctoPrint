@@ -13,7 +13,8 @@
 
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-4.7.0/css/font-awesome.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/v4-shims.min") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/recovery.css") }}">
 
     {% for url in theming %}
@@ -62,6 +63,7 @@
                     <li><a href="#system-commands">{{ _('System commands') }}</a></li>
                     <li data-bind="visible: printerConnected"><a href="#printer-control">{{ _('Printer control') }}</a></li>
                     <li data-bind="visible: backupSupported"><a href="#backups">{{ _('Backups') }}</a></li>
+                    <li><a href="#system-info">{{ _('System info') }}</a></li>
                 </ul>
             </div>
             <div class="span9">
@@ -105,7 +107,7 @@
 
                         <div class="control-group">
                             <div class="controls">
-                                <button class="btn btn-primary" data-bind="enable: !workInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _('Create backup now') }}</button>
+                                <button class="btn btn-primary" data-bind="enable: !workInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _('Create backup now') }}</button>
                             </div>
                         </div>
                     </form>
@@ -133,6 +135,14 @@
                     <p data-bind="visible: backups().length <= 0">
                         {{ _('There are no backups yet.') }}
                     </p>
+                </div>
+
+                <div style="margin-bottom: 2em">
+                    <h1 id="system-info">{{ _('System info') }}</h1>
+                    <p data-bind="foreach: systemInfo">
+                        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+                    </p>
+                    <a href="javascript:void(0)" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
                 </div>
             </div>
         </div>
