@@ -9,6 +9,12 @@
  * http://www.gnu.org/licenses/gpl.html
  * Authors: Vadim Vincent Gabriel (http://vadimg.com), Jason Gill (www.gilluminate.com)
  */
+/*
+ * Changed for OctoPrint:
+ *
+ *   * Call of onTabShown has $element (tab object) added back as last parameter
+ *   * $settings.withVisible defaults to false
+ */
 ;(function($) {
 var bootstrapWizardCreate = function(element, options) {
 	var element = $(element);
@@ -252,7 +258,7 @@ var bootstrapWizardCreate = function(element, options) {
 			return false;
 		}
 
-		if($settings.onTabChange && typeof $settings.onTabChange === 'function' && $settings.onTabChange($activeTab, $navigation, obj.currentIndex(), nextTab)===false){
+		if($settings.onTabChange && typeof $settings.onTabChange === 'function' && $settings.onTabChange($activeTab, $navigation, obj.currentIndex(), nextTab, $element)===false){
 				return false;
 		}
 
@@ -323,7 +329,7 @@ $.fn.bootstrapWizard = function(options) {
 
 // expose options
 $.fn.bootstrapWizard.defaults = {
-	withVisible:      true,
+	withVisible:      false,
 	tabClass:         'nav nav-pills',
 	nextSelector:     '.wizard li.next',
 	previousSelector: '.wizard li.previous',
