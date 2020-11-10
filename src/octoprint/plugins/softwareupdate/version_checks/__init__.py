@@ -35,12 +35,12 @@ class GithubRateLimitCheckError(RateLimitCheckError):
 def log_github_ratelimit(logger, r):
     try:
         ratelimit = int(r.headers.get("X-RateLimit-Limit", None))
-    except ValueError:
+    except Exception:
         ratelimit = None
 
     try:
         remaining = int(r.headers.get("X-RateLimit-Remaining", None))
-    except ValueError:
+    except Exception:
         remaining = None
 
     reset = r.headers["X-RateLimit-Reset"] if "X-RateLimit-Reset" in r.headers else None
