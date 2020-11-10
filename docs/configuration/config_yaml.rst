@@ -24,9 +24,6 @@ Use the following settings to enable access control:
 .. code-block:: yaml
 
    accessControl:
-     # whether to enable access control or not. Defaults to true
-     enabled: true
-
      # The user manager implementation to use for accessing user information. Currently only a filebased
      # user manager is implemented which stores configured accounts in a YAML file (Default: users.yaml
      # in the default configuration folder, see below)
