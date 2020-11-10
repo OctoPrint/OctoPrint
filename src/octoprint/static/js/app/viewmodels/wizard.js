@@ -84,6 +84,7 @@ $(function () {
                 nextSelector: ".button-next",
                 previousSelector: ".button-previous",
                 finishSelector: ".button-finish",
+                withVisible: false,
                 onTabClick: function () {
                     // we don't allow clicking on the tabs
                     return false;
