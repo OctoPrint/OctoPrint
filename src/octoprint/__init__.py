@@ -620,29 +620,12 @@ def init_pluginsystem(
 
     plugin_validators = []
 
-    def implementation_or_hook_validator(phase, plugin_info):
-        if phase in ("before_import", "before_load", "before_enable"):
-            result = plugin_info.parsed_metadata.get("has_control_properties", False)
-            if not result:
-                logger.info(
-                    "Plugin {} declares no control properties, "
-                    "might not even be a plugin, disabling".format(plugin_info.name)
-                )
-            return result
-        return True
-
-    plugin_validators.append(implementation_or_hook_validator)
-
     if safe_mode:
 
         def safe_mode_validator(phase, plugin_info):
             if phase in ("before_import", "before_load", "before_enable"):
                 plugin_info.safe_mode_victim = not plugin_info.bundled
                 if not plugin_info.bundled:
-                    logger.info(
-                        "Plugin {} is not bundled, safe mode is active, "
-                        "disabling".format(plugin_info.name)
-                    )
                     return False
             return True
 

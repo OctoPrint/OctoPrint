@@ -300,7 +300,8 @@ class PluginInfo(object):
 
         if phase == "before_import":
             result = (
-                not self.forced_disabled
+                self.looks_like_plugin
+                and not self.forced_disabled
                 and not self.blacklisted
                 and not self.incompatible
                 and not self.invalid_syntax
@@ -674,6 +675,32 @@ class PluginInfo(object):
             for key in dir(self.__class__)
             if key.startswith("attr_")
         ]
+
+    @property
+    def looks_like_plugin(self):
+        """
+        Returns whether the plugin actually looks like a plugin (has control properties) or not.
+
+        Note that compiled (.pyc) plugins for now will return True here as well, since we
+        currently cannot easily parse metadata from them.
+        """
+        return (
+            self.parsed_metadata.get("has_control_properties", False) or self.is_compiled
+        )
+
+    @property
+    def is_compiled(self):
+        path = self.location
+        if not path:
+            return False
+
+        if os.path.isdir(path):
+            path = os.path.join(self.location, "__init__.py")
+
+        if not os.path.isfile(path):
+            return False
+
+        return path.endswith(".pyc")
 
     def _parse_metadata(self):
         result = {}
@@ -1366,7 +1393,8 @@ class PluginManager(object):
         for name, plugin in added.items():
             try:
                 if (
-                    not plugin.blacklisted
+                    plugin.looks_like_plugin
+                    and not plugin.blacklisted
                     and not plugin.forced_disabled
                     and not plugin.incompatible
                 ):
@@ -1392,6 +1420,7 @@ class PluginManager(object):
             try:
                 if (
                     plugin.loaded
+                    and plugin.looks_like_plugin
                     and not plugin.forced_disabled
                     and not plugin.incompatible
                 ):

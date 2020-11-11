@@ -68,6 +68,18 @@ class PluginTestCase(unittest.TestCase):
             os.path.dirname(os.path.realpath(__file__)), "_plugins"
         )
 
+        # prepare compiled files
+        import py_compile
+
+        py_compile.compile(
+            os.path.join(self.plugin_folder, "asset_plugin.py"),
+            os.path.join(self.plugin_folder, "asset_plugin_2.pyc"),
+        )
+        py_compile.compile(
+            os.path.join(self.plugin_folder, "not_a_plugin.py"),
+            os.path.join(self.plugin_folder, "not_a_plugin_either.pyc"),
+        )
+
         plugin_folders = [self.plugin_folder]
         plugin_bases = [octoprint.plugin.OctoPrintPlugin]
         plugin_entry_points = None
@@ -92,9 +104,10 @@ class PluginTestCase(unittest.TestCase):
             assert "__plugin_implementation__" in str(w[-1].message)
 
     def test_plugin_loading(self):
-        self.assertEqual(7, len(self.plugin_manager.enabled_plugins))
+        self.assertEqual(9, len(self.plugin_manager.enabled_plugins))
+        self.assertEqual(10, len(self.plugin_manager.plugins))
         self.assertEqual(2, len(self.plugin_manager.plugin_hooks))
-        self.assertEqual(4, len(self.plugin_manager.plugin_implementations))
+        self.assertEqual(5, len(self.plugin_manager.plugin_implementations))
         self.assertEqual(3, len(self.plugin_manager.plugin_implementations_by_type))
 
         # hook_plugin
@@ -137,13 +150,13 @@ class PluginTestCase(unittest.TestCase):
             ),
         )
 
-        # TestDeprecatedAssetPlugin, NOT TestSecondaryDeprecatedAssetPlugin
+        # TestAssetPlugin
         self.assertTrue(
             octoprint.plugin.AssetPlugin
             in self.plugin_manager.plugin_implementations_by_type
         )
         self.assertEqual(
-            1,
+            2,
             len(
                 self.plugin_manager.plugin_implementations_by_type[
                     octoprint.plugin.AssetPlugin
@@ -167,7 +180,7 @@ class PluginTestCase(unittest.TestCase):
         )
 
         all_implementations = self.plugin_manager.plugin_implementations
-        self.assertEqual(4, len(all_implementations))
+        self.assertEqual(5, len(all_implementations))
         for name, impl in all_implementations.items():
             self.assertTrue(name in self.plugin_manager.enabled_plugins)
             plugin = self.plugin_manager.enabled_plugins[name]
@@ -258,7 +271,8 @@ class PluginTestCase(unittest.TestCase):
             octoprint.plugin.AssetPlugin
         )
         self.assertListEqual(
-            ["deprecated_plugin"], list(map(lambda x: x._identifier, implementations))
+            ["asset_plugin", "asset_plugin_2"],
+            list(map(lambda x: x._identifier, implementations)),
         )
 
     def test_get_filtered_implementations(self):
@@ -305,12 +319,14 @@ class PluginTestCase(unittest.TestCase):
         client1.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
         client2.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
 
-    def test_validate_plugin(self):
-        self.assertTrue("deprecated_plugin" in self.plugin_manager.enabled_plugins)
+    def test_broken_plugin(self):
+        for key in ("not_a_plugin",):
+            self.assertTrue(key in self.plugin_manager.plugins)
 
-        plugin = self.plugin_manager.enabled_plugins["deprecated_plugin"]
-        self.assertTrue(hasattr(plugin.instance, plugin.__class__.attr_implementation))
-        self.assertFalse(hasattr(plugin.instance, plugin.__class__.attr_implementations))
+            plugin = self.plugin_manager.plugins[key]
+            self.assertFalse(plugin.looks_like_plugin)
+            self.assertFalse(plugin.loaded)
+            self.assertFalse(plugin.enabled)
 
     @ddt.data(
         (
