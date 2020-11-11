@@ -323,7 +323,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
                 if file_or_folder["type"] == "folder":
                     if "children" in file_or_folder:
                         file_or_folder["children"] = analyse_recursively(
-                            file_or_folder["children"].values(),
+                            file_or_folder["children"],
                             path + file_or_folder["name"] + "/",
                         )
 
