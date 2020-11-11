@@ -734,6 +734,14 @@ class PluginInfo(object):
         """The plugin metadata parsed from the plugin ``__init__.py``'s AST."""
         return self._cached_parsed_metadata
 
+    @property
+    def control_properties(self):
+        return [
+            getattr(self.__class__, key)
+            for key in dir(self.__class__)
+            if key.startswith("attr_")
+        ]
+
     def _parse_metadata(self):
         result = {}
 
@@ -764,6 +772,10 @@ class PluginInfo(object):
             assignments = list(
                 filter(lambda x: isinstance(x, ast.Assign) and x.targets, root.body)
             )
+            function_defs = list(
+                filter(lambda x: isinstance(x, ast.FunctionDef) and x.name, root.body)
+            )
+            all_relevant = assignments + function_defs
 
             def extract_target_ids(node):
                 return list(
@@ -772,6 +784,16 @@ class PluginInfo(object):
                         filter(lambda x: isinstance(x, ast.Name), node.targets),
                     )
                 )
+
+            def extract_names(node):
+                if isinstance(node, ast.Assign):
+                    return extract_target_ids(node)
+                elif isinstance(node, ast.FunctionDef):
+                    return [
+                        node.name,
+                    ]
+                else:
+                    return []
 
             for key in (
                 self.__class__.attr_name,
@@ -810,6 +832,12 @@ class PluginInfo(object):
                             result[key] = bool(a.value.id)
 
                         break
+
+            for a in reversed(all_relevant):
+                targets = extract_names(a)
+                if any(map(lambda x: x in targets, self.control_properties)):
+                    result["has_control_properties"] = True
+                    break
 
         except SyntaxError:
             self._logger.exception(
