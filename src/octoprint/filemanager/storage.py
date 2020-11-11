@@ -643,7 +643,7 @@ class LocalFileStorage(StorageInterface):
             for key, node in nodes.items():
                 if node["type"] == "folder":
                     node = copy.copy(node)
-                    node["children"] = []
+                    node["children"] = {}
                 result[key] = node
             return result
 
