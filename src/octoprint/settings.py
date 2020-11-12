@@ -169,6 +169,7 @@ default_settings = {
             "emergency_parser": True,
         },
         "resendRatioThreshold": 10,
+        "resendRatioStart": 100,
         # command specific flags
         "triggerOkForM29": True,
     },
