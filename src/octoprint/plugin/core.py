@@ -665,7 +665,7 @@ class PluginInfo(object):
 
     @property
     def parsed_metadata(self):
-        """The plugin metadata parsed from the plugin ``__init__.py``'s AST."""
+        """The plugin metadata parsed from the plugin's AST."""
         return self._cached_parsed_metadata
 
     @property
@@ -680,27 +680,8 @@ class PluginInfo(object):
     def looks_like_plugin(self):
         """
         Returns whether the plugin actually looks like a plugin (has control properties) or not.
-
-        Note that compiled (.pyc) plugins for now will return True here as well, since we
-        currently cannot easily parse metadata from them.
         """
-        return (
-            self.parsed_metadata.get("has_control_properties", False) or self.is_compiled
-        )
-
-    @property
-    def is_compiled(self):
-        path = self.location
-        if not path:
-            return False
-
-        if os.path.isdir(path):
-            path = os.path.join(self.location, "__init__.py")
-
-        if not os.path.isfile(path):
-            return False
-
-        return path.endswith(".pyc")
+        return self.parsed_metadata.get("has_control_properties", False)
 
     def _parse_metadata(self):
         result = {}
@@ -1003,11 +984,8 @@ class PluginManager(object):
                     try:
                         if entry.is_dir():
                             init_py = os.path.join(entry.path, "__init__.py")
-                            init_pyc = os.path.join(entry.path, "__init__.pyc")
 
-                            if not os.path.isfile(init_py) and not os.path.isfile(
-                                init_pyc
-                            ):
+                            if not os.path.isfile(init_py):
                                 # neither does exist, we ignore this
                                 continue
 
@@ -1015,8 +993,8 @@ class PluginManager(object):
 
                         elif entry.is_file():
                             key, ext = os.path.splitext(entry.name)
-                            if ext not in (".py", ".pyc") or key.startswith("__"):
-                                # neither py nor pyc, or starts with __ (like __init__), we ignore this
+                            if ext not in (".py",) or key.startswith("__"):
+                                # not py, or starts with __ (like __init__), we ignore this
                                 continue
 
                         else:

@@ -104,10 +104,10 @@ class PluginTestCase(unittest.TestCase):
             assert "__plugin_implementation__" in str(w[-1].message)
 
     def test_plugin_loading(self):
-        self.assertEqual(9, len(self.plugin_manager.enabled_plugins))
-        self.assertEqual(10, len(self.plugin_manager.plugins))
+        self.assertEqual(7, len(self.plugin_manager.enabled_plugins))
+        self.assertEqual(8, len(self.plugin_manager.plugins))
         self.assertEqual(2, len(self.plugin_manager.plugin_hooks))
-        self.assertEqual(5, len(self.plugin_manager.plugin_implementations))
+        self.assertEqual(4, len(self.plugin_manager.plugin_implementations))
         self.assertEqual(3, len(self.plugin_manager.plugin_implementations_by_type))
 
         # hook_plugin
@@ -156,7 +156,7 @@ class PluginTestCase(unittest.TestCase):
             in self.plugin_manager.plugin_implementations_by_type
         )
         self.assertEqual(
-            2,
+            1,
             len(
                 self.plugin_manager.plugin_implementations_by_type[
                     octoprint.plugin.AssetPlugin
@@ -180,7 +180,7 @@ class PluginTestCase(unittest.TestCase):
         )
 
         all_implementations = self.plugin_manager.plugin_implementations
-        self.assertEqual(5, len(all_implementations))
+        self.assertEqual(4, len(all_implementations))
         for name, impl in all_implementations.items():
             self.assertTrue(name in self.plugin_manager.enabled_plugins)
             plugin = self.plugin_manager.enabled_plugins[name]
@@ -271,7 +271,7 @@ class PluginTestCase(unittest.TestCase):
             octoprint.plugin.AssetPlugin
         )
         self.assertListEqual(
-            ["asset_plugin", "asset_plugin_2"],
+            ["asset_plugin"],
             list(map(lambda x: x._identifier, implementations)),
         )
 
@@ -320,13 +320,12 @@ class PluginTestCase(unittest.TestCase):
         client2.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
 
     def test_broken_plugin(self):
-        for key in ("not_a_plugin",):
-            self.assertTrue(key in self.plugin_manager.plugins)
+        self.assertTrue("not_a_plugin" in self.plugin_manager.plugins)
 
-            plugin = self.plugin_manager.plugins[key]
-            self.assertFalse(plugin.looks_like_plugin)
-            self.assertFalse(plugin.loaded)
-            self.assertFalse(plugin.enabled)
+        plugin = self.plugin_manager.plugins["not_a_plugin"]
+        self.assertFalse(plugin.looks_like_plugin)
+        self.assertFalse(plugin.loaded)
+        self.assertFalse(plugin.enabled)
 
     @ddt.data(
         (
