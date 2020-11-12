@@ -502,6 +502,8 @@ class FilebasedUserManager(UserManager):
     def __init__(self, group_manager, path=None, settings=None):
         UserManager.__init__(self, group_manager, settings=settings)
 
+        self._logger = logging.getLogger(__name__)
+
         if path is None:
             path = self._settings.get(["accessControl", "userfile"])
             if path is None:
@@ -517,9 +519,18 @@ class FilebasedUserManager(UserManager):
 
     def _load(self):
         if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
-            self._customized = True
+            # noinspection PyBroadException
             with io.open(self._userfile, "rt", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
+
+                if not data or not isinstance(data, dict):
+                    self._logger.fatal(
+                        "{} does not contain a valid map of users. Fix "
+                        "the file, or remove it, then restart OctoPrint.".format(
+                            self._userfile
+                        )
+                    )
+                    raise CorruptUserStorage()
 
                 for name, attributes in data.items():
                     if not isinstance(attributes, dict):
@@ -570,6 +581,7 @@ class FilebasedUserManager(UserManager):
             if self._dirty:
                 self._save()
 
+            self._customized = True
         else:
             self._customized = False
 
@@ -1008,8 +1020,12 @@ class UnknownUser(Exception):
 
 
 class UnknownRole(Exception):
-    def _init_(self, role):
+    def __init__(self, role):
         Exception.__init__(self, "Unknown role: %s" % role)
+
+
+class CorruptUserStorage(Exception):
+    pass
 
 
 ##~~ Refactoring helpers
