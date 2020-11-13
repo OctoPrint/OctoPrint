@@ -590,7 +590,8 @@ class MachineCom(object):
             ),
         }
 
-        self._lastLines = deque([], 50)
+        last_line_count = settings().getInt(["serial", "lastLineBufferSize"])
+        self._lastLines = deque([], last_line_count)
         self._lastCommError = None
         self._lastResendNumber = None
         self._currentResendCount = 0
