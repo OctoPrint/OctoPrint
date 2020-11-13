@@ -74,7 +74,8 @@ _BROWSER_TIME = 500
 _MDNS_ADDR = "224.0.0.251"
 _MDNS_PORT = 5353
 _DNS_PORT = 53
-_DNS_TTL = 60 * 60  # one hour default TTL
+_DNS_HOST_TTL = 120  # two minute for host records (A, SRV etc) as-per RFC6762
+_DNS_OTHER_TTL = 4500  # 75 minutes for non-host records (PTR, TXT etc) as-per RFC6762
 
 _MAX_MSG_TYPICAL = 1460  # unused
 _MAX_MSG_ABSOLUTE = 8966
@@ -1401,6 +1402,8 @@ class ServiceInfo(object):
         priority=0,
         properties=None,
         server=None,
+        host_ttl=_DNS_HOST_TTL,
+        other_ttl=_DNS_OTHER_TTL,
     ):
         """Create a service description.
 
@@ -1413,7 +1416,10 @@ class ServiceInfo(object):
         priority: priority of the service
         properties: dictionary of properties (or a string holding the
                     bytes for the text field)
-        server: fully qualified name for service host (defaults to name)"""
+        server: fully qualified name for service host (defaults to name)
+        host_ttl: ttl used for A/SRV records
+        other_ttl: ttl used for PTR/TXT records
+        """
 
         if not type_.endswith(service_type_name(name)):
             raise BadTypeInNameException
@@ -1439,6 +1445,8 @@ class ServiceInfo(object):
             self.server = name
         self._properties = {}
         self._set_properties(properties)
+        self.host_ttl = host_ttl
+        self.other_ttl = other_ttl
 
     @property
     def addresses(self):
@@ -1845,9 +1853,9 @@ class Zeroconf(QuietLogger):
         for listener in [k for k in self.browsers]:
             self.remove_service_listener(listener)
 
-    def register_service(self, info, ttl=_DNS_TTL, allow_name_change=False):
+    def register_service(self, info, ttl=_DNS_HOST_TTL, allow_name_change=False):
         """Registers service information to the network with a default TTL
-        of 60 seconds.  Zeroconf will then respond to requests for
+        of 120 seconds.  Zeroconf will then respond to requests for
         information for that service.  The name of the service may be
         changed if needed to make it unique on the network."""
         self.check_service(info, allow_name_change)
@@ -2018,7 +2026,7 @@ class Zeroconf(QuietLogger):
             self.debug = out
             out.add_question(DNSQuestion(info.type, _TYPE_PTR, _CLASS_IN))
             out.add_authorative_answer(
-                DNSPointer(info.type, _TYPE_PTR, _CLASS_IN, _DNS_TTL, info.name)
+                DNSPointer(info.type, _TYPE_PTR, _CLASS_IN, info.other_ttl, info.name)
             )
             self.send(out)
             i += 1
@@ -2093,7 +2101,7 @@ class Zeroconf(QuietLogger):
                                 "_services._dns-sd._udp.local.",
                                 _TYPE_PTR,
                                 _CLASS_IN,
-                                _DNS_TTL,
+                                _DNS_OTHER_TTL,
                                 stype,
                             ),
                         )
@@ -2104,9 +2112,47 @@ class Zeroconf(QuietLogger):
                         out.add_answer(
                             msg,
                             DNSPointer(
-                                service.type, _TYPE_PTR, _CLASS_IN, _DNS_TTL, service.name
+                                service.type,
+                                _TYPE_PTR,
+                                _CLASS_IN,
+                                service.other_ttl,
+                                service.name,
                             ),
                         )
+
+                        # Add recommended additional answers according to
+                        # https://tools.ietf.org/html/rfc6763#section-12.1.
+                        out.add_additional_answer(
+                            DNSService(
+                                service.name,
+                                _TYPE_SRV,
+                                _CLASS_IN | _CLASS_UNIQUE,
+                                service.host_ttl,
+                                service.priority,
+                                service.weight,
+                                service.port,
+                                service.server,
+                            )
+                        )
+                        out.add_additional_answer(
+                            DNSText(
+                                service.name,
+                                _TYPE_TXT,
+                                _CLASS_IN | _CLASS_UNIQUE,
+                                service.other_ttl,
+                                service.text,
+                            )
+                        )
+                        for address in service.addresses:
+                            out.add_additional_answer(
+                                DNSAddress(
+                                    service.server,
+                                    _TYPE_A,
+                                    _CLASS_IN | _CLASS_UNIQUE,
+                                    service.host_ttl,
+                                    address,
+                                )
+                            )
             else:
                 try:
                     if out is None:
@@ -2123,7 +2169,7 @@ class Zeroconf(QuietLogger):
                                             question.name,
                                             _TYPE_A,
                                             _CLASS_IN | _CLASS_UNIQUE,
-                                            _DNS_TTL,
+                                            service.host_ttl,
                                             address,
                                         ),
                                     )
@@ -2139,7 +2185,7 @@ class Zeroconf(QuietLogger):
                                 question.name,
                                 _TYPE_SRV,
                                 _CLASS_IN | _CLASS_UNIQUE,
-                                _DNS_TTL,
+                                service.host_ttl,
                                 service.priority,
                                 service.weight,
                                 service.port,
@@ -2153,7 +2199,7 @@ class Zeroconf(QuietLogger):
                                 question.name,
                                 _TYPE_TXT,
                                 _CLASS_IN | _CLASS_UNIQUE,
-                                _DNS_TTL,
+                                service.other_ttl,
                                 service.text,
                             ),
                         )
@@ -2164,7 +2210,7 @@ class Zeroconf(QuietLogger):
                                     service.server,
                                     _TYPE_A,
                                     _CLASS_IN | _CLASS_UNIQUE,
-                                    _DNS_TTL,
+                                    service.host_ttl,
                                     address,
                                 )
                             )
