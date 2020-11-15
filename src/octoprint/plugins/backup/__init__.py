@@ -125,11 +125,12 @@ class BackupPlugin(
 
     ##~~ Utility Methods
 
-    def build_backup_filename(self):
-        if self._settings.global_get(["appearance", "name"]) == "":
-            backup_prefix = "octoprint"
-        else:
-            backup_prefix = self._settings.global_get(["appearance", "name"])
+    def build_backup_filename(self, backup_prefix=None):
+        if not backup_prefix:
+            if self._settings.global_get(["appearance", "name"]) == "":
+                backup_prefix = "octoprint"
+            else:
+                backup_prefix = self._settings.global_get(["appearance", "name"])
         return "{}-backup-{}.zip".format(
             backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
         )
@@ -495,7 +496,7 @@ class BackupPlugin(
             if path is not None:
                 datafolder, backup_file = os.path.split(os.path.abspath(path))
             else:
-                backup_file = self.build_backup_filename()
+                backup_file = self.build_backup_filename(backup_prefix="octoprint")
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
@@ -506,7 +507,6 @@ class BackupPlugin(
                 backup_file,
                 exclude=exclude,
                 settings=settings,
-                logger=self._logger,
                 plugin_manager=cli_group.plugin_manager,
                 datafolder=datafolder,
             )
@@ -844,6 +844,9 @@ class BackupPlugin(
         on_backup_done=None,
         on_backup_error=None,
     ):
+        if logger is None:
+            logger = logging.getLogger(__name__)
+
         exclude_by_default = (
             "generated",
             "logs",
