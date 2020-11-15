@@ -54,13 +54,7 @@ from octoprint.settings import valid_boolean_trues
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
-BACKUP_FILE_PREFIX = "octoprint-backup"
-
 BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
-
-
-def build_backup_filename():
-    return "{}-{}.zip".format(BACKUP_FILE_PREFIX, time.strftime(BACKUP_DATE_TIME_FMT))
 
 
 class BackupPlugin(
@@ -129,6 +123,17 @@ class BackupPlugin(
             {"type": "wizard", "name": gettext("Restore Backup?")},
         ]
 
+    ##~~ Utility Methods
+
+    def build_backup_filename(self):
+        if self._settings.global_get(["appearance", "name"]) == "":
+            backup_prefix = "octoprint"
+        else:
+            backup_prefix = self._settings.global_get(["appearance", "name"])
+        return "{}-backup-{}.zip".format(
+            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
+        )
+
     ##~~ BlueprintPlugin
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
@@ -174,7 +179,7 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = build_backup_filename()
+        backup_file = self.build_backup_filename()
 
         data = flask.request.json
         exclude = data.get("exclude", [])
@@ -490,7 +495,7 @@ class BackupPlugin(
             if path is not None:
                 datafolder, backup_file = os.path.split(os.path.abspath(path))
             else:
-                backup_file = build_backup_filename()
+                backup_file = self.build_backup_filename()
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
