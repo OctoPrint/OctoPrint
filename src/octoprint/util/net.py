@@ -59,27 +59,6 @@ def get_lan_ranges(additional_private=None):
     if additional_private is None or not isinstance(additional_private, (list, tuple)):
         additional_private = []
 
-    subnets = list(netaddr.ip.IPV4_PRIVATE) + [
-        netaddr.ip.IPV4_LOOPBACK,
-        netaddr.ip.IPV4_LINK_LOCAL,
-    ]
-    if HAS_V6:
-        subnets += list(netaddr.ip.IPV6_PRIVATE) + [
-            netaddr.IPNetwork(netaddr.ip.IPV6_LOOPBACK),
-            netaddr.ip.IPV6_LINK_LOCAL,
-        ]
-
-    for additional in additional_private:
-        try:
-            subnets.append(netaddr.IPNetwork(additional))
-        except Exception:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(
-                    "Error while trying to add additional private network to local subnets: {}".format(
-                        additional
-                    )
-                )
-
     def to_ipnetwork(address):
         prefix = address["netmask"]
         if "/" in prefix:
@@ -88,6 +67,8 @@ def get_lan_ranges(additional_private=None):
 
         addr = strip_interface_tag(address["addr"])
         return netaddr.IPNetwork("{}/{}".format(addr, prefix))
+
+    subnets = []
 
     for interface in netifaces.interfaces():
         addrs = netifaces.ifaddresses(interface)
@@ -113,6 +94,27 @@ def get_lan_ranges(additional_private=None):
                                 v6
                             )
                         )
+
+    for additional in additional_private:
+        try:
+            subnets.append(netaddr.IPNetwork(additional))
+        except Exception:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(
+                    "Error while trying to add additional private network to local subnets: {}".format(
+                        additional
+                    )
+                )
+
+    subnets += list(netaddr.ip.IPV4_PRIVATE) + [
+        netaddr.ip.IPV4_LOOPBACK,
+        netaddr.ip.IPV4_LINK_LOCAL,
+    ]
+    if HAS_V6:
+        subnets += list(netaddr.ip.IPV6_PRIVATE) + [
+            netaddr.IPNetwork(netaddr.ip.IPV6_LOOPBACK),
+            netaddr.ip.IPV6_LINK_LOCAL,
+        ]
 
     return subnets
 
