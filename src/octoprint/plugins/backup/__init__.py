@@ -4,6 +4,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from emoji import demojize
+
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
@@ -37,6 +39,7 @@ import io
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -51,6 +54,8 @@ import sarge
 from flask_babel import gettext
 
 from octoprint.settings import valid_boolean_trues
+from octoprint.util import to_unicode
+from octoprint.vendor.awesome_slugify import Slugify
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
@@ -123,18 +128,6 @@ class BackupPlugin(
             {"type": "wizard", "name": gettext("Restore Backup?")},
         ]
 
-    ##~~ Utility Methods
-
-    def build_backup_filename(self, backup_prefix=None):
-        if not backup_prefix:
-            if self._settings.global_get(["appearance", "name"]) == "":
-                backup_prefix = "octoprint"
-            else:
-                backup_prefix = self._settings.global_get(["appearance", "name"])
-        return "{}-backup-{}.zip".format(
-            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
-        )
-
     ##~~ BlueprintPlugin
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
@@ -180,7 +173,7 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = self.build_backup_filename()
+        backup_file = self._build_backup_filename(settings=self._settings)
 
         data = flask.request.json
         exclude = data.get("exclude", [])
@@ -496,7 +489,7 @@ class BackupPlugin(
             if path is not None:
                 datafolder, backup_file = os.path.split(os.path.abspath(path))
             else:
-                backup_file = self.build_backup_filename(backup_prefix="octoprint")
+                backup_file = self._build_backup_filename(settings=settings)
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
@@ -1295,6 +1288,32 @@ class BackupPlugin(
                 )
 
         return True
+
+    @classmethod
+    def _build_backup_filename(cls, settings):
+        if settings.global_get(["appearance", "name"]) == "":
+            backup_prefix = "octoprint"
+        else:
+            backup_prefix = settings.global_get(["appearance", "name"])
+        backup_prefix = cls._slugify(backup_prefix)
+        return "{}-backup-{}.zip".format(
+            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
+        )
+
+    _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
+    _SLUGIFY = Slugify()
+    _SLUGIFY.safe_chars = "-_.()[] "
+
+    @classmethod
+    def _no_unicode_variations(cls, text):
+        return cls._UNICODE_VARIATIONS.sub("", text)
+
+    @classmethod
+    def _slugify(cls, text):
+        text = to_unicode(text)
+        text = cls._no_unicode_variations(text)
+        text = demojize(text, delimiters=("", ""))
+        return cls._SLUGIFY(text)
 
     @classmethod
     def _restore_supported(cls, settings):
