@@ -12,7 +12,10 @@ $(function () {
         self.resendTotalTransmitted = ko.observable(0);
         self.resendRatio = ko.observable(0);
         self.resendRatioCritical = ko.pureComputed(function () {
-            return self.resendRatio() >= self.settings.serial_resendRatioThreshold();
+            return (
+                self.resendRatio() >= self.settings.serial_resendRatioThreshold() &&
+                self.resendTotalTransmitted() >= self.settings.serial_resendRatioStart()
+            );
         });
         self.resendRatioNotification = undefined;
 
@@ -387,6 +390,7 @@ $(function () {
 
         self._processResends = function (data) {
             self.resendCount(data.count);
+            self.resendTotalTransmitted(data.transmitted);
             self.resendRatio(data.ratio);
         };
 

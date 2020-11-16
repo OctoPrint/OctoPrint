@@ -162,6 +162,10 @@ Resend stats
      - 1
      - int
      - Number of resend requests received since connecting.
+   * - ``transmitted``
+     - 1
+     - int
+     - Number of transmitted lines since connecting.
    * - ``ratio``
      - 1
      - int

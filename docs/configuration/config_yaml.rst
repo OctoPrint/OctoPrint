@@ -24,9 +24,6 @@ Use the following settings to enable access control:
 .. code-block:: yaml
 
    accessControl:
-     # whether to enable access control or not. Defaults to true
-     enabled: true
-
      # The user manager implementation to use for accessing user information. Currently only a filebased
      # user manager is implemented which stores configured accounts in a YAML file (Default: users.yaml
      # in the default configuration folder, see below)
@@ -74,6 +71,10 @@ Use the following settings to enable access control:
 
      # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
      addRemoteUsers: false
+
+     # Secret salt used for password hashing, DO NOT TOUCH. If changed you will no longer be able to log in with your
+     # existing accounts.
+     salt: someSecretSalt
 
 .. _sec-configuration-config_yaml-api:
 
