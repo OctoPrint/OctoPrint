@@ -70,6 +70,10 @@ class OctoPrintPermission(Permission):
         self._key = value
 
     @property
+    def dangerous(self):
+        return self._dangerous
+
+    @property
     def default_groups(self):
         return self._default_groups
 
