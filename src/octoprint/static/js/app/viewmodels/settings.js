@@ -235,6 +235,7 @@ $(function () {
         self.serial_disableSdPrintingDetection = ko.observable(undefined);
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
+        self.serial_resendRatioStart = ko.observable(100);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

@@ -541,6 +541,8 @@ class Server:
             try:
                 clazz = octoprint.util.get_class(user_manager_name)
                 userManager = clazz(groupManager)
+            except octoprint.access.users.CorruptUserStorage:
+                raise
             except Exception:
                 self._logger.exception(
                     "Could not instantiate user manager {}, "

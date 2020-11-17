@@ -495,7 +495,6 @@ class BackupPlugin(
                 backup_file,
                 exclude=exclude,
                 settings=settings,
-                logger=self._logger,
                 plugin_manager=cli_group.plugin_manager,
                 datafolder=datafolder,
             )
@@ -833,6 +832,9 @@ class BackupPlugin(
         on_backup_done=None,
         on_backup_error=None,
     ):
+        if logger is None:
+            logger = logging.getLogger(__name__)
+
         exclude_by_default = (
             "generated",
             "logs",

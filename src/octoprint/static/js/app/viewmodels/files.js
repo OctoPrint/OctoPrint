@@ -1130,7 +1130,10 @@ $(function () {
                         return false;
                     }
 
-                    var success = entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    var success =
+                        (entry["display"] &&
+                            entry["display"].toLocaleLowerCase().indexOf(query) > -1) ||
+                        entry["name"].toLocaleLowerCase().indexOf(query) > -1;
                     if (!success && entry["type"] === "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
                     }

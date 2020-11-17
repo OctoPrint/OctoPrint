@@ -44,71 +44,83 @@ else:
     HAS_V6 = False
 
 
+def get_lan_ranges(additional_private=None):
+    logger = logging.getLogger(__name__)
+
+    if additional_private is None or not isinstance(additional_private, (list, tuple)):
+        additional_private = []
+
+    def to_ipnetwork(address):
+        prefix = address["netmask"]
+        if "/" in prefix:
+            # v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
+            _, prefix = prefix.split("/")
+
+        addr = strip_interface_tag(address["addr"])
+        return netaddr.IPNetwork("{}/{}".format(addr, prefix))
+
+    subnets = []
+
+    for interface in netifaces.interfaces():
+        addrs = netifaces.ifaddresses(interface)
+        for v4 in addrs.get(socket.AF_INET, ()):
+            try:
+                subnets.append(to_ipnetwork(v4))
+            except Exception:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(
+                        "Error while trying to add v4 network to local subnets: {!r}".format(
+                            v4
+                        )
+                    )
+
+        if HAS_V6:
+            for v6 in addrs.get(socket.AF_INET6, ()):
+                try:
+                    subnets.append(to_ipnetwork(v6))
+                except Exception:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(
+                            "Error while trying to add v6 network to local subnets: {!r}".format(
+                                v6
+                            )
+                        )
+
+    for additional in additional_private:
+        try:
+            subnets.append(netaddr.IPNetwork(additional))
+        except Exception:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(
+                    "Error while trying to add additional private network to local subnets: {}".format(
+                        additional
+                    )
+                )
+
+    subnets += list(netaddr.ip.IPV4_PRIVATE) + [
+        netaddr.ip.IPV4_LOOPBACK,
+        netaddr.ip.IPV4_LINK_LOCAL,
+    ]
+    if HAS_V6:
+        subnets += list(netaddr.ip.IPV6_PRIVATE) + [
+            netaddr.IPNetwork(netaddr.ip.IPV6_LOOPBACK),
+            netaddr.ip.IPV6_LINK_LOCAL,
+        ]
+
+    return subnets
+
+
 def is_lan_address(address, additional_private=None):
     if not address:
         # no address is LAN address
         return True
 
     try:
-        address = unmap_v4_as_v6(address)
-        address = strip_interface_tag(address)
-
+        address = sanitize_address(address)
         ip = netaddr.IPAddress(address)
-        if ip.is_private() or ip.is_loopback():
-            return True
+        subnets = get_lan_ranges(additional_private=additional_private)
 
-        if additional_private is None or not isinstance(
-            additional_private, (list, tuple)
-        ):
-            additional_private = []
-
-        subnets = netaddr.IPSet()
-        for additional in additional_private:
-            try:
-                subnets.add(netaddr.IPNetwork(additional))
-            except Exception:
-                if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-                    logging.getLogger(__name__).exception(
-                        "Error while trying to add additional private network to local subnets: {}".format(
-                            additional
-                        )
-                    )
-
-        def to_ipnetwork(address):
-            prefix = address["netmask"]
-            if "/" in prefix:
-                # v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
-                _, prefix = prefix.split("/")
-
-            addr = strip_interface_tag(address["addr"])
-            return netaddr.IPNetwork("{}/{}".format(addr, prefix))
-
-        for interface in netifaces.interfaces():
-            addrs = netifaces.ifaddresses(interface)
-            for v4 in addrs.get(socket.AF_INET, ()):
-                try:
-                    subnets.add(to_ipnetwork(v4))
-                except Exception:
-                    if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-                        logging.getLogger(__name__).exception(
-                            "Error while trying to add v4 network to local subnets: {!r}".format(
-                                v4
-                            )
-                        )
-
-            if HAS_V6:
-                for v6 in addrs.get(socket.AF_INET6, ()):
-                    try:
-                        subnets.add(to_ipnetwork(v6))
-                    except Exception:
-                        if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-                            logging.getLogger(__name__).exception(
-                                "Error while trying to add v6 network to local subnets: {!r}".format(
-                                    v6
-                                )
-                            )
-
-        if ip in subnets:
+        if any(map(lambda subnet: ip in subnet, subnets)):
             return True
 
         return False
@@ -121,6 +133,12 @@ def is_lan_address(address, additional_private=None):
             )
         )
         return True
+
+
+def sanitize_address(address):
+    address = unmap_v4_as_v6(address)
+    address = strip_interface_tag(address)
+    return address
 
 
 def strip_interface_tag(address):

@@ -1044,6 +1044,9 @@ class PluginManagerPlugin(
                 if full_path.endswith(".py"):
                     pyc_file = "{full_path}c".format(**locals())
                     if os.path.isfile(pyc_file):
+                        self._log_stdout(
+                            "Deleting plugin from {file}".format(file=pyc_file)
+                        )
                         os.remove(pyc_file)
 
         else:

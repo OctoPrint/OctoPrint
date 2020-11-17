@@ -395,6 +395,7 @@ def utilTest():
         "url": ["url"],
         "server": ["host", "port"],
         "resolution": ["name"],
+        "address": [],
     }
 
     command, data, response = get_json_command_from_request(request, valid_commands)
@@ -409,6 +410,8 @@ def utilTest():
         return _test_server(data)
     elif command == "resolution":
         return _test_resolution(data)
+    elif command == "address":
+        return _test_address(data)
 
 
 def _test_path(data):
@@ -738,5 +741,36 @@ def _test_resolution(data):
     resolvable = len(resolve_host(name)) > 0
 
     result = {"name": name, "result": resolvable}
+
+    return jsonify(**result)
+
+
+def _test_address(data):
+    import netaddr
+
+    from octoprint.util.net import get_lan_ranges, sanitize_address
+
+    remote_addr = data.get("address")
+    if not remote_addr:
+        remote_addr = get_remote_address(request)
+
+    remote_addr = sanitize_address(remote_addr)
+    ip = netaddr.IPAddress(remote_addr)
+
+    lan_subnets = get_lan_ranges()
+
+    detected_subnet = None
+    for subnet in lan_subnets:
+        if ip in subnet:
+            detected_subnet = subnet
+            break
+
+    result = {
+        "is_lan_address": detected_subnet is not None,
+        "address": remote_addr,
+    }
+
+    if detected_subnet is not None:
+        result["subnet"] = str(detected_subnet)
 
     return jsonify(**result)

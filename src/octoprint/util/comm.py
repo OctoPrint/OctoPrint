@@ -577,7 +577,8 @@ class MachineCom:
             ),
         }
 
-        self._lastLines = deque([], 50)
+        last_line_count = settings().getInt(["serial", "lastLineBufferSize"])
+        self._lastLines = deque([], last_line_count)
         self._lastCommError = None
         self._lastResendNumber = None
         self._currentResendCount = 0
@@ -651,6 +652,7 @@ class MachineCom:
 
         self._transmitted_lines = 0
         self._received_resend_requests = 0
+        self._resend_ratio_start = settings().getInt(["serial", "resendRatioStart"])
         self._resend_ratio_threshold = (
             settings().getInt(["serial", "resendRatioThreshold"]) / 100.0
         )
@@ -812,13 +814,14 @@ class MachineCom:
         resend_ratio = self.resend_ratio
         if (
             resend_ratio >= self._resend_ratio_threshold
+            and self._transmitted_lines > self._resend_ratio_start
             and not self._resend_ratio_reported
         ):
             message = (
-                "Over {}% of transmitted lines have triggered resend requests "
-                "({:.2f}%). The communication with the printers is unreliable. "
+                "Over {:.0f}% of transmitted lines have triggered resend requests "
+                "({:.2f}%). The communication with the printer is unreliable. "
                 "Please see https://faq.octoprint.org/communication-errors.".format(
-                    self._resend_ratio_threshold, resend_ratio
+                    self._resend_ratio_threshold * 100, resend_ratio * 100
                 )
             )
             self._log(message)

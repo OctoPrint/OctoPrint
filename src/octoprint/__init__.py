@@ -591,16 +591,17 @@ def init_pluginsystem(
         )
 
     plugin_validators = []
+
     if safe_mode:
 
-        def validator(phase, plugin_info):
+        def safe_mode_validator(phase, plugin_info):
             if phase in ("before_import", "before_load", "before_enable"):
                 plugin_info.safe_mode_victim = not plugin_info.bundled
                 if not plugin_info.bundled:
                     return False
             return True
 
-        plugin_validators.append(validator)
+        plugin_validators.append(safe_mode_validator)
 
     compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
 

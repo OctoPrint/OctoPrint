@@ -8,7 +8,12 @@ import click
 
 from octoprint import init_settings
 from octoprint.access.groups import FilebasedGroupManager
-from octoprint.access.users import FilebasedUserManager, UnknownUser, UserAlreadyExists
+from octoprint.access.users import (
+    CorruptUserStorage,
+    FilebasedUserManager,
+    UnknownUser,
+    UserAlreadyExists,
+)
 from octoprint.cli import get_ctx_obj_option
 from octoprint.util import get_class, sv
 
@@ -60,6 +65,8 @@ def user(ctx):
         try:
             clazz = get_class(name)
             user_manager = clazz(group_manager=group_manager, settings=settings)
+        except CorruptUserStorage:
+            raise
         except Exception:
             click.echo(
                 "Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(
@@ -73,7 +80,7 @@ def user(ctx):
 
     except Exception:
         click.echo("Could not instantiate user manager", err=True)
-        return
+        ctx.exit(-1)
 
 
 @user.command(name="list")

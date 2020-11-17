@@ -1612,6 +1612,24 @@ class CountedEvent:
         self._internal_set(value)
 
     @property
+    def min(self):
+        return self._min
+
+    @min.setter
+    def min(self, val):
+        with self._mutex:
+            self._min = val
+
+    @property
+    def max(self):
+        return self._max
+
+    @max.setter
+    def max(self, val):
+        with self._mutex:
+            self._max = val
+
+    @property
     def is_set(self):
         return self._event.is_set
 

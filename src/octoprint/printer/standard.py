@@ -1145,9 +1145,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def _updateResendDataCallback(self):
         if not self._comm:
-            return self._dict(count=0, ratio=0)
+            return self._dict(count=0, transmitted=0, ratio=0)
         return self._dict(
             count=self._comm.received_resends,
+            transmitted=self._comm.transmitted_lines,
             ratio=int(self._comm.resend_ratio * 100.0),
         )
 
