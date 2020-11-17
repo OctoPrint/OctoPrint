@@ -6,8 +6,8 @@ Util
 
 .. _sec-api-util-test:
 
-Test paths or URLs
-==================
+Various tests
+=============
 
 .. http:post:: /api/util/test
 
@@ -105,6 +105,15 @@ Test paths or URLs
        * ``name``: The host name to test. Mandatory.
 
      The ``resolution`` command returns :http:statuscode:`200` with a :ref:`Resolution test result <sec-api-util-datamodel-resolutiontestresult>`
+     when the test could be performed. The status code of the response does NOT reflect the test result!
+
+   address
+     Tests whether a provided address (or, if none is provided, the client's remote address) is
+     a LAN address and if so returns the subnet specifier in CIDR format.
+
+       * ``address``: the address to test. If not set, the client's remote address will be used
+
+     The ``address`` command return :http:statuscode:`200` with a :ref:`Address test result <sec-api-util-datamodel-addresstestresult>`
      when the test could be performed. The status code of the response does NOT reflect the test result!
 
    Requires the ``ADMIN`` permission.
@@ -320,6 +329,58 @@ Test paths or URLs
         "result": true
       }
 
+   **Example 8**
+
+   Test whether the client's address is a LAN address.
+
+   .. sourcecode:: http
+
+      POST /api/util/test HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "command": "address"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "address": "192.168.1.3",
+        "is_lan_address": true,
+        "subnet": "192.168.0.0/16"
+      }
+
+   **Example 9**
+
+   Test whether ``8.8.8.8`` is a LAN address.
+
+   .. sourcecode:: http
+
+      POST /api/util/test HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "command": "address",
+        "address": "8.8.8.8"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "address": "8.8.8.8",
+        "is_lan_address": false
+      }
+
    :json command:            The command to execute, currently either ``path`` or ``url``
    :json path:               ``path`` command only: the path to test
    :json check_type:         ``path`` command only: the type of path to test for, either ``file`` or ``dir``
@@ -337,6 +398,7 @@ Test paths or URLs
    :json port:               ``server`` command only: the port to test
    :json protocol:           ``server`` command only: the protocol to test
    :json name:               ``resolution`` command only: the host name to test
+   :json address:            ``address`` command only: the address to test
    :statuscode 200:          No error occurred
 
 .. _sec-api-util-datamodel:
@@ -466,3 +528,29 @@ Resolution test result
      - 1
      - bool
      - ``true`` if the check passed.
+
+.. _sec-api-util-datamodel-addresstestresult:
+
+Address test result
+-------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``address``
+     - 1
+     - string
+     - The address that was tested.
+   * - ``is_lan_address``
+     - 1
+     - bool
+     - ``true`` if the address is a LAN address, false otherwise.
+   * - ``subnet``
+     - 0..1
+     - string
+     - The detected subnet, if address is a LAN address.

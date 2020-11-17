@@ -288,7 +288,7 @@ class FilebasedGroupManager(GroupManager):
                         ):
                             permissions.append(permission)
 
-                    subgroups = attributes.get("subgroups", [])
+                    subgroups = self._to_groups(*attributes.get("subgroups", []))
 
                     group = Group(
                         key,
@@ -301,6 +301,16 @@ class FilebasedGroupManager(GroupManager):
                         changeable=changeable,
                         toggleable=toggleable,
                     )
+
+                    if key == GUEST_GROUP and (
+                        len(group.permissions) != len(permissions)
+                        or len(group.subgroups) != len(subgroups)
+                    ):
+                        self._logger.warning(
+                            "Dangerous permissions and/or subgroups stripped from guests group"
+                        )
+                        self._dirty = True
+
                     self._groups[key] = group
 
                 for group in self._groups.values():
@@ -532,6 +542,16 @@ class Group(object):
         changeable=True,
         toggleable=True,
     ):
+        if permissions is None:
+            permissions = []
+        if subgroups is None:
+            subgroups = []
+
+        if key == GUEST_GROUP:
+            # guests may not have any dangerous permissions
+            permissions = list(filter(lambda p: not p.dangerous, permissions))
+            subgroups = list(filter(lambda g: not g.dangerous, subgroups))
+
         self._key = key
         self._name = name
         self._description = description
@@ -556,6 +576,7 @@ class Group(object):
             "removable": self._removable,
             "changeable": self._changeable,
             "toggleable": self._toggleable,
+            "dangerous": self.dangerous,
         }
 
     @property
@@ -580,6 +601,12 @@ class Group(object):
     def is_toggleable(self):
         return self._toggleable
 
+    @property
+    def dangerous(self):
+        return any(map(lambda p: p.dangerous, self._permissions)) or any(
+            map(lambda g: g.dangerous, self._subgroups)
+        )
+
     def add_permissions_to_group(self, permissions):
         """Adds a list of permissions to a group"""
         if not self.is_changeable():
@@ -590,6 +617,10 @@ class Group(object):
             permissions = [permissions]
 
         assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+
+        if self.key == GUEST_GROUP:
+            # don't allow dangerous permissions on the guests group
+            permissions = list(filter(lambda p: not p.dangerous, permissions))
 
         dirty = False
         for permission in permissions:
@@ -629,6 +660,10 @@ class Group(object):
 
         assert all(map(lambda g: isinstance(g, Group), subgroups))
 
+        if self.key == GUEST_GROUP:
+            # don't allow dangerous subgroups on the guests group
+            subgroups = list(filter(lambda g: not g.dangerous, subgroups))
+
         dirty = False
         for group in subgroups:
             if group.is_toggleable() and group not in self._subgroups:
@@ -639,7 +674,6 @@ class Group(object):
 
     def remove_subgroups_from_group(self, subgroups):
         """Removes a list of subgroups from a group"""
-        """Adds a list of subgroups to a group"""
         if not self.is_changeable():
             raise GroupCantBeChanged(self.key)
 
@@ -677,7 +711,7 @@ class Group(object):
 
     @property
     def subgroups(self):
-        return filter(lambda g: g is not None, self._subgroups)
+        return list(filter(lambda g: g is not None, self._subgroups))
 
     @property
     def needs(self):

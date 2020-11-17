@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2020-11-10 09:51+0100\n"
-"PO-Revision-Date: 2020-11-10 10:56+0100\n"
+"POT-Creation-Date: 2020-11-17 14:24+0100\n"
+"PO-Revision-Date: 2020-11-17 14:27+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -19,87 +19,87 @@ msgstr ""
 "Generated-By: Babel 2.8.0\n"
 "X-Generator: Poedit 2.0.4\n"
 
-#: src/octoprint/access/permissions.py:279
+#: src/octoprint/access/permissions.py:283
 msgid "Admin is allowed to do everything"
 msgstr "Admins dürfen alles tun"
 
-#: src/octoprint/access/permissions.py:287
+#: src/octoprint/access/permissions.py:291
 msgid "Allows to gather basic status information, e.g. job progress, printer state, temperatures, ... Mandatory for the default UI to work"
 msgstr "Erlaubt Zugriff auf Statusinformationen wie Druckfortschritt, Druckerstatus, Temperaturen, ... Obligatorisch für die korrekte Funktion des Userinterfaces"
 
-#: src/octoprint/access/permissions.py:298
+#: src/octoprint/access/permissions.py:302
 msgid "Allows to connect to and disconnect from a printer"
 msgstr "Erlaubt Verbindung und Verbindungstrennung zum Drucker"
 
-#: src/octoprint/access/permissions.py:305
+#: src/octoprint/access/permissions.py:309
 msgid "Allows to watch the webcam stream"
 msgstr "Erlaubt Einbettung des Webcamstreams"
 
-#: src/octoprint/access/permissions.py:312
+#: src/octoprint/access/permissions.py:316
 msgid "Allows to run system commands, e.g. restart OctoPrint, shutdown or reboot the system, and to retrieve system and usage information"
 msgstr "Erlaubt die Ausführung von Systembefehlen, z.B. OctoPrint neu starten, System herunterfahren oder neu starten, und die Abfrage von Systeminformation"
 
-#: src/octoprint/access/permissions.py:322
+#: src/octoprint/access/permissions.py:326
 msgid "Allows to retrieve a list of all uploaded files and folders, includingtheir metadata (e.g. date, file size, analysis results, ...)"
 msgstr "Erlaubt das Abrufen eines Liste aller hochgeladenen Dateien und Verzeichnisse, inkl. ihrer Metadaten (z.B. Datum, Dateigröße, Analyseergebnisse, …)"
 
-#: src/octoprint/access/permissions.py:331
+#: src/octoprint/access/permissions.py:335
 msgid "Allows users to upload new files, create new folders and copy existing ones. If the File Delete permission is also set, File Upload also allows moving files and folders."
 msgstr "Erlaubt Nutzern das Hochladen neuer Dateien, Erstellen von Verzeichnissen und Kopieren vorhandener Dateien und Verzeichnisse. Wenn die File Delete Berechtigung ebenfalls gesetzt ist, erlaubt File Upload auch das Verschieben von Dateien und Verzeichnissen."
 
-#: src/octoprint/access/permissions.py:341
+#: src/octoprint/access/permissions.py:345
 msgid "Allows users to download files. The GCODE viewer is affected by this as well."
 msgstr "Erlaubt das Herunterladen von Dateien. Der GCODE viewer benötigt dieses Recht."
 
-#: src/octoprint/access/permissions.py:350
+#: src/octoprint/access/permissions.py:354
 msgid "Allows users to delete files and folders. If the File Upload permission is also set, File Delete also allows moving files and folders."
 msgstr "Erlaubt Nutzern das Löschen von Dateien und Verzeichnissen. Falls die File Upload Berechtigung ebenfalls gesetzt ist, erlaubt File Delete auch das Verschieben von Dateien und Verzeichnissen."
 
-#: src/octoprint/access/permissions.py:359
+#: src/octoprint/access/permissions.py:363
 msgid "Allows to select a file for printing"
 msgstr "Erlaubt die Auswahl einer Datei zum Drucken"
 
-#: src/octoprint/access/permissions.py:366
+#: src/octoprint/access/permissions.py:370
 msgid "Allows to start, pause and cancel a print job"
 msgstr "Erlaubt das starten, pausieren und abbrechen eines Druckauftrags"
 
-#: src/octoprint/access/permissions.py:373
+#: src/octoprint/access/permissions.py:377
 msgid "Allows access to the GCODE viewer if the \"File Download\"permission is also set."
 msgstr "Erlaubt den Zugriff auf den GCODE viewer falls die \"File Download\" Berechtigung ebenfalls gesetzt ist."
 
-#: src/octoprint/access/permissions.py:383
+#: src/octoprint/access/permissions.py:387
 msgid "Allows to watch the terminal tab but not to send commands to the printer from it"
 msgstr "Erlaubt lesenden Zugriff auf das Terminal Tab. Das Senden von Befehlen zum Drucker ist nicht gestattet"
 
-#: src/octoprint/access/permissions.py:393
+#: src/octoprint/access/permissions.py:397
 msgid "Allows to control of the printer by using the temperature controls,the control tab or sending commands through the terminal."
 msgstr "Erlaubt vollen Zugriff auf den Drucker, inkl. Temperatur, Steuerung oder Senden individueller Befehle über das Terminal."
 
-#: src/octoprint/access/permissions.py:403
+#: src/octoprint/access/permissions.py:407
 msgid "Allows to slice files"
 msgstr "Erlaubt das Slicen von Dateien"
 
-#: src/octoprint/access/permissions.py:410
+#: src/octoprint/access/permissions.py:414
 msgid "Allows to list timelapse videos"
 msgstr "Erlaubt die Auflistung von Zeitrafferaufnahmen"
 
-#: src/octoprint/access/permissions.py:416
+#: src/octoprint/access/permissions.py:420
 msgid "Allows to download timelapse videos"
 msgstr "Erlaubt das Herunterladen von Zeitrafferaufnahmen"
 
-#: src/octoprint/access/permissions.py:422
+#: src/octoprint/access/permissions.py:426
 msgid "Allows to delete timelapse videos and unrendered timelapses"
 msgstr "Erlaubt das Löschen von Zeitrafferaufnahmen und ungerenderten Zeitraffern"
 
-#: src/octoprint/access/permissions.py:428
+#: src/octoprint/access/permissions.py:432
 msgid "Allows to change the timelapse settings and delete or render unrendered timelapses. Includes the \"Timelapse List\",\"Timelapse Delete\" and \"Timelapse Download\" permissions"
 msgstr "Erlaubt die Änderung von Zeitraffereinstellungen sowie das Löschen oder Rendern unprozessierter Zeitrafferaufnahmen"
 
-#: src/octoprint/access/permissions.py:441
+#: src/octoprint/access/permissions.py:445
 msgid "Allows to read non sensitive settings. Mandatory for the default UI to work."
 msgstr "Erlaubt lesenden Zugriff auf allgemeine Einstellungen (jedoch keine kritischen). Obligatorisch für die korrekte Funktion des Userinterfaces."
 
-#: src/octoprint/access/permissions.py:450
+#: src/octoprint/access/permissions.py:454
 msgid "Allows to manage settings and also to read sensitive settings"
 msgstr "Erlaubt vollen Zugriff auf alle Einstellungen"
 
@@ -531,7 +531,7 @@ msgstr "Sicherung & Wiederherstellung"
 msgid "Restore Backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: src/octoprint/plugins/backup/__init__.py:1318
+#: src/octoprint/plugins/backup/__init__.py:1320
 msgid "Without this plugin you will no longer be able to backup & restore your OctoPrint settings and data."
 msgstr "Ohne dieses Plugin kannst du deine OctoPrint Einstellung und Daten nicht länger sichern & wiederherstellen."
 
@@ -684,8 +684,8 @@ msgid "Size"
 msgstr "Größe"
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:49
-#: src/octoprint/static/js/app/viewmodels/access.js:319
-#: src/octoprint/static/js/app/viewmodels/access.js:636
+#: src/octoprint/static/js/app/viewmodels/access.js:331
+#: src/octoprint/static/js/app/viewmodels/access.js:665
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:103
 msgid "Delete"
 msgstr "Löschen"
@@ -1245,7 +1245,7 @@ msgstr "Filament"
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:697
 #: src/octoprint/static/js/app/viewmodels/control.js:85
 #: src/octoprint/static/js/app/viewmodels/files.js:959
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:351
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:354
 #: src/octoprint/static/js/app/viewmodels/temperature.js:146
 #: src/octoprint/static/js/app/viewmodels/temperature.js:157
 #: src/octoprint/static/js/app/viewmodels/temperature.js:377
@@ -1388,7 +1388,6 @@ msgstr "\n"
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:484
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:499
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:87
-#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:6
 #: src/octoprint/templates/snippets/settings/server/serverPluginTimings.jinja2:4
 msgid "Warning"
 msgstr "Warnung"
@@ -3372,8 +3371,8 @@ msgid "off"
 msgstr "Aus"
 
 #: src/octoprint/static/js/app/helpers.js:792
-#: src/octoprint/static/js/app/viewmodels/access.js:314
-#: src/octoprint/static/js/app/viewmodels/access.js:631
+#: src/octoprint/static/js/app/viewmodels/access.js:326
+#: src/octoprint/static/js/app/viewmodels/access.js:660
 #: src/octoprint/static/js/app/viewmodels/connection.js:157
 msgid "Are you sure?"
 msgstr "Bist Du sicher?"
@@ -3456,40 +3455,48 @@ msgstr "Beende"
 msgid "Loading OctoPrint's UI, please wait..."
 msgstr "Lade OctoPrints Userinterface, bitte warten..."
 
-#: src/octoprint/static/js/app/viewmodels/access.js:102
+#: src/octoprint/static/js/app/viewmodels/access.js:99
+msgid "This user may not have dangerous permissions."
+msgstr "Dieser Nutzer darf keine gefährlichen Berechtigungen erhalten."
+
+#: src/octoprint/static/js/app/viewmodels/access.js:114
 #: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:48
 msgid "Add user"
 msgstr "Nutzer hinzufügen"
 
-#: src/octoprint/static/js/app/viewmodels/access.js:112
+#: src/octoprint/static/js/app/viewmodels/access.js:124
 #, python-format
 msgid "Edit user \"%(name)s\""
 msgstr "Editiere Nutzer \"%(name)s\""
 
-#: src/octoprint/static/js/app/viewmodels/access.js:304
+#: src/octoprint/static/js/app/viewmodels/access.js:316
 msgid "Not possible"
 msgstr "Nicht möglich"
 
-#: src/octoprint/static/js/app/viewmodels/access.js:305
+#: src/octoprint/static/js/app/viewmodels/access.js:317
 msgid "You may not delete your own account."
 msgstr "Du kannst deinen eigenen Account nicht löschen."
 
-#: src/octoprint/static/js/app/viewmodels/access.js:316
+#: src/octoprint/static/js/app/viewmodels/access.js:328
 #, python-format
 msgid "You are about to delete the user \"%(name)s\"."
 msgstr "Du bist im Begriff, den Nutzer \"%(name)s\" zu löschen."
 
-#: src/octoprint/static/js/app/viewmodels/access.js:490
+#: src/octoprint/static/js/app/viewmodels/access.js:461
+msgid "This group may not have dangerous permissions or subgroups."
+msgstr "Diese Gruppe darf keine gefährlichen Berechtigungen oder Untergruppern erhalten."
+
+#: src/octoprint/static/js/app/viewmodels/access.js:519
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:47
 msgid "Add group"
 msgstr "Gruppe hinzufügen"
 
-#: src/octoprint/static/js/app/viewmodels/access.js:502
+#: src/octoprint/static/js/app/viewmodels/access.js:531
 #, python-format
 msgid "Edit group \"%(name)s\""
 msgstr "Gruppe \"%(name)s\" bearbeiten"
 
-#: src/octoprint/static/js/app/viewmodels/access.js:633
+#: src/octoprint/static/js/app/viewmodels/access.js:662
 #, python-format
 msgid "You are about to delete the group \"%(name)s\"."
 msgstr "Du bist im Begriff die Gruppe\"%(name)s\" zu löschen."
@@ -3551,22 +3558,22 @@ msgid "You are about to delete the folder \"%(folder)s\" which still contains fi
 msgstr "Du bist im Begriff das Verzeichnis \"%(folder)s\" zu löschen, das noch Dateien und/oder Unterverzeichnisse enthält."
 
 #: src/octoprint/static/js/app/viewmodels/files.js:624
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:435
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:439
 msgid "This will start a new print job. Please check that the print bed is clear."
 msgstr "Dies started einen neuen Druckauftrag. Bitte prüfe, dass das Druckbett frei ist."
 
 #: src/octoprint/static/js/app/viewmodels/files.js:627
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:438
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:442
 msgid "Do you want to start the print job now?"
 msgstr "Möchtest du den Druckauftrag jetzt starten?"
 
 #: src/octoprint/static/js/app/viewmodels/files.js:628
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:439
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:443
 msgid "No"
 msgstr "Nein"
 
 #: src/octoprint/static/js/app/viewmodels/files.js:629
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:440
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:444
 msgid "Yes"
 msgstr "Ja"
 
@@ -3843,98 +3850,98 @@ msgstr "Druckerprofil hinzufügen"
 msgid "Edit Printer Profile \"%(name)s\""
 msgstr "Druckerprofile \"%(name)s\" bearbeiten"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:91
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:94
 msgid "Restarts the print job from the beginning"
 msgstr "Startet den Druckjob von vorne"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:94
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:97
 msgid "Starts the print job"
 msgstr "Startet den Druckjob"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:95
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:98
 msgid "Resumes the print job"
 msgstr "Setzt den Druckjob fort"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:96
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:99
 msgid "Pauses the print job"
 msgstr "Pausiert den Druckjob"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:134
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:137
 msgid "Still stabilizing..."
 msgstr "Noch zu ungenau..."
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:154
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:157
 msgid "Based on a linear approximation (very low accuracy, especially at the beginning of the print)"
 msgstr "Basiert auf einer linearen Approximation (sehr geringe Genauigkeit, insbesondere zu Beginn eines Drucks)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:159
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:162
 msgid "Based on the estimate from analysis of file (medium accuracy)"
 msgstr "Basiert auf der Schätzung der Analyse der Datei (mittlere Genauigkeit)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:164
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:167
 msgid "Based on a mix of estimate from analysis and calculation (medium accuracy)"
 msgstr "Basiert auf einem Mix der Schätzung aus der Analyse und der Berechnung (mittlere Genauigkeit)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:169
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:172
 msgid "Based on the average total of past prints of this model with the same printer profile (usually good accuracy)"
 msgstr "Basiert auf der durchschnittlichen Dauer vergangener Druckjobs dieses Modells mit dem selben Druckerprofil (normalerweise gute Genauigkeit)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:174
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:177
 msgid "Based on a mix of average total from past prints and calculation (usually good accuracy)"
 msgstr "Basiert auf einem Mix der durchschnittlichen Dauer vergangener Druckjobs und der Berechnung (normalerweise gute Genauigkeit)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:179
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:182
 msgid "Based on the calculated estimate (best accuracy)"
 msgstr "Basiert auf der berechneten Schätzung (beste Genauigkeit)"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:215
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:218
 msgid "Continue"
 msgstr "Fortsetzen"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:216
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:219
 #: src/octoprint/templates/sidebar/state.jinja2:31
 msgid "Pause"
 msgstr "Pause"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:226
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:229
 #: src/octoprint/templates/tabs/timelapse.jinja2:16
 msgid "On Z Change"
 msgstr "Bei Ebenenwechsel"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:229
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:232
 #: src/octoprint/templates/tabs/timelapse.jinja2:15
 msgid "Timed"
 msgstr "Nach Zeit"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:233
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:236
 #: src/octoprint/templates/tabs/timelapse.jinja2:27
 #: src/octoprint/templates/tabs/timelapse.jinja2:38
 #: src/octoprint/templates/tabs/timelapse.jinja2:58
 msgid "sec"
 msgstr "Sek"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:396
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:400
 #, python-format
 msgid "<p>%(ratio)d%% of transmitted lines have triggered resend requests. The communication with the printer is unreliable and this will cause print artefacts and failures.</p><p>Please see <a href='%(url)s' target='_blank'>this FAQ entry</a> on tips on how to solve this.</p>"
 msgstr "<p>%(ratio)d%% aller übertragenen Zeilen haben einen Resend Request verursacht. Die Kommunikation mit dem Drucker ist nicht zuverlässig und das wird Druckartefakte und -fehler verursachen.</p><p>Bitte konsultiere <a href='%(url)s' target='_blank'>diesen FAQ Eintrag</a> für Tipps, was man dagegen machen kann.</p>"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:408
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:412
 msgid "Critical resend ratio!"
 msgstr "Kritisches Resendverhältnis!"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:423
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:427
 msgid "This will restart the print job from the beginning."
 msgstr "Der Druckjob wird zurückgesetzt und von vorne begonnen."
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:467
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:471
 msgid "This will cancel your print."
 msgstr "Das wird deinen Druck abbrechen."
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:468
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:472
 msgid "No, continue the print"
 msgstr "Nein, mit dem Druck fortfahren"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:469
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:473
 msgid "Yes, cancel the print"
 msgstr "Ja, den Druck abbrechen"
 
@@ -3952,85 +3959,85 @@ msgstr "Weiß"
 msgid "Autodetect from browser"
 msgstr "Automatisch vom Browser erkennen"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:426
+#: src/octoprint/static/js/app/viewmodels/settings.js:427
 msgid "If you see your webcam stream below, the entered stream URL is ok."
 msgstr "Falls du unten den Webcamstream sehen kannst, ist die Stream-URL ok."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:453
+#: src/octoprint/static/js/app/viewmodels/settings.js:454
 msgid "Stream test"
 msgstr "Stream Test"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:471
+#: src/octoprint/static/js/app/viewmodels/settings.js:472
 msgid "Could not retrieve snapshot URL, please double check the URL"
 msgstr "Konnte die Snapshot-URL nicht abgreifen, bitte prüfen"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:474
+#: src/octoprint/static/js/app/viewmodels/settings.js:475
 msgid "Snapshot test failed"
 msgstr "Snapshot Test fehlgeschlagen"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:494
+#: src/octoprint/static/js/app/viewmodels/settings.js:495
 #, python-format
 msgid "Could retrieve the snapshot URL, but it didn't look like an image. Got this as a content type header: <code>%(content_type)s</code>. Please double check that the URL is returning static images, not multipart data or videos."
 msgstr "Konnte die Snapshot URL abrufen, aber die Antwort sah nicht wie ein Bild aus: <code>%(content_type)s</code>. Bitte überprüfe, dass die URL einzelne Bilder zurückliefert, nicht multipart Daten oder Videos."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:523
+#: src/octoprint/static/js/app/viewmodels/settings.js:524
 msgid "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
 msgstr "Falls du unten dein Snapshotbild sehen kannst, ist die Snapshot-URL ok."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:527
+#: src/octoprint/static/js/app/viewmodels/settings.js:528
 msgid "Snapshot test"
 msgstr "Snapshot Test"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:569
+#: src/octoprint/static/js/app/viewmodels/settings.js:570
 msgid "The path doesn't exist"
 msgstr "Der Pfad existiert nicht"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:571
+#: src/octoprint/static/js/app/viewmodels/settings.js:572
 msgid "The path is not a file"
 msgstr "Der Pfad ist keine Datei"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:574
+#: src/octoprint/static/js/app/viewmodels/settings.js:575
 msgid "The path is not an executable"
 msgstr "Der Pfad ist nicht ausführbar"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:578
-#: src/octoprint/static/js/app/viewmodels/settings.js:679
+#: src/octoprint/static/js/app/viewmodels/settings.js:579
+#: src/octoprint/static/js/app/viewmodels/settings.js:680
 msgid "The path is valid"
 msgstr "Der Pfad ist valide"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:603
+#: src/octoprint/static/js/app/viewmodels/settings.js:604
 msgid "The server is not reachable"
 msgstr "Der Server ist nicht erreichbar"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:606
+#: src/octoprint/static/js/app/viewmodels/settings.js:607
 msgid "The server is reachable"
 msgstr "Der Server ist erreichbar"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:627
+#: src/octoprint/static/js/app/viewmodels/settings.js:628
 msgid "Name cannot be resolved"
 msgstr "Name kann nicht aufgelöst werden"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:631
+#: src/octoprint/static/js/app/viewmodels/settings.js:632
 msgid "Name can be resolved"
 msgstr "Name kann aufgelöst werden"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:663
+#: src/octoprint/static/js/app/viewmodels/settings.js:664
 msgid "The path is a broken symlink."
 msgstr "Der Pfad ist ein kaputter Symlink."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:667
+#: src/octoprint/static/js/app/viewmodels/settings.js:668
 msgid "The path does not exist and cannot be created."
 msgstr "Der Pfad existiert nicht und kann nicht erstellt werden."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:671
+#: src/octoprint/static/js/app/viewmodels/settings.js:672
 msgid "The path is not a folder."
 msgstr "Der Pfad ist kein Verzeichnis."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:675
+#: src/octoprint/static/js/app/viewmodels/settings.js:676
 msgid "The path is not writable."
 msgstr "Der Pfad ist nicht beschreibbar."
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:817
+#: src/octoprint/static/js/app/viewmodels/settings.js:818
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:120
 msgid "This will generate a new API Key. The old API Key will cease to function immediately."
 msgstr "Dies wird einen neuen API-Key generieren. Der alte wird sofort aufhören zu funktionieren."
@@ -5561,6 +5568,14 @@ msgstr "Resendverhältnis-Schwellwert. Anteil von Resendrequests an allen übert
 msgid "Critical resend ratio"
 msgstr "Kritisches Resendverhältnis"
 
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:529
+msgid "Start tracking resend request after these many transmitted lines."
+msgstr "Resend requests erst nach dieser Anzahl übertragener Zeilen beginnen zu tracken."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:530
+msgid "Tracking start"
+msgstr "Trackingbeginn"
+
 #: src/octoprint/templates/dialogs/settings/server.jinja2:4
 msgid "Commands"
 msgstr "Befehle"
@@ -5895,16 +5910,24 @@ msgid "Current printer state"
 msgstr "Aktueller Druckerstatus"
 
 #: src/octoprint/templates/sidebar/state.jinja2:2
-msgid "Count of resend requests and resend ratio"
-msgstr "Anzahl von Resendrequests und Resendverhältnis"
+msgid "Count of resend requests, transmitted lines and resend ratio"
+msgstr "Anzahl von Resendrequests, übertragene Zeilen und Resendverhältnis"
 
 #: src/octoprint/templates/sidebar/state.jinja2:2
-msgid "Resend requests"
-msgstr "Resendrequests"
+msgid "Resend ratio"
+msgstr "Resendverhältnis"
 
 #: src/octoprint/templates/sidebar/state.jinja2:2
 msgid "resend requests"
 msgstr "Resendrequests"
+
+#: src/octoprint/templates/sidebar/state.jinja2:2
+msgid "transmitted lines"
+msgstr "übertragene Zeilen"
+
+#: src/octoprint/templates/sidebar/state.jinja2:2
+msgid "resend ratio"
+msgstr "Resendverhältnis"
 
 #: src/octoprint/templates/sidebar/state.jinja2:4
 msgid "Name of file currently selected for printing"
@@ -5979,7 +6002,7 @@ msgid "Fixed groups can't be added or removed to users."
 msgstr "Feste Gruppen können zu Benutzern nicht hinzugefügt oder entfernt werden."
 
 #: src/octoprint/templates/snippets/settings/accesscontrol/group_list.jinja2:6
-#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:6
+#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
 msgid "Fixed"
 msgstr "Fest"
 
@@ -6022,11 +6045,16 @@ msgstr "Standard"
 msgid "Marking a group as default will make it get pre selected when creating new users."
 msgstr "Eine als Standardgruppe deklarierte Gruppe wird bei der Erstellung neuer Nutzer vorselektiert."
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:6
+#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:8
 msgid "Plugin"
 msgstr "Plugin"
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:6
+#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:8
+#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
+msgid "Dangerous"
+msgstr "Gefährlich"
+
+#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
 msgid "Fixed groups can't be added or removed to other groups."
 msgstr "Feste Gruppen können zu Gruppen nicht hinzugefügt oder entfernt werden."
 
@@ -7934,3 +7962,6 @@ msgstr "Zeitrafferaufnahme rendern"
 
 #~ msgid "Select Tool..."
 #~ msgstr "Tool wählen..."
+
+#~ msgid "Resend requests"
+#~ msgstr "Resendrequests"
