@@ -776,7 +776,7 @@ class PluginManagerPlugin(
                 "for generated output",
             }
             self._send_result_notification("install", result)
-            return jsonify(result)
+            return result
 
         # The final output of a pip install command looks something like this:
         #
