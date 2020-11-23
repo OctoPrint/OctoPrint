@@ -4,6 +4,9 @@ $(function () {
 
         access.loginState = parameters[0];
 
+        var GROUP_ADMINS = "admins";
+        var GROUP_GUESTS = "guests";
+
         //~~ Users ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         access.users = (function () {
@@ -43,6 +46,9 @@ $(function () {
                 }),
                 apikey: ko.observable(undefined),
                 active: ko.observable(undefined),
+                permissionSelectable: function (permission) {
+                    return true;
+                },
                 permissionSelected: function (permission) {
                     var index = self.editor.permissions().indexOf(permission);
                     return index >= 0;
@@ -86,7 +92,13 @@ $(function () {
                                 self.editor.password().trim() &&
                                 !self.editor.passwordMismatch()))
                     );
-                })
+                }),
+                dangerRestricted: function () {
+                    return false;
+                },
+                dangerRestrictedText: gettext(
+                    "This user may not have dangerous permissions."
+                )
             };
 
             self.userEditorDialog = undefined;
@@ -395,6 +407,10 @@ $(function () {
                 permissions: ko.observableArray([]),
                 subgroups: ko.observableArray([]),
                 default: ko.observable(false),
+                permissionSelectable: function (permission) {
+                    // guests may not get dangerous permissions
+                    return self.editor.key() !== GROUP_GUESTS || !permission.dangerous;
+                },
                 permissionSelected: function (permission) {
                     var index = self.editor.permissions().indexOf(permission);
                     return index >= 0;
@@ -408,6 +424,13 @@ $(function () {
                         permissions.splice(index, 1);
                     }
                     self.editor.permissions(permissions);
+                },
+                subgroupSelectable: function (subgroup) {
+                    // guests may not get dangerous subgroups
+                    return (
+                        self.editor.key() !== subgroup.key &&
+                        (self.editor.key() !== GROUP_GUESTS || !subgroup.dangerous)
+                    );
                 },
                 subgroupSelected: function (subgroup) {
                     var index = self.editor.subgroups().indexOf(subgroup);
@@ -431,7 +454,13 @@ $(function () {
                 confirm: undefined,
                 valid: ko.pureComputed(function () {
                     return self.editor.name() && self.editor.name().trim();
-                })
+                }),
+                dangerRestricted: function () {
+                    return self.editor.key() === GROUP_GUESTS;
+                },
+                dangerRestrictedText: gettext(
+                    "This group may not have dangerous permissions or subgroups."
+                )
             };
 
             self.groupEditorDialog = undefined;

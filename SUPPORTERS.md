@@ -36,6 +36,7 @@ thanks to everyone who contributed!
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
+  * Kelly C McNiece
   * Kenneth Jiang
   * Kurt Wubbels
   * Kyle Menigoz
@@ -67,4 +68,4 @@ thanks to everyone who contributed!
   * Sven Mueller
   * Ulrich Kempken
 
-and 2084 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2107 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!

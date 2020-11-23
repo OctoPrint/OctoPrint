@@ -63,7 +63,7 @@ For information about how to go about submitting bug reports or pull requests, p
 Installation instructions for installing from source for different operating
 systems can be found [on the forum](https://community.octoprint.org/tags/c/support/guides/15/setup).
 
-If you want to run OctoPrint on a Raspberry Pi, you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
+If you want to run OctoPrint on a Raspberry Pi, you really should take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
 
 The generic steps that should basically be done regardless of operating system
@@ -75,13 +75,6 @@ you already have Python 2.7, 3.6 or 3.7, pip and virtualenv and their dependenci
    to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python`
    parameter, e.g. `virtualenv --python=python3 venv`.
 2. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install OctoPrint`
-
-Or alternatively, for an install from source:
-
-1. Checkout OctoPrint: `git clone https://github.com/OctoPrint/OctoPrint.git`
-2. Change into the OctoPrint folder: `cd OctoPrint`
-3. Create a user-owned virtual environment therein: `virtualenv venv`
-4. Install OctoPrint *into that virtual environment*: `./venv/bin/pip install .`
 
 You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
 for details.

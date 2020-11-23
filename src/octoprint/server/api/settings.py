@@ -243,6 +243,7 @@ def getSettings():
                 ["serial", "capabilities", "emergency_parser"]
             ),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
+            "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -871,6 +872,8 @@ def _saveSettings(data):
             s.setInt(
                 ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
             )
+        if "resendRatioStart" in data["serial"]:
+            s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:

@@ -75,7 +75,7 @@ INSTALL_REQUIRES_PYTHON2 = [
     "scandir>=1.10,<2",
     "chainmap>=1.0.3,<2",
     "typing>=3.7.4.1,<4",
-    "enum34>=1.1.10",
+    "enum34>=1.1.10,<1.2",
 ]
 
 # Python 3 specific requirements

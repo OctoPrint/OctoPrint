@@ -184,7 +184,7 @@ More nifty pause and resume
 ...........................
 
 If you do not have a multi-extruder setup, aren't printing from SD and have "Log position on pause" enabled under
-Settings > Serial > Advanced options, the following ``afterPrintPaused`` and
+Settings > Serial Connection > Behaviour > Pausing, the following ``afterPrintPaused`` and
 ``beforePrintResumed`` scripts might be interesting for you. With something like them in place, OctoPrint will move your print head
 out of the way to a safe rest position (here ``G1 X0 Y0``, you might want to adjust that) on pause and move it back
 to the persisted pause position on resume, making sure to also reset the extruder and feedrate.

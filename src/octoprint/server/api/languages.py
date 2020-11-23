@@ -140,8 +140,10 @@ def uploadLanguagePack():
     upload_name = request.values[input_upload_name]
     upload_path = request.values[input_upload_path]
 
-    exts = filter(
-        lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar")
+    exts = list(
+        filter(
+            lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar")
+        )
     )
     if not len(exts):
         return make_response(
