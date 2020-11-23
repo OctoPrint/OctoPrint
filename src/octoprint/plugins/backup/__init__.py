@@ -4,8 +4,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from emoji import demojize
-
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
@@ -39,7 +37,6 @@ import io
 import json
 import logging
 import os
-import re
 import shutil
 import sys
 import tempfile
@@ -54,8 +51,7 @@ import sarge
 from flask_babel import gettext
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import to_unicode
-from octoprint.vendor.awesome_slugify import Slugify
+from octoprint.util.text import sanitize
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
@@ -1295,25 +1291,10 @@ class BackupPlugin(
             backup_prefix = "octoprint"
         else:
             backup_prefix = settings.global_get(["appearance", "name"])
-        backup_prefix = cls._slugify(backup_prefix)
+        backup_prefix = sanitize(backup_prefix)
         return "{}-backup-{}.zip".format(
             backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
         )
-
-    _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
-    _SLUGIFY = Slugify()
-    _SLUGIFY.safe_chars = "-_.()[] "
-
-    @classmethod
-    def _no_unicode_variations(cls, text):
-        return cls._UNICODE_VARIATIONS.sub("", text)
-
-    @classmethod
-    def _slugify(cls, text):
-        text = to_unicode(text)
-        text = cls._no_unicode_variations(text)
-        text = demojize(text, delimiters=("", ""))
-        return cls._SLUGIFY(text)
 
     @classmethod
     def _restore_supported(cls, settings):
