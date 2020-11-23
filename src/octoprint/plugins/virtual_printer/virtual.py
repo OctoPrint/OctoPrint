@@ -1137,7 +1137,7 @@ class VirtualPrinter(object):
         config = self._virtual_eeprom.eeprom["material"]
         lines = []
         for material in ["0", "1"]:
-            line = "echo: " + config["command"] + "S" + material
+            line = "echo: " + config["command"] + " S" + material
             for param, saved_value in config["params"][material].items():
                 line = line + " " + param + str(saved_value)
             lines.append(line)
