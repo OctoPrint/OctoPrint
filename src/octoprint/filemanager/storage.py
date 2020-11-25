@@ -6,17 +6,15 @@ import copy
 import io
 import logging
 import os
-import re
 import shutil
 from contextlib import contextmanager
 from os import scandir, walk
 
 import pylru
-from emoji import demojize
 
 import octoprint.filemanager
 from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
-from octoprint.vendor.awesome_slugify import Slugify
+from octoprint.util.text import sanitize
 
 
 class StorageInterface:
@@ -455,22 +453,6 @@ class LocalFileStorage(StorageInterface):
 
     This storage type implements :func:`path_on_disk`.
     """
-
-    _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
-
-    @classmethod
-    def _no_unicode_variations(cls, text):
-        return cls._UNICODE_VARIATIONS.sub("", text)
-
-    _SLUGIFY = Slugify()
-    _SLUGIFY.safe_chars = "-_.()[] "
-
-    @classmethod
-    def _slugify(cls, text):
-        text = to_unicode(text)
-        text = cls._no_unicode_variations(text)
-        text = demojize(text, delimiters=("", ""))
-        return cls._SLUGIFY(text)
 
     def __init__(self, basefolder, create=False):
         """
@@ -1166,7 +1148,7 @@ class LocalFileStorage(StorageInterface):
         if "/" in name or "\\" in name:
             raise ValueError("name must not contain / or \\")
 
-        result = self._slugify(name).replace(" ", "_")
+        result = sanitize(name, safe_chars="-_.()[] ").replace(" ", "_")
         if result and result != "." and result != ".." and result[0] == ".":
             # hidden files under *nix
             result = result[1:]

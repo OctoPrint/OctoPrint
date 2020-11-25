@@ -228,12 +228,15 @@ $(function () {
     [
         // printer states
         gettext("Offline"),
+        gettext("Offline after error"),
+        gettext("Error"),
         gettext("Opening serial connection"),
         gettext("Detecting serial connection"),
         gettext("Connecting"),
         gettext("Operational"),
         gettext("Starting"),
         gettext("Starting print from SD"),
+        gettext("Starting to send file to SD"),
         gettext("Printing from SD"),
         gettext("Sending file to SD"),
         gettext("Printing"),

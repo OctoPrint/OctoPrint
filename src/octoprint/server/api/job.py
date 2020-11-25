@@ -76,10 +76,12 @@ def controlJob():
 @Permissions.STATUS.require(403)
 def jobState():
     currentData = printer.get_current_data()
-    return jsonify(
-        {
-            "job": currentData["job"],
-            "progress": currentData["progress"],
-            "state": currentData["state"]["text"],
-        }
-    )
+    response = {
+        "job": currentData["job"],
+        "progress": currentData["progress"],
+        "state": currentData["state"]["text"],
+    }
+    if currentData["state"]["error"]:
+        response["error"] = currentData["state"]["error"]
+
+    return jsonify(**response)

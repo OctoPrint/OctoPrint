@@ -937,9 +937,9 @@ class MachineCom:
         elif state == self.STATE_CLOSED:
             return "Offline"
         elif state == self.STATE_ERROR:
-            return "Error: {}".format(self.getErrorString())
+            return "Error"
         elif state == self.STATE_CLOSED_WITH_ERROR:
-            return "Offline (Error: {})".format(self.getErrorString())
+            return "Offline after error"
         elif state == self.STATE_TRANSFERING_FILE:
             return "Transferring file to SD"
         return "Unknown State ({})".format(self._state)
@@ -3826,7 +3826,7 @@ class MachineCom:
                         "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                         level=logging.ERROR,
                     )
-                self._errorValue = get_exception_string()
+                self._errorValue = get_exception_string(fmt="{type}: {message}")
                 self.close(is_error=True)
             return None
 
@@ -4697,7 +4697,7 @@ class MachineCom:
                                 "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                                 level=logging.INFO,
                             )
-                        self._errorValue = get_exception_string()
+                        self._errorValue = get_exception_string(fmt="{type}: {message}")
                         self.close(is_error=True)
                     break
             except Exception as ex:
@@ -4714,7 +4714,7 @@ class MachineCom:
                             "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                             level=logging.INFO,
                         )
-                    self._errorValue = get_exception_string()
+                    self._errorValue = get_exception_string(fmt="{type}: {message}")
                     self.close(is_error=True)
                 break
 

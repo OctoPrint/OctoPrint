@@ -7,6 +7,10 @@ $(function () {
         self.access = parameters[2];
 
         self.stateString = ko.observable(undefined);
+        self.errorString = ko.observable(undefined);
+        self.hasErrorString = ko.pureComputed(function () {
+            return !!self.errorString();
+        });
 
         self.resendCount = ko.observable(0);
         self.resendTotalTransmitted = ko.observable(0);
@@ -291,6 +295,7 @@ $(function () {
             var prevPaused = self.isPaused();
 
             self.stateString(gettext(data.text));
+            self.errorString(data.error);
             self.isErrorOrClosed(data.flags.closedOrError);
             self.isOperational(data.flags.operational);
             self.isPaused(data.flags.paused);
