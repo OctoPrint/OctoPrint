@@ -401,6 +401,22 @@ class PluginManagerPlugin(
                     )
                 )
 
+    @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def export_plugin_list(self):
+        import json
+
+        import flask
+
+        plugins = self.generate_plugins_json(self._settings, self._plugin_manager)
+
+        return flask.Response(
+            json.dumps(plugins),
+            mimetype="text/plain",
+            headers={"Content-Disposition": 'attachment; filename="plugins.json"'},
+        )
+
     def is_blueprint_protected(self):
         return False
 
