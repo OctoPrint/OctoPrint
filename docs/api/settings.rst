@@ -354,84 +354,22 @@ Data model
 ==========
 
 The data model on the settings API mostly reflects the contents of
-:ref:`config.yaml <sec-configuration-config_yaml>`. The settings tree
-returned by the API contains the following fields, which are directly
-mapped from the same fields in ``config.yaml`` unless otherwise noted:
+:ref:`config.yaml <sec-configuration-config_yaml>`, which are directly
+mapped, with the following exceptions:
 
 .. list-table::
    :header-rows: 1
 
    * - Field
      - Notes
-   * - ``api.enabled``
-     -
-   * - ``api.key``
-     - Only maps to ``api.key`` in ``config.yaml`` if request is sent with admin rights, set to ``n/a`` otherwise.
-       Starting with OctoPrint 1.3.3 setting this field via :ref:`the API <sec-api-settings-save>` is not possible,
-       only :ref:`regenerating it <sec-api-settings-generateapikey>` is supported. Setting a custom value is only
-       possible through `config.yaml`.
-   * - ``api.allowCrossOrigin``
-     -
-   * - ``appearance.name``
-     -
-   * - ``appearance.color``
-     -
-   * - ``appearance.colorTransparent``
-     -
-   * - ``appearance.defaultLanguage``
-     -
-   * - ``appearance.showFahrenheitAlso``
-     -
    * - ``feature.gcodeViewer``
      - Maps to ``gcodeViewer.enabled`` in ``config.yaml``
    * - ``feature.sizeThreshold``
      - Maps to ``gcodeViewer.sizeThreshold`` in ``config.yaml``
    * - ``feature.mobileSizeThreshold``
      - Maps to ``gcodeViewer.mobileSizeThreshold`` in ``config.yaml``
-   * - ``feature.temperatureGraph``
-     -
-   * - ``feature.waitForStart``
-     -
-   * - ``feature.alwaysSendChecksum``
-     -
-   * - ``feature.neverSendChecksum``
-     -
-   * - ``feature.sdSupport``
-     -
-   * - ``feature.sdRelativePath``
-     -
-   * - ``feature.sdAlwaysAvailable``
-     -
-   * - ``feature.swallowOkAfterResend``
-     -
-   * - ``feature.repetierTargetTemp``
-     -
-   * - ``feature.externalHeatupDetection``
-     -
-   * - ``feature.keyboardControl``
-     -
-   * - ``feature.pollWatched``
-     -
-   * - ``feature.ignoreIdenticalResends``
-     -
-   * - ``feature.modelSizeDetection``
-     -
-   * - ``feature.firmwareDetection``
-     -
-   * - ``feature.printCancelConfirmation``
-     -
-   * - ``feature.blockWhileDwelling``
-     -
-   * - ``folder.uploads``
-     -
-   * - ``folder.timelapse``
-     -
    * - ``folder.timelapseTmp``
      - Maps to ``folder.timelapse_tmp`` in ``config.yaml``
-   * - ``folder.logs``
-     -
-   * - ``folder.watched``
-     -
    * - ``plugins``
      - Plugin settings as available from ``config.yaml`` and :class:`~octoprint.plugin.SettingsPlugin` implementations
    * - ``printer.defaultExtrusionLength``
@@ -446,8 +384,6 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      - Available serial ports
    * - ``serial.baudrateOptions``
      - Available serial baudrates
-   * - ``serial.autoconnect``
-     -
    * - ``serial.timeoutConnection``
      - Maps to ``serial.timeout.connection`` in ``config.yaml``
    * - ``serial.timeoutDetection``
@@ -460,50 +396,18 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      - Maps to ``serial.timeout.temperatureTargetSet`` in ``config.yaml``
    * - ``serial.timeoutSdStatus``
      - Maps to ``serial.timeout.sdStatus`` in ``config.yaml``
-   * - ``serial.log``
-     -
-   * - ``serial.additionalPorts``
-     -
-   * - ``serial.additionalBaudrates``
-     -
-   * - ``serial.longRunningCommands``
-     -
-   * - ``serial.checksumRequiringCommands``
-     -
-   * - ``serial.helloCommand``
-     -
-   * - ``serial.ignoreErrorsFromFirmware``
-     -
-   * - ``serial.disconnectOnErrors``
-     -
-   * - ``serial.triggerOkForM29``
-     -
-   * - ``serial.supportResendsWIthoutOk``
-     -
    * - ``serial.maxTimeoutsIdle``
      - Maps to ``serial.maxCommunicationTimeouts.idle`` in ``config.yaml``
    * - ``serial.maxTimeoutsPrinting``
      - Maps to ``serial.maxCommunicationTimeouts.printing`` in ``config.yaml``
    * - ``serial.maxTimeoutsLong``
      - Maps to ``serial.maxCommunicationTimeouts.long`` in ``config.yaml``
-   * - ``server.commands.systemShutdownCommand``
-     -
-   * - ``server.commands.systemRestartCommand``
-     -
-   * - ``server.commands.serverRestartCommand``
-     -
-   * - ``server.diskspace.warning``
-     -
-   * - ``server.diskspace.critical``
-     -
    * - ``system.actions``
      - Whole subtree taken from ``config.yaml``
    * - ``system.events``
      - Whole subtree taken from ``config.yaml``
    * - ``temperature.profiles``
      - Whole subtree taken from ``config.yaml``
-   * - ``temperature.cutoff``
-     -
    * - ``terminalFilters``
      - Whole subtree taken from ``config.yaml``
    * - ``webcam.streamUrl``
@@ -512,17 +416,3 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      - Maps to ``webcam.snapshot`` in ``config.yaml``
    * - ``webcam.ffmpegPath``
      - Maps to ``webcam.ffmpeg`` in ``config.yaml``
-   * - ``webcam.bitrate``
-     -
-   * - ``webcam.ffmpegThreads``
-     -
-   * - ``webcam.ffmpegVideoCodec``
-     -
-   * - ``webcam.watermark``
-     -
-   * - ``webcam.flipH``
-     -
-   * - ``webcam.flipV``
-     -
-   * - ``webcam.rotate90``
-     -
