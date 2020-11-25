@@ -247,10 +247,6 @@ $(function () {
 
         self.userString = ko.pureComputed(function () {
             var user = self.user();
-            if (!CONFIG_ACCESS_CONTROL || user === "_dummy") {
-                return "";
-            }
-
             if (user === "_cli") {
                 user = "CLI";
             }
