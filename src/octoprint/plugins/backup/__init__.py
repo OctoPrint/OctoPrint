@@ -983,7 +983,9 @@ class BackupPlugin(
                     "pluginmanager", "generate_plugins_json"
                 )
                 if helpers and "generate_plugins_json" in helpers:
-                    plugins = helpers["generate_plugins_json"]()
+                    plugins = helpers["generate_plugins_json"](
+                        settings=settings, plugin_manager=plugin_manager
+                    )
 
                     if len(plugins):
                         zip.writestr("plugin_list.json", json.dumps(plugins))
