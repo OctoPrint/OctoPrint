@@ -45,8 +45,10 @@ class UserManager(GroupChangeListener):
     def anonymous_user_factory(self):
         return AnonymousUser([self._group_manager.guest_group])
 
-    def api_user_factory(self):
-        return ApiUser([self._group_manager.admin_group, self._group_manager.user_group])
+    def cli_user_factory(self):
+        return LocalCliUser(
+            [self._group_manager.admin_group, self._group_manager.user_group]
+        )
 
     @property
     def enabled(self):
@@ -1427,9 +1429,9 @@ class SessionUser(wrapt.ObjectProxy):
         )
 
 
-##~~ User object to use when global api key is used to access the API
+##~~ User object to use when CLI key is used
 
 
-class ApiUser(User):
+class LocalCliUser(User):
     def __init__(self, groups):
-        User.__init__(self, "_api", "", True, [], groups)
+        User.__init__(self, "_cli", "", True, [], groups)

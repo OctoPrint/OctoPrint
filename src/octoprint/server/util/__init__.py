@@ -10,6 +10,7 @@ PY3 = sys.version_info[0] == 3  # keeping this for backwards compatibility
 
 import flask as _flask
 import flask_login
+import netaddr
 
 import octoprint.server
 import octoprint.timelapse
@@ -66,7 +67,8 @@ def loginUserFromApiKey():
     if not apikey:
         return False
 
-    user = get_user_for_apikey(apikey)
+    remote_address = flask.get_remote_address(_flask.request)
+    user = get_user_for_apikey(apikey, remote_address=remote_address)
     if user is None:
         # invalid API key = no API key
         return False
@@ -199,11 +201,16 @@ def optionsAllowOrigin(request):
     return resp
 
 
-def get_user_for_apikey(apikey):
+def get_user_for_apikey(apikey, remote_address=None):
     if apikey is not None:
-        if apikey == settings().get(["api", "key"]):
-            # master key was used
-            return octoprint.server.userManager.api_user_factory()
+        if apikey == octoprint.server.cli_key and remote_address:
+            try:
+                remote_address = netaddr.IPAddress(remote_address)
+                if remote_address.is_loopback():
+                    # CLI key was used on loopback
+                    return octoprint.server.userManager.cli_user_factory()
+            except Exception:
+                pass
 
         user = octoprint.server.userManager.find_user(apikey=apikey)
         if user is not None:

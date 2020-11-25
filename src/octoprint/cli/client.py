@@ -3,6 +3,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import io
 import json
+import os
 
 import click
 
@@ -33,18 +34,23 @@ def create_client(
     https=False,
     prefix=None,
 ):
-    assert host is not None or settings is not None
     assert port is not None or settings is not None
     assert apikey is not None or settings is not None
 
     if not host:
-        host = settings.get(["server", "host"])
-        host = host if host != "0.0.0.0" else "127.0.0.1"
+        host = "127.0.0.1"
     if not port:
         port = settings.getInt(["server", "port"])
 
     if not apikey:
-        apikey = settings.get(["api", "key"])
+        cli_key_file = os.path.join(settings.getBaseFolder("generated"), "cli.key")
+        try:
+            with io.open(cli_key_file, "r", encoding="utf8") as f:
+                apikey = f.readline()
+        except Exception:
+            raise FatalStartupError(
+                "Can not authenticate with server at {}:{}, no key".format(host, port)
+            )
 
     baseurl = octoprint_client.build_base_url(
         https=https,
@@ -84,7 +90,7 @@ def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
     """Basic API client."""
     try:
         settings = None
-        if not host or not port or not apikey:
+        if not port or not apikey:
             settings = init_settings(
                 get_ctx_obj_option(ctx, "basedir", None),
                 get_ctx_obj_option(ctx, "configfile", None),

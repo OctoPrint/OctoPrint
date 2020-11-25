@@ -251,8 +251,8 @@ $(function () {
                 return "";
             }
 
-            if (user === "_api") {
-                user = "API client";
+            if (user === "_cli") {
+                user = "CLI";
             }
 
             var file = self.filename();

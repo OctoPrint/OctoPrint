@@ -88,6 +88,8 @@ jsonDecoder = None
 connectivityChecker = None
 environmentDetector = None
 
+cli_key = None
+
 principals = Principal(app)
 
 import octoprint.access.groups as groups  # noqa: E402
@@ -174,8 +176,8 @@ def load_user(id):
     if id is None:
         return None
 
-    if id == "_api":
-        return userManager.api_user_factory()
+    if id == "_cli":
+        return userManager.cli_user_factory()
 
     if session and "usersession.id" in session:
         sessionid = session["usersession.id"]
@@ -292,6 +294,7 @@ class Server:
         global environmentDetector
         global debug
         global safe_mode
+        global cli_key
 
         from tornado.ioloop import IOLoop
         from tornado.web import Application
@@ -335,6 +338,7 @@ class Server:
         util.tornado.fix_websocket_check_origin()
         util.flask.fix_flask_jsonify()
 
+        cli_key = self._setup_cli_key()
         self._setup_mimetypes()
 
         additional_translation_folders = []
@@ -1785,6 +1789,16 @@ class Server:
                         ),
                         extra={"plugin": name},
                     )
+
+    def _setup_cli_key(self):
+        from octoprint.util import generate_api_key
+
+        cli_key_file = os.path.join(self._settings.getBaseFolder("generated"), "cli.key")
+        cli_key = generate_api_key()
+        with io.open(cli_key_file, "w", encoding="utf8") as f:
+            f.write(cli_key)
+
+        return cli_key
 
     def _setup_mimetypes(self):
         # Safety measures for Windows... apparently the mimetypes module takes its translation from the windows

@@ -33,13 +33,7 @@ from collections.abc import KeysView
 import yaml
 import yaml.parser
 
-from octoprint.util import (
-    CaseInsensitiveSet,
-    atomic_write,
-    dict_merge,
-    generate_api_key,
-    is_hidden_path,
-)
+from octoprint.util import CaseInsensitiveSet, atomic_write, dict_merge, is_hidden_path
 
 _APPNAME = "OctoPrint"
 
@@ -385,7 +379,7 @@ default_settings = {
     },
     "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": None},
     "events": {"enabled": True, "subscriptions": []},
-    "api": {"key": None, "allowCrossOrigin": False, "apps": {}},
+    "api": {"allowCrossOrigin": False, "apps": {}},
     "terminalFilters": [
         {
             "name": "Suppress temperature messages",
@@ -671,10 +665,6 @@ class Settings:
         else:
             self._configfile = os.path.join(self._basedir, "config.yaml")
         self.load(migrate=True)
-
-        apikey = self.get(["api", "key"])
-        if not apikey or apikey == "n/a":
-            self.generateApiKey()
 
         self._script_env = self._init_script_templating()
 
@@ -2126,16 +2116,6 @@ class Settings:
             os.makedirs(path)
         with atomic_write(filename, mode="wt", max_permissions=0o666) as f:
             f.write(script)
-
-    def generateApiKey(self):
-        apikey = generate_api_key()
-        self.set(["api", "key"], apikey)
-        self.save(force=True)
-        return apikey
-
-    def deleteApiKey(self):
-        self.set(["api", "key"], None)
-        self.save(force=True)
 
 
 def _default_basedir(applicationName):

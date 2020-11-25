@@ -71,23 +71,6 @@ Save settings
         }
       }
 
-.. _sec-api-settings-generateapikey:
-
-Regenerate the system wide API key
-==================================
-
-.. http:post:: /api/settings/apikey
-
-   Generates a new system wide API key.
-
-   Does not expect a body. Will return the generated API key as ``apikey``
-   property in the JSON object contained in the response body.
-
-   Requires admin rights.
-
-   :status 200:     No error
-   :status 403:     No admin rights
-
 .. _sec-api-settings-fetchtemplaatedata:
 
 Fetch template data
