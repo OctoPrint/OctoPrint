@@ -86,6 +86,7 @@ class FatalStartupError(Exception):
 def init_platform(
     basedir,
     configfile,
+    overlays=None,
     use_logging_file=True,
     logging_file=None,
     logging_config=None,
@@ -117,7 +118,7 @@ def init_platform(
         after_preinit_logging(**kwargs)
 
     try:
-        settings = init_settings(basedir, configfile)
+        settings = init_settings(basedir, configfile, overlays=overlays)
     except Exception as ex:
         raise FatalStartupError("Could not initialize settings manager", cause=ex)
     kwargs["settings"] = settings
@@ -220,13 +221,15 @@ def init_platform(
     )
 
 
-def init_settings(basedir, configfile):
+def init_settings(basedir, configfile, overlays=None):
     """Inits the settings instance based on basedir and configfile to use."""
 
     from octoprint.settings import InvalidSettings, settings
 
     try:
-        return settings(init=True, basedir=basedir, configfile=configfile)
+        return settings(
+            init=True, basedir=basedir, configfile=configfile, overlays=overlays
+        )
     except InvalidSettings as e:
         raise FatalStartupError(str(e))
 

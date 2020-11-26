@@ -8,7 +8,6 @@ import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.plugin.core import FolderOrigin
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
@@ -980,22 +979,16 @@ class BackupPlugin(
                 )
 
                 # add list of installed plugins
-                plugins = []
-                plugin_folder = settings.global_get_basefolder("plugins")
-                for plugin in plugin_manager.plugins.values():
-                    if plugin.bundled or (
-                        isinstance(plugin.origin, FolderOrigin)
-                        and plugin.origin.folder == plugin_folder
-                    ):
-                        # ignore anything bundled or from the plugins folder we already include in the backup
-                        continue
-
-                    plugins.append(
-                        {"key": plugin.key, "name": plugin.name, "url": plugin.url}
+                helpers = plugin_manager.get_helpers(
+                    "pluginmanager", "generate_plugins_json"
+                )
+                if helpers and "generate_plugins_json" in helpers:
+                    plugins = helpers["generate_plugins_json"](
+                        settings=settings, plugin_manager=plugin_manager
                     )
 
-                if len(plugins):
-                    zip.writestr("plugin_list.json", json.dumps(plugins))
+                    if len(plugins):
+                        zip.writestr("plugin_list.json", json.dumps(plugins))
 
             shutil.move(temporary_path, final_path)
 

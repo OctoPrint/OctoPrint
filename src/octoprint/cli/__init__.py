@@ -62,6 +62,7 @@ def init_platform_for_cli(ctx):
     components = init_platform(
         get_ctx_obj_option(ctx, "basedir", None),
         get_ctx_obj_option(ctx, "configfile", None),
+        overlays=get_ctx_obj_option(ctx, "overlays", None),
         safe_mode=True,
     )
 
@@ -180,8 +181,7 @@ def standard_options(hidden=False):
     """
     Decorator to add the standard options shared among all "octoprint" commands.
 
-    Adds the options ``--basedir``, ``--config`` and ``--verbose``. If ``hidden``
-    is set to ``True``, the options will be available on the command but not
+    If ``hidden`` is set to ``True``, the options will be available on the command but not
     listed in its help page.
     """
 
@@ -208,6 +208,16 @@ def standard_options(hidden=False):
             is_eager=True,
             expose_value=False,
             help="Specify the config file to use.",
+        ),
+        factory(
+            "--overlay",
+            "overlays",
+            type=click.Path(),
+            callback=set_ctx_obj_option,
+            is_eager=True,
+            multiple=True,
+            expose_value=False,
+            help="Specify additional config overlays to use.",
         ),
         factory(
             "--verbose",
