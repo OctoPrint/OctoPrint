@@ -84,6 +84,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
             self.settings = init_settings(
                 get_ctx_obj_option(ctx, "basedir", None),
                 get_ctx_obj_option(ctx, "configfile", None),
+                overlays=get_ctx_obj_option(ctx, "overlays", None),
             )
             self.plugin_manager = init_pluginsystem(
                 self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
