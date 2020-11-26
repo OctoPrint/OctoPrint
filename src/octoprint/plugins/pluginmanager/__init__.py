@@ -414,7 +414,7 @@ class PluginManagerPlugin(
         return flask.Response(
             json.dumps(plugins),
             mimetype="text/plain",
-            headers={"Content-Disposition": 'attachment; filename="plugins.json"'},
+            headers={"Content-Disposition": 'attachment; filename="plugin_list.json"'},
         )
 
     def is_blueprint_protected(self):
