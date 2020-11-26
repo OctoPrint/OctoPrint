@@ -52,11 +52,13 @@ class TestSettings(unittest.TestCase):
         with self.mocked_basedir() as basedir:
             # construct settings
             settings = octoprint.settings.Settings()
+            settings.set(["appearance", "name"], "unit test")
+            settings.save()
 
             # verify
             self.assertTrue(os.path.isdir(basedir))
             self.assertTrue(os.path.isfile(os.path.join(basedir, "config.yaml")))
-            self.assertIsNotNone(settings.get(["api", "key"]))
+            self.assertIsNotNone(settings.get(["appearance", "name"]))
 
     def test_basedir_folder_creation(self):
         with self.mocked_basedir() as basedir:
@@ -89,7 +91,9 @@ class TestSettings(unittest.TestCase):
                 my_basedir = tempfile.mkdtemp("octoprint-settings-test-custom")
                 self.assertNotEqual(my_basedir, default_basedir)
 
-                octoprint.settings.Settings(basedir=my_basedir)
+                settings = octoprint.settings.Settings(basedir=my_basedir)
+                settings.set(["appearance", "name"], "unit test")
+                settings.save()
 
                 self.assertFalse(
                     os.path.isfile(os.path.join(default_basedir, "config.yaml"))
