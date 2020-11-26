@@ -62,9 +62,9 @@
             <div class="pull-right">
                 <button class="btn btn-small" data-bind="click: $root.showRepository"><i class="fas fa-plus"></i> {{ _('Get More') }}</button>
                 <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
-                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}"><i class="fas fa-info-circle text-info"></i></a>
+                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
             </div>
-            <div id="pluginmanager_info" class="collapse">
+            <div id="pluginmanager_info" class="collapse" data-bind="css: {'in': noticeCount() > 0}">
                 <div class="muted" data-bind="visible: pipAvailable()">
                     <div>
                         <small>
@@ -86,7 +86,7 @@
                     <div>
                         <small>
                             <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
-                                <i class="toggle-arrow fas fa-caret-right"></i> <span data-bind="text: noticeCountText"></span>
+                                <i class="toggle-arrow fas fa-caret-right"></i> <span data-bind="text: noticeCountText, css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></span>
                             </a>
                         </small>
                     </div>
