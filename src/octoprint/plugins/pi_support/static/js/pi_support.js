@@ -1,10 +1,10 @@
-$(function() {
-
+$(function () {
     function PiSupportViewModel(parameters) {
         var self = this;
 
         self.loginState = parameters[0];
         self.access = parameters[1];
+        self.settings = parameters[2];
 
         self.model = ko.observable();
 
@@ -15,29 +15,75 @@ $(function() {
         self.currentIssue = ko.observable(false);
         self.pastIssue = ko.observable(false);
 
-        self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PI_SUPPORT_STATUS)) {
+        self.requestData = function () {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PI_SUPPORT_STATUS
+                )
+            ) {
                 return;
             }
 
-            OctoPrint.plugins.pi_support.get()
-                .done(function(response) {
-                    // Raspberry Pi model
-                    self.model(response.model);
+            OctoPrint.plugins.pi_support.get().done(function (response) {
+                // Raspberry Pi model
+                self.model(response.model);
 
-                    // Throttle state
-                    self.fromThrottleState(response.throttle_state);
+                // Unrecommended model
+                if (
+                    response.model_unrecommended &&
+                    !self.settings.settings.plugins.pi_support.ignore_unrecommended_model()
+                ) {
+                    var warning = gettext(
+                        "OctoPrint does not and never has supported the " +
+                            "RPi Zero or Zero W. Use at least a Raspberry Pi 3, or " +
+                            "risk bad performance and failed prints."
+                    );
+                    var faq = gettext(
+                        "" +
+                            'You can read more <a href="%(url)s" target="_blank">in the FAQ</a>.'
+                    );
+                    var remove = gettext(
+                        "You can disable this message via Settings > " +
+                            "Pi Support > Ignore warning on unsupported hardware"
+                    );
+                    new PNotify({
+                        title: gettext("Unsupported hardware detected"),
+                        text:
+                            "<p>" +
+                            warning +
+                            "</p><p>" +
+                            _.sprintf(faq, {
+                                url: "https://faq.octoprint.org/recommended-hardware"
+                            }) +
+                            "</p><p>" +
+                            "<small>" +
+                            remove +
+                            "</small></p>",
+                        type: "error",
+                        hide: false
+                    });
+                }
 
-                    // OctoPi version
-                    $("#pi_support_footer").remove();
-                    if (!response.octopi_version) return;
+                // Throttle state
+                self.fromThrottleState(response.throttle_state);
 
-                    var octoPiVersion = $("<li id='pi_support_footer'><small>" + gettext("OctoPi") + " " + "<span class='octopi_version'>" + response.octopi_version + "</span></small></li>");
-                    $("#footer_version").append(octoPiVersion);
-                })
+                // OctoPi version
+                $("#pi_support_footer").remove();
+                if (!response.octopi_version) return;
+
+                var octoPiVersion = $(
+                    "<li id='pi_support_footer'><small>" +
+                        gettext("OctoPi") +
+                        " " +
+                        "<span class='octopi_version'>" +
+                        response.octopi_version +
+                        "</span></small></li>"
+                );
+                $("#footer_version").append(octoPiVersion);
+            });
         };
 
-        self.fromThrottleState = function(state) {
+        self.fromThrottleState = function (state) {
             self.currentUndervoltage(state.current_undervoltage);
             self.pastUndervoltage(state.past_undervoltage);
             self.currentOverheat(state.current_overheat);
@@ -46,7 +92,7 @@ $(function() {
             self.pastIssue(state.past_issue);
         };
 
-        self.popoverContent = ko.pureComputed(function() {
+        self.popoverContent = ko.pureComputed(function () {
             var undervoltageParagraphClasses = "muted";
             var undervoltageSymbolClasses = "";
 
@@ -69,29 +115,58 @@ $(function() {
                 overheatParagraphClasses = "";
             }
 
-            return "<p class='" + undervoltageParagraphClasses + "'><strong class='" + undervoltageSymbolClasses + "'><i class=\"fa fa-bolt\"></i><i class=\"fa fa-exclamation\"></i></strong></strong> - " + gettext("Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi.") + "</p>"
-                + "<p class='" + overheatParagraphClasses + "'><strong class='" + overheatSymbolClasses + "'><i class=\"fa fa-thermometer-full\"></i><i class=\"fa fa-exclamation\"></i></strong> - " + gettext("Frequency capping due to overheating. Improve cooling of the CPU and GPU.") + "</p>"
-                + "<p>" + gettext("A blinking symbol indicates a current issue, a non blinking symbol one that was observed some time since the Pi booted up.") + "</p>"
-                + "<p><small>" + gettext("Click the symbol in the navbar for more information.") + "</small></p>";
+            return (
+                "<p class='" +
+                undervoltageParagraphClasses +
+                "'><strong class='" +
+                undervoltageSymbolClasses +
+                '\'><i class="fa fa-bolt"></i><i class="fa fa-exclamation"></i></strong></strong> - ' +
+                gettext(
+                    "Undervoltage. Make sure your power supply and cabling are providing enough power to the Pi."
+                ) +
+                "</p>" +
+                "<p class='" +
+                overheatParagraphClasses +
+                "'><strong class='" +
+                overheatSymbolClasses +
+                '\'><i class="fa fa-thermometer-full"></i><i class="fa fa-exclamation"></i></strong> - ' +
+                gettext(
+                    "Frequency capping due to overheating. Improve cooling of the CPU and GPU."
+                ) +
+                "</p>" +
+                "<p>" +
+                gettext(
+                    "A blinking symbol indicates a current issue, a non blinking symbol one that was observed some time since the Pi booted up."
+                ) +
+                "</p>" +
+                "<p><small>" +
+                gettext("Click the symbol in the navbar for more information.") +
+                "</small></p>"
+            );
         });
 
-        self.onStartup = self.onServerReconnect = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onStartup = self.onServerReconnect = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
         };
 
-        self.onDataUpdaterPluginMessage = function(plugin, data) {
+        self.onDataUpdaterPluginMessage = function (plugin, data) {
             if (plugin !== "pi_support") return;
             if (!data.hasOwnProperty("state") || !data.hasOwnProperty("type")) return;
             if (data.type !== "throttle_state") return;
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PI_SUPPORT_STATUS)) return;
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PI_SUPPORT_STATUS
+                )
+            )
+                return;
 
             self.fromThrottleState(data.state);
-        }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: PiSupportViewModel,
         elements: ["#navbar_plugin_pi_support"],
-        dependencies: ["loginStateViewModel", "accessViewModel"]
+        dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"]
     });
 });

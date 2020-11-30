@@ -3,11 +3,12 @@
 Discovery Plugin
 ================
 
-The OctoPrint Discovery Plugin comes bundled with OctoPrint (starting with 1.2.0).
+.. versionadded:: 1.2.0
 
-It allows discovery of the OctoPrint instances via SSDP/UPNP. If
-`pybonjour <https://pypi.python.org/pypi/pybonjour>`_ is installed OctoPrint
-will additionally support discovery via ZeroConf, also known as Bonjour or Avahi.
+The OctoPrint Discovery Plugin comes bundled with OctoPrint.
+
+It allows discovery of the OctoPrint instances via SSDP/UPNP and ZeroConf
+(also known as Bonjour or Avahi).
 
 The SSDP/UPNP support allows OctoPrint to announce itself to machines on the same
 network running Microsoft Windows. You will be able to just double click on the
@@ -28,45 +29,6 @@ line) to scan for available instances.
 
    Various discovered OctoPrint instances in Windows Explorer
 
-.. _sec-bundledplugins-discovery-firststeps:
-
-First Steps
------------
-
-.. _sec-bundledplugins-discovery-firststeps-pybonjour:
-
-Installing pybonjour
-++++++++++++++++++++
-
-.. note::
-
-   OctoPi versions 0.12.0 and later already come with pybonjour installed and ready to go,
-   you don't need to perform these steps there.
-
-.. note::
-
-   Currently there are no releases for pybonjour available on the Python Package Index PyPI. The latest pybonjour
-   release is still available in the `Google Code Archive <https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/pybonjour/pybonjour-1.1.1.tar.gz>`_.
-   Since that URL is hilariously long though, a shortened version is provided with https://goo.gl/SxQZ06 and
-   used in the installation instructions below.
-
-In order for the Zeroconf discovery to work, the
-`pybonjour package <https://pypi.python.org/pypi/pybonjour>`_ needs to be available
-to the Python installation running OctoPrint.
-
-It can be installed via ``pip``. Let's assume you installed OctoPrint manually
-into some folder ``~/OctoPrint``. You executed ``python setup.py install`` within a
-virtualenv in the same folder called ``venv``. In order to install ``pybonjour``
-so it will be available to OctoPrint you'll need to do the following::
-
-    venv/bin/pip install https://goo.gl/SxQZ06
-
-**Linux users:** You'll need to install an additional dependency for this to work, the
-libdnssd compatibility layer for libavahi. On Debian/Ubuntu that can be achieved with::
-
-    sudo apt-get install libavahi-compat-libdnssd-dev
-
-
 .. _sec-bundledplugins-discovery-configuration:
 
 Configuring the plugin
@@ -74,6 +36,10 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
+  * ``addresses``: List of IP addresses for which to enable discovery, if unset all
+    addresses available on the host will be used
+  * ``interfaces``: List of network interfaces for which to enable discovery, if unset
+    all interfaces on the host will be used
   * ``publicPort``: Public port number OctoPrint is reachable under,
     optional, if not set the port OctoPrint itself was started under will be used
   * ``pathPrefix``: Path prefix OctoPrint is running under, optional, if not
@@ -128,6 +94,8 @@ The following snippet is a valid configuration example for the discovery plugin 
 
    plugins:
      discovery:
+       interfaces:
+       - eth0
        publicPort: 443
        useSsl: true
        zeroConf:

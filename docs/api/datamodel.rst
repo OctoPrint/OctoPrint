@@ -145,6 +145,31 @@ Temperature offset
      - Number
      - Temperature offset for the printer's heated bed.
 
+.. _sec-api-datamodel-printer-resends:
+
+Resend stats
+------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``count``
+     - 1
+     - int
+     - Number of resend requests received since connecting.
+   * - ``transmitted``
+     - 1
+     - int
+     - Number of transmitted lines since connecting.
+   * - ``ratio``
+     - 1
+     - int
+     - Percentage of resend requests vs transmitted lines. Value between 0 and 100.
 
 .. _sec-api-datamodel-jobs:
 

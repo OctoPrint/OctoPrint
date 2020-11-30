@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function FilesViewModel(parameters) {
         var self = this;
 
@@ -6,10 +6,12 @@ $(function() {
         self.loginState = parameters[1];
         self.printerState = parameters[2];
         self.slicing = parameters[3];
-        self.printerProfiles=parameters[4];
+        self.printerProfiles = parameters[4];
         self.access = parameters[5];
 
         self.filesListVisible = ko.observable(true);
+        self.showInternalFilename = ko.observable(true);
+
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
         self.isPrinting = ko.observable(undefined);
@@ -20,32 +22,34 @@ $(function() {
         self.isSdReady = ko.observable(undefined);
 
         self.searchQuery = ko.observable(undefined);
-        self.searchQuery.subscribe(function() {
+        self.searchQuery.subscribe(function () {
             self.performSearch();
         });
 
         self.freeSpace = ko.observable(undefined);
         self.totalSpace = ko.observable(undefined);
-        self.freeSpaceString = ko.pureComputed(function() {
-            if (!self.freeSpace())
-                return "-";
+        self.freeSpaceString = ko.pureComputed(function () {
+            if (!self.freeSpace()) return "-";
             return formatSize(self.freeSpace());
         });
-        self.totalSpaceString = ko.pureComputed(function() {
-            if (!self.totalSpace())
-                return "-";
+        self.totalSpaceString = ko.pureComputed(function () {
+            if (!self.totalSpace()) return "-";
             return formatSize(self.totalSpace());
         });
 
-        self.diskusageWarning = ko.pureComputed(function() {
-            return self.freeSpace() !== undefined
-                && self.freeSpace() < self.settingsViewModel.server_diskspace_warning();
+        self.diskusageWarning = ko.pureComputed(function () {
+            return (
+                self.freeSpace() !== undefined &&
+                self.freeSpace() < self.settingsViewModel.server_diskspace_warning()
+            );
         });
-        self.diskusageCritical = ko.pureComputed(function() {
-            return self.freeSpace() !== undefined
-                && self.freeSpace() < self.settingsViewModel.server_diskspace_critical();
+        self.diskusageCritical = ko.pureComputed(function () {
+            return (
+                self.freeSpace() !== undefined &&
+                self.freeSpace() < self.settingsViewModel.server_diskspace_critical()
+            );
         });
-        self.diskusageString = ko.pureComputed(function() {
+        self.diskusageString = ko.pureComputed(function () {
             if (self.diskusageCritical()) {
                 return gettext("Your available free disk space is critically low.");
             } else if (self.diskusageWarning()) {
@@ -76,7 +80,7 @@ $(function() {
         self.activeRemovals = ko.observableArray([]);
 
         self.movingFileOrFolder = ko.observable(false);
-        self.moveEntry = ko.observable({name:"",display:"",path:""}); // is there a better way to do this?
+        self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
         self.moveError = ko.observable("");
@@ -84,8 +88,13 @@ $(function() {
         self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
-        self.enableAddFolder = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) && self.addFolderName() && self.addFolderName().trim() !== "" && !self.addingFolder();
+        self.enableAddFolder = ko.pureComputed(function () {
+            return (
+                self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
+                self.addFolderName() &&
+                self.addFolderName().trim() !== "" &&
+                !self.addingFolder()
+            );
         });
 
         self.allItems = ko.observable(undefined);
@@ -95,22 +104,20 @@ $(function() {
         // list style incl. persistence
         var listStyleStorageKey = "gcodeFiles.currentListStyle";
         var defaultListStyle = "folders_files";
-        var saveListStyleToLocalStorage = function() {
+        var saveListStyleToLocalStorage = function () {
             if (initListStyleLocalStorage()) {
                 localStorage[listStyleStorageKey] = self.listStyle();
             }
         };
-        var loadListStyleFromLocalStorage = function() {
+        var loadListStyleFromLocalStorage = function () {
             if (initListStyleLocalStorage()) {
                 self.listStyle(localStorage[listStyleStorageKey]);
             }
         };
-        var initListStyleLocalStorage = function() {
-            if (!Modernizr.localstorage)
-                return false;
+        var initListStyleLocalStorage = function () {
+            if (!Modernizr.localstorage) return false;
 
-            if (localStorage[listStyleStorageKey] !== undefined)
-                return true;
+            if (localStorage[listStyleStorageKey] !== undefined) return true;
 
             localStorage[listStyleStorageKey] = defaultListStyle;
             return true;
@@ -122,24 +129,33 @@ $(function() {
 
         // initialize list helper
         var listHelperFilters = {
-            "printed": function(data) {
-                return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0)
-                    || (data["type"] && data["type"] === "folder");
+            printed: function (data) {
+                return (
+                    !(
+                        data["prints"] &&
+                        data["prints"]["success"] &&
+                        data["prints"]["success"] > 0
+                    ) ||
+                    (data["type"] && data["type"] === "folder")
+                );
             },
-            "sd": function(data) {
+            sd: function (data) {
                 return data["origin"] && data["origin"] === "sdcard";
             },
-            "local": function(data) {
+            local: function (data) {
                 return !(data["origin"] && data["origin"] === "sdcard");
             }
         };
         var listHelperExclusiveFilters = [["sd", "local"]];
 
         if (SUPPORTED_FILETYPES.length > 1) {
-            _.each(SUPPORTED_FILETYPES, function(filetype) {
-                listHelperFilters[filetype] = function(data) {
-                    return data["type"] && (data["type"] === filetype || data["type"] === "folder");
-                }
+            _.each(SUPPORTED_FILETYPES, function (filetype) {
+                listHelperFilters[filetype] = function (data) {
+                    return (
+                        data["type"] &&
+                        (data["type"] === filetype || data["type"] === "folder")
+                    );
+                };
             });
             listHelperExclusiveFilters.push(SUPPORTED_FILETYPES);
         }
@@ -147,22 +163,29 @@ $(function() {
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
             {
-                "name": function(a, b) {
+                name: function (a, b) {
                     // sorts ascending
-                    if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+                    if (a["display"].toLowerCase() < b["display"].toLowerCase())
+                        return -1;
                     if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
                     return 0;
                 },
-                "upload": function(a, b) {
+                upload: function (a, b) {
                     // sorts descending
                     if (b["date"] === undefined || a["date"] > b["date"]) return -1;
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
-                "last_printed": function(a, b) {
+                last_printed: function (a, b) {
                     // sorts descending
-                    var valA = (a.prints && a.prints.last && a.prints.last.date) ? a.prints.last.date : "";
-                    var valB = (b.prints && b.prints.last && b.prints.last.date) ? b.prints.last.date : "";
+                    var valA =
+                        a.prints && a.prints.last && a.prints.last.date
+                            ? a.prints.last.date
+                            : "";
+                    var valB =
+                        b.prints && b.prints.last && b.prints.last.date
+                            ? b.prints.last.date
+                            : "";
 
                     if (valA > valB) {
                         return -1;
@@ -172,7 +195,7 @@ $(function() {
                         return 0;
                     }
                 },
-                "size": function(a, b) {
+                size: function (a, b) {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
                     if (a["size"] === undefined || a["size"] < b["size"]) return 1;
@@ -186,42 +209,51 @@ $(function() {
             0
         );
 
-        self.availableFiletypes = ko.pureComputed(function() {
+        self.availableFiletypes = ko.pureComputed(function () {
             var mapping = {
                 model: gettext("Only show model files"),
                 machinecode: gettext("Only show machine code files")
             };
 
             var result = [];
-            _.each(SUPPORTED_FILETYPES, function(filetype) {
+            _.each(SUPPORTED_FILETYPES, function (filetype) {
                 if (mapping[filetype]) {
                     result.push({key: filetype, text: mapping[filetype]});
                 } else {
-                    result.push({key: filetype, text: _.sprintf(gettext("Only show %(type)s files"), {type: _.escape(filetype)})});
+                    result.push({
+                        key: filetype,
+                        text: _.sprintf(gettext("Only show %(type)s files"), {
+                            type: _.escape(filetype)
+                        })
+                    });
                 }
             });
 
             return result;
         });
 
-        self.folderDestinations = ko.pureComputed(function() {
+        self.folderDestinations = ko.pureComputed(function () {
             if (self.allItems()) {
-                return ko.utils.arrayFilter(self.allItems(), function(item) {
+                return ko.utils.arrayFilter(self.allItems(), function (item) {
                     return item.type === "folder";
                 });
             }
         });
-        self.foldersOnlyList = ko.dependentObservable(function() {
-            var filter = function(data) { return data["type"] && data["type"] === "folder"; };
+        self.foldersOnlyList = ko.dependentObservable(function () {
+            var filter = function (data) {
+                return data["type"] && data["type"] === "folder";
+            };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
-        self.filesOnlyList = ko.dependentObservable(function() {
-            var filter = function(data) { return data["type"] && data["type"] !== "folder"; };
+        self.filesOnlyList = ko.dependentObservable(function () {
+            var filter = function (data) {
+                return data["type"] && data["type"] !== "folder";
+            };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
-        self.filesAndFolders = ko.dependentObservable(function() {
+        self.filesAndFolders = ko.dependentObservable(function () {
             var style = self.listStyle();
             if (style === "folders_files" || style === "files_folders") {
                 var files = self.filesOnlyList();
@@ -237,27 +269,37 @@ $(function() {
             }
         });
 
-        self.isLoadActionPossible = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.FILES_SELECT) && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
+        self.isLoadActionPossible = ko.pureComputed(function () {
+            return (
+                self.loginState.hasPermission(self.access.permissions.FILES_SELECT) &&
+                self.isOperational() &&
+                !self.isPrinting() &&
+                !self.isPaused() &&
+                !self.isLoading()
+            );
         });
 
-        self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && self.isLoadActionPossible();
+        self.isLoadAndPrintActionPossible = ko.pureComputed(function () {
+            return (
+                self.loginState.hasPermission(self.access.permissions.PRINT) &&
+                self.isOperational() &&
+                self.isLoadActionPossible()
+            );
         });
 
-        self.printerState.filepath.subscribe(function(newValue) {
+        self.printerState.filepath.subscribe(function (newValue) {
             self.highlightFilename(newValue);
         });
 
-        self.highlightCurrentFilename = function() {
+        self.highlightCurrentFilename = function () {
             self.highlightFilename(self.printerState.filepath());
         };
 
-        self.highlightFilename = function(filename) {
+        self.highlightFilename = function (filename) {
             if (filename === undefined || filename === null) {
                 self.listHelper.selectNone();
             } else {
-                self.listHelper.selectItem(function(item) {
+                self.listHelper.selectItem(function (item) {
                     if (item.type === "folder") {
                         return _.startsWith(filename, item.path + "/");
                     } else {
@@ -267,15 +309,15 @@ $(function() {
             }
         };
 
-        self.fromCurrentData = function(data) {
+        self.fromCurrentData = function (data) {
             self._processStateData(data.state);
         };
 
-        self.fromHistoryData = function(data) {
+        self.fromHistoryData = function (data) {
             self._processStateData(data.state);
         };
 
-        self._processStateData = function(data) {
+        self._processStateData = function (data) {
             self.isErrorOrClosed(data.flags.closedOrError);
             self.isOperational(data.flags.operational);
             self.isPaused(data.flags.paused);
@@ -289,7 +331,7 @@ $(function() {
         self._otherRequestInProgress = undefined;
         self._focus = undefined;
         self._switchToPath = undefined;
-        self.requestData = function(params) {
+        self.requestData = function (params) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_LIST)) {
                 return;
             }
@@ -299,10 +341,12 @@ $(function() {
             if (_.isObject(params)) {
                 focus = params.focus;
                 switchToPath = params.switchToPath;
-                force = params.force
+                force = params.force;
             } else if (arguments.length) {
                 // old argument list type call signature
-                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                log.warn(
+                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
+                );
                 if (arguments.length >= 1) {
                     if (arguments.length >= 2) {
                         focus = {location: arguments[1], path: arguments[0]};
@@ -322,25 +366,29 @@ $(function() {
             self._switchToPath = self._switchToPath || switchToPath;
 
             if (self._otherRequestInProgress !== undefined) {
-                return self._otherRequestInProgress
+                return self._otherRequestInProgress;
             }
 
-            return self._otherRequestInProgress = OctoPrint.files.list(true, force)
-                .done(function(response) {
-                    self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
+            return (self._otherRequestInProgress = OctoPrint.files
+                .list(true, force)
+                .done(function (response) {
+                    self.fromResponse(response, {
+                        focus: self._focus,
+                        switchToPath: self._switchToPath
+                    });
                 })
-                .fail(function() {
+                .fail(function () {
                     self.allItems(undefined);
                     self.listHelper.updateItems([]);
                 })
-                .always(function() {
+                .always(function () {
                     self._otherRequestInProgress = undefined;
                     self._focus = undefined;
                     self._switchToPath = undefined;
-                });
+                }));
         };
 
-        self.fromResponse = function(response, params) {
+        self.fromResponse = function (response, params) {
             var focus = undefined;
             var switchToPath;
 
@@ -348,7 +396,9 @@ $(function() {
                 focus = params.focus || undefined;
                 switchToPath = params.switchToPath || undefined;
             } else if (arguments.length > 1) {
-                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                log.warn(
+                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
+                );
                 if (arguments.length > 2) {
                     focus = {location: arguments[2], path: arguments[1]};
                 } else {
@@ -363,9 +413,9 @@ $(function() {
 
             self.allItems(files);
 
-            var createFolderList = function(entries) {
+            var createFolderList = function (entries) {
                 var result = [];
-                _.each(entries, function(entry) {
+                _.each(entries, function (entry) {
                     if (entry.type !== "folder") return;
 
                     result.push("/" + entry.path);
@@ -375,21 +425,23 @@ $(function() {
                     }
                 });
                 return result;
-            }
+            };
             self.folderList(["/"].concat(createFolderList(files)));
 
             // Sanity check file list - see #2572
             var nonrecursive = false;
-            _.each(files, function(file) {
+            _.each(files, function (file) {
                 if (file.type === "folder" && file.children === undefined) {
                     nonrecursive = true;
                 }
             });
             if (nonrecursive) {
-                log.error("At least one folder doesn't have a 'children' element defined. That means the file list request " +
-                    "wasn't actually made with 'recursive=true' in the query.\n\n" +
-                    "This can happen on wrong reverse proxy configs that " +
-                    "swallow up query parameters, see https://github.com/OctoPrint/OctoPrint/issues/2572");
+                log.error(
+                    "At least one folder doesn't have a 'children' element defined. That means the file list request " +
+                        "wasn't actually made with 'recursive=true' in the query.\n\n" +
+                        "This can happen on wrong reverse proxy configs that " +
+                        "swallow up query parameters, see https://github.com/OctoPrint/OctoPrint/issues/2572"
+                );
             }
 
             if (!switchToPath) {
@@ -407,17 +459,23 @@ $(function() {
 
             if (focus) {
                 // got a file to scroll to
-                var entryElement = self.getEntryElement({path: focus.path, origin: focus.location});
+                var entryElement = self.getEntryElement({
+                    path: focus.path,
+                    origin: focus.location
+                });
                 if (entryElement) {
                     // scroll to uploaded element
                     self.listElement.scrollTop(entryElement.offsetTop);
 
                     // highlight uploaded element
                     var element = $(entryElement);
-                    element.on("webkitAnimationEnd oanimationend msAnimationEnd animationend", function(e) {
-                        // remove highlight class again
-                        element.removeClass("highlight");
-                    });
+                    element.on(
+                        "webkitAnimationEnd oanimationend msAnimationEnd animationend",
+                        function (e) {
+                            // remove highlight class again
+                            element.removeClass("highlight");
+                        }
+                    );
                     element.addClass("highlight");
                 }
             }
@@ -433,9 +491,11 @@ $(function() {
             self.highlightCurrentFilename();
         };
 
-        self.changeFolder = function(data) {
+        self.changeFolder = function (data) {
             if (data.children === undefined) {
-                log.error("Can't switch to folder '" + data.path + "', no children available");
+                log.error(
+                    "Can't switch to folder '" + data.path + "', no children available"
+                );
                 return;
             }
 
@@ -444,26 +504,27 @@ $(function() {
             self.highlightCurrentFilename();
         };
 
-        self.navigateUp = function() {
+        self.navigateUp = function () {
             var path = self.currentPath().split("/");
             path.pop();
             self.changeFolderByPath(path.join("/"));
         };
 
-        self.changeFolderByPath = function(path) {
+        self.changeFolderByPath = function (path) {
             var element = self.elementByPath(path);
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
-            } else{
+            } else {
                 self.currentPath("");
                 self.listHelper.updateItems(self.allItems());
             }
             self.highlightCurrentFilename();
         };
 
-        self.showAddFolderDialog = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) return;
+        self.showAddFolderDialog = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD))
+                return;
 
             if (self.addFolderDialog) {
                 self.addFolderName("");
@@ -471,8 +532,9 @@ $(function() {
             }
         };
 
-        self.addFolder = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) return;
+        self.addFolder = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD))
+                return;
 
             var name = self.addFolderName();
 
@@ -482,31 +544,33 @@ $(function() {
 
             self.ignoreUpdatedFilesEvent = true;
             self.addingFolder(true);
-            OctoPrint.files.createFolder(location, name, self.currentPath())
-                .done(function(data) {
+            OctoPrint.files
+                .createFolder(location, name, self.currentPath())
+                .done(function (data) {
                     self.requestData({
                         focus: {
                             path: data.folder.name,
                             location: data.folder.origin
                         }
                     })
-                        .done(function() {
+                        .done(function () {
                             self.addFolderDialog.modal("hide");
                         })
-                        .always(function() {
+                        .always(function () {
                             self.addingFolder(false);
                         });
                 })
-                .fail(function() {
+                .fail(function () {
                     self.addingFolder(false);
                 })
-                .always(function() {
+                .always(function () {
                     self.ignoreUpdatedFilesEvent = false;
                 });
         };
 
-        self.removeFolder = function(folder, event) {
-            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
+        self.removeFolder = function (folder, event) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE))
+                return;
 
             if (!folder) {
                 return;
@@ -519,8 +583,13 @@ $(function() {
             if (folder.weight > 0) {
                 // confirm recursive delete
                 var options = {
-                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: _.escape(folder.name)}),
-                    onproceed: function() {
+                    message: _.sprintf(
+                        gettext(
+                            'You are about to delete the folder "%(folder)s" which still contains files and/or sub folders.'
+                        ),
+                        {folder: _.escape(folder.name)}
+                    ),
+                    onproceed: function () {
                         self._removeEntry(folder, event);
                     }
                 };
@@ -530,14 +599,19 @@ $(function() {
             }
         };
 
-        self.loadFile = function(data, printAfterLoad) {
-            if (!self.loginState.hasPermission(self.access.permissions.FILES_SELECT)) return;
+        self.loadFile = function (data, printAfterLoad) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_SELECT))
+                return;
 
             if (!data) {
                 return;
             }
 
-            if (printAfterLoad && self.listHelper.isSelected(data) && self.enablePrint(data)) {
+            if (
+                printAfterLoad &&
+                self.listHelper.isSelected(data) &&
+                self.enablePrint(data)
+            ) {
                 // file was already selected, just start the print job
                 OctoPrint.job.start();
             } else {
@@ -547,11 +621,13 @@ $(function() {
 
                 if (print && self.settingsViewModel.feature_printStartConfirmation()) {
                     showConfirmationDialog({
-                        message: gettext("This will start a new print job. Please check that the print bed is clear."),
+                        message: gettext(
+                            "This will start a new print job. Please check that the print bed is clear."
+                        ),
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),
                         proceed: gettext("Yes"),
-                        onproceed: function() {
+                        onproceed: function () {
                             OctoPrint.files.select(data.origin, data.path, print);
                         },
                         nofade: true
@@ -562,9 +638,13 @@ $(function() {
             }
         };
 
-        self.showMoveDialog = function(entry, event) {
-            if (!self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
-                                                   self.access.permissions.FILES_DELETE)) {
+        self.showMoveDialog = function (entry, event) {
+            if (
+                !self.loginState.hasAllPermissions(
+                    self.access.permissions.FILES_UPLOAD,
+                    self.access.permissions.FILES_DELETE
+                )
+            ) {
                 return;
             }
 
@@ -595,8 +675,9 @@ $(function() {
             self.moveDialog.modal("show");
         };
 
-        self.removeFile = function(file, event) {
-            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) return;
+        self.removeFile = function (file, event) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_DELETE))
+                return;
 
             if (!file) {
                 return;
@@ -609,70 +690,87 @@ $(function() {
             self._removeEntry(file, event);
         };
 
-        self.sliceFile = function(file) {
+        self.sliceFile = function (file) {
             if (!self.loginState.hasPermission(self.access.permissions.SLICE)) return;
 
             if (!file) {
                 return;
             }
 
-            self.slicing.show(file.origin, file.path, true, undefined, {display: file.display});
+            self.slicing.show(file.origin, file.path, true, undefined, {
+                display: file.display
+            });
         };
 
-        self.initSdCard = function() {
+        self.initSdCard = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.initSd();
         };
 
-        self.releaseSdCard = function() {
+        self.releaseSdCard = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.releaseSd();
         };
 
-        self.refreshSdFiles = function() {
+        self.refreshSdFiles = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) return;
             OctoPrint.printer.refreshSd();
         };
 
-        self.moveFileOrFolder = function(source, destination) {
+        self.moveFileOrFolder = function (source, destination) {
             self.movingFileOrFolder(true);
-            return OctoPrint.files.move("local", source, destination)
-                .done(function() {
+            return OctoPrint.files
+                .move("local", source, destination)
+                .done(function () {
                     self.requestData()
-                        .done(function() {
+                        .done(function () {
                             self.moveDialog.modal("hide");
                         })
-                        .always(function() {
+                        .always(function () {
                             self.movingFileOrFolder(false);
                         });
                 })
-                .fail(function() {
-                    self.moveError(gettext("Unable to move file or folder") + " " + self.moveEntry().display + " " + gettext("to") + " " + self.moveDestination());
+                .fail(function () {
+                    self.moveError(
+                        gettext("Unable to move file or folder") +
+                            " " +
+                            self.moveEntry().display +
+                            " " +
+                            gettext("to") +
+                            " " +
+                            self.moveDestination()
+                    );
                     self.movingFileOrFolder(false);
                 });
         };
 
-        self._removeEntry = function(entry, event) {
+        self._removeEntry = function (entry, event) {
             self.activeRemovals.push(entry.origin + ":" + entry.path);
-            var finishActiveRemoval = function() {
-                self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
-                    return e !== entry.origin + ":" + entry.path;
-                }));
+            var finishActiveRemoval = function () {
+                self.activeRemovals(
+                    _.filter(self.activeRemovals(), function (e) {
+                        return e !== entry.origin + ":" + entry.path;
+                    })
+                );
             };
 
-            var activateSpinner = function(){},
-                finishSpinner = function(){};
+            var activateSpinner = function () {},
+                finishSpinner = function () {};
 
             if (event) {
                 var element = $(event.currentTarget);
                 if (element.length) {
-                    var icon = $("i.fa-trash-o", element);
+                    var icon = $("i.fa-trash-alt", element);
                     if (icon.length) {
-                        activateSpinner = function() {
-                            icon.removeClass("fa-trash-o").addClass("fa-spinner fa-spin");
+                        activateSpinner = function () {
+                            icon.removeClass("fa-trash-alt").addClass(
+                                "fa-spinner fa-spin"
+                            );
                         };
-                        finishSpinner = function() {
-                            icon.removeClass("fa-spinner fa-spin").addClass("fa-trash-o");
+                        finishSpinner = function () {
+                            icon.removeClass("fa-spinner fa-spin").addClass(
+                                "fa-trash-alt"
+                            );
                         };
                     }
                 }
@@ -681,28 +779,28 @@ $(function() {
             activateSpinner();
 
             var deferred = $.Deferred();
-            OctoPrint.files.delete(entry.origin, entry.path)
-                .done(function() {
+            OctoPrint.files
+                .delete(entry.origin, entry.path)
+                .done(function () {
                     self.requestData()
-                        .done(function() {
+                        .done(function () {
                             deferred.resolve();
                         })
-                        .fail(function() {
+                        .fail(function () {
                             deferred.reject();
                         });
                 })
-                .fail(function() {
+                .fail(function () {
                     deferred.reject();
                 });
 
-            return deferred.promise()
-                .always(function() {
-                    finishActiveRemoval();
-                    finishSpinner();
-                });
+            return deferred.promise().always(function () {
+                finishActiveRemoval();
+                finishSpinner();
+            });
         };
 
-        self.downloadLink = function(data) {
+        self.downloadLink = function (data) {
             if (data["refs"] && data["refs"]["download"]) {
                 return data["refs"]["download"];
             } else {
@@ -710,30 +808,34 @@ $(function() {
             }
         };
 
-        self.lastTimePrinted = function(data) {
-            if (data["prints"] && data["prints"]["last"] && data["prints"]["last"]["date"]) {
+        self.lastTimePrinted = function (data) {
+            if (
+                data["prints"] &&
+                data["prints"]["last"] &&
+                data["prints"]["last"]["date"]
+            ) {
                 return data["prints"]["last"]["date"];
             } else {
                 return "-";
             }
         };
 
-        self.getSuccessClass = function(data) {
+        self.getSuccessClass = function (data) {
             if (!data["prints"] || !data["prints"]["last"]) {
                 return "";
             }
             return data["prints"]["last"]["success"] ? "text-success" : "text-error";
         };
 
-        self.templateFor = function(data) {
+        self.templateFor = function (data) {
             return "files_template_" + data.type;
         };
 
-        self.getEntryId = function(data) {
+        self.getEntryId = function (data) {
             return "gcode_file_" + md5(data["origin"] + ":" + data["path"]);
         };
 
-        self.getEntryElement = function(data) {
+        self.getEntryElement = function (data) {
             var entryId = self.getEntryId(data);
             var entryElements = $("#" + entryId);
             if (entryElements && entryElements[0]) {
@@ -743,90 +845,153 @@ $(function() {
             }
         };
 
-        self.enableRemove = function(data) {
+        self.enableRemove = function (data) {
             if (_.contains(self.activeRemovals(), data.origin + ":" + data.path)) {
                 return false;
             }
 
             var busy = false;
             if (data.type === "folder") {
-                busy = _.any(self.printerState.busyFiles(), function(name) {
+                busy = _.any(self.printerState.busyFiles(), function (name) {
                     return _.startsWith(name, data.origin + ":" + data.path + "/");
                 });
             } else {
-                busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
+                busy = _.contains(
+                    self.printerState.busyFiles(),
+                    data.origin + ":" + data.path
+                );
             }
-            return self.loginState.hasPermission(self.access.permissions.FILES_DELETE) && !busy;
+            return (
+                self.loginState.hasPermission(self.access.permissions.FILES_DELETE) &&
+                !busy
+            );
         };
 
-        self.enableMove = function(data) {
-            return self.loginState.hasAllPermissions(self.access.permissions.FILES_UPLOAD,
-                                                     self.access.permissions.FILES_DELETE)
-                && (data.origin === "local"); // && some way to figure out if there are subfolders;
+        self.enableMove = function (data) {
+            return (
+                self.loginState.hasAllPermissions(
+                    self.access.permissions.FILES_UPLOAD,
+                    self.access.permissions.FILES_DELETE
+                ) && data.origin === "local"
+            ); // && some way to figure out if there are subfolders;
         };
-        self.enableSelect = function(data) {
-            return self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data);
+        self.enableSelect = function (data) {
+            return (
+                self.isLoadAndPrintActionPossible() && !self.listHelper.isSelected(data)
+            );
         };
 
-        self.enablePrint = function(data) {
-            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+        self.enablePrint = function (data) {
+            return (
+                self.loginState.hasPermission(self.access.permissions.PRINT) &&
+                self.isOperational() &&
+                !(self.isPrinting() || self.isPaused() || self.isLoading())
+            );
         };
 
-        self.enableSelectAndPrint = function(data, printAfterSelect) {
+        self.enableSelectAndPrint = function (data, printAfterSelect) {
             return self.isLoadAndPrintActionPossible();
         };
 
-
-        self.enableSlicing = function(data) {
-            return self.loginState.hasPermission(self.access.permissions.SLICE) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+        self.enableSlicing = function (data) {
+            return (
+                self.loginState.hasPermission(self.access.permissions.SLICE) &&
+                self.slicing.enableSlicingDialog() &&
+                self.slicing.enableSlicingDialogForFile(data.name)
+            );
         };
 
-        self.enableAdditionalData = function(data) {
-            return data["gcodeAnalysis"] || data["prints"] && data["prints"]["last"];
+        self.enableAdditionalData = function (data) {
+            return data["gcodeAnalysis"] || (data["prints"] && data["prints"]["last"]);
         };
 
-        self.toggleAdditionalData = function(data) {
+        self.toggleAdditionalData = function (data) {
             var entryElement = self.getEntryElement(data);
             if (!entryElement) return;
 
             var additionalInfo = $(".additionalInfo", entryElement);
-            additionalInfo.slideToggle("fast", function() {
-                $(".toggleAdditionalData i", entryElement).toggleClass("fa-chevron-down fa-chevron-up");
+            additionalInfo.slideToggle("fast", function () {
+                $(".toggleAdditionalData i", entryElement).toggleClass(
+                    "fa-chevron-down fa-chevron-up"
+                );
             });
         };
 
-        self.getAdditionalData = function(data) {
+        self.getAdditionalData = function (data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
                 if (data["gcodeAnalysis"]["dimensions"]) {
                     var dimensions = data["gcodeAnalysis"]["dimensions"];
-                    output += gettext("Model size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output +=
+                        gettext("Model size") +
+                        ": " +
+                        _.sprintf(
+                            "%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm",
+                            dimensions
+                        );
                     output += "<br>";
                 }
-                if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) === "object") {
+                if (
+                    data["gcodeAnalysis"]["filament"] &&
+                    typeof data["gcodeAnalysis"]["filament"] === "object"
+                ) {
                     var filament = data["gcodeAnalysis"]["filament"];
                     if (_.keys(filament).length === 1) {
-                        output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                        output +=
+                            gettext("Filament") +
+                            ": " +
+                            formatFilament(
+                                data["gcodeAnalysis"]["filament"]["tool" + 0]
+                            ) +
+                            "<br>";
                     } else if (_.keys(filament).length > 1) {
-                        _.each(filament, function(f, k) {
-                            if (!_.startsWith(k, "tool") || !f || !f.hasOwnProperty("length") || f["length"] <= 0) return;
-                            output += gettext("Filament") + " (" + gettext("Tool") + " " + k.substr("tool".length)
-                                + "): " + formatFilament(f) + "<br>";
+                        _.each(filament, function (f, k) {
+                            if (
+                                !_.startsWith(k, "tool") ||
+                                !f ||
+                                !f.hasOwnProperty("length") ||
+                                f["length"] <= 0
+                            )
+                                return;
+                            output +=
+                                gettext("Filament") +
+                                " (" +
+                                gettext("Tool") +
+                                " " +
+                                k.substr("tool".length) +
+                                "): " +
+                                formatFilament(f) +
+                                "<br>";
                         });
                     }
                 }
-                output += gettext("Estimated print time") + ": " + (self.settingsViewModel.appearance_fuzzyTimes() ? formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) + "<br>";
+                output +=
+                    gettext("Estimated print time") +
+                    ": " +
+                    (self.settingsViewModel.appearance_fuzzyTimes()
+                        ? formatFuzzyPrintTime(
+                              data["gcodeAnalysis"]["estimatedPrintTime"]
+                          )
+                        : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) +
+                    "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
-                output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+                output +=
+                    gettext("Last printed") +
+                    ": " +
+                    formatTimeAgo(data["prints"]["last"]["date"]) +
+                    "<br>";
                 if (data["prints"]["last"]["printTime"]) {
-                    output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["printTime"]);
+                    output +=
+                        gettext("Last print time") +
+                        ": " +
+                        formatDuration(data["prints"]["last"]["printTime"]);
                 }
             }
             return output;
         };
 
-        self.evaluatePrintDimensions = function(data, notify) {
+        self.evaluatePrintDimensions = function (data, notify) {
             if (!self.settingsViewModel.feature_modelSizeDetection()) {
                 return true;
             }
@@ -855,21 +1020,21 @@ $(function() {
             var boundaries;
             if (_.isPlainObject(volumeInfo.custom_box)) {
                 boundaries = {
-                    minX : volumeInfo.custom_box.x_min(),
-                    minY : volumeInfo.custom_box.y_min(),
-                    minZ : volumeInfo.custom_box.z_min(),
-                    maxX : volumeInfo.custom_box.x_max(),
-                    maxY : volumeInfo.custom_box.y_max(),
-                    maxZ : volumeInfo.custom_box.z_max()
-                }
+                    minX: volumeInfo.custom_box.x_min(),
+                    minY: volumeInfo.custom_box.y_min(),
+                    minZ: volumeInfo.custom_box.z_min(),
+                    maxX: volumeInfo.custom_box.x_max(),
+                    maxY: volumeInfo.custom_box.y_max(),
+                    maxZ: volumeInfo.custom_box.z_max()
+                };
             } else {
                 boundaries = {
-                    minX : 0,
-                    maxX : volumeInfo.width(),
-                    minY : 0,
-                    maxY : volumeInfo.depth(),
-                    minZ : 0,
-                    maxZ : volumeInfo.height()
+                    minX: 0,
+                    maxX: volumeInfo.width(),
+                    minY: 0,
+                    maxY: volumeInfo.depth(),
+                    minZ: 0,
+                    maxZ: volumeInfo.height()
                 };
                 if (volumeInfo.origin() === "center") {
                     boundaries["maxX"] = volumeInfo.width() / 2;
@@ -880,7 +1045,15 @@ $(function() {
             }
 
             // model not within bounds, we need to prepare a warning
-            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), {name: _.escape(data.name)}) + "</p>";
+            var warning =
+                "<p>" +
+                _.sprintf(
+                    gettext(
+                        "Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
+                    ),
+                    {name: _.escape(data.name)}
+                ) +
+                "</p>";
             var info = "";
 
             var formatData = {
@@ -889,26 +1062,46 @@ $(function() {
             };
 
             // find exceeded dimensions
-            if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+            if (
+                printingArea["minX"] < boundaries["minX"] ||
+                printingArea["maxX"] > boundaries["maxX"]
+            ) {
                 info += gettext("Object exceeds print volume in width.<br>");
             }
-            if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+            if (
+                printingArea["minY"] < boundaries["minY"] ||
+                printingArea["maxY"] > boundaries["maxY"]
+            ) {
                 info += gettext("Object exceeds print volume in depth.<br>");
             }
-            if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+            if (
+                printingArea["minZ"] < boundaries["minZ"] ||
+                printingArea["maxZ"] > boundaries["maxZ"]
+            ) {
                 info += gettext("Object exceeds print volume in height.<br>");
             }
 
             //warn user
             if (info !== "") {
                 if (notify) {
-                    info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+                    info += _.sprintf(
+                        gettext(
+                            "Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"
+                        ),
+                        formatData
+                    );
                     info += "<br>";
-                    info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+                    info += _.sprintf(
+                        gettext(
+                            "Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"
+                        ),
+                        formatData
+                    );
 
                     warning += pnotifyAdditionalInfo(info);
 
-                    warning += "<p><small>You can disable this check via Settings &gt; Features &gt; \"Enable model size detection [...]\"</small></p>";
+                    warning +=
+                        '<p><small>You can disable this check via Settings &gt; Features &gt; "Enable model size detection [...]"</small></p>';
 
                     new PNotify({
                         title: gettext("Object doesn't fit print volume"),
@@ -923,16 +1116,16 @@ $(function() {
             }
         };
 
-        self.clearSearchQuery = function() {
+        self.clearSearchQuery = function () {
             self.searchQuery("");
         };
 
-        self.performSearch = function(e) {
+        self.performSearch = function (e) {
             var query = self.searchQuery();
             if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
 
-                var recursiveSearch = function(entry) {
+                var recursiveSearch = function (entry) {
                     if (entry === undefined) {
                         return false;
                     }
@@ -953,10 +1146,10 @@ $(function() {
             return false;
         };
 
-        self.elementByPath = function(path, root) {
+        self.elementByPath = function (path, root) {
             root = root || {children: self.allItems()};
 
-            var recursiveSearch = function(location, element) {
+            var recursiveSearch = function (location, element) {
                 if (location.length === 0) {
                     return element;
                 }
@@ -978,7 +1171,7 @@ $(function() {
             return recursiveSearch(path.split("/"), root);
         };
 
-        self.updateButtons = function() {
+        self.updateButtons = function () {
             if (self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) {
                 self.uploadButton.fileupload("enable");
                 if (self.uploadSdButton) {
@@ -992,19 +1185,19 @@ $(function() {
             }
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.updateButtons();
             self.requestData();
         };
 
-        self.onStartup = function() {
-            $(".accordion-toggle[data-target='#files']").click(function() {
+        self.onStartup = function () {
+            $(".accordion-toggle[data-target='#files']").click(function () {
                 var files = $("#files");
                 if (files.hasClass("in")) {
                     files.removeClass("overflow_visible");
                     self.filesListVisible(false);
                 } else {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         files.addClass("overflow_visible");
                         self.filesListVisible(true);
                     }, 100);
@@ -1015,10 +1208,10 @@ $(function() {
 
             self.moveDialog = $("#move_file_or_folder_dialog");
             self.addFolderDialog = $("#add_folder_dialog");
-            self.addFolderDialog.on("shown", function() {
+            self.addFolderDialog.on("shown", function () {
                 $("input", self.addFolderDialog).focus();
             });
-            $("form", self.addFolderDialog).on("submit", function(e) {
+            $("form", self.addFolderDialog).on("submit", function (e) {
                 e.preventDefault();
                 if (self.enableAddFolder()) {
                     self.addFolder();
@@ -1048,15 +1241,21 @@ $(function() {
                 self.localTarget = self.dropZoneLocal;
             } else {
                 self.localTarget = self.dropZone;
-                self.listHelper.removeFilter('sd');
+                self.listHelper.removeFilter("sd");
             }
             self.sdTarget = self.dropZoneSd;
 
-            self.dropOverlay.on('drop', self._forceEndDragNDrop);
+            self.dropOverlay.on("drop", self._forceEndDragNDrop);
 
             function evaluateDropzones() {
-                var enableLocal = self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD);
-                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady() && !self.isPrinting();
+                var enableLocal = self.loginState.hasPermission(
+                    self.access.permissions.FILES_UPLOAD
+                );
+                var enableSd =
+                    enableLocal &&
+                    CONFIG_SD_SUPPORT &&
+                    self.printerState.isSdReady() &&
+                    !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);
                 self._setDropzone("sdcard", enableSd);
@@ -1067,7 +1266,7 @@ $(function() {
             evaluateDropzones();
         };
 
-        self.onEventUpdatedFiles = function(payload) {
+        self.onEventUpdatedFiles = function (payload) {
             if (self.ignoreUpdatedFilesEvent) {
                 return;
             }
@@ -1079,147 +1278,163 @@ $(function() {
             self.requestData();
         };
 
-        self.onEventSlicingStarted = function(payload) {
-            self.uploadProgress
-                .addClass("progress-striped")
-                .addClass("active");
+        self.onEventSlicingStarted = function (payload) {
+            self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
             if (payload.progressAvailable) {
-                self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+                self.uploadProgressText(
+                    _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0})
+                );
             } else {
                 self.uploadProgressText(gettext("Slicing ..."));
             }
         };
 
-        self.onSlicingProgress = function(slicer, modelPath, machinecodePath, progress) {
-            self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(progress)}));
+        self.onSlicingProgress = function (slicer, modelPath, machinecodePath, progress) {
+            self.uploadProgressText(
+                _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {
+                    percentage: Math.round(progress)
+                })
+            );
         };
 
-        self.onEventSlicingCancelled = function(payload) {
-            self.uploadProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.uploadProgressBar
-                .css("width", "0%");
+        self.onEventSlicingCancelled = function (payload) {
+            self.uploadProgress.removeClass("progress-striped").removeClass("active");
+            self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
         };
 
-        self.onEventSlicingDone = function(payload) {
-            self.uploadProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.uploadProgressBar
-                .css("width", "0%");
+        self.onEventSlicingDone = function (payload) {
+            self.uploadProgress.removeClass("progress-striped").removeClass("active");
+            self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
 
             new PNotify({
                 title: gettext("Slicing done"),
-                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), {stl: _.escape(payload.stl), gcode: _.escape(payload.gcode), time: payload.time}),
+                text: _.sprintf(
+                    gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"),
+                    {
+                        stl: _.escape(payload.stl),
+                        gcode: _.escape(payload.gcode),
+                        time: payload.time
+                    }
+                ),
                 type: "success"
             });
 
             self.requestData();
         };
 
-        self.onEventSlicingFailed = function(payload) {
-            self.uploadProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.uploadProgressBar
-                .css("width", "0%");
+        self.onEventSlicingFailed = function (payload) {
+            self.uploadProgress.removeClass("progress-striped").removeClass("active");
+            self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
 
-            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), {stl: _.escape(payload.stl), gcode: _.escape(payload.gcode), reason: _.escape(payload.reason)});
-            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
+            var html = _.sprintf(
+                gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"),
+                {
+                    stl: _.escape(payload.stl),
+                    gcode: _.escape(payload.gcode),
+                    reason: _.escape(payload.reason)
+                }
+            );
+            new PNotify({
+                title: gettext("Slicing failed"),
+                text: html,
+                type: "error",
+                hide: false
+            });
         };
 
-        self.onEventMetadataAnalysisFinished = function(payload) {
+        self.onEventMetadataAnalysisFinished = function (payload) {
             self.requestData();
         };
 
-        self.onEventMetadataStatisticsUpdated = function(payload) {
+        self.onEventMetadataStatisticsUpdated = function (payload) {
             self.requestData();
         };
 
-        self.onEventTransferStarted = function(payload) {
-            self.uploadProgress
-                .addClass("progress-striped")
-                .addClass("active");
-            self.uploadProgressBar
-                .css("width", "100%");
+        self.onEventTransferStarted = function (payload) {
+            self.uploadProgress.addClass("progress-striped").addClass("active");
+            self.uploadProgressBar.css("width", "100%");
             self.uploadProgressText(gettext("Streaming ..."));
         };
 
-        self.onEventTransferDone = function(payload) {
-            self.uploadProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.uploadProgressBar
-                .css("width", "0");
+        self.onEventTransferDone = function (payload) {
+            self.uploadProgress.removeClass("progress-striped").removeClass("active");
+            self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
 
             new PNotify({
                 title: gettext("Streaming done"),
-                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), {local: _.escape(payload.local), remote: _.escape(payload.remote), time: payload.time}),
+                text: _.sprintf(
+                    gettext(
+                        "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
+                    ),
+                    {
+                        local: _.escape(payload.local),
+                        remote: _.escape(payload.remote),
+                        time: payload.time
+                    }
+                ),
                 type: "success"
             });
 
             self.requestData({focus: {location: "sdcard", path: payload.remote}});
         };
 
-        self.onEventTransferFailed = function(payload) {
-            self.uploadProgress
-                .removeClass("progress-striped")
-                .removeClass("active");
-            self.uploadProgressBar
-                .css("width", "0");
+        self.onEventTransferFailed = function (payload) {
+            self.uploadProgress.removeClass("progress-striped").removeClass("active");
+            self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
 
             new PNotify({
                 title: gettext("Streaming failed"),
-                text: _.sprintf(gettext("Did not finish streaming %(local)s to %(remote)s on SD"), {local: _.escape(payload.local), remote: _.escape(payload.remote)}),
+                text: _.sprintf(
+                    gettext("Did not finish streaming %(local)s to %(remote)s on SD"),
+                    {local: _.escape(payload.local), remote: _.escape(payload.remote)}
+                ),
                 type: "error"
             });
 
             self.requestData();
         };
 
-        self.onServerConnect = self.onServerReconnect = function(payload) {
+        self.onServerConnect = self.onServerReconnect = function (payload) {
             self._enableDragNDrop(true);
             self.requestData();
         };
 
-        self.onServerDisconnect = function(payload) {
+        self.onServerDisconnect = function (payload) {
             self._enableDragNDrop(false);
         };
 
-        self._setDropzone = function(dropzone, enable) {
-            var button = (dropzone === "local") ? self.uploadButton : self.uploadSdButton;
-            var drop = (dropzone === "local") ? self.localTarget : self.sdTarget;
+        self._setDropzone = function (dropzone, enable) {
+            var button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
+            var drop = dropzone === "local" ? self.localTarget : self.sdTarget;
             var url = API_BASEURL + "files/" + dropzone;
 
-            if (button === undefined)
-                return;
+            if (button === undefined) return;
 
-            button.fileupload({
-                url: url,
-                dataType: "json",
-                dropZone: enable ? drop : null,
-                drop: function(e, data) {
-
-                },
-                submit: self._handleUploadStart,
-                done: self._handleUploadDone,
-                fail: self._handleUploadFail,
-                always: self._handleUploadAlways,
-                progressall: self._handleUploadProgress
-            }).bind('fileuploadsubmit', function(e, data) {
-                if (self.currentPath() !== "")
-                    data.formData = { path: self.currentPath() };
-            });
+            button
+                .fileupload({
+                    url: url,
+                    dataType: "json",
+                    dropZone: enable ? drop : null,
+                    drop: function (e, data) {},
+                    submit: self._handleUploadStart,
+                    done: self._handleUploadDone,
+                    fail: self._handleUploadFail,
+                    always: self._handleUploadAlways,
+                    progressall: self._handleUploadProgress
+                })
+                .bind("fileuploadsubmit", function (e, data) {
+                    if (self.currentPath() !== "")
+                        data.formData = {path: self.currentPath()};
+                });
         };
 
-        self._enableDragNDrop = function(enable) {
+        self._enableDragNDrop = function (enable) {
             if (enable) {
                 $(document).bind("dragenter", self._handleDragEnter);
                 $(document).bind("dragleave", self._handleDragLeave);
@@ -1231,55 +1446,60 @@ $(function() {
             }
         };
 
-        self._setProgressBar = function(percentage, text, active) {
-            self.uploadProgressBar
-                .css("width", percentage + "%");
+        self._setProgressBar = function (percentage, text, active) {
+            self.uploadProgressBar.css("width", percentage + "%");
             self.uploadProgressText(text);
 
             if (active) {
-                self.uploadProgress
-                    .addClass("progress-striped active");
+                self.uploadProgress.addClass("progress-striped active");
             } else {
-                self.uploadProgress
-                    .removeClass("progress-striped active");
+                self.uploadProgress.removeClass("progress-striped active");
             }
         };
 
-        self._handleUploadStart = function(e, data) {
+        self._handleUploadStart = function (e, data) {
             self.ignoreUpdatedFilesEvent = true;
             return true;
         };
 
-        self._handleUploadDone = function(e, data) {
+        self._handleUploadDone = function (e, data) {
+            self._setProgressBar(100, gettext("Refreshing list ..."), true);
+
             var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
                 focus = {location: "sdcard", path: data.result.files.sdcard.path};
             } else if (data.result.files.hasOwnProperty("local")) {
                 focus = {location: "local", path: data.result.files.local.path};
             }
-            self.requestData({focus: focus})
-                .done(function() {
-                    if (data.result.done) {
-                        self._setProgressBar(0, "", false);
-                    }
-                });
+            self.requestData({focus: focus}).done(function () {
+                if (data.result.done) {
+                    self._setProgressBar(0, "", false);
+                }
+            });
 
             if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
                 self.slicing.show(focus.location, focus.path);
             }
         };
 
-        self._handleUploadFail = function(e, data) {
-            var extensions = _.map(SUPPORTED_EXTENSIONS, function(extension) {
+        self._handleUploadFail = function (e, data) {
+            var extensions = _.map(SUPPORTED_EXTENSIONS, function (extension) {
                 return extension.toLowerCase();
             }).sort();
             extensions = extensions.join(", ");
-            var error = "<p>"
-                + _.sprintf(gettext("Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"),
-                            {extensions: _.escape(extensions)})
-                + "</p>";
+            var error =
+                "<p>" +
+                _.sprintf(
+                    gettext(
+                        "Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"
+                    ),
+                    {extensions: _.escape(extensions)}
+                ) +
+                "</p>";
             if (data.jqXHR.responseText) {
-                error += pnotifyAdditionalInfo("<pre>" + _.escape(data.jqXHR.responseText) + "</pre>");
+                error += pnotifyAdditionalInfo(
+                    "<pre>" + _.escape(data.jqXHR.responseText) + "</pre>"
+                );
             }
             new PNotify({
                 title: "Upload failed",
@@ -1290,15 +1510,19 @@ $(function() {
             self._setProgressBar(0, "", false);
         };
 
-        self._handleUploadAlways = function(e, data) {
+        self._handleUploadAlways = function (e, data) {
             self.ignoreUpdatedFilesEvent = false;
         };
 
-        self._handleUploadProgress = function(e, data) {
-            var progress = parseInt(data.loaded / data.total * 100, 10);
+        self._handleUploadProgress = function (e, data) {
+            var progress = parseInt((data.loaded / data.total) * 100, 10);
             var uploaded = progress >= 100;
 
-            self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
+            self._setProgressBar(
+                progress,
+                uploaded ? gettext("Saving ...") : gettext("Uploading ..."),
+                uploaded
+            );
         };
 
         self._dragNDropTarget = null;
@@ -1318,7 +1542,7 @@ $(function() {
         };
 
         self._handleDragEnter = function (e) {
-            self.dropOverlay.addClass('in');
+            self.dropOverlay.addClass("in");
 
             var foundLocal = false;
             var foundSd = false;
@@ -1347,20 +1571,39 @@ $(function() {
             } else if (found) {
                 self.dropZoneBackground.addClass("hover");
             } else {
-                if (self.dropZoneLocalBackground) self.dropZoneLocalBackground.removeClass("hover");
-                if (self.dropZoneSdBackground) self.dropZoneSdBackground.removeClass("hover");
+                if (self.dropZoneLocalBackground)
+                    self.dropZoneLocalBackground.removeClass("hover");
+                if (self.dropZoneSdBackground)
+                    self.dropZoneSdBackground.removeClass("hover");
                 if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
             }
             self._dragNDropTarget = e.target;
             self._dragNDropLastOver = Date.now();
-        }
+        };
+        self.onEventSettingsUpdated = function () {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
+        };
+        self.onBeforeBinding = function () {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: FilesViewModel,
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
-        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "accessViewModel"],
+        dependencies: [
+            "settingsViewModel",
+            "loginStateViewModel",
+            "printerStateViewModel",
+            "slicingViewModel",
+            "printerProfilesViewModel",
+            "accessViewModel"
+        ],
         elements: ["#files_wrapper", "#add_folder_dialog", "#move_file_or_folder_dialog"]
     });
 });

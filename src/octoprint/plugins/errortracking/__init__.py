@@ -1,209 +1,253 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import octoprint.plugin
+import errno
 import logging
 
-from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util.version import get_octoprint_version_string, is_released_octoprint_version
-
+import requests.exceptions
+import serial
+import tornado.websocket
 from flask import jsonify
 from flask_babel import gettext
 
-SENTRY_URL_SERVER = "https://d479a74f172d4ac2b959a9a7d0536a82@o118517.ingest.sentry.io/1373987"
-SENTRY_URL_COREUI = "https://040577fb88b241ff985e408c11775720@o118517.ingest.sentry.io/1374096"
+import octoprint.plugin
+from octoprint.util import get_fully_qualified_classname as fqcn  # noqa: F401
+from octoprint.util.version import (
+    get_octoprint_version_string,
+    is_released_octoprint_version,
+)
 
-SETTINGS_DEFAULTS = dict(enabled=False,
-                         enabled_unreleased=False,
-                         unique_id=None,
-                         url_server=SENTRY_URL_SERVER,
-                         url_coreui=SENTRY_URL_COREUI)
+SENTRY_URL_SERVER = (
+    "https://53f015cb6c3046088019baed6ff5b653@o118517.ingest.sentry.io/1373987"
+)
+SENTRY_URL_COREUI = (
+    "https://993cc8f6848b4ccca8c66be5769ccb50@o118517.ingest.sentry.io/1374096"
+)
 
-import serial
-import requests.exceptions
-import errno
-import tornado.websocket
+SETTINGS_DEFAULTS = {
+    "enabled": False,
+    "enabled_unreleased": False,
+    "unique_id": None,
+    "url_server": SENTRY_URL_SERVER,
+    "url_coreui": SENTRY_URL_COREUI,
+}
 
 IGNORED_EXCEPTIONS = [
-	# serial exceptions in octoprint.util.comm
-	(serial.SerialException, lambda exc, logger, plugin, cb: logger == "octoprint.util.comm"),
-
-	# KeyboardInterrupts
-	KeyboardInterrupt,
-
-	# IOErrors of any kind due to a full file system
-	(IOError, lambda exc, logger, plugin, cb: getattr(exc, "errno") and exc.errno in (getattr(errno, "ENOSPC"),)),
-
-	# RequestExceptions of any kind
-	requests.exceptions.RequestException,
-
-	# Tornado WebSocketErrors of any kind
-	tornado.websocket.WebSocketError,
-
-	# Anything triggered by or in third party plugin Astroprint
-	(Exception, lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
-	                                            or plugin == "astroprint"
-	                                            or cb.startswith("octoprint_astroprint."))
+    # serial exceptions in octoprint.util.comm
+    (
+        serial.SerialException,
+        lambda exc, logger, plugin, cb: logger == "octoprint.util.comm",
+    ),
+    # KeyboardInterrupts
+    KeyboardInterrupt,
+    # IOErrors of any kind due to a full file system
+    (
+        IOError,
+        lambda exc, logger, plugin, cb: exc.errorgetattr(exc, "errno")  # noqa: B009
+        and exc.errno in (getattr(errno, "ENOSPC"),),  # noqa: B009
+    ),
+    # RequestExceptions of any kind
+    requests.exceptions.RequestException,
+    # Tornado WebSocketErrors of any kind
+    tornado.websocket.WebSocketError,
+    # Anything triggered by or in third party plugin Astroprint
+    (
+        Exception,
+        lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
+        or plugin == "astroprint"
+        or cb.startswith("octoprint_astroprint."),
+    ),
 ]
 
 try:
-	# noinspection PyUnresolvedReferences
-	from octoprint.plugins.backup import InsufficientSpace
+    # noinspection PyUnresolvedReferences
+    from octoprint.plugins.backup import InsufficientSpace
 
-	# if the backup plugin is enabled, ignore InsufficientSpace errors from it as well
-	IGNORED_EXCEPTIONS.append(InsufficientSpace)
+    # if the backup plugin is enabled, ignore InsufficientSpace errors from it as well
+    IGNORED_EXCEPTIONS.append(InsufficientSpace)
 
-	del InsufficientSpace
+    del InsufficientSpace
 except ImportError:
-	pass
+    pass
 
 
-class ErrorTrackingPlugin(octoprint.plugin.SettingsPlugin,
-                          octoprint.plugin.AssetPlugin,
-                          octoprint.plugin.TemplatePlugin,
-                          octoprint.plugin.SimpleApiPlugin):
+class ErrorTrackingPlugin(
+    octoprint.plugin.SettingsPlugin,
+    octoprint.plugin.AssetPlugin,
+    octoprint.plugin.TemplatePlugin,
+    octoprint.plugin.SimpleApiPlugin,
+):
+    def get_template_configs(self):
+        return [
+            {
+                "type": "settings",
+                "name": gettext("Error Tracking"),
+                "template": "errortracking_settings.jinja2",
+                "custom_bindings": False,
+            },
+            {"type": "generic", "template": "errortracking_javascripts.jinja2"},
+        ]
 
-	def get_template_configs(self):
-		return [
-			dict(type="settings",
-			     name=gettext("Error Tracking"),
-			     template="errortracking_settings.jinja2",
-			     custom_bindings=False),
-			dict(type="generic", template="errortracking_javascripts.jinja2")
-		]
+    def get_template_vars(self):
+        enabled = self._settings.get_boolean(["enabled"])
+        enabled_unreleased = self._settings.get_boolean(["enabled_unreleased"])
 
-	def get_template_vars(self):
-		enabled = self._settings.get_boolean(["enabled"])
-		enabled_unreleased = self._settings.get_boolean(["enabled_unreleased"])
+        return {
+            "enabled": _is_enabled(enabled, enabled_unreleased),
+            "unique_id": self._settings.get(["unique_id"]),
+            "url_coreui": self._settings.get(["url_coreui"]),
+        }
 
-		return dict(enabled=_is_enabled(enabled, enabled_unreleased),
-		            unique_id=self._settings.get(["unique_id"]),
-		            url_coreui=self._settings.get(["url_coreui"]))
+    def get_assets(self):
+        return {"js": ["js/sentry.min.js", "js/errortracking.js"]}
 
-	def get_assets(self):
-		return dict(js=["js/sentry.min.js", "js/errortracking.js"])
+    def get_settings_defaults(self):
+        return SETTINGS_DEFAULTS
 
-	def get_settings_defaults(self):
-		return SETTINGS_DEFAULTS
+    def on_settings_save(self, data):
+        old_enabled = _is_enabled(
+            self._settings.get_boolean(["enabled"]),
+            self._settings.get_boolean(["enabled_unreleased"]),
+        )
 
-	def on_settings_save(self, data):
-		old_enabled = _is_enabled(self._settings.get_boolean(["enabled"]),
-		                          self._settings.get_boolean(["enabled_unreleased"]))
+        octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
-		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+        enabled = _is_enabled(
+            self._settings.get_boolean(["enabled"]),
+            self._settings.get_boolean(["enabled_unreleased"]),
+        )
 
-		enabled = _is_enabled(self._settings.get_boolean(["enabled"]),
-		                      self._settings.get_boolean(["enabled_unreleased"]))
+        if old_enabled != enabled:
+            _enable_errortracking()
 
-		if old_enabled != enabled:
-			_enable_errortracking()
-
-	def on_api_get(self, request):
-		return jsonify(**self.get_template_vars())
+    def on_api_get(self, request):
+        return jsonify(**self.get_template_vars())
 
 
 _enabled = False
+
+
 def _enable_errortracking():
-	# this is a bit hackish, but we want to enable error tracking as early in the platform lifecycle as possible
-	# and hence can't wait until our implementation is initialized and injected with settings
+    # this is a bit hackish, but we want to enable error tracking as early in the platform lifecycle as possible
+    # and hence can't wait until our implementation is initialized and injected with settings
 
-	from octoprint.settings import settings
-	global _enabled
+    from octoprint.settings import settings
 
-	if _enabled:
-		return
+    global _enabled
 
-	version = get_octoprint_version_string()
+    if _enabled:
+        return
 
-	s = settings()
-	plugin_defaults = dict(plugins=dict(errortracking=SETTINGS_DEFAULTS))
+    version = get_octoprint_version_string()
 
-	enabled = s.getBoolean(["plugins", "errortracking", "enabled"], defaults=plugin_defaults)
-	enabled_unreleased = s.getBoolean(["plugins", "errortracking", "enabled_unreleased"], defaults=plugin_defaults)
-	url_server = s.get(["plugins", "errortracking", "url_server"], defaults=plugin_defaults)
-	unique_id = s.get(["plugins", "errortracking", "unique_id"], defaults=plugin_defaults)
-	if unique_id is None:
-		import uuid
-		unique_id = str(uuid.uuid4())
-		s.set(["plugins", "errortracking", "unique_id"], unique_id, defaults=plugin_defaults)
-		s.save()
+    s = settings()
+    plugin_defaults = {"plugins": {"errortracking": SETTINGS_DEFAULTS}}
 
-	if _is_enabled(enabled, enabled_unreleased):
-		import sentry_sdk
-		from octoprint.plugin import plugin_manager
+    enabled = s.getBoolean(
+        ["plugins", "errortracking", "enabled"], defaults=plugin_defaults
+    )
+    enabled_unreleased = s.getBoolean(
+        ["plugins", "errortracking", "enabled_unreleased"], defaults=plugin_defaults
+    )
+    url_server = s.get(
+        ["plugins", "errortracking", "url_server"], defaults=plugin_defaults
+    )
+    unique_id = s.get(["plugins", "errortracking", "unique_id"], defaults=plugin_defaults)
+    if unique_id is None:
+        import uuid
 
-		def _before_send(event, hint):
-			if not "exc_info" in hint:
-				# we only want exceptions
-				return None
+        unique_id = str(uuid.uuid4())
+        s.set(
+            ["plugins", "errortracking", "unique_id"], unique_id, defaults=plugin_defaults
+        )
+        s.save()
 
-			handled = True
-			logger = event.get("logger", "")
-			plugin = event.get("extra", dict()).get("plugin", None)
-			callback = event.get("extra", dict()).get("callback", None)
+    if _is_enabled(enabled, enabled_unreleased):
+        import sentry_sdk
 
-			for ignore in IGNORED_EXCEPTIONS:
-				if isinstance(ignore, tuple):
-					ignored_exc, matcher = ignore
-				else:
-					ignored_exc = ignore
-					matcher = lambda *args: True
+        from octoprint.plugin import plugin_manager
 
-				exc = hint["exc_info"][1]
-				if isinstance(exc, ignored_exc) and matcher(exc, logger, plugin, callback):
-					# exception ignored for logger, plugin and/or callback
-					return None
+        def _before_send(event, hint):
+            if "exc_info" not in hint:
+                # we only want exceptions
+                return None
 
-				elif isinstance(ignore, type):
-					if isinstance(hint["exc_info"][1], ignore):
-						# exception ignored
-						return None
+            handled = True
+            logger = event.get("logger", "")
+            plugin = event.get("extra", {}).get("plugin", None)
+            callback = event.get("extra", {}).get("callback", None)
 
-			if event.get("exception") and event["exception"].get("values"):
-				handled = not any(map(lambda x: x.get("mechanism") and x["mechanism"].get("handled", True) == False,
-				                      event["exception"]["values"]))
+            for ignore in IGNORED_EXCEPTIONS:
+                if isinstance(ignore, tuple):
+                    ignored_exc, matcher = ignore
+                else:
+                    ignored_exc = ignore
+                    matcher = lambda *args: True
 
-			if handled:
-				# error is handled, restrict further based on logger
-				if logger != "" and not (logger.startswith("octoprint.") or logger.startswith("tornado.")):
-					# we only want errors logged by loggers octoprint.* or tornado.*
-					return None
+                exc = hint["exc_info"][1]
+                if isinstance(exc, ignored_exc) and matcher(
+                    exc, logger, plugin, callback
+                ):
+                    # exception ignored for logger, plugin and/or callback
+                    return None
 
-				if logger.startswith("octoprint.plugins."):
-					plugin_id = logger.split(".")[2]
-					plugin_info = plugin_manager().get_plugin_info(plugin_id)
-					if plugin_info is None or not plugin_info.bundled:
-						# we only want our active bundled plugins
-						return None
+                elif isinstance(ignore, type):
+                    if isinstance(hint["exc_info"][1], ignore):
+                        # exception ignored
+                        return None
 
-				if plugin is not None:
-					plugin_info = plugin_manager().get_plugin_info(plugin)
-					if plugin_info is None or not plugin_info.bundled:
-						# we only want our active bundled plugins
-						return None
+            if event.get("exception") and event["exception"].get("values"):
+                handled = not any(
+                    map(
+                        lambda x: x.get("mechanism")
+                        and not x["mechanism"].get("handled", True),
+                        event["exception"]["values"],
+                    )
+                )
 
-			return event
+            if handled:
+                # error is handled, restrict further based on logger
+                if logger != "" and not (
+                    logger.startswith("octoprint.") or logger.startswith("tornado.")
+                ):
+                    # we only want errors logged by loggers octoprint.* or tornado.*
+                    return None
 
-		sentry_sdk.init(url_server,
-		                release=version,
-		                before_send=_before_send)
+                if logger.startswith("octoprint.plugins."):
+                    plugin_id = logger.split(".")[2]
+                    plugin_info = plugin_manager().get_plugin_info(plugin_id)
+                    if plugin_info is None or not plugin_info.bundled:
+                        # we only want our active bundled plugins
+                        return None
 
-		with sentry_sdk.configure_scope() as scope:
-			scope.user = dict(id=unique_id)
+                if plugin is not None:
+                    plugin_info = plugin_manager().get_plugin_info(plugin)
+                    if plugin_info is None or not plugin_info.bundled:
+                        # we only want our active bundled plugins
+                        return None
 
-		logging.getLogger("octoprint.plugins.errortracking").info("Initialized error tracking")
-		_enabled = True
+            return event
+
+        sentry_sdk.init(url_server, release=version, before_send=_before_send)
+
+        with sentry_sdk.configure_scope() as scope:
+            scope.user = {"id": unique_id}
+
+        logging.getLogger("octoprint.plugins.errortracking").info(
+            "Initialized error tracking"
+        )
+        _enabled = True
 
 
 def _is_enabled(enabled, enabled_unreleased):
-	return enabled and (enabled_unreleased or is_released_octoprint_version())
+    return enabled and (enabled_unreleased or is_released_octoprint_version())
 
 
 def __plugin_enable__():
-	_enable_errortracking()
+    _enable_errortracking()
 
 
 __plugin_name__ = "Error Tracking"

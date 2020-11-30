@@ -41,13 +41,13 @@
         <td class="temperature_target">
             <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
                 <div class="input-prepend input-append">
-                    <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: -1°C')|edq }}"><i class="fa fa-minus"></i></button>
+                    <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: -1°C')|edq }}"><i class="fas fa-minus"></i></button>
                     <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target(), 1)}, value: newTarget, valueUpdate: 'input', enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
                     <span class="add-on">&deg;C</span>
-                    <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: +1°C')|edq }}"><i class="fa fa-plus"></i></button>
+                    <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: +1°C')|edq }}"><i class="fas fa-plus"></i></button>
                 </div>
                 <div class="btn-group">
-                    <button type="submit" data-bind="enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational() && $data.newTargetValid()" class="btn btn-primary" title="{{ _('Set')|edq }}"><i class="fa fa-check"></i></button>
+                    <button type="submit" data-bind="enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational() && $data.newTargetValid()" class="btn btn-primary" title="{{ _('Set')|edq }}"><i class="fas fa-check"></i></button>
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()">
                         <span class="caret"></span>
                     </button>
@@ -66,15 +66,14 @@
             </form>
         </td>
         <td class="temperature_offset">
-            <form class="form-inline" style="margin:0">
+            <form class="form-inline" style="margin:0" onsubmit="return false;">
                 <div class="input-append">
                     <span class="input-mini uneditable-input text-right" style="width: 30px" data-bind="text: offset"></span>
                     <span class="add-on">&deg;C</span>
-                    <button class="btn" title="{{ _('Change Offset')|edq }}" data-bind="click: $root.changeOffset, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="fa fa-pencil"></i></button>
-                    <button class="btn" title="{{ _('Delete Offset')|edq }}" data-bind="click: $root.setOffsetToZero, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="fa fa-trash"></i></button>
+                    <button class="btn" title="{{ _('Change Offset')|edq }}" data-bind="click: $root.changeOffset, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn" title="{{ _('Delete Offset')|edq }}" data-bind="click: $root.setOffsetToZero, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="far fa-trash-alt"></i></button>
                 </div>
             </form>
         </td>
     </script>
 </div>
-

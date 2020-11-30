@@ -1,22 +1,22 @@
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
         <label class="control-label">{{ _('Before print job starts') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrintStarted"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_beforePrintStarted"></textarea>
             <small>{{ _('Anything you put here will be executed <em>before</em> any lines in your files.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('After print job completes') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintDone"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterPrintDone"></textarea>
             <small>{{ _('Anything you put here will be executed <em>after</em> any lines in your files.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('After print job is cancelled') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintCancelled"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterPrintCancelled"></textarea>
             <small>
                 {{ _('Anything you put here will be executed <em>after</em> any lines in your files.') }}
                 {{ _('If you ever need to you can find the default cancel script that OctoPrint ships with <a href="%(url)s" target="_blank">here</a>.', url="https://docs.octoprint.org/en/master/features/gcode_scripts.html#bundled-scripts") }}
@@ -26,41 +26,41 @@
     <div class="control-group">
         <label class="control-label">{{ _('After print job is paused') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintPaused"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterPrintPaused"></textarea>
             <small>{{ _('Anything you put here will be executed <em>after</em> any lines in your files.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('Before print job is resumed') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrintResumed"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_beforePrintResumed"></textarea>
             <small>{{ _('Anything you put here will be executed <em>before</em> any lines in your files.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('Before tool change') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforeToolChange"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_beforeToolChange"></textarea>
             <small>{{ _('Anything you put here will be executed <em>before</em> any tool change commands <code>Tn</code>.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('After tool change') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterToolChange"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterToolChange"></textarea>
             <small>{{ _('Anything you put here will be executed <em>after</em> any tool change commands <code>Tn</code>.') }}</small>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('After connection to printer is established') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">{{ _('Before connection to printer is closed') }}</label>
         <div class="controls">
-            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrinterDisconnected"></textarea>
+            <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_beforePrinterDisconnected"></textarea>
             <small>{{ _('Anything you put here will only be executed when closing the connection actively. If the connection to the printer is suddenly lost nothing will be sent.') }}</small>
         </div>
     </div>

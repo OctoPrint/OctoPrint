@@ -1,0 +1,10 @@
+<h3>{{ _('System Information') }}</h3>
+
+<p>{% trans %}Please copy/paste the following when requesting support on the forums or
+    when opening a new bug report:{% endtrans %}</p>
+
+<p data-bind="foreach: systeminfo">
+    <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+</p>
+
+<a href="javascript:void(0)" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>

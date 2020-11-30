@@ -1,37 +1,45 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import requests
 import logging
 
-from ..exceptions import ConfigurationInvalid, NetworkError, CannotCheckOffline
+import requests
+
+from ..exceptions import CannotCheckOffline, ConfigurationInvalid, NetworkError
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.jsondata")
 
-def get_latest(target, check, online=True):
-	if not online:
-		raise CannotCheckOffline()
 
-	url = check.get("jsondata")
-	current = check.get("current")
+def get_latest(target, check, online=True, *args, **kwargs):
+    if not online:
+        raise CannotCheckOffline()
 
-	if url is None:
-		raise ConfigurationInvalid("jsondata version check needs jsondata set")
+    url = check.get("jsondata")
+    current = check.get("current")
 
-	try:
-		with requests.get(url) as r:
-			data = r.json()
-	except Exception as exc:
-		raise NetworkError(cause=exc)
+    if url is None:
+        raise ConfigurationInvalid("jsondata version check needs jsondata set")
 
-	latest = data.get("version")
+    try:
+        with requests.get(url) as r:
+            data = r.json()
+    except Exception as exc:
+        raise NetworkError(cause=exc)
 
-	information = dict(local=dict(name=current if current else "-", value=current),
-	                   remote=dict(name=latest if latest else "-", value=latest))
+    latest = data.get("version")
 
-	logger.debug("Target: {}, local: {}, remote: {}".format(target, information["local"]["name"], information["remote"]["name"]))
+    information = {
+        "local": {"name": current if current else "-", "value": current},
+        "remote": {"name": latest if latest else "-", "value": latest},
+    }
 
-	return information, current is None or current == latest or latest is None
+    logger.debug(
+        "Target: {}, local: {}, remote: {}".format(
+            target, information["local"]["name"], information["remote"]["name"]
+        )
+    )
+
+    return information, current is None or current == latest or latest is None

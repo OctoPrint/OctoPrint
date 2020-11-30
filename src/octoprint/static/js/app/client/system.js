@@ -4,11 +4,12 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
+})(this, function (OctoPrintClient) {
     var url = "api/system";
     var commandUrl = "api/system/commands";
+    var infoUrl = "api/system/info";
 
-    var OctoPrintSystemClient = function(base) {
+    var OctoPrintSystemClient = function (base) {
         this.base = base;
     };
 
@@ -22,6 +23,10 @@
 
     OctoPrintSystemClient.prototype.executeCommand = function (source, action, opts) {
         return this.base.postJson(commandUrl + "/" + source + "/" + action, {}, opts);
+    };
+
+    OctoPrintSystemClient.prototype.getInfo = function (opts) {
+        return this.base.get(infoUrl, opts);
     };
 
     OctoPrintClient.registerComponent("system", OctoPrintSystemClient);

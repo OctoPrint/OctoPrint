@@ -59,7 +59,7 @@ class StatsCollector(object):
         self.sess_active = 0
 
         # Avoid circular reference
-        self.sess_transports = dict()
+        self.sess_transports = {}
 
         # Connections
         self.conn_active = 0
@@ -81,18 +81,15 @@ class StatsCollector(object):
 
     def dump(self):
         """Return dictionary with current statistical information"""
-        data = dict(
-            # Sessions
-            sessions_active=self.sess_active,
+        data = {"sessions_active": self.sess_active,
 
             # Connections
-            connections_active=self.conn_active,
-            connections_ps=self.conn_ps.last_average,
+        "connections_active": self.conn_active,
+        "connections_ps": self.conn_ps.last_average,
 
             # Packets
-            packets_sent_ps=self.pack_sent_ps.last_average,
-            packets_recv_ps=self.pack_recv_ps.last_average
-            )
+        "packets_sent_ps": self.pack_sent_ps.last_average,
+        "packets_recv_ps": self.pack_recv_ps.last_average}
 
         for k, v in self.sess_transports.items():
             data['transp_' + k] = v

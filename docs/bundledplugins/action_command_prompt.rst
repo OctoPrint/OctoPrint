@@ -3,7 +3,9 @@
 Action Command Prompt support
 =============================
 
-The OctoPrint Action Command Prompt Support Plugin comes bundled with OctoPrint (starting with 1.3.9).
+.. versionadded:: 1.3.9
+
+The OctoPrint Action Command Prompt Support Plugin comes bundled with OctoPrint.
 
 It allows firmware to trigger dialog prompts for logged in users using :ref:`action commands <sec-features-action_commands>`, e.g. to wait
 for user acknowledgement or allow the user to choose between options, and also to close the dialog again
@@ -72,8 +74,7 @@ To display the :ref:`above dialog <fig-bundledplugins-action_command_prompt-exam
    //action:prompt_choice Filament swapped
    //action:prompt_show
 
-If the user clicks the button, assuming a ``selection_command`` of ``M876 S{choice}`` is configured, OctoPrint
-will send back ``M876 S0`` (0-based index).
+If the user clicks the button, OctoPrint will send back ``M876 S0`` (0-based index).
 
 A more complicated example with three options would be the following:
 

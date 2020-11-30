@@ -18,13 +18,21 @@ authorization workflow implemented by the bundled :ref:`Application Keys Plugin 
 Clients are advised to implement the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` first and
 fallback on directing the user to manually supply the the user specific API key. The global key should rarely be used.
 
-The API key must be supplied in the custom HTTP header ``X-Api-Key``, e.g.
+The API key must either be supplied in the custom HTTP header ``X-Api-Key``, e.g.
 
 .. sourcecode:: http
 
    GET /api/files HTTP/1.1
    Host: example.com
    X-Api-Key: abcdef...
+
+or as a ``Bearer`` token in the ``Authorization`` header, e.g.
+
+.. sourcecode:: http
+
+   GET /api/files HTTP/1.1
+   Host: example.com
+   Authorization: Bearer abcdef...
 
 For testing purposes it is also possible to supply the API key via a query parameter ``apikey``, e.g.
 

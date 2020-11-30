@@ -4,22 +4,25 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
-    var OctoPrintActionCommandPromptClient = function(base) {
+})(this, function (OctoPrintClient) {
+    var OctoPrintActionCommandPromptClient = function (base) {
         this.base = base;
     };
 
-    OctoPrintActionCommandPromptClient.prototype.get = function(refresh, opts) {
+    OctoPrintActionCommandPromptClient.prototype.get = function (refresh, opts) {
         return this.base.get(this.base.getSimpleApiUrl("action_command_prompt"), opts);
     };
 
-    OctoPrintActionCommandPromptClient.prototype.select = function(choice, opts) {
+    OctoPrintActionCommandPromptClient.prototype.select = function (choice, opts) {
         var data = {
             choice: choice
         };
         return this.base.simpleApiCommand("action_command_prompt", "select", data, opts);
     };
 
-    OctoPrintClient.registerPluginComponent("action_command_prompt", OctoPrintActionCommandPromptClient);
+    OctoPrintClient.registerPluginComponent(
+        "action_command_prompt",
+        OctoPrintActionCommandPromptClient
+    );
     return OctoPrintActionCommandPromptClient;
 });

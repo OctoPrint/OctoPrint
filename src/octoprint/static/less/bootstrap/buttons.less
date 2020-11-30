@@ -2,7 +2,6 @@
 // Buttons
 // --------------------------------------------------
 
-
 // Base styles
 // --------------------------------------------------
 
@@ -17,7 +16,7 @@
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
-  .buttonBackground(@btnBackground, @btnBackgroundHighlight, @grayDark, 0 1px 1px rgba(255,255,255,.75));
+  .buttonBackground(@btnBackground, @btnBackgroundHighlight, @grayDark, 0 1px 1px rgba(255,255,255,0.75));
   border: 1px solid @btnBorder;
   *border: 0; // Remove the border to prevent IE7's black border on input:focus
   border-bottom-color: darken(@btnBorder, 10%);
@@ -34,7 +33,7 @@
 
     // transition is only when going to hover/focus, otherwise the background
     // behind the gradient (there for IE<=9 fallback) gets mismatched
-    .transition(background-position .1s linear);
+    .transition(background-position 0.1s linear);
   }
 
   // Focus state for keyboard and accessibility
@@ -58,10 +57,7 @@
     .opacity(65);
     .box-shadow(none);
   }
-
 }
-
-
 
 // Button Sizes
 // --------------------------------------------------
@@ -99,7 +95,6 @@
   .border-radius(@borderRadiusSmall);
 }
 
-
 // Block button
 // -------------------------
 
@@ -125,8 +120,6 @@ input[type="button"] {
   }
 }
 
-
-
 // Alternate buttons
 // --------------------------------------------------
 
@@ -137,7 +130,7 @@ input[type="button"] {
 .btn-success.active,
 .btn-info.active,
 .btn-inverse.active {
-  color: rgba(255,255,255,.75);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 // Set the backgrounds
@@ -166,13 +159,11 @@ input[type="button"] {
   .buttonBackground(@btnInverseBackground, @btnInverseBackgroundHighlight);
 }
 
-
 // Cross-browser Jank
 // --------------------------------------------------
 
 button.btn,
 input[type="submit"].btn {
-
   // Firefox 3.6 only I believe
   &::-moz-focus-inner {
     padding: 0;
@@ -196,7 +187,6 @@ input[type="submit"].btn {
     *padding-bottom: 1px;
   }
 }
-
 
 // Link buttons
 // --------------------------------------------------

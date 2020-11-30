@@ -1,13 +1,13 @@
 <h3>{{ _('Webcam') }}</h3>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/webcam/webcamEnabled.jinja2" %}
     {% include "snippets/settings/webcam/webcamStreamUrl.jinja2" %}
     {% include "snippets/settings/webcam/webcamStreamRatio.jinja2" %}
     {% include "snippets/settings/webcam/webcamOrientation.jinja2" %}
 
     <div>
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             {% include "snippets/settings/webcam/webcamStreamTimeout.jinja2" %}
         </div>
@@ -16,13 +16,14 @@
 
 <h3>{{ _('Timelapse Recordings') }}</h3>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/webcam/timelapseEnabled.jinja2" %}
     {% include "snippets/settings/webcam/webcamSnapshotUrl.jinja2" %}
     {% include "snippets/settings/webcam/ffmpegPath.jinja2" %}
     {% include "snippets/settings/webcam/watermark.jinja2" %}
     <div>
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas
+         fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             {% include "snippets/settings/webcam/ffmpegBitrate.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegThreads.jinja2" %}

@@ -4,6 +4,8 @@
 Plugins
 *******
 
+.. versionadded:: 1.2.0
+
 Starting with OctoPrint 1.2.0, there's now a plugin system in place which allows to individually
 extend OctoPrint's functionality.
 

@@ -2,11 +2,9 @@
 // Responsive: Navbar
 // --------------------------------------------------
 
-
 // TABLETS AND BELOW
 // -----------------
 @media (max-width: @navbarCollapseWidth) {
-
   // UNFIX THE TOPBAR
   // ----------------
   // Remove any padding from the body
@@ -116,8 +114,8 @@
     .border-radius(0);
     .box-shadow(none);
   }
-  .nav-collapse .open > .dropdown-menu { 
-    display: block; 
+  .nav-collapse .open > .dropdown-menu {
+    display: block;
   }
 
   .nav-collapse .dropdown-menu:before,
@@ -167,23 +165,18 @@
   // STATIC NAVBAR
   // -------------
   .navbar-static .navbar-inner {
-    padding-left:  10px;
+    padding-left: 10px;
     padding-right: 10px;
   }
-
-
 }
-
 
 // DEFAULT DESKTOP
 // ---------------
 
 @media (min-width: @navbarCollapseDesktopWidth) {
-
   // Required to make the collapsing navbar work on regular desktops
   .nav-collapse.collapse {
     height: auto !important;
     overflow: visible !important;
   }
-
 }

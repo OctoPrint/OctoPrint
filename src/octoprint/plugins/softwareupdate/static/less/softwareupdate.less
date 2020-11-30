@@ -1,7 +1,7 @@
 #settings_plugin_softwareupdate_updatelist {
   display: block;
   width: auto;
-  max-height: 500px;
+  max-height: 400px;
   overflow-x: hidden;
   overflow-y: scroll;
   padding-right: 2px;
@@ -10,11 +10,24 @@
 
 td.settings_plugin_softwareupdate_column_update {
   width: 16px;
+
+  a {
+    text-decoration: none;
+    color: #000;
+  }
 }
 
 td.settings_plugin_softwareupdate_column_information {
   .line {
     display: block;
+  }
+
+  .settings_plugin_softwareupdate_release_channel {
+    line-height: 20px;
+    height: 20px;
+    font-size: 9px;
+    margin-bottom: 0;
+    vertical-align: baseline;
   }
 }
 
@@ -60,4 +73,3 @@ td.settings_plugin_softwareupdate_column_information {
     }
   }
 }
-

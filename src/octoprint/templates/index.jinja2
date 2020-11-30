@@ -47,7 +47,7 @@
                     <div class="inner">
                         <div class="content">
                             <h1 id="page-container-loading-header">{{ _('Connecting to OctoPrint\'s server...') }}</h1>
-                            <i id="page-container-loading-spinner" class="fa fa-spinner fa-spin fa-4x"></i>
+                            <i id="page-container-loading-spinner" class="fas fa-spinner fa-spin fa-4x"></i>
                             <p id="page-container-loading-error" style="display: none"></p>
                         </div>
                     </div>
@@ -97,7 +97,7 @@
                                     >
                                 <div class="accordion-heading">
                                     <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
-                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
+                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }} <!-- TODO fontawesom 5 upgrade - note this may not be possible for back-compat reasons - for 2.0.0? -->
                                     </a>
                                     {% if "template_header" in data %}
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template_header ignore missing %}{% endtry %}
@@ -163,6 +163,7 @@
             {% include 'dialogs/about.jinja2' %}
             {% include 'dialogs/files.jinja2' %}
             {% include 'dialogs/temperature.jinja2' %}
+            {% include 'dialogs/timelapse.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

@@ -2,6 +2,7 @@ src/octoprint/templates/_data/AUTHORS.md
 src/octoprint/templates/_data/CHANGELOG.md
 src/octoprint/templates/_data/SUPPORTERS.md
 src/octoprint/templates/_data/THIRDPARTYLICENSES.md
+src/octoprint/plugins/pi_support/.local_debug
 docs/_build
 
 devtools
@@ -35,6 +36,7 @@ pypy
 .eggs
 .mypy_cache
 .pytest_cache
+.python-version
 .tox
 
 venv*

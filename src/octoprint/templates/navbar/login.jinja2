@@ -1,5 +1,5 @@
 <a href="javascript:void(0)" data-test-id="login-menu" class="dropdown-toggle">
-    <i class="fa fa-user"></i> <span data-test-id="login-menu-title" data-bind="text: loginState.userMenuText, attr: {title: loginState.userMenuTitle}">{{ _('Login') }}</span>
+    <i class="fas fa-user"></i> <span data-test-id="login-menu-title" data-bind="text: loginState.userMenuText, attr: {title: loginState.userMenuTitle}">{{ _('Login') }}</span>
     <b class="caret"></b>
 </a>
 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
@@ -17,5 +17,5 @@
 </div>
 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
     <li><a href="#" id="usersettings_button" data-bind="click: function() { usersettings.show(); }">{{ _('User Settings') }}</a></li>
-    <li><a href="#" id="logout_button" data-bind="click: loginState.logout" data-test-id="logout-submit">{{ _('Logout') }}</a></li>
+    <li><a href="#" id="logout_button" data-bind="click: loginState.logout, css: { disabled: !loginState.logoutSupported() }, attr: { title: loginState.logoutTooltip }" data-test-id="logout-submit">{{ _('Logout') }}</a></li>
 </ul>

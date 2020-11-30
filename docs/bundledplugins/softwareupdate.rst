@@ -3,9 +3,13 @@
 Software Update Plugin
 ======================
 
+.. versionadded:: 1.2.0
+
 The Software Update Plugin allows receiving notifications about new releases
 of OctoPrint or installed plugins which registered with it and -- if properly
 configured -- also applying the found updates.
+
+It comes bundled with OctoPrint.
 
 .. _sec-bundledplugins-softwareupdate-firststeps:
 
@@ -24,7 +28,7 @@ Settings Dialog, navigate to the Software Update section therein and once you ar
 wrench icon in the upper right corner.
 
 .. _fig-bundledplugins-softwareupdate-plugin-configuration:
-.. figure:: ../images/bundledplugins-softwareupdate-plugin-configuration.png
+.. figure:: ../images/bundledplugins-softwareupdate-configuration.png
    :align: center
    :alt: Software Update plugin configuration dialog
 
@@ -34,21 +38,25 @@ There you can adjust the following settings:
 
   * **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
     select "Release" here which is also the default, unless you are a developer.
-  * **OctoPrint Release Channel** (if tracking releases): The release channel of OctoPrint to track for updates. If you only want stable versions,
-    select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
-    candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
-    "Stable". `Read more about Release Channels here <https://community.octoprint.org/t/how-to-use-the-release-channels-to-help-test-release-candidates/402>`_.
-  * **OctoPrint checkout folder** (if tracking git commits): This must be the path to OctoPrint's git checkout folder
+  * **Tracked branch** (if tracking is set to "Github Commit"): The branch that will be tracked if you set version tracking to "Github Commit".
+  * **OctoPrint ``pip`` target** (if tracking is set to "Release" or "Github Commit"): The argument that will be provided to ``pip`` when updating OctoPrint.
+    Usually you don't want to change this from its default value of ``https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip``.
+  * **OctoPrint checkout folder** (if tracking is set to "Local checkout"): This must be the path to OctoPrint's git checkout folder
     (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspbian/2337/>`_).
     Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
     want to be able to update against some bleeding edge git branch.
+  * **Enable ``pip`` update checks**: Whether to have OctoPrint automatically check for updates of
+    the ``pip`` tool that is used for updating most components.
   * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
     for the various components registered with the plugin, so that they don't have to be queried from the internet every time
     you load the page. Defaults to 24h, you usually shouldn't need to change that value.
+  * **Show notifications to users**: Whether to display update notifications (without "Update now" button) to users that cannot
+    apply updates.
+  * **Minimum free disk space**: The minimum amount of free disk space needed in order to allow software updates to be run.
 
 More settings are available by :ref:`editing the corresponding section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
-That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
+Restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
 .. _sec-bundledplugins-softwareupdate-cli:
 
@@ -119,9 +127,6 @@ Configuring the Plugin
 
    plugins:
      softwareupdate:
-       # the time-to-live of the version cache, in minutes
-       cache_ttl: 60
-
        # configured version check and update methods
        checks:
          # "octoprint" is reserved for OctoPrint
@@ -140,6 +145,41 @@ Configuring the Plugin
        # pip command, if another one than the automatically detected one should be
        # used - should normally NOT be necessary and hence set
        pip_command: /path/to/pip
+
+       # the time-to-live of the version cache, in minutes, defaults to 24h
+       cache_ttl: 1440
+
+       # whether to show update notifications to users that cannot apply updates
+       notify_users: true
+
+       # whether to ignore the system throttled state reported by the pisupport plugin and
+       # allow updating even when the system is not running stable - really not recommended
+       ignore_throttled: false
+
+       # minimum free storage in MB for updates to be enabled
+       minimum_free_storage: 150
+
+       # URL from which to fetch check overlays
+       check_overlay_url: https://plugins.octoprint.org/update_check_overlay.json
+
+       # time to live of the overlay cache, defaults to 6h
+       check_overlay_ttl: 360
+
+       # global credentials to provide to version checks
+       credentials:
+
+         # GitHub API token to use for the github_release and github_commit version checks.
+         # Helpful if you regularly run into rate limit issues with the GitHub API using
+         # the default anonymous access. Use a personal access token:
+         #   https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
+         # Unset by default
+         github:
+
+         # Bitbucket user name and password, used by the bitbucket_commit version check if
+         # provided, but only if the check doesn't specify credentials on its own.
+         # Unset by default
+         bitbucket_user:
+         bitbucket_password:
 
 .. _sec-bundledplugins-softwareupdate-configuration-versionchecks:
 
@@ -163,6 +203,7 @@ types are currently recognized:
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+      .. versionadded:: 1.2.16
     * ``stable_branch``: Stable channel definition, optional. Structure:
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
@@ -170,11 +211,13 @@ types are currently recognized:
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+      .. versionadded:: 1.2.16
     * ``prerelease_channel``: Release channel to limit updates to. If set only
       those releases will be included if their ``target_comittish`` matches
       the ones associated with the release channel identified by this, either
       included in ``prerelease_channels`` or the ``stable_channel``. Only
       taken into account if ``prerelease`` is ``true``.
+      .. versionadded:: 1.2.16
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected
@@ -208,6 +251,8 @@ types are currently recognized:
       ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
       a new app password. App passwords are user specific on Bitbucket.
 
+    .. versionadded:: 1.3.5
+
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:
 
@@ -218,6 +263,8 @@ types are currently recognized:
     config parameters:
 
     * ``package``: (mandatory) Name of the package which to check.
+
+    .. versionadded:: 1.4.0
 
   * ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
     against things like ``ETag`` or ``Last-Modified`` headers. Additional
@@ -230,11 +277,15 @@ types are currently recognized:
     * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
       will be used. If set to an empty string, no prefix will be added.
 
+    .. versionadded:: 1.4.1
+
   * ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
     property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
     config parameters:
 
     * ``jsondata``: (mandatory) URL from which to fetch the JSON data
+
+    .. versionadded:: 1.4.1
 
   * ``command_line``: Uses a provided script to determine whether an update
     is available. Additional config parameters:
@@ -258,11 +309,15 @@ types are currently recognized:
 
     * ``current_version``: Version to report for both local and remote version.
 
+    .. versionadded:: 1.3.7
+
   * ``never_current``: Always reports that an update is necessary. Useful for debugging
     software update mechanisms during development. Additional config parameters:
 
     * ``local_version``: Current local version. Defaults to ``1.0.0``.
     * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
+
+    .. versionadded:: 1.3.7
 
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
@@ -308,6 +363,8 @@ supported:
   * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
     a countdown in the meantime. Useful for debugging software update mechanisms
     during development.
+
+    .. versionadded:: 1.3.7
 
 .. note::
 
@@ -479,6 +536,28 @@ Note that for gist hosted single file plugins, you need to use the "Raw" install
 commit identifier. E.g. ``https://gist.githubusercontent.com/<user>/<gistid>/raw/my_plugin.py`` instead of
 ``https://gist.githubusercontent.com/<user>/<gistid>/raw/<commit>/my_plugin.py``. Note that these URLs will
 be cached by Github for a bit, so an update will not be immediately picked up.
+
+.. _sec-bundledplugins-softwareupdate-configuration-credentials:
+
+Global credentials
+++++++++++++++++++
+
+.. versionadded:: 1.5.0
+
+Starting with OctoPrint 1.5.0, the Software Update Plugin supports supplyting a GitHub
+API token to use for the ``github_release`` and ``github_commit`` version check types,
+to work around possible rate limit problems if a lot of checks are to be made from a single
+external IP. You may create a `personal access token <https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token>`_
+and configure that as ``plugins.softwareupdate.credentials.github`` via
+:ref:`config.yaml <sec-configuration-config_yaml>` in order to get a higher rate limit than with purely anonymous access.
+
+Additionally, the username and password to use with the ``bitbucket_commit`` version check
+type may also be configured via ``plugins.softwareupdate.credentials.bitbucket_user`` and
+``plugins.softwareupdate.credentials.bitbucket_password`` respectively.
+
+None of these configuration options are currently exposed on the UI and can only be used
+via :ref:`config.yaml <sec-configuration-config_yaml>` or the
+:ref:`config command line interface <sec-configuration-cli>`.
 
 .. _sec-bundledplugins-softwareupdate-events:
 

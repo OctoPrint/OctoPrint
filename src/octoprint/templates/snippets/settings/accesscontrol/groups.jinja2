@@ -9,7 +9,7 @@
     </thead>
     <tbody data-bind="foreach: $root.access.groups.listHelper.paginatedItems">
     <tr>
-        <td class="settings_groups_default"><span class="fa fa-star" data-bind="invisible: !$data.default" title="{{ _('Default group')|edq }}"></span></td>
+        <td class="settings_groups_default"><span class="fas fa-star" data-bind="invisible: !$data.default" title="{{ _('Default group')|edq }}"></span></td>
         <td class="settings_groups_name">
             <span data-bind="text: name"></span><br>
             <small class="muted" data-bind="text: description"></small>
@@ -27,7 +27,7 @@
             </table>
         </td>
         <td class="settings_groups_actions">
-            <a href="#" class="fa fa-pencil" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.removeGroup($data); }"></a>
+            <a href="#" class="fas fa-pencil-alt" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.removeGroup($data); }"></a>
         </td>
     </tr>
     </tbody>
@@ -44,7 +44,7 @@
     </ul>
 </div>
 
-<button title="{{ _('Add group')|edq }}" class="btn pull-right" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="fa fa-plus"></i> {{ _('Add group...') }}</button>
+<button title="{{ _('Add group')|edq }}" class="btn pull-right" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="fas fa-plus"></i> {{ _('Add group...') }}</button>
 
 <!-- Modals for group management -->
 
@@ -68,7 +68,7 @@
             </ul>
             <div class="tab-content">
                 <div id="settings_accesscontrol_groups_add_general" class="tab-pane active">
-                    <form class="form-horizontal">
+                    <form class="form-horizontal" onsubmit="return false;">
                         <div class="control-group">
                             <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Name') }}</label>
                             <div class="controls">

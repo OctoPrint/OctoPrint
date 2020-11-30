@@ -21,8 +21,14 @@ Action commands are a feature defined for the GCODE based RepRap communication p
 
 OctoPrint out of the box supports handling of the above mentioned commands:
 
+start
+    When this command is received from the printer, a job is currently selected and *not* active, OctoPrint
+    will start it just like if the "Start"/"Restart" button had been clicked.
+
+    .. versionadded:: 1.5.0
+
 cancel
-    When this command is received from the printer, OctoPrint will cancel a current print job like if the
+    When this command is received from the printer, OctoPrint will cancel a current print job just like if the
     "Cancel" button had been clicked.
 
 pause

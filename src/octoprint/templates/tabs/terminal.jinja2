@@ -1,5 +1,5 @@
 <div class="terminal">
-    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
+    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: display == 'filtered' || display == 'cut', 'text-error': type == 'warn'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
     <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <div class="input-block-level input-append">
@@ -13,8 +13,8 @@
         <span data-bind="visible: !autoscrollEnabled() && enableFancyFunctionality()" style="display: none">(<a href="javascript:void(0)" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>)</span>
     </small>
     <small class="pull-right">
-        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fa fa-copy" title="{{ _('Copy all')|edq }}"></i> {{ _('Copy all') }}</a><br>
-        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="fa fa-trash-o" title="{{ _('Clear log window')|edq }}"></i> {{ _('Clear all') }}</a>
+        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fas fa-copy" title="{{ _('Copy all')|edq }}"></i> {{ _('Copy all') }}</a><br>
+        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="far fa-trash-alt" title="{{ _('Clear log window')|edq }}"></i> {{ _('Clear all') }}</a>
     </small>
     <small class="pull-left text-warning" data-bind="visible: !fancyFunctionality()" style="display: none">
         {{ _('For performance reasons only a limited amount of terminal functionality is enabled right now.') }}
@@ -32,7 +32,7 @@
 </div>
 
 <div>
-    <div><small><a href="#" class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <p class="row-fluid">
             <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>

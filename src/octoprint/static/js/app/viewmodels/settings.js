@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function SettingsViewModel(parameters) {
         var self = this;
 
@@ -19,7 +19,7 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
-        self.exchanging = ko.pureComputed(function() {
+        self.exchanging = ko.pureComputed(function () {
             return self.receiving() || self.sending();
         });
         self.outstanding = [];
@@ -31,31 +31,48 @@ $(function() {
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
-        self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
-        self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
+        self.translationUploadElement = $(
+            "#settings_appearance_managelanguagesdialog_upload"
+        );
+        self.translationUploadButton = $(
+            "#settings_appearance_managelanguagesdialog_upload_start"
+        );
 
         self.translationUploadFilename = ko.observable();
-        self.invalidTranslationArchive = ko.pureComputed(function() {
+        self.invalidTranslationArchive = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
-            return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
+            return (
+                name !== undefined &&
+                !(
+                    _.endsWith(name.toLocaleLowerCase(), ".zip") ||
+                    _.endsWith(name.toLocaleLowerCase(), ".tar.gz") ||
+                    _.endsWith(name.toLocaleLowerCase(), ".tgz") ||
+                    _.endsWith(name.toLocaleLowerCase(), ".tar")
+                )
+            );
         });
-        self.enableTranslationUpload = ko.pureComputed(function() {
+        self.enableTranslationUpload = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
-            return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
+            return (
+                name !== undefined &&
+                name.trim() != "" &&
+                !self.invalidTranslationArchive()
+            );
         });
 
         self.translations = new ItemListHelper(
             "settings.translations",
             {
-                "locale": function (a, b) {
+                locale: function (a, b) {
                     // sorts ascending
-                    if (a["locale"].toLocaleLowerCase() < b["locale"].toLocaleLowerCase()) return -1;
-                    if (a["locale"].toLocaleLowerCase() > b["locale"].toLocaleLowerCase()) return 1;
+                    if (a["locale"].toLocaleLowerCase() < b["locale"].toLocaleLowerCase())
+                        return -1;
+                    if (a["locale"].toLocaleLowerCase() > b["locale"].toLocaleLowerCase())
+                        return 1;
                     return 0;
                 }
             },
-            {
-            },
+            {},
             "locale",
             [],
             [],
@@ -71,10 +88,10 @@ $(function() {
             {key: "blue", name: gettext("blue")},
             {key: "violet", name: gettext("violet")},
             {key: "black", name: gettext("black")},
-            {key: "white", name: gettext("white")},
+            {key: "white", name: gettext("white")}
         ]);
 
-        self.appearance_colorName = function(color) {
+        self.appearance_colorName = function (color) {
             switch (color) {
                 case "red":
                     return gettext("red");
@@ -100,12 +117,20 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
-        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
+        self.webcam_available_videocodecs = ["libx264", "mpeg2video"];
 
-        var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
-        self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
-            return n.display;
-        })));
+        var auto_locale = {
+            language: "_default",
+            display: gettext("Autodetect from browser"),
+            english: undefined
+        };
+        self.locales = ko.observableArray(
+            [auto_locale].concat(
+                _.sortBy(_.values(AVAILABLE_LOCALES), function (n) {
+                    return n.display;
+                })
+            )
+        );
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
         self.api_key = ko.observable(undefined);
@@ -119,6 +144,7 @@ $(function() {
         self.appearance_showFahrenheitAlso = ko.observable(undefined);
         self.appearance_fuzzyTimes = ko.observable(undefined);
         self.appearance_closeModalsWithClick = ko.observable(undefined);
+        self.appearance_showInternalFilename = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -182,16 +208,16 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
-        self.serial_waitForStart =  ko.observable(undefined);
-        self.serial_sendChecksum =  ko.observable("print");
-        self.serial_sdRelativePath =  ko.observable(undefined);
-        self.serial_sdAlwaysAvailable =  ko.observable(undefined);
-        self.serial_swallowOkAfterResend =  ko.observable(undefined);
-        self.serial_repetierTargetTemp =  ko.observable(undefined);
-        self.serial_disableExternalHeatupDetection =  ko.observable(undefined);
-        self.serial_ignoreIdenticalResends =  ko.observable(undefined);
-        self.serial_firmwareDetection =  ko.observable(undefined);
-        self.serial_blockWhileDwelling =  ko.observable(undefined);
+        self.serial_waitForStart = ko.observable(undefined);
+        self.serial_sendChecksum = ko.observable("print");
+        self.serial_sdRelativePath = ko.observable(undefined);
+        self.serial_sdAlwaysAvailable = ko.observable(undefined);
+        self.serial_swallowOkAfterResend = ko.observable(undefined);
+        self.serial_repetierTargetTemp = ko.observable(undefined);
+        self.serial_disableExternalHeatupDetection = ko.observable(undefined);
+        self.serial_ignoreIdenticalResends = ko.observable(undefined);
+        self.serial_firmwareDetection = ko.observable(undefined);
+        self.serial_blockWhileDwelling = ko.observable(undefined);
         self.serial_useParityWorkaround = ko.observable(undefined);
         self.serial_sanityCheckTools = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
@@ -208,6 +234,8 @@ $(function() {
         self.serial_sendM112OnError = ko.observable(undefined);
         self.serial_disableSdPrintingDetection = ko.observable(undefined);
         self.serial_ackMax = ko.observable(undefined);
+        self.serial_resendRatioThreshold = ko.observable(100);
+        self.serial_resendRatioStart = ko.observable(100);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -241,7 +269,9 @@ $(function() {
         self.server_diskspace_warning = ko.observable();
         self.server_diskspace_critical = ko.observable();
         self.server_diskspace_warning_str = sizeObservable(self.server_diskspace_warning);
-        self.server_diskspace_critical_str = sizeObservable(self.server_diskspace_critical);
+        self.server_diskspace_critical_str = sizeObservable(
+            self.server_diskspace_critical
+        );
 
         self.server_onlineCheck_enabled = ko.observable();
         self.server_onlineCheck_interval = ko.observable();
@@ -261,7 +291,7 @@ $(function() {
         self.webcam_ffmpegPathText = ko.observable();
         self.webcam_ffmpegPathOk = ko.observable(false);
         self.webcam_ffmpegPathBroken = ko.observable(false);
-        self.webcam_ffmpegPathReset = function() {
+        self.webcam_ffmpegPathReset = function () {
             self.webcam_ffmpegPathText("");
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
@@ -270,7 +300,7 @@ $(function() {
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
         self.server_onlineCheckBroken = ko.observable(false);
-        self.server_onlineCheckReset = function() {
+        self.server_onlineCheckReset = function () {
             self.server_onlineCheckText("");
             self.server_onlineCheckOk(false);
             self.server_onlineCheckBroken(false);
@@ -278,66 +308,114 @@ $(function() {
         self.server_onlineCheckResolutionText = ko.observable();
         self.server_onlineCheckResolutionOk = ko.observable(false);
         self.server_onlineCheckResolutionBroken = ko.observable(false);
-        self.server_onlineCheckResolutionReset = function() {
+        self.server_onlineCheckResolutionReset = function () {
             self.server_onlineCheckResolutionText("");
             self.server_onlineCheckResolutionOk(false);
             self.server_onlineCheckResolutionBroken(false);
         };
 
         var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
+
+        var checkForDuplicateFolders = function () {
+            _.each(folderTypes, function (folderType) {
+                var path = self["folder_" + folderType]();
+                var duplicate = false;
+                _.each(folderTypes, function (otherFolderType) {
+                    if (folderType !== otherFolderType) {
+                        duplicate =
+                            duplicate || path === self["folder_" + otherFolderType]();
+                    }
+                });
+                self.testFolderConfigDuplicate[folderType](duplicate);
+            });
+        };
+
         self.testFolderConfigText = {};
         self.testFolderConfigOk = {};
         self.testFolderConfigBroken = {};
-        _.each(folderTypes, function(folderType) {
+        self.testFolderConfigDuplicate = {};
+        self.testFolderConfigError = {};
+        self.testFolderConfigSuccess = {};
+        _.each(folderTypes, function (folderType) {
             self.testFolderConfigText[folderType] = ko.observable("");
             self.testFolderConfigOk[folderType] = ko.observable(false);
             self.testFolderConfigBroken[folderType] = ko.observable(false);
+            self.testFolderConfigDuplicate[folderType] = ko.observable(false);
+            self.testFolderConfigError[folderType] = ko.pureComputed(function () {
+                return (
+                    self.testFolderConfigBroken[folderType]() ||
+                    self.testFolderConfigDuplicate[folderType]()
+                );
+            });
+            self.testFolderConfigSuccess[folderType] = ko.pureComputed(function () {
+                return (
+                    self.testFolderConfigOk[folderType]() &&
+                    !self.testFolderConfigDuplicate[folderType]()
+                );
+            });
+            self["folder_" + folderType].subscribe(checkForDuplicateFolders);
         });
-        self.testFolderConfigReset = function() {
-            _.each(folderTypes, function(folderType) {
+        self.testFolderConfigReset = function () {
+            _.each(folderTypes, function (folderType) {
                 self.testFolderConfigText[folderType]("");
                 self.testFolderConfigOk[folderType](false);
                 self.testFolderConfigBroken[folderType](false);
             });
         };
+        self.testFoldersDuplicate = ko.pureComputed(function () {
+            var foundDupe = false;
+            _.each(folderTypes, function (folderType) {
+                foundDupe = foundDupe || self.testFolderConfigDuplicate[folderType]();
+            });
+            return foundDupe;
+        });
 
         self.observableCopies = {
-            "feature_waitForStart": "serial_waitForStart",
-            "feature_sendChecksum": "serial_sendChecksum",
-            "feature_sdRelativePath": "serial_sdRelativePath",
-            "feature_sdAlwaysAvailable": "serial_sdAlwaysAvailable",
-            "feature_swallowOkAfterResend": "serial_swallowOkAfterResend",
-            "feature_repetierTargetTemp": "serial_repetierTargetTemp",
-            "feature_disableExternalHeatupDetection": "serial_disableExternalHeatupDetection",
-            "feature_ignoreIdenticalResends": "serial_ignoreIdenticalResends",
-            "feature_firmwareDetection": "serial_firmwareDetection",
-            "feature_blockWhileDwelling": "serial_blockWhileDwelling",
-            "serial_": "feature_"
+            feature_waitForStart: "serial_waitForStart",
+            feature_sendChecksum: "serial_sendChecksum",
+            feature_sdRelativePath: "serial_sdRelativePath",
+            feature_sdAlwaysAvailable: "serial_sdAlwaysAvailable",
+            feature_swallowOkAfterResend: "serial_swallowOkAfterResend",
+            feature_repetierTargetTemp: "serial_repetierTargetTemp",
+            feature_disableExternalHeatupDetection:
+                "serial_disableExternalHeatupDetection",
+            feature_ignoreIdenticalResends: "serial_ignoreIdenticalResends",
+            feature_firmwareDetection: "serial_firmwareDetection",
+            feature_blockWhileDwelling: "serial_blockWhileDwelling",
+            serial_: "feature_"
         };
-        _.each(self.observableCopies, function(value, key) {
+        _.each(self.observableCopies, function (value, key) {
             if (self.hasOwnProperty(value)) {
                 self[key] = self[value];
             }
         });
 
-        self.addTemperatureProfile = function() {
-            self.temperature_profiles.push({name: "New", extruder:0, bed:0, chamber:0});
+        self.addTemperatureProfile = function () {
+            self.temperature_profiles.push({
+                name: "New",
+                extruder: 0,
+                bed: 0,
+                chamber: 0
+            });
         };
 
-        self.removeTemperatureProfile = function(profile) {
+        self.removeTemperatureProfile = function (profile) {
             self.temperature_profiles.remove(profile);
         };
 
-        self.addTerminalFilter = function() {
-            self.terminalFilters.push({name: "New", regex: "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)"})
+        self.addTerminalFilter = function () {
+            self.terminalFilters.push({
+                name: "New",
+                regex: "(Send: (Nd+s+)?M105)|(Recv:s+(oks+)?.*(B|Td*):d+)"
+            });
         };
 
-        self.removeTerminalFilter = function(filter) {
+        self.removeTerminalFilter = function (filter) {
             self.terminalFilters.remove(filter);
         };
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
-        self.testWebcamStreamUrl = function() {
+        self.testWebcamStreamUrl = function () {
             if (!self.webcam_streamUrl()) {
                 return;
             }
@@ -346,24 +424,43 @@ $(function() {
                 return;
             }
 
-            var text = gettext("If you see your webcam stream below, the entered stream URL is ok.");
-            var image = $('<img src="' + self.webcam_streamUrl() + '">');
-            var message = $("<p></p>")
-                .append(text)
-                .append(image);
+            var text = gettext(
+                "If you see your webcam stream below, the entered stream URL is ok."
+            );
+            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+            var webcam_element;
+            if (streamType == "mjpg") {
+                webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
+            } else if (streamType == "hls") {
+                webcam_element = $(
+                    '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
+                );
+                video_element = webcam_element[0];
+                if (video_element.canPlayType("application/vnd.apple.mpegurl")) {
+                    video_element.src = self.webcam_streamUrl();
+                } else if (Hls.isSupported()) {
+                    var hls = new Hls();
+                    hls.loadSource(self.webcam_streamUrl());
+                    hls.attachMedia(video_element);
+                }
+            } else {
+                throw "Unknown stream type " + streamType;
+            }
+
+            var message = $("<p></p>").append(text).append(webcam_element);
 
             self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
                 title: gettext("Stream test"),
                 message: message,
-                onclose: function() {
+                onclose: function () {
                     self.testWebcamStreamUrlBusy(false);
                 }
             });
         };
 
         self.testWebcamSnapshotUrlBusy = ko.observable(false);
-        self.testWebcamSnapshotUrl = function(viewModel, event) {
+        self.testWebcamSnapshotUrl = function (viewModel, event) {
             if (!self.webcam_snapshotUrl()) {
                 return;
             }
@@ -372,33 +469,44 @@ $(function() {
                 return;
             }
 
-            var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
+            var errorText = gettext(
+                "Could not retrieve snapshot URL, please double check the URL"
+            );
             var errorTitle = gettext("Snapshot test failed");
 
             self.testWebcamSnapshotUrlBusy(true);
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {
-                method: "GET",
-                response: "bytes",
-                timeout: self.webcam_snapshotTimeout(),
-                validSsl: self.webcam_snapshotSslValidation(),
-                content_type_whitelist: ["image/*"],
-                content_type_guess: true
-            })
-                .done(function(response) {
+            OctoPrint.util
+                .testUrl(self.webcam_snapshotUrl(), {
+                    method: "GET",
+                    response: "bytes",
+                    timeout: self.webcam_snapshotTimeout(),
+                    validSsl: self.webcam_snapshotSslValidation(),
+                    content_type_whitelist: ["image/*"],
+                    content_type_guess: true
+                })
+                .done(function (response) {
                     if (!response.result) {
-                        if (response.status && response.response && response.response.content_type) {
+                        if (
+                            response.status &&
+                            response.response &&
+                            response.response.content_type
+                        ) {
                             // we could contact the server, but something else was wrong, probably the mime type
-                            errorText = gettext("Could retrieve the snapshot URL, but it didn't look like an " +
-                                                "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
-                                                "double check that the URL is returning static images, not multipart data " +
-                                                "or videos.");
-                            errorText = _.sprintf(errorText, {content_type: _.escape(response.response.content_type)});
+                            errorText = gettext(
+                                "Could retrieve the snapshot URL, but it didn't look like an " +
+                                    "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
+                                    "double check that the URL is returning static images, not multipart data " +
+                                    "or videos."
+                            );
+                            errorText = _.sprintf(errorText, {
+                                content_type: _.escape(response.response.content_type)
+                            });
                         }
 
                         showMessageDialog({
                             title: errorTitle,
                             message: errorText,
-                            onclose: function() {
+                            onclose: function () {
                                 self.testWebcamSnapshotUrlBusy(false);
                             }
                         });
@@ -413,20 +521,30 @@ $(function() {
                         mimeType = contentType.split(";")[0];
                     }
 
-                    var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
+                    var text = gettext(
+                        "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
+                    );
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" style="border: 1px solid black" /></p>'),
-                        onclose: function() {
+                        message: $(
+                            "<p>" +
+                                text +
+                                '</p><p><img src="data:' +
+                                mimeType +
+                                ";base64," +
+                                content +
+                                '" style="border: 1px solid black" /></p>'
+                        ),
+                        onclose: function () {
                             self.testWebcamSnapshotUrlBusy(false);
                         }
                     });
                 })
-                .fail(function() {
+                .fail(function () {
                     showMessageDialog({
                         title: errorTitle,
                         message: errorText,
-                        onclose: function() {
+                        onclose: function () {
                             self.testWebcamSnapshotUrlBusy(false);
                         }
                     });
@@ -434,7 +552,7 @@ $(function() {
         };
 
         self.testWebcamFfmpegPathBusy = ko.observable(false);
-        self.testWebcamFfmpegPath = function() {
+        self.testWebcamFfmpegPath = function () {
             if (!self.webcam_ffmpegPath()) {
                 return;
             }
@@ -444,15 +562,18 @@ $(function() {
             }
 
             self.testWebcamFfmpegPathBusy(true);
-            OctoPrint.util.testExecutable(self.webcam_ffmpegPath())
-                .done(function(response) {
+            OctoPrint.util
+                .testExecutable(self.webcam_ffmpegPath())
+                .done(function (response) {
                     if (!response.result) {
                         if (!response.exists) {
                             self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
                         } else if (!response.typeok) {
                             self.webcam_ffmpegPathText(gettext("The path is not a file"));
                         } else if (!response.access) {
-                            self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+                            self.webcam_ffmpegPathText(
+                                gettext("The path is not an executable")
+                            );
                         }
                     } else {
                         self.webcam_ffmpegPathText(gettext("The path is valid"));
@@ -460,56 +581,67 @@ $(function() {
                     self.webcam_ffmpegPathOk(response.result);
                     self.webcam_ffmpegPathBroken(!response.result);
                 })
-                .always(function() {
+                .always(function () {
                     self.testWebcamFfmpegPathBusy(false);
                 });
         };
 
         self.testOnlineConnectivityConfigBusy = ko.observable(false);
-        self.testOnlineConnectivityConfig = function() {
+        self.testOnlineConnectivityConfig = function () {
             if (!self.server_onlineCheck_host()) return;
             if (!self.server_onlineCheck_port()) return;
             if (self.testOnlineConnectivityConfigBusy()) return;
 
             self.testOnlineConnectivityConfigBusy(true);
-            OctoPrint.util.testServer(self.server_onlineCheck_host(), self.server_onlineCheck_port())
-                .done(function(response) {
+            OctoPrint.util
+                .testServer(
+                    self.server_onlineCheck_host(),
+                    self.server_onlineCheck_port()
+                )
+                .done(function (response) {
                     if (!response.result) {
-                        self.server_onlineCheckText(gettext("The server is not reachable"));
+                        self.server_onlineCheckText(
+                            gettext("The server is not reachable")
+                        );
                     } else {
                         self.server_onlineCheckText(gettext("The server is reachable"));
                     }
                     self.server_onlineCheckOk(response.result);
                     self.server_onlineCheckBroken(!response.result);
                 })
-                .always(function() {
+                .always(function () {
                     self.testOnlineConnectivityConfigBusy(false);
                 });
         };
 
         self.testOnlineConnectivityResolutionConfigBusy = ko.observable(false);
-        self.testOnlineConnectivityResolutionConfig = function() {
+        self.testOnlineConnectivityResolutionConfig = function () {
             if (!self.server_onlineCheck_name()) return;
             if (self.testOnlineConnectivityResolutionConfigBusy()) return;
 
             self.testOnlineConnectivityResolutionConfigBusy(true);
-            OctoPrint.util.testResolution(self.server_onlineCheck_name())
-                .done(function(response) {
+            OctoPrint.util
+                .testResolution(self.server_onlineCheck_name())
+                .done(function (response) {
                     if (!response.result) {
-                        self.server_onlineCheckResolutionText(gettext("Name cannot be resolved"));
+                        self.server_onlineCheckResolutionText(
+                            gettext("Name cannot be resolved")
+                        );
                     } else {
-                        self.server_onlineCheckResolutionText(gettext("Name can be resolved"));
+                        self.server_onlineCheckResolutionText(
+                            gettext("Name can be resolved")
+                        );
                     }
                     self.server_onlineCheckResolutionOk(response.result);
                     self.server_onlineCheckResolutionBroken(!response.result);
                 })
-                .always(function() {
+                .always(function () {
                     self.testOnlineConnectivityResolutionConfigBusy(false);
                 });
         };
 
         self.testFolderConfigBusy = ko.observable(false);
-        self.testFolderConfig = function(folder) {
+        self.testFolderConfig = function (folder) {
             var observable = "folder_" + folder;
             if (!self.hasOwnProperty(observable)) return;
 
@@ -523,17 +655,26 @@ $(function() {
                 check_writable_dir: true
             };
             var path = self[observable]();
-            OctoPrint.util.testPath(path, opts)
-                .done(function(response) {
+            OctoPrint.util
+                .testPath(path, opts)
+                .done(function (response) {
                     if (!response.result) {
                         if (response.broken_symlink) {
-                            self.testFolderConfigText[folder](gettext("The path is a broken symlink."));
+                            self.testFolderConfigText[folder](
+                                gettext("The path is a broken symlink.")
+                            );
                         } else if (!response.exists) {
-                            self.testFolderConfigText[folder](gettext("The path does not exist and cannot be created."));
+                            self.testFolderConfigText[folder](
+                                gettext("The path does not exist and cannot be created.")
+                            );
                         } else if (!response.typeok) {
-                            self.testFolderConfigText[folder](gettext("The path is not a folder."));
+                            self.testFolderConfigText[folder](
+                                gettext("The path is not a folder.")
+                            );
                         } else if (!response.access) {
-                            self.testFolderConfigText[folder](gettext("The path is not writable."));
+                            self.testFolderConfigText[folder](
+                                gettext("The path is not writable.")
+                            );
                         }
                     } else {
                         self.testFolderConfigText[folder](gettext("The path is valid"));
@@ -541,35 +682,41 @@ $(function() {
                     self.testFolderConfigOk[folder](response.result);
                     self.testFolderConfigBroken[folder](!response.result);
                 })
-                .always(function() {
+                .always(function () {
                     self.testFolderConfigBusy(false);
                 });
         };
 
-        self.onSettingsHidden = function() {
+        self.onSettingsHidden = function () {
             self.webcam_ffmpegPathReset();
             self.server_onlineCheckReset();
             self.server_onlineCheckResolutionReset();
             self.testFolderConfigReset();
         };
 
-        self.isDialogActive = function() {
+        self.isDialogActive = function () {
             return self.settingsDialog.is(":visible");
         };
 
-        self.onStartup = function() {
-            self.settingsDialog = $('#settings_dialog');
-            self.settingsUpdatedDialog = $('#settings_dialog_update_detected');
-            self.translationManagerDialog = $('#settings_appearance_managelanguagesdialog');
-            self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
-            self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
+        self.onStartup = function () {
+            self.settingsDialog = $("#settings_dialog");
+            self.settingsUpdatedDialog = $("#settings_dialog_update_detected");
+            self.translationManagerDialog = $(
+                "#settings_appearance_managelanguagesdialog"
+            );
+            self.translationUploadElement = $(
+                "#settings_appearance_managelanguagesdialog_upload"
+            );
+            self.translationUploadButton = $(
+                "#settings_appearance_managelanguagesdialog_upload_start"
+            );
 
             self.translationUploadElement.fileupload({
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
                 headers: OctoPrint.getRequestHeaders(),
-                add: function(e, data) {
+                add: function (e, data) {
                     if (data.files.length == 0) {
                         return false;
                     }
@@ -577,50 +724,50 @@ $(function() {
                     self.translationUploadFilename(data.files[0].name);
 
                     self.translationUploadButton.unbind("click");
-                    self.translationUploadButton.bind("click", function() {
+                    self.translationUploadButton.bind("click", function () {
                         data.submit();
                         return false;
                     });
                 },
-                done: function(e, data) {
+                done: function (e, data) {
                     self.translationUploadButton.unbind("click");
                     self.translationUploadFilename(undefined);
                     self.fromTranslationResponse(data.result);
                 },
-                fail: function(e, data) {
+                fail: function (e, data) {
                     self.translationUploadButton.unbind("click");
                     self.translationUploadFilename(undefined);
                 }
             });
         };
 
-        self.onAllBound = function(allViewModels) {
+        self.onAllBound = function (allViewModels) {
             self.allViewModels = allViewModels;
 
-            self.settingsDialog.on('show', function(event) {
+            self.settingsDialog.on("show", function (event) {
                 OctoPrint.coreui.settingsOpen = true;
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
-            self.settingsDialog.on('hidden', function(event) {
+            self.settingsDialog.on("hidden", function (event) {
                 OctoPrint.coreui.settingsOpen = false;
                 if (event.target.id == "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }
             });
-            self.settingsDialog.on('beforeSave', function () {
+            self.settingsDialog.on("beforeSave", function () {
                 callViewModels(allViewModels, "onSettingsBeforeSave");
             });
 
-            $(".reload_all", self.settingsUpdatedDialog).click(function(e) {
+            $(".reload_all", self.settingsUpdatedDialog).click(function (e) {
                 e.preventDefault();
                 self.settingsUpdatedDialog.modal("hide");
                 self.requestData();
                 return false;
             });
-            $(".reload_nonconflicts", self.settingsUpdatedDialog).click(function(e) {
+            $(".reload_nonconflicts", self.settingsUpdatedDialog).click(function (e) {
                 e.preventDefault();
                 self.settingsUpdatedDialog.modal("hide");
                 self.requestData(undefined, true);
@@ -628,12 +775,15 @@ $(function() {
             });
 
             // reset scroll position on tab change
-            $('ul.nav-list a[data-toggle="tab"]', self.settingsDialog).on("show", function() {
-                self._resetScrollPosition();
-            });
+            $('ul.nav-list a[data-toggle="tab"]', self.settingsDialog).on(
+                "show",
+                function () {
+                    self._resetScrollPosition();
+                }
+            );
         };
 
-        self.show = function(tab) {
+        self.show = function (tab) {
             // select first or specified tab
             self.selectTab(tab);
 
@@ -641,48 +791,60 @@ $(function() {
             self._resetScrollPosition();
 
             // show settings, ensure centered position
-            self.settingsDialog.modal({
-                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-            }).css({
-                width: 'auto',
-                'margin-left': function() { return -($(this).width() /2); }
-            });
+            self.settingsDialog
+                .modal({
+                    minHeight: function () {
+                        return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                    }
+                })
+                .css({
+                    "width": "auto",
+                    "margin-left": function () {
+                        return -($(this).width() / 2);
+                    }
+                });
 
             return false;
         };
 
-        self.hide = function() {
+        self.hide = function () {
             self.settingsDialog.modal("hide");
         };
 
-        self.generateApiKey = function() {
+        self.generateApiKey = function () {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            showConfirmationDialog(gettext("This will generate a new API Key. The old API Key will cease to function immediately."),
-                function() {
-                    OctoPrint.settings.generateApiKey()
-                        .done(function(response) {
-                            self.api_key(response.apikey);
-                            self.requestData();
-                        });
-                });
+            showConfirmationDialog(
+                gettext(
+                    "This will generate a new API Key. The old API Key will cease to function immediately."
+                ),
+                function () {
+                    OctoPrint.settings.generateApiKey().done(function (response) {
+                        self.api_key(response.apikey);
+                        self.requestData();
+                    });
+                }
+            );
         };
 
-        self.copyApiKey = function() {
+        self.copyApiKey = function () {
             copyToClipboard(self.api_key());
         };
 
-        self.showTranslationManager = function() {
+        self.showTranslationManager = function () {
             self.translationManagerDialog.modal();
             return false;
         };
 
-        self.requestData = function(local) {
+        self.requestData = function (local) {
             // handle old parameter format
             var callback = undefined;
             if (arguments.length == 2 || _.isFunction(local)) {
                 var exc = new Error();
-                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:", (exc.stack || exc.stacktrace || "<n/a>"));
+                log.warn(
+                    "The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:",
+                    exc.stack || exc.stacktrace || "<n/a>"
+                );
 
                 if (arguments.length == 2) {
                     callback = arguments[0];
@@ -694,12 +856,17 @@ $(function() {
             }
 
             // handler for any explicitly provided callbacks
-            var callbackHandler = function() {
+            var callbackHandler = function () {
                 if (!callback) return;
                 try {
                     callback();
                 } catch (exc) {
-                    log.error("Error calling settings callback", callback, ":", (exc.stack || exc.stacktrace || exc));
+                    log.error(
+                        "Error calling settings callback",
+                        callback,
+                        ":",
+                        exc.stack || exc.stacktrace || exc
+                    );
                 }
             };
 
@@ -721,11 +888,12 @@ $(function() {
 
             // perform the request
             self.receiving(true);
-            return OctoPrint.settings.get()
-                .always(function() {
+            return OctoPrint.settings
+                .get()
+                .always(function () {
                     self.receiving(false);
                 })
-                .done(function(response) {
+                .done(function (response) {
                     self.fromResponse(response, local);
 
                     if (callback) {
@@ -736,30 +904,29 @@ $(function() {
 
                     // resolve all promises
                     var args = arguments;
-                    _.each(self.outstanding, function(deferred) {
+                    _.each(self.outstanding, function (deferred) {
                         deferred.resolve(args);
                     });
                     self.outstanding = [];
                 })
-                .fail(function() {
+                .fail(function () {
                     // reject all promises
                     var args = arguments;
-                    _.each(self.outstanding, function(deferred) {
+                    _.each(self.outstanding, function (deferred) {
                         deferred.reject(args);
                     });
                     self.outstanding = [];
                 });
         };
 
-        self.requestTranslationData = function() {
-            return OctoPrint.languages.list()
-                .done(self.fromTranslationResponse);
+        self.requestTranslationData = function () {
+            return OctoPrint.languages.list().done(self.fromTranslationResponse);
         };
 
-        self.fromTranslationResponse = function(response) {
+        self.fromTranslationResponse = function (response) {
             var translationsByLocale = {};
-            _.each(response.language_packs, function(item, key) {
-                _.each(item.languages, function(pack) {
+            _.each(response.language_packs, function (item, key) {
+                _.each(item.languages, function (pack) {
                     var locale = pack.locale;
                     if (!_.has(translationsByLocale, locale)) {
                         translationsByLocale[locale] = {
@@ -779,8 +946,8 @@ $(function() {
             });
 
             var translations = [];
-            _.each(translationsByLocale, function(item) {
-                item["packs"].sort(function(a, b) {
+            _.each(translationsByLocale, function (item) {
+                item["packs"].sort(function (a, b) {
                     if (a.identifier == "_core") return -1;
                     if (b.identifier == "_core") return 1;
 
@@ -794,23 +961,25 @@ $(function() {
             self.translations.updateItems(translations);
         };
 
-        self.languagePackDisplay = function(item) {
-            return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
+        self.languagePackDisplay = function (item) {
+            return (
+                item.display +
+                (item.english != undefined ? " (" + item.english + ")" : "")
+            );
         };
 
-        self.languagePacksAvailable = ko.pureComputed(function() {
+        self.languagePacksAvailable = ko.pureComputed(function () {
             return self.translations.allSize() > 0;
         });
 
-        self.deleteLanguagePack = function(locale, pack) {
-            OctoPrint.languages.delete(locale, pack)
-                .done(self.fromTranslationResponse);
+        self.deleteLanguagePack = function (locale, pack) {
+            OctoPrint.languages.delete(locale, pack).done(self.fromTranslationResponse);
         };
 
         /**
          * Fetches the settings as currently stored in this client instance.
          */
-        self.getLocalData = function() {
+        self.getLocalData = function () {
             var data = {};
             if (self.settings != undefined) {
                 data = ko.mapping.toJS(self.settings);
@@ -819,26 +988,96 @@ $(function() {
             // some special read functions for various observables
             var specialMappings = {
                 feature: {
-                    autoUppercaseBlacklist: function() { return splitTextToArray(self.feature_autoUppercaseBlacklist(), ",", true) }
+                    autoUppercaseBlacklist: function () {
+                        return splitTextToArray(
+                            self.feature_autoUppercaseBlacklist(),
+                            ",",
+                            true
+                        );
+                    }
                 },
                 serial: {
-                    additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
-                    additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
-                    blacklistedPorts : function() { return commentableLinesToArray(self.serial_blacklistedPorts()) },
-                    blacklistedBaudrates: function() { return _.map(splitTextToArray(self.serial_blacklistedBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
-                    longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
-                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
-                    blockedCommands: function() { return splitTextToArray(self.serial_blockedCommands(), ",", true) },
-                    pausingCommands: function() { return splitTextToArray(self.serial_pausingCommands(), ",", true) },
-                    emergencyCommands: function() {return splitTextToArray(self.serial_emergencyCommands(), ",", true) },
-                    externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
-                    alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
-                    neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
-                    ignoreErrorsFromFirmware: function() { return self.serial_serialErrorBehaviour() === "ignore"},
-                    disconnectOnErrors: function() { return self.serial_serialErrorBehaviour() === "disconnect" }
+                    additionalPorts: function () {
+                        return commentableLinesToArray(self.serial_additionalPorts());
+                    },
+                    additionalBaudrates: function () {
+                        return _.map(
+                            splitTextToArray(
+                                self.serial_additionalBaudrates(),
+                                ",",
+                                true,
+                                function (item) {
+                                    return !isNaN(parseInt(item));
+                                }
+                            ),
+                            function (item) {
+                                return parseInt(item);
+                            }
+                        );
+                    },
+                    blacklistedPorts: function () {
+                        return commentableLinesToArray(self.serial_blacklistedPorts());
+                    },
+                    blacklistedBaudrates: function () {
+                        return _.map(
+                            splitTextToArray(
+                                self.serial_blacklistedBaudrates(),
+                                ",",
+                                true,
+                                function (item) {
+                                    return !isNaN(parseInt(item));
+                                }
+                            ),
+                            function (item) {
+                                return parseInt(item);
+                            }
+                        );
+                    },
+                    longRunningCommands: function () {
+                        return splitTextToArray(
+                            self.serial_longRunningCommands(),
+                            ",",
+                            true
+                        );
+                    },
+                    checksumRequiringCommands: function () {
+                        return splitTextToArray(
+                            self.serial_checksumRequiringCommands(),
+                            ",",
+                            true
+                        );
+                    },
+                    blockedCommands: function () {
+                        return splitTextToArray(self.serial_blockedCommands(), ",", true);
+                    },
+                    pausingCommands: function () {
+                        return splitTextToArray(self.serial_pausingCommands(), ",", true);
+                    },
+                    emergencyCommands: function () {
+                        return splitTextToArray(
+                            self.serial_emergencyCommands(),
+                            ",",
+                            true
+                        );
+                    },
+                    externalHeatupDetection: function () {
+                        return !self.serial_disableExternalHeatupDetection();
+                    },
+                    alwaysSendChecksum: function () {
+                        return self.serial_sendChecksum() === "always";
+                    },
+                    neverSendChecksum: function () {
+                        return self.serial_sendChecksum() === "never";
+                    },
+                    ignoreErrorsFromFirmware: function () {
+                        return self.serial_serialErrorBehaviour() === "ignore";
+                    },
+                    disconnectOnErrors: function () {
+                        return self.serial_serialErrorBehaviour() === "disconnect";
+                    }
                 },
                 scripts: {
-                    gcode: function() {
+                    gcode: function () {
                         // we have a special handler function for the gcode scripts since the
                         // server will always send us those that have been set already, so we
                         // can't depend on all keys that we support to be present in the
@@ -852,8 +1091,10 @@ $(function() {
                         // is done!
                         var result = {};
                         var prefix = "scripts_gcode_";
-                        var observables = _.filter(_.keys(self), function(key) { return _.startsWith(key, prefix); });
-                        _.each(observables, function(observable) {
+                        var observables = _.filter(_.keys(self), function (key) {
+                            return _.startsWith(key, prefix);
+                        });
+                        _.each(observables, function (observable) {
                             var script = observable.substring(prefix.length);
                             result[script] = self[observable]();
                         });
@@ -861,15 +1102,29 @@ $(function() {
                     }
                 },
                 temperature: {
-                    profiles: function() {
+                    profiles: function () {
                         var result = [];
-                        _.each(self.temperature_profiles(), function(profile) {
+                        _.each(self.temperature_profiles(), function (profile) {
                             try {
                                 result.push({
                                     name: profile.name,
-                                    extruder: Math.floor(_.isNumber(profile.extruder) ? profile.extruder : parseInt(profile.extruder)),
-                                    bed: Math.floor(_.isNumber(profile.bed) ? profile.bed : parseInt(profile.bed)),
-                                    chamber: Math.floor(_.isNumber(profile.chamber) ? profile.chamber : (_.isNumber(parseInt(profile.chamber)) ? parseInt(profile.chamber) : 0))
+                                    extruder: Math.floor(
+                                        _.isNumber(profile.extruder)
+                                            ? profile.extruder
+                                            : parseInt(profile.extruder)
+                                    ),
+                                    bed: Math.floor(
+                                        _.isNumber(profile.bed)
+                                            ? profile.bed
+                                            : parseInt(profile.bed)
+                                    ),
+                                    chamber: Math.floor(
+                                        _.isNumber(profile.chamber)
+                                            ? profile.chamber
+                                            : _.isNumber(parseInt(profile.chamber))
+                                            ? parseInt(profile.chamber)
+                                            : 0
+                                    )
                                 });
                             } catch (ex) {
                                 // ignore
@@ -880,12 +1135,12 @@ $(function() {
                 }
             };
 
-            var mapFromObservables = function(data, mapping, keyPrefix) {
+            var mapFromObservables = function (data, mapping, keyPrefix) {
                 var flag = false;
                 var result = {};
 
                 // process all key-value-pairs here
-                _.forOwn(data, function(value, key) {
+                _.forOwn(data, function (value, key) {
                     var observable = key;
                     if (keyPrefix != undefined) {
                         observable = keyPrefix + "_" + observable;
@@ -901,7 +1156,11 @@ $(function() {
                         flag = true;
                     } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
-                        var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
+                        var subresult = mapFromObservables(
+                            value,
+                            mapping && mapping[key] ? mapping[key] : undefined,
+                            observable
+                        );
                         if (subresult != undefined) {
                             // we only set something on our result if we got something back
                             result[key] = subresult;
@@ -920,11 +1179,11 @@ $(function() {
             // map local observables based on our existing data
             var dataFromObservables = mapFromObservables(data, specialMappings);
 
-            data = _.extend(data, dataFromObservables);
+            data = _.merge(data, dataFromObservables);
             return data;
         };
 
-        self.fromResponse = function(response, local) {
+        self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
 
@@ -933,9 +1192,15 @@ $(function() {
 
             if (local) {
                 // local is true, so we'll keep all local changes and only update what's been updated server side
-                serverChangedData = getOnlyChangedData(response, self.lastReceivedSettings);
-                clientChangedData = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
-            } else  {
+                serverChangedData = getOnlyChangedData(
+                    response,
+                    self.lastReceivedSettings
+                );
+                clientChangedData = getOnlyChangedData(
+                    self.getLocalData(),
+                    self.lastReceivedSettings
+                );
+            } else {
                 // local is false or unset, so we'll forcefully update with the settings from the server
                 serverChangedData = response;
                 clientChangedData = undefined;
@@ -953,7 +1218,7 @@ $(function() {
             // some special apply functions for various observables
             var specialMappings = {
                 appearance: {
-                    defaultLanguage: function(value) {
+                    defaultLanguage: function (value) {
                         self.appearance_defaultLanguage("_default");
                         if (_.includes(self.locale_languages, value)) {
                             self.appearance_defaultLanguage(value);
@@ -961,37 +1226,79 @@ $(function() {
                     }
                 },
                 feature: {
-                    autoUppercaseBlacklist: function(value) { self.feature_autoUppercaseBlacklist(value.join(", "))}
+                    autoUppercaseBlacklist: function (value) {
+                        self.feature_autoUppercaseBlacklist(value.join(", "));
+                    }
                 },
                 serial: {
-                    additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
-                    additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
-                    blacklistedPorts : function(value) { self.serial_blacklistedPorts(value.join("\n"))},
-                    blacklistedBaudrates: function(value) { self.serial_blacklistedBaudrates(value.join(", "))},
-                    longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
-                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
-                    blockedCommands: function(value) { self.serial_blockedCommands(value.join(", "))},
-                    pausingCommands: function(value) { self.serial_pausingCommands(value.join(", "))},
-                    emergencyCommands: function(value) { self.serial_emergencyCommands(value.join(", "))},
-                    externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
-                    alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
-                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},
-                    ignoreErrorsFromFirmware: function(value) { if (value) {self.serial_serialErrorBehaviour("ignore")}},
-                    disconnectOnErrors: function(value) { if (value) {self.serial_serialErrorBehaviour("disconnect")}}
+                    additionalPorts: function (value) {
+                        self.serial_additionalPorts(value.join("\n"));
+                    },
+                    additionalBaudrates: function (value) {
+                        self.serial_additionalBaudrates(value.join(", "));
+                    },
+                    blacklistedPorts: function (value) {
+                        self.serial_blacklistedPorts(value.join("\n"));
+                    },
+                    blacklistedBaudrates: function (value) {
+                        self.serial_blacklistedBaudrates(value.join(", "));
+                    },
+                    longRunningCommands: function (value) {
+                        self.serial_longRunningCommands(value.join(", "));
+                    },
+                    checksumRequiringCommands: function (value) {
+                        self.serial_checksumRequiringCommands(value.join(", "));
+                    },
+                    blockedCommands: function (value) {
+                        self.serial_blockedCommands(value.join(", "));
+                    },
+                    pausingCommands: function (value) {
+                        self.serial_pausingCommands(value.join(", "));
+                    },
+                    emergencyCommands: function (value) {
+                        self.serial_emergencyCommands(value.join(", "));
+                    },
+                    externalHeatupDetection: function (value) {
+                        self.serial_disableExternalHeatupDetection(!value);
+                    },
+                    alwaysSendChecksum: function (value) {
+                        if (value) {
+                            self.serial_sendChecksum("always");
+                        }
+                    },
+                    neverSendChecksum: function (value) {
+                        if (value) {
+                            self.serial_sendChecksum("never");
+                        }
+                    },
+                    ignoreErrorsFromFirmware: function (value) {
+                        if (value) {
+                            self.serial_serialErrorBehaviour("ignore");
+                        }
+                    },
+                    disconnectOnErrors: function (value) {
+                        if (value) {
+                            self.serial_serialErrorBehaviour("disconnect");
+                        }
+                    }
                 },
-                terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
+                terminalFilters: function (value) {
+                    self.terminalFilters($.extend(true, [], value));
+                },
                 temperature: {
-                    profiles: function(value) { self.temperature_profiles($.extend(true, [], value)); }
+                    profiles: function (value) {
+                        self.temperature_profiles($.extend(true, [], value));
+                    }
                 }
             };
 
-            var mapToObservables = function(data, mapping, local, keyPrefix) {
+            var mapToObservables = function (data, mapping, local, keyPrefix) {
                 if (!_.isPlainObject(data)) {
                     return;
                 }
 
                 // process all key-value-pairs here
-                _.forOwn(data, function(value, key) {
+                _.forOwn(data, function (value, key) {
                     var observable = key;
                     if (keyPrefix != undefined) {
                         observable = keyPrefix + "_" + observable;
@@ -1004,12 +1311,22 @@ $(function() {
 
                     var haveLocalVersion = local && local.hasOwnProperty(key);
 
-                    if (mapping && mapping[key] && _.isFunction(mapping[key]) && !haveLocalVersion) {
+                    if (
+                        mapping &&
+                        mapping[key] &&
+                        _.isFunction(mapping[key]) &&
+                        !haveLocalVersion
+                    ) {
                         // if we have a custom apply function for this, we'll use it
                         mapping[key](value);
                     } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
-                        mapToObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, (local && local[key]) ? local[key] : undefined, observable);
+                        mapToObservables(
+                            value,
+                            mapping && mapping[key] ? mapping[key] : undefined,
+                            local && local[key] ? local[key] : undefined,
+                            observable
+                        );
                     } else if (!haveLocalVersion && self.hasOwnProperty(observable)) {
                         // if we have a matching observable, we'll use that
                         self[observable](value);
@@ -1027,7 +1344,7 @@ $(function() {
             self.fromResponse(self.lastReceivedSettings);
 
             self.hide();
-        }
+        };
 
         self.saveData = function (data, successCallback, setAsSending) {
             var options;
@@ -1036,23 +1353,32 @@ $(function() {
             } else {
                 options = {
                     success: successCallback,
-                    sending: (setAsSending == true)
-                }
+                    sending: setAsSending === true
+                };
             }
 
             self.settingsDialog.trigger("beforeSave");
 
             self.sawUpdateEventWhileSending = false;
-            self.sending(data == undefined || options.sending || false);
+            self.sending(data === undefined || options.sending || false);
 
-            if (data == undefined) {
+            if (data === undefined) {
                 // we also only send data that actually changed when no data is specified
-                data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
+                var localData = self.getLocalData();
+                data = getOnlyChangedData(localData, self.lastReceivedSettings);
+            }
+
+            // final validation
+            if (self.testFoldersDuplicate()) {
+                // duplicate folders configured, we refuse to send any folder config
+                // to the server
+                delete data.folder;
             }
 
             self.active = true;
-            return OctoPrint.settings.save(data)
-                .done(function(data, status, xhr) {
+            return OctoPrint.settings
+                .save(data)
+                .done(function (data, status, xhr) {
                     self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
                     self.active = false;
 
@@ -1066,27 +1392,32 @@ $(function() {
                         self.receiving(false);
                     }
                 })
-                .fail(function(xhr, status, error) {
+                .fail(function (xhr, status, error) {
                     self.sending(false);
                     self.active = false;
                     if (options.error) options.error(xhr, status, error);
                 })
-                .always(function(xhr, status) {
+                .always(function (xhr, status) {
                     if (options.complete) options.complete(xhr, status);
                 });
         };
 
-        self.onEventSettingsUpdated = function() {
+        self.onEventSettingsUpdated = function () {
             if (self.active) {
                 self.sawUpdateEventWhileActive = true;
             }
 
-            var preventSettingsRefresh = _.any(self.allViewModels, function(viewModel) {
+            var preventSettingsRefresh = _.any(self.allViewModels, function (viewModel) {
                 if (viewModel.hasOwnProperty("onSettingsPreventRefresh")) {
                     try {
                         return viewModel["onSettingsPreventRefresh"]();
                     } catch (e) {
-                        log.warn("Error while calling onSettingsPreventRefresh on", viewModel, ":", e);
+                        log.warn(
+                            "Error while calling onSettingsPreventRefresh on",
+                            viewModel,
+                            ":",
+                            e
+                        );
                         return false;
                     }
                 } else {
@@ -1101,7 +1432,12 @@ $(function() {
 
             if (self.isDialogActive()) {
                 // dialog is open and not currently busy...
-                if (self.sending() || self.receiving() || self.active || self.ignoreNextUpdateEvent) {
+                if (
+                    self.sending() ||
+                    self.receiving() ||
+                    self.active ||
+                    self.ignoreNextUpdateEvent
+                ) {
                     self.ignoreNextUpdateEvent = false;
                     return;
                 }
@@ -1119,33 +1455,44 @@ $(function() {
             }
         };
 
-        self._resetScrollPosition = function() {
-            $('#settings_dialog_content', self.settingsDialog).scrollTop(0);
+        self._resetScrollPosition = function () {
+            $("#settings_dialog_content", self.settingsDialog).scrollTop(0);
 
             // also reset any contained tabs/pills/lists to first pane
-            $('#settings_dialog_content ul.nav-pills a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
-            $('#settings_dialog_content ul.nav-list a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
-            $('#settings_dialog_content ul.nav-tabs a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
+            $(
+                '#settings_dialog_content ul.nav-pills a[data-toggle="tab"]:first',
+                self.settingsDialog
+            ).tab("show");
+            $(
+                '#settings_dialog_content ul.nav-list a[data-toggle="tab"]:first',
+                self.settingsDialog
+            ).tab("show");
+            $(
+                '#settings_dialog_content ul.nav-tabs a[data-toggle="tab"]:first',
+                self.settingsDialog
+            ).tab("show");
         };
 
-        self.selectTab = function(tab) {
+        self.selectTab = function (tab) {
             if (tab != undefined) {
                 if (!_.startsWith(tab, "#")) {
                     tab = "#" + tab;
                 }
                 $('ul.nav-list a[href="' + tab + '"]', self.settingsDialog).tab("show");
             } else {
-                $('ul.nav-list a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
+                $('ul.nav-list a[data-toggle="tab"]:first', self.settingsDialog).tab(
+                    "show"
+                );
             }
         };
 
-        self.onServerReconnect = function() {
+        self.onServerReconnect = function () {
             // the settings might have changed if the server was just restarted,
             // better refresh them now
             self.requestData();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             // we might have other user rights now, refresh (but only if startup has fully completed)
             if (!self._startupComplete) return;
             self.requestData();
@@ -1154,7 +1501,13 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SettingsViewModel,
-        dependencies: ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "accessViewModel",
+            "printerProfilesViewModel",
+            "aboutViewModel",
+            "usersViewModel"
+        ],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
 });

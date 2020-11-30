@@ -1,4 +1,8 @@
-<form class="form-horizontal">
+<div class="alert alert-block">
+    <strong>{{ _('Note: ') }}</strong>{{ _('Changing most of these settings requires restarting the connection with your printer for your changes to become effective.') }}
+</div>
+
+<form class="form-horizontal" onsubmit="return false;">
     <ul class="nav nav-pills">
         <li class="active"><a href="#settings_serial_general" data-toggle="tab">{{ _('General') }}</a></li>
         <li><a href="#settings_serial_timeouts" data-toggle="tab">{{ _('Intervals &amp; timeouts') }}</a></li>
@@ -200,7 +204,7 @@
                     </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_timeouts_timeouts .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group" title="{{ _('Time to wait after opening the serial connection before starting baudrate detection')|edq }}">
                             <label class="control-label" for="settings-serialTimeoutBaudrateDetectionPause">{{ _('Initial baudrate detection pause') }}</label>
@@ -317,7 +321,7 @@
                     </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group">
                             <div class="controls">
@@ -404,7 +408,7 @@
                         <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.') }}</span>                    </div>
                 </div>
                 <div>
-                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
                         <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.')|edq }}">
                             <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
@@ -495,6 +499,41 @@
                         <input type="checkbox" data-bind="checked: serial_sanityCheckTools" id="settings-sanityCheckTools"> {{ _('Sanity check tool commands') }}  <span class="label label-important">{{ _('Warning') }}</span>
                         <span class="help-block">{{ _('If enabled, OctoPrint will not send tool commands to your printer that exceed the number of extruders configured in the active printer profile, or for which the firmware has reported an "invalid extruder" error. Only uncheck this if OctoPrint or your firmware mistakingly mark valid tools as invalid and be sure to investigate the reason for that, it might be a misconfiguration you need to correct for proper operation.') }}</span>
                     </label>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Display notifications for suppressed commands')}}</label>
+                    <div class="controls">
+                        <label class="radio">
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="info" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-info"> {{ _('Show notifications of severity "info" and "warning"') }}
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="warn" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-warn"> {{ _('Show notifications of severity "warning"') }}
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="notifySuppressedCommandsGroup" value="never" data-bind="checked: settings.serial.notifySuppressedCommands" id="settings-serialNotifySuppressedCommands-never"> {{ _('Never show notifications') }}
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Resend Tracking') }}</legend>
+                <div class="control-group" title="{{ _('Resend ratio threshold. Percentage of resend requests among all sent lines to consider critical.')|edq }}">
+                    <label class="control-label" for="settings-serialResendRatioThreshold">{{ _('Critical resend ratio') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" min="0" max="100" step="1" class="input-mini text-right" id="settings-serialResendRatioThreshold" data-bind="value: serial_resendRatioThreshold">
+                            <span class="add-on">%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group" title="{{ _('Start tracking resend request after these many transmitted lines.')|edq }}">
+                    <label class="control-label" for="settings-serialResendRatioStart">{{ _('Tracking start') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="1" class="input-mini text-right" id="settings-serialResendRatioStart" data-bind="value: serial_resendRatioStart">
+                            <span class="add-on">lines</span>
+                        </div>
+                    </div>
                 </div>
             </fieldset>
         </div>

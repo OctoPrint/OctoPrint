@@ -1,137 +1,152 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import click
-click.disable_unicode_literals_warning = True
 import logging
 import logging.config
 
-from octoprint.cli import pass_octoprint_ctx, OctoPrintContext, get_ctx_obj_option
+import click
+
+from octoprint.cli import OctoPrintContext, get_ctx_obj_option, pass_octoprint_ctx
 from octoprint.util import dict_merge
 
+click.disable_unicode_literals_warning = True
 LOGGING_CONFIG = {
-	"version": 1,
-	"formatters": {
-		"brief": {
-			"format": "%(message)s"
-		}
-	},
-	"handlers": {
-		"console": {
-			"class": "logging.StreamHandler",
-			"formatter": "brief",
-			"stream": "ext://sys.stdout"
-		}
-	},
-	"loggers": {
-		"octoprint.plugin.core": {
-			"level": logging.ERROR
-		}
-	},
-	"root": {
-		"level": logging.WARNING
-	}
+    "version": 1,
+    "formatters": {"brief": {"format": "%(message)s"}},
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "brief",
+            "stream": "ext://sys.stdout",
+        }
+    },
+    "loggers": {"octoprint.plugin.core": {"level": logging.ERROR}},
+    "root": {"level": logging.WARNING},
 }
 
-#~~ "octoprint plugin:command" commands
+# ~~ "octoprint plugin:command" commands
+
 
 class OctoPrintPluginCommands(click.MultiCommand):
-	"""
-	Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
-	implementation that collects commands from the plugin hook
-	:ref:`octoprint.cli.commands <sec-plugins-hook-cli-commands>`.
+    """
+    Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
+    implementation that collects commands from the plugin hook
+    :ref:`octoprint.cli.commands <sec-plugins-hook-cli-commands>`.
 
-	.. attribute:: settings
+    .. attribute:: settings
 
-	   The global :class:`~octoprint.settings.Settings` instance.
+       The global :class:`~octoprint.settings.Settings` instance.
 
-	.. attribute:: plugin_manager
+    .. attribute:: plugin_manager
 
-	   The :class:`~octoprint.plugin.core.PluginManager` instance.
-	"""
+       The :class:`~octoprint.plugin.core.PluginManager` instance.
+    """
 
-	sep = ":"
+    sep = ":"
 
-	def __init__(self, *args, **kwargs):
-		click.MultiCommand.__init__(self, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        click.MultiCommand.__init__(self, *args, **kwargs)
 
-		self.settings = None
-		self.plugin_manager = None
-		self.hooks = dict()
+        self.settings = None
+        self.plugin_manager = None
+        self.hooks = {}
 
-		self._logger = logging.getLogger(__name__)
-		self._initialized = False
+        self._logger = logging.getLogger(__name__)
+        self._initialized = False
 
-	def _initialize(self, ctx):
-		if self._initialized:
-			return
+    def _initialize(self, ctx):
+        if self._initialized:
+            return
 
-		click.echo("Initializing settings & plugin subsystem...")
-		if ctx.obj is None:
-			ctx.obj = OctoPrintContext()
+        click.echo("Initializing settings & plugin subsystem...")
+        if ctx.obj is None:
+            ctx.obj = OctoPrintContext()
 
-		logging_config = dict_merge(LOGGING_CONFIG, dict(root=dict(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARNING)))
-		logging.config.dictConfig(logging_config)
+        logging_config = dict_merge(
+            LOGGING_CONFIG,
+            {
+                "root": {
+                    "level": logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARNING
+                }
+            },
+        )
+        logging.config.dictConfig(logging_config)
 
-		# initialize settings and plugin manager based on provided
-		# context (basedir and configfile)
-		from octoprint import init_settings, init_pluginsystem, FatalStartupError
-		try:
-			self.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
-			self.plugin_manager = init_pluginsystem(self.settings,
-			                                        safe_mode=get_ctx_obj_option(ctx, "safe_mode", False))
-		except FatalStartupError as e:
-			click.echo(e.message, err=True)
-			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)
-			ctx.exit(-1)
+        # initialize settings and plugin manager based on provided
+        # context (basedir and configfile)
+        from octoprint import FatalStartupError, init_pluginsystem, init_settings
 
-		# fetch registered hooks
-		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
+        try:
+            self.settings = init_settings(
+                get_ctx_obj_option(ctx, "basedir", None),
+                get_ctx_obj_option(ctx, "configfile", None),
+            )
+            self.plugin_manager = init_pluginsystem(
+                self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
+            )
+        except FatalStartupError as e:
+            click.echo(str(e), err=True)
+            click.echo(
+                "There was a fatal error initializing the settings or the plugin system.",
+                err=True,
+            )
+            ctx.exit(-1)
 
-		self._initialized = True
+        # fetch registered hooks
+        self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
 
-	def list_commands(self, ctx):
-		self._initialize(ctx)
-		result = [name for name in self._get_commands()]
-		result.sort()
-		return result
+        self._initialized = True
 
-	def get_command(self, ctx, cmd_name):
-		self._initialize(ctx)
-		commands = self._get_commands()
-		return commands.get(cmd_name, None)
+    def list_commands(self, ctx):
+        self._initialize(ctx)
+        result = [name for name in self._get_commands()]
+        result.sort()
+        return result
 
-	def _get_commands(self):
-		"""Fetch all commands from plugins providing any."""
+    def get_command(self, ctx, cmd_name):
+        self._initialize(ctx)
+        commands = self._get_commands()
+        return commands.get(cmd_name, None)
 
-		import collections
-		result = collections.OrderedDict()
+    def _get_commands(self):
+        """Fetch all commands from plugins providing any."""
 
-		for name, hook in self.hooks.items():
-			try:
-				commands = hook(self, pass_octoprint_ctx)
-				for command in commands:
-					if not isinstance(command, click.Command):
-						self._logger.warning("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
-						continue
-					result[name + self.sep + command.name] = command
-			except Exception:
-				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name),
-				                       extra=dict(plugin=name))
+        import collections
 
-		return result
+        result = collections.OrderedDict()
+
+        for name, hook in self.hooks.items():
+            try:
+                commands = hook(self, pass_octoprint_ctx)
+                for command in commands:
+                    if not isinstance(command, click.Command):
+                        self._logger.warning(
+                            "Plugin {} provided invalid CLI command, ignoring it: {!r}".format(
+                                name, command
+                            )
+                        )
+                        continue
+                    result[name + self.sep + command.name] = command
+            except Exception:
+                self._logger.exception(
+                    "Error while retrieving cli commands for plugin {}".format(name),
+                    extra={"plugin": name},
+                )
+
+        return result
+
 
 @click.group()
 @pass_octoprint_ctx
 def plugin_commands(obj):
-	pass
+    pass
+
 
 @plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
 def plugins():
-	"""Additional commands provided by plugins."""
-	pass
-
+    """Additional commands provided by plugins."""
+    pass

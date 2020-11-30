@@ -10,3 +10,4 @@ Configuration
    yaml.rst
    config_yaml.rst
    logging_yaml.rst
+   cli.rst

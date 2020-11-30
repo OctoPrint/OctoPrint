@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function ConnectionViewModel(parameters) {
         var self = this;
 
@@ -7,17 +7,17 @@ $(function() {
         self.printerProfiles = parameters[2];
         self.access = parameters[3];
 
-        self.printerProfiles.profiles.items.subscribe(function() {
+        self.printerProfiles.profiles.items.subscribe(function () {
             var allProfiles = self.printerProfiles.profiles.items();
 
             var printerOptions = [];
-            _.each(allProfiles, function(profile) {
+            _.each(allProfiles, function (profile) {
                 printerOptions.push({id: profile.id, name: profile.name});
             });
             self.printerOptions(printerOptions);
         });
 
-        self.printerProfiles.currentProfile.subscribe(function() {
+        self.printerProfiles.currentProfile.subscribe(function () {
             self.selectedPrinter(self.printerProfiles.currentProfile());
         });
 
@@ -38,27 +38,24 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
-        self.buttonText = ko.pureComputed(function() {
-            if (self.isErrorOrClosed())
-                return gettext("Connect");
-            else
-                return gettext("Disconnect");
+        self.buttonText = ko.pureComputed(function () {
+            if (self.isErrorOrClosed()) return gettext("Connect");
+            else return gettext("Disconnect");
         });
 
         self.previousIsOperational = undefined;
 
         self.refreshVisible = ko.observable(true);
 
-        self.requestData = function() {
+        self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
 
-            OctoPrint.connection.getSettings()
-                .done(self.fromResponse);
+            OctoPrint.connection.getSettings().done(self.fromResponse);
         };
 
-        self.fromResponse = function(response) {
+        self.fromResponse = function (response) {
             var ports = response.options.ports;
             var baudrates = response.options.baudrates;
             var currentPort = response.current.port;
@@ -97,15 +94,15 @@ $(function() {
             self.saveSettings(false);
         };
 
-        self.fromHistoryData = function(data) {
+        self.fromHistoryData = function (data) {
             self._processStateData(data.state);
         };
 
-        self.fromCurrentData = function(data) {
+        self.fromCurrentData = function (data) {
             self._processStateData(data.state);
         };
 
-        self.openOrCloseOnStateChange = function(force) {
+        self.openOrCloseOnStateChange = function (force) {
             if (!self._startupComplete && !force) return;
 
             var connectionTab = $("#connection");
@@ -118,7 +115,7 @@ $(function() {
             }
         };
 
-        self._processStateData = function(data) {
+        self._processStateData = function (data) {
             self.previousIsOperational = self.isOperational();
 
             self.isErrorOrClosed(data.flags.closedOrError);
@@ -136,23 +133,21 @@ $(function() {
             }
         };
 
-        self.connect = function() {
+        self.connect = function () {
             if (self.isErrorOrClosed()) {
                 var data = {
-                    "port": self.selectedPort() || "AUTO",
-                    "baudrate": self.selectedBaudrate() || 0,
-                    "printerProfile": self.selectedPrinter(),
-                    "autoconnect": self.settings.serial_autoconnect()
+                    port: self.selectedPort() || "AUTO",
+                    baudrate: self.selectedBaudrate() || 0,
+                    printerProfile: self.selectedPrinter(),
+                    autoconnect: self.settings.serial_autoconnect()
                 };
 
-                if (self.saveSettings())
-                    data["save"] = true;
+                if (self.saveSettings()) data["save"] = true;
 
-                OctoPrint.connection.connect(data)
-                    .done(function() {
-                        self.settings.requestData();
-                        self.settings.printerProfiles.requestData();
-                    });
+                OctoPrint.connection.connect(data).done(function () {
+                    self.settings.requestData();
+                    self.settings.printerProfiles.requestData();
+                });
             } else {
                 if (!self.isPrinting() && !self.isPaused()) {
                     self.requestData();
@@ -160,58 +155,67 @@ $(function() {
                 } else {
                     showConfirmationDialog({
                         title: gettext("Are you sure?"),
-                        message: gettext("<p><strong>You are about to disconnect from the printer while a print "
-                            + "is in progress.</strong></p>"
-                            + "<p>Disconnecting while a print is in progress will prevent OctoPrint from "
-                            + "completing the print. If you're printing from an SD card attached directly "
-                            + "to the printer, any attempt to restart OctoPrint or reconnect to the printer "
-                            + "could interrupt the print.<p>"),
-                        question: gettext("Are you sure you want to disconnect from the printer?"),
+                        message: gettext(
+                            "<p><strong>You are about to disconnect from the printer while a print " +
+                                "is in progress.</strong></p>" +
+                                "<p>Disconnecting while a print is in progress will prevent OctoPrint from " +
+                                "completing the print. If you're printing from an SD card attached directly " +
+                                "to the printer, any attempt to restart OctoPrint or reconnect to the printer " +
+                                "could interrupt the print.<p>"
+                        ),
+                        question: gettext(
+                            "Are you sure you want to disconnect from the printer?"
+                        ),
                         cancel: gettext("Stay Connected"),
                         proceed: gettext("Disconnect"),
-                        onproceed:  function() {
+                        onproceed: function () {
                             self.requestData();
                             OctoPrint.connection.disconnect();
                         }
-                    })
+                    });
                 }
             }
         };
 
-        self.onEventSettingsUpdated = function() {
+        self.onEventSettingsUpdated = function () {
             self.requestData();
         };
 
-        self.onEventConnected = function() {
+        self.onEventConnected = function () {
             self.requestData();
         };
 
-        self.onEventDisconnected = function() {
+        self.onEventDisconnected = function () {
             self.requestData();
         };
 
-        self.onStartup = function() {
+        self.onStartup = function () {
             var connectionTab = $("#connection");
-            connectionTab.on("show", function() {
+            connectionTab.on("show", function () {
                 self.refreshVisible(true);
             });
-            connectionTab.on("hide", function() {
+            connectionTab.on("hide", function () {
                 self.refreshVisible(false);
             });
         };
 
-        self.onStartupComplete = function() {
+        self.onStartupComplete = function () {
             self.openOrCloseOnStateChange(true);
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
         };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ConnectionViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel", "accessViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "settingsViewModel",
+            "printerProfilesViewModel",
+            "accessViewModel"
+        ],
         elements: ["#connection_wrapper"]
     });
 });

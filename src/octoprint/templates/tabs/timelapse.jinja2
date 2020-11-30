@@ -6,7 +6,7 @@
 
         <h1>{{ _('Timelapse Configuration') }}</h1>
 
-        <form class="form-horizontal">
+        <form class="form-horizontal" onsubmit="return false;">
             <div class="control-group">
                 <label class="control-label" for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
                 <div class="controls">
@@ -114,17 +114,17 @@
 
 <div class="pull-right">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-wrench"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fas fa-wrench"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('date'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'date' ? 'visible' : 'hidden'}"></i> {{ _('Sort by date') }} ({{ _('descending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('date'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'date' ? 'visible' : 'hidden'}"></i> {{ _('Sort by date') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         </ul>
     </div>
 </div>
 <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu">
             <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
             <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
@@ -148,7 +148,7 @@
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { $parent.removeFile($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)() }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)()}, attr: { href: ($root.loginState.hasPermission($root.access.permissions.TIMELAPSE_DOWNLOAD)) ? $data.url : 'javascript:void(0)' }"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="far fa-trash-alt" data-bind="click: function() { $parent.removeFile($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)() }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fas fa-download" data-bind="css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)()}, attr: { href: ($root.loginState.hasPermission($root.access.permissions.TIMELAPSE_DOWNLOAD)) ? $data.url : 'javascript:void(0)' }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fas fa-camera" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a></td>
     </tr>
     </tbody>
 </table>
@@ -166,11 +166,11 @@
 
 
 <div data-bind="visible: unrenderedListHelper.allSize">
-    <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
+    <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fas fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
         <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
             <div class="btn-group">
-                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fas fa-square"></i> <span class="caret"></span></button>
                 <ul class="dropdown-menu">
                     <li><a href="javascript:void(0)" data-bind="click: markUnrenderedOnPage">{{ _('Select all on this page') }}</a></li>
                     <li><a href="javascript:void(0)" data-bind="click: markAllUnrendered">{{ _('Select all') }}</a></li>
@@ -197,8 +197,8 @@
                 <td class="timelapse_unrendered_count" data-bind="text: count"></td>
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
-                    <span data-bind="visible: processing"><i class="fa fa-refresh fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fa fa-video-camera" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
+                    <span data-bind="visible: processing"><i class="fas fa-sync fa-spin"></i></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fas fa-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
                 </td>
             </tr>
             </tbody>

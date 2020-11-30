@@ -20,7 +20,7 @@
 
     <div class="pull-left">
         <div class="btn-group">
-            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
             <ul class="dropdown-menu">
                 <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
                 <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
@@ -46,7 +46,7 @@
             <td class="settings_plugin_backup_name" data-bind="text: name"></td>
             <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_plugin_backup_size" data-bind="text: formatSize(size)"></td>
-            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download')|edq }}" class="fa fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore')|edq }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()"><i class="fa fa-refresh"></i></a></span></td>
+            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download')|edq }}" class="fas fa-download" data-bind="attr: {href: url}"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore')|edq }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"><i class="fas fa-sync"></i></a></span></td>
         </tr>
         </tbody>
     </table>
@@ -67,7 +67,7 @@
 
 <p>{{ _('Create a new backup of the current state.') }}</p>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
@@ -86,7 +86,7 @@
 
     <div class="control-group">
         <div class="controls">
-            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fa fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
         </div>
     </div>
 </form>

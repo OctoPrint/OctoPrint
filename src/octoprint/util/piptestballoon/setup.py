@@ -20,36 +20,41 @@ import io
 import os
 import sys
 
+
 def produce_output(stream):
-	from distutils.command.install import install as cmd_install
-	from distutils.dist import Distribution
+    from distutils.command.install import install as cmd_install
+    from distutils.dist import Distribution
 
-	cmd = cmd_install(Distribution())
-	cmd.finalize_options()
+    cmd = cmd_install(Distribution())
+    cmd.finalize_options()
 
-	install_dir = cmd.install_lib
-	virtual_env = hasattr(sys, "real_prefix")
-	writable = os.access(install_dir, os.W_OK)
+    install_dir = cmd.install_lib
+    virtual_env = hasattr(sys, "real_prefix") or (
+        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
+    )
+    writable = os.access(install_dir, os.W_OK)
 
-	lines = ["PIP_INSTALL_DIR={}".format(install_dir),
-	         "PIP_VIRTUAL_ENV={}".format(virtual_env),
-	         "PIP_WRITABLE={}".format(writable)]
+    lines = [
+        "PIP_INSTALL_DIR={}".format(install_dir),
+        "PIP_VIRTUAL_ENV={}".format(virtual_env),
+        "PIP_WRITABLE={}".format(writable),
+    ]
 
-	for line in lines:
-		print(line, file=stream)
+    for line in lines:
+        print(line, file=stream)
 
-	stream.flush()
+    stream.flush()
 
 
 path = os.environ.get("TESTBALLOON_OUTPUT", None)
 if path is not None:
-	# environment variable set, write to a log
-	path = os.path.abspath(path)
-	with io.open(path, 'wt+', encoding='utf-8') as output:
-		produce_output(output)
+    # environment variable set, write to a log
+    path = os.path.abspath(path)
+    with io.open(path, "wt+", encoding="utf-8") as output:
+        produce_output(output)
 else:
-	# write to stdout
-	produce_output(sys.stdout)
+    # write to stdout
+    produce_output(sys.stdout)
 
 # fail intentionally
 sys.exit(-1)

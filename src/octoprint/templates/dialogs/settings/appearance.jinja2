@@ -1,4 +1,4 @@
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group" title="{{ _('Name of this OctoPrint instance, will be shown in the navigation bar and broadcast on the network')|edq }}">
         <label class="control-label" for="settings-appearanceName">{{ _('Title') }}</label>
         <div class="controls">
@@ -64,6 +64,13 @@
             </label>
         </div>
     </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: appearance_showInternalFilename" id="settings-appearanceShowInternalFilename"> {{ _('Show internal filename in the files sidebar (if available)') }}
+            </label>
+        </div>
+    </div>
 </form>
 
 <div id="settings_appearance_managelanguagesdialog" class="modal hide fade">
@@ -76,7 +83,7 @@
             <strong>{{ _('There is currently no central repository for language packs like there is for plugins - any help to change that is appreciated!') }}</strong>
         </p>
         <p>
-            {{ _('Until a repository is available, please see <a href="%(url)s" target="_blank" >the wiki</a> for language packs provided by the community.', url = "https://github.com/OctoPrint/OctoPrint/wiki#language-packs") }}
+            {{ _('Until a repository is available, please see <a href="%(url)s" target="_blank" >the wiki</a> for language packs provided by the community.', url = "https://community.octoprint.org/t/translating-octoprint/21144") }}
         </p>
 
         <h4>{{ _('Available Language Packs') }}</h4>
@@ -84,7 +91,7 @@
         <div data-bind="visible: languagePacksAvailable()">
             <div id="settings_appearance_managelanguagesdialog_list" data-bind="foreach: translations.paginatedItems">
                 <div class="entry">
-                    <strong><a href="#" class="fa" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fa fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
+                    <strong><a href="#" class="fas" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fas fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
                     <div class="packs">
                         <!-- ko foreach: $data.packs -->
                         <div class="row-fluid">
@@ -93,7 +100,7 @@
                                 <small data-bind="visible: pack.last_update" class="muted">{{ _('Last update:') }} <span data-bind="text: formatDate($data.pack.last_update)"></span></small>
                             </div>
                             <div class="span3">
-                                <button class="btn btn-block btn-small" data-bind="click: function() {$root.deleteLanguagePack($data.pack.locale, $data.identifier)}"><i class="fa fa-trash-o"></i> {{ _('Delete') }}</button>
+                                <button class="btn btn-block btn-small" data-bind="click: function() {$root.deleteLanguagePack($data.pack.locale, $data.identifier)}"><i class="far fa-trash-alt"></i> {{ _('Delete') }}</button>
                             </div>
                         </div>
                         <!-- /ko -->
@@ -111,7 +118,7 @@
 
         <h4>{{ _('Upload additional Language Packs') }}</h4>
 
-        <form class="form-inline">
+        <form class="form-inline" onsubmit="return false;">
             <div class="control-group row-fluid" data-bind="css: {error: invalidTranslationArchive}">
                 <div class="input-prepend span9">
                     <span class="btn fileinput-button">

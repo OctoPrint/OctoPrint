@@ -5,6 +5,7 @@ on:
     types: [opened, sychronize, reopened]
   release:
     types: [published, prereleased]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -30,6 +31,70 @@ jobs:
           name: dist
           path: dist
 
+  lint-black:
+    name: 🧹 black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run black
+        run: |
+          pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
+
+  lint-prettier:
+    name: 🧹 prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run prettier
+        run: |
+          pre-commit run --hook-stage manual prettier --all-files --show-diff-on-failure
+
+  lint-isort:
+    name: 🧹 isort
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run isort
+        run: |
+          pre-commit run --hook-stage manual isort --all-files --show-diff-on-failure
+
+  lint-flake8:
+    name: 🧹 Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run flake8
+        run: |
+          pre-commit run --hook-stage manual flake8 --all-files
+
   test-unit:
     name: 🧪 Unit tests
     strategy:
@@ -48,22 +113,6 @@ jobs:
       - name: 🚀 Run test suite
         run: |
           pytest
-
-  test-flake8:
-    name: 🧪 Flake8
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: 🏗 Set up test dependencies
-        run: |
-          pip install -e .[develop]
-      - name: 🚀 Run test suite
-        run: |
-          flake8 src/ tests setup.py
 
   test-install:
     name: 🧪 Installation tests
@@ -123,8 +172,8 @@ jobs:
         with:
           working-directory: tests/cypress
           browser: chrome
-          start: 'octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000'
-          wait-on: 'http://127.0.0.1:5000/online.txt'
+          start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
+          wait-on: "http://127.0.0.1:5000/online.txt"
 
       - name: ⬆ Upload screenshots
         uses: actions/upload-artifact@v1
@@ -143,6 +192,10 @@ jobs:
     name: 📦 Publish on TestPyPI
     if: github.event_name == 'release'
     needs:
+      - lint-black
+      - lint-prettier
+      - lint-isort
+      - lint-flake8
       - test-unit
       - test-install
       - test-e2e

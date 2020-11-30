@@ -2,17 +2,17 @@
 
 <div class="pull-right">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-wrench"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fas fa-wrench"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('modification'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'modification' ? 'visible' : 'hidden'}"></i> {{ _('Sort by modification date') }} ({{ _('descending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('modification'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'modification' ? 'visible' : 'hidden'}"></i> {{ _('Sort by modification date') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fas fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         </ul>
     </div>
 </div>
 <div class="pull-left">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu">
             <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
             <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
@@ -63,7 +63,7 @@
 </div>
 
 <h3>{{ _('Logging Levels') }}</h3>
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
 
     <div class="row-fluid">
         <div class="span8"><h5>{{ _('Name') }}</h5></div>

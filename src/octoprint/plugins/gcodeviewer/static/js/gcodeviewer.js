@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function GcodeViewModel(parameters) {
         var self = this;
 
@@ -11,15 +11,23 @@ $(function() {
 
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
-        self.ui_progress_text = ko.pureComputed(function() {
+        self.ui_progress_text = ko.pureComputed(function () {
             var text = "";
             switch (self.ui_progress_type()) {
                 case "loading": {
-                    text = gettext("Loading...") + " (" + self.ui_progress_percentage().toFixed(0) + "%)";
+                    text =
+                        gettext("Loading...") +
+                        " (" +
+                        self.ui_progress_percentage().toFixed(0) +
+                        "%)";
                     break;
                 }
                 case "analyzing": {
-                    text = gettext("Analyzing...") + " (" + self.ui_progress_percentage().toFixed(0) + "%)";
+                    text =
+                        gettext("Analyzing...") +
+                        " (" +
+                        self.ui_progress_percentage().toFixed(0) +
+                        "%)";
                     break;
                 }
                 case "done": {
@@ -68,12 +76,18 @@ $(function() {
         self.layerUpEnabled = ko.observable(false);
         self.layerDownEnabled = ko.observable(false);
 
-        self.synchronizeOptionsAndReload = function(additionalRendererOptions, additionalReaderOptions) {
+        self.synchronizeOptionsAndReload = function (
+            additionalRendererOptions,
+            additionalReaderOptions
+        ) {
             self.synchronizeOptions(additionalRendererOptions, additionalReaderOptions);
             self.reload();
         };
 
-        self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
+        self.synchronizeOptions = function (
+            additionalRendererOptions,
+            additionalReaderOptions
+        ) {
             var renderer = {
                 moveModel: self.renderer_centerModel(),
                 centerViewport: self.renderer_centerViewport(),
@@ -82,7 +96,9 @@ $(function() {
                 showHead: self.renderer_showPrinthead(),
                 showBoundingBox: self.renderer_showBoundingBox(),
                 showFullSize: self.renderer_showFullSize(),
-                extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
+                extrusionWidth: self.renderer_extrusionWidthEnabled()
+                    ? self.renderer_extrusionWidth()
+                    : 1,
                 showNextLayer: self.renderer_showNext(),
                 showCurrentLayer: self.renderer_showCurrent(),
                 showPreviousLayer: self.renderer_showPrevious(),
@@ -96,7 +112,7 @@ $(function() {
             var reader = {
                 sortLayers: self.reader_sortLayers(),
                 purgeEmptyLayers: self.reader_hideEmptyLayers(),
-                ignoreOutsideBed: self.reader_ignoreOutsideBed(),
+                ignoreOutsideBed: self.reader_ignoreOutsideBed()
             };
             if (additionalReaderOptions) {
                 _.extend(reader, additionalReaderOptions);
@@ -108,12 +124,12 @@ $(function() {
             });
         };
 
-        self.rendererOptionUpdated = function() {
+        self.rendererOptionUpdated = function () {
             self.synchronizeOptions();
             self._toLocalStorage();
         };
 
-        self.readerOptionUpdated = function() {
+        self.readerOptionUpdated = function () {
             self.synchronizeOptionsAndReload();
             self._toLocalStorage();
         };
@@ -137,7 +153,7 @@ $(function() {
         self.reader_hideEmptyLayers.subscribe(self.readerOptionUpdated);
         self.reader_ignoreOutsideBed.subscribe(self.readerOptionUpdated);
 
-        self._printerProfileUpdated = function() {
+        self._printerProfileUpdated = function () {
             if (!self.enabled) return;
 
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -168,27 +184,43 @@ $(function() {
         };
 
         // subscribe to relevant printer settings...
-        self.settings.printerProfiles.currentProfileData.subscribe(function() {
+        self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._printerProfileUpdated();
             if (self.settings.printerProfiles.currentProfileData()) {
                 if (self.settings.printerProfiles.currentProfileData().extruder) {
-                    self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
-                    self.settings.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
-                    self.settings.printerProfiles.currentProfileData().extruder.offsets.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .extruder.count.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .extruder.offsets.subscribe(self._printerProfileUpdated);
                 }
                 if (self.settings.printerProfiles.currentProfileData().volume) {
-                    self.settings.printerProfiles.currentProfileData().volume.width.subscribe(self._printerProfileUpdated);
-                    self.settings.printerProfiles.currentProfileData().volume.depth.subscribe(self._printerProfileUpdated);
-                    self.settings.printerProfiles.currentProfileData().volume.formFactor.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .volume.width.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .volume.depth.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .volume.formFactor.subscribe(self._printerProfileUpdated);
                 }
                 if (self.settings.printerProfiles.currentProfileData().axes) {
-                    self.settings.printerProfiles.currentProfileData().axes.x.inverted.subscribe(self._printerProfileUpdated);
-                    self.settings.printerProfiles.currentProfileData().axes.y.inverted.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .axes.x.inverted.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .axes.y.inverted.subscribe(self._printerProfileUpdated);
                 }
             }
         });
 
-        self.settings.feature_g90InfluencesExtruder.subscribe(function() {
+        self.settings.feature_g90InfluencesExtruder.subscribe(function () {
             GCODE.ui.updateOptions({
                 reader: {
                     g90InfluencesExtruder: self.settings.feature_g90InfluencesExtruder()
@@ -196,13 +228,23 @@ $(function() {
             });
         });
 
-        self._retrieveBedDimensions = function(currentProfileData) {
+        self._retrieveBedDimensions = function (currentProfileData) {
             if (currentProfileData === undefined) {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
-            if (currentProfileData && currentProfileData.volume && currentProfileData.volume.formFactor() && currentProfileData.volume.width() && currentProfileData.volume.depth()) {
-                var x = undefined, y = undefined, r = undefined, circular = false, centeredOrigin = false;
+            if (
+                currentProfileData &&
+                currentProfileData.volume &&
+                currentProfileData.volume.formFactor() &&
+                currentProfileData.volume.width() &&
+                currentProfileData.volume.depth()
+            ) {
+                var x = undefined,
+                    y = undefined,
+                    r = undefined,
+                    circular = false,
+                    centeredOrigin = false;
 
                 var formFactor = currentProfileData.volume.formFactor();
                 if (formFactor === "circular") {
@@ -229,32 +271,35 @@ $(function() {
             }
         };
 
-        self._retrieveToolOffsets = function(currentProfileData) {
+        self._retrieveToolOffsets = function (currentProfileData) {
             if (currentProfileData == undefined) {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
             if (currentProfileData && currentProfileData.extruder) {
                 var offsets = [];
-                if (currentProfileData.extruder.offsets() && !currentProfileData.extruder.sharedNozzle()) {
-                    _.each(currentProfileData.extruder.offsets(), function(offset) {
-                        offsets.push({x: offset[0], y: offset[1]})
+                if (
+                    currentProfileData.extruder.offsets() &&
+                    !currentProfileData.extruder.sharedNozzle()
+                ) {
+                    _.each(currentProfileData.extruder.offsets(), function (offset) {
+                        offsets.push({x: offset[0], y: offset[1]});
                     });
                 }
                 return offsets;
             } else {
                 return undefined;
             }
-
         };
 
-        self._retrieveAxesConfiguration = function(currentProfileData) {
+        self._retrieveAxesConfiguration = function (currentProfileData) {
             if (currentProfileData == undefined) {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
             if (currentProfileData && currentProfileData.axes) {
-                var invertX = false, invertY = false;
+                var invertX = false,
+                    invertY = false;
                 if (currentProfileData.axes.x) {
                     invertX = currentProfileData.axes.x.inverted();
                 }
@@ -265,7 +310,7 @@ $(function() {
                 return {
                     x: invertX,
                     y: invertY
-                }
+                };
             } else {
                 return undefined;
             }
@@ -273,7 +318,7 @@ $(function() {
 
         self.loadedFilepath = undefined;
         self.loadedFileDate = undefined;
-        self.status = 'idle';
+        self.status = "idle";
         self.enabled = false;
 
         self.currentlyPrinting = false;
@@ -287,52 +332,61 @@ $(function() {
         self.currentCommand = undefined;
         self.maxLayer = undefined;
 
-        self.initialize = function() {
-            self.sizeThresholdStr = sizeObservable(self.settings.settings.plugins.gcodeviewer.sizeThreshold);
-            self.mobileSizeThresholdStr = sizeObservable(self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold);
+        self.initialize = function () {
+            self.sizeThresholdStr = sizeObservable(
+                self.settings.settings.plugins.gcodeviewer.sizeThreshold
+            );
+            self.mobileSizeThresholdStr = sizeObservable(
+                self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold
+            );
 
             var layerSliderElement = $("#gcode_slider_layers");
             var commandSliderElement = $("#gcode_slider_commands");
             var containerElement = $("#gcode_canvas");
 
-            if (!(layerSliderElement.length && commandSliderElement.length && containerElement.length)) {
+            if (
+                !(
+                    layerSliderElement.length &&
+                    commandSliderElement.length &&
+                    containerElement.length
+                )
+            ) {
                 return;
             }
 
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.firstRequest
-                .done(function() {
-                    var initResult = GCODE.ui.init({
-                        container: "#gcode_canvas",
-                        onProgress: self._onProgress,
-                        onModelLoaded: self._onModelLoaded,
-                        onLayerSelected: self._onLayerSelected,
-                        bed: self._retrieveBedDimensions(),
-                        toolOffsets: self._retrieveToolOffsets(),
-                        invertAxes: self._retrieveAxesConfiguration()
-                    });
-
-                    if (!initResult) {
-                        log.info("Could not initialize GCODE viewer component");
-                        return;
-                    }
-
-                    self.synchronizeOptions();
-                    self.enabled = true;
-                    self._fromLocalStorage();
+            self.settings.firstRequest.done(function () {
+                var initResult = GCODE.ui.init({
+                    container: "#gcode_canvas",
+                    onProgress: self._onProgress,
+                    onModelLoaded: self._onModelLoaded,
+                    onLayerSelected: self._onLayerSelected,
+                    bed: self._retrieveBedDimensions(),
+                    toolOffsets: self._retrieveToolOffsets(),
+                    invertAxes: self._retrieveAxesConfiguration()
                 });
+
+                if (!initResult) {
+                    log.info("Could not initialize GCODE viewer component");
+                    return;
+                }
+
+                self.synchronizeOptions();
+                self.enabled = true;
+                self._fromLocalStorage();
+            });
         };
 
-        self.reset = function() {
+        self.reset = function () {
             self.enableReload(false);
             self.loadedFilepath = undefined;
             self.loadedFileDate = undefined;
             self.clear();
         };
 
-        self.resetOptions = function() {
+        self.resetOptions = function () {
             self.renderer_centerModel(false);
             self.renderer_centerViewport(false);
             self.renderer_zoomOnModel(false);
@@ -353,46 +407,59 @@ $(function() {
             self.reader_ignoreOutsideBed(true);
         };
 
-        self.clear = function() {
+        self.clear = function () {
             GCODE.ui.clear();
         };
 
-        self._configureLayerSlider = function(layerSliderElement) {
-            self.layerSlider = layerSliderElement.slider({
-                id: "gcode_layer_slider",
-                reversed: true,
-                selection: "after",
-                orientation: "vertical",
-                min: 0,
-                max: 1,
-                step: 1,
-                value: 0,
-                enabled: false,
-                formatter: function(value) { return "Layer #" + (value + 1) + " (Z = " + GCODE.renderer.getZ(value) + ")"; }
-            }).on("slide", self.changeLayer);
+        self._configureLayerSlider = function (layerSliderElement) {
+            self.layerSlider = layerSliderElement
+                .slider({
+                    id: "gcode_layer_slider",
+                    reversed: true,
+                    selection: "after",
+                    orientation: "vertical",
+                    min: 0,
+                    max: 1,
+                    step: 1,
+                    value: 0,
+                    enabled: false,
+                    formatter: function (value) {
+                        return (
+                            "Layer #" +
+                            (value + 1) +
+                            " (Z = " +
+                            GCODE.renderer.getZ(value) +
+                            ")"
+                        );
+                    }
+                })
+                .on("slide", self.changeLayer);
         };
 
-        self._configureLayerCommandSlider = function(commandSliderElement) {
-            self.layerCommandSlider = commandSliderElement.slider({
-                id: "gcode_command_slider",
-                orientation: "horizontal",
-                min: 0,
-                max: 1,
-                step: 1,
-                value: [0, 1],
-                enabled: false,
-                tooltip: "hide"
-            }).on("slide", self.changeCommandRange);
+        self._configureLayerCommandSlider = function (commandSliderElement) {
+            self.layerCommandSlider = commandSliderElement
+                .slider({
+                    id: "gcode_command_slider",
+                    orientation: "horizontal",
+                    min: 0,
+                    max: 1,
+                    step: 1,
+                    value: [0, 1],
+                    enabled: false,
+                    tooltip: "hide"
+                })
+                .on("slide", self.changeCommandRange);
         };
 
-        self.loadFile = function(path, date){
+        self.loadFile = function (path, date) {
             self.enableReload(false);
             self.needsLoad = false;
             if (self.status === "idle" && self.errorCount < 3) {
                 self.status = "request";
-                OctoPrint.files.download("local", path)
-                    .done(function(response, rstatus) {
-                        if(rstatus === 'success'){
+                OctoPrint.files
+                    .download("local", path)
+                    .done(function (response, rstatus) {
+                        if (rstatus === "success") {
                             self.showGCodeViewer(response, rstatus);
                             self.loadedFilepath = path;
                             self.loadedFileDate = date;
@@ -400,14 +467,14 @@ $(function() {
                             self.enableReload(true);
                         }
                     })
-                    .fail(function() {
+                    .fail(function () {
                         self.status = "idle";
                         self.errorCount++;
                     });
             }
         };
 
-        self.showGCodeViewer = function(response, rstatus) {
+        self.showGCodeViewer = function (response, rstatus) {
             var par = {
                 target: {
                     result: response
@@ -424,20 +491,20 @@ $(function() {
             }
         };
 
-        self.reload = function() {
+        self.reload = function () {
             if (!self.enableReload()) return;
             self.loadFile(self.loadedFilepath, self.loadedFileDate);
         };
 
-        self.fromHistoryData = function(data) {
+        self.fromHistoryData = function (data) {
             self._processData(data);
         };
 
-        self.fromCurrentData = function(data) {
+        self.fromCurrentData = function (data) {
             self._processData(data);
         };
 
-        self._renderPercentage = function(percentage) {
+        self._renderPercentage = function (percentage) {
             var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(percentage);
             if (!cmdIndex) return;
 
@@ -452,8 +519,11 @@ $(function() {
             }
         };
 
-        self._processData = function(data) {
-            if (!data.job.file || !data.job.file.path && (self.loadedFilepath || self.loadedFileDate)) {
+        self._processData = function (data) {
+            if (
+                !data.job.file ||
+                (!data.job.file.path && (self.loadedFilepath || self.loadedFileDate))
+            ) {
                 self.waitForApproval(false);
 
                 self.loadedFilepath = undefined;
@@ -466,26 +536,46 @@ $(function() {
                 return;
             }
             if (!self.enabled) return;
-            self.currentlyPrinting = data.state.flags && (data.state.flags.printing || data.state.flags.paused);
+            self.currentlyPrinting =
+                data.state.flags &&
+                (data.state.flags.printing || data.state.flags.paused);
 
-            if(self.loadedFilepath
-                    && self.loadedFilepath === data.job.file.path
-                    && self.loadedFileDate === data.job.file.date) {
-                if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+            if (
+                self.loadedFilepath &&
+                self.loadedFilepath === data.job.file.path &&
+                self.loadedFileDate === data.job.file.date
+            ) {
+                if (
+                    OctoPrint.coreui.browserTabVisible &&
+                    self.tabActive &&
+                    self.currentlyPrinting &&
+                    self.renderer_syncProgress() &&
+                    !self.waitForApproval()
+                ) {
                     self._renderPercentage(data.progress.completion);
                 }
-                self.errorCount = 0
+                self.errorCount = 0;
             } else {
                 self.clear();
-                if (data.job.file.path && data.job.file.origin !== "sdcard"
-                        && self.status !== "request"
-                        && (!self.waitForApproval() || self.selectedFile.path() !== data.job.file.path || self.selectedFile.date() !== data.job.file.date)) {
+                if (
+                    data.job.file.path &&
+                    data.job.file.origin !== "sdcard" &&
+                    self.status !== "request" &&
+                    (!self.waitForApproval() ||
+                        self.selectedFile.path() !== data.job.file.path ||
+                        self.selectedFile.date() !== data.job.file.date)
+                ) {
                     self.selectedFile.path(data.job.file.path);
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);
 
-                    if (data.job.file.size > self.settings.settings.plugins.gcodeviewer.sizeThreshold()
-                        || (OctoPrint.coreui.browser.mobile && data.job.file.size > self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold())) {
+                    if (
+                        data.job.file.size >
+                            self.settings.settings.plugins.gcodeviewer.sizeThreshold() ||
+                        (OctoPrint.coreui.browser.mobile &&
+                            data.job.file.size >
+                                self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold())
+                    ) {
                         self.waitForApproval(true);
                         self.loadedFilepath = undefined;
                         self.loadedFileDate = undefined;
@@ -501,23 +591,23 @@ $(function() {
             }
         };
 
-        self.onEventPrintDone = function() {
+        self.onEventPrintDone = function () {
             if (self.renderer_syncProgress() && !self.waitForApproval()) {
                 self._renderPercentage(100.0);
             }
         };
 
-        self.approveLargeFile = function() {
+        self.approveLargeFile = function () {
             self.waitForApproval(false);
             self.loadFile(self.selectedFile.path(), self.selectedFile.date());
         };
 
-        self._onProgress = function(type, percentage) {
+        self._onProgress = function (type, percentage) {
             self.ui_progress_type(type);
             self.ui_progress_percentage(percentage);
         };
 
-        self._onModelLoaded = function(model) {
+        self._onModelLoaded = function (model) {
             if (!model) {
                 self.ui_modelInfo("");
                 if (self.layerSlider !== undefined) {
@@ -532,10 +622,32 @@ $(function() {
                 self.maxLayer = 0;
             } else {
                 var output = [];
-                output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
-                output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
-                output.push(gettext("Estimated total print time") + ": " + formatFuzzyPrintTime(model.printTime));
-                output.push(gettext("Layers with extrusion") + ": " + model.layersPrinted.toFixed(0));
+                output.push(
+                    gettext("Model size") +
+                        ": " +
+                        model.width.toFixed(2) +
+                        "mm &times; " +
+                        model.depth.toFixed(2) +
+                        "mm &times; " +
+                        model.height.toFixed(2) +
+                        "mm"
+                );
+                output.push(
+                    gettext("Estimated layer height") +
+                        ": " +
+                        model.layerHeight.toFixed(2) +
+                        gettext("mm")
+                );
+                output.push(
+                    gettext("Estimated total print time") +
+                        ": " +
+                        formatFuzzyPrintTime(model.printTime)
+                );
+                output.push(
+                    gettext("Layers with extrusion") +
+                        ": " +
+                        model.layersPrinted.toFixed(0)
+                );
 
                 self.ui_modelInfo(output.join("<br>"));
 
@@ -551,7 +663,7 @@ $(function() {
             }
         };
 
-        self._onLayerSelected = function(layer) {
+        self._onLayerSelected = function (layer) {
             if (!layer) {
                 self.ui_layerInfo("");
                 if (self.layerCommandSlider !== undefined) {
@@ -570,16 +682,34 @@ $(function() {
                 output.push(gettext("GCODE commands") + ": " + layer.commands);
                 if (layer.filament !== undefined) {
                     if (layer.filament.length === 1) {
-                        output.push(gettext("Filament") + ": " + layer.filament[0].toFixed(2) + "mm");
+                        output.push(
+                            gettext("Filament") +
+                                ": " +
+                                layer.filament[0].toFixed(2) +
+                                "mm"
+                        );
                     } else {
                         for (var i = 0; i < layer.filament.length; i++) {
                             if (layer.filament[i] !== undefined) {
-                                output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                                output.push(
+                                    gettext("Filament") +
+                                        " (" +
+                                        gettext("Tool") +
+                                        " " +
+                                        i +
+                                        "): " +
+                                        layer.filament[i].toFixed(2) +
+                                        "mm"
+                                );
                             }
                         }
                     }
                 }
-                output.push(gettext("Estimated print time") + ": " + formatDuration(layer.printTime));
+                output.push(
+                    gettext("Estimated print time") +
+                        ": " +
+                        formatDuration(layer.printTime)
+                );
 
                 self.ui_layerInfo(output.join("<br>"));
 
@@ -594,23 +724,33 @@ $(function() {
             }
         };
 
-        self._onInternalRendererOptionChange = function(options) {
+        self._onInternalRendererOptionChange = function (options) {
             if (!options) return;
 
             for (var opt in options) {
                 if (!options.hasOwnProperty(opt)) continue;
-                if (opt === "zoomInOnModel" && options[opt] !== self.renderer_zoomOnModel()) {
+                if (
+                    opt === "zoomInOnModel" &&
+                    options[opt] !== self.renderer_zoomOnModel()
+                ) {
                     self.renderer_zoomOnModel(false);
-                } else if (opt === "centerViewport" && options[opt] !== self.renderer_centerViewport()) {
+                } else if (
+                    opt === "centerViewport" &&
+                    options[opt] !== self.renderer_centerViewport()
+                ) {
                     self.renderer_centerViewport(false);
-                } else if (opt === "moveModel" && options[opt] !== self.renderer_centerModel()) {
+                } else if (
+                    opt === "moveModel" &&
+                    options[opt] !== self.renderer_centerModel()
+                ) {
                     self.renderer_centerModel(false);
                 }
             }
         };
 
-        self.changeLayer = function(event) {
-            if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
+        self.changeLayer = function (event) {
+            if (self.currentlyPrinting && self.renderer_syncProgress())
+                self.renderer_syncProgress(false);
 
             var value = event.value;
             if (self.currentLayer !== undefined && self.currentLayer === value) return;
@@ -619,20 +759,23 @@ $(function() {
             GCODE.ui.changeSelectedLayer(value);
         };
 
-        self.onMouseOver = function(data, event) {
+        self.onMouseOver = function (data, event) {
             if (!self.settings.feature_keyboardControl()) return;
             $("#canvas_container").focus();
-
         };
-        self.onMouseOut = function(data, event) {
+        self.onMouseOut = function (data, event) {
             if (!self.settings.feature_keyboardControl()) return;
             $("#canvas_container").blur();
         };
-        self.onKeyDown = function(data, event) {
-            if (!self.settings.feature_keyboardControl() || self.layerSlider === undefined) return;
+        self.onKeyDown = function (data, event) {
+            if (
+                !self.settings.feature_keyboardControl() ||
+                self.layerSlider === undefined
+            )
+                return;
 
             var value = self.currentLayer;
-            switch(event.which){
+            switch (event.which) {
                 case 33: // Pg up
                     value = value + 10; // No need to check against max this is done by the Slider anyway
                     break;
@@ -649,112 +792,117 @@ $(function() {
             self.shiftLayer(value);
         };
 
-        self.changeCommandRange = function(event) {
-            if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
+        self.changeCommandRange = function (event) {
+            if (self.currentlyPrinting && self.renderer_syncProgress())
+                self.renderer_syncProgress(false);
 
             var tuple = event.value;
-            if (self.currentCommand !== undefined && self.currentCommand[0] === tuple[0] && self.currentCommand[1] === tuple[1]) return;
+            if (
+                self.currentCommand !== undefined &&
+                self.currentCommand[0] === tuple[0] &&
+                self.currentCommand[1] === tuple[1]
+            )
+                return;
             self.currentCommand = tuple;
 
-            GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
+            GCODE.ui.changeSelectedCommands(
+                self.layerSlider.slider("getValue"),
+                tuple[0],
+                tuple[1]
+            );
         };
 
-        self.onDataUpdaterReconnect = function() {
+        self.onDataUpdaterReconnect = function () {
             self.reset();
         };
 
-        self.onBeforeBinding = function() {
+        self.onBeforeBinding = function () {
             self.initialize();
         };
 
-        self.onTabChange = function(current, previous) {
+        self.onTabChange = function (current, previous) {
             self.tabActive = current === "#gcode";
             if (self.tabActive && self.needsLoad) {
                 self.loadFile(self.selectedFile.path(), self.selectedFile.date());
             }
         };
 
-        self.shiftLayer = function(value){
+        self.shiftLayer = function (value) {
             if (value !== self.currentLayer) {
-                self.layerSlider.slider('setValue', value);
-                value = self.layerSlider.slider('getValue');
+                self.layerSlider.slider("setValue", value);
+                value = self.layerSlider.slider("getValue");
                 //This sets the scroll bar to the appropriate position.
                 self.layerSlider
                     .trigger({
-                        type: 'slideStart',
+                        type: "slideStart",
                         value: value
                     })
                     .trigger({
-                        type: 'slide',
+                        type: "slide",
                         value: value
-                    }).trigger({
-                        type: 'slideStop',
+                    })
+                    .trigger({
+                        type: "slideStop",
                         value: value
                     });
             }
         };
 
-        self.incrementLayer = function() {
-            var value = self.layerSlider.slider('getValue') + 1;
+        self.incrementLayer = function () {
+            var value = self.layerSlider.slider("getValue") + 1;
             self.shiftLayer(value);
         };
 
-        self.decrementLayer = function() {
-            var value = self.layerSlider.slider('getValue') - 1;
+        self.decrementLayer = function () {
+            var value = self.layerSlider.slider("getValue") - 1;
             self.shiftLayer(value);
         };
 
         var optionsLocalStorageKey = "core.gcodeviewer.options";
-        self._toLocalStorage = function() {
-            if (!Modernizr.localstorage)
-                return;
-
-            var current = {};
-            current["centerViewport"] = self.renderer_centerViewport();
-            current["zoomOnModel"] = self.renderer_zoomOnModel();
-            current["showMoves"] = self.renderer_showMoves();
-            current["showRetracts"] = self.renderer_showRetracts();
-            current["showPrinthead"] = self.renderer_showPrinthead();
-            current["showPrevious"] = self.renderer_showPrevious();
-            current["showCurrent"] = self.renderer_showCurrent();
-            current["showNext"] = self.renderer_showNext();
-            current["showFullsize"] = self.renderer_showFullSize();
-            current["showBoundingBox"] = self.renderer_showBoundingBox();
-            current["hideEmptyLayers"] = self.reader_hideEmptyLayers();
-            current["sortLayers"] = self.reader_sortLayers();
-
-            localStorage[optionsLocalStorageKey] = JSON.stringify(current);
+        self._toLocalStorage = function () {
+            saveToLocalStorage(optionsLocalStorageKey, {
+                centerViewPort: self.renderer_centerViewport(),
+                zoomOnModel: self.renderer_zoomOnModel(),
+                showMoves: self.renderer_showMoves(),
+                showRetracts: self.renderer_showRetracts(),
+                showPrinthead: self.renderer_showPrinthead(),
+                showPrevious: self.renderer_showPrevious(),
+                showCurrent: self.renderer_showCurrent(),
+                showNext: self.renderer_showNext(),
+                showFullsize: self.renderer_showFullSize(),
+                showBoundingBox: self.renderer_showBoundingBox(),
+                hideEmptyLayers: self.reader_hideEmptyLayers(),
+                sortLayers: self.reader_sortLayers()
+            });
         };
-        self._fromLocalStorage = function() {
+        self._fromLocalStorage = function () {
             self.resetOptions();
 
-            if (!Modernizr.localstorage)
-                return;
-
-            var currentString = localStorage[optionsLocalStorageKey];
-            var current;
-            if (currentString === undefined) {
-                current = {};
-            } else {
-                try {
-                    current = JSON.parse(currentString);
-                } catch (ex) {
-                    current = {};
-                }
-            }
-
-            if (current["centerViewport"] !== undefined) self.renderer_centerViewport(current["centerViewport"]) ;
-            if (current["zoomOnModel"] !== undefined) self.renderer_zoomOnModel(current["zoomOnModel"]) ;
-            if (current["showMoves"] !== undefined) self.renderer_showMoves(current["showMoves"]) ;
-            if (current["showRetracts"] !== undefined) self.renderer_showRetracts(current["showRetracts"]) ;
-            if (current["showPrinthead"] !== undefined) self.renderer_showPrinthead(current["showPrinthead"]);
-            if (current["showPrevious"] !== undefined) self.renderer_showPrevious(current["showPrevious"]) ;
-            if (current["showCurrent"] !== undefined) self.renderer_showCurrent(current["showCurrent"]) ;
-            if (current["showNext"] !== undefined) self.renderer_showNext(current["showNext"]) ;
-            if (current["showFullsize"] !== undefined) self.renderer_showFullSize(current["showFullsize"]) ;
-            if (current["showBoundingBox"] !== undefined) self.renderer_showBoundingBox(current["showBoundingBox"]) ;
-            if (current["hideEmptyLayers"] !== undefined) self.reader_hideEmptyLayers(current["hideEmptyLayers"]) ;
-            if (current["sortLayers"] !== undefined) self.reader_sortLayers(current["sortLayers"]) ;
+            var current = loadFromLocalStorage(optionsLocalStorageKey);
+            if (current["centerViewport"] !== undefined)
+                self.renderer_centerViewport(current["centerViewport"]);
+            if (current["zoomOnModel"] !== undefined)
+                self.renderer_zoomOnModel(current["zoomOnModel"]);
+            if (current["showMoves"] !== undefined)
+                self.renderer_showMoves(current["showMoves"]);
+            if (current["showRetracts"] !== undefined)
+                self.renderer_showRetracts(current["showRetracts"]);
+            if (current["showPrinthead"] !== undefined)
+                self.renderer_showPrinthead(current["showPrinthead"]);
+            if (current["showPrevious"] !== undefined)
+                self.renderer_showPrevious(current["showPrevious"]);
+            if (current["showCurrent"] !== undefined)
+                self.renderer_showCurrent(current["showCurrent"]);
+            if (current["showNext"] !== undefined)
+                self.renderer_showNext(current["showNext"]);
+            if (current["showFullsize"] !== undefined)
+                self.renderer_showFullSize(current["showFullsize"]);
+            if (current["showBoundingBox"] !== undefined)
+                self.renderer_showBoundingBox(current["showBoundingBox"]);
+            if (current["hideEmptyLayers"] !== undefined)
+                self.reader_hideEmptyLayers(current["hideEmptyLayers"]);
+            if (current["sortLayers"] !== undefined)
+                self.reader_sortLayers(current["sortLayers"]);
         };
     }
 

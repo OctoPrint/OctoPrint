@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function ControlViewModel(parameters) {
         var self = this;
 
@@ -10,7 +10,7 @@ $(function() {
             return {
                 name: ko.observable(),
                 key: ko.observable()
-            }
+            };
         };
 
         self.isErrorOrClosed = ko.observable(undefined);
@@ -39,18 +39,26 @@ $(function() {
 
         self.webcamDisableTimeout = undefined;
         self.webcamLoaded = ko.observable(false);
+        self.webcamMjpgEnabled = ko.observable(false);
+        self.webcamHlsEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
         self.keycontrolPossible = ko.pureComputed(function () {
-            return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && !$.browser.mobile;
+            return (
+                self.loginState.hasPermission(self.access.permissions.CONTROL) &&
+                self.settings.feature_keyboardControl() &&
+                self.isOperational() &&
+                !self.isPrinting() &&
+                !$.browser.mobile
+            );
         });
         self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
         });
 
-        self.webcamRatioClass = ko.pureComputed(function() {
+        self.webcamRatioClass = ko.pureComputed(function () {
             if (self.settings.webcam_streamRatio() == "4:3") {
                 return "ratio43";
             } else {
@@ -60,12 +68,16 @@ $(function() {
 
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
-            self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._updateExtruderCount);
+            self.settings.printerProfiles
+                .currentProfileData()
+                .extruder.count.subscribe(self._updateExtruderCount);
         });
         self._updateExtruderCount = function () {
             var tools = [];
 
-            var numExtruders = self.settings.printerProfiles.currentProfileData().extruder.count();
+            var numExtruders = self.settings.printerProfiles
+                .currentProfileData()
+                .extruder.count();
             if (numExtruders > 1) {
                 // multiple extruders
                 for (var extruder = 0; extruder < numExtruders; extruder++) {
@@ -107,10 +119,10 @@ $(function() {
             self.requestData();
         };
 
-        self.onEventRegisteredMessageReceived = function(payload) {
+        self.onEventRegisteredMessageReceived = function (payload) {
             if (payload.key in self.feedbackControlLookup) {
                 var outputs = self.feedbackControlLookup[payload.key];
-                _.each(payload.outputs, function(value, key) {
+                _.each(payload.outputs, function (value, key) {
                     if (outputs.hasOwnProperty(key)) {
                         outputs[key](value);
                     }
@@ -120,7 +132,7 @@ $(function() {
 
         self.rerenderControls = function () {
             var allControls = self.controlsFromServer.concat(self.additionalControls);
-            self.controls(self._processControls(allControls))
+            self.controls(self._processControls(allControls));
         };
 
         self.requestData = function () {
@@ -128,10 +140,9 @@ $(function() {
                 return;
             }
 
-            OctoPrint.control.getCustomControls()
-                .done(function(response) {
-                    self._fromResponse(response);
-                });
+            OctoPrint.control.getCustomControls().done(function (response) {
+                self._fromResponse(response);
+            });
         };
 
         self._fromResponse = function (response) {
@@ -151,17 +162,32 @@ $(function() {
                 return control;
             }
 
-            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
+            if (
+                control.hasOwnProperty("template") &&
+                control.hasOwnProperty("key") &&
+                control.hasOwnProperty("template_key") &&
+                !control.hasOwnProperty("output")
+            ) {
                 control.output = ko.observable(control.default || "");
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
-                self.feedbackControlLookup[control.key][control.template_key] = control.output;
+                self.feedbackControlLookup[control.key][control.template_key] =
+                    control.output;
             }
 
             if (control.hasOwnProperty("children")) {
-                control.children = ko.observableArray(self._processControls(control.children));
-                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal" || control.layout == "horizontal_grid")) {
+                control.children = ko.observableArray(
+                    self._processControls(control.children)
+                );
+                if (
+                    !control.hasOwnProperty("layout") ||
+                    !(
+                        control.layout == "vertical" ||
+                        control.layout == "horizontal" ||
+                        control.layout == "horizontal_grid"
+                    )
+                ) {
                     control.layout = "vertical";
                 }
 
@@ -171,7 +197,7 @@ $(function() {
             }
 
             if (control.hasOwnProperty("input")) {
-                var attributeToInt = function(obj, key, def) {
+                var attributeToInt = function (obj, key, def) {
                     if (obj.hasOwnProperty(key)) {
                         var val = obj[key];
                         if (_.isNumber(val)) {
@@ -189,21 +215,42 @@ $(function() {
                 _.each(control.input, function (element) {
                     if (element.hasOwnProperty("slider") && _.isObject(element.slider)) {
                         element.slider["min"] = attributeToInt(element.slider, "min", 0);
-                        element.slider["max"] = attributeToInt(element.slider, "max", 255);
+                        element.slider["max"] = attributeToInt(
+                            element.slider,
+                            "max",
+                            255
+                        );
 
                         // try defaultValue, default to min
-                        var defaultValue = attributeToInt(element, "default", element.slider.min);
+                        var defaultValue = attributeToInt(
+                            element,
+                            "default",
+                            element.slider.min
+                        );
 
                         // if default value is not within range of min and max, correct that
-                        if (!_.inRange(defaultValue, element.slider.min, element.slider.max)) {
+                        if (
+                            !_.inRange(
+                                defaultValue,
+                                element.slider.min,
+                                element.slider.max
+                            )
+                        ) {
                             // use bound closer to configured default value
-                            defaultValue = defaultValue < element.slider.min ? element.slider.min : element.slider.max;
+                            defaultValue =
+                                defaultValue < element.slider.min
+                                    ? element.slider.min
+                                    : element.slider.max;
                         }
 
                         element.value = ko.observable(defaultValue);
                     } else {
                         element.slider = false;
-                        element.value = ko.observable((element.hasOwnProperty("default")) ? element["default"] : undefined);
+                        element.value = ko.observable(
+                            element.hasOwnProperty("default")
+                                ? element["default"]
+                                : undefined
+                        );
                     }
                 });
             }
@@ -226,7 +273,7 @@ $(function() {
                 if (!_.isFunction(enabled)) {
                     control.enabled = function (data) {
                         return eval(enabled);
-                    }
+                    };
                 }
             }
 
@@ -242,7 +289,10 @@ $(function() {
             if (data.hasOwnProperty("enabled")) {
                 return data.enabled(data);
             } else {
-                return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.isOperational();
+                return (
+                    self.loginState.hasPermission(self.access.permissions.CONTROL) &&
+                    self.isOperational()
+                );
             }
         };
 
@@ -267,9 +317,15 @@ $(function() {
         };
 
         self.sendJogCommand = function (axis, multiplier, distance) {
-            if (typeof distance === "undefined")
-                distance = self.distance();
-            if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
+            if (typeof distance === "undefined") distance = self.distance();
+            if (
+                self.settings.printerProfiles.currentProfileData() &&
+                self.settings.printerProfiles.currentProfileData()["axes"] &&
+                self.settings.printerProfiles.currentProfileData()["axes"][axis] &&
+                self.settings.printerProfiles
+                    .currentProfileData()
+                    ["axes"][axis]["inverted"]()
+            ) {
                 multiplier *= -1;
             }
 
@@ -285,24 +341,30 @@ $(function() {
         self.feedRateBusy = ko.observable(false);
         self.feedRateResetter = ko.observable();
         self.sendFeedRateCommand = function () {
-            var rate = _.parseInt(self.feedRate());
+            var rate = self.feedRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.feedRate());
             self.feedRateBusy(true);
-            OctoPrint.printer.setFeedrate(rate)
-                .done(function() {
+            OctoPrint.printer
+                .setFeedrate(rate)
+                .done(function () {
                     self.feedRate(undefined);
                 })
-                .always(function() {
+                .always(function () {
                     self.feedRateBusy(false);
                 });
         };
-        self.resetFeedRateDisplay = function() {
+        self.resetFeedRateDisplay = function () {
             self.cancelFeedRateDisplayReset();
-            self.feedRateResetter(setTimeout(function() {
-                self.feedRate(undefined);
-                self.feedRateResetter(undefined);
-            }, 5000));
+            self.feedRateResetter(
+                setTimeout(function () {
+                    self.feedRate(undefined);
+                    self.feedRateResetter(undefined);
+                }, 5000)
+            );
         };
-        self.cancelFeedRateDisplayReset = function() {
+        self.cancelFeedRateDisplayReset = function () {
             var resetter = self.feedRateResetter();
             if (resetter) {
                 clearTimeout(resetter);
@@ -321,24 +383,30 @@ $(function() {
         self.flowRateBusy = ko.observable(false);
         self.flowRateResetter = ko.observable();
         self.sendFlowRateCommand = function () {
-            var rate = _.parseInt(self.flowRate());
+            var rate = self.flowRate();
+            if (!rate) return;
+
+            rate = _.parseInt(self.flowRate());
             self.flowRateBusy(true);
-            OctoPrint.printer.setFlowrate(rate)
-                .done(function() {
+            OctoPrint.printer
+                .setFlowrate(rate)
+                .done(function () {
                     self.flowRate(undefined);
                 })
-                .always(function() {
+                .always(function () {
                     self.flowRateBusy(false);
                 });
         };
-        self.resetFlowRateDisplay = function() {
+        self.resetFlowRateDisplay = function () {
             self.cancelFlowRateDisplayReset();
-            self.flowRateResetter(setTimeout(function() {
-                self.flowRate(undefined);
-                self.flowRateResetter(undefined);
-            }, 5000));
+            self.flowRateResetter(
+                setTimeout(function () {
+                    self.flowRate(undefined);
+                    self.flowRateResetter(undefined);
+                }, 5000)
+            );
         };
-        self.cancelFlowRateDisplayReset = function() {
+        self.cancelFlowRateDisplayReset = function () {
             var resetter = self.flowRateResetter();
             if (resetter) {
                 clearTimeout(resetter);
@@ -347,7 +415,7 @@ $(function() {
         };
 
         self._sendECommand = function (dir) {
-            var length = self.extrusionAmount() || self.settings.printer_defaultExtrusionLength();
+            var length = self.extrusionAmount();
             OctoPrint.printer.extrude(length * dir);
         };
 
@@ -363,7 +431,10 @@ $(function() {
             var parameters = {};
             if (command.hasOwnProperty("input")) {
                 _.each(command.input, function (input) {
-                    if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
+                    if (
+                        !input.hasOwnProperty("parameter") ||
+                        !input.hasOwnProperty("value")
+                    ) {
                         return;
                     }
 
@@ -377,7 +448,11 @@ $(function() {
             } else if (command.hasOwnProperty("script")) {
                 var script = command.script;
                 var context = command.context || {};
-                OctoPrint.control.sendGcodeScriptWithParameters(script, context, parameters);
+                OctoPrint.control.sendGcodeScriptWithParameters(
+                    script,
+                    context,
+                    parameters
+                );
             }
         };
 
@@ -405,11 +480,11 @@ $(function() {
             return span + " " + offset;
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
         };
 
-        self._disableWebcam = function() {
+        self._disableWebcam = function () {
             // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
             // more load by the constant connection creation than by the actual webcam stream
 
@@ -426,38 +501,30 @@ $(function() {
             }, timeout * 1000);
         };
 
-        self._enableWebcam = function() {
-            if (OctoPrint.coreui.selectedTab != "#control" || !OctoPrint.coreui.browserTabVisible) {
+        self._enableWebcam = function () {
+            if (
+                OctoPrint.coreui.selectedTab != "#control" ||
+                !OctoPrint.coreui.browserTabVisible
+            ) {
                 return;
             }
 
             if (self.webcamDisableTimeout != undefined) {
                 clearTimeout(self.webcamDisableTimeout);
             }
-            var webcamImage = $("#webcam_image");
-            var currentSrc = webcamImage.attr("src");
 
-            // safari bug doesn't release the mjpeg stream, so we just set it up the once
-            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
-                return;
-            }
-
-            var newSrc = self.settings.webcam_streamUrl();
-            if (currentSrc != newSrc) {
-                if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
-                } else {
-                    newSrc += "?";
-                }
-                newSrc += new Date().getTime();
-
-                self.webcamLoaded(false);
-                self.webcamError(false);
-                webcamImage.attr("src", newSrc);
+            // Determine stream type and switch to corresponding webcam.
+            var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
+            if (streamType == "mjpg") {
+                self._switchToMjpgWebcam();
+            } else if (streamType == "hls") {
+                self._switchToHlsWebcam();
+            } else {
+                throw "Unknown stream type " + streamType;
             }
         };
 
-        self.onWebcamLoaded = function() {
+        self.onWebcamLoaded = function () {
             if (self.webcamLoaded()) return;
 
             log.debug("Webcam stream loaded");
@@ -465,7 +532,7 @@ $(function() {
             self.webcamError(false);
         };
 
-        self.onWebcamErrored = function() {
+        self.onWebcamErrored = function () {
             log.debug("Webcam stream failed to load/disabled");
             self.webcamLoaded(false);
             self.webcamError(true);
@@ -479,7 +546,7 @@ $(function() {
             }
         };
 
-        self.onBrowserTabVisibilityChange = function(status) {
+        self.onBrowserTabVisibilityChange = function (status) {
             if (status) {
                 self._enableWebcam();
             } else {
@@ -489,7 +556,7 @@ $(function() {
 
         self.onAllBound = function (allViewModels) {
             var additionalControls = [];
-            callViewModels(allViewModels, "getAdditionalControls", function(method) {
+            callViewModels(allViewModels, "getAdditionalControls", function (method) {
                 additionalControls = additionalControls.concat(method());
             });
             if (additionalControls.length > 0) {
@@ -497,6 +564,8 @@ $(function() {
                 self.rerenderControls();
             }
             self._enableWebcam();
+
+            self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
         };
 
         self.onFocus = function (data, event) {
@@ -604,10 +673,51 @@ $(function() {
             }
         };
 
-        self.stripDistanceDecimal = function(distance) {
+        self.stripDistanceDecimal = function (distance) {
             return distance.toString().replace(".", "");
         };
 
+        self._switchToMjpgWebcam = function () {
+            var webcamImage = $("#webcam_image");
+            var currentSrc = webcamImage.attr("src");
+
+            // safari bug doesn't release the mjpeg stream, so we just set it up the once
+            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
+                return;
+            }
+
+            var newSrc = self.settings.webcam_streamUrl();
+            if (currentSrc != newSrc) {
+                if (newSrc.lastIndexOf("?") > -1) {
+                    newSrc += "&";
+                } else {
+                    newSrc += "?";
+                }
+                newSrc += new Date().getTime();
+
+                self.webcamLoaded(false);
+                self.webcamError(false);
+                webcamImage.attr("src", newSrc);
+
+                self.webcamHlsEnabled(false);
+                self.webcamMjpgEnabled(true);
+            }
+        };
+
+        self._switchToHlsWebcam = function () {
+            var video = document.getElementById("webcam_hls");
+
+            if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                video.src = self.settings.webcam_streamUrl();
+            } else if (Hls.isSupported()) {
+                var hls = new Hls();
+                hls.loadSource(self.settings.webcam_streamUrl());
+                hls.attachMedia(video);
+            }
+
+            self.webcamMjpgEnabled(false);
+            self.webcamHlsEnabled(true);
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

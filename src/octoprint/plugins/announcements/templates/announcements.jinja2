@@ -28,7 +28,7 @@
                             <div class="content" data-bind="html: $data.summary"></div>
                             <div class="actions">
                                 <span class="articlelink"><small><a data-bind="text: $root.cleanedLink($data), attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
-                                <span class="markread"><small><a href="javascript:void(0)" data-bind="click: function() { $root.markRead($parent.key, $data.published, true) }"><i class="fa fa-eye"></i> {{ _('Mark as last read') }}</a></small></span>
+                                <span class="markread"><small><a href="javascript:void(0)" data-bind="click: function() { $root.markRead($parent.key, $data.published, true) }"><i class="far fa-eye"></i> {{ _('Mark as last read') }}</a></small></span>
                             </div>
                         </article>
                         <!-- /ko -->
@@ -40,7 +40,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn configurelink" data-bind="click: configureAnnouncements"><i class="fa fa-wrench"></i></button>
+        <button class="btn configurelink" data-bind="click: configureAnnouncements"><i class="fas fa-wrench"></i></button>
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>

@@ -4,11 +4,11 @@
     } else {
         factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrintClient) {
+})(this, function (OctoPrintClient) {
     var customUrl = "api/printer/command/custom";
     var commandUrl = "api/printer/command";
 
-    var OctoPrintControlClient = function(base) {
+    var OctoPrintControlClient = function (base) {
         this.base = base;
     };
 
@@ -16,7 +16,11 @@
         return this.base.get(customUrl, opts);
     };
 
-    OctoPrintControlClient.prototype.sendGcodeWithParameters = function(commands, parameters, opts) {
+    OctoPrintControlClient.prototype.sendGcodeWithParameters = function (
+        commands,
+        parameters,
+        opts
+    ) {
         commands = commands || [];
         parameters = parameters || {};
 
@@ -24,22 +28,35 @@
             commands = [commands];
         }
 
-        return this.base.postJson(commandUrl, {
-            commands: commands,
-            parameters: parameters
-        }, opts);
+        return this.base.postJson(
+            commandUrl,
+            {
+                commands: commands,
+                parameters: parameters
+            },
+            opts
+        );
     };
 
-    OctoPrintControlClient.prototype.sendGcodeScriptWithParameters = function(script, context, parameters, opts) {
+    OctoPrintControlClient.prototype.sendGcodeScriptWithParameters = function (
+        script,
+        context,
+        parameters,
+        opts
+    ) {
         script = script || "";
         context = context || {};
         parameters = parameters || {};
 
-        return this.base.postJson(commandUrl, {
-            script: script,
-            context: context,
-            parameters: parameters
-        }, opts);
+        return this.base.postJson(
+            commandUrl,
+            {
+                script: script,
+                context: context,
+                parameters: parameters
+            },
+            opts
+        );
     };
 
     OctoPrintControlClient.prototype.sendGcode = function (commands, opts) {
