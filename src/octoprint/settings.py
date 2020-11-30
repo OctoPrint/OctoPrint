@@ -221,7 +221,7 @@ default_settings = {
         "onlineCheck": {
             "enabled": None,
             "interval": 15 * 60,  # 15 min
-            "host": "8.8.8.8",
+            "host": "1.1.1.1",
             "port": 53,
             "name": "octoprint.org",
         },
