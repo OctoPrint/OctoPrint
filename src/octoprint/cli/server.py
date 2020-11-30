@@ -30,6 +30,7 @@ def run_server(
     safe_mode,
     ignore_blacklist,
     octoprint_daemon=None,
+    overlays=None,
 ):
     """Initializes the environment and starts up the server."""
 
@@ -110,6 +111,7 @@ def run_server(
         components = init_platform(
             basedir,
             configfile,
+            overlays=overlays,
             logging_file=logging_config,
             debug=debug,
             verbosity=verbosity,
@@ -257,6 +259,7 @@ def enable_safemode(ctx, **kwargs):
         settings = init_settings(
             get_ctx_obj_option(ctx, "basedir", None),
             get_ctx_obj_option(ctx, "configfile", None),
+            overlays=get_ctx_obj_option(ctx, "overlays", None),
         )
     except FatalStartupError as e:
         click.echo(str(e), err=True)
@@ -294,6 +297,7 @@ def serve_command(ctx, **kwargs):
     verbosity = get_value("verbosity")
     safe_mode = "flag" if get_value("safe_mode") else None
     ignore_blacklist = get_value("ignore_blacklist")
+    overlays = get_value("overlays")
 
     if v4 and not host:
         host = "0.0.0.0"
@@ -310,6 +314,7 @@ def serve_command(ctx, **kwargs):
         verbosity,
         safe_mode,
         ignore_blacklist,
+        overlays=overlays,
     )
 
 
@@ -347,6 +352,7 @@ if sys.platform != "win32" and sys.platform != "darwin":
 
         basedir = get_value("basedir")
         configfile = get_value("configfile")
+        overlays = get_value("overlays")
         verbosity = get_value("verbosity")
         safe_mode = "flag" if get_value("safe_mode") else None
         ignore_blacklist = get_value("ignore_blacklist")
@@ -366,6 +372,7 @@ if sys.platform != "win32" and sys.platform != "darwin":
                 pidfile,
                 basedir,
                 configfile,
+                overlays,
                 host,
                 port,
                 v6_only,
@@ -380,6 +387,7 @@ if sys.platform != "win32" and sys.platform != "darwin":
 
                 self._basedir = basedir
                 self._configfile = configfile
+                self._overlays = overlays
                 self._host = host
                 self._port = port
                 self._v6_only = v6_only
@@ -404,12 +412,14 @@ if sys.platform != "win32" and sys.platform != "darwin":
                     self._safe_mode,
                     self._ignore_blacklist,
                     octoprint_daemon=self,
+                    overlays=self._overlays,
                 )
 
         octoprint_daemon = OctoPrintDaemon(
             pid,
             basedir,
             configfile,
+            overlays,
             host,
             port,
             v6,

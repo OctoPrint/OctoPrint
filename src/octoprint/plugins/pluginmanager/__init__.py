@@ -393,6 +393,22 @@ class PluginManagerPlugin(
                     )
                 )
 
+    @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def export_plugin_list(self):
+        import json
+
+        import flask
+
+        plugins = self.generate_plugins_json(self._settings, self._plugin_manager)
+
+        return flask.Response(
+            json.dumps(plugins),
+            mimetype="text/plain",
+            headers={"Content-Disposition": 'attachment; filename="plugin_list.json"'},
+        )
+
     def is_blueprint_protected(self):
         return False
 
@@ -1740,6 +1756,24 @@ class PluginManagerPlugin(
 
         return result
 
+    @staticmethod
+    def generate_plugins_json(
+        settings, plugin_manager, ignore_bundled=True, ignore_plugins_folder=True
+    ):
+        plugins = []
+        plugin_folder = settings.getBaseFolder("plugins")
+        for plugin in plugin_manager.plugins.values():
+            if (ignore_bundled and plugin.bundled) or (
+                ignore_plugins_folder
+                and isinstance(plugin.origin, octoprint.plugin.core.FolderOrigin)
+                and plugin.origin.folder == plugin_folder
+            ):
+                # ignore bundled or from the plugins folder already included in the backup
+                continue
+
+            plugins.append({"key": plugin.key, "name": plugin.name, "url": plugin.url})
+        return plugins
+
     def _to_external_plugin(self, plugin):
         return {
             "key": plugin.key,
@@ -1882,4 +1916,9 @@ def __plugin_load__():
         "octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
         "octoprint.events.register_custom_events": _register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+    }
+
+    global __plugin_helpers__
+    __plugin_helpers__ = {
+        "generate_plugins_json": __plugin_implementation__.generate_plugins_json,
     }
