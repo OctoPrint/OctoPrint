@@ -14,5 +14,5 @@ jobs:
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: "release"
+          event-type: github.event.action
           client-payload: '{"tag_name": "${{ github.event.release.tag_name }}"}'
