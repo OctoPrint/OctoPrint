@@ -133,6 +133,7 @@
         </ul>
     </div>
     <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForFileDeletion().length > 0">{{ _('Delete selected') }}</button>
+    <button class="btn btn-small" data-bind="click: downloadMarkedFiles, enable: markedForFileDeletion().length > 0">{{_('Download selected')}}</button>
 </div>
 <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
     <thead>
