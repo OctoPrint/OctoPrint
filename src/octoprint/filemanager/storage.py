@@ -647,6 +647,15 @@ class LocalFileStorage(StorageInterface):
                 result[key] = node
             return result
 
+        def strip_grandchildren(nodes):
+            result = {}
+            for key, node in nodes.items():
+                if node["type"] == "folder":
+                    node = copy.copy(node)
+                    node["children"] = strip_children(node["children"])
+                result[key] = node
+            return result
+
         def apply_filter(nodes, filter_func):
             result = {}
             for key, node in nodes.items():
@@ -654,14 +663,14 @@ class LocalFileStorage(StorageInterface):
                     if node["type"] == "folder":
                         node = copy.copy(node)
                         node["children"] = apply_filter(
-                            node.get("children", []), filter_func
+                            node.get("children", {}), filter_func
                         )
                     result[key] = node
             return result
 
         result = self._list_folder(path, base=base, force_refresh=force_refresh)
         if not recursive:
-            result = strip_children(result)
+            result = strip_grandchildren(result)
         if callable(filter):
             result = apply_filter(result, filter)
         return result
