@@ -92,7 +92,9 @@ class StorageInterface(object):
         """
         raise NotImplementedError()
 
-    def list_files(self, path=None, filter=None, recursive=True, force_refresh=False):
+    def list_files(
+        self, path=None, filter=None, recursive=True, level=0, force_refresh=False
+    ):
         """
         List all files in storage starting at ``path``. If ``recursive`` is set to True (the default), also dives into
         subfolders.
@@ -628,7 +630,9 @@ class LocalFileStorage(StorageInterface):
         folder_path = os.path.join(path, name)
         return os.path.exists(folder_path) and os.path.isdir(folder_path)
 
-    def list_files(self, path=None, filter=None, recursive=True, force_refresh=False):
+    def list_files(
+        self, path=None, filter=None, recursive=True, level=0, force_refresh=False
+    ):
         if path:
             path = self.sanitize_path(to_unicode(path))
             base = self.path_in_storage(path)
@@ -670,7 +674,10 @@ class LocalFileStorage(StorageInterface):
 
         result = self._list_folder(path, base=base, force_refresh=force_refresh)
         if not recursive:
-            result = strip_grandchildren(result)
+            if level > 0:
+                result = strip_grandchildren(result)
+            else:
+                result = strip_children(result)
         if callable(filter):
             result = apply_filter(result, filter)
         return result

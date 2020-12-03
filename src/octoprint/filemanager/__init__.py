@@ -675,6 +675,7 @@ class FileManager(object):
         path=None,
         filter=None,
         recursive=None,
+        level=0,
         force_refresh=False,
     ):
         if not destinations:
@@ -685,7 +686,11 @@ class FileManager(object):
         result = {}
         for dst in destinations:
             result[dst] = self._storage_managers[dst].list_files(
-                path=path, filter=filter, recursive=recursive, force_refresh=force_refresh
+                path=path,
+                filter=filter,
+                recursive=recursive,
+                level=level,
+                force_refresh=force_refresh,
             )
         return result
 
