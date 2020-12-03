@@ -231,7 +231,7 @@ def readGcodeFile(target, filename):
 
 def _getFileDetails(origin, path, recursive=True):
     parent, path = os.path.split(path)
-    files = _getFileList(origin, path=parent, recursive=recursive)
+    files = _getFileList(origin, path=parent, recursive=recursive, level=1)
 
     for f in files:
         if f["name"] == path:
@@ -245,7 +245,9 @@ def _getFileDetails(origin, path, recursive=True):
     message="{func}({func_args},{func_kwargs}) took {timing:.2f}ms",
     incl_func_args=True,
 )
-def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cache=True):
+def _getFileList(
+    origin, path=None, filter=None, recursive=False, level=0, allow_from_cache=True
+):
     if origin == FileDestinations.SDCARD:
         sdFileList = printer.get_sd_files()
 
@@ -301,6 +303,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
                         path=path,
                         filter=filter_func,
                         recursive=recursive,
+                        level=level,
                         force_refresh=not allow_from_cache,
                     )[origin].values()
                 )
