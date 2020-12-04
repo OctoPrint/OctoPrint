@@ -184,7 +184,8 @@ def interface_addresses(family=None, interfaces=None):
             continue
         if family in ifaddresses:
             for ifaddress in ifaddresses[family]:
-                if not ifaddress["addr"].startswith("169.254."):
+                address = netaddr.IPAddress(ifaddress["addr"])
+                if not address.is_link_local() and not address.is_loopback():
                     yield ifaddress["addr"]
 
 
