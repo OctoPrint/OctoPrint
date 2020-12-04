@@ -1,0 +1,3 @@
+# someone from the docker-maintainers team will be requested for review
+# whenever the trigger_docker workflow is changed in a Pull Request
+.github/workflows/trigger_docker.yml    @OctoPrint/docker-maintainers
