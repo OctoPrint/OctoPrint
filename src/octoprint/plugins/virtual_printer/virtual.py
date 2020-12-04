@@ -1031,7 +1031,7 @@ class VirtualPrinter:
                 if key == "S":
                     pass
                 else:
-                    self._virtual_eeprom.eeprom["advanced"]["params"][material_no][
+                    self._virtual_eeprom.eeprom["material"]["params"][material_no][
                         key
                     ] = float(value)
 
