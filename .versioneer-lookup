@@ -24,8 +24,8 @@ maintenance 1.5.0 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 fix/.* 1.5.0 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 improve/.* 1.5.0 42769dad7dda3bc0c6c94e0e8ce832af9b14a565 pep440-dev
 
-# staging/hotfix is the branch for preparation of the 1.5.1 hotfix release
-staging/hotfix 1.5.1 f67c15a9a47794a68be9aed4f2d5a12a87e70179 pep440-dev
+# staging/hotfix is the branch for preparation of the 1.5.2 hotfix release
+staging/hotfix 1.5.2 38256815ef6d6dd602e0fac949a17fbf8f30f838 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.5.0rc4
 # so is regressionfix/...
