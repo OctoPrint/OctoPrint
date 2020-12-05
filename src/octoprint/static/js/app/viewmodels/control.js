@@ -542,7 +542,7 @@ $(function () {
         };
 
         self.onTabChange = function (current, previous) {
-            if (current == "#control") {
+            if (current == "#control" || current == "#webcam") {
                 self._enableWebcam();
             } else if (previous == "#control") {
                 self._disableWebcam();
