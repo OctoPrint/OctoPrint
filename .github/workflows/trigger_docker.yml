@@ -6,7 +6,7 @@ on:
       - prereleased
   push:
     branches:
-      - master
+      - maintenance
 
 
 jobs:
