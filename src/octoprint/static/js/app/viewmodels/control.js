@@ -503,7 +503,10 @@ $(function () {
 
         self._enableWebcam = function () {
             if (
-                OctoPrint.coreui.selectedTab != "#control" ||
+                (
+                 OctoPrint.coreui.selectedTab != "#control" &&
+                 OctoPrint.coreui.selectedTab != "#webcam"
+                ) ||
                 !OctoPrint.coreui.browserTabVisible
             ) {
                 return;
