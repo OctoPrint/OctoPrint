@@ -413,7 +413,8 @@ class BackupPlugin(
         if exclude is None or not (type(exclude) == list):
             exclude = []
 
-        self._start_backup(exclude, backup_file=None)
+        self._start_backup(exclude, backup_file=backup_file)
+        return backup_file
 
     ##~~ CLI hook
 
