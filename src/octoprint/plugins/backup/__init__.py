@@ -168,63 +168,12 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = self._build_backup_filename(settings=self._settings)
 
         data = flask.request.json
         exclude = data.get("exclude", [])
+        backup_file = self._build_backup_filename(settings=self._settings)
 
-        def on_backup_start(name, temporary_path, exclude):
-            self._logger.info(
-                "Creating backup zip at {} (excluded: {})...".format(
-                    temporary_path, ",".join(exclude) if len(exclude) else "-"
-                )
-            )
-
-            with self._in_progress_lock:
-                self._in_progress.append(name)
-                self._send_client_message("backup_started", payload={"name": name})
-
-        def on_backup_done(name, final_path, exclude):
-            with self._in_progress_lock:
-                self._in_progress.remove(name)
-                self._send_client_message("backup_done", payload={"name": name})
-
-            self._logger.info("... done creating backup zip.")
-
-            self._event_bus.fire(
-                Events.PLUGIN_BACKUP_BACKUP_CREATED,
-                {"name": name, "path": final_path, "excludes": exclude},
-            )
-
-        def on_backup_error(name, exc_info):
-            with self._in_progress_lock:
-                try:
-                    self._in_progress.remove(name)
-                except ValueError:
-                    # we'll ignore that
-                    pass
-
-            self._send_client_message(
-                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
-            )
-            self._logger.error("Error while creating backup zip", exc_info=exc_info)
-
-        thread = threading.Thread(
-            target=self._create_backup,
-            args=(backup_file,),
-            kwargs={
-                "exclude": exclude,
-                "settings": self._settings,
-                "plugin_manager": self._plugin_manager,
-                "logger": self._logger,
-                "datafolder": self.get_plugin_data_folder(),
-                "on_backup_start": on_backup_start,
-                "on_backup_done": on_backup_done,
-                "on_backup_error": on_backup_error,
-            },
-        )
-        thread.daemon = True
-        thread.start()
+        self._start_backup(exclude, backup_file)
 
         response = flask.jsonify(started=True, name=backup_file)
         response.status_code = 201
@@ -454,6 +403,18 @@ class BackupPlugin(
         # max upload size of 1GB for the restore endpoint
         return [("POST", r"/restore", 1024 * 1024 * 1024)]
 
+    # Exported plugin helpers
+    def create_backup_helper(self, exclude=None, backup_file=None):
+        """
+        Trigger a backup from a plugin or other internal call
+        Args:
+             exclude (list): Identifiers of data folders to exclude
+        """
+        if exclude is None or not (type(exclude) == list):
+            exclude = []
+
+        self._start_backup(exclude, backup_file=None)
+
     ##~~ CLI hook
 
     def cli_commands_hook(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
@@ -637,6 +598,63 @@ class BackupPlugin(
         return [backup_command, restore_command]
 
     ##~~ helpers
+
+    def _start_backup(self, exclude, backup_file=None):
+        if backup_file is None:
+            backup_file = self._build_backup_filename(settings=self._settings)
+
+        def on_backup_start(name, temporary_path, exclude):
+            self._logger.info(
+                "Creating backup zip at {} (excluded: {})...".format(
+                    temporary_path, ",".join(exclude) if len(exclude) else "-"
+                )
+            )
+
+            with self._in_progress_lock:
+                self._in_progress.append(name)
+                self._send_client_message("backup_started", payload={"name": name})
+
+        def on_backup_done(name, final_path, exclude):
+            with self._in_progress_lock:
+                self._in_progress.remove(name)
+                self._send_client_message("backup_done", payload={"name": name})
+
+            self._logger.info("... done creating backup zip.")
+
+            self._event_bus.fire(
+                Events.PLUGIN_BACKUP_BACKUP_CREATED,
+                {"name": name, "path": final_path, "excludes": exclude},
+            )
+
+        def on_backup_error(name, exc_info):
+            with self._in_progress_lock:
+                try:
+                    self._in_progress.remove(name)
+                except ValueError:
+                    # we'll ignore that
+                    pass
+
+            self._send_client_message(
+                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
+            )
+            self._logger.error("Error while creating backup zip", exc_info=exc_info)
+
+        thread = threading.Thread(
+            target=self._create_backup,
+            args=(backup_file,),
+            kwargs={
+                "exclude": exclude,
+                "settings": self._settings,
+                "plugin_manager": self._plugin_manager,
+                "logger": self._logger,
+                "datafolder": self.get_plugin_data_folder(),
+                "on_backup_start": on_backup_start,
+                "on_backup_done": on_backup_done,
+                "on_backup_error": on_backup_error,
+            },
+        )
+        thread.daemon = True
+        thread.start()
 
     def _get_backups(self):
         backups = []
@@ -1330,4 +1348,7 @@ __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.events.register_custom_events": _register_custom_events,
     "octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook,
+}
+__plugin_helpers__ = {
+    "create_backup": __plugin_implementation__.create_backup_helper,
 }
