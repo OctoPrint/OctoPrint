@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - maintenance
+      - devel
 
 
 jobs:
@@ -25,7 +26,7 @@ jobs:
 
   dispatch_canary:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
@@ -34,4 +35,17 @@ jobs:
           repository: ${{ github.repository_owner }}/octoprint-docker
           event-type: 'canary'
           client-payload: '{"tag_name": "${{ github.sha }}"}'
+
+  dispatch_bleeding:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/devel'
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ github.repository_owner }}/octoprint-docker
+          event-type: 'bleeding'
+          client-payload: '{"tag_name": "${{ github.sha }}"}'
+
 
