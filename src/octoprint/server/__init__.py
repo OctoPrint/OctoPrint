@@ -1957,6 +1957,8 @@ class Server(object):
             "js/lib/ResizeSensor.js",
             "js/lib/less.min.js",
             "js/lib/hls.js",
+            "js/lib/jszip.min.js",
+            "js/lib/FileSaver.min.js",
         ]
         js_client = [
             "js/app/client/base.js",
