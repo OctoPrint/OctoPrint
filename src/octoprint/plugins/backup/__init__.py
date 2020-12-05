@@ -183,18 +183,8 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def delete_backup(self, filename):
-        backup_folder = self.get_plugin_data_folder()
-        full_path = os.path.realpath(os.path.join(backup_folder, filename))
-        if (
-            full_path.startswith(backup_folder)
-            and os.path.exists(full_path)
-            and not is_hidden_path(full_path)
-        ):
-            try:
-                os.remove(full_path)
-            except Exception:
-                self._logger.exception("Could not delete {}".format(filename))
-                raise
+        self._delete_backup(filename)
+
         return NO_CONTENT
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
@@ -415,6 +405,9 @@ class BackupPlugin(
 
         self._start_backup(exclude, backup_file=backup_file)
         return backup_file
+
+    def delete_backup_helper(self, backup_file):
+        self._delete_backup(backup_file)
 
     ##~~ CLI hook
 
@@ -656,6 +649,25 @@ class BackupPlugin(
         )
         thread.daemon = True
         thread.start()
+
+    def _delete_backup(self, filename):
+        """
+        Delete the backup specified
+        Args:
+            filename (str): Name of backup to delete
+        """
+        backup_folder = self.get_plugin_data_folder()
+        full_path = os.path.realpath(os.path.join(backup_folder, filename))
+        if (
+            full_path.startswith(backup_folder)
+            and os.path.exists(full_path)
+            and not is_hidden_path(full_path)
+        ):
+            try:
+                os.remove(full_path)
+            except Exception:
+                self._logger.exception("Could not delete {}".format(filename))
+                raise
 
     def _get_backups(self):
         backups = []
@@ -1352,4 +1364,5 @@ __plugin_hooks__ = {
 }
 __plugin_helpers__ = {
     "create_backup": __plugin_implementation__.create_backup_helper,
+    "delete_backup": __plugin_implementation__.delete_backup_helper,
 }
