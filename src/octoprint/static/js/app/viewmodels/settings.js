@@ -1142,7 +1142,7 @@ $(function () {
                 // process all key-value-pairs here
                 _.forOwn(data, function (value, key) {
                     var observable = key;
-                    if (keyPrefix != undefined) {
+                    if (keyPrefix !== undefined) {
                         observable = keyPrefix + "_" + observable;
                     }
 
@@ -1161,7 +1161,7 @@ $(function () {
                             mapping && mapping[key] ? mapping[key] : undefined,
                             observable
                         );
-                        if (subresult != undefined) {
+                        if (subresult !== undefined) {
                             // we only set something on our result if we got something back
                             result[key] = subresult;
                             flag = true;
@@ -1179,7 +1179,7 @@ $(function () {
             // map local observables based on our existing data
             var dataFromObservables = mapFromObservables(data, specialMappings);
 
-            data = _.merge(data, dataFromObservables);
+            data = deepMerge(data, dataFromObservables);
             return data;
         };
 
