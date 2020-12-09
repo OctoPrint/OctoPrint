@@ -9,9 +9,7 @@ on:
       - maintenance
       - devel
 
-
 jobs:
-
   dispatch_releases:
     runs-on: ubuntu-latest
     if: github.event_name != 'push'
@@ -33,7 +31,7 @@ jobs:
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: 'canary'
+          event-type: "canary"
           client-payload: '{"tag_name": "${{ github.sha }}"}'
 
   dispatch_bleeding:
@@ -45,7 +43,5 @@ jobs:
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: 'bleeding'
+          event-type: "bleeding"
           client-payload: '{"tag_name": "${{ github.sha }}"}'
-
-
