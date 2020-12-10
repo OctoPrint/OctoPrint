@@ -449,7 +449,7 @@ $(function () {
                     compression: "STORE"
                 }).then(function (blob) {
                     saveAs(blob, "OctoPrint-Timelapses.zip");
-                    dialog.modal("toggle");
+                    dialog.modal("hide");
                 });
             });
 
