@@ -42,7 +42,7 @@ INSTALL_REQUIRES = [
     "PyYAML>=5.3.1,<6",
     "pyserial>=3.4,<4",
     "netaddr>=0.7.19,<1",
-    "watchdog==0.10.4",  # watchdog dropped Py>3.6 on 0.10.5 point release...
+    "watchdog==1.0.0",
     "sarge==0.1.5post0",
     "netifaces>=0.10.9,<1",
     "pylru>=1.2,<2",
