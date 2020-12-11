@@ -71,6 +71,7 @@ class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
                 octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg),
                 separators=(",", ":"),
                 default=JsonEncoding.encode,
+                allow_nan=False,
             ),
             stats,
         )
@@ -589,9 +590,6 @@ class PrinterStateConnection(
 
     def _do_emit(self, type, payload):
         try:
-            import json
-            
-            _ = json.dumps(octoprint.util.thaw_frozendict({type: payload}), allow_nan=False)
             self.send({type: payload})
         except Exception as e:
             if self._logger.isEnabledFor(logging.DEBUG):
