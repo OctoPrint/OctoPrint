@@ -32,7 +32,7 @@ jobs:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
           event-type: "canary"
-          client-payload: '{"tag_name": "${{ github.sha }}"}'
+          client-payload: '{"tag_name": "maintenance"}'
 
   dispatch_bleeding:
     runs-on: ubuntu-latest
@@ -44,4 +44,4 @@ jobs:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
           event-type: "bleeding"
-          client-payload: '{"tag_name": "${{ github.sha }}"}'
+          client-payload: '{"tag_name": "devel"}'
