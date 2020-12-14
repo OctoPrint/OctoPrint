@@ -1746,10 +1746,10 @@ class SettingsPlugin(OctoPrintPlugin):
 
            def get_settings_restricted_paths(self):
                from octoprint.access.permissions import Permissions
-               return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                           user=[["some", "user_only", "path"],],
-                           never=[["path", "to", "never", "return"],],
-                           Permissions.WEBCAM=[["the", "webcam", "data"],])
+               return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
+                           'user':[["some", "user_only", "path"],],
+                           'never':[["path", "to", "never", "return"],],
+                           Permissions.WEBCAM:[["the", "webcam", "data"],]}
 
            # this will make the plugin return settings on the REST API like this for an anonymous user
            #
