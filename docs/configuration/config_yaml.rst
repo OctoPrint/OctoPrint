@@ -30,7 +30,7 @@ Use the following settings to enable access control:
      userManager: octoprint.access.users.FilebasedUserManager
 
      # The YAML user file to use. If left out defaults to users.yaml in the default configuration folder.
-     userFile: /path/to/users.yaml
+     userfile: /path/to/users.yaml
 
      # If set to true, will automatically log on clients originating from any of the networks defined in
      # "localNetworks" as the user defined in "autologinAs". Defaults to false.
