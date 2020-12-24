@@ -444,6 +444,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if name is None or not name:
             raise ValueError("name must be set")
 
+        event_name = name[0].upper() + name[1:]
+        event_start = "{}{}".format(event_name, "GcodeRunning")
+        payload = context.get("event", None) if isinstance(context, dict) else None
+
+        eventManager().fire(event_start, payload)
+
         result = self._comm.sendGcodeScript(
             name,
             part_of_job=part_of_job,
@@ -452,6 +458,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         )
         if not result and must_be_set:
             raise UnknownScript(name)
+
+        event_end = "{}{}".format(event_name, "GcodeFinished")
+        eventManager().fire(event_end, payload)
 
     def jog(self, axes, relative=True, speed=None, *args, **kwargs):
         if isinstance(axes, basestring):
