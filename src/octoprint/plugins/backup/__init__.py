@@ -171,11 +171,11 @@ class BackupPlugin(
 
         data = flask.request.json
         exclude = data.get("exclude", [])
-        backup_file = self._build_backup_filename(settings=self._settings)
+        filename = self._build_backup_filename(settings=self._settings)
 
-        self._start_backup(exclude, backup_file)
+        self._start_backup(exclude, filename)
 
-        response = flask.jsonify(started=True, name=backup_file)
+        response = flask.jsonify(started=True, name=filename)
         response.status_code = 201
         return response
 
@@ -394,7 +394,7 @@ class BackupPlugin(
         return [("POST", r"/restore", 1024 * 1024 * 1024)]
 
     # Exported plugin helpers
-    def create_backup_helper(self, exclude=None, backup_file=None):
+    def create_backup_helper(self, exclude=None, filename=None):
         """
         Trigger a backup from a plugin or other internal call
         Args:
@@ -403,11 +403,11 @@ class BackupPlugin(
         if exclude is None or not (type(exclude) == list):
             exclude = []
 
-        self._start_backup(exclude, backup_file=backup_file)
-        return backup_file
+        self._start_backup(exclude, filename=filename)
+        return filename
 
-    def delete_backup_helper(self, backup_file):
-        self._delete_backup(backup_file)
+    def delete_backup_helper(self, filename):
+        self._delete_backup(filename)
 
     ##~~ CLI hook
 
@@ -437,26 +437,24 @@ class BackupPlugin(
             )
 
             if path is not None:
-                datafolder, backup_file = os.path.split(os.path.abspath(path))
+                datafolder, filename = os.path.split(os.path.abspath(path))
             else:
-                backup_file = self._build_backup_filename(settings=settings)
+                filename = self._build_backup_filename(settings=settings)
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
                 os.makedirs(datafolder)
 
-            click.echo("Creating backup at {}, please wait...".format(backup_file))
+            click.echo("Creating backup at {}, please wait...".format(filename))
             self._create_backup(
-                backup_file,
+                filename,
                 exclude=exclude,
                 settings=settings,
                 plugin_manager=cli_group.plugin_manager,
                 datafolder=datafolder,
             )
             click.echo("Done.")
-            click.echo(
-                "Backup located at {}".format(os.path.join(datafolder, backup_file))
-            )
+            click.echo("Backup located at {}".format(os.path.join(datafolder, filename)))
 
         @click.command("restore")
         @click.argument("path")
@@ -593,9 +591,9 @@ class BackupPlugin(
 
     ##~~ helpers
 
-    def _start_backup(self, exclude, backup_file=None):
-        if backup_file is None:
-            backup_file = self._build_backup_filename(settings=self._settings)
+    def _start_backup(self, exclude, filename=None):
+        if filename is None:
+            filename = self._build_backup_filename(settings=self._settings)
 
         def on_backup_start(name, temporary_path, exclude):
             self._logger.info(
@@ -635,7 +633,7 @@ class BackupPlugin(
 
         thread = threading.Thread(
             target=self._create_backup,
-            args=(backup_file,),
+            args=(filename,),
             kwargs={
                 "exclude": exclude,
                 "settings": self._settings,
