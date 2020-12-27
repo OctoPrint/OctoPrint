@@ -396,9 +396,32 @@ class BackupPlugin(
     # Exported plugin helpers
     def create_backup_helper(self, exclude=None, filename=None):
         """
-        Trigger a backup from a plugin or other internal call
-        Args:
-             exclude (list): Identifiers of data folders to exclude
+        .. versionadded:: 1.6.0
+
+        Create a backup from a plugin or other internal call
+
+        This helper is exported as ``create_backup`` and can be used from the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+
+        The following code snippet can be used from within a plugin, and will create a backup
+        excluding two folders (``timelapse`` and ``uploads``)
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "create_backup")
+
+            if helpers and "create_backup" in helpers:
+                helpers["create_backup"](exclude=["timelapse", "uploads"])
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+
+        :param list exclude: Names of data folders to exclude, defaults to None
+        :param str filename: Name of backup to be created, if None (default) the backup
+            name will be auto-generated. This should use a ``.zip`` extension.
         """
         if exclude is None:
             exclude = []
@@ -406,9 +429,38 @@ class BackupPlugin(
             exclude = list(exclude)
 
         self._start_backup(exclude, filename=filename)
-        return filename
 
     def delete_backup_helper(self, filename):
+        """
+        .. versionadded:: 1.6.0
+
+        Delete the specified backup from a plugin or other internal call
+
+        This helper is exported as ``delete_backup`` and can be used through the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+        The following code snippet can be used from within a plugin, and will attempt to
+        delete the backup named ``ExampleBackup.zip``.
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "delete_backup")
+
+            if helpers and "delete_backup" in helpers:
+                helpers["delete_backup"]("ExampleBackup.zip")
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+        .. warning::
+
+            This method will fail silently if the backup does not exist, and so
+            it is recommended that you make sure the name comes from a verified source,
+            for example the name from the events or other helpers.
+
+        :param str filename: The name of the backup to delete
+        """
         self._delete_backup(filename)
 
     ##~~ CLI hook
