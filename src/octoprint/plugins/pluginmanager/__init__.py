@@ -671,11 +671,19 @@ class PluginManagerPlugin(
             and not self._settings.get_boolean(["ignore_throttled"])
         ):
             # currently throttled, we refuse to run
-            return make_response(
-                "System is currently throttled, refusing to install "
-                "anything due to possible stability issues",
-                409,
+            error_msg = (
+                "System is currently throttled, refusing to install anything"
+                " due to possible stability isssues"
             )
+            self._logger.error(error_msg)
+            result = {
+                "result": False,
+                "source": source,
+                "source_type": source_type,
+                "reason": error_msg,
+            }
+            self._send_result_notification("install", result)
+            return result
 
         try:
             # Py3
@@ -745,11 +753,20 @@ class PluginManagerPlugin(
                     "Looks like the plugin was already installed. Forcing a reinstall."
                 )
                 force = True
-        except Exception:
-            self._logger.exception("Could not install plugin from %s" % source)
-            return make_response(
-                "Could not install plugin from URL, see the log for more details", 500
-            )
+        except Exception as e:
+            self._logger.exception("Could not install plugin from {}".format(source))
+            self._logger.exception("Reason: {}".format(repr(e)))
+            result = {
+                "result": False,
+                "source": source,
+                "source_type": source_type,
+                "reason": "Could not install plugin from {}, see the log for more details".format(
+                    source
+                ),
+            }
+            self._send_result_notification("install", result)
+            return result
+
         else:
             if force:
                 # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
@@ -757,16 +774,21 @@ class PluginManagerPlugin(
                 pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
                 try:
                     returncode, stdout, stderr = self._call_pip(pip_args)
-                except Exception:
+                except Exception as e:
                     self._logger.exception(
                         "Could not install plugin from {}".format(source)
                     )
-                    return make_response(
-                        "Could not install plugin from source {}, see the log for more details".format(
+                    self._logger.exception("Reason: {}".format(repr(e)))
+                    result = {
+                        "result": False,
+                        "source": source,
+                        "source_type": source_type,
+                        "reason": "Could not install plugin from source {}, see the log for more details".format(
                             source
                         ),
-                        500,
-                    )
+                    }
+                    self._send_result_notification("install", result)
+                    return result
 
         try:
             result_line = list(
