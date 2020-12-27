@@ -400,8 +400,10 @@ class BackupPlugin(
         Args:
              exclude (list): Identifiers of data folders to exclude
         """
-        if exclude is None or not (type(exclude) == list):
+        if exclude is None:
             exclude = []
+        if not isinstance(exclude, list):
+            exclude = list(exclude)
 
         self._start_backup(exclude, filename=filename)
         return filename
