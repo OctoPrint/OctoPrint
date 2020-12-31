@@ -182,7 +182,7 @@ Groups will be as follows:
   * ``value``: reported position value
 """
 
-regex_firmware_splitter = re.compile(r"\s*([A-Z0-9_]+):\s*")
+regex_firmware_splitter = re.compile(r"\s*([A-Z_]+):\s*")
 """Regex to use for splitting M115 responses."""
 
 regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
