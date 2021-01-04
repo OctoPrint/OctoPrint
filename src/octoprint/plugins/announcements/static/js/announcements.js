@@ -31,7 +31,7 @@ $(function () {
             5
         );
 
-        self.unread = ko.observable();
+        self.unread = ko.observable(false);
         self.hiddenChannels = [];
         self.channelNotifications = {};
 
