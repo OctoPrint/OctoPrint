@@ -43,6 +43,15 @@ The following GCODE scripts are sent by OctoPrint automatically:
 
    Plugins may extend these scripts through :ref:`a hook <sec-plugins-hook-comm-protocol-scripts>`.
 
+.. _sec-features-gcode_scripts-events:
+
+Events
+------
+
+Every GCODE script that is executed will emit two events. The events will start with the capitalized name of the script.
+When ``afterPrintDone`` has started the event will be ``AfterPrintDoneRunning`` and once it has completed the last event
+will be ``AfterPrintDoneFinished``. You can find more details in the :ref:`Events <sec-events-available_events-printing>` documentation.
+
 .. _sec-features-gcode_scripts-snippets:
 
 Snippets
