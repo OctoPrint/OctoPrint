@@ -47,6 +47,8 @@ from octoprint.util.version import (
     is_python_compatible,
 )
 
+from . import exceptions
+
 try:
     from os import scandir
 except ImportError:
@@ -649,21 +651,32 @@ class PluginManagerPlugin(
                     )
 
                 else:
-                    self._logger.error(
-                        "{} is neither an archive nor a python file, can't install that.".format(
-                            source
-                        )
+                    raise exceptions.InvalidPackageFormat()
+            except requests.exceptions.HTTPError as e:
+                self._logger.error("Could not fetch plugin from server, got {}".format(e))
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not fetch plugin from server, got {}".format(e),
+                }
+                self._send_result_notification("install", result)
+                return result
+            except exceptions.InvalidPackageFormat:
+                self._logger.error(
+                    "{} is neither an archive nor a python file, can't install that.".format(
+                        source
                     )
-                    result = {
-                        "result": False,
-                        "source": source,
-                        "source_type": source_type,
-                        "reason": "Could not install plugin from {}, was neither "
-                        "a plugin archive nor a single file plugin".format(source),
-                    }
-                    self._send_result_notification("install", result)
-                    return result
-
+                )
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not install plugin from {}, was neither "
+                    "a plugin archive nor a single file plugin".format(source),
+                }
+                self._send_result_notification("install", result)
+                return result
             finally:
                 if folder is not None:
                     folder.cleanup()
