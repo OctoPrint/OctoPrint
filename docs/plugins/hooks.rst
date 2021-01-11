@@ -1173,15 +1173,6 @@ octoprint.plugin.backup.additional_excludes
 
 See :ref:`here <sec-bundledplugins-backup-hooks-excludes>`.
 
-.. _sec-plugins-hook-plugin-loginui-theming:
-
-octoprint.plugin.loginui.theming
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.4.0
-
-See :ref:`here <sec-bundledplugins-loginui-hooks-theming>`.
-
 .. _sec-plugins-hook-plugin-pluginmanager-reconnect:
 
 octoprint.plugin.pluginmanager.reconnect_hooks
