@@ -24,6 +24,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
+import fnmatch
 import io
 import logging
 import os
@@ -47,6 +48,11 @@ try:
 except ImportError:
     from collections import KeysView
 
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
+
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
@@ -60,7 +66,7 @@ _APPNAME = "OctoPrint"
 _instance = None
 
 
-def settings(init=False, basedir=None, configfile=None):
+def settings(init=False, basedir=None, configfile=None, overlays=None):
     """
     Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.settings.Settings`
     singleton.
@@ -75,6 +81,7 @@ def settings(init=False, basedir=None, configfile=None):
             ``~/Library/Application Support/OctoPrint`` on MacOS.
         configfile (str): Path of the configuration file (``config.yaml``) to work on. If not set the default will
             be used: ``<basedir>/config.yaml`` for ``basedir`` as defined above.
+        overlays (list): List of paths to config overlays to put between default settings and config.yaml
 
     Returns:
         Settings: The fully initialized :class:`Settings` instance.
@@ -89,7 +96,9 @@ def settings(init=False, basedir=None, configfile=None):
 
     else:
         if init:
-            _instance = Settings(configfile=configfile, basedir=basedir)
+            _instance = Settings(
+                configfile=configfile, basedir=basedir, overlays=overlays
+            )
         else:
             raise ValueError("Settings not initialized yet")
 
@@ -133,6 +142,7 @@ default_settings = {
         "disconnectOnErrors": True,
         "ignoreErrorsFromFirmware": False,
         "terminalLogSize": 20,
+        "lastLineBufferSize": 50,
         "logResends": True,
         "supportResendsWithoutOk": "detect",
         "logPositionOnPause": True,
@@ -211,7 +221,7 @@ default_settings = {
         "onlineCheck": {
             "enabled": None,
             "interval": 15 * 60,  # 15 min
-            "host": "8.8.8.8",
+            "host": "1.1.1.1",
             "port": 53,
             "name": "octoprint.org",
         },
@@ -355,7 +365,11 @@ default_settings = {
                     "plugin_pi_support",
                 ],
                 "usersettings": ["access", "interface"],
-                "wizard": ["plugin_backup", "plugin_corewizard_acl"],
+                "wizard": [
+                    "plugin_backup",
+                    "plugin_corewizard_acl",
+                    "plugin_corewizard_onlinecheck",
+                ],
                 "about": [
                     "about",
                     "plugin_pi_support",
@@ -658,14 +672,18 @@ class Settings(object):
 
     OVERLAY_KEY = "__overlay__"
 
-    def __init__(self, configfile=None, basedir=None):
+    def __init__(self, configfile=None, basedir=None, overlays=None):
         self._logger = logging.getLogger(__name__)
 
         self._basedir = None
 
+        if overlays is None:
+            overlays = []
+
         assert isinstance(default_settings, dict)
 
         self._map = HierarchicalChainMap({}, default_settings)
+        self.load_overlays(overlays)
 
         self._config = None
         self._dirty = False
@@ -1011,6 +1029,34 @@ class Settings(object):
         self._validate_config()
 
         self._forget_hashes()
+
+    def load_overlays(self, overlays, migrate=True):
+        for overlay in overlays:
+            if not os.path.exists(overlay):
+                continue
+
+            def process(path):
+                try:
+                    overlay_config = self.load_overlay(path, migrate=migrate)
+                    self.add_overlay(overlay_config)
+                    self._logger.info("Added config overlay from {}".format(path))
+                except Exception:
+                    self._logger.exception(
+                        "Could not add config overlay from {}".format(path)
+                    )
+
+            if os.path.isfile(overlay):
+                process(overlay)
+
+            elif os.path.isdir(overlay):
+                for entry in scandir(overlay):
+                    name = entry.name
+                    path = entry.path
+
+                    if is_hidden_path(path) or not fnmatch.fnmatch(name, "*.yaml"):
+                        continue
+
+                    process(path)
 
     def load_overlay(self, overlay, migrate=True):
         config = None

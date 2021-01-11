@@ -40,7 +40,7 @@ def _set_helper(settings, path, value, data_type=None):
         if name is not None:
             method = getattr(settings, name)
 
-    method(path, value)
+    method(path, value, force=True)
     settings.save()
 
 
@@ -65,6 +65,7 @@ def config(ctx):
         ctx.obj.settings = init_settings(
             get_ctx_obj_option(ctx, "basedir", None),
             get_ctx_obj_option(ctx, "configfile", None),
+            overlays=get_ctx_obj_option(ctx, "overlays", None),
         )
     except FatalStartupError as e:
         click.echo(str(e), err=True)

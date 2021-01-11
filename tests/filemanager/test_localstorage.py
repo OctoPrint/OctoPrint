@@ -814,12 +814,6 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(expected_path, actual_path)
         self.assertEqual(expected_name, actual_name)
 
-    @data(("test", "test"), ("\u2764", "red_heart"), ("\u2764\ufe00", "red_heart"))
-    @unpack
-    def test_slugify(self, input, expected):
-        output = LocalFileStorage._slugify(input)
-        self.assertEqual(output, expected)
-
     def _add_and_verify_file(
         self, path, expected_path, file_object, links=None, overwrite=False, display=None
     ):

@@ -590,7 +590,8 @@ class MachineCom(object):
             ),
         }
 
-        self._lastLines = deque([], 50)
+        last_line_count = settings().getInt(["serial", "lastLineBufferSize"])
+        self._lastLines = deque([], last_line_count)
         self._lastCommError = None
         self._lastResendNumber = None
         self._currentResendCount = 0
@@ -949,9 +950,9 @@ class MachineCom(object):
         elif state == self.STATE_CLOSED:
             return "Offline"
         elif state == self.STATE_ERROR:
-            return "Error: {}".format(self.getErrorString())
+            return "Error"
         elif state == self.STATE_CLOSED_WITH_ERROR:
-            return "Offline (Error: {})".format(self.getErrorString())
+            return "Offline after error"
         elif state == self.STATE_TRANSFERING_FILE:
             return "Transferring file to SD"
         return "Unknown State ({})".format(self._state)
@@ -3841,7 +3842,7 @@ class MachineCom(object):
                         "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                         level=logging.ERROR,
                     )
-                self._errorValue = get_exception_string()
+                self._errorValue = get_exception_string(fmt="{type}: {message}")
                 self.close(is_error=True)
             return None
 
@@ -4712,7 +4713,7 @@ class MachineCom(object):
                                 "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                                 level=logging.INFO,
                             )
-                        self._errorValue = get_exception_string()
+                        self._errorValue = get_exception_string(fmt="{type}: {message}")
                         self.close(is_error=True)
                     break
             except Exception as ex:
@@ -4729,7 +4730,7 @@ class MachineCom(object):
                             "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                             level=logging.INFO,
                         )
-                    self._errorValue = get_exception_string()
+                    self._errorValue = get_exception_string(fmt="{type}: {message}")
                     self.close(is_error=True)
                 break
 

@@ -92,7 +92,7 @@ class SoftwareUpdatePlugin(
         self._environment_ready = threading.Event()
 
         self._storage_sufficient = True
-        self.storage_info = {}
+        self._storage_info = {}
 
         self._console_logger = None
 

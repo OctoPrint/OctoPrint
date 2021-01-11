@@ -8,7 +8,6 @@ import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.plugin.core import FolderOrigin
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
@@ -51,16 +50,11 @@ import sarge
 from flask_babel import gettext
 
 from octoprint.settings import valid_boolean_trues
+from octoprint.util.text import sanitize
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
-BACKUP_FILE_PREFIX = "octoprint-backup"
-
 BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
-
-
-def build_backup_filename():
-    return "{}-{}.zip".format(BACKUP_FILE_PREFIX, time.strftime(BACKUP_DATE_TIME_FMT))
 
 
 class BackupPlugin(
@@ -174,7 +168,7 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = build_backup_filename()
+        backup_file = self._build_backup_filename(settings=self._settings)
 
         data = flask.request.json
         exclude = data.get("exclude", [])
@@ -490,7 +484,7 @@ class BackupPlugin(
             if path is not None:
                 datafolder, backup_file = os.path.split(os.path.abspath(path))
             else:
-                backup_file = build_backup_filename()
+                backup_file = self._build_backup_filename(settings=settings)
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
@@ -985,22 +979,16 @@ class BackupPlugin(
                 )
 
                 # add list of installed plugins
-                plugins = []
-                plugin_folder = settings.global_get_basefolder("plugins")
-                for plugin in plugin_manager.plugins.values():
-                    if plugin.bundled or (
-                        isinstance(plugin.origin, FolderOrigin)
-                        and plugin.origin.folder == plugin_folder
-                    ):
-                        # ignore anything bundled or from the plugins folder we already include in the backup
-                        continue
-
-                    plugins.append(
-                        {"key": plugin.key, "name": plugin.name, "url": plugin.url}
+                helpers = plugin_manager.get_helpers(
+                    "pluginmanager", "generate_plugins_json"
+                )
+                if helpers and "generate_plugins_json" in helpers:
+                    plugins = helpers["generate_plugins_json"](
+                        settings=settings, plugin_manager=plugin_manager
                     )
 
-                if len(plugins):
-                    zip.writestr("plugin_list.json", json.dumps(plugins))
+                    if len(plugins):
+                        zip.writestr("plugin_list.json", json.dumps(plugins))
 
             shutil.move(temporary_path, final_path)
 
@@ -1289,6 +1277,17 @@ class BackupPlugin(
                 )
 
         return True
+
+    @classmethod
+    def _build_backup_filename(cls, settings):
+        if settings.global_get(["appearance", "name"]) == "":
+            backup_prefix = "octoprint"
+        else:
+            backup_prefix = settings.global_get(["appearance", "name"])
+        backup_prefix = sanitize(backup_prefix)
+        return "{}-backup-{}.zip".format(
+            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
+        )
 
     @classmethod
     def _restore_supported(cls, settings):

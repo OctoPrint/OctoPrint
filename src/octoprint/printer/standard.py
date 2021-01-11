@@ -18,6 +18,7 @@ import time
 from frozendict import frozendict
 from past.builtins import basestring, long
 
+import octoprint.util.json
 from octoprint import util as util
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
@@ -147,7 +148,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             on_get_resends=self._updateResendDataCallback,
         )
         self._stateMonitor.reset(
-            state=self._dict(text=self.get_state_string(), flags=self._getStateFlags()),
+            state=self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            ),
             job_data=self._dict(
                 file=self._dict(name=None, path=None, size=None, origin=None, date=None),
                 estimatedPrintTime=None,
@@ -272,7 +277,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
+                    octoprint.util.json.dump({name: additional})
                     plugin_data[name] = additional
+            except ValueError:
+                self._logger.exception(
+                    "Invalid additional data from plugin {}".format(name),
+                    extra={"plugin": name},
+                )
             except Exception:
                 self._logger.exception(
                     "Error while retrieving additional data from plugin {}, blacklisting it for further loops".format(
@@ -790,6 +801,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         else:
             return self._comm.getStateId(state=state)
 
+    def get_error(self):
+        if self._comm is None:
+            return ""
+        else:
+            return self._comm.getErrorString()
+
     def get_current_data(self, *args, **kwargs):
         return util.thaw_frozendict(self._stateMonitor.get_current_data())
 
@@ -1043,13 +1060,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._currentZ = currentZ
         self._stateMonitor.set_current_z(self._currentZ)
 
-    def _setState(self, state, state_string=None):
+    def _setState(self, state, state_string=None, error_string=None):
         if state_string is None:
             state_string = self.get_state_string()
+        if error_string is None:
+            error_string = self.get_error()
 
         self._state = state
         self._stateMonitor.set_state(
-            self._dict(text=state_string, flags=self._getStateFlags())
+            self._dict(text=state_string, flags=self._getStateFlags(), error=error_string)
         )
 
         payload = {
@@ -1419,8 +1438,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         oldState = self._state
 
         state_string = None
+        error_string = None
         if self._comm is not None:
             state_string = self._comm.getStateString()
+            error_string = self._comm.getErrorString()
 
         if oldState in (comm.MachineCom.STATE_PRINTING,):
             # if we were still printing and went into an error state, mark the print as failed
@@ -1481,7 +1502,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             self._printerProfileManager.deselect()
             eventManager().fire(Events.DISCONNECTED)
 
-        self._setState(state, state_string=state_string)
+        self._setState(state, state_string=state_string, error_string=error_string)
 
     def on_comm_message(self, message):
         """
@@ -1512,7 +1533,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def on_comm_sd_state_change(self, sdReady):
         self._stateMonitor.set_state(
-            self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+            self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            )
         )
 
     def on_comm_sd_files(self, files):
@@ -1544,7 +1569,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         self._setJobData(full_path, size, sd, user=user)
         self._stateMonitor.set_state(
-            self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+            self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            )
         )
 
         self._create_estimator()
@@ -1591,7 +1620,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 printTimeLeft=0,
             )
             self._stateMonitor.set_state(
-                self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+                self._dict(
+                    text=self.get_state_string(),
+                    flags=self._getStateFlags(),
+                    error=self.get_error(),
+                )
             )
 
             eventManager().fire(Events.PRINT_DONE, payload)
@@ -1628,7 +1661,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         else:
             self._updateProgressData()
             self._stateMonitor.set_state(
-                self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+                self._dict(
+                    text=self.get_state_string(),
+                    flags=self._getStateFlags(),
+                    error=self.get_error(),
+                )
             )
 
     def on_comm_print_job_cancelling(self, firmware_error=None, user=None):
@@ -1744,7 +1781,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._setJobData(remote_filename, filesize, True, user=user)
         self._updateProgressData(completion=0.0, filepos=0, printTime=0)
         self._stateMonitor.set_state(
-            self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+            self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            )
         )
 
     def on_comm_file_transfer_done(
@@ -1771,7 +1812,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._setJobData(None, None, None)
         self._updateProgressData()
         self._stateMonitor.set_state(
-            self._dict(text=self.get_state_string(), flags=self._getStateFlags())
+            self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            )
         )
 
     def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):

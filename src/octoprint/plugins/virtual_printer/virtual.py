@@ -202,7 +202,7 @@ class VirtualPrinter(object):
 
         self._received_lines = 0
         self._resend_every_n = 0
-        self._calculate_resend_every_n(self._settings.get(["resend_ratio"]))
+        self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
 
@@ -1091,7 +1091,7 @@ class VirtualPrinter(object):
                 if key == "S":
                     pass
                 else:
-                    self._virtual_eeprom.eeprom["advanced"]["params"][material_no][
+                    self._virtual_eeprom.eeprom["material"]["params"][material_no][
                         key
                     ] = float(value)
 
@@ -1137,7 +1137,7 @@ class VirtualPrinter(object):
         config = self._virtual_eeprom.eeprom["material"]
         lines = []
         for material in ["0", "1"]:
-            line = "echo: " + config["command"] + "S" + material
+            line = "echo: " + config["command"] + " S" + material
             for param, saved_value in config["params"][material].items():
                 line = line + " " + param + str(saved_value)
             lines.append(line)

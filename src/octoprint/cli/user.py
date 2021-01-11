@@ -48,6 +48,7 @@ def user(ctx):
         settings = init_settings(
             get_ctx_obj_option(ctx, "basedir", None),
             get_ctx_obj_option(ctx, "configfile", None),
+            overlays=get_ctx_obj_option(ctx, "overlays", None),
         )
 
         group_manager_name = settings.get(["accessControl", "groupManager"])
