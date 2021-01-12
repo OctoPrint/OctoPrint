@@ -131,6 +131,7 @@ date of first contribution):
   * [Manuel McLure](https://github.com/ManuelMcLure)
   * ["j7126"](https://github.com/j7126)
   * ["MichaIng"](https://github.com/MichaIng)
+  * ["jasonbcox"](https://github.com/jasonbcox)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

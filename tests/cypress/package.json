@@ -22,6 +22,7 @@
         "cypress-file-upload": "^4.0.7",
         "cypress-plugin-retries": "^1.5.2",
         "cypress-terminal-report": "^1.4.1",
-        "cypress-wait-until": "^1.7.1"
+        "cypress-wait-until": "^1.7.1",
+        "ini": "^2.0.0"
     }
 }
