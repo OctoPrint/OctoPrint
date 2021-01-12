@@ -13,7 +13,7 @@
         <i class="fas fa-spinner fa-spin" style="display: none" data-bind="visible: active() && decision() === false"></i>
         {{ _('Disable Anonymous Usage Tracking') }}
     </a>
-    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup() || !decision()){enableUsage()}}, enable: !setup() || !decision(), css: {disabled: setup() && decision}">
+    <a href="javascript:void(0)" class="btn btn-primary span6" data-bind="click: function() { if(!setup() || !decision()){enableUsage()}}, enable: !setup() || !decision(), css: {disabled: setup() && decision()}">
         <i class="fas fa-spinner fa-spin" style="display: none" data-bind="visible: active() && decision() === true"></i>
         {{ _('Enable Anonymous Usage Tracking') }}
     </a>
