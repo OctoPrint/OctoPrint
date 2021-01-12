@@ -17,8 +17,12 @@
 {% endtrans %}</p>
 
 <div class="row-fluid">
-    <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){disablePluginBlacklist()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Plugin Blacklist Processing') }}</a>
-    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){enablePluginBlacklist()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable Plugin Blacklist Processing') }}</a>
+    <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup() || decision()){disablePluginBlacklist()}}, enable: !setup() || decision(), css: {disabled: setup() && !decision()}">
+        {{ _('Disable Plugin Blacklist Processing') }}
+    </a>
+    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup() || !decision()){enablePluginBlacklist()}}, enable: !setup() || !decision(), css: {disabled: setup() && decision()}">
+        {{ _('Enable Plugin Blacklist Processing') }}
+    </a>
 </div>
 
 <div class="pluginblacklist_decision" style="display: none" data-bind="visible: setup()">
