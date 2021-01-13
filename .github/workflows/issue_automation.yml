@@ -1,10 +1,10 @@
-name: "Issue Labeler"
+name: "Issue Automation"
 on:
   issues:
     types: [opened, edited, closed, reopened]
 
 jobs:
-  label-opened-and-edited:
+  label:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v2
