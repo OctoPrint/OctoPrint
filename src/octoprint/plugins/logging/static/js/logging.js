@@ -109,6 +109,7 @@ $(function () {
             // loggers
             var availableLoggers = _.without(response.loggers, configuredLoggers);
             self.availableLoggers(availableLoggers);
+            self.configuredLoggersChanged = false;
         };
 
         self.fromSerialLogResponse = function (response) {
