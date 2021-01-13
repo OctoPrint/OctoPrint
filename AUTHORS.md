@@ -130,6 +130,7 @@ date of first contribution):
   * [Sophist](https://github.com/Sophist-UK)
   * [Manuel McLure](https://github.com/ManuelMcLure)
   * ["j7126"](https://github.com/j7126)
+  * ["coliss86"](https://github.com/coliss86)
   * ["MichaIng"](https://github.com/MichaIng)
   * ["jasonbcox"](https://github.com/jasonbcox)
 
