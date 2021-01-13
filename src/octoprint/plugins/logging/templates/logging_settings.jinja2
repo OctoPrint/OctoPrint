@@ -69,7 +69,7 @@
         <div class="span8"><h5>{{ _('Name') }}</h5></div>
         <div class="span2"><h5>{{ _('Level') }}</h5></div>
     </div>
-    <div data-bind="foreach: configuredLoggersSorted">
+    <div data-bind="foreach: configuredLoggers">
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
                 <span data-bind="text: component"></span>
@@ -91,7 +91,7 @@
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select class="input-block-level" data-bind="options: availableLoggersSorted, value: availableLoggersName"></select>
+                <select class="input-block-level" data-bind="options: availableLoggersSorted, value: availableLoggersName, event: { change: addLogger }"></select>
             </div>
             <div class="span3">
                 <select class="input-medium" data-bind="value: availableLoggersLevel">
@@ -101,9 +101,6 @@
                     <option value="ERROR">ERROR</option>
                     <option value="CRITICAL">CRITICAL</option>
                 </select>
-            </div>
-            <div class="span1">
-                <a title="{{ _('Add')|edq }}" class="btn btn-primary" data-bind="click: $root.addLogger"><i class="icon-plus"></i></a>
             </div>
         </div>
     </div>

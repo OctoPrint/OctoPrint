@@ -21,13 +21,6 @@ $(function () {
             return _.sortBy(self.availableLoggers());
         });
 
-        self.configuredLoggersSorted = ko.computed(function () {
-            return _.sortBy(self.configuredLoggers(), function (o) {
-                o.level();
-                return o.component;
-            });
-        });
-
         // initialize list helper
         self.listHelper = new ItemListHelper(
             "logFiles",
@@ -103,6 +96,9 @@ $(function () {
                 });
                 levels.push(item);
                 configuredLoggers.push(logger);
+            });
+            let sortedLevels = _.sortBy(levels, function (o) {
+                return o.component;
             });
             self.configuredLoggers(levels);
 
