@@ -278,7 +278,7 @@ $(function () {
             );
         };
 
-        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = function () {
+        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = self.onSettingsShown = function () {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_LOGGING_MANAGE
