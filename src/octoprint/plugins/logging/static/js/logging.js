@@ -108,8 +108,6 @@ $(function () {
 
             // loggers
             var availableLoggers = _.without(response.loggers, configuredLoggers);
-            availableLoggers.push("");
-            self.availableLoggersName("");
             self.availableLoggers(availableLoggers);
         };
 
@@ -182,7 +180,7 @@ $(function () {
             }
 
             var component = self.availableLoggersName();
-            if (component == "") {
+            if (!component) {
                 return;
             }
             var level = self.availableLoggersLevel();

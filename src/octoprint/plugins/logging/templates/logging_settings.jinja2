@@ -91,7 +91,7 @@
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select class="input-block-level" data-bind="options: availableLoggersSorted, value: availableLoggersName"></select>
+                <select class="input-block-level" data-bind="options: availableLoggersSorted, optionsCaption: '{{ _('Select a logger...') }}', value: availableLoggersName"></select>
             </div>
             <div class="span3">
                 <select class="input-medium" data-bind="value: availableLoggersLevel">
