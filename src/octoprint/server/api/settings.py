@@ -311,6 +311,7 @@ def getSettings():
             "allowFraming": s.getBoolean(["server", "allowFraming"]),
         },
         "devel": {"pluginTimings": s.getBoolean(["devel", "pluginTimings"])},
+        "slicing": {"defaultSlicer": s.get(["slicing", "defaultSlicer"])},
     }
 
     gcode_scripts = s.listScripts("gcode")
@@ -1026,6 +1027,10 @@ def _saveSettings(data):
             # enable plugin timing logging to plugintimings.log
             logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
             logging.getLogger("PLUGIN_TIMINGS").debug("Enabling plugin timings logging")
+
+    if "slicing" in data:
+        if "defaultSlicer" in data["slicing"]:
+            s.set(["slicing", "defaultSlicer"], data["slicing"]["defaultSlicer"])
 
     if "plugins" in data:
         for plugin in octoprint.plugin.plugin_manager().get_implementations(
