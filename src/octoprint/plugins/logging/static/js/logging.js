@@ -107,7 +107,7 @@ $(function () {
             self.configuredLoggers(levels);
 
             // loggers
-            var availableLoggers = _.without(response.loggers, configuredLoggers);
+            var availableLoggers = _.difference(response.loggers, configuredLoggers);
             self.availableLoggers(availableLoggers);
         };
 
