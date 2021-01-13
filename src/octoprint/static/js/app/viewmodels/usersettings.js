@@ -79,6 +79,8 @@ $(function () {
         self.save = function () {
             if (!CONFIG_ACCESS_CONTROL) return;
 
+            self.userSettingsDialog.trigger("beforeSave");
+
             if (self.access_password() && !self.passwordMismatch()) {
                 self.users.updatePassword(
                     self.currentUser().name,
@@ -161,6 +163,9 @@ $(function () {
             });
             self.userSettingsDialog.on("hidden", function () {
                 callViewModels(allViewModels, "onUserSettingsHidden");
+            });
+            self.userSettingsDialog.on("beforeSave", function () {
+                callViewModels(allViewModels, "onUserSettingsBeforeSave");
             });
         };
     }
