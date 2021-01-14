@@ -14,6 +14,7 @@ import time
 
 from frozendict import frozendict
 
+import octoprint.util.json
 from octoprint import util as util
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
@@ -272,7 +273,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
+                    octoprint.util.json.dump({name: additional})
                     plugin_data[name] = additional
+            except ValueError:
+                self._logger.exception(
+                    "Invalid additional data from plugin {}".format(name),
+                    extra={"plugin": name},
+                )
             except Exception:
                 self._logger.exception(
                     "Error while retrieving additional data from plugin {}, blacklisting it for further loops".format(

@@ -340,7 +340,11 @@ default_settings = {
                     "plugin_pi_support",
                 ],
                 "usersettings": ["access", "interface"],
-                "wizard": ["plugin_backup", "plugin_corewizard_acl"],
+                "wizard": [
+                    "plugin_backup",
+                    "plugin_corewizard_acl",
+                    "plugin_corewizard_onlinecheck",
+                ],
                 "about": [
                     "about",
                     "plugin_pi_support",

@@ -2,7 +2,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import json
 import logging
 import threading
 import time
@@ -24,7 +23,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener
 from octoprint.events import Events
 from octoprint.settings import settings
-from octoprint.util.json import JsonEncoding
+from octoprint.util.json import dump as json_dump
 
 
 class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
@@ -64,11 +63,7 @@ class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
 class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
     def send_message(self, msg, stats=True, binary=False):
         self.send_jsonified(
-            json.dumps(
-                octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg),
-                separators=(",", ":"),
-                default=JsonEncoding.encode,
-            ),
+            json_dump(octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg)),
             stats,
         )
 

@@ -162,65 +162,14 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = self._build_backup_filename(settings=self._settings)
 
         data = flask.request.json
         exclude = data.get("exclude", [])
+        filename = self._build_backup_filename(settings=self._settings)
 
-        def on_backup_start(name, temporary_path, exclude):
-            self._logger.info(
-                "Creating backup zip at {} (excluded: {})...".format(
-                    temporary_path, ",".join(exclude) if len(exclude) else "-"
-                )
-            )
+        self._start_backup(exclude, filename)
 
-            with self._in_progress_lock:
-                self._in_progress.append(name)
-                self._send_client_message("backup_started", payload={"name": name})
-
-        def on_backup_done(name, final_path, exclude):
-            with self._in_progress_lock:
-                self._in_progress.remove(name)
-                self._send_client_message("backup_done", payload={"name": name})
-
-            self._logger.info("... done creating backup zip.")
-
-            self._event_bus.fire(
-                Events.PLUGIN_BACKUP_BACKUP_CREATED,
-                {"name": name, "path": final_path, "excludes": exclude},
-            )
-
-        def on_backup_error(name, exc_info):
-            with self._in_progress_lock:
-                try:
-                    self._in_progress.remove(name)
-                except ValueError:
-                    # we'll ignore that
-                    pass
-
-            self._send_client_message(
-                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
-            )
-            self._logger.error("Error while creating backup zip", exc_info=exc_info)
-
-        thread = threading.Thread(
-            target=self._create_backup,
-            args=(backup_file,),
-            kwargs={
-                "exclude": exclude,
-                "settings": self._settings,
-                "plugin_manager": self._plugin_manager,
-                "logger": self._logger,
-                "datafolder": self.get_plugin_data_folder(),
-                "on_backup_start": on_backup_start,
-                "on_backup_done": on_backup_done,
-                "on_backup_error": on_backup_error,
-            },
-        )
-        thread.daemon = True
-        thread.start()
-
-        response = flask.jsonify(started=True, name=backup_file)
+        response = flask.jsonify(started=True, name=filename)
         response.status_code = 201
         return response
 
@@ -228,18 +177,8 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def delete_backup(self, filename):
-        backup_folder = self.get_plugin_data_folder()
-        full_path = os.path.realpath(os.path.join(backup_folder, filename))
-        if (
-            full_path.startswith(backup_folder)
-            and os.path.exists(full_path)
-            and not is_hidden_path(full_path)
-        ):
-            try:
-                os.remove(full_path)
-            except Exception:
-                self._logger.exception("Could not delete {}".format(filename))
-                raise
+        self._delete_backup(filename)
+
         return NO_CONTENT
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
@@ -448,6 +387,76 @@ class BackupPlugin(
         # max upload size of 1GB for the restore endpoint
         return [("POST", r"/restore", 1024 * 1024 * 1024)]
 
+    # Exported plugin helpers
+    def create_backup_helper(self, exclude=None, filename=None):
+        """
+        .. versionadded:: 1.6.0
+
+        Create a backup from a plugin or other internal call
+
+        This helper is exported as ``create_backup`` and can be used from the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+
+        The following code snippet can be used from within a plugin, and will create a backup
+        excluding two folders (``timelapse`` and ``uploads``)
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "create_backup")
+
+            if helpers and "create_backup" in helpers:
+                helpers["create_backup"](exclude=["timelapse", "uploads"])
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+
+        :param list exclude: Names of data folders to exclude, defaults to None
+        :param str filename: Name of backup to be created, if None (default) the backup
+            name will be auto-generated. This should use a ``.zip`` extension.
+        """
+        if exclude is None:
+            exclude = []
+        if not isinstance(exclude, list):
+            exclude = list(exclude)
+
+        self._start_backup(exclude, filename=filename)
+
+    def delete_backup_helper(self, filename):
+        """
+        .. versionadded:: 1.6.0
+
+        Delete the specified backup from a plugin or other internal call
+
+        This helper is exported as ``delete_backup`` and can be used through the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+        The following code snippet can be used from within a plugin, and will attempt to
+        delete the backup named ``ExampleBackup.zip``.
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "delete_backup")
+
+            if helpers and "delete_backup" in helpers:
+                helpers["delete_backup"]("ExampleBackup.zip")
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+        .. warning::
+
+            This method will fail silently if the backup does not exist, and so
+            it is recommended that you make sure the name comes from a verified source,
+            for example the name from the events or other helpers.
+
+        :param str filename: The name of the backup to delete
+        """
+        self._delete_backup(filename)
+
     ##~~ CLI hook
 
     def cli_commands_hook(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
@@ -476,26 +485,24 @@ class BackupPlugin(
             )
 
             if path is not None:
-                datafolder, backup_file = os.path.split(os.path.abspath(path))
+                datafolder, filename = os.path.split(os.path.abspath(path))
             else:
-                backup_file = self._build_backup_filename(settings=settings)
+                filename = self._build_backup_filename(settings=settings)
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
                 os.makedirs(datafolder)
 
-            click.echo("Creating backup at {}, please wait...".format(backup_file))
+            click.echo("Creating backup at {}, please wait...".format(filename))
             self._create_backup(
-                backup_file,
+                filename,
                 exclude=exclude,
                 settings=settings,
                 plugin_manager=cli_group.plugin_manager,
                 datafolder=datafolder,
             )
             click.echo("Done.")
-            click.echo(
-                "Backup located at {}".format(os.path.join(datafolder, backup_file))
-            )
+            click.echo("Backup located at {}".format(os.path.join(datafolder, filename)))
 
         @click.command("restore")
         @click.argument("path")
@@ -631,6 +638,82 @@ class BackupPlugin(
         return [backup_command, restore_command]
 
     ##~~ helpers
+
+    def _start_backup(self, exclude, filename=None):
+        if filename is None:
+            filename = self._build_backup_filename(settings=self._settings)
+
+        def on_backup_start(name, temporary_path, exclude):
+            self._logger.info(
+                "Creating backup zip at {} (excluded: {})...".format(
+                    temporary_path, ",".join(exclude) if len(exclude) else "-"
+                )
+            )
+
+            with self._in_progress_lock:
+                self._in_progress.append(name)
+                self._send_client_message("backup_started", payload={"name": name})
+
+        def on_backup_done(name, final_path, exclude):
+            with self._in_progress_lock:
+                self._in_progress.remove(name)
+                self._send_client_message("backup_done", payload={"name": name})
+
+            self._logger.info("... done creating backup zip.")
+
+            self._event_bus.fire(
+                Events.PLUGIN_BACKUP_BACKUP_CREATED,
+                {"name": name, "path": final_path, "excludes": exclude},
+            )
+
+        def on_backup_error(name, exc_info):
+            with self._in_progress_lock:
+                try:
+                    self._in_progress.remove(name)
+                except ValueError:
+                    # we'll ignore that
+                    pass
+
+            self._send_client_message(
+                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
+            )
+            self._logger.error("Error while creating backup zip", exc_info=exc_info)
+
+        thread = threading.Thread(
+            target=self._create_backup,
+            args=(filename,),
+            kwargs={
+                "exclude": exclude,
+                "settings": self._settings,
+                "plugin_manager": self._plugin_manager,
+                "logger": self._logger,
+                "datafolder": self.get_plugin_data_folder(),
+                "on_backup_start": on_backup_start,
+                "on_backup_done": on_backup_done,
+                "on_backup_error": on_backup_error,
+            },
+        )
+        thread.daemon = True
+        thread.start()
+
+    def _delete_backup(self, filename):
+        """
+        Delete the backup specified
+        Args:
+            filename (str): Name of backup to delete
+        """
+        backup_folder = self.get_plugin_data_folder()
+        full_path = os.path.realpath(os.path.join(backup_folder, filename))
+        if (
+            full_path.startswith(backup_folder)
+            and os.path.exists(full_path)
+            and not is_hidden_path(full_path)
+        ):
+            try:
+                os.remove(full_path)
+            except Exception:
+                self._logger.exception("Could not delete {}".format(filename))
+                raise
 
     def _get_backups(self):
         backups = []
@@ -1324,4 +1407,8 @@ __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.events.register_custom_events": _register_custom_events,
     "octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook,
+}
+__plugin_helpers__ = {
+    "create_backup": __plugin_implementation__.create_backup_helper,
+    "delete_backup": __plugin_implementation__.delete_backup_helper,
 }

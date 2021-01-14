@@ -435,23 +435,30 @@ $(function () {
             },
             done: function (e, data) {
                 var response = data.result;
-                if (response.result) {
-                    self._markDone();
-                } else {
-                    self._markDone(response.reason);
+                if (!response.in_progress) {
+                    if (response.result) {
+                        self._markDone();
+                    } else {
+                        self._markDone(response.reason);
+                    }
                 }
 
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             },
             fail: function (e, data) {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                });
-                self._markDone("Could not install plugin, unknown error.");
+                if (data && data.errorThrown === "CONFLICT") {
+                    // there's already a plugin being installed
+                    self._markDone("There's already another plugin install in progress.");
+                } else {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                    self._markDone("Could not install plugin, unknown error.");
+                }
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             }
@@ -823,16 +830,23 @@ $(function () {
             var onSuccess = function (response) {
                     self.installUrl("");
                 },
-                onError = function () {
-                    self._markDone(
-                        "Could not install plugin, unknown error, please consult octoprint.log for details"
-                    );
-                    new PNotify({
-                        title: gettext("Something went wrong"),
-                        text: gettext("Please consult octoprint.log for details"),
-                        type: "error",
-                        hide: false
-                    });
+                onError = function (jqXHR) {
+                    if (jqXHR.status === 409) {
+                        // there's already a plugin being installed
+                        self._markDone(
+                            "There's already another plugin install in progress."
+                        );
+                    } else {
+                        self._markDone(
+                            "Could not install plugin, unknown error, please consult octoprint.log for details"
+                        );
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    }
                 };
 
             if (reinstall) {

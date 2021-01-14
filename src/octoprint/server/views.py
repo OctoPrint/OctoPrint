@@ -612,14 +612,16 @@ def index():
             if plugin is not None and isinstance(
                 plugin.implementation, octoprint.plugin.UiPlugin
             ):
-                permissions = plugin.get_ui_permissions()
+                permissions = plugin.implementation.get_ui_permissions()
                 response = require_login(*permissions)
                 if not response:
                     response = plugin_view(plugin.implementation)
                     if _logger.isEnabledFor(logging.DEBUG) and isinstance(
                         response, Response
                     ):
-                        response.headers["X-Ui-Plugin"] = plugin._identifier
+                        response.headers[
+                            "X-Ui-Plugin"
+                        ] = plugin.implementation._identifier
         else:
             response = require_login(*default_permissions)
             if not response:

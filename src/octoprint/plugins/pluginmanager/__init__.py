@@ -44,6 +44,8 @@ from octoprint.util.version import (
     is_python_compatible,
 )
 
+from . import exceptions
+
 _DATA_FORMAT_VERSION = "v3"
 
 
@@ -370,28 +372,43 @@ class PluginManagerPlugin(
             )
 
         ext = exts[0]
+        archive = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        archive.close()
+        shutil.copy(upload_path, archive.name)
 
-        archive = tempfile.NamedTemporaryFile(
-            delete=False, suffix="{ext}".format(**locals())
-        )
-        try:
-            archive.close()
-            shutil.copy(upload_path, archive.name)
-            return self.command_install(
-                path=archive.name,
-                name=upload_name,
-                force="force" in flask.request.values
-                and flask.request.values["force"] in valid_boolean_trues,
-            )
-        finally:
+        def perform_install(source, name, force=False):
             try:
-                os.remove(archive.name)
-            except Exception as e:
-                self._logger.warning(
-                    "Could not remove temporary file {path} again: {message}".format(
-                        path=archive.name, message=str(e)
-                    )
+                self.command_install(
+                    path=source,
+                    name=name,
+                    force=force,
                 )
+            finally:
+                try:
+                    os.remove(archive.name)
+                except Exception as e:
+                    self._logger.warning(
+                        "Could not remove temporary file {path} again: {message}".format(
+                            path=archive.name, message=str(e)
+                        )
+                    )
+
+        with self._install_lock:
+            if self._install_task is not None:
+                return make_response("There's already a plugin being installed", 409)
+
+            self._install_task = threading.Thread(
+                target=perform_install,
+                args=(archive.name, upload_name),
+                kwargs={
+                    "force": "force" in flask.request.values
+                    and flask.request.values["force"] in valid_boolean_trues
+                },
+            )
+            self._install_task.daemon = True
+            self._install_task.start()
+
+            return jsonify(in_progress=True)
 
     @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
     @no_firstrun_access
@@ -528,7 +545,7 @@ class PluginManagerPlugin(
 
             with self._install_lock:
                 if self._install_task is not None:
-                    return make_response("There's always a plugin being installed", 409)
+                    return make_response("There's already a plugin being installed", 409)
 
                 self._install_task = threading.Thread(
                     target=self.command_install,
@@ -626,7 +643,7 @@ class PluginManagerPlugin(
 
                 # determine type of path
                 if self._is_archive(path):
-                    return self._command_install_archive(
+                    result = self._command_install_archive(
                         path,
                         source=source,
                         source_type=source_type,
@@ -636,30 +653,59 @@ class PluginManagerPlugin(
                     )
 
                 elif self._is_pythonfile(path):
-                    return self._command_install_pythonfile(
+                    result = self._command_install_pythonfile(
                         path, source=source, source_type=source_type, name=name
                     )
 
                 else:
-                    self._logger.error(
-                        "{} is neither an archive nor a python file, can't install that.".format(
-                            source
-                        )
+                    raise exceptions.InvalidPackageFormat()
+
+            except requests.exceptions.HTTPError as e:
+                self._logger.error("Could not fetch plugin from server, got {}".format(e))
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not fetch plugin from server, got {}".format(e),
+                }
+                self._send_result_notification("install", result)
+
+            except exceptions.InvalidPackageFormat:
+                self._logger.error(
+                    "{} is neither an archive nor a python file, can't install that.".format(
+                        source
                     )
-                    result = {
-                        "result": False,
-                        "source": source,
-                        "source_type": source_type,
-                        "reason": "Could not install plugin from {}, was neither "
-                        "a plugin archive nor a single file plugin".format(source),
-                    }
-                    self._send_result_notification("install", result)
-                    return result
+                )
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not install plugin from {}, was neither "
+                    "a plugin archive nor a single file plugin".format(source),
+                }
+                self._send_result_notification("install", result)
+
+            except Exception:
+                error_msg = (
+                    "Unexpected error while trying to install plugin from {}".format(
+                        source
+                    )
+                )
+                self._logger.exception(error_msg)
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": error_msg,
+                }
+                self._send_result_notification("install", result)
 
             finally:
                 if folder is not None:
                     folder.cleanup()
                 self._install_task = None
+
+        return result
 
     # noinspection DuplicatedCode
     def _command_install_archive(
@@ -679,11 +725,19 @@ class PluginManagerPlugin(
             and not self._settings.get_boolean(["ignore_throttled"])
         ):
             # currently throttled, we refuse to run
-            return make_response(
-                "System is currently throttled, refusing to install "
-                "anything due to possible stability issues",
-                409,
+            error_msg = (
+                "System is currently throttled, refusing to install anything"
+                " due to possible stability issues"
             )
+            self._logger.error(error_msg)
+            result = {
+                "result": False,
+                "source": source,
+                "source_type": source_type,
+                "reason": error_msg,
+            }
+            self._send_result_notification("install", result)
+            return result
 
         from urllib.parse import quote as url_quote
 
@@ -748,11 +802,20 @@ class PluginManagerPlugin(
                     "Looks like the plugin was already installed. Forcing a reinstall."
                 )
                 force = True
-        except Exception:
-            self._logger.exception("Could not install plugin from %s" % source)
-            return make_response(
-                "Could not install plugin from URL, see the log for more details", 500
-            )
+        except Exception as e:
+            self._logger.exception("Could not install plugin from {}".format(source))
+            self._logger.exception("Reason: {}".format(repr(e)))
+            result = {
+                "result": False,
+                "source": source,
+                "source_type": source_type,
+                "reason": "Could not install plugin from {}, see the log for more details".format(
+                    source
+                ),
+            }
+            self._send_result_notification("install", result)
+            return result
+
         else:
             if force:
                 # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
@@ -760,16 +823,21 @@ class PluginManagerPlugin(
                 pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
                 try:
                     returncode, stdout, stderr = self._call_pip(pip_args)
-                except Exception:
+                except Exception as e:
                     self._logger.exception(
                         "Could not install plugin from {}".format(source)
                     )
-                    return make_response(
-                        "Could not install plugin from source {}, see the log for more details".format(
+                    self._logger.exception("Reason: {}".format(repr(e)))
+                    result = {
+                        "result": False,
+                        "source": source,
+                        "source_type": source_type,
+                        "reason": "Could not install plugin from source {}, see the log for more details".format(
                             source
                         ),
-                        500,
-                    )
+                    }
+                    self._send_result_notification("install", result)
+                    return result
 
         try:
             result_line = list(

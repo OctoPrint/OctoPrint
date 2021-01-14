@@ -3,10 +3,20 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 
 import collections
+import json
 
 import frozendict
 
 from octoprint.util import to_unicode
+
+
+def dump(obj):
+    return json.dumps(
+        obj,
+        separators=(",", ":"),
+        default=JsonEncoding.encode,
+        allow_nan=False,
+    )
 
 
 class JsonEncoding:

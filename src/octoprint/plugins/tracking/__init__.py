@@ -231,7 +231,8 @@ class TrackingPlugin(
             return
 
         uptime = int(time.monotonic() - self._startup_time)
-        self._track("ping", octoprint_uptime=uptime)
+        printer_state = self._printer.get_state_id()
+        self._track("ping", octoprint_uptime=uptime, printer_state=printer_state)
 
     def _track_pong(self):
         if not self._settings.get_boolean(["events", "pong"]):
