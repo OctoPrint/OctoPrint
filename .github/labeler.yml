@@ -1,0 +1,25 @@
+docs:
+  - "docs/*"
+  - "docs/**/*"
+  - "README.md"
+
+meta:
+  - "CODE_OF_CONDUCT.md"
+  - "CONTRIBUTING.md"
+  - "SECURITY.md"
+  - ".github/CODEOWNERS"
+  - ".github/FUNDING.yml"
+  - ".github/ISSUE_TEMPLATE/*"
+  - ".github/PULL_REQUEST_TEMPLATE.md"
+
+ci/cd:
+  - ".github/fixtures/**/*"
+  - ".github/workflows/*"
+  - ".github/labeler.yml"
+
+docker:
+  - ".github/workflows/trigger_docker.yml"
+
+tests:
+  - "tests/*"
+  - "tests/**/*"
