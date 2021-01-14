@@ -1,6 +1,7 @@
 name: "Pull Request Automation"
 on:
-  - pull_request_target
+  pull_request_target:
+    types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
 
 jobs:
   label:
@@ -9,3 +10,11 @@ jobs:
       - uses: actions/labeler@v3
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: label
+    steps:
+      - uses: OctoPrint/actions/pr-validation@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
