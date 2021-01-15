@@ -69,4 +69,4 @@ jobs:
     steps:
       - uses: OctoPrint/actions/issue-validation@main
         with:
-          - repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
