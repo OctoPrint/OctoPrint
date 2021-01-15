@@ -1,0 +1,37 @@
+name: "Cleanup issues & PRs"
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  lock:
+    name: 🔒 Lock issues & PRs closed over a year
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@v2
+        with:
+          github-token: ${{ github.token }}
+          issue-lock-comment: ""
+          pr-lock-comment: ""
+
+  cleanup:
+    name: 🧹 Close issues marked as incomplete & older than 14 days
+    runs-on: ubuntu-latest
+    steps:
+      - id: date
+        run: |
+          echo "::set-output name=CUTOFF::`date --date='14 days ago' +'%Y-%m-%d'`"
+      - uses: OctoPrint/actions/close-by-query@main
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          query: "is:issue is:open label:incomplete created:<${{ steps.date.outputs.CUTOFF }}"
+          comment: >
+            Since apparently some of the required information is still missing, this will be
+            closed now, sorry. Feel free to request a reopen of this or create a new issue
+            once you can provide **all**
+            [required information](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report).
+
+
+            This is nothing personal. Thank you for your collaboration.
