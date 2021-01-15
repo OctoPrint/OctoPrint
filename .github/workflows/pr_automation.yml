@@ -17,4 +17,4 @@ jobs:
     steps:
       - uses: OctoPrint/actions/pr-validation@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

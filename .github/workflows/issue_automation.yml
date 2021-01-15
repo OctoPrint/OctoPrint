@@ -62,3 +62,11 @@ jobs:
                 labels: labels
               })
             }
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: label
+    steps:
+      - uses: OctoPrint/actions/issue-validation@main
+        with:
+          - repo-token: ${{ secrets.GITHUB_TOKEN }}
