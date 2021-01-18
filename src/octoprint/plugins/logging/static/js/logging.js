@@ -21,13 +21,6 @@ $(function () {
             return _.sortBy(self.availableLoggers());
         });
 
-        self.configuredLoggersSorted = ko.computed(function () {
-            return _.sortBy(self.configuredLoggers(), function (o) {
-                o.level();
-                return o.component;
-            });
-        });
-
         // initialize list helper
         self.listHelper = new ItemListHelper(
             "logFiles",
@@ -103,6 +96,9 @@ $(function () {
                 });
                 levels.push(item);
                 configuredLoggers.push(logger);
+            });
+            let sortedLevels = _.sortBy(levels, function (o) {
+                return o.component;
             });
             self.configuredLoggers(levels);
 
@@ -180,6 +176,9 @@ $(function () {
             }
 
             var component = self.availableLoggersName();
+            if (!component) {
+                return;
+            }
             var level = self.availableLoggersLevel();
 
             self.configuredLoggers.push({
@@ -273,7 +272,7 @@ $(function () {
             );
         };
 
-        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = function () {
+        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = self.onSettingsShown = function () {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_LOGGING_MANAGE
