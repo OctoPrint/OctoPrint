@@ -792,7 +792,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             list: A list of paths to additional files whose modification to track for (in)validating
                 the cache. Ignored if ``None`` is returned.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -807,7 +807,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             list: A list of paths representing the only files whose modification to track for (in)validating
                 the cache. Ignored if ``None`` is returned.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -820,7 +820,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -838,7 +838,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             (list): A list of additional fields for the ETag generation, or None
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return default_additional
 
@@ -851,7 +851,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             int: An alternatively calculated LastModified value. Ignored if ``None`` is returned (default).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -877,7 +877,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             dict: Additional data to persist in the preemptive cache configuration.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -895,7 +895,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             dict: Additional request data to persist in the preemptive cache configuration and to
                 use for request environment construction.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -911,7 +911,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             bool: Whether to suppress a record (True) or not (False, default)
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return False
 
@@ -933,7 +933,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
             filtering will take place.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return default_template_filter
 
@@ -953,7 +953,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             (list) A list of permissions which to check the current user session against.
             May be empty to indicate that no permission checks should be made by OctoPrint.
 
-        ..versionadded: 1.5.0
+        .. versionadded: 1.5.0
         """
         from octoprint.access.permissions import Permissions
 
@@ -1381,7 +1381,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
         information.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         from collections import defaultdict
 
@@ -1779,7 +1779,7 @@ class SettingsPlugin(OctoPrintPlugin):
            #          path=dict(to=dict(never=dict(return=None))),
            #          the=dict(webcam=dict(data="webcam")))
 
-        ..versionadded:: 1.2.17
+        .. versionadded:: 1.2.17
         """
         return {}
 
@@ -1817,7 +1817,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
         Returns:
             (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
-                getters, the second the preprocessors for setters
+            getters, the second the preprocessors for setters
         """
         return {}, {}
 
@@ -1831,8 +1831,8 @@ class SettingsPlugin(OctoPrintPlugin):
 
         Returns:
             int or None: an int signifying the current settings format, should be incremented by plugins whenever there
-                         are backwards incompatible changes. Returning None here disables the version tracking for the
-                         plugin's configuration.
+            are backwards incompatible changes. Returning None here disables the version tracking for the
+            plugin's configuration.
         """
         return None
 
@@ -1868,7 +1868,7 @@ class SettingsPlugin(OctoPrintPlugin):
         the differences to the defaults (in case the current data was persisted with an older
         version of OctoPrint that still duplicated default data).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         import octoprint.util
         from octoprint.settings import NoSuchSettingsPath
@@ -2011,7 +2011,7 @@ class SlicerPlugin(OctoPrintPlugin):
 
         Returns: (dict) a dictionary containing a valid extension subtree.
 
-        ..versionadded:: 1.3.11
+        .. versionadded:: 1.3.11
         """
         from octoprint.filemanager import ContentTypeMapping
 
@@ -2028,7 +2028,7 @@ class SlicerPlugin(OctoPrintPlugin):
         Arguments:
             profile_path (str): The base folder where OctoPrint stores this slicer plugin's profiles
 
-        ..versionadded:: 1.3.7
+        .. versionadded:: 1.3.7
         """
 
         try:
@@ -2053,7 +2053,7 @@ class SlicerPlugin(OctoPrintPlugin):
     # noinspection PyMethodMayBeStatic
     def get_slicer_profiles_lastmodified(self, profile_path):
         """
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         import os
 
