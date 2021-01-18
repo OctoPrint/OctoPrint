@@ -1719,17 +1719,10 @@ class SettingsPlugin(OctoPrintPlugin):
         Return a ``dict`` with one of the following keys, mapping to a list of paths (as tuples or lists of
         the path elements) for which to restrict access via the REST API accordingly.
 
-        .. list-table::
-           :widths: 5 95
-
-           * - An octoprint permission object
-             - Paths will only be available on the REST API for users with the permission
-           * - admin
-             - Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
-           * - user
-             - Paths will only be available on the REST API when accessed as a logged in user
-           * - never
-             - Paths will never be returned on the API
+           * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
+           * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
+           * ``user``: Paths will only be available on the REST API when accessed as a logged in user
+           * ``never``: Paths will never be returned on the API
 
         Example:
 
@@ -1746,9 +1739,9 @@ class SettingsPlugin(OctoPrintPlugin):
            def get_settings_restricted_paths(self):
                from octoprint.access.permissions import Permissions
                return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                           'user':[["some", "user_only", "path"],],
-                           'never':[["path", "to", "never", "return"],],
-                           Permissions.WEBCAM:[["the", "webcam", "data"],]}
+                       'user':[["some", "user_only", "path"],],
+                       'never':[["path", "to", "never", "return"],],
+                       Permissions.WEBCAM:[["the", "webcam", "data"],]}
 
            # this will make the plugin return settings on the REST API like this for an anonymous user
            #
@@ -1777,7 +1770,7 @@ class SettingsPlugin(OctoPrintPlugin):
            #          path=dict(to=dict(never=dict(return=None))),
            #          the=dict(webcam=dict(data="webcam")))
            #
-           # and like this for an admin user with the webcam permission
+           # and like this for an admin user
            #
            #     dict(some=dict(admin_only=dict(path="path", foo="foo"),
            #                    user_only=dict(path="path", bar="bar")),
