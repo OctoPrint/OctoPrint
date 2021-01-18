@@ -1634,15 +1634,14 @@ class SettingsPlugin(OctoPrintPlugin):
 
         for level, paths in restricted_paths.items():
             if isinstance(level, OctoPrintPermission):
-                for path in paths:
-                    condition = lambda: (
-                        current_user is not None and current_user.has_permission(level)
-                    )
-                    restrict_path_unless(data, path, condition)
+                condition = lambda: (
+                    current_user is not None and current_user.has_permission(level)
+                )
             else:
                 condition = conditions.get(level, lambda: False)
-                for path in paths:
-                    restrict_path_unless(data, path, condition)
+
+            for path in paths:
+                restrict_path_unless(data, path, condition)
 
         return data
 
