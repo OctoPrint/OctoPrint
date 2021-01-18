@@ -1580,7 +1580,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
         from flask_login import current_user
 
-        from octoprint.access.permissions import Permissions
+        from octoprint.access.permissions import OctoPrintPermission, Permissions
 
         data = copy.deepcopy(self._settings.get_all_data(merged=True))
         if self.config_version_key in data:
@@ -1632,9 +1632,15 @@ class SettingsPlugin(OctoPrintPlugin):
             "never": lambda: False,
         }
 
-        for level, condition in conditions.items():
-            paths_for_level = restricted_paths.get(level, [])
-            for path in paths_for_level:
+        for level, paths in restricted_paths.items():
+            if isinstance(level, OctoPrintPermission):
+                condition = lambda: (
+                    current_user is not None and current_user.has_permission(level)
+                )
+            else:
+                condition = conditions.get(level, lambda: False)
+
+            for path in paths:
                 restrict_path_unless(data, path, condition)
 
         return data
@@ -1708,12 +1714,15 @@ class SettingsPlugin(OctoPrintPlugin):
         Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
 
         Override this in your plugin's implementation to restrict whether a path should only be returned to users with
-        the SETTINGS permission, any logged in users, or never on the REST API.
+        certain permissions, or never on the REST API.
 
-        Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
-        the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``
-        key will only be available on the REST API when access with admin rights, ``user`` will only be available when accessed
-        as a logged in user. ``never`` will never be returned on the API.
+        Return a ``dict`` with one of the following keys, mapping to a list of paths (as tuples or lists of
+        the path elements) for which to restrict access via the REST API accordingly.
+
+           * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
+           * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
+           * ``user``: Paths will only be available on the REST API when accessed as a logged in user
+           * ``never``: Paths will never be returned on the API
 
         Example:
 
@@ -1724,12 +1733,15 @@ class SettingsPlugin(OctoPrintPlugin):
                                      user_only=dict(path="path", bar="bar")),
                            another=dict(admin_only=dict(path="path"),
                                         field="field"),
-                           path=dict(to=dict(never=dict(return="return"))))
+                           path=dict(to=dict(never=dict(return="return"))),
+                           the=dict(webcam=dict(data="webcam")))
 
            def get_settings_restricted_paths(self):
-               return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                           user=[["some", "user_only", "path"],],
-                           never=[["path", "to", "never", "return"],])
+               from octoprint.access.permissions import Permissions
+               return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
+                       'user':[["some", "user_only", "path"],],
+                       'never':[["path", "to", "never", "return"],],
+                       Permissions.WEBCAM:[["the", "webcam", "data"],]}
 
            # this will make the plugin return settings on the REST API like this for an anonymous user
            #
@@ -1737,15 +1749,26 @@ class SettingsPlugin(OctoPrintPlugin):
            #                    user_only=dict(path=None, bar="bar")),
            #          another=dict(admin_only=dict(path=None),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data=None)))
            #
-           # like this for a logged in user
+           # like this for a logged in user without the webcam permission
            #
            #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
            #                    user_only=dict(path="path", bar="bar")),
            #          another=dict(admin_only=dict(path=None),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data=None)))
+           #
+           # like this for a logged in user with the webcam permission
+           #
+           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+           #                    user_only=dict(path="path", bar="bar")),
+           #          another=dict(admin_only=dict(path=None),
+           #                       field="field"),
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data="webcam")))
            #
            # and like this for an admin user
            #
@@ -1753,7 +1776,8 @@ class SettingsPlugin(OctoPrintPlugin):
            #                    user_only=dict(path="path", bar="bar")),
            #          another=dict(admin_only=dict(path="path"),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data="webcam")))
 
         ..versionadded:: 1.2.17
         """
