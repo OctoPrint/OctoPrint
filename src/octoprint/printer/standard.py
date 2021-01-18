@@ -444,8 +444,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if name is None or not name:
             raise ValueError("name must be set")
 
+        # .capitalize() will lowercase all letters but the first
+        # this code preserves existing CamelCase
         event_name = name[0].upper() + name[1:]
-        event_start = "{}{}".format(event_name, "GcodeRunning")
+
+        event_start = "GcodeScript{}Running".format(event_name)
         payload = context.get("event", None) if isinstance(context, dict) else None
 
         eventManager().fire(event_start, payload)
@@ -459,7 +462,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if not result and must_be_set:
             raise UnknownScript(name)
 
-        event_end = "{}{}".format(event_name, "GcodeFinished")
+        event_end = "GcodeScript{}Finished".format(event_name)
         eventManager().fire(event_end, payload)
 
     def jog(self, axes, relative=True, speed=None, *args, **kwargs):

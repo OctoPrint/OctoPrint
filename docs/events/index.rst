@@ -539,7 +539,7 @@ PrintResumed
 
    .. versionchanged:: 1.4.0
 
-${ScriptName}Running
+GcodeScript${ScriptName}Running
    A custom :ref:`GCODE script <sec-features-gcode_scripts>` has started running.
 
    Payload:
@@ -551,9 +551,9 @@ ${ScriptName}Running
      * ``owner``: the user who started the print job (if available)
      * ``time``: the time needed for the print, in seconds (float)
 
-   .. versionadded:: X.X.X
+   .. versionadded:: 1.6.0
 
-${ScriptName}Finished
+GcodeScript${ScriptName}Finished
    A custom :ref:`GCODE script <sec-features-gcode_scripts>` has finished running.
 
    Payload:
@@ -565,7 +565,7 @@ ${ScriptName}Finished
      * ``owner``: the user who started the print job (if available)
      * ``time``: the time needed for the print, in seconds (float)
 
-   .. versionadded:: X.X.X
+   .. versionadded:: 1.6.0
 
 .. _sec-events-available_events-gcode_processing:
 
