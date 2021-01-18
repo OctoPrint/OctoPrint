@@ -133,6 +133,7 @@ date of first contribution):
   * ["coliss86"](https://github.com/coliss86)
   * ["MichaIng"](https://github.com/MichaIng)
   * ["jasonbcox"](https://github.com/jasonbcox)
+  * ["shadycuz"](https://github.com/shadycuz)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
