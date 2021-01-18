@@ -105,6 +105,7 @@ $(function () {
             // loggers
             var availableLoggers = _.difference(response.loggers, configuredLoggers);
             self.availableLoggers(availableLoggers);
+            self.configuredLoggersChanged = false;
         };
 
         self.fromSerialLogResponse = function (response) {
