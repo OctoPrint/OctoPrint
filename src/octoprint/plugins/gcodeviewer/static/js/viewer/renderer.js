@@ -1123,7 +1123,6 @@ GCODE.renderer = (function () {
             this.doRender([], 0);
         },
         doRender: function (mdl, layerNum) {
-            console.log("doRender", layerNum);
             model = mdl;
             modelInfo = undefined;
 
