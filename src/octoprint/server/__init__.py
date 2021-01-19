@@ -720,6 +720,11 @@ class Server(object):
                 app, util.flask.permission_validator, permissions.Permissions.WEBCAM
             ),
         ] + access_validators_from_plugins
+        systeminfo_validators = [
+            util.tornado.access_validation_factory(
+                app, util.flask.permission_validator, permissions.Permissions.SYSTEM
+            )
+        ] + access_validators_from_plugins
 
         timelapse_permission_validator = {
             "access_validation": util.tornado.validation_chain(*timelapse_validators)
@@ -732,6 +737,9 @@ class Server(object):
         }
         camera_permission_validator = {
             "access_validation": util.tornado.validation_chain(*camera_validators)
+        }
+        systeminfo_permission_validator = {
+            "access_validation": util.tornado.validation_chain(*systeminfo_validators)
         }
 
         no_hidden_files_validator = {
@@ -772,6 +780,7 @@ class Server(object):
                     timelapse_path_validator,
                 ),
             ),
+            # uploaded printables
             (
                 r"/downloads/files/local/(.*)",
                 util.tornado.LargeResponseHandler,
@@ -787,6 +796,7 @@ class Server(object):
                     additional_mime_types,
                 ),
             ),
+            # log files
             (
                 r"/downloads/logs/([^/]*)",
                 util.tornado.LargeResponseHandler,
@@ -799,6 +809,12 @@ class Server(object):
                     download_handler_kwargs,
                     log_permission_validator,
                 ),
+            ),
+            # system info bundle
+            (
+                r"/downloads/systeminfo.zip",
+                util.tornado.SystemInfoBundleHandler,
+                systeminfo_permission_validator,
             ),
             # camera snapshot
             (
