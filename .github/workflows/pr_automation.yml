@@ -4,17 +4,13 @@ on:
     types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
 
 jobs:
-  label:
+  pr-automation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/labeler@v3
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
 
-  validate:
-    runs-on: ubuntu-latest
-    needs: label
-    steps:
       - uses: OctoPrint/actions/pr-validation@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

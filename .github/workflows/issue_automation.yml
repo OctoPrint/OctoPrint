@@ -4,7 +4,7 @@ on:
     types: [opened, edited, closed, reopened]
 
 jobs:
-  label:
+  issue-automation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v2
@@ -62,3 +62,8 @@ jobs:
                 labels: labels
               })
             }
+
+      - uses: OctoPrint/actions/issue-validation@main
+        if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'edited')
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
