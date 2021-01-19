@@ -30,8 +30,8 @@ There are three main branches in OctoPrint:
 
 There are couple more RC and staging branches that see regular use:
 
-``staging/hotfix``
-    Any preparation for potential hotfix releases takes place here.
+``staging/bugfix``
+    Any preparation for potential bugfix releases takes place here.
     Version number follows the scheme ``<x>.<y>.<z+1>`` (e.g. ``1.5.1``) for a current release
     of ``<x>.<y>.<z>``.
 ``rc/maintenance``
@@ -56,8 +56,8 @@ There are couple more RC and staging branches that see regular use:
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:
 
-``hotfix/...``
-    Hotfixes under development that are to be merged into the ``staging/hotfix``
+``bug/...``
+    Fixes under development that are to be merged into the ``staging/bugfix``
     and later the ``master`` branch.
 ``fix/...``
     Fixes under development that are to be merged into the ``maintenance``
