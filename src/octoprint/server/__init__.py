@@ -761,6 +761,15 @@ class Server(object):
                 status_code=400,
             )
         }
+        logs_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: not octoprint.util.is_hidden_path(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("logs")
+                ),
+                status_code=400,
+            )
+        }
 
         def joined_dict(*dicts):
             if not len(dicts):
@@ -832,6 +841,23 @@ class Server(object):
                     },
                     download_handler_kwargs,
                     log_permission_validator,
+                ),
+            ),
+            # zipped log file bundles
+            (
+                r"/downloads/logs",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-logs.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("logs"), x),
+                        ),
+                    },
+                    log_permission_validator,
+                    logs_path_validator,
                 ),
             ),
             # system info bundle
@@ -1997,7 +2023,6 @@ class Server(object):
             "js/lib/ResizeSensor.js",
             "js/lib/less.min.js",
             "js/lib/hls.js",
-            "js/lib/FileSaver.min.js",
         ]
         js_client = [
             "js/app/client/base.js",
