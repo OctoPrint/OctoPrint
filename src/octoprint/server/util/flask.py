@@ -612,7 +612,16 @@ def _local_networks():
         logger = logging.getLogger(__name__)
         local_networks = netaddr.IPSet([])
         for entry in settings().get(["accessControl", "localNetworks"]):
-            network = netaddr.IPNetwork(entry)
+            try:
+                network = netaddr.IPNetwork(entry)
+            except Exception:
+                logger.warning(
+                    "Invalid network definition configured in localNetworks: {}".format(
+                        entry
+                    )
+                )
+                continue
+
             local_networks.add(network)
             logger.debug("Added network {} to localNetworks".format(network))
 

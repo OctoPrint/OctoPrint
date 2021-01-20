@@ -7,4 +7,7 @@
     <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
 </p>
 
-<a href="javascript:void(0)" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
+
+<a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
+
+<a href="javascript:void(0)" class="btn" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>

@@ -6,7 +6,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import io
 import logging
 import os
 import site
@@ -16,7 +15,7 @@ import threading
 import pkg_resources
 import sarge
 
-from octoprint.util import to_native_str, to_unicode
+from octoprint.util import to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
@@ -412,18 +411,9 @@ class PipCaller(CommandlineCaller):
             # variables, we can't for stuff like third party software we allow to update via the software
             # update plugin.
             #
-            # What we do instead for these situations is try to install (and of course uninstall) the
-            # testballoon dummy package, which collects that information for us. For pip <= 7 we could
-            # have the testballoon provide us with the info needed through stdout, if pip was called
-            # with --verbose anything printed to stdout within setup.py would be output. Pip 8 managed
-            # to break this mechanism. Any (!) output within setup.py appears to be suppressed now, and
-            # no combination of --log and multiple --verbose or -v arguments could get it to bring the
-            # output back.
-            #
-            # So here's what we do now instead. Our sarge call sets an environment variable
-            # "TESTBALLOON_OUTPUT" that points to a temporary file. If the testballoon sees that
-            # variable set, it opens the file and writes to it the output it so far printed on stdout.
-            # We then open the file and read in the data that way.
+            # What we do instead for these situations is try to install the testballoon dummy package, which
+            # collects that information for us. The install fails expectedly and pip prints the required
+            # information together with its STDOUT (until pip v19) or STDERR (from pip v20 on).
             #
             # Yeah, I'm not happy with that either. But as long as there's no way to otherwise figure
             # out for a generic pip command whether OctoPrint can even install anything with that
@@ -435,36 +425,33 @@ class PipCaller(CommandlineCaller):
                 os.path.realpath(os.path.dirname(__file__)), "piptestballoon"
             )
 
-            from octoprint.util import temppath
+            sarge_command = self.to_sarge_command(pip_command, "install", ".")
+            try:
+                # our testballoon is no real package, so this command will fail - that's ok though,
+                # we only need the output produced within the pip environment
+                p = sarge.run(
+                    sarge_command,
+                    close_fds=CLOSE_FDS,
+                    stdout=sarge.Capture(),
+                    stderr=sarge.Capture(),
+                    cwd=testballoon,
+                )
+            except Exception:
+                self._logger.exception(
+                    "Error while trying to install testballoon to figure out pip setup"
+                )
+                return False, False, False, None
 
-            with temppath() as testballoon_output_file:
-                sarge_command = self.to_sarge_command(pip_command, "install", ".")
-                try:
-                    # our testballoon is no real package, so this command will fail - that's ok though,
-                    # we only need the output produced within the pip environment
-                    sarge.run(
-                        sarge_command,
-                        close_fds=CLOSE_FDS,
-                        stdout=sarge.Capture(),
-                        stderr=sarge.Capture(),
-                        cwd=testballoon,
-                        env={
-                            to_native_str("TESTBALLOON_OUTPUT"): to_native_str(
-                                testballoon_output_file
-                            )
-                        },
-                    )
-                except Exception:
-                    self._logger.exception(
-                        "Error while trying to install testballoon to figure out pip setup"
-                    )
-                    return False, False, False, None
-
-                data = {}
-                with io.open(testballoon_output_file, "rt", encoding="utf-8") as f:
-                    for line in f:
-                        key, value = line.split("=", 2)
-                        data[key] = value
+            output = p.stdout.text + p.stderr.text
+            data = {}
+            for line in output.split("\n"):
+                if (
+                    "PIP_INSTALL_DIR=" in line
+                    or "PIP_VIRTUAL_ENV=" in line
+                    or "PIP_WRITABLE=" in line
+                ):
+                    key, value = line.split("=", 2)
+                    data[key.strip()] = value.strip()
 
             install_dir_str = data.get("PIP_INSTALL_DIR", None)
             virtual_env_str = data.get("PIP_VIRTUAL_ENV", None)
@@ -475,9 +462,9 @@ class PipCaller(CommandlineCaller):
                 and virtual_env_str is not None
                 and writable_str is not None
             ):
-                install_dir = install_dir_str.strip()
-                virtual_env = virtual_env_str.strip() == "True"
-                writable = writable_str.strip() == "True"
+                install_dir = install_dir_str
+                virtual_env = virtual_env_str == "True"
+                writable = writable_str == "True"
 
                 can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
 

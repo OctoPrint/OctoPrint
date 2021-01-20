@@ -46,7 +46,7 @@ INSTALL_REQUIRES = [
     "PyYAML>=5.3.1,<6",
     "pyserial>=3.4,<4",
     "netaddr>=0.7.19,<1",
-    "watchdog>=0.10.2,<1",
+    "watchdog==0.10.4",  # watchdog dropped Py>3.6 on 0.10.5 point release...
     "sarge==0.1.5post0",
     "netifaces>=0.10.9,<1",
     "pylru>=1.2,<2",
@@ -62,6 +62,7 @@ INSTALL_REQUIRES = [
     "frozendict>=1.2,<2",
     "sentry-sdk>=0.15.1,<1",
     "filetype>=1.0.7,<2",
+    "zipstream-new>=1.1.8,<1.2",
     # vendor bundled dependencies
     "unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
     "blinker>=1.4,<2",  # dependency of flask_principal

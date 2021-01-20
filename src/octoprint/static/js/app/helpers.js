@@ -1592,3 +1592,27 @@ var loadFromLocalStorage = function (key) {
     }
     return current;
 };
+
+var deepMerge = function (target, source) {
+    /**
+     * Implements an object deep merge, which contrary to _.merge doesn't try to
+     * merge arrays.
+     */
+    if (!_.isObject(target)) {
+        return target;
+    }
+
+    _.forOwn(source, function (value, key) {
+        if (
+            target.hasOwnProperty(key) &&
+            _.isPlainObject(target[key]) &&
+            _.isPlainObject(value)
+        ) {
+            target[key] = deepMerge(target[key], value);
+        } else {
+            target[key] = value;
+        }
+    });
+
+    return target;
+};

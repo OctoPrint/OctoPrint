@@ -205,8 +205,10 @@ Retrieve information about the current job
           },
           "estimatedPrintTime": 8811,
           "filament": {
-            "length": 810,
-            "volume": 5.36
+            "tool0": {
+              "length": 810,
+              "volume": 5.36
+            }
           }
         },
         "progress": {

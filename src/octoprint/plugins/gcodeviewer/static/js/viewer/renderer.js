@@ -103,6 +103,9 @@ GCODE.renderer = (function () {
                 " segments"
         );
 
+        applyOffsets(layerNumStore);
+        applyZoom(layerNumStore);
+
         notifyIfViewportChanged();
 
         var p1 = ctx.transformedPoint(0, 0);
@@ -143,6 +146,51 @@ GCODE.renderer = (function () {
             }
         }
     };
+
+    function getLayerBounds(layer) {
+        if (!model || !model[layer]) return;
+
+        var cmds = model[layer];
+        var i = 0;
+
+        // find bounds based on x/y moves with extrusion only
+        // if you want to change that criterion, this is the place to do it
+
+        while (i < cmds.length) {
+            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined))
+                break;
+            i++;
+        }
+
+        if (i == cmds.length) return;
+
+        // initialize with guaranteed defined values and cut out a bunch of
+        // testing for undefined cases
+        var minX = cmds[i].prevX,
+            maxX = cmds[i].prevX,
+            minY = cmds[i].prevY,
+            maxY = cmds[i].prevY;
+
+        while (i < cmds.length) {
+            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined)) {
+                minX = Math.min(minX, cmds[i].prevX);
+                maxX = Math.max(maxX, cmds[i].prevX);
+                if (cmds[i].x !== undefined) {
+                    minX = Math.min(minX, cmds[i].x);
+                    maxX = Math.max(maxX, cmds[i].x);
+                }
+                minY = Math.min(minY, cmds[i].prevY);
+                maxY = Math.max(maxY, cmds[i].prevY);
+                if (cmds[i].y !== undefined) {
+                    minY = Math.min(minY, cmds[i].y);
+                    maxY = Math.max(maxY, cmds[i].y);
+                }
+            }
+            i++;
+        }
+
+        return {minX: minX, maxX: maxX, minY: minY, maxY: maxY};
+    }
 
     function trackTransforms(ctx) {
         var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -270,9 +318,6 @@ GCODE.renderer = (function () {
                     if (renderOptions["onDrag"] && renderOptions["onDrag"](pt) === false)
                         return;
 
-                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
-                    reRender();
-
                     renderOptions["centerViewport"] = false;
                     renderOptions["zoomInOnModel"] = false;
                     renderOptions["zoomInOnBed"] = false;
@@ -282,6 +327,9 @@ GCODE.renderer = (function () {
                     offsetBedY = 0;
                     scaleX = 1;
                     scaleY = 1;
+
+                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+                    reRender();
 
                     if (renderOptions["onInternalOptionChange"] !== undefined) {
                         renderOptions["onInternalOptionChange"]({
@@ -326,9 +374,6 @@ GCODE.renderer = (function () {
             // return to old position
             ctx.translate(-pt.x, -pt.y);
 
-            // render
-            reRender();
-
             // disable conflicting options
             renderOptions["zoomInOnModel"] = false;
             renderOptions["zoomInOnBed"] = false;
@@ -338,6 +383,9 @@ GCODE.renderer = (function () {
             offsetBedY = 0;
             scaleX = 1;
             scaleY = 1;
+
+            // render
+            reRender();
 
             if (renderOptions["onInternalOptionChange"] !== undefined) {
                 renderOptions["onInternalOptionChange"]({
@@ -836,41 +884,41 @@ GCODE.renderer = (function () {
         }
     };
 
-    var applyOffsets = function () {
+    var applyOffsets = function (layerNum) {
         var canvasCenter;
 
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
         if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
-            if (modelInfo) {
-                offsetModelX =
-                    canvasCenter.x -
-                    (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2;
-                offsetModelY =
-                    canvasCenter.y -
-                    (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2;
+            layerBounds = getLayerBounds(layerNum);
+            if (layerBounds) {
+                offsetModelX = canvasCenter.x - (layerBounds.minX + layerBounds.maxX) / 2;
+                offsetModelY = canvasCenter.y - (layerBounds.minY + layerBounds.maxY) / 2;
             } else {
                 offsetModelX = 0;
                 offsetModelY = 0;
             }
             offsetBedX = 0;
             offsetBedY = 0;
-        } else if (modelInfo && renderOptions["moveModel"]) {
-            offsetModelX =
-                renderOptions["bed"]["x"] / 2 -
-                (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2;
-            offsetModelY =
-                renderOptions["bed"]["y"] / 2 -
-                (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2;
-            offsetBedX =
-                -1 *
-                (renderOptions["bed"]["x"] / 2 -
-                    (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2);
-            offsetBedY =
-                -1 *
-                (renderOptions["bed"]["y"] / 2 -
-                    (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2);
+        } else if (renderOptions["moveModel"]) {
+            layerBounds = getLayerBounds(layerNum);
+            if (layerBounds) {
+                offsetModelX =
+                    renderOptions["bed"]["x"] / 2 -
+                    (layerBounds.minX + layerBounds.maxX) / 2;
+                offsetModelY =
+                    renderOptions["bed"]["y"] / 2 -
+                    (layerBounds.minY + layerBounds.maxY) / 2;
+                offsetBedX =
+                    -1 *
+                    (renderOptions["bed"]["x"] / 2 -
+                        (layerBounds.minX + layerBounds.maxX) / 2);
+                offsetBedY =
+                    -1 *
+                    (renderOptions["bed"]["y"] / 2 -
+                        (layerBounds.minY + layerBounds.maxY) / 2);
+            }
         } else if (
             renderOptions["bed"]["circular"] ||
             renderOptions["bed"]["centeredOrigin"]
@@ -889,7 +937,7 @@ GCODE.renderer = (function () {
         if (ctx) ctx.translate(offsetModelX, offsetModelY);
     };
 
-    var applyZoom = function () {
+    var applyZoom = function (layerNum) {
         // get middle of canvas
         var pt = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
 
@@ -904,28 +952,36 @@ GCODE.renderer = (function () {
             transform = ctx.getTransform();
         }
 
-        if (modelInfo && renderOptions["zoomInOnModel"]) {
-            // if we need to zoom in on model, scale factor is calculated by longer side of object in relation to that axis of canvas
-            var width = modelInfo.boundingBox.maxX - modelInfo.boundingBox.minX;
-            var length = modelInfo.boundingBox.maxY - modelInfo.boundingBox.minY;
+        if (renderOptions["zoomInOnModel"]) {
+            var layerBounds = getLayerBounds(layerNum);
+            if (layerBounds) {
+                // if we need to zoom in on model, scale factor is calculated by longer side of object in relation to that axis of canvas
+                // limited arbitrarily to 50 x extrusion width, to prevent extreme disorienting zoom
+                var width = Math.max(
+                    layerBounds.maxX - layerBounds.minX,
+                    renderOptions["extrusionWidth"] * 50
+                );
+                var length = Math.max(
+                    layerBounds.maxY - layerBounds.minY,
+                    renderOptions["extrusionWidth"] * 50
+                );
 
-            var scaleF =
-                width > length
-                    ? (canvas.width - 10) / width
-                    : (canvas.height - 10) / length;
-            if (transform.a && transform.d) {
-                scaleX =
-                    (scaleF / transform.a) * (renderOptions["invertAxes"]["x"] ? -1 : 1);
-                scaleY =
-                    (scaleF / transform.d) * (renderOptions["invertAxes"]["y"] ? 1 : -1);
-                ctx.translate(pt.x, pt.y);
-                ctx.scale(scaleX, scaleY);
-                ctx.translate(-pt.x, -pt.y);
+                var scaleF =
+                    width > length
+                        ? (canvas.width - 10) / width
+                        : (canvas.height - 10) / length;
+                if (transform.a && transform.d) {
+                    scaleX =
+                        (scaleF / transform.a) *
+                        (renderOptions["invertAxes"]["x"] ? -1 : 1);
+                    scaleY =
+                        (scaleF / transform.d) *
+                        (renderOptions["invertAxes"]["y"] ? 1 : -1);
+                    ctx.translate(pt.x, pt.y);
+                    ctx.scale(scaleX, scaleY);
+                    ctx.translate(-pt.x, -pt.y);
+                }
             }
-        } else {
-            // reset scale to 1
-            scaleX = 1;
-            scaleY = 1;
         }
     };
 
@@ -1085,8 +1141,8 @@ GCODE.renderer = (function () {
             }
 
             applyInversion();
-            applyOffsets();
-            applyZoom();
+            scaleX = 1;
+            scaleY = 1;
 
             this.render(layerNum, 0, toProgress);
         },

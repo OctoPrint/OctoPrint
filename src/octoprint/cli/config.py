@@ -40,7 +40,7 @@ def _set_helper(settings, path, value, data_type=None):
         if name is not None:
             method = getattr(settings, name)
 
-    method(path, value)
+    method(path, value, force=True)
     settings.save()
 
 

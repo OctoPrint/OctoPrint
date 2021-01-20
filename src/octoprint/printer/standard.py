@@ -18,6 +18,7 @@ import time
 from frozendict import frozendict
 from past.builtins import basestring, long
 
+import octoprint.util.json
 from octoprint import util as util
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
@@ -276,7 +277,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
+                    octoprint.util.json.dump({name: additional})
                     plugin_data[name] = additional
+            except ValueError:
+                self._logger.exception(
+                    "Invalid additional data from plugin {}".format(name),
+                    extra={"plugin": name},
+                )
             except Exception:
                 self._logger.exception(
                     "Error while retrieving additional data from plugin {}, blacklisting it for further loops".format(
@@ -437,6 +444,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if name is None or not name:
             raise ValueError("name must be set")
 
+        # .capitalize() will lowercase all letters but the first
+        # this code preserves existing CamelCase
+        event_name = name[0].upper() + name[1:]
+
+        event_start = "GcodeScript{}Running".format(event_name)
+        payload = context.get("event", None) if isinstance(context, dict) else None
+
+        eventManager().fire(event_start, payload)
+
         result = self._comm.sendGcodeScript(
             name,
             part_of_job=part_of_job,
@@ -445,6 +461,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         )
         if not result and must_be_set:
             raise UnknownScript(name)
+
+        event_end = "GcodeScript{}Finished".format(event_name)
+        eventManager().fire(event_end, payload)
 
     def jog(self, axes, relative=True, speed=None, *args, **kwargs):
         if isinstance(axes, basestring):

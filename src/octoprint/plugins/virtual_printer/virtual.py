@@ -202,7 +202,7 @@ class VirtualPrinter(object):
 
         self._received_lines = 0
         self._resend_every_n = 0
-        self._calculate_resend_every_n(self._settings.get(["resend_ratio"]))
+        self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
 
