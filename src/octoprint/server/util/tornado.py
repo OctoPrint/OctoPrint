@@ -1468,6 +1468,71 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
                 return
 
 
+class DynamicZipBundleHandler(StaticZipBundleHandler):
+    # noinspection PyMethodOverriding
+    def initialize(
+        self,
+        path_validation=None,
+        path_processor=None,
+        as_attachment=True,
+        attachment_name=None,
+        access_validation=None,
+    ):
+        if as_attachment and not attachment_name:
+            raise ValueError("attachment name must be set if as_attachment is True")
+
+        self._path_validator = path_validation
+        self._path_processor = path_processor
+        self._as_attachment = as_attachment
+        self._attachment_name = attachment_name
+        self._access_validator = access_validation
+
+    def get(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        files = list(
+            map(octoprint.util.to_unicode, self.request.query_arguments.get("files", []))
+        )
+        return self._get_files_zip(files)
+
+    def post(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        import json
+
+        content_type = self.request.headers.get("Content-Type", "")
+        try:
+            if "application/json" in content_type:
+                data = json.loads(self.request.body)
+            else:
+                data = self.request.body_arguments
+        except Exception:
+            raise tornado.web.HTTPError(400)
+
+        return self._get_files_zip(
+            list(map(octoprint.util.to_unicode, data.get("files", [])))
+        )
+
+    def _get_files_zip(self, files):
+        files = self.normalize_files(files)
+        if not files:
+            raise tornado.web.HTTPError(400)
+
+        for f in files:
+            if "path" in f:
+                if callable(self._path_processor):
+                    path = self._path_processor(f["path"])
+                    if isinstance(path, tuple):
+                        f["name"], f["path"] = path
+                    else:
+                        f["path"] = path
+                self._path_validator(f["path"])
+
+        return self.stream_zip(files)
+
+
 class SystemInfoBundleHandler(StaticZipBundleHandler):
     # noinspection PyMethodOverriding
     def initialize(self, access_validation=None):

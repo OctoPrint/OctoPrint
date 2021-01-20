@@ -754,6 +754,13 @@ class Server(object):
                 status_code=404,
             )
         }
+        timelapses_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: not octoprint.util.is_hidden_path(path)
+                and octoprint.timelapse.valid_timelapse(path),
+                status_code=400,
+            )
+        }
 
         def joined_dict(*dicts):
             if not len(dicts):
@@ -778,6 +785,23 @@ class Server(object):
                     timelapse_permission_validator,
                     download_handler_kwargs,
                     timelapse_path_validator,
+                ),
+            ),
+            # zipped timelapse bundles
+            (
+                r"/downloads/timelapses",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-timelapses.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("timelapse"), x),
+                        ),
+                    },
+                    timelapse_permission_validator,
+                    timelapses_path_validator,
                 ),
             ),
             # uploaded printables
@@ -1973,7 +1997,6 @@ class Server(object):
             "js/lib/ResizeSensor.js",
             "js/lib/less.min.js",
             "js/lib/hls.js",
-            "js/lib/jszip.min.js",
             "js/lib/FileSaver.min.js",
         ]
         js_client = [

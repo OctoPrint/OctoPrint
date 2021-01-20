@@ -11,11 +11,9 @@
   * [Bootstrap Tabdrop](http://www.eyecon.ro/bootstrap-tabdrop): Apache License 2.0
   * [css-element-queries](https://github.com/marcj/css-element-queries): MIT
   * [Detect Mobile Browser](http://detectmobilebrowsers.com/): Public Domain
-  * [FileSaver.js](https://github.com/eligrey/FileSaver.js): MIT
   * [Flot](http://www.flotcharts.org/): MIT
   * [HLS.js](https://github.com/video-dev/hls.js): Apache License 2.0
   * [JavaScript MD5](https://github.com/blueimp/JavaScript-MD5): MIT
-  * [JSZip](https://github.com/Stuk/jszip): MIT, GPLv3 (dual licensed)
   * [JQuery](http://jquery.com/): MIT
   * [JQuery Bootstrap Wizard](http://github.com/VinceG/twitter-bootstrap-wizard): MIT, GPL (dual licensed)
   * [JQuery File Upload](https://github.com/blueimp/jQuery-File-Upload): MIT
