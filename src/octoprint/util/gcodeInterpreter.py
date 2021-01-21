@@ -282,9 +282,9 @@ class gcode(object):
             readBytes += len(line.encode("utf-8"))
 
             if isinstance(gcodeFile, (io.IOBase, codecs.StreamReaderWriter)):
-                percentage = float(readBytes) / float(self._fileSize)
+                percentage = readBytes / self._fileSize
             elif isinstance(gcodeFile, (list)):
-                percentage = float(lineNo) / float(len(gcodeFile))
+                percentage = lineNo / len(gcodeFile)
             else:
                 percentage = None
 
@@ -387,7 +387,7 @@ class gcode(object):
                             e -= currentE[currentExtruder]
 
                         # If move with extrusion, calculate new min/max coordinates of model
-                        if e > 0.0 and move:
+                        if e > 0 and move:
                             # extrusion and move -> oldPos & pos relevant for print area & dimensions
                             self._minMax.record(oldPos)
                             self._minMax.record(pos)
@@ -405,7 +405,7 @@ class gcode(object):
                                 currentE[i] += e
                                 maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
                     else:
-                        e = 0.0
+                        e = 0
 
                     # move time in x, y, z, will be 0 if no movement happened
                     moveTimeXYZ = abs((oldPos - pos).length / feedrate)
@@ -419,10 +419,10 @@ class gcode(object):
                 elif G == 4:  # Delay
                     S = getCodeFloat(line, "S")
                     if S is not None:
-                        totalMoveTimeMinute += S / 60.0
+                        totalMoveTimeMinute += S / 60
                     P = getCodeFloat(line, "P")
                     if P is not None:
-                        totalMoveTimeMinute += P / 60.0 / 1000.0
+                        totalMoveTimeMinute += P / 60 / 1000
                 elif G == 10:  # Firmware retract
                     totalMoveTimeMinute += fwretractTime
                 elif G == 11:  # Firmware retract recover
