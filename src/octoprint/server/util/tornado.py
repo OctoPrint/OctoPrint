@@ -814,7 +814,7 @@ class WsgiInputContainer(object):
             log_method = access_log.warning
         else:
             log_method = access_log.error
-        request_time = 1000.0 * request.request_time()
+        request_time = 1000 * request.request_time()
         summary = request.method + " " + request.uri + " (" + request.remote_ip + ")"
         log_method("%d %s %.2fms", status_code, summary, request_time)
 

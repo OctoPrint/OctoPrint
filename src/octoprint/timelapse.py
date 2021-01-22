@@ -1097,7 +1097,7 @@ class TimelapseRenderJob(object):
             current_time = _ffmpeg_current_regex.search(line)
             if current_time is not None and self._parsed_duration != 0:
                 current_s = self._convert_time(*current_time.groups())
-                progress = current_s / float(self._parsed_duration) * 100
+                progress = current_s / self._parsed_duration * 100
 
                 # Update progress bar
                 for callback in _update_callbacks:

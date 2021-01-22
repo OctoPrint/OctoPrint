@@ -233,9 +233,9 @@ class TimelapseTest(unittest.TestCase):
             "0: Video: mpeg2video, yuv420p, 640x480, q=2-31, 10000 kb/s, 90k tbn, 25 tbc"
         )
         progress1Str = "frame=  134 fps=0.0 q=1.6 size=    1528kB time=00:00:05.28 bitrate=2370.7kbits/s dup=80 drop=0  "  # 5s elapsed
-        expectedProgress1 = 5.0 / 18.0 * 100.0
+        expectedProgress1 = 5 / 18 * 100
         progress2Str = "frame=  274 fps=270 q=2.0 size=    2748kB time=00:00:10.88 bitrate=2069.1kbits/s dup=164 drop=0 "  # 10s elapsed
-        expectedProgress2 = 10.0 / 18.0 * 100.0
+        expectedProgress2 = 10 / 18 * 100
 
         # Callback mock
         callback = mock.MagicMock()

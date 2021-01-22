@@ -634,7 +634,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             raise ValueError("factor is not a number")
 
         if isinstance(factor, float):
-            factor = int(factor * 100.0)
+            factor = int(factor * 100)
 
         if min_val and factor < min_val:
             raise ValueError("factor must be a value >={}".format(min_val))
@@ -1138,7 +1138,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             if progress == 0:
                 printTimeLeft = None
                 printTimeLeftOrigin = None
-            elif progress == 1.0:
+            elif progress == 1:
                 printTimeLeft = 0
                 printTimeLeftOrigin = None
             elif estimator is not None:
@@ -1184,7 +1184,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         return self._dict(
             count=self._comm.received_resends,
             transmitted=self._comm.transmitted_lines,
-            ratio=int(self._comm.resend_ratio * 100.0),
+            ratio=int(self._comm.resend_ratio * 100),
         )
 
     def _addTemperatureData(self, tools=None, bed=None, chamber=None, custom=None):
