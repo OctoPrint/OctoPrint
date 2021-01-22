@@ -843,9 +843,9 @@ class ZTimelapse(Timelapse):
             and payload["old"] is not None
             and payload["new"] is not None
         ):
-            diff = round(abs(payload["new"] - payload["old"]), 3)
-            zhop = round(self._retraction_zhop, 3)
-            if diff == zhop:
+            diff = abs(payload["new"] - payload["old"])
+            zhop = self._retraction_zhop
+            if abs(diff - zhop) < 0.001:
                 return
 
         # check if last picture has been less than min_delay ago, if so don't take a picture (anti vase mode...)
