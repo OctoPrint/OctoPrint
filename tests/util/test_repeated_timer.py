@@ -9,7 +9,7 @@ import unittest.mock as mock
 from octoprint.util import RepeatedTimer
 
 
-class Countdown(object):
+class Countdown:
     def __init__(self, start):
         self._counter = start
 

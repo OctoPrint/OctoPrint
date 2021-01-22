@@ -13,7 +13,7 @@ from ddt import data, ddt, unpack
 from octoprint.filemanager.storage import LocalFileStorage, StorageError
 
 
-class FileWrapper(object):
+class FileWrapper:
     def __init__(self, filename):
         self.path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "_files", filename

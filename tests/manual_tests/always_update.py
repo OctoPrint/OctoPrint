@@ -17,7 +17,7 @@ OLD_VERSION = "1.0.0"
 NEW_VERSION = "2.0.0"
 
 
-class Foo(object):
+class Foo:
     def get_latest(self, target, check, full_data=None):
         information = {
             "local": {"name": OLD_VERSION, "value": OLD_VERSION},
