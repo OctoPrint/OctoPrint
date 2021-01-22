@@ -318,10 +318,10 @@ def get_latest(
         prerelease_branches = check.get("prerelease_branches", None)
         if prerelease_branches:
             # fetch valid commitish list from configured prerelease_branches for selected channel
-            commitishes = dict(
-                (x["branch"], x.get("commitish", [x["branch"]]))
+            commitishes = {
+                x["branch"]: x.get("commitish", [x["branch"]])
                 for x in prerelease_branches
-            )
+            }
             commitish = commitishes.get(prerelease_channel, [prerelease_channel])
 
     force_base = check.get("force_base", False)

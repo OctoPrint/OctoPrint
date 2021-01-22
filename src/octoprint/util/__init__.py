@@ -1072,7 +1072,7 @@ def dict_filter(dictionary, filter_function):
     """
     assert isinstance(dictionary, dict)
     assert callable(filter_function)
-    return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+    return {k: v for k, v in dictionary.items() if filter_function(k, v)}
 
 
 # Source: http://stackoverflow.com/a/6190500/562769

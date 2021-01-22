@@ -244,10 +244,9 @@ class AppKeysPlugin(
 
         return flask.jsonify(
             keys=list(map(lambda x: x.external(), keys)),
-            pending=dict(
-                (x.user_token, x.external())
-                for x in self._get_pending_by_user_id(user_id)
-            ),
+            pending={
+                x.user_token: x.external() for x in self._get_pending_by_user_id(user_id)
+            },
         )
 
     def on_api_command(self, command, data):

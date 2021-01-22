@@ -1571,11 +1571,11 @@ class Server:
                             continue
 
                     additional_request_data = kwargs.get("_additional_request_data", {})
-                    kwargs = dict(
-                        (k, v)
+                    kwargs = {
+                        k: v
                         for k, v in kwargs.items()
                         if not k.startswith("_") and not k == "plugin"
-                    )
+                    }
                     kwargs.update(additional_request_data)
 
                     try:

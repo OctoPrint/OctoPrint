@@ -1612,11 +1612,11 @@ class SoftwareUpdatePlugin(
         updater_thread.daemon = False
         updater_thread.start()
 
-        check_data = dict(
-            (key, check["displayName"] if "displayName" in check else key)
+        check_data = {
+            key: check["displayName"] if "displayName" in check else key
             for key, check in populated_checks.items()
             if key in to_be_updated
-        )
+        }
         return to_be_updated, check_data
 
     def _update_worker(self, checks, check_targets, force):
