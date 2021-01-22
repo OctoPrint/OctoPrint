@@ -535,8 +535,7 @@ class LocalFileStorage(StorageInterface):
         if path:
             path = self.sanitize_path(path)
 
-        for entry in self._analysis_backlog_generator(path):
-            yield entry
+        yield from self._analysis_backlog_generator(path)
 
     def _analysis_backlog_generator(self, path=None):
         if path is None:

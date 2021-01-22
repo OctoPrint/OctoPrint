@@ -1030,8 +1030,7 @@ class fallback_dict(dict):
 
     def _all(self):
         yield self.custom
-        for d in self.fallbacks:
-            yield d
+        yield from self.fallbacks
 
 
 def dict_filter(dictionary, filter_function):
