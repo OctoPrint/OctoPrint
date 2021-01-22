@@ -44,7 +44,7 @@ class CheckError(Exception):
 
 class RateLimitCheckError(CheckError):
     def __init__(self, message, remaining=None, limit=None, reset=None):
-        super(RateLimitCheckError, self).__init__(message)
+        super().__init__(message)
         self.remaining = remaining
         self.limit = limit
         self.reset = reset

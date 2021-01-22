@@ -24,9 +24,7 @@ class GithubRateLimitCheckError(RateLimitCheckError):
             message = "Github rate limit exceeded, reset at {}".format(reset)
         else:
             message = "Github rate limit exceeded"
-        super(GithubRateLimitCheckError, self).__init__(
-            message, remaining=remaining, limit=ratelimit, reset=reset
-        )
+        super().__init__(message, remaining=remaining, limit=ratelimit, reset=reset)
 
 
 def log_github_ratelimit(logger, r):
