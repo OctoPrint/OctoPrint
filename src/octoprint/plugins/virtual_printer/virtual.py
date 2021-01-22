@@ -757,7 +757,7 @@ class VirtualPrinter:
 
     # noinspection PyUnusedLocal
     def _gcode_G20(self, data: str) -> None:
-        self._unitModifier = 1.0 / 2.54
+        self._unitModifier = 1 / 2.54
         if self._lastX is not None:
             self._lastX *= 2.54
         if self._lastY is not None:
@@ -807,9 +807,9 @@ class VirtualPrinter:
 
         _timeout = 0
         if matchP:
-            _timeout = float(matchP.group(1)) / 1000.0
+            _timeout = int(matchP.group(1)) / 1000
         elif matchS:
-            _timeout = float(matchS.group(1))
+            _timeout = int(matchS.group(1))
 
         if self._sendBusy and self._busyInterval > 0:
             until = time.monotonic() + _timeout
@@ -1510,11 +1510,11 @@ class VirtualPrinter:
             return
 
         try:
-            self.targetTemp[tool] = float(re.search(r"S([0-9]+)", line).group(1))
+            self.targetTemp[tool] = int(re.search(r"S([0-9]+)", line).group(1))
         except Exception:
             if support_r:
                 try:
-                    self.targetTemp[tool] = float(re.search(r"R([0-9]+)", line).group(1))
+                    self.targetTemp[tool] = int(re.search(r"R([0-9]+)", line).group(1))
                     only_wait_if_higher = False
                 except Exception:
                     pass
@@ -1531,11 +1531,11 @@ class VirtualPrinter:
 
         only_wait_if_higher = True
         try:
-            self.bedTargetTemp = float(re.search(r"S([0-9]+)", line).group(1))
+            self.bedTargetTemp = int(re.search(r"S([0-9]+)", line).group(1))
         except Exception:
             if support_r:
                 try:
-                    self.bedTargetTemp = float(re.search(r"R([0-9]+)", line).group(1))
+                    self.bedTargetTemp = int(re.search(r"R([0-9]+)", line).group(1))
                     only_wait_if_higher = False
                 except Exception:
                     pass
@@ -1551,11 +1551,11 @@ class VirtualPrinter:
 
         only_wait_if_higher = True
         try:
-            self.chamberTargetTemp = float(re.search("S([0-9]+)", line).group(1))
+            self.chamberTargetTemp = int(re.search("S([0-9]+)", line).group(1))
         except Exception:
             if support_r:
                 try:
-                    self.chamberTargetTemp = float(re.search("R([0-9]+)", line).group(1))
+                    self.chamberTargetTemp = int(re.search("R([0-9]+)", line).group(1))
                     only_wait_if_higher = False
                 except Exception:
                     pass
@@ -1577,8 +1577,8 @@ class VirtualPrinter:
             except ValueError:
                 pass
 
-        speedXYZ = self._lastF * (self._feedrate_multiplier / 100.0)
-        speedE = self._lastF * (self._flowrate_multiplier / 100.0)
+        speedXYZ = self._lastF * (self._feedrate_multiplier / 100)
+        speedE = self._lastF * (self._flowrate_multiplier / 100)
         if speedXYZ == 0:
             speedXYZ = 999999999999
         if speedE == 0:
@@ -1591,10 +1591,10 @@ class VirtualPrinter:
                 pass
             else:
                 if self._relative or self._lastX is None:
-                    duration = max(duration, x * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, x * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60.0
+                        duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastX is not None:
@@ -1608,10 +1608,10 @@ class VirtualPrinter:
                 pass
             else:
                 if self._relative or self._lastY is None:
-                    duration = max(duration, y * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, y * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60.0
+                        duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastY is not None:
@@ -1625,10 +1625,10 @@ class VirtualPrinter:
                 pass
             else:
                 if self._relative or self._lastZ is None:
-                    duration = max(duration, z * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, z * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60.0
+                        duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastZ is not None:
@@ -1643,10 +1643,10 @@ class VirtualPrinter:
             else:
                 lastE = self._lastE[self.currentExtruder]
                 if self._relative or lastE is None:
-                    duration = max(duration, e * self._unitModifier / speedE * 60.0)
+                    duration = max(duration, e * self._unitModifier / speedE * 60)
                 else:
                     duration = max(
-                        duration, (e - lastE) * self._unitModifier / speedE * 60.0
+                        duration, (e - lastE) * self._unitModifier / speedE * 60
                     )
 
                 if self._relative and lastE is not None:
@@ -2228,7 +2228,7 @@ class CharCountingQueue(queue.Queue):
                 endtime = time.monotonic() + timeout
                 while not self._will_it_fit(item):
                     remaining = endtime - time.monotonic()
-                    if remaining <= 0.0:
+                    if remaining <= 0:
                         raise queue.Full
                     self.not_full.wait(remaining)
 

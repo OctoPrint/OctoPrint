@@ -42,7 +42,7 @@ class PrintTimeEstimator:
                 # by that divided by the sd status polling interval
                 interval = settings().getFloat(["serial", "timeout", "sdStatus"])
                 if interval <= 0:
-                    interval = 1.0
+                    interval = 1
                 rolling_window = int(15 // interval)
                 if rolling_window < 1:
                     rolling_window = 1

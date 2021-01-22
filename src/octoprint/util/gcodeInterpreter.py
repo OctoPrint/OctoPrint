@@ -279,9 +279,9 @@ class gcode:
             readBytes += len(line.encode("utf-8"))
 
             if isinstance(gcodeFile, (io.IOBase, codecs.StreamReaderWriter)):
-                percentage = float(readBytes) / float(self._fileSize)
+                percentage = readBytes / self._fileSize
             elif isinstance(gcodeFile, (list)):
-                percentage = float(lineNo) / float(len(gcodeFile))
+                percentage = lineNo / len(gcodeFile)
             else:
                 percentage = None
 
@@ -416,10 +416,10 @@ class gcode:
                 elif G == 4:  # Delay
                     S = getCodeFloat(line, "S")
                     if S is not None:
-                        totalMoveTimeMinute += S / 60.0
+                        totalMoveTimeMinute += S / 60
                     P = getCodeFloat(line, "P")
                     if P is not None:
-                        totalMoveTimeMinute += P / 60.0 / 1000.0
+                        totalMoveTimeMinute += P / 60 / 1000
                 elif G == 10:  # Firmware retract
                     totalMoveTimeMinute += fwretractTime
                 elif G == 11:  # Firmware retract recover
@@ -427,7 +427,7 @@ class gcode:
                 elif G == 20:  # Units are inches
                     scale = 25.4
                 elif G == 21:  # Units are mm
-                    scale = 1.0
+                    scale = 1
                 elif G == 28:  # Home
                     x = getCodeFloat(line, "X")
                     y = getCodeFloat(line, "Y")

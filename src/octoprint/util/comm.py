@@ -654,7 +654,7 @@ class MachineCom:
         self._received_resend_requests = 0
         self._resend_ratio_start = settings().getInt(["serial", "resendRatioStart"])
         self._resend_ratio_threshold = (
-            settings().getInt(["serial", "resendRatioThreshold"]) / 100.0
+            settings().getInt(["serial", "resendRatioThreshold"]) / 100
         )
         self._resend_ratio_reported = False
 
@@ -4734,7 +4734,7 @@ class MachineCom:
                 # may be busy, so give things a little time before we try again. Extend this
                 # period each time we fail until either we write the data or run out of retry attempts.
                 if passes > 1:
-                    time.sleep((passes - 1) / 10.0)
+                    time.sleep((passes - 1) / 10)
 
         self._transmitted_lines += 1
 
@@ -5152,7 +5152,7 @@ class MachineCom:
 
         _timeout = 0
         if p_match:
-            _timeout = float(p_match.group("value")) / 1000.0
+            _timeout = float(p_match.group("value")) / 1000
         elif s_match:
             _timeout = float(s_match.group("value"))
 
@@ -5383,7 +5383,7 @@ class PrintingFileInformation:
         """
         if self._size is None or not self._size > 0:
             return -1
-        return float(self._pos) / float(self._size)
+        return self._pos / self._size
 
     def reset(self):
         """
@@ -5592,8 +5592,8 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         if duration > 0 and read_lines > 0:
             stats = {
                 "lines": read_lines,
-                "rate": float(read_lines) / duration,
-                "time_per_line": duration * 1000.0 / float(read_lines),
+                "rate": read_lines / duration,
+                "time_per_line": duration * 1000 / read_lines,
                 "duration": duration,
             }
             self._logger.info(

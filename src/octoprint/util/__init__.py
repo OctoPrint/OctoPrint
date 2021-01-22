@@ -333,9 +333,9 @@ def get_formatted_size(num):
     """
 
     for x in ["B", "KB", "MB", "GB"]:
-        if num < 1024.0:
+        if num < 1024:
             return "%3.1f%s" % (num, x)
-        num /= 1024.0
+        num /= 1024
     return "%3.1f%s" % (num, "TB")
 
 
@@ -1732,7 +1732,7 @@ class PrependableQueue(queue.Queue):
                     endtime = _time() + timeout
                     while self._qsize() == self.maxsize:
                         remaining = endtime - _time()
-                        if remaining <= 0.0:
+                        if remaining <= 0:
                             raise queue.Full
                         self.not_full.wait(remaining)
             self._prepend(item)
@@ -1859,7 +1859,7 @@ def time_this(
             try:
                 return f(*args, **kwargs)
             finally:
-                timing = (time.time() - start) * 1000.0
+                timing = (time.time() - start) * 1000
                 func = fqfn(f)
 
                 lt = logtarget

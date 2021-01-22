@@ -1348,7 +1348,7 @@ class LocalFileStorage(StorageInterface):
                 continue
             statistics["averagePrintTime"][printer_profile] = sum(
                 former_print_times[printer_profile]
-            ) / float(len(former_print_times[printer_profile]))
+            ) / len(former_print_times[printer_profile])
 
         for printer_profile in last_print:
             if not last_print[printer_profile]:
