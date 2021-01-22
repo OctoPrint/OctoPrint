@@ -27,7 +27,7 @@ class StringHelperTest(unittest.TestCase):
         self.assertRaises(
             UnicodeDecodeError,
             octoprint.util.to_unicode,
-            "äöüß".encode("utf-8"),
+            "äöüß".encode(),
             encoding="ascii",
         )
 

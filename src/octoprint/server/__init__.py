@@ -2254,7 +2254,7 @@ class Server:
                         break
                 else:
                     self.send_response(404)
-                    self.wfile.write("Not found".encode("utf-8"))
+                    self.wfile.write(b"Not found")
 
         base_path = os.path.realpath(
             os.path.join(os.path.dirname(__file__), "..", "static")
