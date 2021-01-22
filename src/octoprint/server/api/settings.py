@@ -9,6 +9,7 @@ import logging
 
 from flask import abort, jsonify, make_response, request
 from flask_login import current_user
+from past.builtins import basestring
 from werkzeug.exceptions import BadRequest
 
 import octoprint.plugin
@@ -310,6 +311,7 @@ def getSettings():
             "allowFraming": s.getBoolean(["server", "allowFraming"]),
         },
         "devel": {"pluginTimings": s.getBoolean(["devel", "pluginTimings"])},
+        "slicing": {"defaultSlicer": s.get(["slicing", "defaultSlicer"])},
     }
 
     gcode_scripts = s.listScripts("gcode")
@@ -932,6 +934,8 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
+                if not isinstance(script, basestring):
+                    continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
                 )
@@ -1023,6 +1027,10 @@ def _saveSettings(data):
             # enable plugin timing logging to plugintimings.log
             logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
             logging.getLogger("PLUGIN_TIMINGS").debug("Enabling plugin timings logging")
+
+    if "slicing" in data:
+        if "defaultSlicer" in data["slicing"]:
+            s.set(["slicing", "defaultSlicer"], data["slicing"]["defaultSlicer"])
 
     if "plugins" in data:
         for plugin in octoprint.plugin.plugin_manager().get_implementations(

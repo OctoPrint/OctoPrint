@@ -9,6 +9,7 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
+    if: github.repository == 'OctoPrint/OctoPrint'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1

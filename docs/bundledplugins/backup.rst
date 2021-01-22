@@ -177,6 +177,30 @@ octoprint.plugin.backup.additional_excludes
    :return: A list of paths to exclude, relative to your plugin's data folder
    :rtype: list
 
+Helpers
+-------
+
+.. _sec-bundledplugins-backup-helpers:
+
+The Backup plugin exports two helpers that can be used by other plugins or internal methods
+from within OctoPrint, without going via the API.
+
+.. _sec-bundledplugins-backup-helpers-create_backup:
+
+create_backup
++++++++++++++
+
+.. autofunction:: octoprint.plugins.backup.BackupPlugin.create_backup_helper
+
+
+.. _sec-bundledplugins-backup-helpers-delete_backup:
+
+delete_backup
++++++++++++++
+
+.. autofunction:: octoprint.plugins.backup.BackupPlugin.delete_backup_helper
+
+
 .. _sec-bundledplugins-backup-sourcecode:
 
 Source code
