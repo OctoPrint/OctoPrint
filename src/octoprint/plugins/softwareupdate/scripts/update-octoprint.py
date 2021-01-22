@@ -153,7 +153,7 @@ def _git(args, cwd, git_executable=None):
         command = [c] + args
         try:
             return _execute(command, cwd=cwd)
-        except EnvironmentError:
+        except OSError:
             e = sys.exc_info()[1]
             if e.errno == errno.ENOENT:
                 continue

@@ -2306,7 +2306,7 @@ class EntryPointMetadata(pkginfo.Distribution):
             for metadata_file in metadata_files:
                 try:
                     return self.entry_point.dist.get_metadata(metadata_file)
-                except (IOError, OSError):  # noqa: B014
+                except OSError:  # noqa: B014
                     # file not found, metadata file might be missing, ignore
                     # IOError: file not found in Py2
                     # OSError (specifically FileNotFoundError): file not found in Py3

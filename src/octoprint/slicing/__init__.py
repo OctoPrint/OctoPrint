@@ -424,7 +424,7 @@ class SlicingManager:
 
         try:
             path = self.get_profile_path(slicer, name, must_exist=True)
-        except IOError:
+        except OSError:
             return None
         return self._load_profile_from_path(
             slicer, path, require_configured=require_configured
@@ -532,7 +532,7 @@ class SlicingManager:
         if name:
             try:
                 profile = self.load_profile(slicer, name)
-            except (UnknownProfile, IOError):
+            except (UnknownProfile, OSError):
                 # in that case we'll use the default profile
                 pass
 
@@ -728,7 +728,7 @@ class SlicingManager:
             self.get_slicer_profile_path(slicer), "{name}.profile".format(name=name)
         )
         if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
-            raise IOError(
+            raise OSError(
                 "Path to profile {name} tried to break out of allows sub path".format(
                     **locals()
                 )
@@ -782,7 +782,7 @@ class SlicingManager:
         if default_profiles and slicer in default_profiles:
             try:
                 return self.load_profile(slicer, default_profiles[slicer])
-            except (UnknownProfile, IOError):
+            except (UnknownProfile, OSError):
                 # in that case we'll use the slicers predefined default profile
                 pass
 
