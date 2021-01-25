@@ -377,17 +377,17 @@ class gcode(object):
                 # Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
                 # in absolute and 0.0 in relative mode.
                 newPos = Vector3D(
-                    x if x is not None else (0.0 if relativeMode else pos.x),
-                    y if y is not None else (0.0 if relativeMode else pos.y),
-                    z if z is not None else (0.0 if relativeMode else pos.z),
+                    x * scale if x is not None else (0.0 if relativeMode else pos.x),
+                    y * scale if y is not None else (0.0 if relativeMode else pos.y),
+                    z * scale if z is not None else (0.0 if relativeMode else pos.z),
                 )
 
                 if relativeMode:
-                    # Relative mode: scale and add to current position
-                    pos += newPos * scale
+                    # Relative mode: add to current position
+                    pos += newPos
                 else:
-                    # Absolute mode: scale coordinates and apply tool offsets
-                    pos = newPos * scale
+                    # Absolute mode: apply tool offsets
+                    pos = newPos
 
                 if f is not None and f != 0:
                     feedrate = f
