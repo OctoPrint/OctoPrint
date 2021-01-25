@@ -32,6 +32,7 @@ class StorageInterface(object):
     Interface of storage adapters for OctoPrint.
     """
 
+    # noinspection PyUnreachableCode
     @property
     def analysis_backlog(self):
         """
@@ -46,6 +47,7 @@ class StorageInterface(object):
         return
         yield
 
+    # noinspection PyUnreachableCode
     def analysis_backlog_for_path(self, path=None):
         # empty generator pattern, yield is intentionally unreachable
         return
