@@ -789,8 +789,8 @@ class PrinterProfileManager:
     @staticmethod
     def _default_box_for_volume(volume):
         if volume["origin"] == BedOrigin.CENTER:
-            half_width = volume["width"] / 2.0
-            half_depth = volume["depth"] / 2.0
+            half_width = volume["width"] / 2
+            half_depth = volume["depth"] / 2
             return {
                 "x_min": -half_width,
                 "x_max": half_width,

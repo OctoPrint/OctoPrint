@@ -50,7 +50,7 @@ class MovingAverage(object):
         if streamlen == 0:
             self.last_average = 0
         else:
-            self.last_average = self.sum / float(streamlen)
+            self.last_average = self.sum / streamlen
 
 
 class StatsCollector(object):

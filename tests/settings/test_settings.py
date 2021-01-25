@@ -253,7 +253,7 @@ class TestSettings(unittest.TestCase):
 
     def test_get_float(self):
         with self.mocked_config():
-            expected_serial_timeout = 1.0
+            expected_serial_timeout = 1
 
             settings = octoprint.settings.Settings()
 
