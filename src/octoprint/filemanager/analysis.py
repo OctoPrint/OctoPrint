@@ -319,6 +319,10 @@ class AbstractAnalysisQueue(object):
                 )
             )
             self._finished_callback(self._current, result)
+        except RuntimeError as exc:
+            self._logger.error(
+                "Analysis for {} ran into error: {}".format(self._current, exc)
+            )
         finally:
             self._current = None
             self._current_progress = None
@@ -477,7 +481,10 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
             output = p.stdout.text
             self._logger.debug("Got output: {!r}".format(output))
 
-            if "RESULTS:" not in output:
+            if "ERROR:" in output:
+                _, error = output.split("ERROR:")
+                raise RuntimeError(error.strip())
+            elif "RESULTS:" not in output:
                 raise RuntimeError("No analysis result found")
 
             _, output = output.split("RESULTS:")
