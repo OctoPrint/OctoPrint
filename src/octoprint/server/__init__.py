@@ -718,6 +718,11 @@ class Server:
                 app, util.flask.permission_validator, permissions.Permissions.WEBCAM
             ),
         ] + access_validators_from_plugins
+        systeminfo_validators = [
+            util.tornado.access_validation_factory(
+                app, util.flask.permission_validator, permissions.Permissions.SYSTEM
+            )
+        ] + access_validators_from_plugins
 
         timelapse_permission_validator = {
             "access_validation": util.tornado.validation_chain(*timelapse_validators)
@@ -731,6 +736,9 @@ class Server:
         camera_permission_validator = {
             "access_validation": util.tornado.validation_chain(*camera_validators)
         }
+        systeminfo_permission_validator = {
+            "access_validation": util.tornado.validation_chain(*systeminfo_validators)
+        }
 
         no_hidden_files_validator = {
             "path_validation": util.tornado.path_validation_factory(
@@ -742,6 +750,22 @@ class Server:
                 lambda path: not octoprint.util.is_hidden_path(path)
                 and octoprint.timelapse.valid_timelapse(path),
                 status_code=404,
+            )
+        }
+        timelapses_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: not octoprint.util.is_hidden_path(path)
+                and octoprint.timelapse.valid_timelapse(path),
+                status_code=400,
+            )
+        }
+        logs_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: not octoprint.util.is_hidden_path(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("logs")
+                ),
+                status_code=400,
             )
         }
 
@@ -770,6 +794,24 @@ class Server:
                     timelapse_path_validator,
                 ),
             ),
+            # zipped timelapse bundles
+            (
+                r"/downloads/timelapses",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-timelapses.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("timelapse"), x),
+                        ),
+                    },
+                    timelapse_permission_validator,
+                    timelapses_path_validator,
+                ),
+            ),
+            # uploaded printables
             (
                 r"/downloads/files/local/(.*)",
                 util.tornado.LargeResponseHandler,
@@ -785,6 +827,7 @@ class Server:
                     additional_mime_types,
                 ),
             ),
+            # log files
             (
                 r"/downloads/logs/([^/]*)",
                 util.tornado.LargeResponseHandler,
@@ -797,6 +840,29 @@ class Server:
                     download_handler_kwargs,
                     log_permission_validator,
                 ),
+            ),
+            # zipped log file bundles
+            (
+                r"/downloads/logs",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-logs.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("logs"), x),
+                        ),
+                    },
+                    log_permission_validator,
+                    logs_path_validator,
+                ),
+            ),
+            # system info bundle
+            (
+                r"/downloads/systeminfo.zip",
+                util.tornado.SystemInfoBundleHandler,
+                systeminfo_permission_validator,
             ),
             # camera snapshot
             (
