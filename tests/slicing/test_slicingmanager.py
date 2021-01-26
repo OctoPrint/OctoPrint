@@ -116,7 +116,7 @@ class TestSlicingManager(unittest.TestCase):
         self.slicer_plugin.get_slicer_default_profile.return_value = default_profile
 
         # mock threading
-        class MockThread(object):
+        class MockThread:
             def __init__(self):
                 self.target = None
                 self.args = None

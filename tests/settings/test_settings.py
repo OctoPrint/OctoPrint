@@ -312,7 +312,7 @@ class TestSettings(unittest.TestCase):
 
             self.assertGreater(len(data), 1)
             test_dict = {"enabled": True, "sendWait": True, "waitInterval": 1.0}
-            test_data = dict((k, v) for k, v in data.items() if k in test_dict)
+            test_data = {k: v for k, v in data.items() if k in test_dict}
             self.assertEqual(test_dict, test_data)
 
     def test_get_multiple(self):

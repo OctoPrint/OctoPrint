@@ -25,7 +25,7 @@ class SocketTimeout(BaseException):
     pass
 
 
-class SocketClient(object):
+class SocketClient:
     def __init__(self, url, use_ssl=False, daemon=True, **kwargs):
         self._url = url
         self._use_ssl = use_ssl
@@ -219,7 +219,7 @@ class SocketClient(object):
         return False
 
 
-class Client(object):
+class Client:
     def __init__(self, baseurl, apikey):
         self.baseurl = baseurl
         self.apikey = apikey

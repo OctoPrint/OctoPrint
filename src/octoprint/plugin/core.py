@@ -1325,9 +1325,7 @@ class PluginManager:
             force_reload = []
 
         added, found = self.find_plugins(
-            existing=dict(
-                (k, v) for k, v in self.plugins.items() if k not in force_reload
-            ),
+            existing={k: v for k, v in self.plugins.items() if k not in force_reload},
             incl_all_found=True,
         )
 
@@ -2178,7 +2176,7 @@ class PluginManager:
 
         all_helpers = plugin.helpers
         if len(helpers):
-            return dict((k, v) for (k, v) in all_helpers.items() if k in helpers)
+            return {k: v for (k, v) in all_helpers.items() if k in helpers}
         else:
             return all_helpers
 
@@ -2306,7 +2304,7 @@ class EntryPointMetadata(pkginfo.Distribution):
             for metadata_file in metadata_files:
                 try:
                     return self.entry_point.dist.get_metadata(metadata_file)
-                except (IOError, OSError):  # noqa: B014
+                except OSError:  # noqa: B014
                     # file not found, metadata file might be missing, ignore
                     # IOError: file not found in Py2
                     # OSError (specifically FileNotFoundError): file not found in Py3

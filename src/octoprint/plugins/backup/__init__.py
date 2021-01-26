@@ -845,9 +845,7 @@ class BackupPlugin(
 
         from octoprint.plugins.pluginmanager import map_repository_entry
 
-        return dict(
-            (plugin["id"], plugin) for plugin in map(map_repository_entry, r.json())
-        )
+        return {plugin["id"]: plugin for plugin in map(map_repository_entry, r.json())}
 
     @classmethod
     def _install_plugin(

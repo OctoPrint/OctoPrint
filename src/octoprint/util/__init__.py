@@ -1030,8 +1030,7 @@ class fallback_dict(dict):
 
     def _all(self):
         yield self.custom
-        for d in self.fallbacks:
-            yield d
+        yield from self.fallbacks
 
 
 def dict_filter(dictionary, filter_function):
@@ -1072,7 +1071,7 @@ def dict_filter(dictionary, filter_function):
     """
     assert isinstance(dictionary, dict)
     assert callable(filter_function)
-    return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+    return {k: v for k, v in dictionary.items() if filter_function(k, v)}
 
 
 # Source: http://stackoverflow.com/a/6190500/562769

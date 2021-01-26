@@ -208,7 +208,7 @@ def fix_webassets_cache():
 
         try:
             hash = make_md5(self.V, key)
-        except IOError as e:
+        except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
             return None
@@ -216,7 +216,7 @@ def fix_webassets_cache():
         filename = os.path.join(self.directory, "%s" % hash)
         try:
             f = io.open(filename, "rb")
-        except IOError as e:
+        except OSError as e:
             if e.errno != errno.ENOENT:
                 error_logger.exception(
                     "Got an exception while trying to open webasset file {}".format(
@@ -1020,7 +1020,7 @@ class PreemptiveCache:
             try:
                 with io.open(self.cachefile, "rt") as f:
                     cache_data = yaml.safe_load(f)
-            except IOError as e:
+            except OSError as e:
                 import errno
 
                 if e.errno != errno.ENOENT:

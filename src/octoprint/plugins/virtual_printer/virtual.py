@@ -663,7 +663,7 @@ class VirtualPrinter:
     # noinspection PyUnusedLocal
     def _gcode_M114(self, data: str) -> bool:
         m114FormatString = self._settings.get(["m114FormatString"])
-        e = dict((index, value) for index, value in enumerate(self._lastE))
+        e = {index: value for index, value in enumerate(self._lastE)}
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [

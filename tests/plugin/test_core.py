@@ -9,7 +9,7 @@ import octoprint.plugin.core
 ##~~ Helpers for testing mixin type extraction
 
 
-class A(object):
+class A:
     pass
 
 
@@ -29,7 +29,7 @@ class A1_1(A_1):
     pass
 
 
-class B(object):
+class B:
     pass
 
 
@@ -37,7 +37,7 @@ class B_1(B):
     pass
 
 
-class C(object):
+class C:
     pass
 
 
@@ -45,7 +45,7 @@ class C_1(C):
     pass
 
 
-class D(object):
+class D:
     pass
 
 
@@ -337,7 +337,7 @@ class PluginTestCase(unittest.TestCase):
     @ddt.unpack
     def test_has_any_of_hooks(self, hooks_to_test_for, plugin_hooks, expected):
         plugin = mock.MagicMock()
-        plugin.hooks = dict((hook, hook) for hook in plugin_hooks)
+        plugin.hooks = {hook: hook for hook in plugin_hooks}
 
         actual = octoprint.plugin.core.PluginManager.has_any_of_hooks(
             plugin, hooks_to_test_for
@@ -346,9 +346,9 @@ class PluginTestCase(unittest.TestCase):
 
     def test_has_any_of_hooks_varargs(self):
         plugin = mock.MagicMock()
-        plugin.hooks = dict(
-            (hook, hook) for hook in ["octoprint.some_hook", "octoprint.another_hook"]
-        )
+        plugin.hooks = {
+            hook: hook for hook in ["octoprint.some_hook", "octoprint.another_hook"]
+        }
 
         result = octoprint.plugin.core.PluginManager.has_any_of_hooks(
             plugin, "octoprint.some_hook", "octoprint.some_other_hook"

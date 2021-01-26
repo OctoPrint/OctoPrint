@@ -1598,9 +1598,9 @@ class Settings:
     def _validate_config(self):
         # validate uniqueness of folder paths
         folder_keys = self.get(["folder"], merged=True).keys()
-        folders = dict(
-            (folder_key, self.getBaseFolder(folder_key)) for folder_key in folder_keys
-        )
+        folders = {
+            folder_key: self.getBaseFolder(folder_key) for folder_key in folder_keys
+        }
         if len(folders.values()) != len(set(folders.values())):
             raise DuplicateFolderPaths(folders)
 
@@ -2178,7 +2178,7 @@ def _validate_folder(
     if not os.path.exists(folder):
         if os.path.islink(folder):
             # broken symlink, see #2644
-            raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+            raise OSError("Folder at {} appears to be a broken symlink".format(folder))
 
         elif create:
             # non existing, but we are allowed to create it
@@ -2187,7 +2187,7 @@ def _validate_folder(
             except Exception:
                 if log_error:
                     logger.exception("Could not create {}".format(folder))
-                raise IOError(
+                raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
                     )
@@ -2195,11 +2195,11 @@ def _validate_folder(
 
         else:
             # not extisting, not allowed to create it
-            raise IOError("No such folder: {}".format(folder))
+            raise OSError("No such folder: {}".format(folder))
 
     elif os.path.isfile(folder):
         # hardening against misconfiguration, see #1953
-        raise IOError("Expected a folder at {} but found a file instead".format(folder))
+        raise OSError("Expected a folder at {} but found a file instead".format(folder))
 
     elif check_writable:
         # make sure we can also write into the folder
@@ -2207,7 +2207,7 @@ def _validate_folder(
             folder
         )
         if not os.access(folder, os.W_OK):
-            raise IOError(error)
+            raise OSError(error)
 
         elif deep_check_writable:
             # try to write a file to the folder - on network shares that might be the only reliable way
@@ -2220,4 +2220,4 @@ def _validate_folder(
             except Exception:
                 if log_error:
                     logger.exception("Could not write test file to {}".format(folder))
-                raise IOError(error)
+                raise OSError(error)

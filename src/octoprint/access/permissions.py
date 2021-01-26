@@ -267,7 +267,7 @@ class PermissionsMetaClass(type):
         return None
 
 
-class Permissions(object, metaclass=PermissionsMetaClass):
+class Permissions(metaclass=PermissionsMetaClass):
 
     # Special permission
     ADMIN = OctoPrintPermission(

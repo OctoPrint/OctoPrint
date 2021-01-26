@@ -155,7 +155,7 @@ class Daemon:
         try:
             with io.open(self.pidfile, "rt", encoding="utf-8") as pf:
                 pid = int(pf.read().strip())
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             pid = None
         return pid
 

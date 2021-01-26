@@ -201,11 +201,9 @@ def _to_client_specs(specs):
     for spec in specs.values():
         if "action" not in spec or "source" not in spec:
             continue
-        copied = dict(
-            (k, v)
-            for k, v in spec.items()
-            if k in ("source", "action", "name", "confirm")
-        )
+        copied = {
+            k: v for k, v in spec.items() if k in ("source", "action", "name", "confirm")
+        }
         copied["resource"] = url_for(
             ".executeSystemCommand",
             source=spec["source"],

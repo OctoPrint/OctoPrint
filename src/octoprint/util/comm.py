@@ -324,7 +324,7 @@ class PositionRecord:
 
     def as_dict(self):
         attrs = self._standard_attrs | {key for key in dir(self) if self.valid_e(key)}
-        return dict((attr, getattr(self, attr)) for attr in attrs)
+        return {attr: getattr(self, attr) for attr in attrs}
 
 
 class TemperatureRecord:
@@ -3874,7 +3874,7 @@ class MachineCom:
 
         try:
             line, pos, lineno = self._currentFile.getNext()
-        except EnvironmentError:
+        except OSError:
             self._log(
                 "There was an error reading from the file that's being printed, cancelling the print. Please "
                 "consult octoprint.log for details on the error."
@@ -5462,7 +5462,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         self._current_tool_callback = current_tool_callback
 
         if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
-            raise IOError("File %s does not exist" % self._filename)
+            raise OSError("File %s does not exist" % self._filename)
         self._size = os.stat(self._filename).st_size
         self._pos = 0
         self._read_lines = 0
