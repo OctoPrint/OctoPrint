@@ -12,6 +12,7 @@ import io
 import logging
 import math
 import os
+import re
 import zlib
 
 
@@ -181,6 +182,12 @@ class AnalysisAborted(Exception):
         Exception.__init__(self, *args, **kwargs)
 
 
+regex_command = re.compile(
+    r"^\s*((?P<codeGM>[GM]\d+)(\.(?P<subcode>\d+))?|(?P<codeT>T)(?P<tool>\d+))"
+)
+"""Regex for a GCODE command."""
+
+
 class gcode(object):
     def __init__(self, progress_callback=None):
         self._logger = logging.getLogger(__name__)
@@ -282,9 +289,9 @@ class gcode(object):
             readBytes += len(line.encode("utf-8"))
 
             if isinstance(gcodeFile, (io.IOBase, codecs.StreamReaderWriter)):
-                percentage = float(readBytes) / float(self._fileSize)
+                percentage = readBytes / self._fileSize
             elif isinstance(gcodeFile, (list)):
-                percentage = float(lineNo) / float(len(gcodeFile))
+                percentage = lineNo / len(gcodeFile)
             else:
                 percentage = None
 
@@ -340,173 +347,180 @@ class gcode(object):
                         self._filamentDiameter = 0.0
                 line = line[0 : line.find(";")]
 
-            G = getCodeInt(line, "G")
-            M = getCodeInt(line, "M")
-            T = getCodeInt(line, "T")
+            match = regex_command.search(line)
+            gcode = tool = None
+            if match:
+                values = match.groupdict()
+                if "codeGM" in values and values["codeGM"]:
+                    gcode = values["codeGM"]
+                elif "codeT" in values and values["codeT"]:
+                    gcode = values["codeT"]
+                    tool = int(values["tool"])
 
-            if G is not None:
-                if G == 0 or G == 1:  # Move
-                    x = getCodeFloat(line, "X")
-                    y = getCodeFloat(line, "Y")
-                    z = getCodeFloat(line, "Z")
-                    e = getCodeFloat(line, "E")
-                    f = getCodeFloat(line, "F")
+            # G codes
+            if gcode in ("G0", "G1"):  # Move
+                x = getCodeFloat(line, "X")
+                y = getCodeFloat(line, "Y")
+                z = getCodeFloat(line, "Z")
+                e = getCodeFloat(line, "E")
+                f = getCodeFloat(line, "F")
 
-                    if x is not None or y is not None or z is not None:
-                        # this is a move
-                        move = True
+                if x is not None or y is not None or z is not None:
+                    # this is a move
+                    move = True
+                else:
+                    # print head stays on position
+                    move = False
+
+                oldPos = pos
+
+                # Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
+                # in absolute and 0.0 in relative mode.
+                newPos = Vector3D(
+                    x * scale if x is not None else (0.0 if relativeMode else pos.x),
+                    y * scale if y is not None else (0.0 if relativeMode else pos.y),
+                    z * scale if z is not None else (0.0 if relativeMode else pos.z),
+                )
+
+                if relativeMode:
+                    # Relative mode: add to current position
+                    pos += newPos
+                else:
+                    # Absolute mode: apply tool offsets
+                    pos = newPos
+
+                if f is not None and f != 0:
+                    feedrate = f
+
+                if e is not None:
+                    if relativeMode or relativeE:
+                        # e is already relative, nothing to do
+                        pass
                     else:
-                        # print head stays on position
-                        move = False
+                        e -= currentE[currentExtruder]
 
-                    oldPos = pos
+                    # If move with extrusion, calculate new min/max coordinates of model
+                    if e > 0 and move:
+                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
+                        self._minMax.record(oldPos)
+                        self._minMax.record(pos)
 
-                    # Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
-                    # in absolute and 0.0 in relative mode.
-                    newPos = Vector3D(
-                        x if x is not None else (0.0 if relativeMode else pos.x),
-                        y if y is not None else (0.0 if relativeMode else pos.y),
-                        z if z is not None else (0.0 if relativeMode else pos.z),
+                    totalExtrusion[currentExtruder] += e
+                    currentE[currentExtruder] += e
+                    maxExtrusion[currentExtruder] = max(
+                        maxExtrusion[currentExtruder], totalExtrusion[currentExtruder]
                     )
 
-                    if relativeMode:
-                        # Relative mode: scale and add to current position
-                        pos += newPos * scale
-                    else:
-                        # Absolute mode: scale coordinates and apply tool offsets
-                        pos = newPos * scale
+                    if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
+                        # Copy first extruder length to other extruders
+                        for i in range(1, len(currentE)):
+                            totalExtrusion[i] += e
+                            currentE[i] += e
+                            maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
+                else:
+                    e = 0
 
-                    if f is not None and f != 0:
-                        feedrate = f
+                # move time in x, y, z, will be 0 if no movement happened
+                moveTimeXYZ = abs((oldPos - pos).length / feedrate)
 
-                    if e is not None:
-                        if relativeMode or relativeE:
-                            # e is already relative, nothing to do
-                            pass
-                        else:
-                            e -= currentE[currentExtruder]
+                # time needed for extruding, will be 0 if no extrusion happened
+                extrudeTime = abs(e / feedrate)
 
-                        # If move with extrusion, calculate new min/max coordinates of model
-                        if e > 0.0 and move:
-                            # extrusion and move -> oldPos & pos relevant for print area & dimensions
-                            self._minMax.record(oldPos)
-                            self._minMax.record(pos)
+                # time to add is maximum of both
+                totalMoveTimeMinute += max(moveTimeXYZ, extrudeTime)
 
-                        totalExtrusion[currentExtruder] += e
-                        currentE[currentExtruder] += e
-                        maxExtrusion[currentExtruder] = max(
-                            maxExtrusion[currentExtruder], totalExtrusion[currentExtruder]
-                        )
-
-                        if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
-                            # Copy first extruder length to other extruders
-                            for i in range(1, len(currentE)):
-                                totalExtrusion[i] += e
-                                currentE[i] += e
-                                maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
-                    else:
-                        e = 0.0
-
-                    # move time in x, y, z, will be 0 if no movement happened
-                    moveTimeXYZ = abs((oldPos - pos).length / feedrate)
-
-                    # time needed for extruding, will be 0 if no extrusion happened
-                    extrudeTime = abs(e / feedrate)
-
-                    # time to add is maximum of both
-                    totalMoveTimeMinute += max(moveTimeXYZ, extrudeTime)
-
-                elif G == 4:  # Delay
-                    S = getCodeFloat(line, "S")
-                    if S is not None:
-                        totalMoveTimeMinute += S / 60.0
-                    P = getCodeFloat(line, "P")
-                    if P is not None:
-                        totalMoveTimeMinute += P / 60.0 / 1000.0
-                elif G == 10:  # Firmware retract
-                    totalMoveTimeMinute += fwretractTime
-                elif G == 11:  # Firmware retract recover
-                    totalMoveTimeMinute += fwrecoverTime
-                elif G == 20:  # Units are inches
-                    scale = 25.4
-                elif G == 21:  # Units are mm
-                    scale = 1.0
-                elif G == 28:  # Home
-                    x = getCodeFloat(line, "X")
-                    y = getCodeFloat(line, "Y")
-                    z = getCodeFloat(line, "Z")
-                    center = Vector3D(0.0, 0.0, 0.0)
-                    if x is None and y is None and z is None:
-                        pos = center
-                    else:
-                        pos = Vector3D(pos)
-                        if x is not None:
-                            pos.x = center.x
-                        if y is not None:
-                            pos.y = center.y
-                        if z is not None:
-                            pos.z = center.z
-                elif G == 90:  # Absolute position
-                    relativeMode = False
-                    if g90_extruder:
-                        relativeE = False
-                elif G == 91:  # Relative position
-                    relativeMode = True
-                    if g90_extruder:
-                        relativeE = True
-                elif G == 92:
-                    x = getCodeFloat(line, "X")
-                    y = getCodeFloat(line, "Y")
-                    z = getCodeFloat(line, "Z")
-                    e = getCodeFloat(line, "E")
-
-                    if e is None and x is None and y is None and z is None:
-                        # no parameters, set all axis to 0
-                        currentE[currentExtruder] = 0.0
-                        pos.x = 0.0
-                        pos.y = 0.0
-                        pos.z = 0.0
-                    else:
-                        # some parameters set, only set provided axes
-                        if e is not None:
-                            currentE[currentExtruder] = e
-                        if x is not None:
-                            pos.x = x
-                        if y is not None:
-                            pos.y = y
-                        if z is not None:
-                            pos.z = z
-
-            elif M is not None:
-                if M == 82:  # Absolute E
+            elif gcode == "G4":  # Delay
+                S = getCodeFloat(line, "S")
+                if S is not None:
+                    totalMoveTimeMinute += S / 60
+                P = getCodeFloat(line, "P")
+                if P is not None:
+                    totalMoveTimeMinute += P / 60 / 1000
+            elif gcode == "G10":  # Firmware retract
+                totalMoveTimeMinute += fwretractTime
+            elif gcode == "G11":  # Firmware retract recover
+                totalMoveTimeMinute += fwrecoverTime
+            elif gcode == "G20":  # Units are inches
+                scale = 25.4
+            elif gcode == "G21":  # Units are mm
+                scale = 1.0
+            elif gcode == "G28":  # Home
+                x = getCodeFloat(line, "X")
+                y = getCodeFloat(line, "Y")
+                z = getCodeFloat(line, "Z")
+                center = Vector3D(0.0, 0.0, 0.0)
+                if x is None and y is None and z is None:
+                    pos = center
+                else:
+                    pos = Vector3D(pos)
+                    if x is not None:
+                        pos.x = center.x
+                    if y is not None:
+                        pos.y = center.y
+                    if z is not None:
+                        pos.z = center.z
+            elif gcode == "G90":  # Absolute position
+                relativeMode = False
+                if g90_extruder:
                     relativeE = False
-                elif M == 83:  # Relative E
+            elif gcode == "G91":  # Relative position
+                relativeMode = True
+                if g90_extruder:
                     relativeE = True
-                elif M == 207 or M == 208:  # Firmware retract settings
-                    s = getCodeFloat(line, "S")
-                    f = getCodeFloat(line, "F")
-                    if s is not None and f is not None:
-                        if M == 207:
-                            fwretractTime = s / f
-                            fwretractDist = s
-                        else:
-                            fwrecoverTime = (fwretractDist + s) / f
-                elif M == 605:  # Duplication/Mirroring mode
-                    s = getCodeInt(line, "S")
-                    if s in [2, 4, 5, 6]:
-                        # Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
-                        # from first extruder to all other extruders
-                        duplicationMode = True
-                    else:
-                        duplicationMode = False
+            elif gcode == "G92":
+                x = getCodeFloat(line, "X")
+                y = getCodeFloat(line, "Y")
+                z = getCodeFloat(line, "Z")
+                e = getCodeFloat(line, "E")
 
-            elif T is not None:
-                if T > max_extruders:
+                if e is None and x is None and y is None and z is None:
+                    # no parameters, set all axis to 0
+                    currentE[currentExtruder] = 0.0
+                    pos.x = 0.0
+                    pos.y = 0.0
+                    pos.z = 0.0
+                else:
+                    # some parameters set, only set provided axes
+                    if e is not None:
+                        currentE[currentExtruder] = e
+                    if x is not None:
+                        pos.x = x
+                    if y is not None:
+                        pos.y = y
+                    if z is not None:
+                        pos.z = z
+
+            # M codes
+            elif gcode == "M82":  # Absolute E
+                relativeE = False
+            elif gcode == "M83":  # Relative E
+                relativeE = True
+            elif gcode in ("M207", "M208"):  # Firmware retract settings
+                s = getCodeFloat(line, "S")
+                f = getCodeFloat(line, "F")
+                if s is not None and f is not None:
+                    if gcode == "M207":
+                        fwretractTime = s / f
+                        fwretractDist = s
+                    else:
+                        fwrecoverTime = (fwretractDist + s) / f
+            elif gcode == "M605":  # Duplication/Mirroring mode
+                s = getCodeInt(line, "S")
+                if s in [2, 4, 5, 6]:
+                    # Duplication / Mirroring mode selected. Printer firmware copies extrusion commands
+                    # from first extruder to all other extruders
+                    duplicationMode = True
+                else:
+                    duplicationMode = False
+
+            # T codes
+            elif tool is not None:
+                if tool > max_extruders:
                     self._logger.warning(
                         "GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis"
-                        % T
+                        % tool
                     )
-                elif T == currentExtruder:
+                elif tool == currentExtruder:
                     pass
                 else:
                     pos.x -= (
@@ -520,7 +534,7 @@ class gcode(object):
                         else 0
                     )
 
-                    currentExtruder = T
+                    currentExtruder = tool
 
                     pos.x += (
                         offsets[currentExtruder][0]

@@ -216,6 +216,16 @@
         return this.get(url, params);
     };
 
+    OctoPrintClient.prototype.bulkDownloadUrl = function (url, files) {
+        return (
+            url +
+            "?" +
+            _.map(files, function (f) {
+                return "files=" + encodeURIComponent(f);
+            }).join("&")
+        );
+    };
+
     OctoPrintClient.prototype.upload = function (url, file, filename, additional) {
         additional = additional || {};
 

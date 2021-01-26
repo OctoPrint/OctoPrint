@@ -251,5 +251,10 @@ Job information response
    * - ``state``
      - 1
      - String
-     - A textual representation of the current state of the job, i.e. "Operational", "Printing", "Pausing", "Paused",
-       "Cancelling", "Error" or "Offline".
+     - A textual representation of the current state of the job or connection, e.g. "Operational", "Printing", "Pausing", "Paused",
+       "Cancelling", "Error", "Offline", "Offline after error", "Opening serial connection", ... -- please note
+       that this list is not exhaustive!
+   * - ``error``
+     - 0..1
+     - String
+     - Any error message for the job or connection, only set if there has been an error.

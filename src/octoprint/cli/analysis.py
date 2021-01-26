@@ -4,11 +4,47 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import sys
+
 import click
 
 click.disable_unicode_literals_warning = True
 
 # ~~ "octoprint util" commands
+
+
+def validate_result(result):
+    dimensions = ("depth", "height", "width")
+    printing_area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
+
+    def validate_list(data):
+        return not any(map(invalid_float, data))
+
+    def validate_dict(data, keys):
+        for k in keys:
+            if k not in data or invalid_float(data[k]):
+                return False
+        return True
+
+    def invalid_float(value):
+        return value is None or value == float("inf") or value == float("-inf")
+
+    if "dimensions" not in result or not validate_dict(result["dimensions"], dimensions):
+        return False
+
+    if "extrusion_length" not in result or not validate_list(result["extrusion_length"]):
+        return False
+
+    if "extrusion_volume" not in result or not validate_list(result["extrusion_volume"]):
+        return False
+
+    if "printing_area" not in result or not validate_dict(
+        result["printing_area"], printing_area
+    ):
+        return False
+
+    if "total_time" not in result or invalid_float(result["total_time"]):
+        return False
 
 
 @click.group()
@@ -92,6 +128,16 @@ def gcode_command(
     )
 
     click.echo("DONE:{}s".format(monotonic_time() - start_time))
+
+    result = interpreter.get_result()
+    if not validate_result(result):
+        click.echo(
+            "ERROR:Invalid analysis result, please create a bug report in OctoPrint's "
+            "issue tracker and be sure to also include the GCODE file with which this "
+            "happened"
+        )
+        sys.exit(-1)
+
     click.echo("RESULTS:")
     click.echo(
         yaml.safe_dump(

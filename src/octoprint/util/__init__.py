@@ -347,9 +347,9 @@ def get_formatted_size(num):
     """
 
     for x in ["B", "KB", "MB", "GB"]:
-        if num < 1024.0:
+        if num < 1024:
             return "%3.1f%s" % (num, x)
-        num /= 1024.0
+        num /= 1024
     return "%3.1f%s" % (num, "TB")
 
 
@@ -449,7 +449,7 @@ def get_fully_qualified_classname(o):
     return module + "." + o.__class__.__name__
 
 
-def get_exception_string():
+def get_exception_string(fmt="{type}: '{message}' @ {file}:{function}:{line}"):
     """
     Retrieves the exception info of the last raised exception and returns it as a string formatted as
     ``<exception type>: <exception message> @ <source file>:<function name>:<line number>``.
@@ -458,14 +458,15 @@ def get_exception_string():
         string: The formatted exception information.
     """
 
-    locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
-    return "%s: '%s' @ %s:%s:%d" % (
-        str(sys.exc_info()[0].__name__),
-        str(sys.exc_info()[1]),
-        os.path.basename(locationInfo[0]),
-        locationInfo[2],
-        locationInfo[1],
-    )
+    location_info = traceback.extract_tb(sys.exc_info()[2])[0]
+    exception = {
+        "type": str(sys.exc_info()[0].__name__),
+        "message": str(sys.exc_info()[1]),
+        "file": os.path.basename(location_info[0]),
+        "function": location_info[2],
+        "line": location_info[1],
+    }
+    return fmt.format(**exception)
 
 
 @deprecated(
@@ -1655,6 +1656,24 @@ class CountedEvent(object):
         self._internal_set(value)
 
     @property
+    def min(self):
+        return self._min
+
+    @min.setter
+    def min(self, val):
+        with self._mutex:
+            self._min = val
+
+    @property
+    def max(self):
+        return self._max
+
+    @max.setter
+    def max(self, val):
+        with self._mutex:
+            self._max = val
+
+    @property
     def is_set(self):
         return self._event.is_set
 
@@ -1760,7 +1779,7 @@ class PrependableQueue(queue.Queue):
                     endtime = _time() + timeout
                     while self._qsize() == self.maxsize:
                         remaining = endtime - _time()
-                        if remaining <= 0.0:
+                        if remaining <= 0:
                             raise queue.Full
                         self.not_full.wait(remaining)
             self._prepend(item)
@@ -1889,7 +1908,7 @@ def time_this(
             try:
                 return f(*args, **kwargs)
             finally:
-                timing = (time.time() - start) * 1000.0
+                timing = (time.time() - start) * 1000
                 func = fqfn(f)
 
                 lt = logtarget

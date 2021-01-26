@@ -590,7 +590,8 @@ class MachineCom(object):
             ),
         }
 
-        self._lastLines = deque([], 50)
+        last_line_count = settings().getInt(["serial", "lastLineBufferSize"])
+        self._lastLines = deque([], last_line_count)
         self._lastCommError = None
         self._lastResendNumber = None
         self._currentResendCount = 0
@@ -666,7 +667,7 @@ class MachineCom(object):
         self._received_resend_requests = 0
         self._resend_ratio_start = settings().getInt(["serial", "resendRatioStart"])
         self._resend_ratio_threshold = (
-            settings().getInt(["serial", "resendRatioThreshold"]) / 100.0
+            settings().getInt(["serial", "resendRatioThreshold"]) / 100
         )
         self._resend_ratio_reported = False
 
@@ -949,9 +950,9 @@ class MachineCom(object):
         elif state == self.STATE_CLOSED:
             return "Offline"
         elif state == self.STATE_ERROR:
-            return "Error: {}".format(self.getErrorString())
+            return "Error"
         elif state == self.STATE_CLOSED_WITH_ERROR:
-            return "Offline (Error: {})".format(self.getErrorString())
+            return "Offline after error"
         elif state == self.STATE_TRANSFERING_FILE:
             return "Transferring file to SD"
         return "Unknown State ({})".format(self._state)
@@ -3841,7 +3842,7 @@ class MachineCom(object):
                         "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                         level=logging.ERROR,
                     )
-                self._errorValue = get_exception_string()
+                self._errorValue = get_exception_string(fmt="{type}: {message}")
                 self.close(is_error=True)
             return None
 
@@ -4712,7 +4713,7 @@ class MachineCom(object):
                                 "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                                 level=logging.INFO,
                             )
-                        self._errorValue = get_exception_string()
+                        self._errorValue = get_exception_string(fmt="{type}: {message}")
                         self.close(is_error=True)
                     break
             except Exception as ex:
@@ -4729,7 +4730,7 @@ class MachineCom(object):
                             "Please see https://faq.octoprint.org/serialerror for possible reasons of this.",
                             level=logging.INFO,
                         )
-                    self._errorValue = get_exception_string()
+                    self._errorValue = get_exception_string(fmt="{type}: {message}")
                     self.close(is_error=True)
                 break
 
@@ -4749,7 +4750,7 @@ class MachineCom(object):
                 # may be busy, so give things a little time before we try again. Extend this
                 # period each time we fail until either we write the data or run out of retry attempts.
                 if passes > 1:
-                    time.sleep((passes - 1) / 10.0)
+                    time.sleep((passes - 1) / 10)
 
         self._transmitted_lines += 1
 
@@ -5168,7 +5169,7 @@ class MachineCom(object):
 
         _timeout = 0
         if p_match:
-            _timeout = float(p_match.group("value")) / 1000.0
+            _timeout = float(p_match.group("value")) / 1000
         elif s_match:
             _timeout = float(s_match.group("value"))
 
@@ -5399,7 +5400,7 @@ class PrintingFileInformation(object):
         """
         if self._size is None or not self._size > 0:
             return -1
-        return float(self._pos) / float(self._size)
+        return self._pos / self._size
 
     def reset(self):
         """
@@ -5608,8 +5609,8 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         if duration > 0 and read_lines > 0:
             stats = {
                 "lines": read_lines,
-                "rate": float(read_lines) / duration,
-                "time_per_line": duration * 1000.0 / float(read_lines),
+                "rate": read_lines / duration,
+                "time_per_line": duration * 1000 / read_lines,
                 "duration": duration,
             }
             self._logger.info(
