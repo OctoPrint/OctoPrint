@@ -118,6 +118,10 @@ $(function () {
         exports.browser.mobile = $.browser.mobile;
         exports.browser.desktop = !exports.browser.mobile;
 
+        if (exports.browser.safari) {
+            $("html").addClass("safari");
+        }
+
         // exports
 
         exports.isVisible = function () {

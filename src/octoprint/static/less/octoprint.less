@@ -1340,6 +1340,24 @@ _:future,
   position: static;
 }
 
+// Speaking of Safari... it also wants to be special and doesn't consider scrollbars
+// being visible that important and I'm frankly at a loss of words about that
+
+.safari {
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    border-radius: 8px;
+    -webkit-border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgba(100, 100, 100, 0.8);
+  }
+}
+
 .scrollable {
   height: 100%;
   overflow: auto;
