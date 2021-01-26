@@ -1404,7 +1404,12 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
 class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def initialize(
-        self, files=None, as_attachment=True, attachment_name=None, access_validation=None
+        self,
+        files=None,
+        as_attachment=True,
+        attachment_name=None,
+        access_validation=None,
+        compress=False,
     ):
         if files is None:
             files = []
@@ -1415,6 +1420,7 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         self._as_attachment = as_attachment
         self._attachment_name = attachment_name
         self._access_validator = access_validation
+        self._compress = compress
 
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
@@ -1445,6 +1451,16 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
         import zipstream
 
+        compress_type = zipstream.ZIP_STORED
+        if self._compress:
+            try:
+                import zlib  # noqa: F401
+
+                compress_type = zipstream.ZIP_DEFLATED
+            except ImportError:
+                # no zlib, no compression
+                pass
+
         z = zipstream.ZipFile()
         for f in self.normalize_files(files):
             # noinspection PyCompatibility
@@ -1454,11 +1470,11 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
             content = f.get("content")
 
             if path:
-                z.write(path, arcname=name, compress_type=zipstream.ZIP_STORED)
+                z.write(path, arcname=name, compress_type=compress_type)
             elif iter and name:
-                z.write_iter(name, iter, compress_type=zipstream.ZIP_STORED)
+                z.write_iter(name, iter, compress_type=compress_type)
             elif content and name:
-                z.writestr(name, content, compress_type=zipstream.ZIP_STORED)
+                z.writestr(name, content, compress_type=compress_type)
 
         for chunk in z:
             try:
@@ -1477,6 +1493,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         as_attachment=True,
         attachment_name=None,
         access_validation=None,
+        compress=False,
     ):
         if as_attachment and not attachment_name:
             raise ValueError("attachment name must be set if as_attachment is True")
@@ -1486,6 +1503,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         self._as_attachment = as_attachment
         self._attachment_name = attachment_name
         self._access_validator = access_validation
+        self._compress = compress
 
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
@@ -1539,6 +1557,7 @@ class SystemInfoBundleHandler(StaticZipBundleHandler):
         self._as_attachment = True
         self._attachment_name = "octoprint-systeminfo-{datetime}.zip"
         self._access_validator = access_validation
+        self._compress = True
 
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
