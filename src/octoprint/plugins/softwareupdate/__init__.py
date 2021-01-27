@@ -1972,12 +1972,6 @@ class SoftwareUpdatePlugin(
                     elif check.get("pip", None):
                         # we force python unequality check for pip installs, to be able to downgrade
                         result["release_compare"] = "python_unequal"
-                        result["pip_command"] = check.get(
-                            "pip_command",
-                            self._settings.global_get(
-                                ["server", "commands", "localPipCommand"]
-                            ),
-                        )
 
         elif target == "pip":
             import pkg_resources
@@ -2021,12 +2015,13 @@ class SoftwareUpdatePlugin(
                     "current", check.get("displayVersion", None)
                 )
 
-        if "pip" in result:
-            if (
-                "pip_command" not in check
-                and self._settings.get(["pip_command"]) is not None
-            ):
-                result["pip_command"] = self._settings.get(["pip_command"])
+        if result.get("pip", None):
+            if "pip_command" not in result:
+                local_pip_command = self._settings.global_get(
+                    ["server", "commands", "localPipCommand"]
+                )
+                if local_pip_command:
+                    result["pip_command"] = local_pip_command
 
         return result
 
