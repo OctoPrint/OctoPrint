@@ -143,7 +143,7 @@ def run_server(
             method("There was a fatal error starting up OctoPrint.")
 
     else:
-        from octoprint.server import Server
+        from octoprint.server import CannotStartServerException, Server
 
         octoprint_server = Server(
             settings=settings,
@@ -159,7 +159,16 @@ def run_server(
             allow_root=allow_root,
             octoprint_daemon=octoprint_daemon,
         )
-        octoprint_server.run()
+
+        try:
+            octoprint_server.run()
+        except CannotStartServerException as e:
+            logger = logging.getLogger("octoprint.startup").fatal
+            echo = lambda x: click.echo(x, err=True)
+
+            for method in logger, echo:
+                method(str(e))
+                method("There was a fatal error starting up OctoPrint.")
 
 
 # ~~ server options
