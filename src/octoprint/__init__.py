@@ -557,6 +557,8 @@ def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handl
     # configure logging globally
     import logging.config as logconfig
 
+    from octoprint.logging.filters import TornadoAccessFilter
+
     logconfig.dictConfig(config)
 
     # make sure we log any warnings
@@ -584,6 +586,9 @@ def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handl
 
         uncaught_handler = exception_logger
     sys.excepthook = uncaught_handler
+
+    tornado_logger = log.getLogger("tornado.access")
+    tornado_logger.addFilter(TornadoAccessFilter())
 
     return logger
 
