@@ -137,6 +137,7 @@ date of first contribution):
   * [David Rifkind](https://github.com/drifkind)
   * [Nils Hofmann](https://github.com/Master92)
   * [Miroslav Šedivý](https://github.com/eumiro)
+  * [Costas Basdekis](https://github.com/costas-basdekis)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
