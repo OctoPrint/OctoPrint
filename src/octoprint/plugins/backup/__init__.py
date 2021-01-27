@@ -49,6 +49,7 @@ import requests
 import sarge
 from flask_babel import gettext
 
+from octoprint.plugins.pluginmanager import DEFAULT_PLUGIN_REPOSITORY
 from octoprint.settings import valid_boolean_trues
 from octoprint.util.text import sanitize
 
@@ -1118,10 +1119,11 @@ class BackupPlugin(
         basedir = settings._basedir
         cls._clean_dir_backup(basedir, on_log_progress=on_log_progress)
 
-        plugin_repo = {}
         repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
-        if repo_url:
-            plugin_repo = cls._get_plugin_repository_data(repo_url)
+        if not repo_url:
+            repo_url = DEFAULT_PLUGIN_REPOSITORY
+
+        plugin_repo = cls._get_plugin_repository_data(repo_url)
 
         if callable(on_restore_start):
             on_restore_start(path)

@@ -56,6 +56,9 @@ except ImportError:
 
 _DATA_FORMAT_VERSION = "v3"
 
+DEFAULT_PLUGIN_REPOSITORY = "https://plugins.octoprint.org/plugins.json"
+DEFAULT_PLUGIN_NOTICES = "https://plugins.octoprint.org/notices.json"
+
 
 def map_repository_entry(entry):
     if not isinstance(entry, dict):
@@ -275,9 +278,9 @@ class PluginManagerPlugin(
 
     def get_settings_defaults(self):
         return {
-            "repository": "https://plugins.octoprint.org/plugins.json",
+            "repository": DEFAULT_PLUGIN_REPOSITORY,
             "repository_ttl": 24 * 60,
-            "notices": "https://plugins.octoprint.org/notices.json",
+            "notices": DEFAULT_PLUGIN_NOTICES,
             "notices_ttl": 6 * 60,
             "pip_args": None,
             "pip_force_user": False,
