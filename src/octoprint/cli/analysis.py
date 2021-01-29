@@ -46,6 +46,8 @@ def validate_result(result):
     if "total_time" not in result or invalid_float(result["total_time"]):
         return False
 
+    return True
+
 
 @click.group()
 def analysis_commands():
