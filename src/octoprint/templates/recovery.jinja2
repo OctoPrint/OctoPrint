@@ -61,9 +61,9 @@
                 <ul class="nav nav-list">
                     <li class="nav-header">{{ _('Navigation') }}</li>
                     <li><a href="#system-commands">{{ _('System commands') }}</a></li>
+                    <li><a href="#system-info">{{ _('System info') }}</a></li>
                     <li data-bind="visible: printerConnected"><a href="#printer-control">{{ _('Printer control') }}</a></li>
                     <li data-bind="visible: backupSupported"><a href="#backups">{{ _('Backups') }}</a></li>
-                    <li><a href="#system-info">{{ _('System info') }}</a></li>
                 </ul>
             </div>
             <div class="span9">
@@ -75,6 +75,15 @@
                     <!-- ko foreach: systemCommands -->
                     <button class="btn btn-block" data-bind="text: name, click: function() { $root.executeSystemCommand($data) }"></button>
                     <!-- /ko -->
+                </div>
+
+                <div style="margin-bottom: 2em">
+                    <h1 id="system-info">{{ _('System info') }}</h1>
+                    <p data-bind="foreach: systemInfo">
+                        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+                    </p>
+                    <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
+                    <a href="javascript:void(0)" class="btn" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
                 </div>
 
                 <div data-bind="visible: printerConnected" style="margin-bottom: 2em">
@@ -135,14 +144,6 @@
                     <p data-bind="visible: backups().length <= 0">
                         {{ _('There are no backups yet.') }}
                     </p>
-                </div>
-
-                <div style="margin-bottom: 2em">
-                    <h1 id="system-info">{{ _('System info') }}</h1>
-                    <p data-bind="foreach: systemInfo">
-                        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
-                    </p>
-                    <a href="javascript:void(0)" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
                 </div>
             </div>
         </div>
