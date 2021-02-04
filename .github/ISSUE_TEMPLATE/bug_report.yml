@@ -49,8 +49,8 @@ inputs:
         caused by a third party plugin. Please see [here](https://docs.octoprint.org/en/master/features/safemode.html)
         on how to run OctoPrint in safe mode.
       choices:
-        - Yes
-        - No
+        - Yes, it did persist
+        - No, it did not persist (it's an issue with one of your installed plugins, don't report here)
         - I cannot test in safe mode (state why below)
       required: true
   - type: description
