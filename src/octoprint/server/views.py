@@ -228,6 +228,19 @@ def recovery():
     except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
+    try:
+        from octoprint.plugins.backup import MAX_UPLOAD_SIZE
+        from octoprint.util import get_formatted_size
+
+        render_kwargs.update(
+            {
+                "plugin_backup_max_upload_size": MAX_UPLOAD_SIZE,
+                "plugin_backup_max_upload_size_str": get_formatted_size(MAX_UPLOAD_SIZE),
+            }
+        )
+    except Exception:
+        _logger.exception("Error adding backup upload size info, ignoring")
+
     return render_template("recovery.jinja2", **render_kwargs)
 
 
