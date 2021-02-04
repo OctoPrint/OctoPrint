@@ -31,7 +31,7 @@ nothing but ticket management.
 
 - **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
-  and *[use the provided template](#what-should-i-include-in-a-ticket)*.
+  and *[use the provided form](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml)*.
   You do not need to do anything else with your ticket.
 - If you want to post a **feature request** or a **documentation request**, add `[Request]`
   to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
@@ -47,15 +47,6 @@ nothing but ticket management.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
-
-> 👉 **Note**
->
-> A bot is in place that monitors new tickets, automatically
-> categorizes them and checks new bug reports for usage of the provided template.
-> That bot will only bother you if you open a ticket that appears to be a bug (no
-> `[Request]` in the title) without the complete template, and it
-> will do that only to ensure that all information needed to solve the issue is
-> available for the maintainers to directly start tackling that problem.
 
 ## How to file a bug report
 
@@ -135,7 +126,7 @@ there.
 First of all make sure your use **a descriptive title**. "It doesn't work"
 and similar unspecific complaints are NOT descriptive titles.
 
-Always fill out the [reporting form](https://github.com/OctoPrint/OctoPrint/issues/new?assignees=&labels=&template=bug_report.yml&title=) **completely** and include as much
+Always fill out the [reporting form](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml) **completely** and include as much
 information as possible.
 
 Provide the same kind and amount of information also when you are just adding on to an
