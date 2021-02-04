@@ -51,7 +51,7 @@ inputs:
       choices:
         - Yes, it did persist
         - No, it did not persist (it's an issue with one of your installed plugins, don't report here)
-        - I cannot test in safe mode (state why below)
+        - I cannot test this issue in safe mode (state why below)
       required: true
   - type: description
     attributes:
