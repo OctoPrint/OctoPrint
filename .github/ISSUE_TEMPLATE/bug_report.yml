@@ -52,6 +52,7 @@ inputs:
         - Yes
         - No
         - I cannot test in safe mode (state why below)
+      required: true
   - type: description
     attributes:
       value: |
