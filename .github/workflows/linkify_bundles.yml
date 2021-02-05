@@ -31,7 +31,7 @@ jobs:
               }
             };
 
-            if (bundles) {
+            if (bundles.length > 0) {
               let text = comment + botMarker + "\n\n---\n\n\nBundles:\n\n";
               bundles.forEach((bundle) => {
                 text += "  * [" + bundle.filename + "](https://bundleviewer.octoprint.org/?url=" + encodeURIComponent(bundle.link) + ")\n"
@@ -43,5 +43,12 @@ jobs:
                 repo: context.repo.repo,
                 comment_id: context.payload.comment.id,
                 body: text
+              });
+            } else if (botWasHere !== -1) {
+              github.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                body: comment
               });
             }

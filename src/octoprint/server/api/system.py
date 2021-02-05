@@ -39,9 +39,15 @@ def getSystemInfo():
     )
     from octoprint.util import dict_flatten
 
-    systeminfo = get_systeminfo(environmentDetector, connectivityChecker)
-    systeminfo["browser.user_agent"] = request.headers.get("User-Agent")
-    systeminfo["octoprint.safe_mode"] = safe_mode is not None
+    systeminfo = get_systeminfo(
+        environmentDetector,
+        connectivityChecker,
+        {
+            "browser.user_agent": request.headers.get("User-Agent"),
+            "octoprint.safe_mode": safe_mode is not None,
+            "systeminfo.generator": "systemapi",
+        },
+    )
 
     if printer and printer.is_operational():
         firmware_info = printer.firmware_info

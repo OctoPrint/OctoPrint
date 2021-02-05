@@ -72,10 +72,11 @@ the *Python 3* environment and install the docs dependencies as well:
   * ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
   * ``pip install -e .[develop,plugins,docs]``
 
-You can then build the documentation:
+Go to the directory `docs` and you can then build the documentation:
 
   * ``sphinx-build -b html . _build``
 
+The documentation will be available in the newly created ``_build`` directory. You can simply browse it locally by opening ``index.html``
 .. _sec-development-environment-source-linux:
 
 Linux

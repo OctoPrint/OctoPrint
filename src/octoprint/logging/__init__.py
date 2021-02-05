@@ -1,5 +1,6 @@
 from typing import Union
 
+from octoprint.logging import filters  # noqa: F401
 from octoprint.logging import handlers  # noqa: F401
 
 

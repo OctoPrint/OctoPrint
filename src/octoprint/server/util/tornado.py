@@ -1385,7 +1385,12 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
 class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def initialize(
-        self, files=None, as_attachment=True, attachment_name=None, access_validation=None
+        self,
+        files=None,
+        as_attachment=True,
+        attachment_name=None,
+        access_validation=None,
+        compress=False,
     ):
         if files is None:
             files = []
@@ -1396,6 +1401,7 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         self._as_attachment = as_attachment
         self._attachment_name = attachment_name
         self._access_validator = access_validation
+        self._compress = compress
 
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
@@ -1426,6 +1432,16 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
         import zipstream
 
+        compress_type = zipstream.ZIP_STORED
+        if self._compress:
+            try:
+                import zlib  # noqa: F401
+
+                compress_type = zipstream.ZIP_DEFLATED
+            except ImportError:
+                # no zlib, no compression
+                pass
+
         z = zipstream.ZipFile()
         for f in self.normalize_files(files):
             # noinspection PyCompatibility
@@ -1435,11 +1451,11 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
             content = f.get("content")
 
             if path:
-                z.write(path, arcname=name, compress_type=zipstream.ZIP_STORED)
+                z.write(path, arcname=name, compress_type=compress_type)
             elif iter and name:
-                z.write_iter(name, iter, compress_type=zipstream.ZIP_STORED)
+                z.write_iter(name, iter, compress_type=compress_type)
             elif content and name:
-                z.writestr(name, content, compress_type=zipstream.ZIP_STORED)
+                z.writestr(name, content, compress_type=compress_type)
 
         for chunk in z:
             try:
@@ -1458,6 +1474,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         as_attachment=True,
         attachment_name=None,
         access_validation=None,
+        compress=False,
     ):
         if as_attachment and not attachment_name:
             raise ValueError("attachment name must be set if as_attachment is True")
@@ -1467,6 +1484,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         self._as_attachment = as_attachment
         self._attachment_name = attachment_name
         self._access_validator = access_validation
+        self._compress = compress
 
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
@@ -1514,18 +1532,21 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         return self.stream_zip(files)
 
 
-class SystemInfoBundleHandler(StaticZipBundleHandler):
+class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     # noinspection PyMethodOverriding
     def initialize(self, access_validation=None):
-        self._as_attachment = True
-        self._attachment_name = "octoprint-systeminfo-{datetime}.zip"
         self._access_validator = access_validation
 
+    @tornado.gen.coroutine
     def get(self, *args, **kwargs):
         if self._access_validator is not None:
             self._access_validator(self.request)
 
-        from octoprint.cli.systeminfo import get_systeminfo
+        from octoprint.cli.systeminfo import (
+            get_systeminfo,
+            get_systeminfo_bundle,
+            get_systeminfo_bundle_name,
+        )
         from octoprint.server import (
             connectivityChecker,
             environmentDetector,
@@ -1533,54 +1554,33 @@ class SystemInfoBundleHandler(StaticZipBundleHandler):
             safe_mode,
         )
         from octoprint.settings import settings
-        from octoprint.util import dict_flatten
 
-        systeminfo = get_systeminfo(environmentDetector, connectivityChecker)
-        systeminfo["browser.user_agent"] = self.request.headers.get("User-Agent")
-        systeminfo["octoprint.safe_mode"] = safe_mode is not None
-
-        terminaltxt = None
-        if printer and printer.is_operational():
-            firmware_info = printer.firmware_info
-            if firmware_info:
-                systeminfo.update(
-                    dict_flatten({"firmware": firmware_info["name"]}, prefix="printer")
-                )
-
-            if hasattr(printer, "_log"):
-                terminaltxt = list(printer._log)
-
-        logbase = settings().getBaseFolder("logs")
-
-        systeminfotxt = []
-        for k in sorted(systeminfo.keys()):
-            systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
-
-        files = [
+        systeminfo = get_systeminfo(
+            environmentDetector,
+            connectivityChecker,
             {
-                "name": "systeminfo.txt",
-                "content": octoprint.util.to_bytes("\n".join(systeminfotxt)),
+                "browser.user_agent": self.request.headers.get("User-Agent"),
+                "octoprint.safe_mode": safe_mode is not None,
+                "systeminfo.generator": "zipapi",
             },
-            {"path": os.path.join(logbase, "octoprint.log"), "name": "octoprint.log"},
-            {"path": os.path.join(logbase, "serial.log"), "name": "serial.log"},
-            {
-                "path": os.path.join(logbase, "plugin_softwareupdate_console.log"),
-                "name": "plugin_softwareupdate_console.log",
-            },
-            {
-                "path": os.path.join(logbase, "plugin_pluginmanager_console.log"),
-                "name": "plugin_pluginmanager_console.log",
-            },
-        ]
-        if terminaltxt is not None:
-            files.append(
-                {
-                    "name": "terminal.txt",
-                    "content": octoprint.util.to_bytes("\n".join(terminaltxt)),
-                }
-            )
+        )
 
-        return self.stream_zip(files)
+        z = get_systeminfo_bundle(
+            systeminfo, settings().getBaseFolder("logs"), printer=printer
+        )
+
+        self.set_header("Content-Type", "application/zip")
+        self.set_header(
+            "Content-Disposition",
+            'attachment; filename="{}"'.format(get_systeminfo_bundle_name()),
+        )
+
+        for chunk in z:
+            try:
+                self.write(chunk)
+                yield self.flush()
+            except tornado.iostream.StreamClosedError:
+                return
 
     def get_attachment_name(self):
         import time

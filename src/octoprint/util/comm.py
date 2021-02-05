@@ -2353,7 +2353,7 @@ class MachineCom:
                             if not filename.startswith("/"):
                                 # file from the root of the sd -- we'll prepend a /
                                 filename = "/" + filename
-                            self._sdFiles.append((filename.lower(), size))
+                            self._sdFiles.append((filename, size))
                             if longname is not None:
                                 self._sdFilesMap[filename] = longname
                         continue
@@ -5072,7 +5072,7 @@ class MachineCom:
     ):
         parts = cmd.split(None, 1)
         if len(parts) > 1:
-            filename = parts[1].strip().lower()
+            filename = parts[1].strip()
             if not filename.startswith("/"):
                 filename = "/" + filename
             self._sdFileLongName = filename

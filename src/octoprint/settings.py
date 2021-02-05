@@ -304,7 +304,13 @@ default_settings = {
                     "plugin_pi_support",
                     "login",
                 ],
-                "sidebar": ["plugin_firmware_check", "connection", "state", "files"],
+                "sidebar": [
+                    "plugin_firmware_check_warning",
+                    "plugin_firmware_check_info",
+                    "connection",
+                    "state",
+                    "files",
+                ],
                 "tab": [
                     "temperature",
                     "control",

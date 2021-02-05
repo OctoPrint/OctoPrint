@@ -2027,7 +2027,6 @@ class Server:
             "js/lib/loglevel.min.js",
             "js/lib/sockjs.min.js",
             "js/lib/ResizeSensor.js",
-            "js/lib/less.min.js",
             "js/lib/hls.js",
         ]
         js_client = [
@@ -2441,9 +2440,25 @@ class Server:
         try:
             self._intermediary_server.server_bind()
             self._intermediary_server.server_activate()
-        except Exception:
+        except Exception as exc:
             self._intermediary_server.server_close()
-            raise
+
+            if isinstance(exc, UnicodeDecodeError) and sys.platform == "win32":
+                # we end up here if the hostname contains non-ASCII characters due to
+                # https://bugs.python.org/issue26227 - tell the user they need
+                # to either change their hostname or read up other options in
+                # https://github.com/OctoPrint/OctoPrint/issues/3963
+                raise CannotStartServerException(
+                    "OctoPrint cannot start due to a Python bug "
+                    "(https://bugs.python.org/issue26227). Your "
+                    "computer's host name contains non-ASCII characters. "
+                    "Please either change your computer's host name to "
+                    "contain only ASCII characters, or take a look at "
+                    "https://github.com/OctoPrint/OctoPrint/issues/3963 for "
+                    "other options."
+                )
+            else:
+                raise
 
         def serve():
             try:
@@ -2656,3 +2671,7 @@ class LifecycleManager:
             for event in events:
                 if callback in self._plugin_lifecycle_callbacks[event]:
                     self._plugin_lifecycle_callbacks[event].remove(callback)
+
+
+class CannotStartServerException(Exception):
+    pass
