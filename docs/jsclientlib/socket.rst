@@ -122,7 +122,7 @@ Sample to setup an authed socket
       OctoPrint.socket.connect();
       OctoPrint.browser.login("myusername", "mypassword", true)
           .done(function(response) {
-              client.socket.sendAuth("myusername", response.session);
+              OctoPrint.socket.sendAuth("myusername", response.session);
           });
 
 .. _sec-jsclient-socket-throttling:
