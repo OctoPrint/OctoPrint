@@ -40,7 +40,7 @@ because the library depends on those to be available (as ``$`` and ``_``). You c
    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
 
-Moreover, if you need to use the socket module, you'll need to include sockJS. You can embedded it like this:
+Moreover, if you need to use the socket module, you'll need to include sockJS. You can embed it like this:
 
 .. code-block:: html+jinja
 
