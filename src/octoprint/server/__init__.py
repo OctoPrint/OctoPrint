@@ -1979,6 +1979,7 @@ class Server(object):
         )
 
         js_libs = [
+            "js/lib/babel-polyfill.min.js",
             "js/lib/jquery/jquery.min.js",
             "js/lib/modernizr.custom.js",
             "js/lib/lodash.min.js",
@@ -2022,6 +2023,7 @@ class Server(object):
             "js/lib/sockjs.min.js",
             "js/lib/ResizeSensor.js",
             "js/lib/hls.js",
+            "js/lib/less.js",
         ]
         js_client = [
             "js/app/client/base.js",
