@@ -47,4 +47,8 @@ repos:
     hooks:
       - id: eslint
         additional_dependencies:
+          - eslint@7.19.0
           - eslint-plugin-es5@v1.3.0
+          - eslint-plugin-cypress@2.11.2
+        files: \.js$
+        exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
