@@ -42,3 +42,9 @@ repos:
     rev: v2.1.2
     hooks:
       - id: prettier
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v7.19.0
+    hooks:
+      - id: eslint
+        additional_dependencies:
+          - eslint-plugin-es5@v1.3.0

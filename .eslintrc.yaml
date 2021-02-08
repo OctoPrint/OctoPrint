@@ -1,0 +1,22 @@
+env:
+  browser: true
+  jquery: true
+parserOptions:
+  ecmaVersion: 5
+rules: {}
+overrides:
+  - files:
+      - "src/octoprint/static/js/app/**"
+    rules:
+      es5/no-block-scoping: error
+      es5/no-arrow-functions: error
+      es5/no-default-parameters: error
+      es5/no-rest-parameters: error
+      es5/no-spread: error
+      es5/no-destructuring: error
+      es5/no-for-of: error
+      es5/no-generators: error
+      es5/no-template-literals: error
+
+plugins:
+  - eslint-plugin-es5
