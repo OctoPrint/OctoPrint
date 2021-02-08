@@ -1,7 +1,7 @@
 {% if enableWebcam %}
     <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
     <div id="webcam_hls_container" tabindex="0" data-bind="visible: webcamHlsEnabled()">
-        <video id="webcam_hls" muted autoplay style="width: 100%"/>
+        <video id="webcam_hls" muted autoplay style="width: 100%"></video>
     </div>
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">
