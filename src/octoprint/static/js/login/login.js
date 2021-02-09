@@ -16,6 +16,8 @@ $(function () {
     var buttonElement = $("#login-button");
     var reconnectElement = $("#login-reconnect");
 
+    var ignoreDisconnect = false;
+
     buttonElement.click(function () {
         var usernameElement = $("#login-user");
         var passwordElement = $("#login-password");
@@ -31,6 +33,7 @@ $(function () {
         OctoPrint.browser
             .login(username, password, remember)
             .done(function () {
+                ignoreDisconnect = true;
                 window.location.href = REDIRECT_URL;
             })
             .fail(function () {
@@ -52,6 +55,7 @@ $(function () {
     };
 
     OctoPrint.socket.onDisconnected = function () {
+        if (ignoreDisconnect) return;
         buttonElement.prop("disabled", true);
         offlineElement.addClass("in");
     };
