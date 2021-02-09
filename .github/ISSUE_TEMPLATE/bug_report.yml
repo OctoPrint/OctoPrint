@@ -92,10 +92,10 @@ inputs:
       value: >-
         Please also be sure to upload the following files below:
 
-          * `octoprint.log`: See [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know where to find that.
+          * `octoprint.log`: See [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know where to find that. Please do not zip, modify or paste, just attach down below as-is.
           * `serial.log` or the contents of your terminal tab, if applicable. Always
             include if unsure. **Please note that you need to enable `serial.log` first**,
-            see [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know how to do or where to find it.
+            see [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know how to do or where to find it. Please do not zip, modify or paste, just attach down below as-is.
           * Your browser's JavaScript console, if you are reporting a problem with the
             user interface. See [here](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers) on where to find that.
           * If possible, screenshots or videos showing the problem, especially if you
@@ -109,7 +109,7 @@ inputs:
     attributes:
       label: Checklist of files to include below
       choices:
-        - label: octoprint.log
+        - label: octoprint.log (unmodified, unzipped, just attached below)
           required: true
         - label: serial.log or contents of your terminal tab (always include in cases of issues with printer communication)
         - label: Contents of the JavaScript browser console (always include in cases of issues with the user interface)
