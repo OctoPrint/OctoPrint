@@ -1,0 +1,16 @@
+# refs to ignore during git blame, use with --ignore-revs-file
+
+# Switch to black formatting
+1f93b2355a2816918e11a55e61b42010d15a6720
+5f2a95d154650366078b0d387e5b01427c4340c0
+
+# Switch to prettier formatting
+6b44909f21ee39237b7504cd31ffa6cf28275c33
+
+# EOF/trailing whitespace check
+#cae6730ea87da18bd6ebfeaf3e1e9cd354390939
+
+# dict_to_literal, set_to_literal, not_in, flake8 fixes
+#af60fd642832736966104ae71d852d745397c749
+#986312b6ae7eeadcaf620cc99d53b23794be83b6
+#b5be8f3eaec18ae2a88110a3a16c552931d493dd

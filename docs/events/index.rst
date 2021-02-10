@@ -100,20 +100,53 @@ Shutdown
    The server is shutting down.
 
 ClientOpened
-   A client has connected to the web server.
+   A client has connected to the push socket.
 
    Payload:
 
-     * ``remoteAddress``: the remote address (IP) of the client that connected
+     * ``remoteAddress``: the remote address (IP) of the client that connected. On the push socket only available with
+       a valid login session.
 
    **Note:** Name changed in version 1.1.0
 
-ClientClosed
-   A client has disconnected from the webserver
+   .. versionchanged:: 1.1.0
+   .. versionchanged:: 1.4.0
+
+ClientAuthed
+   A client has authenticated a user session on the push socket.
 
    Payload:
 
-     * ``remoteAddress``: the remote address (IP) of the client that disconnected
+     * ``remoteAddress``: the remote address (IP) of the client that authed. On the push socket only available with a
+       valid login session.
+     * ``username``: the name of the user who authed. On the push socket only available with a valid login session.
+
+  .. versionadded:: 1.4.0
+
+ClientClosed
+   A client has disconnected from the push socket.
+
+   Payload:
+
+     * ``remoteAddress``: the remote address (IP) of the client that disconnected. On the push socket only available
+       with a valid login session.
+
+UserLoggedIn
+   A user logged in. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+
+     * ``username``: the name of the user who logged in
+
+  .. versionadded:: 1.4.0
+
+UserLoggedOut
+   A user logged out. On the push socket only available with a valid login session with admin rights.
+
+   Payload:
+     * ``username``: the name of the user who logged out
+
+  .. versionadded:: 1.4.0
 
 ConnectivityChanged
    The server's internet connectivity changed
@@ -123,6 +156,8 @@ ConnectivityChanged
      * ``old``: Old connectivity value (true for online, false for offline)
      * ``new``: New connectivity value (true for online, false for offline)
 
+  .. versionadded:: 1.3.5
+
 .. _sec-events-available_events-printer_commmunication:
 
 Printer communication
@@ -130,6 +165,8 @@ Printer communication
 
 Connecting
    The server is attempting to connect to the printer.
+
+  .. versionadded:: 1.3.0
 
 Connected
    The server has connected to the printer.
@@ -144,12 +181,17 @@ Disconnecting
    event might not always be sent when the server and printer get disconnected
    from each other. Do not depend on this for critical life cycle management.
 
+  .. versionadded:: 1.3.0
+
 Disconnected
    The server has disconnected from the printer
 
 Error
    An unrecoverable error has been encountered, either as reported by the firmware (e.g. a thermal runaway) or
    on the connection.
+
+   Note that this event will not fire for error messages from the firmware that are handled (and as such recovered from)
+   either by OctoPrint or a plugin.
 
    Payload:
 
@@ -164,22 +206,29 @@ PrinterStateChanged
        :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
      * ``state_string``: Text representation of the new state.
 
+  .. versionadded:: 1.3.0
+
 .. _sec-events-available_events-file_handling:
 
 File handling
 -------------
 
 Upload
-   A file has been uploaded through the web interface.
+   A file has been uploaded through the :ref:`REST API <sec-api-fileops-uploadfile>`.
 
    Payload:
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
+     * ``select``: whether the file will immediately be selected, as requested on the API by the corresponding parameter
+     * ``print``: whether the file will immediately start printing, as requested on the API by the corresponding parameter
+     * ``userdata``: optional ``userdata`` if provided on the API, will only be present if supplied in the upload request
 
    .. deprecated:: 1.3.0
 
         * ``file``: the file's path within its storage location. To be removed in 1.4.0.
+
+  .. versionchanged:: 1.4.0
 
 FileAdded
    A file has been added to a storage.
@@ -196,6 +245,8 @@ FileAdded
       A copied file triggers this for its new path. A moved file first triggers ``FileRemoved`` for its original
       path and then ``FileAdded`` for the new one.
 
+  .. versionadded:: 1.3.3
+
 FileRemoved
    A file has been removed from a storage.
 
@@ -210,6 +261,8 @@ FileRemoved
 
       A moved file first triggers ``FileRemoved`` for its original path and then ``FileAdded`` for the new one.
 
+  .. versionadded:: 1.3.3
+
 FolderAdded
    A folder has been added to a storage.
 
@@ -223,6 +276,8 @@ FolderAdded
       A copied folder triggers this for its new path. A moved folder first triggers ``FolderRemoved`` for its original
       path and then ``FolderAdded`` for the new one.
 
+  .. versionadded:: 1.3.3
+
 FolderRemoved
    A folder has been removed from a storage.
 
@@ -234,6 +289,8 @@ FolderRemoved
    .. note::
 
       A moved folder first triggers ``FolderRemoved`` for its original path and then ``FolderAdded`` for the new one.
+
+  .. versionadded:: 1.3.3
 
 UpdatedFiles
    A file list was modified.
@@ -249,6 +306,7 @@ UpdatedFiles
           reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
           be removed with 1.4.0.
 
+   .. versionchanged:: 1.4.0
 
 MetadataAnalysisStarted
    The metadata analysis of a file has started.
@@ -262,6 +320,8 @@ MetadataAnalysisStarted
    .. deprecated:: 1.3.0
 
         * ``file``: the file's path within its storage location. To be removed in 1.4.0.
+
+  .. versionchanged:: 1.4.0
 
 MetadataAnalysisFinished
    The metadata analysis of a file has finished.
@@ -277,6 +337,8 @@ MetadataAnalysisFinished
 
         * ``file``: the file's path within its storage location. To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 FileSelected
    A file has been selected for printing.
 
@@ -291,6 +353,8 @@ FileSelected
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name.  To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 FileDeselected
    No file is selected any more for printing.
 
@@ -303,6 +367,8 @@ TransferStarted
      * ``remote``: the file's name as stored on SD
 
    **Note:** Name changed in version 1.1.0
+
+   .. versionchanged:: 1.1.0
 
 TransferDone
    A file transfer to the printer's SD has finished.
@@ -335,6 +401,8 @@ PrintStarted
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name.  To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 PrintFailed
    A print failed.
 
@@ -353,6 +421,8 @@ PrintFailed
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name.  To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 PrintDone
    A print completed successfully.
 
@@ -370,6 +440,8 @@ PrintDone
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name.  To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 PrintCancelling
    The print is about to be cancelled.
 
@@ -382,6 +454,8 @@ PrintCancelling
      * ``owner``: the user who started the print job (if available)
      * ``user``: the user who cancelled the print job (if available)
      * ``firmwareError``: the firmware error that caused cancelling the print job, if any
+
+  .. versionadded:: 1.3.7
 
 PrintCancelled
    The print has been cancelled.
@@ -413,6 +487,8 @@ PrintCancelled
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name. To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 PrintPaused
    The print has been paused.
 
@@ -442,6 +518,8 @@ PrintPaused
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name. To be removed in 1.4.0.
 
+   .. versionchanged:: 1.4.0
+
 PrintResumed
    The print has been resumed.
 
@@ -458,6 +536,36 @@ PrintResumed
 
         * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``). To be removed in 1.4.0.
         * ``filename``: the file's name. To be removed in 1.4.0.
+
+   .. versionchanged:: 1.4.0
+
+GcodeScript${ScriptName}Running
+   A custom :ref:`GCODE script <sec-features-gcode_scripts>` has started running.
+
+   Payload:
+
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``time``: the time needed for the print, in seconds (float)
+
+   .. versionadded:: 1.6.0
+
+GcodeScript${ScriptName}Finished
+   A custom :ref:`GCODE script <sec-features-gcode_scripts>` has finished running.
+
+   Payload:
+
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``time``: the time needed for the print, in seconds (float)
+
+   .. versionadded:: 1.6.0
 
 .. _sec-events-available_events-gcode_processing:
 
@@ -513,6 +621,8 @@ PositionUpdate
      * ``t``: last tool selected *through OctoPrint*
      * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
 
+   .. versionadded:: 1.3.0
+
 ToolChange
    A tool change command was sent to the printer. The payload contains the former current tool index and the
    new current tool index.
@@ -521,6 +631,34 @@ ToolChange
 
      * ``old``: old tool index
      * ``new``: new tool index
+
+   .. versionadded:: 1.3.5
+
+CommandSuppressed
+   A command was suppressed by OctoPrint due to according configuration and will not be
+   sent to the printer.
+
+   Payload:
+
+     * ``command``: the command that was suppressed
+     * ``message``: a message containing an explanation of the command suppression
+     * ``severity``: a severity level, either ``warn`` or ``info`` - ``warn`` indicates
+       that the command was suppressed probably due to a misconfiguration either inside
+       OctoPrint or the firmware and that it should be investigated by the user
+
+   .. versionadded:: 1.5.0
+
+InvalidToolReported
+   The firmware reported a tool as invalid upon trying to select it. It has thus been marked
+   as invalid and further attempts to select said tool will result in the tool command
+   to get suppressed (and ``SuppressedCommand`` to be generated).
+
+   Payload:
+
+     * ``tool``: the tool number that was reported as invalid by the firmware
+     * ``fallback``: the tool number that OctoPrint will revert to
+
+   .. versionadded:: 1.5.0
 
 .. _sec-events-available_events-timelapses:
 
@@ -546,6 +684,8 @@ CaptureFailed
    Payload:
      * ``file``: the name of the image file that should have been saved
      * ``error``: the error that was caught
+
+   .. versionadded:: 1.3.0
 
 MovieRendering
    The timelapse movie has started rendering.
@@ -639,6 +779,8 @@ SlicingProfileAdded
      * ``slicer``: the slicer for which the profile was added
      * ``profile``: the profile that was added
 
+  .. versionadded:: 1.2.12
+
 SlicingProfileModified
    A slicing profile was modified.
 
@@ -647,6 +789,8 @@ SlicingProfileModified
      * ``slicer``: the slicer for which the profile was modified
      * ``profile``: the profile that was modified
 
+  .. versionadded:: 1.2.12
+
 SlicingProfileDeleted
    A slicing profile was deleted.
 
@@ -654,6 +798,8 @@ SlicingProfileDeleted
 
      * ``slicer``: the slicer for which the profile was deleted
      * ``profile``: the profile that was deleted
+
+  .. versionadded:: 1.2.12
 
 .. _sec-events-available_events-settings:
 
@@ -666,10 +812,12 @@ SettingsUpdated
    This event may also be triggered if calling code of :py:class:`octoprint.settings.Settings.save` or
    :py:class:`octoprint.plugin.PluginSettings.save` sets the ``trigger_event`` parameter to ``True``.
 
+   .. versionadded:: 1.2.0
+
 .. _sec-events-available_events-printer_profile:
 
 Printer Profile
---------
+---------------
 
 PrinterProfileModified
    A printer profile was modified.
@@ -677,3 +825,6 @@ PrinterProfileModified
    Payload:
 
      * ``identifier``: the identifier of the modified printer profile
+
+   .. versionadded:: 1.3.12
+

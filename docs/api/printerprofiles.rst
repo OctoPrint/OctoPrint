@@ -21,6 +21,8 @@ Retrieve all printer profiles
 
    Returns a :http:statuscode:`200` with a list of :ref:`profiles <sec-api-printerprofiles-datamodel-profile>`.
 
+   Requires the ``CONNECTION`` permission.
+
    **Example**
 
    .. sourcecode:: http
@@ -124,6 +126,22 @@ Retrieve all printer profiles
       }
 
 
+.. _sec-api-printerprofiles-get:
+
+Retrieve a single printer profile
+=================================
+
+.. http:get:: /api/printerprofiles/(string:identifier)
+
+   Retrieves an existing single printer profile.
+
+   Returns a :http:statuscode:`200` with a :ref:`profile <sec-api-printerprofiles-datamodel-profile>`.
+
+   Requires the ``CONNECTION`` permission.
+
+   :statuscode 200: No error
+   :statuscode 404: The profile does not exist
+
 .. _sec-api-printerprofiles-add:
 
 Add a new printer profile
@@ -143,7 +161,7 @@ Add a new printer profile
    Returns a :http:statuscode:`200` with the saved profile as property ``profile``
    in the JSON body upon success.
 
-   Requires admin rights.
+   Requires the ``SETTINGS`` permission.
 
    **Example 1**
 
@@ -314,7 +332,7 @@ Update an existing printer profile
    Returns a :http:statuscode:`200` with the saved profile as property ``profile``
    in the JSON body upon success.
 
-   Requires admin rights.
+   Requires the ``SETTINGS`` permission.
 
    **Example**
 
@@ -400,7 +418,7 @@ Remove an existing printer profile
 
    Returns a :http:statuscode:`204` an empty body upon success.
 
-   Requires admin rights.
+   Requires the ``SETTINGS`` permission.
 
    **Example**
 

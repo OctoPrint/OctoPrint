@@ -4,6 +4,8 @@
 Plugins
 *******
 
+.. versionadded:: 1.2.0
+
 Starting with OctoPrint 1.2.0, there's now a plugin system in place which allows to individually
 extend OctoPrint's functionality.
 
@@ -28,7 +30,7 @@ Finding Plugins
 
 The official OctoPrint Plugin Repository can be found at `plugins.octoprint.org <http://plugins.octoprint.org>`_.
 
-Some plugins may also be found in the list provided in `the OctoPrint wiki <https://github.com/foosel/OctoPrint/wiki#plugins>`_
+Some plugins may also be found in the list provided in `the OctoPrint wiki <https://github.com/OctoPrint/OctoPrint/wiki#plugins>`_
 and on the `OctoPrint organization Github page <https://github.com/OctoPrint>`_.
 
 .. _sec-features-plugins-installing:

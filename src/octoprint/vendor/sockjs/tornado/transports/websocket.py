@@ -33,7 +33,10 @@ class WebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransportMix
 
         # Disable nagle
         if self.server.settings['disable_nagle']:
-            self.stream.set_nodelay(True)
+            if hasattr(self, 'ws_connection'):
+                self.ws_connection.stream.set_nodelay(True)
+            else:
+                self.stream.set_nodelay(True)
 
         # Handle session
         self.session = self.server.create_session(session_id, register=False)
@@ -89,7 +92,7 @@ class WebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransportMix
             # Running in Main Thread
             # Send message
             try:
-                self.write_message(message, binary)
+                self.write_message(message, binary).add_done_callback(self.send_complete)
             except (IOError, WebSocketError):
                 self.server.io_loop.add_callback(self.on_close)
         else:

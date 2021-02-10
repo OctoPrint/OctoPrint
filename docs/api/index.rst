@@ -9,7 +9,7 @@ REST API
 
    general.rst
    version.rst
-   apps.rst
+   server.rst
    connection.rst
    files.rst
    job.rst
@@ -21,7 +21,7 @@ REST API
    slicing.rst
    system.rst
    timelapse.rst
-   users.rst
+   access.rst
    util.rst
    wizard.rst
    push.rst

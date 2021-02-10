@@ -16,6 +16,8 @@ Get connection settings
    Retrieve the current connection settings, including information regarding the available baudrates and
    serial ports and the current connection state.
 
+   Requires the ``STATUS`` permission.
+
    **Example**
 
    .. sourcecode:: http
@@ -81,7 +83,7 @@ Issue a connection command
      for the lost acknowledgment should always be properly investigated and removed instead of depending on this
      "symptom solver".
 
-   Requires user rights.
+   Requires the ``CONNECTION`` permission.
 
    **Example Connect Request**
 

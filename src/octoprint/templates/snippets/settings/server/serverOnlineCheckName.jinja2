@@ -1,0 +1,6 @@
+<div class="control-group" title="{{ _('Hostname to try to resolve to check for internet connectivity')|edq }}" data-bind="css: {error: server_onlineCheckResolutionBroken, success: server_onlineCheckResolutionOk}">
+    <label class="control-label" for="settings-serverOnlineCheckHost">{{ _('Hostname') }}</label>
+    <div class="controls">
+        <input type="text" class="input-small" data-bind="value: server_onlineCheck_name" id="settings-serverOnlineCheckName">
+    </div>
+</div>

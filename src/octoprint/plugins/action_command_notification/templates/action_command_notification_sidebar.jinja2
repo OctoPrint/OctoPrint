@@ -1,0 +1,12 @@
+<div style="display: none" data-bind="visible: notifications().length > 0">
+    <div class="scroll-wrapper sidebar_plugin_action_command_notification_scrollable" data-bind="foreach: notifications">
+        <div class="sidebar_plugin_action_command_notification_entry">
+            <div class="sidebar_plugin_action_command_notification_entry_timestamp"><small class="muted" data-bind="text: $root.toDateTimeString($data.timestamp)"></small></div>
+            <div class="sidebar_plugin_action_command_notification_entry_message" data-bind="text: message"></div>
+        </div>
+    </div>
+    <button class="btn btn-block" data-bind="click: clear, visible: loginState.hasPermission(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_CLEAR)"><i class="far fa-trash-alt"></i> {{ _('Clear notifications') }}</button>
+</div>
+<div style="display: none" data-bind="visible: notifications().length == 0">
+    {{ _('There are currently no notifications from your printer.') }}
+</div>

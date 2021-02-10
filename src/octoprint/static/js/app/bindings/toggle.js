@@ -6,10 +6,10 @@ ko.bindingHandlers.toggle = {
         var value = valueAccessor();
 
         if (!ko.isObservable(value)) {
-            throw new Error('toggle binding should be used only with observable values');
+            throw new Error("toggle binding should be used only with observable values");
         }
 
-        $(element).on('click', function (event) {
+        $(element).on("click", function (event) {
             event.preventDefault();
 
             var previousValue = ko.utils.unwrapObservable(value);
@@ -18,7 +18,10 @@ ko.bindingHandlers.toggle = {
     },
 
     update: function (element, valueAccessor) {
-        ko.utils.toggleDomNodeCssClass(element, 'active', ko.utils.unwrapObservable(valueAccessor()));
+        ko.utils.toggleDomNodeCssClass(
+            element,
+            "active",
+            ko.utils.unwrapObservable(valueAccessor())
+        );
     }
 };
-

@@ -3,6 +3,8 @@
 Error Tracking Plugin
 =====================
 
+.. versionadded:: 1.3.11
+
 The Error Tracking plugin will cause any logged exceptions in the server and the browser interface to be sent to
 OctoPrint's `Sentry instance <https://sentry.io/>`_.
 

@@ -1,0 +1,12 @@
+<h3>Virtual Printer</h3>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.virtual_printer.enabled"> {{ _('Enable the virtual printer') }}
+                <span class="help-block">{{ _('If enabled, an additional serial port <code>VIRTUAL</code> will be available for connecting, backed by a fake printer implementation. Useful for development.') }}</span>
+            </label>
+        </div>
+    </div>
+</form>

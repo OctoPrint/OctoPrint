@@ -1,21 +1,70 @@
+#settings_plugin_pluginmanager {
+}
+
+#settings_plugin_pluginmanager_navbar {
+  position: -webkit-sticky; /* Safari, according to the internet */
+  position: sticky;
+  top: 0;
+  padding-bottom: 1px;
+  border-bottom: 1px solid #ddd;
+  background: white;
+}
+
 #settings_plugin_pluginmanager_pluginlist {
   display: block;
   width: auto;
-  height: 400px;
+  overflow-x: hidden;
+  padding-right: 2px;
+  margin-bottom: 1em;
+
+  table {
+    th,
+    td {
+      &.settings_plugin_plugin_manager_plugins_name {
+        text-overflow: ellipsis;
+        text-align: left;
+
+        .prop {
+          white-space: nowrap;
+        }
+      }
+
+      &.settings_plugin_plugin_manager_plugins_actions {
+        text-align: center;
+        width: 80px;
+
+        a {
+          text-decoration: none;
+          color: #000;
+
+          &.disabled {
+            color: #ccc;
+            cursor: default;
+          }
+        }
+      }
+    }
+  }
+}
+
+#settings_plugin_pluginmanager_orphanlist {
+  display: block;
+  width: auto;
+  max-height: 400px;
   overflow-x: hidden;
   overflow-y: scroll;
   padding-right: 2px;
   margin-bottom: 1em;
 
   table {
-
-    th, td {
-      &.settings_plugin_plugin_manager_plugins_name {
+    th,
+    td {
+      &.settings_plugin_plugin_manager_orphans_id {
         text-overflow: ellipsis;
         text-align: left;
       }
 
-      &.settings_plugin_plugin_manager_plugins_actions {
+      &.settings_plugin_plugin_manager_orphans_actions {
         text-align: center;
         width: 80px;
 
@@ -68,7 +117,7 @@
   #settings_plugin_pluginmanager_repositorydialog_empty {
     overflow: hidden;
     width: 100%;
-    height: 300px;
+    height: 400px;
     background-image: url("../img/repo_unavailable.png");
     text-align: center;
     display: table;
@@ -81,7 +130,7 @@
 
   #settings_plugin_pluginmanager_repositorydialog_list {
     width: auto;
-    height: 300px;
+    height: 400px;
     overflow-x: hidden;
     overflow-y: scroll;
     padding-right: 2px;
@@ -89,6 +138,16 @@
     .entry {
       border-bottom: 1px solid #ddd;
       padding: 5px;
+
+      .meta {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .stats .prop {
+        white-space: nowrap;
+      }
     }
   }
 }

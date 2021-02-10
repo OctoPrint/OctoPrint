@@ -2,7 +2,16 @@
 
 <p>{{ _('Please restart OctoPrint after changing any of this plugin\'s settings.') }}</p>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.pi_support.ignore_unrecommended_model"> {{ _('Disable warning about unsupported hardware') }} <label class="label label-important">{{ _('Warning') }}</label>
+            </label>
+            <span class="help-block">{{ _('If you check this, you will no longer get warned if you run OctoPrint on Raspberry Pi models that are not officially supported due to bad performance that can lead to failed prints. Do so at your own risk.') }}</span>
+        </div>
+    </div>
+
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
@@ -13,9 +22,9 @@
     </div>
 
     <div>
-        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
-            <form class="form-horizontal">
+            <form class="form-horizontal" onsubmit="return false;">
                 <div class="control-group">
                     <label class="control-label">{{ _('Command for under voltage/overheat detection') }}</label>
                     <div class="controls">
@@ -27,5 +36,3 @@
         </div>
     </div>
 </form>
-
-

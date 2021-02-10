@@ -1,0 +1,11 @@
+.sidebar_plugin_action_command_notification_entry {
+    padding: 5px;
+    line-height: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sidebar_plugin_action_command_notification_scrollable  {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: 306px;
+}

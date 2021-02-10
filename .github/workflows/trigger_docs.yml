@@ -1,0 +1,20 @@
+name: Trigger doc build
+on:
+  push:
+  release:
+    types:
+      - released
+      - prereleased
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    if: github.repository == 'OctoPrint/OctoPrint'
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCS_ACCESS_TOKEN }}
+          repository: OctoPrint/docs.octoprint.org
+          event-type: docs
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

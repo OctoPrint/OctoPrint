@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
 
+
 class ReprapFirmwareFlavor(GenericFlavor):
 
-	key = "reprapfirmware"
-	name = "RepRapFirmware"
+    key = "reprapfirmware"
+    name = "RepRapFirmware"
 
-	sd_relative_path = True
+    sd_relative_path = True
 
-	@classmethod
-	def identifier(cls, firmware_name, firmware_info):
-		return "reprapfirmware" in firmware_name.lower()
-
+    @classmethod
+    def identifier(cls, firmware_name, firmware_info):
+        return "reprapfirmware" in firmware_name.lower()

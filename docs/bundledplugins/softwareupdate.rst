@@ -3,9 +3,13 @@
 Software Update Plugin
 ======================
 
+.. versionadded:: 1.2.0
+
 The Software Update Plugin allows receiving notifications about new releases
 of OctoPrint or installed plugins which registered with it and -- if properly
 configured -- also applying the found updates.
+
+It comes bundled with OctoPrint.
 
 .. _sec-bundledplugins-softwareupdate-firststeps:
 
@@ -24,7 +28,7 @@ Settings Dialog, navigate to the Software Update section therein and once you ar
 wrench icon in the upper right corner.
 
 .. _fig-bundledplugins-softwareupdate-plugin-configuration:
-.. figure:: ../images/bundledplugins-softwareupdate-plugin-configuration.png
+.. figure:: ../images/bundledplugins-softwareupdate-configuration.png
    :align: center
    :alt: Software Update plugin configuration dialog
 
@@ -34,21 +38,25 @@ There you can adjust the following settings:
 
   * **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
     select "Release" here which is also the default, unless you are a developer.
-  * **OctoPrint Release Channel** (if tracking releases): The release channel of OctoPrint to track for updates. If you only want stable versions,
-    select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
-    candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
-    "Stable". `Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`_.
-  * **OctoPrint checkout folder** (if tracking git commits): This must be the path to OctoPrint's git checkout folder
-    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_).
+  * **Tracked branch** (if tracking is set to "Github Commit"): The branch that will be tracked if you set version tracking to "Github Commit".
+  * **OctoPrint ``pip`` target** (if tracking is set to "Release" or "Github Commit"): The argument that will be provided to ``pip`` when updating OctoPrint.
+    Usually you don't want to change this from its default value of ``https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip``.
+  * **OctoPrint checkout folder** (if tracking is set to "Local checkout"): This must be the path to OctoPrint's git checkout folder
+    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspbian/2337/>`_).
     Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
     want to be able to update against some bleeding edge git branch.
+  * **Enable ``pip`` update checks**: Whether to have OctoPrint automatically check for updates of
+    the ``pip`` tool that is used for updating most components.
   * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
     for the various components registered with the plugin, so that they don't have to be queried from the internet every time
     you load the page. Defaults to 24h, you usually shouldn't need to change that value.
+  * **Show notifications to users**: Whether to display update notifications (without "Update now" button) to users that cannot
+    apply updates.
+  * **Minimum free disk space**: The minimum amount of free disk space needed in order to allow software updates to be run.
 
 More settings are available by :ref:`editing the corresponding section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
-That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
+Restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
 .. _sec-bundledplugins-softwareupdate-cli:
 
@@ -119,9 +127,6 @@ Configuring the Plugin
 
    plugins:
      softwareupdate:
-       # the time-to-live of the version cache, in minutes
-       cache_ttl: 60
-
        # configured version check and update methods
        checks:
          # "octoprint" is reserved for OctoPrint
@@ -133,7 +138,7 @@ Configuring the Plugin
            user: foosel
            repo: OctoPrint
            method: pip
-           pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+           pip: 'https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip'
 
          # further checks may be defined here
 
@@ -141,10 +146,48 @@ Configuring the Plugin
        # used - should normally NOT be necessary and hence set
        pip_command: /path/to/pip
 
+       # the time-to-live of the version cache, in minutes, defaults to 24h
+       cache_ttl: 1440
+
+       # whether to show update notifications to users that cannot apply updates
+       notify_users: true
+
+       # whether to ignore the system throttled state reported by the pisupport plugin and
+       # allow updating even when the system is not running stable - really not recommended
+       ignore_throttled: false
+
+       # minimum free storage in MB for updates to be enabled
+       minimum_free_storage: 150
+
+       # URL from which to fetch check overlays
+       check_overlay_url: https://plugins.octoprint.org/update_check_overlay.json
+
+       # time to live of the overlay cache, defaults to 6h
+       check_overlay_ttl: 360
+
+       # global credentials to provide to version checks
+       credentials:
+
+         # GitHub API token to use for the github_release and github_commit version checks.
+         # Helpful if you regularly run into rate limit issues with the GitHub API using
+         # the default anonymous access. Use a personal access token:
+         #   https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
+         # Unset by default
+         github:
+
+         # Bitbucket user name and password, used by the bitbucket_commit version check if
+         # provided, but only if the check doesn't specify credentials on its own.
+         # Unset by default
+         bitbucket_user:
+         bitbucket_password:
+
 .. _sec-bundledplugins-softwareupdate-configuration-versionchecks:
 
 Version checks
 ++++++++++++++
+
+Version check types are configured through the ``type`` parameter. The following
+types are currently recognized:
 
   * ``github_release``: Checks against releases published on Github. Additional
     config parameters:
@@ -153,10 +196,28 @@ Version checks
     * ``repo``: (mandatory) Github repository to check
     * ``prerelease``: ``True`` or ``False``, default ``False``, set to
       ``True`` to also include releases on Github marked as prerelease.
-    * ``release_branch``: Branch name to check against ``target_comittish``
-      field in Github release data - release will only be included if the
-      values match. Defaults to being unset, in which case no match will
-      be performed.
+    * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
+      * ``branch``: Branch associated with the channel, acts as ID
+      * ``name``: Human readable name of the release channel
+      * ``commitish``: List of values to check against ``target_commitish``
+        field in Github release data - release will only be included if the
+        values match. Defaults to being unset, in which case the ``branch``
+        will be matched.
+      .. versionadded:: 1.2.16
+    * ``stable_branch``: Stable channel definition, optional. Structure:
+      * ``branch``: Branch associated with the channel, acts as ID
+      * ``name``: Human readable name of the release channel
+      * ``commitish``: List of values to check against ``target_commitish``
+        field in Github release data - release will only be included if the
+        values match. Defaults to being unset, in which case the ``branch``
+        will be matched.
+      .. versionadded:: 1.2.16
+    * ``prerelease_channel``: Release channel to limit updates to. If set only
+      those releases will be included if their ``target_commitish`` matches
+      the ones associated with the release channel identified by this, either
+      included in ``prerelease_channels`` or the ``stable_channel``. Only
+      taken into account if ``prerelease`` is ``true``.
+      .. versionadded:: 1.2.16
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected
@@ -190,11 +251,41 @@ Version checks
       ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
       a new app password. App passwords are user specific on Bitbucket.
 
+    .. versionadded:: 1.3.5
+
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:
 
     * ``checkout_folder``: (mandatory) The full path to the folder with a valid git
       repository to check.
+
+  * ``pypi_release``: Checks `pypi.org <https://pypi.org>`_ for new releases of a specified package. Additional
+    config parameters:
+
+    * ``package``: (mandatory) Name of the package which to check.
+
+    .. versionadded:: 1.4.0
+
+  * ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
+    against things like ``ETag`` or ``Last-Modified`` headers. Additional
+    config parameters:
+
+    * ``header_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
+      methods such as ``single_file_plugin``.
+    * ``header_name``: (mandatory) HTTP header to check, case-insensitive, e.g. ``ETag`` or ``Last-Modified``.
+    * ``header_method``: HTTP request method to use for the check, defaults to ``HEAD``.
+    * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
+      will be used. If set to an empty string, no prefix will be added.
+
+    .. versionadded:: 1.4.1
+
+  * ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
+    property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
+    config parameters:
+
+    * ``jsondata``: (mandatory) URL from which to fetch the JSON data
+
+    .. versionadded:: 1.4.1
 
   * ``command_line``: Uses a provided script to determine whether an update
     is available. Additional config parameters:
@@ -218,34 +309,62 @@ Version checks
 
     * ``current_version``: Version to report for both local and remote version.
 
+    .. versionadded:: 1.3.7
+
   * ``never_current``: Always reports that an update is necessary. Useful for debugging
     software update mechanisms during development. Additional config parameters:
 
     * ``local_version``: Current local version. Defaults to ``1.0.0``.
     * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
 
+    .. versionadded:: 1.3.7
+
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
 Update methods
 ++++++++++++++
 
-  * ``pip``: An URL to provide to ``pip install`` in order to perform the
-    update. May contain a placeholder ``{target}`` which will be the most
-    recent version specifier as retrieved from the update check.
-  * ``update_script``: A script to execute in order to perform the update. May
-    contain placeholders ``{target}`` (for the most recent version specified
-    as retrieved from the update check), ``{branch}`` for the branch to switch
-    to to access the release, ``{folder}`` for the working directory
-    of the script and ``{python}`` for the python executable OctoPrint is
-    running under. The working directory must be specified either by an
-    ``update_folder`` setting or if the ``git_commit`` check is used its
-    ``checkout_folder`` setting.
-  * ``python_updater``: Can only be specified by plugins through the
-    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
-    which performs the update, see below for details.
+Update methods are specified via the ``method`` parameter. Some update methods are assigned implicitly
+through the presence of their mandatory configuration parameters. The following methods are currently
+supported:
+
+  * ``pip``: Update by ``pip install``ing the supplied URL. May contain a
+    placeholder ``{target}`` which will be the most recent version specifier as retrieved from the update check.
+    Additional config parameters:
+
+    * ``pip``: The URL to use for installing. Presence implies ``method: pip``.
+
+  * ``single_file_plugin``: Update a single file plugin by re-downloading it from a configured URL.
+    Additional config parameters:
+
+    * ``url``: (mandatory) The URL from which to install the single file plugin. Must be a single self contained
+      python file.
+
+  * ``update_script``: Update by executing a script.
+    Additional config parameters:
+
+    * ``update_script``: (mandatory) The path of the script to run. May
+      contain placeholders ``{target}`` (for the most recent version specified
+      as retrieved from the update check), ``{branch}`` for the branch to switch
+      to to access the release, ``{folder}`` for the working directory
+      of the script and ``{python}`` for the python executable OctoPrint is
+      running under. Presence implies ``method: update_script``.
+    * ``update_folder`` or ``checkout_folder``: (mandatory) The working directory.
+      ``checkout_folder`` can be used to avoid duplication in case of check
+      types such as ``git_commit``.
+
+  * ``python_updater``: Update by executing a custom python callable.
+    Additional config parameters:
+
+    * ``python_updater``: (mandatory) Can only be specified by plugins through the
+      :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
+      which performs the update, see below for details. Presence implies ``method: python_updater``.
+
   * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
     a countdown in the meantime. Useful for debugging software update mechanisms
     during development.
+
+    .. versionadded:: 1.3.7
 
 .. note::
 
@@ -269,7 +388,7 @@ Update methods
               user: foosel
               repo: OctoPrint
               method: pip
-              pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+              pip: 'https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip'
               update_script: '{python} "/path/to/octoprint-update.py" --python="{python}" "{folder}" "{target}"'
               checkout_folder: /path/to/octoprint/checkout/folder
 
@@ -310,7 +429,71 @@ tracked:
            repo: OctoPrint-SomePlugin
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
 
-The same, but tracking all commits pushed to branch ``devel`` (thus allowing
+The same, but declaring three release channels "Stable", "Maintenance RCs" (tagged on ``rc/maintenance`` or ``master``,
+id ``rc/maintenance``) and "Devel RCs" (tagged on ``rc/maintenance``, ``rc/devel`` or ``master``, id ``rc/devel``),
+but with "Stable" active:
+
+.. code-block:: yaml
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: github_release
+           user: someUser
+           repo: OctoPrint-SomePlugin
+           stable_branch:
+             name: Stable
+             branch: master
+             commitish:
+             - master
+           prerelease_branches:
+           - name: Maintenance RCs
+             branch: rc/maintenance
+             commitish:
+             - rc/maintenance
+             - master
+           - name: Devel RCs
+             branch: rc/devel
+             commitish:
+             - rc/devel
+             - rc/maintenance
+             - master
+           pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
+
+And now with "Maintenance RCs" active (note the ``prerelease`` and ``prerelease_channel`` settings):
+
+.. code-block:: yaml
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: github_release
+           user: someUser
+           repo: OctoPrint-SomePlugin
+           stable_branch:
+             name: Stable
+             branch: master
+             commitish:
+             - master
+           prerelease_branches:
+           - name: Maintenance RCs
+             branch: rc/maintenance
+             commitish:
+             - rc/maintenance
+             - master
+           - name: Devel RCs
+             branch: rc/devel
+             commitish:
+             - rc/devel
+             - rc/maintenance
+             - master
+           prerelease: True
+           prerelease_channel: rc/maintenance
+           pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
+
+The same plugin again, but tracking all commits pushed to branch ``devel`` (thus allowing
 "bleeding edge" updates):
 
 .. code-block:: yaml
@@ -324,6 +507,59 @@ The same, but tracking all commits pushed to branch ``devel`` (thus allowing
            repo: OctoPrint-SomePlugin
            branch: devel
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
+
+Single file plugin hosted in a gist ``https://gist.github.com/someUser/somegist`` and updated whenever there are changes:
+
+.. code-block:: yaml
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: httpheader
+           header_name: ETag
+           url: 'https://gist.github.com/someUser/somegist/raw/some_plugin.py'
+           method: single_file_plugin
+
+The same but updated when a ``version.json`` hosted alongside gets updated with a new version can be found at
+
+.. code-block:: yaml
+
+   plugins:
+     softwareupdate:
+       checks:
+         some_plugin:
+           type: jsondata
+           jsondata: 'https://gist.github.com/someUser/somegist/raw/version.json'
+           url: 'https://gist.github.com/someUser/somegist/raw/some_plugin.py'
+           method: single_file_plugin
+
+Note that for gist hosted single file plugins, you need to use the "Raw" install link but should remove the
+commit identifier. E.g. ``https://gist.githubusercontent.com/<user>/<gistid>/raw/my_plugin.py`` instead of
+``https://gist.githubusercontent.com/<user>/<gistid>/raw/<commit>/my_plugin.py``. Note that these URLs will
+be cached by Github for a bit, so an update will not be immediately picked up.
+
+.. _sec-bundledplugins-softwareupdate-configuration-credentials:
+
+Global credentials
+++++++++++++++++++
+
+.. versionadded:: 1.5.0
+
+Starting with OctoPrint 1.5.0, the Software Update Plugin supports supplyting a GitHub
+API token to use for the ``github_release`` and ``github_commit`` version check types,
+to work around possible rate limit problems if a lot of checks are to be made from a single
+external IP. You may create a `personal access token <https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token>`_
+and configure that as ``plugins.softwareupdate.credentials.github`` via
+:ref:`config.yaml <sec-configuration-config_yaml>` in order to get a higher rate limit than with purely anonymous access.
+
+Additionally, the username and password to use with the ``bitbucket_commit`` version check
+type may also be configured via ``plugins.softwareupdate.credentials.bitbucket_user`` and
+``plugins.softwareupdate.credentials.bitbucket_password`` respectively.
+
+None of these configuration options are currently exposed on the UI and can only be used
+via :ref:`config.yaml <sec-configuration-config_yaml>` or the
+:ref:`config command line interface <sec-configuration-cli>`.
 
 .. _sec-bundledplugins-softwareupdate-events:
 
@@ -384,9 +620,6 @@ octoprint.plugin.softwareupdate.check_config
    at the (fictional) repository ``https://github.com/someUser/OctoPrint-UpdatePluginDemo``.
 
    .. code-block:: python
-
-      # -*- coding: utf-8 -*-
-      from __future__ import absolute_import, unicode_literals
 
       def get_update_information(*args, **kwargs):
           return dict(

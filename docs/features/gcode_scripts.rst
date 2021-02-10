@@ -11,20 +11,14 @@ is clicked.
 
 Unless :ref:`configured otherwise <sec-configuration-config_yaml-folder>`, OctoPrint expects scripts to be located in
 the ``scripts/gcode`` folder in OctoPrint configuration directory (per default ``~/.octoprint`` on Linux, ``%APPDATA%\OctoPrint``
-on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
+on Windows and ``~/Library/Application Support/OctoPrint`` on macOS).
 
 These GCODE scripts are backed by the templating engine Jinja2, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To
 this end, OctoPrint injects some variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
 as described below.
 
-You can find the docs on the Jinja templating engine as used in OctoPrint at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_.
-
-.. note::
-
-   Due to backwards compatibility issues with Jinja versions 2.9+, OctoPrint currently only supports Jinja 2.8. For this
-   reason use the template documentation at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_ instead of the
-   documentation of current stable Jinja versions.
+You can find the docs on the Jinja templating engine as used in OctoPrint `here <https://jinja.palletsprojects.com/en/2.11.x/templates/>`_.
 
 .. _sec-features-gcode_scripts-predefined:
 
@@ -48,6 +42,15 @@ The following GCODE scripts are sent by OctoPrint automatically:
 .. note::
 
    Plugins may extend these scripts through :ref:`a hook <sec-plugins-hook-comm-protocol-scripts>`.
+
+.. _sec-features-gcode_scripts-events:
+
+Events
+------
+
+Every GCODE script that is executed will emit two events. The event name will start with 'GcodeScript' followed by the capitalized name
+of the script. When ``afterPrintDone`` has started the event will be ``GcodeScriptAfterPrintDoneRunning`` and once it has completed the last event
+will be ``GcodeScriptAfterPrintDoneFinished``. You can find more details in the :ref:`Events <sec-events-available_events-printing>` documentation.
 
 .. _sec-features-gcode_scripts-snippets:
 
@@ -190,7 +193,7 @@ More nifty pause and resume
 ...........................
 
 If you do not have a multi-extruder setup, aren't printing from SD and have "Log position on pause" enabled under
-Settings > Serial > Advanced options, the following ``afterPrintPaused`` and
+Settings > Serial Connection > Behaviour > Pausing, the following ``afterPrintPaused`` and
 ``beforePrintResumed`` scripts might be interesting for you. With something like them in place, OctoPrint will move your print head
 out of the way to a safe rest position (here ``G1 X0 Y0``, you might want to adjust that) on pause and move it back
 to the persisted pause position on resume, making sure to also reset the extruder and feedrate.
@@ -250,7 +253,6 @@ to the persisted pause position on resume, making sure to also reset the extrude
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <http://jinja.octoprint.org/templates.html>`_
+   `Jinja Template Designer Documentation <https://jinja.palletsprojects.com/en/2.11.x/templates/>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
-      also by OctoPrint's GCODE scripts. Linked here are the docs for Jinja 2.8.1, which OctoPrint still
-      relies on for backwards compatibility reasons.
+      also by OctoPrint's GCODE scripts.

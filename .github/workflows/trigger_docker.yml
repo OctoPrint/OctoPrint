@@ -1,0 +1,47 @@
+name: Trigger docker build
+on:
+  release:
+    types:
+      - released
+      - prereleased
+  push:
+    branches:
+      - maintenance
+      - devel
+
+jobs:
+  dispatch_releases:
+    runs-on: ubuntu-latest
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name != 'push'
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ github.repository_owner }}/octoprint-docker
+          event-type: ${{ github.event.action }}
+          client-payload: '{"tag_name": "${{ github.event.release.tag_name }}"}'
+
+  dispatch_canary:
+    runs-on: ubuntu-latest
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ github.repository_owner }}/octoprint-docker
+          event-type: "canary"
+          client-payload: '{"tag_name": "maintenance"}'
+
+  dispatch_bleeding:
+    runs-on: ubuntu-latest
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/devel'
+    steps:
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ github.repository_owner }}/octoprint-docker
+          event-type: "bleeding"
+          client-payload: '{"tag_name": "devel"}'

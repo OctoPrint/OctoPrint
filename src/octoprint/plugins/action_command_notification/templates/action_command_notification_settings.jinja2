@@ -1,0 +1,19 @@
+<h3>{{ _('Action Command Notification Settings') }}</h3>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.action_command_notification.enable"> {{ _('Enable') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.action_command_notification.enable_popups"> {{ _('Enable popups') }}
+                <span class="help-block">{{ _("Check this if you want notifications to also show up as popups in addition to the notification list in the sidebar") }}</span>
+            </label>
+        </div>
+    </div>
+</form>

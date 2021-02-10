@@ -1,241 +1,304 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
-from octoprint.comm.util.parameters import TextType, IntegerType, ChoiceType, SuggestionType, BooleanType, Value, SmallChoiceType
-
-from octoprint.util import dummy_gettext as gettext
-
-import serial
 import logging
 
+import serial
+
+from octoprint.comm.transport import Transport
+from octoprint.comm.util.parameters import (
+    BooleanType,
+    ChoiceType,
+    IntegerType,
+    SmallChoiceType,
+    SuggestionType,
+    Value,
+)
+from octoprint.util import dummy_gettext as gettext
+
+
 class SerialTransport(Transport):
-	name = "Serial Connection"
-	key = "serial"
-	message_integrity = False
+    name = "Serial Connection"
+    key = "serial"
+    message_integrity = False
 
-	suggested_baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
-	unix_port_patterns = ["/dev/ttyUSB*", "/dev/ttyACM*", "/dev/tty.usb*",
-	                      "/dev/cu.*", "/dev/cuaU*", "/dev/rfcomm*"]
+    suggested_baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+    unix_port_patterns = [
+        "/dev/ttyUSB*",
+        "/dev/ttyACM*",
+        "/dev/tty.usb*",
+        "/dev/cu.*",
+        "/dev/cuaU*",
+        "/dev/rfcomm*",
+    ]
 
-	max_write_passes = 5
+    max_write_passes = 5
 
-	@classmethod
-	def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
-		patterns = SerialTransport.unix_port_patterns
-		if additional_ports:
-			patterns += additional_ports
+    @classmethod
+    def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
+        patterns = SerialTransport.unix_port_patterns
+        if additional_ports:
+            patterns += additional_ports
 
-		baudrates = SerialTransport.suggested_baudrates
-		if additional_baudrates:
-			baudrates += additional_baudrates
+        baudrates = SerialTransport.suggested_baudrates
+        if additional_baudrates:
+            baudrates += additional_baudrates
 
-		return type(cls.__name__ + b"WithAdditionalPorts",
-		            (cls,),
-		            {b"unix_port_patterns": patterns,
-		             b"suggested_baudrates": baudrates})
+        return type(
+            cls.__name__ + b"WithAdditionalPorts",
+            (cls,),
+            {b"unix_port_patterns": patterns, b"suggested_baudrates": baudrates},
+        )
 
-	@classmethod
-	def get_connection_options(cls):
-		return [
-			SuggestionType("port",
-			               gettext("Port"),
-			               cls.get_available_serial_ports(),
-			               lambda value: Value(value)),
-			SuggestionType("baudrate",
-			               gettext("Baudrate"),
-			               cls.get_available_baudrates(),
-			               lambda value: Value(value),
-			               default=0),
-			IntegerType("write_timeout",
-			            gettext("Write Timeout"),
-			            min=1,
-			            unit="sec",
-			            default=10,
-			            advanced=True),
-			BooleanType("exclusive",
-			            gettext("Request exclusive access to the serial port"),
-			            help=gettext("Uncheck this if you are having problems connecting to your printer."),
-			            default=True,
-			            advanced=True),
-			ChoiceType("parity",
-			           gettext("Parity"),
-			           [Value(serial.PARITY_NONE, gettext("none")),
-			            Value(serial.PARITY_ODD, gettext("odd")),
-			            Value(serial.PARITY_EVEN, gettext("even"))],
-			           default=serial.PARITY_NONE,
-			           advanced=True,
-			           expert=True),
-			# TODO: implement parity workaround flag
-			SmallChoiceType("parity_workaround",
-			                gettext("Apply parity double open workaround"),
-			                [Value("always",
-			                       title=gettext("Always"),
-			                       help=gettext("Use this if you are running into [this problem](https://forum.arduino.cc/index.php?topic=91291.0).")),
-			                 Value("detect",
-			                       title=gettext("If detected as potentially needed")),
-			                 Value("never",
-			                       title=gettext("Never"),
-			                       help=gettext("Use this if connecting to your printer fails with `(22, 'Invalid argument')`."))],
-			                default="detect",
-			                advanced=True,
-			                expert=True)
-		]
+    @classmethod
+    def get_connection_options(cls):
+        return [
+            SuggestionType(
+                "port",
+                gettext("Port"),
+                cls.get_available_serial_ports(),
+                lambda value: Value(value),
+            ),
+            SuggestionType(
+                "baudrate",
+                gettext("Baudrate"),
+                cls.get_available_baudrates(),
+                lambda value: Value(value),
+                default=0,
+            ),
+            IntegerType(
+                "write_timeout",
+                gettext("Write Timeout"),
+                min=1,
+                unit="sec",
+                default=10,
+                advanced=True,
+            ),
+            BooleanType(
+                "exclusive",
+                gettext("Request exclusive access to the serial port"),
+                help=gettext(
+                    "Uncheck this if you are having problems connecting to your printer."
+                ),
+                default=True,
+                advanced=True,
+            ),
+            ChoiceType(
+                "parity",
+                gettext("Parity"),
+                [
+                    Value(serial.PARITY_NONE, gettext("none")),
+                    Value(serial.PARITY_ODD, gettext("odd")),
+                    Value(serial.PARITY_EVEN, gettext("even")),
+                ],
+                default=serial.PARITY_NONE,
+                advanced=True,
+                expert=True,
+            ),
+            # TODO: implement parity workaround flag
+            SmallChoiceType(
+                "parity_workaround",
+                gettext("Apply parity double open workaround"),
+                [
+                    Value(
+                        "always",
+                        title=gettext("Always"),
+                        help=gettext(
+                            "Use this if you are running into [this problem](https://forum.arduino.cc/index.php?topic=91291.0)."
+                        ),
+                    ),
+                    Value("detect", title=gettext("If detected as potentially needed")),
+                    Value(
+                        "never",
+                        title=gettext("Never"),
+                        help=gettext(
+                            "Use this if connecting to your printer fails with `(22, 'Invalid argument')`."
+                        ),
+                    ),
+                ],
+                default="detect",
+                advanced=True,
+                expert=True,
+            ),
+        ]
 
-	@classmethod
-	def get_available_serial_ports(cls):
-		import sys
+    @classmethod
+    def get_available_serial_ports(cls):
+        import sys
 
-		if sys.platform == "win32":
-			# windows
-			from serial.tools.list_ports import comports
-			ports = comports()
+        if sys.platform == "win32":
+            # windows
+            from serial.tools.list_ports import comports
 
-		else:
-			# posix
-			import glob
+            ports = comports()
 
-			devices = [device
-			           for pattern in cls.unix_port_patterns
-			           for device in glob.glob(pattern)]
+        else:
+            # posix
+            import glob
 
-			plat = sys.platform.lower()
+            devices = [
+                device
+                for pattern in cls.unix_port_patterns
+                for device in glob.glob(pattern)
+            ]
 
-			if plat[:5] == "linux":
-				# linux
-				from serial.tools.list_ports_linux import SysFS
-				ports = [info
-				         for info in [SysFS(d) for d in devices]
-				         if info.subsystem != "platform"]
-			else:
-				# other posix systems
-				from serial.tools import list_ports_common
-				ports = [list_ports_common.ListPortInfo(d) for d in devices]
+            plat = sys.platform.lower()
 
-		port_values = [Value(None, title="Auto detect")] + sorted([Value(port.device, title=port.description) for port in ports], key=lambda x: x.title)
-		return port_values
+            if plat[:5] == "linux":
+                # linux
+                from serial.tools.list_ports_linux import SysFS
 
-	@classmethod
-	def get_available_baudrates(cls):
-		return [Value(0, title="Auto detect")] + \
-		       sorted([Value(baudrate) for baudrate in cls.suggested_baudrates], key=lambda x: x.title, reverse=True)
+                ports = [
+                    info
+                    for info in [SysFS(d) for d in devices]
+                    if info.subsystem != "platform"
+                ]
+            else:
+                # other posix systems
+                from serial.tools import list_ports_common
 
-	def __init__(self, *args, **kwargs):
-		super(SerialTransport, self).__init__()
+                ports = [list_ports_common.ListPortInfo(d) for d in devices]
 
-		self.serial_factory = kwargs.get("serial_factory", None)
+        port_values = [Value(None, title="Auto detect")] + sorted(
+            [Value(port.device, title=port.description) for port in ports],
+            key=lambda x: x.title,
+        )
+        return port_values
 
-		self._logger = logging.getLogger(__name__)
-		self._serial = None
+    @classmethod
+    def get_available_baudrates(cls):
+        return [Value(0, title="Auto detect")] + sorted(
+            [Value(baudrate) for baudrate in cls.suggested_baudrates],
+            key=lambda x: x.title,
+            reverse=True,
+        )
 
-		self._closing = False
+    def __init__(self, *args, **kwargs):
+        super(SerialTransport, self).__init__()
 
-	def create_connection(self, **kwargs):
-		factory = self.serial_factory
-		if self.serial_factory is None:
-			factory = self._default_serial_factory
+        self.serial_factory = kwargs.get("serial_factory", None)
 
-		self._closing = False
-		self._serial = factory(**kwargs)
-		self.set_current_args(**kwargs)
+        self._logger = logging.getLogger(__name__)
+        self._serial = None
 
-		return True
+        self._closing = False
 
-	def drop_connection(self, wait=True):
-		error = False
+    def create_connection(self, **kwargs):
+        factory = self.serial_factory
+        if self.serial_factory is None:
+            factory = self._default_serial_factory
 
-		if self._serial is not None:
-			self._closing = True
+        self._closing = False
+        self._serial = factory(**kwargs)
+        self.set_current_args(**kwargs)
 
-			try:
-				if callable(getattr(self._serial, "cancel_read", None)):
-					self._serial.cancel_read()
-			except Exception:
-				self._logger.exception("Error while cancelling pending reads from the serial port")
+        return True
 
-			try:
-				if callable(getattr(self._serial, "cancel_write", None)):
-					self._serial.cancel_write()
-			except Exception:
-				self._logger.exception("Error while cancelling pending writes to the serial port")
+    def drop_connection(self, wait=True):
+        error = False
 
-			try:
-				self._serial.close()
-			except Exception:
-				self._logger.exception("Error while closing the serial port")
-				error = True
+        if self._serial is not None:
+            self._closing = True
 
-			self._serial = None
+            try:
+                if callable(getattr(self._serial, "cancel_read", None)):
+                    self._serial.cancel_read()
+            except Exception:
+                self._logger.exception(
+                    "Error while cancelling pending reads from the serial port"
+                )
 
-		return not error
+            try:
+                if callable(getattr(self._serial, "cancel_write", None)):
+                    self._serial.cancel_write()
+            except Exception:
+                self._logger.exception(
+                    "Error while cancelling pending writes to the serial port"
+                )
 
-	def do_read(self, size=None, timeout=None):
-		return self._serial.read(size=size)
+            try:
+                self._serial.close()
+            except Exception:
+                self._logger.exception("Error while closing the serial port")
+                error = True
 
-	def do_write(self, data):
-		written = 0
-		passes = 0
+            self._serial = None
 
-		def try_to_write(d):
-			result = self._serial.write(d)
-			if result is None or not isinstance(result, int):
-				# probably some plugin not returning the written bytes, assuming all of them
-				return len(data)
-			else:
-				return result
+        return not error
 
-		while written < len(data):
-			to_send = data[written:]
-			old_written = written
+    def do_read(self, size=None, timeout=None):
+        return self._serial.read(size=size)
 
-			try:
-				written += try_to_write(to_send)
-			except serial.SerialTimeoutException:
-				self._logger.warn("Serial timeout while writing to serial port, trying again.")
-				try:
-					# second try
-					written += try_to_write(to_send)
-				except Exception:
-					if not self._closing:
-						message = "Unexpected error while writing to serial port"
-						self._logger.exception(message)
-						self.disconnect(error=message)
-					break
-			except Exception:
-				if not self._closing:
-					message = "Unexpected error while writing to serial port"
-					self._logger.exception(message)
-					self.disconnect(error=message)
-				break
+    def do_write(self, data):
+        written = 0
+        passes = 0
 
-			if old_written == written:
-				passes += 1
-				if passes > self.max_write_passes:
-					message = "Could not write anything to the serial port in {} tries, something appears to be " \
-					          "wrong with the printer communication".format(self.max_write_passes)
-					self._logger.error(message)
-					self.disconnect(error=message)
-					break
+        def try_to_write(d):
+            result = self._serial.write(d)
+            if result is None or not isinstance(result, int):
+                # probably some plugin not returning the written bytes, assuming all of them
+                return len(data)
+            else:
+                return result
 
-	@property
-	def in_waiting(self):
-		return getattr(self._serial, "in_waiting", 0)
+        while written < len(data):
+            to_send = data[written:]
+            old_written = written
 
-	def _default_serial_factory(self, **kwargs):
-		return serial.Serial(port=kwargs.get("port"),
-		                     baudrate=kwargs.get("baudrate"),
-		                     exclusive=kwargs.get("exclusive"),
-		                     parity=kwargs.get("parity"),
-		                     write_timeout=kwargs.get("write_timeout", 10) * 1000)
+            try:
+                written += try_to_write(to_send)
+            except serial.SerialTimeoutException:
+                self._logger.warn(
+                    "Serial timeout while writing to serial port, trying again."
+                )
+                try:
+                    # second try
+                    written += try_to_write(to_send)
+                except Exception:
+                    if not self._closing:
+                        message = "Unexpected error while writing to serial port"
+                        self._logger.exception(message)
+                        self.disconnect(error=message)
+                    break
+            except Exception:
+                if not self._closing:
+                    message = "Unexpected error while writing to serial port"
+                    self._logger.exception(message)
+                    self.disconnect(error=message)
+                break
 
-	def __str__(self):
-		return "SerialTransport"
+            if old_written == written:
+                passes += 1
+                if passes > self.max_write_passes:
+                    message = (
+                        "Could not write anything to the serial port in {} tries, something appears to be "
+                        "wrong with the printer communication".format(
+                            self.max_write_passes
+                        )
+                    )
+                    self._logger.error(message)
+                    self.disconnect(error=message)
+                    break
+
+    @property
+    def in_waiting(self):
+        return getattr(self._serial, "in_waiting", 0)
+
+    def _default_serial_factory(self, **kwargs):
+        return serial.Serial(
+            port=kwargs.get("port"),
+            baudrate=kwargs.get("baudrate"),
+            exclusive=kwargs.get("exclusive"),
+            parity=kwargs.get("parity"),
+            write_timeout=kwargs.get("write_timeout", 10) * 1000,
+        )
+
+    def __str__(self):
+        return "SerialTransport"
+
 
 if __name__ == "__main__":
-	# list ports
-	ports = SerialTransport.get_available_serial_ports()
-	for port in ports:
-		print(port.title + ": " + port.value)
+    # list ports
+    ports = SerialTransport.get_available_serial_ports()
+    for port in ports:
+        print(port.title + ": " + port.value)

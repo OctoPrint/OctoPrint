@@ -13,7 +13,7 @@ import hashlib
 import random
 import sys
 
-from tornado.web import asynchronous
+from tornado.gen import coroutine
 
 from octoprint.vendor.sockjs.tornado.basehandler import BaseHandler, PreflightHandler
 from octoprint.vendor.sockjs.tornado.proto import json_encode
@@ -85,7 +85,7 @@ class ChunkingTestHandler(PreflightHandler):
         self.step = 0
         self.io_loop = server.io_loop
 
-    @asynchronous
+    @coroutine
     def post(self):
         self.preflight()
         self.set_header('Content-Type', 'application/javascript; charset=UTF-8')
@@ -127,9 +127,9 @@ class InfoHandler(PreflightHandler):
         self.disable_cache()
         self.set_header('Content-Type', 'application/json; charset=UTF-8')
 
-        options = dict(websocket=self.server.websockets_enabled,
-                       cookie_needed=self.server.cookie_needed,
-                       origins=['*:*'],
-                       entropy=random.randint(0, MAXSIZE))
+        options = {"websocket": self.server.websockets_enabled,
+                   "cookie_needed": self.server.cookie_needed,
+                   "origins": ['*:*'],
+                   "entropy": random.randint(0, MAXSIZE)}
 
         self.write(json_encode(options))

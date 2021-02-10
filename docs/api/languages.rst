@@ -6,7 +6,7 @@ Languages
 
 .. note::
 
-   All language pack management operations require admin rights.
+   All language pack management operations require the ``SETTINGS`` permission.
 
 .. contents::
 

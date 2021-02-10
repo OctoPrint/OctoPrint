@@ -13,8 +13,8 @@
         </thead>
         <tbody data-bind="foreach: keys.paginatedItems">
         <tr>
-            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fa fa-copy"></i></a></small></td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fas fa-copy"></i></a></small></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
         </tr>
         </tbody>
     </table>
@@ -33,7 +33,7 @@
 
 <legend>{{ _('Manually generate an application key') }}</legend>
 
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
         <label class="control-label">{{ _('Application identifier') }}</label>
         <div class="controls">

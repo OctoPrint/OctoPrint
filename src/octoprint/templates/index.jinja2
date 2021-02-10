@@ -3,6 +3,7 @@
     <head>
         <title data-bind="text: title">OctoPrint</title>
 
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
         <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
@@ -11,12 +12,51 @@
 
         <meta name="robots" content="noindex, nofollow, noimageindex">
         <meta name="referrer" content="no-referrer">
+        <meta name="theme-color" data-bind="attr: { content: theme_color }">
 
-        {% include 'stylesheets.jinja2' %}
+        {% include 'javascripts-preload.jinja2' %}
+        {% include 'stylesheets-preload.jinja2' %}
         {% include 'initscript.jinja2' %}
     </head>
     <body>
-        <div class="page-container" id="page-container-main" style="display: none" data-bind="visible: visible">
+        <noscript>
+            <style type="text/css">
+                #page-container-main,
+                #page-container-loading {
+                    display:none;
+                }
+            </style>
+            <div id="page-container-noscript">
+                <div class="wrapper">
+                    <div class="outer">
+                        <div class="inner">
+                            <div class="content">
+                                <h1 class="text-error">{{ _('You don\'t seem to have JavaScript enabled') }}</h1>
+                                {{ _('OctoPrint\'s UI requires JavaScript to work. Please enable JavaScript and reload.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </noscript>
+
+        {% if enableLoadingAnimation %}
+        <div id="page-container-loading" style="display: none" data-bind="visible: loading">
+            <div class="wrapper">
+                <div class="outer">
+                    <div class="inner">
+                        <div class="content">
+                            <h1 id="page-container-loading-header">{{ _('Connecting to OctoPrint\'s server...') }}</h1>
+                            <i id="page-container-loading-spinner" class="fas fa-spinner fa-spin fa-4x"></i>
+                            <p id="page-container-loading-error" style="display: none"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="page-container" id="page-container-main" {% if enableLoadingAnimation %}style="display: none"{% endif %} data-bind="visible: visible">
             <!-- ko allowBindings: false -->
             <div id="navbar" class="navbar navbar-static-top">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
@@ -56,8 +96,8 @@
                                  {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                 <div class="accordion-heading">
-                                    <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
-                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
+                                    <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
+                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }} <!-- TODO fontawesom 5 upgrade - note this may not be possible for back-compat reasons - for 2.0.0? -->
                                     </a>
                                     {% if "template_header" in data %}
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template_header ignore missing %}{% endtry %}
@@ -67,7 +107,7 @@
                                      class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
                                      {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
                                         >
-                                    <div class="accordion-inner">
+                                    <div class="accordion-inner" data-test-id="sidebar-{{ data._div }}-content">
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
                                     </div>
                                 </div>
@@ -112,18 +152,7 @@
                     </div>
                     {% endif %}
                 </div>
-                <div class="footer">
-                    <ul id="footer_version" class="pull-left muted">
-                        <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version|e }}</span></small></li>
-                    </ul>
-                    <ul id="footer_links" class="pull-right">
-                        <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://community.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-users"></i> {{ _('Forum') }}</a></li>
-                        <li><a href="https://faq.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
-                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Docs') }}</a></li>
-                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
-                    </ul>
-                </div>
+                {%  include 'footer.jinja2' %}
             </div>
 
             <!-- Dialogs -->
@@ -134,6 +163,7 @@
             {% include 'dialogs/about.jinja2' %}
             {% include 'dialogs/files.jinja2' %}
             {% include 'dialogs/temperature.jinja2' %}
+            {% include 'dialogs/timelapse.jinja2' %}
             {% include 'dialogs/connection.jinja2' %}
             {% include 'dialogs/connectionprofiles.jinja2' %}
             <!-- End of dialogs -->
@@ -144,6 +174,7 @@
             {% include 'overlays/reloadui.jinja2' %}
             <!-- End of overlays -->
 
+            {% include 'stylesheets.jinja2' %}
             {% include 'javascripts.jinja2' %}
 
             <!-- Generic plugin template files -->
@@ -155,32 +186,5 @@
             <!-- /ko -->
         </div>
 
-        <div id="page-container-loading" data-bind="visible: loading">
-            <div class="wrapper">
-                <div class="outer">
-                    <div class="inner">
-                        <div class="content">
-                            <i class="fa fa-spinner fa-spin fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="container" id="page-container-needlogin" style="display: none" data-bind="visible: needlogin">
-            <form class="form-signin">
-                <h2 class="form-signin-heading">{{ _('Please log in') }}</h2>
-
-                <div class="alert alert-error" style="display: none" data-bind="visible: login_error, text: login_error"></div>
-
-                <input type="text" data-bind="value: login_username" class="input-block-level" placeholder="{{ _('Username') }} autofocus">
-                <input type="password" data-bind="value: login_password" class="input-block-level" placeholder="{{ _('Password') }}">
-                <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="value: login_remember"> {{ _('Remember me') }}
-                </label>
-                <button class="btn btn-block btn-large btn-primary" type="submit" data-bind="click: login">{{ _('Log in') }}</button>
-            </form>
-        </div>
     </body>
 </html>

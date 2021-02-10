@@ -1,4 +1,4 @@
-<form class="form-horizontal">
+<form class="form-horizontal" onsubmit="return false;">
     <div class="row-fluid">
         <div class="span4"><h4>{{ _('Name') }}</h4></div>
         <div class="span6"><h4>{{ _('RegExp') }} <small><a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions">?</a></small></h4></div>
@@ -12,13 +12,13 @@
                 <input type="text" class="span12" data-bind="value: regex">
             </div>
             <div class="span2">
-                <a title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="fa fa-trash-o"></i></a>
+                <a title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="far fa-trash-alt"></i></a>
             </div>
         </div>
     </div>
     <div class="row-fluid">
         <div class="offset10 span2">
-            <a title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="fa fa-plus"></i></a>
+            <a title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="fas fa-plus"></i></a>
         </div>
     </div>
 </form>

@@ -1,0 +1,69 @@
+name: "Issue Automation"
+on:
+  issues:
+    types: [opened, edited, closed, reopened]
+
+jobs:
+  issue-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let labels = [];
+            let setLabels = false;
+            context.payload.issue.labels.forEach(label => { labels.push(label.name) });
+
+            switch (context.payload.action) {
+
+              case 'opened':
+              case 'edited': {
+                if (context.payload.issue.title.match(/\[request\]|feature request/i)) {
+                  labels.push('request');
+                  labels = labels.filter(label => label !== 'triage');
+                  setLabels = true;
+                }
+                if (context.payload.issue.title.match(/\[rc feedback\]/i)) {
+                  labels.push('rc feedback');
+                  labels = labels.filter(label => label !== 'triage');
+                  setLabels = true;
+                }
+
+                if (labels.length === 0) {
+                  labels.push('triage');
+                  setLabels = true;
+                }
+                break;
+              }
+
+              case 'closed': {
+                if (labels.includes('bug') || labels.includes('request') || labels.includes('improvement')) {
+                  labels.push('done');
+                  setLabels = true;
+                }
+                break;
+              }
+
+              case 'reopened': {
+                if (labels.includes('done')) {
+                  labels = labels.filter(label => label !== 'done');
+                  setLabels = true;
+                }
+                break;
+              }
+            }
+
+            if (setLabels) {
+              github.issues.setLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              })
+            }
+
+      #- uses: OctoPrint/actions/issue-validation@main
+      #  if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'edited')
+      #  with:
+      #    repo-token: ${{ secrets.GITHUB_TOKEN }}

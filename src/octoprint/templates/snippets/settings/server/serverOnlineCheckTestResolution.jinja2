@@ -1,0 +1,6 @@
+<div class="control-group" title="{{ _('Test')|edq }}" data-bind="css: {error: server_onlineCheckResolutionBroken, success: server_onlineCheckResolutionOk}">
+    <div class="controls">
+        <button class="btn" data-bind="click: testOnlineConnectivityResolutionConfig, enable: server_onlineCheck_name() && !testOnlineConnectivityResolutionConfigBusy(), css: {disabled: !server_onlineCheck_name() || testOnlineConnectivityResolutionConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testOnlineConnectivityResolutionConfigBusy"></i> {{ _('Test name resolution') }}</button>
+        <span class="help-block" data-bind="visible: server_onlineCheckResolutionBroken() || server_onlineCheckResolutionOk(), text: server_onlineCheckResolutionText"></span>
+    </div>
+</div>

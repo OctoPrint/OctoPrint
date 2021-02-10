@@ -1,0 +1,18 @@
+accessControl:
+  salt: zXmvzI3uWuTLkSPOEfA2ZLwn3f3sGUNS
+plugins:
+  virtual_printer:
+    enabled: true
+  tracking:
+    enabled: false
+server:
+  firstRun: false
+  onlineCheck:
+    enabled: false
+  pluginBlacklist:
+    enabled: false
+  secretKey: rrdHjvmeGMPSdYWg2NGdiM7mpz9pjekk
+  seenWizards:
+    backup: null
+    corewizard: 3
+    tracking: null

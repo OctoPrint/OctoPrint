@@ -1,0 +1,10 @@
+{
+  "baseUrl": "http://127.0.0.1:5000",
+
+  "fixturesFolder": "fixtures",
+  "integrationFolder": "integration",
+  "pluginsFile": "plugins/index.js",
+  "supportFile": "support/index.js",
+  "screenshotsFolder": "screenshots",
+  "videosFolder": "videos"
+}

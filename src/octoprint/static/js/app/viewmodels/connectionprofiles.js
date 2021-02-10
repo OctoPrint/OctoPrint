@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function ConnectionProfileEditorViewModel() {
         var self = this;
 
@@ -18,11 +18,11 @@ $(function() {
         self.overwrite = ko.observable(false);
         self.makeDefault = ko.observable(false);
 
-        self.name.subscribe(function() {
+        self.name.subscribe(function () {
             self.identifierPlaceholder(self._sanitize(self.name()).toLowerCase());
         });
 
-        self.showDialog = function(profile, button) {
+        self.showDialog = function (profile, button) {
             if (button) {
                 self.buttonText(button);
             } else {
@@ -41,7 +41,7 @@ $(function() {
             return self.deferred.promise();
         };
 
-        self.confirm = function() {
+        self.confirm = function () {
             self.profile.id = self.identifier();
             if (self.profile.id === undefined) {
                 self.profile.id = self.identifierPlaceholder();
@@ -49,16 +49,17 @@ $(function() {
 
             self.profile.name = self.name();
 
-            OctoPrint.connectionprofiles.set(self.profile.id, self.profile, self.overwrite(), self.makeDefault())
-                .done(function(response) {
+            OctoPrint.connectionprofiles
+                .set(self.profile.id, self.profile, self.overwrite(), self.makeDefault())
+                .done(function (response) {
                     self.dialog.modal("hide");
                     if (self.deferred) {
                         self.deferred.resolve(response.profile);
                     }
-                })
+                });
         };
 
-        self._sanitize = function(name) {
+        self._sanitize = function (name) {
             return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
     }
@@ -76,10 +77,12 @@ $(function() {
         self.profiles = new ItemListHelper(
             "connectionProfiles",
             {
-                "name": function(a, b) {
+                name: function (a, b) {
                     // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase())
+                        return -1;
+                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase())
+                        return 1;
                     return 0;
                 }
             },
@@ -92,35 +95,35 @@ $(function() {
         self.defaultProfile = ko.observable();
         self.currentProfile = ko.observable();
 
-        self.makeDefault = function(data) {
-            return OctoPrint.connectionprofiles.update(data.id, {default: true})
-                .done(function() {
+        self.makeDefault = function (data) {
+            return OctoPrint.connectionprofiles
+                .update(data.id, {default: true})
+                .done(function () {
                     self.requestData();
                 });
         };
 
-        self.canMakeDefault = function(data) {
+        self.canMakeDefault = function (data) {
             return !data.is_default();
         };
 
-        self.canRemove = function(data) {
+        self.canRemove = function (data) {
             return !data.is_current() && !data.is_default();
         };
 
-        self.requestData = function() {
+        self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
 
-            return OctoPrint.connectionprofiles.list()
-                .done(self.fromResponse);
+            return OctoPrint.connectionprofiles.list().done(self.fromResponse);
         };
 
-        self.fromResponse = function(data) {
+        self.fromResponse = function (data) {
             var items = [];
             var defaultProfile = undefined;
             var currentProfile = undefined;
-            _.each(data.profiles, function(profile) {
+            _.each(data.profiles, function (profile) {
                 if (profile.default) {
                     defaultProfile = profile.id;
                 }
@@ -138,30 +141,36 @@ $(function() {
                 self.currentProfile(currentProfile);
             } else {
                 // shouldn't normally happen, but just to not have anything else crash...
-                log.warn("Current printer profile could not be detected, using default values");
+                log.warn(
+                    "Current printer profile could not be detected, using default values"
+                );
                 self.currentProfile(undefined);
             }
         };
 
-        self.removeProfile = function(data) {
-            var proceed = function() {
-                OctoPrint.connectionprofiles.delete(data.id)
-                    .done(function() {
-                        self.requestData();
-                    });
+        self.removeProfile = function (data) {
+            var proceed = function () {
+                OctoPrint.connectionprofiles.delete(data.id).done(function () {
+                    self.requestData();
+                });
             };
 
             showConfirmationDialog({
-                message: _.sprintf(gettext("You are about to delete the connection profile \"%(profile)s\"."), {profile: data.name}),
+                message: _.sprintf(
+                    gettext(
+                        'You are about to delete the connection profile "%(profile)s".'
+                    ),
+                    {profile: data.name}
+                ),
                 onproceed: proceed
             });
         };
 
         self.onSettingsShown = self.requestData;
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
-        }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

@@ -70,7 +70,7 @@ class SockJSRouter(object):
     def __init__(self,
                  connection,
                  prefix='',
-                 user_settings=dict(),
+                 user_settings={},
                  io_loop=None,
                  session_kls=None):
         """Constructor.
@@ -109,18 +109,17 @@ class SockJSRouter(object):
 
         check_interval = self.settings['session_check_interval'] * 1000
         self._sessions_cleanup = ioloop.PeriodicCallback(self._sessions.expire,
-                                                         check_interval,
-                                                         self.io_loop)
+                                                         check_interval)
         self._sessions_cleanup.start()
 
         # Stats
-        self.stats = stats.StatsCollector(self.io_loop)
+        self.stats = stats.StatsCollector()
 
         # Initialize URLs
         base = prefix + r'/[^/.]+/(?P<session_id>[^/.]+)'
 
         # Generate global handler URLs
-        self._transport_urls = [('%s/%s$' % (base, p[0]), p[1], dict(server=self))
+        self._transport_urls = [('%s/%s$' % (base, p[0]), p[1], {"server": self})
                                 for p in GLOBAL_HANDLERS]
 
         for k, v in TRANSPORTS.items():
@@ -131,11 +130,11 @@ class SockJSRouter(object):
             self._transport_urls.append(
                 (r'%s/%s$' % (base, k),
                  v,
-                 dict(server=self))
+                 {"server": self})
                 )
 
         # Generate static URLs
-        self._transport_urls.extend([('%s%s' % (prefix, k), v, dict(server=self))
+        self._transport_urls.extend([('%s%s' % (prefix, k), v, {"server": self})
                                      for k, v in STATIC_HANDLERS.items()])
 
     @property

@@ -1,0 +1,229 @@
+name: Build
+on:
+  push:
+  pull_request:
+  release:
+    types: [released, prereleased]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 🔨 Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Install build dependencies
+        run: |
+          python -m pip install wheel --user
+      - name: 🔨 Build a binary wheel and a source tarball
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: ⬆ Upload build result
+        uses: actions/upload-artifact@v1
+        with:
+          name: dist
+          path: dist
+
+  lint-black:
+    name: 🧹 black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run black
+        run: |
+          pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
+
+  lint-prettier:
+    name: 🧹 prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run prettier
+        run: |
+          pre-commit run --hook-stage manual prettier --all-files --show-diff-on-failure
+
+  lint-isort:
+    name: 🧹 isort
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run isort
+        run: |
+          pre-commit run --hook-stage manual isort --all-files --show-diff-on-failure
+
+  lint-flake8:
+    name: 🧹 Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run flake8
+        run: |
+          pre-commit run --hook-stage manual flake8 --all-files
+
+  test-unit:
+    name: 🧪 Unit tests
+    strategy:
+      matrix:
+        python: ["3.7", "3.8"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 🏗 Set up test dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run test suite
+        run: |
+          pytest
+
+  test-install:
+    name: 🧪 Installation tests
+    needs: build
+    strategy:
+      matrix:
+        python: ["3.7", "3.8"]
+        installable: ["wheel", "sdist"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+          path: dist
+      - name: 🏗 Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 🚀 Install wheel
+        if: matrix.installable == 'wheel'
+        run: |
+          pip install dist/OctoPrint-*-py2.py3-none-any.whl
+      - name: 🚀 Install source tarball
+        if: matrix.installable == 'sdist'
+        run: |
+          pip install dist/OctoPrint-*.tar.gz
+
+  test-e2e:
+    name: 🧪 E2E tests
+    needs: build
+    runs-on: ubuntu-16.04
+    steps:
+      - name: ⬇ Checkout code
+        uses: actions/checkout@v2
+
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+          path: dist
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🚀 Install wheel
+        run: |
+          pip install dist/OctoPrint-*-py2.py3-none-any.whl
+
+      - name: 🏗 Create base config for test server
+        run: |
+          mkdir e2econfig
+          cp -r .github/fixtures/with_acl/* e2econfig
+
+      - name: 🚀 Run Cypress
+        uses: cypress-io/github-action@v2
+        with:
+          working-directory: tests/cypress
+          browser: chrome
+          start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
+          wait-on: "http://127.0.0.1:5000/online.txt"
+
+      - name: ⬆ Upload screenshots
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: tests/cypress/screenshots
+      - name: ⬆ Upload videos
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cypress-videos
+          path: tests/cypress/videos
+
+  publish-on-testpypi:
+    name: 📦 Publish on TestPyPI
+    if: github.event_name == 'release'
+    needs:
+      - lint-black
+      - lint-prettier
+      - lint-isort
+      - lint-flake8
+      - test-unit
+      - test-install
+      - test-e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+          path: dist
+      - name: 📦 Publish to index
+        uses: pypa/gh-action-pypi-publish@master
+        continue-on-error: true
+        with:
+          password: ${{ secrets.testpypi_password }}
+          repository_url: https://test.pypi.org/legacy/
+
+  publish-on-pypi:
+    name: 📦 Publish tagged releases to PyPI
+    if: github.event_name == 'release'
+    needs: publish-on-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+          path: dist
+      - name: 📦 Publish to index
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.pypi_password }}

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
     sockjs.tornado.periodic
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +34,7 @@ class Callback(object):
 
     def calculate_next_run(self):
         """Caltulate next scheduled run"""
-        return time.time() + self.callback_time / 1000.0
+        return time.time() + self.callback_time / 1000
 
     def start(self, timeout=None):
         """Start callbacks"""

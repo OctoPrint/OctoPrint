@@ -4,7 +4,9 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
+Environment="LC_ALL=C.UTF-8"
+Environment="LANG=C.UTF-8"
+Type=exec
 User=pi
 ExecStart=/home/pi/OctoPrint/venv/bin/octoprint
 

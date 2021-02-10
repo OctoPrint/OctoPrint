@@ -3,7 +3,6 @@
 // Adapted from http://github.com/necolas/normalize.css
 // --------------------------------------------------
 
-
 // Display in IE6-9 and FF3
 // -------------------------
 
@@ -35,7 +34,7 @@ video {
 // -------------------------
 
 audio:not([controls]) {
-    display: none;
+  display: none;
 }
 
 // Base settings
@@ -44,7 +43,7 @@ audio:not([controls]) {
 html {
   font-size: 100%;
   -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 // Focus states
 a:focus {
@@ -111,7 +110,8 @@ input {
   line-height: normal; // FF3/4 have !important on line-height in UA stylesheet
 }
 button::-moz-focus-inner,
-input::-moz-focus-inner { // Inner padding and border oddities in FF3/4
+input::-moz-focus-inner {
+  // Inner padding and border oddities in FF3/4
   padding: 0;
   border: 0;
 }
@@ -119,8 +119,8 @@ button,
 html input[type="button"], // Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio` and `video` controls.
 input[type="reset"],
 input[type="submit"] {
-    -webkit-appearance: button; // Corrects inability to style clickable `input` types in iOS.
-    cursor: pointer; // Improves usability and consistency of cursor style between image-type `input` and others.
+  -webkit-appearance: button; // Corrects inability to style clickable `input` types in iOS.
+  cursor: pointer; // Improves usability and consistency of cursor style between image-type `input` and others.
 }
 label,
 select,
@@ -130,9 +130,10 @@ input[type="reset"],
 input[type="submit"],
 input[type="radio"],
 input[type="checkbox"] {
-    cursor: pointer; // Improves usability and consistency of cursor style between image-type `input` and others.
+  cursor: pointer; // Improves usability and consistency of cursor style between image-type `input` and others.
 }
-input[type="search"] { // Appearance in Safari/Chrome
+input[type="search"] {
+  // Appearance in Safari/Chrome
   .box-sizing(content-box);
   -webkit-appearance: textfield;
 }
@@ -145,13 +146,11 @@ textarea {
   vertical-align: top; // Readability and alignment cross-browser
 }
 
-
 // Printing
 // -------------------------
 // Source: https://github.com/h5bp/html5-boilerplate/blob/master/css/main.css
 
 @media print {
-
   * {
     text-shadow: none !important;
     color: #000 !important; // Black prints faster: h5bp.com/s

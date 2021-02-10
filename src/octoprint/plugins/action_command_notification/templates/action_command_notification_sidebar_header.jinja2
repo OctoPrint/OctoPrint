@@ -1,0 +1,11 @@
+<div class="accordion-heading-button btn-group" data-bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_CLEAR) && notifications().length > 0">
+    <a href="javascript:void(0)" data-bind="click: clear" title="{{ _('Clear notifications')|edq }}">
+        <i class="far fa-trash-alt"></i>
+    </a>
+</div>
+
+<div class="accordion-heading-button btn-group" data-bind="visible: notifications().length > 0">
+    <a href="javascript:void(0)" data-bind="click: toggleSorting" title="{{ _('Change sorting')|edq }}">
+        <i class="fas" data-bind="css: {'fa-sort-amount-up': sortDesc, 'fa-sort-amount-down': !sortDesc()}"></i>
+    </a>
+</div>

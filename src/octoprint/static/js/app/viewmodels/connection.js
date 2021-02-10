@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function ConnectionViewModel(parameters) {
         var self = this;
 
@@ -8,19 +8,23 @@ $(function() {
         self.printerProfiles = parameters[3];
         self.access = parameters[4];
 
-        var checkRecursively = function(params, check) {
-            return _.any(params, function(p) {
+        var checkRecursively = function (params, check) {
+            return _.any(params, function (p) {
                 if (p.type === "group") {
                     return check(p) || checkRecursively(p.params, check);
                 } else if (p.type === "groupchoice" && p.group) {
-                    return check(p) || check(p.group) || checkRecursively(p.group.params, check);
+                    return (
+                        check(p) ||
+                        check(p.group) ||
+                        checkRecursively(p.group.params, check)
+                    );
                 } else {
                     return check(p);
                 }
             });
         };
 
-        var convertValue = function(value, option, override) {
+        var convertValue = function (value, option, override) {
             if (override !== undefined) {
                 value = override;
             }
@@ -36,7 +40,7 @@ $(function() {
             return value;
         };
 
-        var extendOption = function(option, value, override) {
+        var extendOption = function (option, value, override) {
             if (option.type === "group") {
                 if (value === undefined) {
                     value = {};
@@ -45,13 +49,25 @@ $(function() {
                     extendOption(option, value[option.name]);
                 });
 
-                option.advancedParameters = option.advanced || _.any(option.params, function(p) { return p.advanced });
-                option.expertParameters = option.expert || _.any(option.params, function(p) { return p.expert });
+                option.advancedParameters =
+                    option.advanced ||
+                    _.any(option.params, function (p) {
+                        return p.advanced;
+                    });
+                option.expertParameters =
+                    option.expert ||
+                    _.any(option.params, function (p) {
+                        return p.expert;
+                    });
             } else {
                 if (option.type === "groupchoice") {
                     value = convertValue(value, option);
-                    _.each(option.group.params, function(p) {
-                        extendOption(p, option.defaults[option.default][p.name], override ? override[p.name] : undefined);
+                    _.each(option.group.params, function (p) {
+                        extendOption(
+                            p,
+                            option.defaults[option.default][p.name],
+                            override ? override[p.name] : undefined
+                        );
                     });
                 } else {
                     value = convertValue(value, option, override);
@@ -62,46 +78,62 @@ $(function() {
                 } else {
                     option.value = ko.observable(value);
                     option.defaultValue = ko.observable(option.default);
-                    option.reset = function() {
+                    option.reset = function () {
                         option.value(option.defaultValue());
                     };
 
-                    option.modified = ko.pureComputed(function() {
+                    option.modified = ko.pureComputed(function () {
                         // noinspection EqualityComparisonWithCoercionJS
                         return option.value() != option.defaultValue();
                     });
 
                     if (option.type === "groupchoice" && option.defaults) {
-                        option.group.advancedParameters = option.group.advanced || _.any(option.group.params, function(p) { return p.advanced });
-                        option.group.expertParameters = option.group.expert || _.any(option.group.params, function(p) { return p.expert });
+                        option.group.advancedParameters =
+                            option.group.advanced ||
+                            _.any(option.group.params, function (p) {
+                                return p.advanced;
+                            });
+                        option.group.expertParameters =
+                            option.group.expert ||
+                            _.any(option.group.params, function (p) {
+                                return p.expert;
+                            });
 
-                        var updateDefaults = function(keepValue) {
+                        var updateDefaults = function (keepValue) {
                             keepValue = !!keepValue;
 
                             var choice = _.find(option.choices, function (c) {
-                                return c.value === option.value()
+                                return c.value === option.value();
                             });
                             if (choice) {
-                                _.each(option.group.params, function(p) {
+                                _.each(option.group.params, function (p) {
                                     if (option.defaults[choice.value]) {
                                         var d = option.defaults[choice.value][p.name];
                                         if (d !== undefined) {
-                                            p.defaultValue(convertValue(d, p, override ? override[p.name] : undefined));
+                                            p.defaultValue(
+                                                convertValue(
+                                                    d,
+                                                    p,
+                                                    override
+                                                        ? override[p.name]
+                                                        : undefined
+                                                )
+                                            );
                                             if (!keepValue) {
                                                 p.value(p.defaultValue());
                                             }
                                         }
                                     }
-                                })
+                                });
                             }
                         };
-                        option.value.subscribe(function() { updateDefaults() });
+                        option.value.subscribe(function () {
+                            updateDefaults();
+                        });
                         updateDefaults(true);
                     }
                 }
-
             }
-
         };
 
         // Connection profiles
@@ -109,25 +141,49 @@ $(function() {
         self.availableConnectionProfiles = ko.observableArray();
 
         self.selectedConnectionProfile = ko.observable(undefined);
-        self.selectedConnectionProfile.subscribe(function() {
+        self.selectedConnectionProfile.subscribe(function () {
             var protocolParameters, transportParameters;
 
             var profile = self.selectedConnectionProfile();
 
             if (profile) {
-                self.selectedPrinter(_.find(self.availablePrinterProfiles(), function(p) { return p.id === profile.printer_profile }));
-                self.selectedProtocol(_.find(self.availableProtocols(), function(p) { return p.key === profile.protocol }));
-                self.selectedTransport(_.find(self.availableTransports(), function(t) { return t.key === profile.transport }));
+                self.selectedPrinter(
+                    _.find(self.availablePrinterProfiles(), function (p) {
+                        return p.id === profile.printer_profile;
+                    })
+                );
+                self.selectedProtocol(
+                    _.find(self.availableProtocols(), function (p) {
+                        return p.key === profile.protocol;
+                    })
+                );
+                self.selectedTransport(
+                    _.find(self.availableTransports(), function (t) {
+                        return t.key === profile.transport;
+                    })
+                );
 
                 protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function(option) {
-                    extendOption(option, profile.protocol_parameters[option.name], option.group ? profile.protocol_parameters[option.group.name] : undefined);
+                _.each(protocolParameters, function (option) {
+                    extendOption(
+                        option,
+                        profile.protocol_parameters[option.name],
+                        option.group
+                            ? profile.protocol_parameters[option.group.name]
+                            : undefined
+                    );
                 });
                 self.protocolParameters(protocolParameters);
 
                 transportParameters = self.transportParameters();
-                _.each(transportParameters, function(option) {
-                    extendOption(option, profile.transport_parameters[option.name], option.group ? profile.transport_parameters[option.group.name] : undefined);
+                _.each(transportParameters, function (option) {
+                    extendOption(
+                        option,
+                        profile.transport_parameters[option.name],
+                        option.group
+                            ? profile.transport_parameters[option.group.name]
+                            : undefined
+                    );
                 });
                 self.transportParameters(transportParameters);
             } else {
@@ -136,13 +192,13 @@ $(function() {
                 self.selectedTransport(undefined);
 
                 protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function(option) {
+                _.each(protocolParameters, function (option) {
                     extendOption(option);
                 });
                 self.protocolParameters(protocolParameters);
 
                 transportParameters = self.transportParameters();
-                _.each(transportParameters, function(option) {
+                _.each(transportParameters, function (option) {
                     extendOption(option);
                 });
                 self.transportParameters(transportParameters);
@@ -161,11 +217,11 @@ $(function() {
         self.protocolParameters = ko.observable();
         self.advancedProtocolParameters = ko.observable();
         self.expertProtocolParameters = ko.observable();
-        self.showAdvancedProtocolOptions = function() {
+        self.showAdvancedProtocolOptions = function () {
             $("#connection_protocol_dialog").modal("show");
         };
 
-        self.selectedProtocol.subscribe(function() {
+        self.selectedProtocol.subscribe(function () {
             var protocol = self.selectedProtocol();
             if (protocol) {
                 self.protocolParameters(protocol.options);
@@ -173,8 +229,16 @@ $(function() {
                 self.protocolParameters([]);
             }
 
-            self.advancedProtocolParameters(_.any(self.protocolParameters(), function(p) { return p.advanced }));
-            self.expertProtocolParameters(_.any(self.protocolParameters(), function(p) { return p.expert }));
+            self.advancedProtocolParameters(
+                _.any(self.protocolParameters(), function (p) {
+                    return p.advanced;
+                })
+            );
+            self.expertProtocolParameters(
+                _.any(self.protocolParameters(), function (p) {
+                    return p.expert;
+                })
+            );
         });
 
         // Transports
@@ -184,11 +248,11 @@ $(function() {
         self.transportParameters = ko.observableArray();
         self.advancedTransportParameters = ko.observable();
         self.expertTransportParameters = ko.observable();
-        self.showAdvancedTransportOptions = function() {
+        self.showAdvancedTransportOptions = function () {
             $("#connection_transport_dialog").modal("show");
         };
 
-        self.selectedTransport.subscribe(function() {
+        self.selectedTransport.subscribe(function () {
             var transport = self.selectedTransport();
             if (transport) {
                 self.transportParameters(transport.options);
@@ -196,8 +260,16 @@ $(function() {
                 self.transportParameters([]);
             }
 
-            self.advancedTransportParameters(_.any(self.transportParameters(), function(p) { return p.advanced }));
-            self.expertTransportParameters(_.any(self.transportParameters(), function(p) { return p.expert }));
+            self.advancedTransportParameters(
+                _.any(self.transportParameters(), function (p) {
+                    return p.advanced;
+                })
+            );
+            self.expertTransportParameters(
+                _.any(self.transportParameters(), function (p) {
+                    return p.expert;
+                })
+            );
         });
 
         // Various other bits
@@ -215,27 +287,24 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
-        self.buttonText = ko.pureComputed(function() {
-            if (self.isErrorOrClosed())
-                return gettext("Connect");
-            else
-                return gettext("Disconnect");
+        self.buttonText = ko.pureComputed(function () {
+            if (self.isErrorOrClosed()) return gettext("Connect");
+            else return gettext("Disconnect");
         });
 
         self.previousIsOperational = undefined;
 
         self.refreshVisible = ko.observable(true);
 
-        self.requestData = function() {
+        self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
 
-            return OctoPrint.connection.getSettings()
-                .done(self.fromResponse);
+            return OctoPrint.connection.getSettings().done(self.fromResponse);
         };
 
-        self.fromResponse = function(response) {
+        self.fromResponse = function (response) {
             //~~ Available options...
 
             // connection profiles
@@ -253,9 +322,13 @@ $(function() {
                 protocolOptions = {};
             }
 
-            _.each(protocols, function(protocol) {
-                _.each(protocol.options, function(option) {
-                    extendOption(option, protocolOptions[option.name], option.group ? protocolOptions[option.group.name] : undefined);
+            _.each(protocols, function (protocol) {
+                _.each(protocol.options, function (option) {
+                    extendOption(
+                        option,
+                        protocolOptions[option.name],
+                        option.group ? protocolOptions[option.group.name] : undefined
+                    );
                 });
             });
 
@@ -268,9 +341,13 @@ $(function() {
                 transportOptions = {};
             }
 
-            _.each(transports, function(transport) {
-                _.each(transport.options, function(option) {
-                    extendOption(option, transportOptions[option.name], option.group ? transportOptions[option.group.name] : undefined);
+            _.each(transports, function (transport) {
+                _.each(transport.options, function (option) {
+                    extendOption(
+                        option,
+                        transportOptions[option.name],
+                        option.group ? transportOptions[option.group.name] : undefined
+                    );
                 });
             });
 
@@ -286,7 +363,7 @@ $(function() {
             if (connectionKey) {
                 // there's currently a connection profile selected on the server
                 var connection = _.find(connections, function (c) {
-                    return c.id === connectionKey
+                    return c.id === connectionKey;
                 });
                 self.selectedConnectionProfile(connection);
             } else {
@@ -300,16 +377,20 @@ $(function() {
             }
 
             if (printerKey) {
-                var printer = _.find(printers, function(p) { return p.id === printerKey });
+                var printer = _.find(printers, function (p) {
+                    return p.id === printerKey;
+                });
                 self.selectedPrinter(printer);
             }
 
             var protocolKey = response.current.protocol;
             if (protocolKey) {
-                var protocol = _.find(protocols, function(p) { return p.key === protocolKey });
+                var protocol = _.find(protocols, function (p) {
+                    return p.key === protocolKey;
+                });
                 self.selectedProtocol(protocol);
                 var protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function(option) {
+                _.each(protocolParameters, function (option) {
                     extendOption(option, response.current.protocolOptions[option.name]);
                 });
                 self.protocolParameters(protocolParameters);
@@ -317,25 +398,27 @@ $(function() {
 
             var transportKey = response.current.transport;
             if (transportKey) {
-                var transport = _.find(transports, function(t) { return t.key === transportKey });
+                var transport = _.find(transports, function (t) {
+                    return t.key === transportKey;
+                });
                 self.selectedTransport(transport);
                 var transportParameters = self.transportParameters();
-                _.each(transportParameters, function(option) {
+                _.each(transportParameters, function (option) {
                     extendOption(option, response.current.transportOptions[option.name]);
                 });
                 self.transportParameters(transportParameters);
             }
         };
 
-        self.fromHistoryData = function(data) {
+        self.fromHistoryData = function (data) {
             self._processStateData(data.state);
         };
 
-        self.fromCurrentData = function(data) {
+        self.fromCurrentData = function (data) {
             self._processStateData(data.state);
         };
 
-        self.openOrCloseOnStateChange = function(force) {
+        self.openOrCloseOnStateChange = function (force) {
             if (!self._startupComplete && !force) return;
 
             var connectionTab = $("#connection");
@@ -348,7 +431,7 @@ $(function() {
             }
         };
 
-        self._processStateData = function(data) {
+        self._processStateData = function (data) {
             self.previousIsOperational = self.isOperational();
 
             self.isErrorOrClosed(data.flags.closedOrError);
@@ -366,18 +449,27 @@ $(function() {
             }
         };
 
-        self.connect = function(save) {
+        self.connect = function (save) {
             if (self.isErrorOrClosed()) {
-                var toOptions = function(parameters) {
+                var toOptions = function (parameters) {
                     var result = {};
-                    _.each(parameters, function(parameter) {
+                    _.each(parameters, function (parameter) {
                         if (parameter.type === "group") {
                             result[parameter.name] = toOptions(parameter.params);
                         } else if (parameter.type === "groupchoice") {
                             result[parameter.name] = parameter.value();
-                            result[parameter.group.name] = toOptions(parameter.group.params);
-                        } else if (parameter.type === "list" || parameter.type === "smalllist") {
-                            result[parameter.name] = splitTextToArray(parameter.value(), ",", true);
+                            result[parameter.group.name] = toOptions(
+                                parameter.group.params
+                            );
+                        } else if (
+                            parameter.type === "list" ||
+                            parameter.type === "smalllist"
+                        ) {
+                            result[parameter.name] = splitTextToArray(
+                                parameter.value(),
+                                ",",
+                                true
+                            );
                         } else {
                             result[parameter.name] = parameter.value();
                         }
@@ -386,7 +478,7 @@ $(function() {
                 };
 
                 var data = {
-                    "autoconnect": self.settings.serial_autoconnect()
+                    autoconnect: self.settings.serial_autoconnect()
                 };
 
                 var connectionProfile = self.selectedConnectionProfile();
@@ -394,7 +486,10 @@ $(function() {
                     data.connection = connectionProfile.id;
                 }
 
-                if (self.adjustConnectionParameters() || connectionProfile === undefined) {
+                if (
+                    self.adjustConnectionParameters() ||
+                    connectionProfile === undefined
+                ) {
                     data.printerProfile = self.selectedPrinter().id;
                     data.protocol = self.selectedProtocol().key;
                     data.protocolOptions = toOptions(self.protocolParameters());
@@ -416,75 +511,89 @@ $(function() {
                         profile.name = connectionProfile.name;
                     }
 
-                    self.connectionProfiles.editor.showDialog(profile, gettext("Save & Connect"))
-                        .done(function(profile) {
+                    self.connectionProfiles.editor
+                        .showDialog(profile, gettext("Save & Connect"))
+                        .done(function (profile) {
                             OctoPrint.connection.connect({connection: profile.id});
                         });
                 } else {
                     OctoPrint.connection.connect(data);
                 }
-
             } else {
                 if (!self.isPrinting() && !self.isPaused()) {
                     OctoPrint.connection.disconnect();
                 } else {
                     showConfirmationDialog({
                         title: gettext("Are you sure?"),
-                        message: gettext("<p><strong>You are about to disconnect from the printer while a print "
-                            + "is in progress.</strong></p>"
-                            + "<p>Disconnecting while a print is in progress will prevent OctoPrint from "
-                            + "completing the print. If you're printing from an SD card attached directly "
-                            + "to the printer, any attempt to restart OctoPrint or reconnect to the printer "
-                            + "could interrupt the print.<p>"),
-                        question: gettext("Are you sure you want to disconnect from the printer?"),
+                        message: gettext(
+                            "<p><strong>You are about to disconnect from the printer while a print " +
+                                "is in progress.</strong></p>" +
+                                "<p>Disconnecting while a print is in progress will prevent OctoPrint from " +
+                                "completing the print. If you're printing from an SD card attached directly " +
+                                "to the printer, any attempt to restart OctoPrint or reconnect to the printer " +
+                                "could interrupt the print.<p>"
+                        ),
+                        question: gettext(
+                            "Are you sure you want to disconnect from the printer?"
+                        ),
                         cancel: gettext("Stay Connected"),
                         proceed: gettext("Disconnect"),
-                        onproceed:  function() {
+                        onproceed: function () {
                             OctoPrint.connection.disconnect();
                         }
-                    })
+                    });
                 }
             }
         };
 
-        self.onEventSettingsUpdated = function() {
+        self.onEventSettingsUpdated = function () {
             self.requestData();
         };
 
-        self.onEventConnected = function() {
+        self.onEventConnected = function () {
             self.requestData();
         };
 
-        self.onEventDisconnected = function() {
+        self.onEventDisconnected = function () {
             self.requestData();
         };
 
-        self.onStartup = function() {
+        self.onStartup = function () {
             var connectionTab = $("#connection");
-            connectionTab.on("show", function() {
+            connectionTab.on("show", function () {
                 self.refreshVisible(true);
             });
-            connectionTab.on("hide", function() {
+            connectionTab.on("hide", function () {
                 self.refreshVisible(false);
             });
         };
 
-        self.onStartupComplete = function() {
+        self.onStartupComplete = function () {
             self.openOrCloseOnStateChange(true);
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function() {
+        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.requestData();
         };
 
-        self._sanitize = function(name) {
+        self._sanitize = function (name) {
             return name.replace(/[^a-zA-Z0-9\-_.() ]/g, "").replace(/ /g, "_");
         };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ConnectionViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "connectionProfilesViewModel", "printerProfilesViewModel", "accessViewModel"],
-        elements: ["#connection_wrapper", "#connection_protocol_dialog", "#connection_transport_dialog"]
+        dependencies: [
+            "loginStateViewModel",
+            "settingsViewModel",
+            "connectionProfilesViewModel",
+            "printerProfilesViewModel",
+            "accessViewModel"
+        ],
+        elements: [
+            "#connection_wrapper",
+            "#connection_protocol_dialog",
+            "#connection_transport_dialog"
+        ]
     });
 });

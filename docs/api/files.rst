@@ -21,6 +21,8 @@ Retrieve all files
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example 1**:
 
    Fetch only the files and folders from the root folder.
@@ -250,6 +252,8 @@ Retrieve files from specific location
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example**:
 
    .. sourcecode:: http
@@ -315,7 +319,8 @@ Upload file or create folder
    Upload a file to the selected ``location`` or create a new empty folder on it.
 
    Other than most of the other requests on OctoPrint's API which are expected as JSON, this request is expected as
-   ``Content-Type: multipart/form-data`` due to the included file upload.
+   ``Content-Type: multipart/form-data`` due to the included file upload. A ``Content-Length`` header specifying
+   the full length of the request body is required as well.
 
    To upload a file, the request body must at least contain the ``file`` form field with the
    contents and file name of the file to upload.
@@ -327,7 +332,7 @@ Upload file or create folder
    Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
    file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
-   Requires user rights.
+   Requires the ``FILES_UPLOAD`` permission.
 
    **Example for uploading a file**
 
@@ -337,6 +342,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
+      Content-Length: 430
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="file"; filename="whistle_v2.gcode"
@@ -346,7 +352,7 @@ Upload file or create folder
       T0
       G21
       G90
-      ...
+
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="select"
 
@@ -396,6 +402,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
+      Content-Length: 263
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="file"; filename*=utf-8''20mm-%C3%BCml%C3%A4ut-b%C3%B6x.gcode
@@ -405,7 +412,7 @@ Upload file or create folder
       T0
       G21
       G90
-      ...
+
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC--
 
    .. sourcecode:: http
@@ -436,6 +443,7 @@ Upload file or create folder
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMD
+      Content-Length: 246
 
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMD
       Content-Disposition: form-data; name="foldername"
@@ -504,6 +512,8 @@ Retrieve a specific file's or folder's information
    On success, a :http:statuscode:`200` is returned, with a :ref:`file information item <sec-api-datamodel-files-file>`
    as the response body.
 
+   Requires the ``FILES_LIST`` permission.
+
    **Example**
 
    .. sourcecode:: http
@@ -566,7 +576,10 @@ Issue a file command
        is not operational when this parameter is present and set to ``true``, the request will fail with a response
        of ``409 Conflict``.
 
-     Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+     Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If there already is an
+     active print job, a :http:statuscode:`409` is returned.
+
+     Requires the ``FILES_SELECT`` permission.
 
    slice
      Slices an STL file into GCODE. Note that this is an asynchronous operation that will take place in the background
@@ -598,6 +611,8 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`202` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
+     Requires the ``SLICE`` permission.
+
    copy
      Copies the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
 
@@ -608,6 +623,8 @@ Issue a file command
 
      Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
+
+     Requires the ``FILES_UPLOAD`` permission.
 
    move
      Moves the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
@@ -622,7 +639,7 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
-   Requires user rights.
+     Requires the ``FILES_UPLOAD`` permission.
 
    **Example Select Request**
 
@@ -756,7 +773,8 @@ Issue a file command
    :statuscode 400:             If the ``command`` is unknown or the request is otherwise invalid
    :statuscode 415:             If a ``slice`` command was issued against something other than an STL file.
    :statuscode 404:             If ``location`` is neither ``local`` nor ``sdcard`` or the requested file was not found
-   :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational or
+   :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational
+                                or if a file is to be selected but the printer is already printing or
                                 if a file to be sliced is supposed to be selected or start printing directly but the printer
                                 is not operational or already printing.
 
@@ -773,7 +791,7 @@ Delete file
 
    Returns a :http:statuscode:`204` after successful deletion.
 
-   Requires user rights.
+   Requires the ``FILES_DELETE`` permission.
 
    **Example Request**
 

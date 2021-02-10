@@ -29,6 +29,9 @@ following message types are currently available for usage by 3rd party clients:
 
   * ``connected``: Initial connection information, sent only right after establishing the socket connection. See
     :ref:`the payload data model <sec-api-push-datamodel-connected>`.
+  * ``reauthRequired``: A reauthentication of the current login session is required. The ``reason`` parameter in the
+    payload defines whether a full active login is necessary (values ``logout`` and ``removed``) or a simple passive
+    login will suffice (all other values).
   * ``current``: Rate limited general state update, payload contains information about the printer's state, job progress,
     accumulated temperature points and log lines since last update. OctoPrint will send these updates when new information
     is available, but not more often than twice per second in order to not flood the client with messages (e.g.
@@ -51,9 +54,8 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
 
   * ``auth`` (since 1.3.10): With the ``auth`` message, clients may associate an
     existing user session with the socket. That is of special importance to receive
-    any kind of messages if the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` is enabled
-    (as it is by default), since it will prevent any kind of status messages to be sent to connected unauthenticated
-    clients.
+    any kind of messages, since the permission system will prevent any kind of status messages to be sent to connected
+    clients lacking the ``STATUS`` permission.
 
     The ``auth`` message expects the user id of the user to authenticate followed by ``:`` and a session key to be
     obtained from the successful payload of a :ref:`(passive or active) login via the API <sec-api-general-login>`.
@@ -175,6 +177,15 @@ Data model
      - 0..*
      - List of String
      - Lines for the serial communication log (special messages)
+   * - ``resends``
+     - 1
+     - :ref:`Resend stats <sec-api-datamodel-printer-resends>`
+     - Current resend statistics for the connection
+   * - ``plugins``
+     - 0..1
+     - Map of plugin identifiers to additional data
+     - Additional data injected by plugins via the :ref:`octoprint.printer.additional_state_data hook <sec-plugins-hooks-plugin-printer-additional_state_data>`,
+       indexed by plugin identifier. Structure of additional data is determined by the plugin.
 
 .. _sec-api-push-datamodel-event:
 

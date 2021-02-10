@@ -3,7 +3,9 @@
 Application Keys Plugin
 =======================
 
-The OctoPrint Application Keys Plugin comes bundled with OctoPrint (starting with version 1.3.10).
+.. versionadded:: 1.3.10
+
+The OctoPrint Application Keys Plugin comes bundled with OctoPrint.
 
 It implements a workflow for third party apps or clients to obtain an application specific API key from OctoPrint to interact with it
 on a user's behalf, via confirmation of the user through OctoPrint's web interface. Existing keys can be managed
@@ -320,7 +322,7 @@ Key response
      - Multiplicity
      - Type
      - Description
-   * - ``apikey``
+   * - ``api_key``
      - 1
      - str
      - the API key generated for the application

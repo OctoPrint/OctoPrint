@@ -6,7 +6,7 @@ Wizard
 
 .. note::
 
-   All wizard operations require either admin rights or the ``firstRun`` flag to be ``true``.
+   All wizard operations require either the ``ADMIN`` permission or the ``firstRun`` flag to be ``true``.
 
 .. contents::
 

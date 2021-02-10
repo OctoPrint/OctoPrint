@@ -4,24 +4,25 @@
     } else {
         factory(global.OctoPrintClient, global.$);
     }
-})(this, function(OctoPrintClient, $) {
+})(this, function (OctoPrintClient, $) {
     var url = "api/timelapse";
 
     var downloadUrl = "downloads/timelapse";
+    var bulkDownloadUrl = "downloads/timelapses";
 
-    var timelapseUrl = function(filename) {
+    var timelapseUrl = function (filename) {
         return url + "/" + filename;
     };
 
-    var timelapseDownloadUrl = function(filename) {
+    var timelapseDownloadUrl = function (filename) {
         return downloadUrl + "/" + filename;
     };
 
-    var unrenderedTimelapseUrl = function(name) {
+    var unrenderedTimelapseUrl = function (name) {
         return url + "/unrendered/" + name;
     };
 
-    var OctoPrintTimelapseClient = function(base) {
+    var OctoPrintTimelapseClient = function (base) {
         this.base = base;
     };
 
@@ -33,15 +34,19 @@
         return this.base.get(url, opts);
     };
 
-    OctoPrintTimelapseClient.prototype.list = function(opts) {
+    OctoPrintTimelapseClient.prototype.list = function (opts) {
         var deferred = $.Deferred();
 
         this.get(true, opts)
             .done(function (response, status, request) {
-                deferred.resolve({
-                    rendered: response.files,
-                    unrendered: response.unrendered
-                }, status, request);
+                deferred.resolve(
+                    {
+                        rendered: response.files,
+                        unrendered: response.unrendered
+                    },
+                    status,
+                    request
+                );
             })
             .fail(function () {
                 deferred.reject.apply(null, arguments);
@@ -82,15 +87,19 @@
         return this.base.download(timelapseDownloadUrl(filename), opts);
     };
 
+    OctoPrintTimelapseClient.prototype.bulkDownloadUrl = function (filenames) {
+        return this.base.bulkDownloadUrl(bulkDownloadUrl, filenames);
+    };
+
     OctoPrintTimelapseClient.prototype.delete = function (filename, opts) {
         return this.base.delete(timelapseUrl(filename), opts);
     };
 
-    OctoPrintTimelapseClient.prototype.deleteUnrendered = function(name, opts) {
+    OctoPrintTimelapseClient.prototype.deleteUnrendered = function (name, opts) {
         return this.base.delete(unrenderedTimelapseUrl(name), opts);
     };
 
-    OctoPrintTimelapseClient.prototype.renderUnrendered = function(name, opts) {
+    OctoPrintTimelapseClient.prototype.renderUnrendered = function (name, opts) {
         return this.base.issueCommand(unrenderedTimelapseUrl(name), "render");
     };
 

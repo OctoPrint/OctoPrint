@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     function WizardViewModel(parameters) {
         var self = this;
 
@@ -13,65 +13,83 @@ $(function() {
         self.finishing = false;
         self.wizards = [];
 
-        self.isDialogActive = function() {
+        self.isDialogActive = function () {
             return self.wizardDialog.is(":visible");
         };
 
-        self.showDialog = function() {
-            if (!CONFIG_WIZARD || !((CONFIG_FIRST_RUN && !CONFIG_ACCESS_CONTROL_ACTIVE) || self.loginState.isAdmin())) return;
+        self.showDialog = function () {
+            if (
+                !CONFIG_WIZARD ||
+                !(!CONFIG_ACCESS_CONTROL_ACTIVE || self.loginState.isAdmin())
+            )
+                return;
 
-            self.getWizardDetails()
-                .done(function(response) {
-                    callViewModels(self.allViewModels, "onWizardDetails", [response]);
+            self.getWizardDetails().done(function (response) {
+                callViewModels(self.allViewModels, "onWizardDetails", [response]);
 
-                    if (!self.isDialogActive()) {
-                        self.wizardDialog.modal({
-                            minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-                        }).css({
-                            width: 'auto',
-                            'margin-left': function() { return -($(this).width() /2); }
+                if (!self.isDialogActive()) {
+                    self.wizardDialog
+                        .modal({
+                            minHeight: function () {
+                                return Math.max(
+                                    $.fn.modal.defaults.maxHeight() - 80,
+                                    250
+                                );
+                            }
+                        })
+                        .css({
+                            "width": "auto",
+                            "margin-left": function () {
+                                return -($(this).width() / 2);
+                            }
                         });
-                    }
+                }
 
-                    callViewModels(self.allViewModels, "onWizardShow");
+                callViewModels(self.allViewModels, "onWizardShow");
 
-                    callViewModels(self.allViewModels, "onBeforeWizardTabChange", [OCTOPRINT_INITIAL_WIZARD, undefined]);
-                    callViewModels(self.allViewModels, "onAfterWizardTabChange", [OCTOPRINT_INITIAL_WIZARD]);
-                });
+                callViewModels(self.allViewModels, "onBeforeWizardTabChange", [
+                    OCTOPRINT_INITIAL_WIZARD,
+                    undefined
+                ]);
+                callViewModels(self.allViewModels, "onAfterWizardTabChange", [
+                    OCTOPRINT_INITIAL_WIZARD
+                ]);
+            });
         };
 
-        self.closeDialog = function() {
+        self.closeDialog = function () {
             self.wizardDialog.modal("hide");
         };
 
-        self.onStartup = function() {
+        self.onStartup = function () {
             self.wizardDialog = $("#wizard_dialog");
-            self.wizardDialog.on('show', function(event) {
+            self.wizardDialog.on("show", function (event) {
                 OctoPrint.coreui.wizardOpen = true;
             });
-            self.wizardDialog.on('hidden', function(event) {
+            self.wizardDialog.on("hidden", function (event) {
                 OctoPrint.coreui.wizardOpen = false;
             });
 
             self.reloadOverlay = $("#reloadui_overlay");
         };
 
-        self.onUserLoggedIn = function() {
+        self.onUserLoggedIn = function () {
             self.showDialog();
         };
 
-        self.onAllBound = function(allViewModels) {
+        self.onAllBound = function (allViewModels) {
             self.allViewModels = allViewModels;
             self.wizardDialog.bootstrapWizard({
                 tabClass: "nav nav-list",
                 nextSelector: ".button-next",
                 previousSelector: ".button-previous",
                 finishSelector: ".button-finish",
-                onTabClick: function() {
+                withVisible: false,
+                onTabClick: function () {
                     // we don't allow clicking on the tabs
                     return false;
                 },
-                onTabShow: function(tab, navigation, index) {
+                onTabShow: function (tab, navigation, index) {
                     if (index < 0 || tab.length == 0) {
                         return true;
                     }
@@ -80,7 +98,10 @@ $(function() {
 
                     if (index == total) {
                         self.wizardDialog.find(".button-next").hide();
-                        self.wizardDialog.find(".button-finish").show().removeClass("disabled");
+                        self.wizardDialog
+                            .find(".button-finish")
+                            .show()
+                            .removeClass("disabled");
                     } else {
                         self.wizardDialog.find(".button-finish").hide();
                         self.wizardDialog.find(".button-next").show();
@@ -91,13 +112,18 @@ $(function() {
                         callViewModels(allViewModels, "onAfterWizardTabChange", [active]);
                     }
                 },
-                onTabChange: function(tab, navigation, index, nextTabIndex, nextTab) {
+                onTabChange: function (tab, navigation, index, nextTabIndex, nextTab) {
                     var current, next;
 
-                    if (index == undefined || index < 0 ||
-                        nextTabIndex == undefined || nextTabIndex < 0 ||
+                    if (
+                        index == undefined ||
+                        index < 0 ||
+                        nextTabIndex == undefined ||
+                        nextTabIndex < 0 ||
                         index == nextTabIndex ||
-                        tab.length == 0 || nextTab.length == 0) {
+                        tab.length == 0 ||
+                        nextTab.length == 0
+                    ) {
                         // let's ignore that nonsense
                         return;
                     }
@@ -107,37 +133,52 @@ $(function() {
 
                     if (current != undefined && next != undefined) {
                         var result = true;
-                        callViewModels(allViewModels, "onBeforeWizardTabChange", function(method) {
-                            // we want to continue evaluating even if result becomes false
-                            result = (method(next, current) !== false) && result;
-                        });
+                        callViewModels(
+                            allViewModels,
+                            "onBeforeWizardTabChange",
+                            function (method) {
+                                // we want to continue evaluating even if result becomes false
+                                result = method(next, current) !== false && result;
+                            }
+                        );
 
                         // also trigger the onWizardTabChange event here which we misnamed and
                         // on which we misordered the parameters on during development but which might
                         // already be used somewhere - log a deprecation warning to console though
-                        callViewModels(allViewModels, "onWizardTabChange", function(method, viewModel) {
-                            log.warn("View model", viewModel, "is using deprecated callback \"onWizardTabChange\", please change to \"onBeforeWizardTabChange\"");
+                        callViewModels(allViewModels, "onWizardTabChange", function (
+                            method,
+                            viewModel
+                        ) {
+                            log.warn(
+                                "View model",
+                                viewModel,
+                                'is using deprecated callback "onWizardTabChange", please change to "onBeforeWizardTabChange"'
+                            );
 
                             // we want to continue evaluating even if result becomes false
-                            result = (method(current, next) !== false) && result;
+                            result = method(current, next) !== false && result;
                         });
                         return result;
                     }
                 },
-                onFinish: function(tab, navigation, index) {
+                onFinish: function (tab, navigation, index) {
                     var closeDialog = true;
-                    callViewModels(allViewModels, "onBeforeWizardFinish", function(method) {
+                    callViewModels(allViewModels, "onBeforeWizardFinish", function (
+                        method
+                    ) {
                         // we don't need to call all methods here, one method saying that
                         // the dialog must not be closed yet is enough to stop
                         //
                         // we evaluate closeDialog first to make sure we don't call
                         // the method once it becomes false
-                        closeDialog = closeDialog && (method() !== false);
+                        closeDialog = closeDialog && method() !== false;
                     });
 
                     if (closeDialog) {
                         var reload = false;
-                        callViewModels(allViewModels, "onWizardFinish", function(method) {
+                        callViewModels(allViewModels, "onWizardFinish", function (
+                            method
+                        ) {
                             // if any of our methods returns that it wants to reload
                             // we'll need to set reload to true
                             //
@@ -145,56 +186,62 @@ $(function() {
                             // first, or it won't happen after the reload flag has been
                             // set once due to the || making further evaluation unnecessary
                             // then
-                            reload = (method() == "reload") || reload;
+                            reload = method() == "reload" || reload;
                         });
-                        self.finishWizard()
-                            .done(function() {
-                                self.closeDialog();
-                                if (reload) {
-                                    self.reloadOverlay.show();
-                                }
-                                callViewModels(allViewModels, "onAfterWizardFinish");
-                            });
+                        self.finishWizard().done(function () {
+                            self.closeDialog();
+                            if (reload) {
+                                self.reloadOverlay.show();
+                            }
+                            callViewModels(allViewModels, "onAfterWizardFinish");
+                        });
                     }
                 }
             });
             self.showDialog();
         };
 
-        self.getWizardDetails = function() {
-            return OctoPrint.wizard.get()
-                .done(function(response) {
-                    self.wizards = _.filter(_.keys(response), function(key) { return response[key] && response[key]["required"] && !response[key]["ignored"]; });
+        self.getWizardDetails = function () {
+            return OctoPrint.wizard.get().done(function (response) {
+                self.wizards = _.filter(_.keys(response), function (key) {
+                    return (
+                        response[key] &&
+                        response[key]["required"] &&
+                        !response[key]["ignored"]
+                    );
                 });
+            });
         };
 
-        self.finishWizard = function() {
+        self.finishWizard = function () {
             var deferred = $.Deferred();
             self.finishing = true;
 
-            self.settingsViewModel.saveData()
-                .done(function() {
-                    OctoPrint.wizard.finish(self.wizards)
-                        .done(function() {
+            self.settingsViewModel
+                .saveData()
+                .done(function () {
+                    OctoPrint.wizard
+                        .finish(self.wizards)
+                        .done(function () {
                             deferred.resolve(arguments);
                         })
-                        .fail(function() {
+                        .fail(function () {
                             deferred.reject(arguments);
                         })
-                        .always(function() {
+                        .always(function () {
                             self.finishing = false;
                         });
                 })
-                .fail(function() {
+                .fail(function () {
                     deferred.reject(arguments);
                 });
 
             return deferred;
         };
 
-        self.onSettingsPreventRefresh = function() {
+        self.onSettingsPreventRefresh = function () {
             return self.isDialogActive();
-        }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

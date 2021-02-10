@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-class FileDestinations(object):
+class FileDestinations:
 
-	SDCARD = "sdcard"
-	LOCAL = "local"
+    SDCARD = "sdcard"
+    LOCAL = "local"

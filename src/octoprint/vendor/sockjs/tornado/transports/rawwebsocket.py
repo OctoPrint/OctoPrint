@@ -42,7 +42,7 @@ class RawWebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransport
 
         # Disable nagle if needed
         if self.server.settings['disable_nagle']:
-            self.stream.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+            self.set_nodelay(True)
 
         # Create and attach to session
         self.session = RawSession(self.server.get_connection_class(), self.server)
@@ -82,7 +82,7 @@ class RawWebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransport
             # Running in Main Thread
             # Send message
             try:
-                self.write_message(message, binary)
+                self.write_message(message, binary).add_done_callback(self.send_complete)
             except (IOError, WebSocketError):
                 self.server.io_loop.add_callback(self.on_close)
         else:
