@@ -2066,7 +2066,7 @@ class VirtualPrinter:
         return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 
-class Outgoing(object):
+class Outgoing:
     def __init__(self):
         self._outgoing = bytearray()
         self._mutex = threading.RLock()

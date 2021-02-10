@@ -14,7 +14,7 @@ def get_param_dict(data, options):
     return result
 
 
-class ParamType(object):
+class ParamType:
     type = "generic"
 
     def __init__(
@@ -252,7 +252,7 @@ class ParamGroup(ParamType):
         return dict((k, v.convert()) for k, v in value.items())
 
 
-class Value(object):
+class Value:
     def __init__(self, value, title=None, warning=False, labels=None, help=None):
         if labels is None:
             labels = []

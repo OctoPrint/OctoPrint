@@ -207,7 +207,7 @@ class SendToken(CountedEvent):
                 self._internal_set(self._counter - 1)
 
 
-class LineHistory(object):
+class LineHistory:
     def __init__(self, max=None):
         self.max = max
 
@@ -260,7 +260,7 @@ class LineHistory(object):
                     pass
 
 
-class PositionRecord(object):
+class PositionRecord:
     _standard_attrs = {"x", "y", "z", "e", "f", "t"}
 
     @classmethod
@@ -300,7 +300,7 @@ class PositionRecord(object):
         return dict((attr, getattr(self, attr)) for attr in attrs)
 
 
-class TemperatureRecord(object):
+class TemperatureRecord:
     def __init__(self):
         self._tools = {}
         self._bed = (None, None)

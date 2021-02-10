@@ -11,7 +11,7 @@ from octoprint.settings import settings
 from octoprint.util import is_hidden_path
 
 
-class ConnectionProfile(object):
+class ConnectionProfile:
     def __init__(
         self,
         id,
@@ -48,7 +48,7 @@ class ConnectionProfile(object):
         }
 
 
-class ConnectionProfileManager(object):
+class ConnectionProfileManager:
     @classmethod
     def to_profile(cls, data):
         return ConnectionProfile.from_dict(data)

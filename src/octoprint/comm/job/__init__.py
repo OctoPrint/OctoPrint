@@ -7,8 +7,6 @@ import os
 import time
 from abc import ABCMeta
 
-from future.utils import with_metaclass
-
 from octoprint.comm.protocol import (
     FileAwareProtocolListener,
     FileManagementProtocolMixin,
@@ -18,7 +16,7 @@ from octoprint.comm.protocol import (
 from octoprint.util.listener import ListenerAware
 
 
-class LastResult(object):
+class LastResult:
     def __init__(self):
         self.elapsed = None
         self.clean_elapsed = None
@@ -29,7 +27,7 @@ class LastResult(object):
         self.available = False
 
 
-class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
+class Printjob(ProtocolListener, ListenerAware, metaclass=ABCMeta):
 
     parallel = False
     """Job runs parallel to regular communication."""
@@ -386,7 +384,7 @@ class LocalGcodeFilePrintjob(LocalFilePrintjob):
         return processed
 
 
-class CopyJobMixin(object):
+class CopyJobMixin:
     pass
 
 
@@ -579,7 +577,7 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
         return payload
 
 
-class PrintjobListener(object):
+class PrintjobListener:
     def on_job_started(self, job, suppress_script=False, *args, **kwargs):
         pass
 

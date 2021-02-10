@@ -11,7 +11,7 @@ from .reprapfirmware import *  # noqa: F401,F403
 from .smoothieware import *  # noqa: F401,F403
 
 
-class FlavorOverride(object):
+class FlavorOverride:
     def __init__(self, flavor, overrides):
         self._flavor = flavor
         self._overrides = overrides

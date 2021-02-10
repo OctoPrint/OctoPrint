@@ -101,7 +101,7 @@ CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
 CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
 
 
-class FallbackValue(object):
+class FallbackValue:
     def __init__(self, value, fallback=None, test=None):
         self.value = value
         self.fallback = fallback
@@ -117,7 +117,7 @@ class FallbackValue(object):
         return self.fallback
 
 
-class BooleanCallbackValue(object):
+class BooleanCallbackValue:
     def __init__(self, callback):
         assert callable(callback)
         self.callback = callback

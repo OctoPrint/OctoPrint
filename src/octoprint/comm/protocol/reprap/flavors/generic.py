@@ -5,8 +5,6 @@ import logging
 import re
 import time
 
-from future.utils import with_metaclass
-
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 from octoprint.comm.protocol.reprap.util import (
     regex_float_pattern,
@@ -39,7 +37,7 @@ class FlavorMeta(type):
         return cls
 
 
-class GenericFlavor(with_metaclass(FlavorMeta, object)):
+class GenericFlavor(metaclass=FlavorMeta):
 
     key = "generic"
     name = "Generic Flavor"

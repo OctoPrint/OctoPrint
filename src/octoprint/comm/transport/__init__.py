@@ -170,7 +170,7 @@ class Transport(ListenerAware):
         return self.__class__.__name__
 
 
-class TransportState(object):
+class TransportState:
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     DISCONNECTED_WITH_ERROR = "disconnected_with_error"
@@ -345,7 +345,7 @@ class PushingTransportWrapper(TransportWrapper):
         return "PushingTransportWrapper({})".format(self.transport)
 
 
-class TransportListener(object):
+class TransportListener:
     def on_transport_connected(self, transport):
         pass
 
@@ -362,7 +362,7 @@ class TransportListener(object):
         pass
 
 
-class PushingTransportWrapperListener(object):
+class PushingTransportWrapperListener:
     def on_transport_data_pushed(self, transport, data):
         pass
 

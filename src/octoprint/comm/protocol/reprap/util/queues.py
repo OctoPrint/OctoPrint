@@ -1,16 +1,12 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.util import PrependableQueue, TypeAlreadyInQueue, TypedQueue
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
 import contextlib
 import logging
+import queue
 import threading
+
+from octoprint.util import PrependableQueue, TypeAlreadyInQueue, TypedQueue
 
 
 class ScriptQueue(PrependableQueue):
@@ -176,7 +172,7 @@ class SendQueue(PrependableQueue):
             return self._resend_queue.qsize() + self._send_queue.qsize()
 
 
-class QueueMarker(object):
+class QueueMarker:
     def __init__(self, callback):
         self.callback = callback
 

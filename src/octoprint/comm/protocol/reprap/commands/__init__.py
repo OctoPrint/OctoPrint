@@ -4,8 +4,6 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import copy
 import re
 
-from future.utils import with_metaclass
-
 from octoprint.util import pp
 
 _compiled_regex_type = type(re.compile(r"a"))
@@ -44,7 +42,7 @@ class CommandMetaClass(type):
         return c
 
 
-class Command(with_metaclass(CommandMetaClass, object)):
+class Command(metaclass=CommandMetaClass):
 
     pattern = None
 

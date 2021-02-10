@@ -2556,7 +2556,7 @@ class Settings:
             f.write(script)
 
 
-class SubSettings(object):
+class SubSettings:
     def __init__(
         self,
         settings,

@@ -373,7 +373,7 @@ class Protocol(ListenerAware, TransportListener):
         return self.__class__.__name__
 
 
-class ProtocolState(object):
+class ProtocolState:
     CONNECTING = "connecting"
     CONNECTED = "connected"
     DISCONNECTING = "disconnecting"
@@ -411,7 +411,7 @@ class ProtocolNotConnectedError(Exception):
     pass
 
 
-class ThreeAxisProtocolMixin(object):
+class ThreeAxisProtocolMixin:
     def move(
         self, x=None, y=None, z=None, feedrate=None, relative=False, *args, **kwargs
     ):
@@ -424,7 +424,7 @@ class ThreeAxisProtocolMixin(object):
         pass
 
 
-class HeaterProtocolMixin(object):
+class HeaterProtocolMixin:
     def set_temperature(self, heater, temperature, wait=False, *args, **kwargs):
         pass
 
@@ -435,7 +435,7 @@ class HeaterProtocolMixin(object):
         return {}
 
 
-class MultiToolProtocolMixin(object):
+class MultiToolProtocolMixin:
     def change_tool(self, tool, *args, **kwargs):
         pass
 
@@ -460,7 +460,7 @@ class Fdm3dPrinterProtocolMixin(
         pass
 
 
-class FanControlProtocolMixin(object):
+class FanControlProtocolMixin:
     def set_fan_speed(self, speed, *args, **kwargs):
         pass
 
@@ -468,7 +468,7 @@ class FanControlProtocolMixin(object):
         pass
 
 
-class MotorControlProtocolMixin(object):
+class MotorControlProtocolMixin:
     def enable_motors(self, *args, **kwargs):
         self.set_motor_state(True)
 
@@ -482,7 +482,7 @@ class MotorControlProtocolMixin(object):
         pass
 
 
-class PowerControlProtocolMixin(object):
+class PowerControlProtocolMixin:
     def enable_power(self, *args, **kwargs):
         self.set_power_state(True)
 
@@ -496,7 +496,7 @@ class PowerControlProtocolMixin(object):
         return None
 
 
-class FileAwareProtocolMixin(object):
+class FileAwareProtocolMixin:
     def init_file_storage(self, *args, **kwargs):
         pass
 
@@ -538,7 +538,7 @@ class FileStreamingProtocolMixin(FileManagementProtocolMixin):
         pass
 
 
-class ProtocolListener(object):
+class ProtocolListener:
     def on_protocol_state(self, protocol, old_state, new_state, *args, **kwargs):
         pass
 
@@ -591,7 +591,7 @@ class ProtocolListener(object):
         pass
 
 
-class FileAwareProtocolListener(object):
+class FileAwareProtocolListener:
     def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
         pass
 
@@ -616,7 +616,7 @@ class FileAwareProtocolListener(object):
         pass
 
 
-class PositionAwareProtocolListener(object):
+class PositionAwareProtocolListener:
     def on_protocol_position_all_update(self, protocol, position, *args, **kwargs):
         pass
 
@@ -624,7 +624,7 @@ class PositionAwareProtocolListener(object):
         pass
 
 
-class FirmwareDataAwareProtocolListener(object):
+class FirmwareDataAwareProtocolListener:
     def on_protocol_firmware_info(self, protocol, info, *args, **kwargs):
         pass
 
