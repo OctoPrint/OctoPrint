@@ -3,11 +3,11 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import copy
 import logging
+import time
 
 from octoprint.comm.util.parameters import get_param_dict
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
-from octoprint.util import monotonic_time
 from octoprint.util.listener import ListenerAware
 
 _registry = {}
@@ -244,7 +244,7 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
         self._buffered = bytearray()
 
     def read(self, size=None, timeout=None):
-        start = monotonic_time()
+        start = time.monotonic()
         termlen = len(self.terminator)
         data = self._buffered
 
@@ -266,7 +266,7 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
                 return received
 
             # check if timeout expired
-            if timeout and monotonic_time() > start + timeout:
+            if timeout and time.monotonic() > start + timeout:
                 break
 
             # if we arrive here we so far couldn't read a full line, wait for more data

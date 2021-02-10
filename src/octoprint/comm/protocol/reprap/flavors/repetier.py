@@ -3,7 +3,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import re
 
-from octoprint.comm.protocol.reprap.flavors import GenericFlavor
+from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
 from octoprint.comm.protocol.reprap.util import regex_positive_float_pattern
 
 

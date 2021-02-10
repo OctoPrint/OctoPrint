@@ -17,13 +17,7 @@ from typing import Any
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import (
-    RepeatedTimer,
-    get_dos_filename,
-    monotonic_time,
-    to_bytes,
-    to_unicode,
-)
+from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
 
 
 # noinspection PyBroadException
@@ -141,7 +135,7 @@ class VirtualPrinter:
 
         self._virtual_eeprom = (
             VirtualEEPROM(self._plugin_data_folder)
-            if self._settings.get_boolean(["enable_eeprom"])
+            if self._settings.get_boolean(["enable_eeprom"]) and self._plugin_data_folder
             else None
         )
         self._support_M503 = self._settings.get_boolean(["support_M503"])
@@ -2086,7 +2080,7 @@ class Outgoing(object):
 
     def read(self, size=1, timeout=0):
         # type: (int, int) -> bytes
-        start = monotonic_time()
+        start = time.monotonic()
 
         result = bytearray()
         while len(result) < size:
@@ -2097,8 +2091,8 @@ class Outgoing(object):
                     if not len(self._outgoing):
                         self._event.clear()
                 return bytes(result)
-            self._event.wait(start + timeout - monotonic_time())
-            if start + timeout < monotonic_time():
+            self._event.wait(start + timeout - time.monotonic())
+            if start + timeout < time.monotonic():
                 break
 
         return b""

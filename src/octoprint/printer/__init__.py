@@ -20,7 +20,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-# noinspection PyUnresolvedReferences
+from octoprint.comm.scripts import UnknownScript  # noqa: F401,F403
 from octoprint.filemanager import FileDestinations
 from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key

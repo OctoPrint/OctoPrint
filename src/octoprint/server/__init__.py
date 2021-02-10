@@ -408,12 +408,6 @@ class Server:
         )
 
         storage_managers = self._collect_initial_storage_managers()
-        storage_managers[
-            octoprint.filemanager.FileDestinations.LOCAL
-        ] = octoprint.filemanager.storage.LocalFileStorage(
-            self._settings.getBaseFolder("uploads")
-        )
-
         fileManager = octoprint.filemanager.FileManager(
             analysisQueue,
             slicingManager,
@@ -560,16 +554,6 @@ class Server:
                 userManager = octoprint.access.users.FilebasedUserManager(groupManager)
         components.update({"user_manager": userManager})
 
-        # register available transports
-        from octoprint.comm.transport import register_transports
-
-        register_transports()
-
-        # register available protocols
-        from octoprint.comm.protocol import register_protocols
-
-        register_protocols()
-
         # create printer instance
         printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
         for name, factory in printer_factories.items():
@@ -615,6 +599,16 @@ class Server:
         init_settings_plugin_config_migration_and_cleanup(pluginManager)
 
         pluginManager.log_all_plugins()
+
+        # register available transports
+        from octoprint.comm.transport import register_transports
+
+        register_transports()
+
+        # register available protocols
+        from octoprint.comm.protocol import register_protocols
+
+        register_protocols()
 
         # log environment data now
         self._environment_detector.log_detected_environment()
@@ -1328,13 +1322,12 @@ class Server:
         from octoprint.filemanager.storage.local import LocalFileStorage
         from octoprint.filemanager.storage.sdcard import PrinterSDStorage
 
-        storage_managers = {}
-        storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = LocalFileStorage(
-            self._settings.getBaseFolder("uploads")
-        )
-        storage_managers[
-            octoprint.filemanager.FileDestinations.SDCARD
-        ] = PrinterSDStorage()
+        storage_managers = {
+            octoprint.filemanager.FileDestinations.LOCAL: LocalFileStorage(
+                self._settings.getBaseFolder("uploads")
+            ),
+            octoprint.filemanager.FileDestinations.SDCARD: PrinterSDStorage(),
+        }
         return storage_managers
 
     def _setup_heartbeat_logging(self):

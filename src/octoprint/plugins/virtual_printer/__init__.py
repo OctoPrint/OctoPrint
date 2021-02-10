@@ -10,6 +10,17 @@ class VirtualSerialTransport(SerialTransport):
     name = "Virtual Connection"
     key = "virtual"
 
+    settings = {}
+    datafolder = None
+
+    @classmethod
+    def with_settings_and_data(cls, settings, datafolder):
+        return type(
+            "{}WithSettingsAndData".format(cls.__name__),
+            (cls,),
+            {"settings": settings, "datafolder": datafolder},
+        )
+
     @classmethod
     def get_connection_options(cls):
         return []
@@ -17,7 +28,7 @@ class VirtualSerialTransport(SerialTransport):
     def create_connection(self, *args, **kwargs):
         from . import virtual
 
-        self._serial = virtual.VirtualPrinter()
+        self._serial = virtual.VirtualPrinter(self.settings, self.datafolder)
 
 
 class VirtualPrinterPlugin(
@@ -102,7 +113,11 @@ class VirtualPrinterPlugin(
                 self._settings.global_remove(["devel", "virtualPrinter"])
 
     def register_transport_hook(self, *args, **kwargs):
-        return [VirtualSerialTransport]
+        return [
+            VirtualSerialTransport.with_settings_and_data(
+                self._settings, self.get_plugin_data_folder()
+            )
+        ]
 
 
 __plugin_name__ = "Virtual Printer"

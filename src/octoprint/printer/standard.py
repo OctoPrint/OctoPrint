@@ -406,8 +406,8 @@ class Printer(
 
         from octoprint.logging.handlers import CommunicationLogHandler
 
-        CommunicationLogHandler.on_open_connection(u"CONNECTION")
-        CommunicationLogHandler.on_open_connection(u"COMMDEBUG")
+        CommunicationLogHandler.arm_rollover(u"CONNECTION")
+        CommunicationLogHandler.arm_rollover(u"COMMDEBUG")
 
         if not logging.getLogger("CONNECTION").isEnabledFor(logging.DEBUG):
             # is protocol.log is not enabled, log a line to explain to reduce "connection.log is empty" in tickets...
@@ -995,10 +995,10 @@ class Printer(
             return "CLOSED_WITH_ERROR"
 
     def get_error(self):
-        if self._comm is None:
+        if self._protocol is None:
             return ""
         else:
-            return self._comm.getErrorString()
+            return self._protocol.error
 
     def get_current_data(self, *args, **kwargs):
         return util.thaw_frozendict(self._state_monitor.get_current_data())
@@ -1423,13 +1423,15 @@ class Printer(
         )
 
     def _update_resend_data_callback(self):
-        if not self._comm:
-            return self._dict(count=0, transmitted=0, ratio=0)
-        return self._dict(
-            count=self._comm.received_resends,
-            transmitted=self._comm.transmitted_lines,
-            ratio=int(self._comm.resend_ratio * 100),
-        )
+        # if not self._comm:
+        #    return self._dict(count=0, transmitted=0, ratio=0)
+        # return self._dict(
+        #    count=self._comm.received_resends,
+        #    transmitted=self._comm.transmitted_lines,
+        #    ratio=int(self._comm.resend_ratio * 100),
+        # )
+        # TODO implement me
+        return self._dict(count=0, transmitted=0, ratio=0)
 
     def _add_temperature_data(self, temperatures=None):
         if temperatures is None:

@@ -41,7 +41,7 @@ def run_server(
         from octoprint.logging.handlers import PluginTimingsLogHandler
 
         logger = logging.getLogger("octoprint.startup")
-        PluginTimingsLogHandler.arm_rollover()
+        PluginTimingsLogHandler.arm_rollover(logger)
 
         logger.info(get_divider_line("*"))
         logger.info("Starting OctoPrint {}".format(__display_version__))

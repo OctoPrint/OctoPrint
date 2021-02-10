@@ -68,7 +68,7 @@ from octoprint.comm.util.parameters import (
 from octoprint.events import Events
 from octoprint.util import ResettableTimer, TypeAlreadyInQueue
 from octoprint.util import dummy_gettext as gettext
-from octoprint.util import monotonic_time, protectedkeydict, to_bytes, to_unicode
+from octoprint.util import protectedkeydict, to_bytes, to_unicode
 
 GCODE_TO_EVENT = {
     # pause for user input
@@ -1355,10 +1355,10 @@ class ReprapGcodeProtocol(
 
     def join(self, timeout=None):
         if timeout is not None:
-            stop = monotonic_time() + timeout
+            stop = time.monotonic() + timeout
             while (
                 self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks
-            ) and monotonic_time() < stop:
+            ) and time.monotonic() < stop:
                 time.sleep(0.1)
             else:
                 self._command_queue.join()
@@ -1457,11 +1457,11 @@ class ReprapGcodeProtocol(
         if not error:
             try:
                 self.send_script("beforePrinterDisconnected")
-                stop = monotonic_time() + 10.0  # TODO make somehow configurable
+                stop = time.monotonic() + 10.0  # TODO make somehow configurable
                 while (
                     self._command_queue.unfinished_tasks
                     or self._send_queue.unfinished_tasks
-                ) and monotonic_time() < stop:
+                ) and time.monotonic() < stop:
                     time.sleep(0.1)
             except UnknownScript:
                 pass
@@ -1680,7 +1680,7 @@ class ReprapGcodeProtocol(
         if len(line):
             if (
                 self._internal_flags["dwelling_until"]
-                and monotonic_time() > self._internal_flags["dwelling_until"]
+                and time.monotonic() > self._internal_flags["dwelling_until"]
             ):
                 self._internal_flags["dwelling_until"] = False
 
@@ -1937,7 +1937,7 @@ class ReprapGcodeProtocol(
             #
             # this it to prevent the log from getting flooded for extremely bad communication issues
             if self._log_resends:
-                now = monotonic_time()
+                now = time.monotonic()
                 new_rate_window = (
                     self._log_resends_rate_start is None
                     or self._log_resends_rate_start + self._log_resends_rate_frame < now
@@ -2139,7 +2139,7 @@ class ReprapGcodeProtocol(
         if heatup_detected:
             self._logger.debug("Externally triggered heatup detected")
             self._internal_flags["heating"] = True
-            self._internal_flags["heatup_start"] = monotonic_time()
+            self._internal_flags["heatup_start"] = time.monotonic()
 
         shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
         current_tool_key = "T{}".format(self._internal_flags["current_tool"])
@@ -2348,7 +2348,7 @@ class ReprapGcodeProtocol(
             if self._internal_flags["heating_start"]:
                 self._internal_flags["heating_lost"] = self._internal_flags[
                     "heating_lost"
-                ] + (monotonic_time() - self._internal_flags["heating_start"])
+                ] + (time.monotonic() - self._internal_flags["heating_start"])
                 self._internal_flags["heating_start"] = None
             self._internal_flags["heating"] = False
 
@@ -2693,7 +2693,7 @@ class ReprapGcodeProtocol(
                         break
 
                     # sleep if we are dwelling
-                    now = monotonic_time()
+                    now = time.monotonic()
                     if (
                         self.flavor.block_while_dwelling
                         and self._internal_flags["dwelling_until"]
@@ -3186,25 +3186,25 @@ class ReprapGcodeProtocol(
             )
 
     def _gcode_M109_sent(self, command):
-        self._internal_flags["heatup_start"] = monotonic_time()
+        self._internal_flags["heatup_start"] = time.monotonic()
         self._internal_flags["long_running_command"] = True
         self._internal_flags["heating"] = True
         self._gcode_M104_sent(command, wait=True, support_r=True)
 
     def _gcode_M190_sent(self, command):
-        self._internal_flags["heatup_start"] = monotonic_time()
+        self._internal_flags["heatup_start"] = time.monotonic()
         self._internal_flags["long_running_command"] = True
         self._internal_flags["heating"] = True
         self._gcode_M140_sent(command, wait=True, support_r=True)
 
     def _gcode_M191_sent(self, command):
-        self._internal_flags["heatup_start"] = monotonic_time()
+        self._internal_flags["heatup_start"] = time.monotonic()
         self._internal_flags["long_running_command"] = True
         self._internal_flags["heating"] = True
         self._gcode_M141_sent(command, wait=True, support_r=True)
 
     def _gcode_M116_sent(self, command):
-        self._internal_flags["heatup_start"] = monotonic_time()
+        self._internal_flags["heatup_start"] = time.monotonic()
         self._internal_flags["long_running_command"] = True
         self._internal_flags["heating"] = True
 
@@ -3301,7 +3301,7 @@ class ReprapGcodeProtocol(
             )
             + timeout
         )
-        self._internal_flags["dwelling_until"] = monotonic_time() + timeout
+        self._internal_flags["dwelling_until"] = time.monotonic() + timeout
 
     ##~~ atcommand handlers
 
@@ -3400,14 +3400,14 @@ class ReprapGcodeProtocol(
 
     def _get_timeout(self, timeout_type):
         if timeout_type in self.timeouts:
-            return monotonic_time() + self.timeouts[timeout_type]
+            return time.monotonic() + self.timeouts[timeout_type]
         else:
-            return monotonic_time()
+            return time.monotonic()
 
     def _get_max_timeout(self, *offsets):
         if len(offsets) == 0:
             offsets = (0.0,)
-        return monotonic_time() + max(offsets)
+        return time.monotonic() + max(offsets)
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(

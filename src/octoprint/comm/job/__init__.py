@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
+import time
 from abc import ABCMeta
 
 from future.utils import with_metaclass
@@ -14,7 +15,6 @@ from octoprint.comm.protocol import (
     ProtocolListener,
     ProtocolState,
 )
-from octoprint.util import monotonic_time
 from octoprint.util.listener import ListenerAware
 
 
@@ -71,7 +71,7 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 
     @property
     def elapsed(self):
-        return monotonic_time() - self._start if self._start is not None else None
+        return time.monotonic() - self._start if self._start is not None else None
 
     @property
     def clean_elapsed(self):
@@ -105,7 +105,7 @@ class Printjob(with_metaclass(ABCMeta, ProtocolListener, ListenerAware)):
 
     def process(self, protocol, position=0, user=None, tags=None, **kwargs):
         self._last_result = LastResult()
-        self._start = monotonic_time()
+        self._start = time.monotonic()
         self._user = user
         self._protocol = protocol
         self._protocol.register_listener(self)

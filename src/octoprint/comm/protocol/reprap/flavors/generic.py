@@ -3,6 +3,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import logging
 import re
+import time
 
 from future.utils import with_metaclass
 
@@ -12,7 +13,7 @@ from octoprint.comm.protocol.reprap.util import (
     regex_int_pattern,
     regex_positive_float_pattern,
 )
-from octoprint.util import chunks, monotonic_time
+from octoprint.util import chunks
 
 _flavor_registry = {}
 
@@ -132,7 +133,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
     @classmethod
     def with_overrides(cls, overrides):
-        return type(b"{}WithOverrides".format(cls.__name__), (cls,), overrides)
+        return type("{}WithOverrides".format(cls.__name__), (cls,), overrides)
 
     @classmethod
     def overridable(cls):
@@ -163,7 +164,7 @@ class GenericFlavor(with_metaclass(FlavorMeta, object)):
 
     @classmethod
     def comm_timeout(cls, line, lower_line, state, flags):
-        now = monotonic_time()
+        now = time.monotonic()
         matches = (
             (line == "" and now > flags["timeout"])
             or (
