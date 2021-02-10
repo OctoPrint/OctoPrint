@@ -386,7 +386,11 @@ $(function () {
 
                 text += "<ul class='fa-ul'>";
                 _.each(self.versions.items(), function (update_info) {
-                    if (update_info.updateAvailable && !update_info.disabled) {
+                    if (
+                        update_info.updateAvailable &&
+                        !update_info.disabled &&
+                        update_info.compatible
+                    ) {
                         text +=
                             "<li>" +
                             "<i class='fa fa-li " +
