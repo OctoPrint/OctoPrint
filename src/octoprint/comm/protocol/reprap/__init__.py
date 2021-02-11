@@ -8,18 +8,16 @@ import queue
 import threading
 import time
 
-from octoprint.comm.job import (
-    CopyJobMixin,
-    LocalGcodeFilePrintjob,
-    LocalGcodeStreamjob,
-    SDFilePrintjob,
-)
+from octoprint.comm.job import CopyJobMixin
+from octoprint.comm.job.gcode import LocalGcodeFilePrintjob, LocalGcodeStreamjob
+from octoprint.comm.job.sdcard import SDFilePrintjob
 from octoprint.comm.protocol import (
     FanControlProtocolMixin,
     Fdm3dPrinterProtocolMixin,
     FileStreamingProtocolMixin,
     MotorControlProtocolMixin,
     Protocol,
+    ProtocolErrorStatsListener,
     ProtocolState,
 )
 from octoprint.comm.protocol.reprap.commands import Command, to_command
@@ -137,6 +135,7 @@ class ReprapGcodeProtocol(
     FileStreamingProtocolMixin,
     PushingTransportWrapperListener,
     TransportListener,
+    ProtocolErrorStatsListener,
 ):
     name = "Reprap GCODE Protocol"
     key = "reprap"
@@ -178,7 +177,10 @@ class ReprapGcodeProtocol(
                             ],
                             expert=True,
                             help=gettext(
-                                'Some Marlin forks lack an acknowledging `ok` with their resend requests. Set this to "Always" or "If detected as necessary" if you run into communication stalls on resend requests.'
+                                "Some firmwares lack an acknowledging `ok` with their "
+                                'resend requests. Set this to "Always" or "If detected '
+                                'as necessary" if you run into communication stalls on '
+                                "resend requests."
                             ),
                         ),
                         BooleanType(
@@ -198,7 +200,8 @@ class ReprapGcodeProtocol(
                         BooleanType(
                             "block_while_dwelling",
                             gettext(
-                                "Block all communication while a dwell command (`G4`) is active"
+                                "Block all communication while a dwell command (`G4`) "
+                                "is active"
                             ),
                         ),
                         BooleanType(
@@ -212,47 +215,80 @@ class ReprapGcodeProtocol(
                         BooleanType(
                             "heatup_abortable",
                             gettext(
-                                "Allow cancelling blocking heatups if the firmware supports it"
+                                "Allow cancelling blocking heatups if the firmware "
+                                "supports it"
                             ),
                         ),
                         SmallListType(
                             "blocked_commands",
                             gettext("Blocked commands"),
                             help=gettext(
-                                "Use this to specify commands that should never be sent to the printer. Just the G or M code, comma separated. Defaults to `M0` and `M1` since most firmware will block until a button on the controller has been pressed if it receives either of those two commands."
+                                "Use this to specify commands that should never be sent "
+                                "to the printer. Just the G or M code, comma separated."
                             ),
                         ),
                         SmallListType(
                             "checksum_requiring_commands",
                             gettext("Checksum requiring commands"),
-                            help=gettext(""),
+                            help=gettext(
+                                "Use this to specify which commands **always** need to "
+                                "be sent with a checksum. Just the G or M code, comma "
+                                "separated."
+                            ),
                         ),
                         SmallListType(
                             "long_running_commands",
                             gettext("Long running commands"),
-                            help=gettext(""),
+                            help=gettext(
+                                "Use this to specify the commands known to take a long "
+                                "time to complete without output from your printer and "
+                                "hence might cause timeout issues. Just the G or M code, "
+                                "comma separated."
+                            ),
                         ),
                         SmallListType(
                             "asynchronous_commands",
                             gettext("Asynchronous commands"),
-                            help=gettext(""),
+                            help=gettext(
+                                "Use this to specify commands that should never be sent "
+                                "to the printer. Just the G or M code, comma separated. "
+                                "Defaults to M0 and M1 since most firmware will block "
+                                "until a button on the controller has been pressed if "
+                                "it receives either of those two commands."
+                            ),
                             expert=True,
                         ),
                         SmallListType(
                             "pausing_commands",
                             gettext("Pausing commands"),
-                            help=gettext(""),
+                            help=gettext(
+                                "Use this to specify commands on which OctoPrint should "
+                                "pause the print job. Just the G or M code, comma "
+                                "separated."
+                            ),
                             expert=True,
                         ),
                         SmallListType(
                             "emergency_commands",
                             gettext("Emergency commands"),
-                            help=gettext(""),
+                            help=gettext(
+                                "Use this to specify emergency commands which should "
+                                "jump any queues and - if supported by the firmware - "
+                                "be force sent. Just the G or M code, comma separated."
+                            ),
                             expert=True,
+                        ),
+                        IntegerType(
+                            "ok_buffer_size",
+                            gettext("`ok` buffer size"),
+                            min=1,
+                            help=gettext("Only modifiy if told to do so"),
                         ),
                     ],
                     help=gettext(
-                        "You can override the firmware flavor default settings here. You usually should *not* need to do that. Only change anything if the defaults don't work for your printer."
+                        "You can override the firmware flavor default settings here. You "
+                        "usually should *not* need to do that. Only change anything if "
+                        "the defaults don't work for your printer."
                     ),
                     advanced=True,
                 ),
@@ -273,10 +309,14 @@ class ReprapGcodeProtocol(
                             Value(
                                 "cancel",
                                 title=gettext(
-                                    "Cancel any ongoing prints but stay connected to the printer"
+                                    "Cancel any ongoing prints but stay connected to the "
+                                    "printer"
                                 ),
                                 help=gettext(
-                                    "Please note that if you choose this, OctoPrint will still disconnect from the printer in  case of *fatal* errors reported by your firmware (e.g. `kill() called`, `fatal:`)"
+                                    "Please note that if you choose this, OctoPrint will "
+                                    "still disconnect from the printer in  case of "
+                                    "*fatal* errors reported by your firmware (e.g. "
+                                    "`kill() called`, `fatal:`)"
                                 ),
                             ),
                             Value(
@@ -284,20 +324,23 @@ class ReprapGcodeProtocol(
                                 title=gettext("Ignore"),
                                 warning=True,
                                 help=gettext(
-                                    "Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!"
+                                    "Only choose this if your firmware sends error "
+                                    "messages that are not actual errors. Might mask "
+                                    "printer issues (even fatal errors!), be careful!"
                                 ),
                             ),
                         ],
                         default="disconnect",
                     ),
-                    # TODO: implement send_m112 flag
                     BooleanType(
-                        "send_m112",
-                        gettext("Send `M112` on disconnect due to error"),
+                        "send_emergency_stop",
+                        gettext("Send emergency stop on disconnect due to error"),
                         default=True,
                         warning=False,
                         help=gettext(
-                            "If this is checked, OctoPrint will try to send an `M112` prior to a disconnect due to a (fatal) error in order to disable heaters and motors."
+                            "If this is checked, OctoPrint will try to send an emergency "
+                            "stop command prior to a disconnect due to a (fatal) error "
+                            "in order to disable heaters and motors."
                         ),
                     ),
                 ],
@@ -331,7 +374,74 @@ class ReprapGcodeProtocol(
                         help=gettext(
                             "If you disable this, the `cancel_position` placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly."
                         ),
-                    )
+                    ),
+                ],
+                advanced=True,
+            ),
+            ParamGroup(
+                "sanity_checking",
+                gettext("Sanity Checking"),
+                [
+                    BooleanType(
+                        "sanity_check_tools",
+                        gettext("Sanity check tool commands"),
+                        default=True,
+                        warning=True,
+                        help=gettext(
+                            "If enabled, OctoPrint will not send tool commands to your "
+                            "printer that exceed the number of extruders configured in "
+                            "the active printer profile, or for which the firmware has "
+                            'reported an "invalid extruder" error. Only uncheck this if '
+                            "OctoPrint or your firmware mistakingly mark valid tools as "
+                            "invalid and be sure to investigate the reason for that, it "
+                            "might be a misconfiguration you need to correct for proper "
+                            "operation."
+                        ),
+                    ),
+                    SmallChoiceType(
+                        "notify_suppressed_commands",
+                        gettext(
+                            "Display notifications for suppressed commands",
+                        ),
+                        [
+                            Value(
+                                "info",
+                                title=gettext(
+                                    'Show notifications of severity "info" and "warning"'
+                                ),
+                            ),
+                            Value(
+                                "warn",
+                                title=gettext('Show notifications of severity "warning"'),
+                            ),
+                            Value("never", title=gettext("Never show notifications")),
+                        ],
+                        default="warn",
+                    ),
+                ],
+                advanced=True,
+            ),
+            ParamGroup(
+                "resend_tracking",
+                gettext("Resend Tracking"),
+                [
+                    IntegerType(
+                        "resend_ratio_threshold",
+                        gettext("Critical resend ratio"),
+                        min=1,
+                        max=100,
+                        unit="%",
+                        default=10,
+                        warning=False,
+                    ),
+                    IntegerType(
+                        "resend_ratio_start",
+                        gettext("Tracking start"),
+                        min=0,
+                        unit="lines",
+                        default=100,
+                        warning=False,
+                    ),
                 ],
                 advanced=True,
             ),
@@ -421,7 +531,10 @@ class ReprapGcodeProtocol(
                         default=1.0,
                         unit="sec",
                         help=gettext(
-                            "Some controllers need a bit of a breather before baudrate detection after initial connect. If baudrate detection fails due to a hanging controller, try increasing this value."
+                            "Some controllers need a bit of a breather before baudrate "
+                            "detection after initial connect. If baudrate detection "
+                            "fails due to a hanging controller, try increasing this "
+                            "value."
                         ),
                     ),
                     FloatType(
@@ -431,7 +544,10 @@ class ReprapGcodeProtocol(
                         default=0.5,
                         unit="sec",
                         help=gettext(
-                            "Some firmwares do not send an `ok` after a resend request. This timeout configures how long OctoPrint will wait for one until it assumes this particular bug to be present and generate its own."
+                            "Some firmwares do not send an `ok` after a resend request. "
+                            "This timeout configures how long OctoPrint will wait for "
+                            "one until it assumes this particular bug to be present and "
+                            "generate its own."
                         ),
                     ),
                     IntegerType(
@@ -440,7 +556,8 @@ class ReprapGcodeProtocol(
                         expert=True,
                         default=2,
                         help=gettext(
-                            "Set to 0 to disable consecutive timeout detection and handling."
+                            "Set to 0 to disable consecutive timeout detection and "
+                            "handling."
                         ),
                     ),
                     IntegerType(
@@ -449,7 +566,8 @@ class ReprapGcodeProtocol(
                         expert=True,
                         default=5,
                         help=gettext(
-                            "Set to 0 to disable consecutive timeout detection and handling."
+                            "Set to 0 to disable consecutive timeout detection and "
+                            "handling."
                         ),
                     ),
                     IntegerType(
@@ -458,7 +576,8 @@ class ReprapGcodeProtocol(
                         expert=True,
                         default=5,
                         help=gettext(
-                            "Set to 0 to disable consecutive timeout detection and handling."
+                            "Set to 0 to disable consecutive timeout detection and "
+                            "handling."
                         ),
                     ),
                 ],
@@ -522,7 +641,7 @@ class ReprapGcodeProtocol(
         return dict((x, getattr(cls, x)) for x in dir(cls) if x.startswith(prefix))
 
     def __init__(self, flavor=None, *args, **kwargs):
-        super(ReprapGcodeProtocol, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.flavor = lookup_flavor(flavor)
         if self.flavor is None:
@@ -534,6 +653,12 @@ class ReprapGcodeProtocol(
         self.set_current_args(
             flavor=self.flavor.key, flavor_overrides=self.flavor_overrides
         )
+
+        self._stats.reset(
+            tx_arm=kwargs.get("resend_ratio_start", 100),
+            tx_threshold=(kwargs.get("resend_ratio_threshold", 10) / 100.0),
+        )
+        self._stats.register_listener(self)
 
         self._logger = logging.getLogger(__name__)
         self._commdebug_logger = logging.getLogger("COMMDEBUG")
@@ -576,6 +701,9 @@ class ReprapGcodeProtocol(
         self.firmware_errors = kwargs.get("error_handling", {}).get(
             "firmware_errors", "disconnect"
         )
+        self.send_emergency_stop = kwargs.get("error_handling", {}).get(
+            "send_emergency_stop", True
+        )
 
         flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
         flavor_message_attrs = self.get_flavor_attributes_starting_with(
@@ -596,22 +724,23 @@ class ReprapGcodeProtocol(
             "_command_phase_"
         )
 
-        self._capability_support = {}
-        self._capability_support[CAPABILITY_AUTOREPORT_TEMP] = kwargs.get(
-            "capabilities", {}
-        ).get("autoreport_temp", True)
-        self._capability_support[CAPABILITY_AUTOREPORT_SD_STATUS] = kwargs.get(
-            "capabilities", {}
-        ).get("autoreport_sd_status", True)
-        self._capability_support[CAPABILITY_EMERGENCY_PARSER] = kwargs.get(
-            "capabilities", {}
-        ).get("emergency_parser", True)
-        self._capability_support[CAPABILITY_BUSY_PROTOCOL] = kwargs.get(
-            "capabilities", {}
-        ).get("busy_protocol", True)
-        self._capability_support[CAPABILITY_CHAMBER_TEMP] = kwargs.get(
-            "capabilities", {}
-        ).get("chamber_temp", True)
+        self._capability_support = {
+            CAPABILITY_AUTOREPORT_TEMP: kwargs.get("capabilities", {}).get(
+                "autoreport_temp", True
+            ),
+            CAPABILITY_AUTOREPORT_SD_STATUS: kwargs.get("capabilities", {}).get(
+                "autoreport_sd_status", True
+            ),
+            CAPABILITY_EMERGENCY_PARSER: kwargs.get("capabilities", {}).get(
+                "emergency_parser", True
+            ),
+            CAPABILITY_BUSY_PROTOCOL: kwargs.get("capabilities", {}).get(
+                "busy_protocol", True
+            ),
+            CAPABILITY_CHAMBER_TEMP: kwargs.get("capabilities", {}).get(
+                "chamber_temp", True
+            ),
+        }
 
         self._transport = None
 
@@ -1174,6 +1303,22 @@ class ReprapGcodeProtocol(
         if self._sd_status_poller is not None:
             self._sd_status_poller.cancel()
             self._sd_status_poller = None
+
+    ##~~ ProtocolErrorStatsListener
+
+    def on_protocol_stats_tx_triggered(self, stats):
+        if stats != self._stats:
+            return
+
+        message = (
+            "Over {:.0f}% of transmitted lines have triggered resend requests "
+            "({:.2f}%). The communication with the printer is unreliable. "
+            "Please see https://faq.octoprint.org/communication-errors.".format(
+                stats.tx_error_threshold * 100, stats.tx_error_rate * 100
+            )
+        )
+        self.process_protocol_log(message)
+        self._logger.warning(message)
 
     ##~~
 
@@ -1866,6 +2011,7 @@ class ReprapGcodeProtocol(
             self._on_comm_ok(wait=True)
 
     def _on_comm_resend(self, linenumber):
+        self._stats.inc_tx_errors()
         try:
             if linenumber is None:
                 return False
@@ -3036,12 +3182,17 @@ class ReprapGcodeProtocol(
                 data (bytes): the data to send
         """
         self._transport.write(data + b"\n")
+        self._stats.inc_tx()
 
     def _add_to_last_lines(self, command, line_number=None):
         # type: (str, int) -> None
         self._last_lines.append(command, line_number=line_number)
 
     ##~~ gcode command handlers
+
+    def _gcode_T_queuing(self, command):
+        # TODO evaluate "sanity_check_tools", block and trigger notification if needed
+        pass
 
     def _gcode_T_sent(self, command):
         if command.tool:
@@ -3230,51 +3381,6 @@ class ReprapGcodeProtocol(
             self._last_lines.clear()
         self._internal_flags["resend_linenumber"] = None
 
-    def _gcode_M112_queuing(self, command):
-        # emergency stop, jump the queue with the M112
-        emergency_stop = self.flavor.command_emergency_stop().bytes
-        self._do_send_without_checksum(emergency_stop)
-        self._do_increment_and_send_with_checksum(emergency_stop)
-
-        # No idea if the printer is still listening or if M112 won. Just in case
-        # we'll now try to also manually make sure all heaters are shut off - better
-        # safe than sorry. We do this ignoring the queue since at this point it
-        # is irrelevant whether the printer has sent enough ack's or not, we
-        # are going to shutdown the connection in a second anyhow.
-        extruder_count = self._printer_profile["extruder"]["count"]
-        shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
-        if extruder_count > 1 and not shared_nozzle:
-            for tool in range(extruder_count):
-                self._do_increment_and_send_with_checksum(
-                    self.flavor.command_set_extruder_temp(0, tool=tool).bytes
-                )
-        else:
-            self._do_increment_and_send_with_checksum(
-                self.flavor.command_set_extruder_temp(0).bytes
-            )
-
-        if self._printer_profile["heatedBed"]:
-            self._do_increment_and_send_with_checksum(
-                self.flavor.command_set_bed_temp(0).bytes
-            )
-
-        # close to reset host state
-        # TODO needs error handling
-        """
-        self._errorValue = "Closing serial port due to emergency stop M112."
-        self._log(self._errorValue)
-        self.close(is_error=True)
-        """
-
-        # fire the M112 event since we sent it and we're going to prevent the caller from seeing it
-        event = GCODE_TO_EVENT.get("M112")
-        if event is not None:
-            self._event_bus.fire(event)
-
-        # return None 1-tuple to eat the one that is queuing because we don't want to send it twice
-        # I hope it got it the first time because as far as I can tell, there is no way to know
-        return (None,)
-
     # TODO
     # def _gcode_M114_queued(self, *args, **kwargs):
     #     self._reset_position_timers()
@@ -3332,13 +3438,14 @@ class ReprapGcodeProtocol(
 
     def _command_phase_queuing(self, command):
         if isinstance(command, GcodeCommand):
-            if (
-                command.code in self.flavor.emergency_commands
-                and command.code != self.flavor.command_emergency_stop().code
-            ):
-                message = "Force-sending {} to the printer".format(command)
-                self._logger.info(message)
-                return self._emergency_force_send(command, message)
+            if command.code in self.flavor.emergency_commands:
+                if command.code == self.flavor.command_emergency_stop().code:
+                    self._trigger_emergency_stop()
+                    return (None,)
+                else:
+                    message = "Force-sending {} to the printer".format(command)
+                    self._logger.info(message)
+                    return self._emergency_force_send(command, message)
 
             if (
                 self.state in ProtocolState.PROCESSING_STATES
@@ -3348,6 +3455,7 @@ class ReprapGcodeProtocol(
                 self.pause_processing(tags=command.tags)
 
             if command.code in self.flavor.blocked_commands:
+                # TODO evaluate "notify_suppressed_commands" and trigger notification if needed
                 self._logger.info(
                     "Not sending {} to printer, it's configured as a blocked command".format(
                         command
@@ -3437,4 +3545,60 @@ class ReprapGcodeProtocol(
         self.state = ProtocolState.ERROR
         self._event_bus.fire(Events.ERROR, {"error": text, "reason": reason})
         if disconnect:
+            if (
+                self.send_emergency_stop
+                and not self._is_streaming()
+                and reason not in ("connection", "autodetect")
+            ):
+                self._trigger_emergency_stop(close=False)
             self.disconnect(error=True)
+
+    def _trigger_emergency_stop(self, close=True):
+        emergency_command = self.flavor.command_emergency_stop()
+        self._logger.info(
+            "Force-sending {} to the printer".format(emergency_command.code)
+        )
+
+        # emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
+        # available or not
+        #
+        # send the M112 once without and with checksum
+        self._do_send_without_checksum(emergency_command.bytes)
+        self._do_increment_and_send_with_checksum(emergency_command.bytes)
+
+        # No idea if the printer is still listening or if M112 won. Just in case
+        # we'll now try to also manually make sure all heaters are shut off - better
+        # safe than sorry. We do this ignoring the queue since at this point it
+        # is irrelevant whether the printer has sent enough ack's or not, we
+        # are going to shutdown the connection in a second anyhow.
+        if self._printer_profile["extruder"]["count"] > 1:
+            for tool in range(self._printer_profile["extruder"]["count"]):
+                self._do_increment_and_send_with_checksum(
+                    self.flavor.command_set_extruder_temp(0, tool=tool).bytes
+                )
+        else:
+            self._do_increment_and_send_with_checksum(
+                self.flavor.command_set_extruder_temp(0).bytes
+            )
+
+        if self._printer_profile["heatedBed"]:
+            self._do_increment_and_send_with_checksum(
+                self.flavor.command_set_bed_temp(0).bytes
+            )
+
+        if self._printer_profile["heatedChamber"]:
+            self._do_increment_and_send_with_checksum(
+                self.flavor.command_set_chamber_temp(0).bytes
+            )
+
+        if close:
+            # close to reset host state
+            self.error = "Closing serial port due to emergency stop."
+            self.process_protocol_log("!!! " + self.error)
+            self._logger.warning(self.error)
+            self.disconnect(error=True)
+
+        # fire the M112 event since we sent it and we're going to prevent the caller from seeing it
+        gcode = emergency_command.code
+        if gcode in GCODE_TO_EVENT:
+            self._event_bus.fire(GCODE_TO_EVENT[gcode])

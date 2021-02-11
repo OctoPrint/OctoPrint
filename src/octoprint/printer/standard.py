@@ -18,13 +18,9 @@ from frozendict import frozendict
 
 import octoprint.util.json
 from octoprint import util as util
-from octoprint.comm.job import (
-    CopyJobMixin,
-    LocalGcodeFilePrintjob,
-    LocalGcodeStreamjob,
-    SDFilePrintjob,
-    StoragePrintjob,
-)
+from octoprint.comm.job import CopyJobMixin, StoragePrintjob
+from octoprint.comm.job.gcode import LocalGcodeFilePrintjob, LocalGcodeStreamjob
+from octoprint.comm.job.sdcard import SDFilePrintjob
 from octoprint.comm.protocol import (
     FileAwareProtocolListener,
     PositionAwareProtocolListener,
@@ -1423,15 +1419,12 @@ class Printer(
         )
 
     def _update_resend_data_callback(self):
-        # if not self._comm:
-        #    return self._dict(count=0, transmitted=0, ratio=0)
-        # return self._dict(
-        #    count=self._comm.received_resends,
-        #    transmitted=self._comm.transmitted_lines,
-        #    ratio=int(self._comm.resend_ratio * 100),
-        # )
-        # TODO implement me
-        return self._dict(count=0, transmitted=0, ratio=0)
+        if not self._protocol:
+            return self._dict(count=0, transmitted=0, ratio=0)
+        stats = self._protocol.stats
+        return self._dict(
+            count=stats.tx_errors, transmitted=stats.tx, ratio=stats.tx_error_rate * 100
+        )
 
     def _add_temperature_data(self, temperatures=None):
         if temperatures is None:

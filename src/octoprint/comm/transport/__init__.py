@@ -14,13 +14,14 @@ _registry = {}
 
 
 def register_transports():
-    from .serialtransport import SerialTransport
+    from .serialtransport import SerialTransport, SerialUrlTransport
     from .sockettransport import SerialOverTcpTransport, TcpTransport
 
     logger = logging.getLogger(__name__)
 
     # stock transports
     register_transport(SerialTransport)
+    register_transport(SerialUrlTransport)
     register_transport(TcpTransport)
     register_transport(SerialOverTcpTransport)
 

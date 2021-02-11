@@ -76,6 +76,8 @@ class GenericFlavor(metaclass=FlavorMeta):
 
     heatup_abortable = False
 
+    ok_buffer_size = 1
+
     regex_min_max_error = re.compile(r"Error:[0-9]\n")
     """Regex matching first line of min/max errors from legacy firmware."""
 
@@ -150,6 +152,7 @@ class GenericFlavor(metaclass=FlavorMeta):
             "pausing_commands": cls.pausing_commands,
             "emergency_commands": cls.emergency_commands,
             "heatup_abortable": cls.heatup_abortable,
+            "ok_buffer_size": cls.ok_buffer_size,
         }
 
     ##~~ Identifier

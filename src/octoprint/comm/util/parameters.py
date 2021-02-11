@@ -79,6 +79,10 @@ class TextType(ParamType):
         return value
 
 
+class UrlType(TextType):
+    type = "url"
+
+
 class IntegerType(ParamType):
     type = "integer"
 

@@ -591,7 +591,7 @@ class LocalFileStorage(Storage):
         return "analysis" in metadata
 
     def create_print_job(self, path, user=None):
-        from octoprint.comm.job import LocalGcodeFilePrintjob
+        from octoprint.comm.job.gcode import LocalGcodeFilePrintjob
 
         return LocalGcodeFilePrintjob(
             self.path_on_disk(path),

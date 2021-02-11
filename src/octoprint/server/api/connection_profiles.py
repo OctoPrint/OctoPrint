@@ -110,13 +110,13 @@ def connectionProfileSet(identifier):
 @Permissions.SETTINGS.require(403)
 def connectionProfilesDelete(identifier):
     current_profile = connectionProfileManager.get_current()
-    if current_profile and current_profile["id"] == identifier:
+    if current_profile and current_profile.id == identifier:
         return make_response(
             "Cannot delete currently selected profile: {}".format(identifier), 409
         )
 
     default_profile = connectionProfileManager.get_default()
-    if default_profile and default_profile["id"] == identifier:
+    if default_profile and default_profile.id == identifier:
         return make_response("Cannot delete default profile: {}".format(identifier), 409)
 
     connectionProfileManager.remove(identifier)

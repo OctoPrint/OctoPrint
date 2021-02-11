@@ -2,6 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import os
 
 import serial
 
@@ -12,9 +13,11 @@ from octoprint.comm.util.parameters import (
     IntegerType,
     SmallChoiceType,
     SuggestionType,
+    UrlType,
     Value,
 )
 from octoprint.util import dummy_gettext as gettext
+from octoprint.util.platform import get_os, set_close_exec
 
 
 class SerialTransport(Transport):
@@ -45,9 +48,9 @@ class SerialTransport(Transport):
             baudrates += additional_baudrates
 
         return type(
-            cls.__name__ + b"WithAdditionalPorts",
+            cls.__name__ + "WithAdditionalPorts",
             (cls,),
-            {b"unix_port_patterns": patterns, b"suggested_baudrates": baudrates},
+            {"unix_port_patterns": patterns, "suggested_baudrates": baudrates},
         )
 
     @classmethod
@@ -66,6 +69,11 @@ class SerialTransport(Transport):
                 lambda value: Value(value),
                 default=0,
             ),
+        ] + cls._get_common_options()
+
+    @classmethod
+    def _get_common_options(cls):
+        return [
             IntegerType(
                 "write_timeout",
                 gettext("Write Timeout"),
@@ -95,7 +103,6 @@ class SerialTransport(Transport):
                 advanced=True,
                 expert=True,
             ),
-            # TODO: implement parity workaround flag
             SmallChoiceType(
                 "parity_workaround",
                 gettext("Apply parity double open workaround"),
@@ -285,16 +292,78 @@ class SerialTransport(Transport):
         return getattr(self._serial, "in_waiting", 0)
 
     def _default_serial_factory(self, **kwargs):
-        return serial.Serial(
-            port=kwargs.get("port"),
+        serial_obj = self._create_serial(**kwargs)
+        self._apply_parity_workaround(serial_obj, **kwargs)
+        serial_obj.open()
+        self._set_close_exec(serial_obj, **kwargs)
+
+        return serial_obj
+
+    @classmethod
+    def _create_serial(cls, **kwargs):
+        serial_obj = serial.Serial(
             baudrate=kwargs.get("baudrate"),
             exclusive=kwargs.get("exclusive"),
             parity=kwargs.get("parity"),
             write_timeout=kwargs.get("write_timeout", 10) * 1000,
         )
+        serial_obj.port = kwargs.get("port")  # set port only now to prevent auto open
+        return serial_obj
+
+    @classmethod
+    def _apply_parity_workaround(cls, serial_obj, **kwargs):
+        use_parity_workaround = kwargs.get("parity_workaround")
+        needs_parity_workaround = get_os() == "linux" and os.path.exists(
+            "/etc/debian_version"
+        )  # See #673
+
+        if use_parity_workaround == "always" or (
+            needs_parity_workaround and use_parity_workaround == "detect"
+        ):
+            serial_obj.parity = serial.PARITY_ODD
+            serial_obj.open()
+            serial_obj.close()
+            serial_obj.parity = kwargs.get("parity")
+
+        return serial_obj
+
+    @classmethod
+    def _set_close_exec(cls, serial_obj, **kwargs):
+        if hasattr(serial_obj, "fd"):
+            # posix
+            set_close_exec(serial_obj.fd)
+        elif hasattr(serial_obj, "_port_handle"):
+            # win32
+            # noinspection PyProtectedMember
+            set_close_exec(serial_obj._port_handle)
+
+        return serial_obj
 
     def __str__(self):
         return "SerialTransport"
+
+
+class SerialUrlTransport(SerialTransport):
+    name = "Serial URL Connection"
+    key = "serialurl"
+    message_integrity = False
+
+    @classmethod
+    def get_connection_options(cls):
+        return [
+            UrlType(
+                "url",
+                "URL",
+                help=gettext(
+                    "See [here](https://pythonhosted.org/pyserial/url_handlers.html#urls) for supported URL schemes"
+                ),
+            )
+        ] + cls._get_common_options()
+
+    @classmethod
+    def _create_serial(cls, **kwargs):
+        serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
+        return serial_obj
 
 
 if __name__ == "__main__":

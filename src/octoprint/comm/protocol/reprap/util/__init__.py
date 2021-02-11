@@ -5,6 +5,7 @@ import copy
 import threading
 
 from octoprint.comm.protocol.reprap.commands import Command, to_command
+from octoprint.comm.util.gcode import strip_comment
 from octoprint.util import CountedEvent
 
 regex_float_pattern = r"[-+]?[0-9]*\.?[0-9]+"
@@ -12,26 +13,12 @@ regex_positive_float_pattern = r"[+]?[0-9]*\.?[0-9]+"
 regex_int_pattern = r"\d+"
 
 
-def strip_comment(line):
-    if ";" not in line:
-        # shortcut
-        return line
-
-    escaped = False
-    result = []
-    for c in line:
-        if c == ";" and not escaped:
-            break
-        result += c
-        escaped = (c == "\\") and not escaped
-    return "".join(result).strip()
-
-
 def process_gcode_line(line, offsets=None, current_tool=None):
     line = strip_comment(line).strip()
     if not len(line):
         return None
 
+    # TODO: apply offsets
     # if offsets is not None:
     #     line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
 

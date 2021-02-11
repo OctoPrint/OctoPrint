@@ -12,7 +12,7 @@
             <!-- /ko -->
 
             <div class="advanced_options" data-bind="visible: expertProtocolParameters">
-                <div><small><a class="muted" href="#" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+                <div><small><a class="muted" href="javascript:void(0)" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
                 <div class="hide">
                     <!-- ko foreach: protocolParameters -->
                     <!-- ko if: expert -->
@@ -42,7 +42,7 @@
             <!-- /ko -->
 
             <div class="advanced_options" data-bind="visible: expertTransportParameters">
-                <div><small><a class="muted" href="#" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+                <div><small><a class="muted" href="javascript:void(0)" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
                 <div class="hide">
                     <!-- ko foreach: transportParameters -->
                     <!-- ko if: expert -->
@@ -79,7 +79,7 @@
                 <span class="add-on" data-bind="text: $data.unit"></span>
             </div>
             <!-- /ko -->
-            <!-- ko unless: $data.unit -->
+            <!-- ko ifnot: $data.unit -->
             <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
             <!-- /ko -->
             <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>

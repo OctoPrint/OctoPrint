@@ -58,7 +58,123 @@ def all_protocols():
     return _registry.values()
 
 
-class Protocol(ListenerAware, TransportListener):
+class ProtocolErrorStats(ListenerAware):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+        self._rx = 0
+        self._rx_errors = 0
+        self._rx_error_rate = 0
+        self._rx_arm = -1
+        self._rx_threshold = 0
+        self._rx_triggered = False
+
+        self._tx = 0
+        self._tx_errors = 0
+        self._tx_error_rate = 0
+        self._tx_arm = -1
+        self._tx_threshold = 0
+        self._tx_triggered = False
+
+        self.reset(**kwargs)
+
+    def reset(
+        self, rx_arm=None, rx_threshold=None, tx_arm=None, tx_threshold=None, **kwargs
+    ):
+        self._rx = self._rx_errors = self._rx_error_rate = 0
+        self._rx_triggered = False
+        if rx_arm is not None:
+            self._rx_arm = rx_arm
+        if rx_threshold is not None:
+            self._rx_threshold = rx_threshold
+
+        self._tx = self._tx_errors = self._tx_error_rate = 0
+        self._tx_triggered = False
+        if tx_arm is not None:
+            self._tx_arm = tx_arm
+        if tx_threshold is not None:
+            self._tx_threshold = tx_threshold
+
+    @property
+    def rx(self):
+        return self._rx
+
+    @property
+    def rx_errors(self):
+        return self._rx_errors
+
+    @property
+    def rx_error_rate(self):
+        return self._rx_error_rate
+
+    @property
+    def rx_error_threshold(self):
+        return self._rx_threshold
+
+    @property
+    def tx(self):
+        return self._tx
+
+    @property
+    def tx_errors(self):
+        return self._tx_errors
+
+    @property
+    def tx_error_rate(self):
+        return self._tx_error_rate
+
+    @property
+    def tx_error_threshold(self):
+        return self._tx_threshold
+
+    def inc_rx(self):
+        self._rx += 1
+        if self._rx > self._rx_arm:
+            self.notify_listeners("on_protocol_stats_rx_armed", self)
+
+    def inc_rx_errors(self):
+        self._rx_errors += 1
+        self._rx_error_rate = (self._rx_errors / self._rx) if self._rx > 0 else 0
+        if (
+            self._rx > self._rx_arm
+            and self._rx_error_rate > self._rx_threshold
+            and not self._rx_triggered
+        ):
+            self._rx_triggered = True
+            self.notify_listeners("on_protocol_stats_rx_triggered", self)
+
+    def inc_tx(self):
+        self._tx += 1
+        if self._tx > self._tx_arm:
+            self.notify_listeners("on_protocol_stats_tx_armed", self)
+
+    def inc_tx_errors(self):
+        self._tx_errors += 1
+        self._tx_error_rate = (self._tx_errors / self._tx) if self._tx > 0 else 0
+        if (
+            self._tx > self._tx_arm
+            and self._tx_error_rate > self._tx_threshold
+            and not self._tx_triggered
+        ):
+            self._tx_triggered = True
+            self.notify_listeners("on_protocol_stats_tx_triggered", self)
+
+
+class ProtocolErrorStatsListener:
+    def on_protocol_stats_tx_armed(self, stats):
+        pass
+
+    def on_protocol_stats_tx_triggered(self, stats):
+        pass
+
+    def on_protocol_stats_rx_armed(self, stats):
+        pass
+
+    def on_protocol_stats_rx_triggered(self, stats):
+        pass
+
+
+class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
     name = None
     key = None
@@ -80,6 +196,7 @@ class Protocol(ListenerAware, TransportListener):
         self._connection_logger = logging.getLogger("CONNECTION")
         self._state = ProtocolState.DISCONNECTED
         self._error = None
+        self._stats = ProtocolErrorStats()
 
         self._printer_profile = kwargs.get("printer_profile")
         self._plugin_manager = kwargs.get("plugin_manager")
@@ -173,6 +290,10 @@ class Protocol(ListenerAware, TransportListener):
     @error.setter
     def error(self, new_error):
         self._error = new_error
+
+    @property
+    def stats(self):
+        return self._stats
 
     def connect(self, transport, transport_args=None, transport_kwargs=None):
         if self.state not in (
