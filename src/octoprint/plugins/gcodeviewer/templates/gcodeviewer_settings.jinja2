@@ -19,4 +19,15 @@
             </span>
         </div>
     </div>
+    <div class="control-group" title="{{ _('Skip/Hide gcode until this string')}}">
+        <label class="control-label" for="settings-skipUntilthis">{{ _('Skip to this') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.settings.plugins.gcodeviewer.skipUntilthis" id="settings-skipUntilthis" placeholder="; layer 1">
+        </div>
+        <div class="controls">
+            <span class="help-inline">
+                {% trans %}If provided, the GCode Viewer will search for a line beginning with this string. If found, all GCode up to that point will be skipped. This can be used to skip "purge/nozzle wipe" GCode in the viewer. Note the search is case sensitive. Example: <code>; layer 1</code>{% endtrans %}
+            </span>
+        </div>
+    </div>
 </form>
