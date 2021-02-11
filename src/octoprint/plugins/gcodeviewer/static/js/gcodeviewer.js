@@ -879,8 +879,8 @@ $(function () {
             self.resetOptions();
 
             var current = loadFromLocalStorage(optionsLocalStorageKey);
-            if (current["centerViewport"] !== undefined)
-                self.renderer_centerViewport(current["centerViewport"]);
+            if (current["centerViewPort"] !== undefined)
+                self.renderer_centerViewport(current["centerViewPort"]);
             if (current["zoomOnModel"] !== undefined)
                 self.renderer_zoomOnModel(current["zoomOnModel"]);
             if (current["showMoves"] !== undefined)
