@@ -3,10 +3,10 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import re
 
-from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
+from octoprint.comm.protocol.reprap.flavors import StandardFlavor
 
 
-class MarlinFlavor(GenericFlavor):
+class MarlinFlavor(StandardFlavor):
 
     key = "marlin"
     name = "Marlin"
@@ -19,17 +19,16 @@ class MarlinFlavor(GenericFlavor):
     )
     """Regex matching first line of kill causing errors from Marlin."""
 
-    @classmethod
-    def comm_error(cls, line, lower_line, state, flags):
-        result = GenericFlavor.comm_error(line, lower_line, state, flags)
+    def comm_error(self, line, lower_line):
+        result = super().comm_error(line, lower_line)
 
-        if cls.regex_min_max_error.match(line):
-            flags["multiline_error"] = line
+        if self.regex_min_max_error.match(line):
+            self._protocol.flags["multiline_error"] = line
 
         return result
 
 
-class MarlinLegacyFlavor(GenericFlavor):
+class MarlinLegacyFlavor(StandardFlavor):
 
     key = "marlinlegacy"
     name = "Legacy Marlin"

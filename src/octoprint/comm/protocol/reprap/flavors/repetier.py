@@ -3,11 +3,11 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import re
 
-from octoprint.comm.protocol.reprap.flavors.generic import GenericFlavor
+from octoprint.comm.protocol.reprap.flavors import StandardFlavor
 from octoprint.comm.protocol.reprap.util import regex_positive_float_pattern
 
 
-class RepetierFlavor(GenericFlavor):
+class RepetierFlavor(StandardFlavor):
 
     key = "repetier"
     name = "Repetier"
@@ -43,18 +43,16 @@ class RepetierFlavor(GenericFlavor):
     def identifier(cls, firmware_name, firmware_info):
         return "repetier" in firmware_name.lower()
 
-    @classmethod
-    def message_temperature(cls, line, lower_line, state, flags):
+    def message_temperature(self, line, lower_line):
         return (
-            GenericFlavor.message_temperature(line, lower_line, state, flags)
+            super().message_temperature(line, lower_line)
             or "targetextr" in lower_line
             or "targetbed" in lower_line
         )
 
-    @classmethod
-    def parse_message_temperature(cls, line, lower_line, state, flags):
+    def parse_message_temperature(self, line, lower_line):
         if "targetextr" in lower_line:
-            match = cls.regex_tempextr.match(lower_line)
+            match = self.regex_tempextr.match(lower_line)
             if match is not None:
                 tool_num = int(match.group("toolnum"))
                 target = float(match.group("target"))
@@ -62,45 +60,46 @@ class RepetierFlavor(GenericFlavor):
                 temperatures = {}
                 temperatures[tool] = (None, target)
                 return {
-                    "max_tool_num": max(tool_num, flags.get("current_tool", 0)),
+                    "max_tool_num": max(
+                        tool_num, self._protocol.flags.get("current_tool", 0)
+                    ),
                     "temperatures": temperatures,
                     "heatup_detected": False,
                 }
         elif "targetbed" in lower_line:
-            match = cls.regex_tempbed.match(lower_line)
+            match = self.regex_tempbed.match(lower_line)
             if match is not None:
                 target = float(match.group("target"))
                 temperatures = {"bed": (None, target)}
                 return {
-                    "max_tool_num": flags.get("current_tool", 0),
+                    "max_tool_num": self._protocol.flags.get("current_tool", 0),
                     "temperatures": temperatures,
                     "heatup_detected": False,
                 }
         else:
             # Repetier sends temperature output on it's own line, so we can't use the
             # "no ok in temperature output" metric to detected external heatups
-            result = GenericFlavor.parse_message_temperature(
-                line, lower_line, state, flags
-            )
-            result[b"heatup_detected"] = False
+            result = super().parse_message_temperature(line, lower_line)
+            result["heatup_detected"] = False
             return result
 
     ##~~ Preprocessors, returning True stops further processing by the protocol
 
-    @classmethod
-    def preprocess_comm_resend(cls, linenumber, state, flags):
+    def preprocess_comm_resend(self, linenumber):
         if (
-            flags.get("resend_swallow_repetitions", False)
-            and flags.get("resend_swallow_repetitions_counter", 0)
-            and linenumber == flags["resend_requested"]
-            and flags["resend_swallow_repetitions_counter"] > 0
+            self._protocol.flags.get("resend_swallow_repetitions", False)
+            and self._protocol.flags.get("resend_swallow_repetitions_counter", 0)
+            and linenumber == self._protocol.flags["resend_requested"]
+            and self._protocol.flags["resend_swallow_repetitions_counter"] > 0
         ):
-            cls.logger.debug(
+            self.logger.debug(
                 "Ignoring resend request for line {}, that is "
                 "probably a repetition sent by the firmware to "
                 "ensure it arrives, not a real request".format(linenumber)
             )
-            flags["resend_swallow_repetitions_counter"] -= 1
+            self._protocol.flags["resend_swallow_repetitions_counter"] -= 1
             return True
 
-        flags["resend_swallow_repetitions_counter"] = cls.identical_resends_countdown
+        self._protocol.flags[
+            "resend_swallow_repetitions_counter"
+        ] = self.identical_resends_countdown

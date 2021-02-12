@@ -24,7 +24,7 @@ from octoprint.comm.protocol.reprap.commands import Command, to_command
 from octoprint.comm.protocol.reprap.commands.atcommand import AtCommand
 from octoprint.comm.protocol.reprap.commands.gcode import GcodeCommand
 from octoprint.comm.protocol.reprap.flavors import (
-    GenericFlavor,
+    StandardFlavor,
     all_flavors,
     lookup_flavor,
 )
@@ -292,7 +292,10 @@ class ReprapGcodeProtocol(
                     ),
                     advanced=True,
                 ),
-                defaults=dict((f.key, f.overridable()) for f in all_flavors()),
+                defaults=dict(
+                    (f.key, dict((key, getattr(f, key)) for key in f.overridable))
+                    for f in all_flavors()
+                ),
                 default="generic",
             ),
             ParamGroup(
@@ -643,12 +646,12 @@ class ReprapGcodeProtocol(
     def __init__(self, flavor=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.flavor = lookup_flavor(flavor)
-        if self.flavor is None:
-            self.flavor = GenericFlavor
+        self.initial_flavor_class = lookup_flavor(flavor)
+        if self.initial_flavor_class is None:
+            self.initial_flavor_class = StandardFlavor
 
         self.flavor_overrides = kwargs.get("flavor_overrides", {})
-        self.flavor = self.flavor.with_overrides(self.flavor_overrides)
+        self.flavor = self.initial_flavor_class(self, **self.flavor_overrides)
 
         self.set_current_args(
             flavor=self.flavor.key, flavor_overrides=self.flavor_overrides
@@ -911,6 +914,10 @@ class ReprapGcodeProtocol(
             and self._transport.active
             and self._send_queue_active
         )
+
+    @property
+    def flags(self):
+        return self._internal_flags
 
     def connect(self, transport, transport_args=None, transport_kwargs=None):
         if not isinstance(transport, Transport):
@@ -1750,9 +1757,7 @@ class ReprapGcodeProtocol(
                 continue
 
             # match line against flavor specific matcher
-            matches = getattr(self.flavor, message)(
-                line, lower_line, self._state, self._protected_flags
-            )
+            matches = getattr(self.flavor, message)(line, lower_line)
             if isinstance(matches, tuple) and len(matches) == 2:
                 matches, continue_further = matches
             else:
@@ -1764,9 +1769,7 @@ class ReprapGcodeProtocol(
                 parse_method = getattr(self.flavor, "parse_{}".format(message), None)
                 if parse_method:
                     # flavor specific parser? run it
-                    parse_result = parse_method(
-                        line, lower_line, self._state, self._protected_flags
-                    )
+                    parse_result = parse_method(line, lower_line)
                     if parse_result is None:
                         if continue_further:
                             continue
@@ -1804,9 +1807,7 @@ class ReprapGcodeProtocol(
             pass
 
     def _on_comm_any(self, line, lower_line):
-        timeout, _ = self.flavor.comm_timeout(
-            line, lower_line, self._state, self._protected_flags
-        )
+        timeout, _ = self.flavor.comm_timeout(line, lower_line)
         if not timeout:
             self._internal_flags["timeout_consecutive"] = 0
 
@@ -2156,16 +2157,12 @@ class ReprapGcodeProtocol(
             if not handler_method:
                 continue
 
-            if getattr(self.flavor, message)(
-                line, lower_line, error, self._state, self._protected_flags
-            ):
+            if getattr(self.flavor, message)(line, lower_line, error):
                 message_args = {}
 
                 parse_method = getattr(self.flavor, "parse_{}".format(message), None)
                 if parse_method:
-                    parse_result = parse_method(
-                        line, lower_line, error, self._state, self._protected_flags
-                    )
+                    parse_result = parse_method(line, lower_line, error)
                     if parse_result is None:
                         break
 
@@ -2192,7 +2189,7 @@ class ReprapGcodeProtocol(
 
             if self.firmware_errors != "ignore":
                 if self.firmware_errors == "disconnect" or self.flavor.error_sdcard(
-                    line, lower_line, error, self._state, self._protected_flags
+                    line, lower_line, error
                 ):
                     # disconnect
                     self._trigger_error(error, "firmware")
@@ -2389,16 +2386,18 @@ class ReprapGcodeProtocol(
         if not self._internal_flags["firmware_identified"] and firmware_name:
             self._logger.info('Printer reports firmware name "{}"'.format(firmware_name))
 
-            for flavor in all_flavors():
+            for flavor_class in all_flavors():
                 if (
-                    flavor.identifier
-                    and callable(flavor.identifier)
-                    and flavor.identifier(firmware_name, data)
+                    flavor_class.identifier
+                    and callable(flavor_class.identifier)
+                    and flavor_class.identifier(firmware_name, data)
                 ):
                     self._logger.info(
-                        'Detected firmware flavor "{}", switching...'.format(flavor.key)
+                        'Detected firmware flavor "{}", switching...'.format(
+                            flavor_class.key
+                        )
                     )
-                    self._switch_flavor(flavor)
+                    self._switch_flavor(flavor_class)
 
             self._internal_flags["firmware_identified"] = True
             self._internal_flags["firmware_name"] = firmware_name
@@ -2509,7 +2508,7 @@ class ReprapGcodeProtocol(
                 self._current_linenumber = 0
                 self._last_lines.clear()
 
-        self.flavor = GenericFlavor.with_overrides(self.flavor_overrides)
+        self.flavor = self.initial_flavor_class(self, **self.flavor_overrides)
 
         self.send_commands(self.flavor.command_hello(), self.flavor.command_set_line(0))
 
@@ -3525,8 +3524,8 @@ class ReprapGcodeProtocol(
             log = message + "\n| " + log
         self._logger.log(level, log)
 
-    def _switch_flavor(self, new_flavor):
-        self.flavor = new_flavor.with_overrides(self.flavor_overrides)
+    def _switch_flavor(self, flavor_class):
+        self.flavor = flavor_class(self, **self.flavor_overrides)
 
         flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
         flavor_message_attrs = self.get_flavor_attributes_starting_with(
