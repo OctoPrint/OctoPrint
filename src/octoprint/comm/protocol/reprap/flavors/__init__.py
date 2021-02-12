@@ -640,19 +640,6 @@ class StandardFlavor(metaclass=FlavorMeta):
     def command_busy_protocol_interval(self, interval):
         return GcodeCommand("M113", s=interval)
 
-    def lookup_command(self, command):
-        command_lut = {
-            "T": "set_tool",
-            "G0": "move",
-            "G1": "move",
-            "G2": "",
-            "G3": "",
-            "G4": "dwell",
-            "G28": "home",
-            "M104": "",
-        }
-        return command_lut.get(command.code)
-
     ##~~ gcode handlers
 
     def handle_gcode_T_queuing(self, command):
