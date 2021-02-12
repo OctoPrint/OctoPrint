@@ -11,6 +11,7 @@ from octoprint.comm.protocol.reprap.util import (
     regex_int_pattern,
     regex_positive_float_pattern,
 )
+from octoprint.events import Events
 from octoprint.util import chunks
 
 _flavor_registry = {}
@@ -42,8 +43,6 @@ class StandardFlavor(metaclass=FlavorMeta):
 
     key = "standard"
     name = "Standard Flavor"
-
-    logger = logging.getLogger(__name__)
 
     unknown_requires_ack = False
     unknown_with_checksum = False
@@ -78,6 +77,24 @@ class StandardFlavor(metaclass=FlavorMeta):
     heatup_abortable = False
 
     ok_buffer_size = 1
+
+    overridable = (
+        "unknown_requires_ack",
+        "unknown_with_checksum",
+        "send_checksum",
+        "detect_external_heatups",
+        "block_while_dwelling",
+        "trigger_ok_after_resend",
+        "sd_relative_path",
+        "checksum_requiring_commands",
+        "long_running_commands",
+        "asynchronous_commands",
+        "blocked_commands",
+        "pausing_commands",
+        "emergency_commands",
+        "heatup_abortable",
+        "ok_buffer_size",
+    )
 
     regex_min_max_error = re.compile(r"Error:[0-9]\n")
     """Regex matching first line of min/max errors from legacy firmware."""
@@ -128,23 +145,45 @@ class StandardFlavor(metaclass=FlavorMeta):
       * ``total``: total size of file being printed
     """
 
-    overridable = (
-        "unknown_requires_ack",
-        "unknown_with_checksum",
-        "send_checksum",
-        "detect_external_heatups",
-        "block_while_dwelling",
-        "trigger_ok_after_resend",
-        "sd_relative_path",
-        "checksum_requiring_commands",
-        "long_running_commands",
-        "asynchronous_commands",
-        "blocked_commands",
-        "pausing_commands",
-        "emergency_commands",
-        "heatup_abortable",
-        "ok_buffer_size",
-    )
+    regex_invalid_tool_1 = re.compile(r"t(?P<tool>[0-9]+) invalid extruder")
+    """Regex matching "invalid tool" messages, variant 1.
+
+    Matches messages like
+
+        echo:T1 Invalid extruder
+
+    Groups will be as follows:
+
+      * ``tool``: tool number reported as invalid
+    """
+
+    regex_invalid_tool_2 = re.compile(r"invalid extruder t?(?P<tool>[0-9]+)")
+    """ Regex matching "invalid tool" messages, variant 2.
+
+    Matches messages like
+
+        echo:M104 Invalid extruder 1
+        echo:M104 Invalid extruder T2
+
+    Groups will be as follows:
+
+      * ``tool``: tool number reported as invalid
+    """
+
+    gcode_to_event = {
+        "M226": Events.WAITING,  # pause of user input
+        "M0": Events.WAITING,  # pause of user input
+        "M1": Events.WAITING,  # pause of user input
+        "G4": Events.DWELL,  # dwell
+        "M245": Events.COOLING,  # part cooler
+        "M240": Events.CONVEYOR,  # part conveyor
+        "M40": Events.EJECT,  # part ejector
+        "M300": Events.ALERT,  # user alert
+        "G28": Events.HOME,  # home print head
+        "M112": Events.E_STOP,  # emergency stop
+        "M80": Events.POWER_ON,  # motors on
+        "M81": Events.POWER_OFF,  # motors off
+    }
 
     def __init__(self, protocol, **kwargs):
         from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
@@ -153,6 +192,7 @@ class StandardFlavor(metaclass=FlavorMeta):
             raise ValueError("protocol must be a ReprapGcodeProtocol instance")
 
         self._protocol = protocol
+        self._logger = logging.getLogger(__name__)
         for key in self.overridable:
             setattr(self, key, kwargs.get(key, getattr(self.__class__, key)))
 
@@ -167,18 +207,18 @@ class StandardFlavor(metaclass=FlavorMeta):
     def comm_timeout(self, line, lower_line):
         now = time.monotonic()
         matches = (
-            (line == "" and now > self._protocol.flags["timeout"])
+            (line == "" and now > self._protocol.internal_state.timeout)
             or (
-                self._protocol.flags["expect_continous_comms"]
-                and not self._protocol.flags["job_on_hold"]
-                and not self._protocol.flags["long_running_command"]
-                and not self._protocol.flags["heating"]
-                and now > self._protocol.flags["ok_timeout"]
+                self._protocol.internal_state.expect_continuous_comms
+                and not self._protocol.internal_state.job_on_hold
+                and not self._protocol.internal_state.long_running_command
+                and not self._protocol.internal_state.heating
+                and now > self._protocol.internal_state.ok_timeout
             )
         ) and (
             not self.block_while_dwelling
-            or not self._protocol.flags["dwelling_until"]
-            or now > self._protocol.flags["dwelling_until"]
+            or not self._protocol.internal_state.dwelling_until
+            or now > self._protocol.internal_state.dwelling_until
         )
         continue_further = line != ""
         return matches, continue_further
@@ -207,10 +247,10 @@ class StandardFlavor(metaclass=FlavorMeta):
 
     def comm_error(self, line, lower_line):
         single_line = line.startswith("Error:") or line.startswith("!!")
-        multi_line = self._protocol.flags.get("multiline_error", False) is not False
+        multi_line = self._protocol.internal_state.multiline_error is not False
 
         if self.regex_min_max_error.match(line):
-            self._protocol.flags["multiline_error"] = line
+            self._protocol.internal_state.multiline_error = line
 
         return single_line or multi_line
 
@@ -297,14 +337,17 @@ class StandardFlavor(metaclass=FlavorMeta):
         return "done saving file" in lower_line
 
     def message_sd_entry(self, line, lower_line):
-        return self._protocol.flags["sd_files_temp"] is not None
+        return self._protocol.internal_state.sd_files_temp is not None
+
+    def message_invalid_tool(self, line, lower_line):
+        return "invalid extruder" in lower_line
 
     ##~~ Message parsers
 
     def parse_comm_error(self, line, lower_line):
-        multiline = self._protocol.flags.get("multiline_error", False)
+        multiline = self._protocol.internal_state.multiline_error
         if multiline:
-            self._protocol.flags["multiline_error"] = False
+            self._protocol.internal_state.multiline_error = False
             line = line.rstrip() + " - " + multiline
             lower_line = line.lower()
 
@@ -326,7 +369,7 @@ class StandardFlavor(metaclass=FlavorMeta):
         else:
             error_type = "other"
 
-        self._protocol.flags["last_communication_error"] = error_type
+        self._protocol.internal_state.last_communication_error = error_type
         return {"error_type": error_type}
 
     def parse_comm_resend(self, line, lower_line):
@@ -349,7 +392,7 @@ class StandardFlavor(metaclass=FlavorMeta):
               key to (actual, target) tuples, with key either matching ``Tn`` for ``n >= 0`` or ``B``
         """
 
-        current_tool = self._protocol.flags["current_tool"]
+        current_tool = self._protocol.internal_state.current_tool
 
         result = {}
         max_tool_num = 0
@@ -379,8 +422,8 @@ class StandardFlavor(metaclass=FlavorMeta):
 
         heatup_detected = (
             not lower_line.startswith("ok")
-            and not self._protocol.flags["heating"]
-            and not self._protocol.flags["temperature_autoreporting"]
+            and not self._protocol.internal_state.heating
+            and not self._protocol.internal_state.temperature_autoreporting
         )
 
         return {
@@ -474,6 +517,13 @@ class StandardFlavor(metaclass=FlavorMeta):
             "total": int(match.group("total")),
         }
 
+    def parse_message_invalid_tool(self, line, lower_line):
+        for pattern in (self.regex_invalid_tool_1, self.regex_invalid_tool_2):
+            match = pattern.search(lower_line)
+            if match:
+                return {"tool": int(match.group("tool"))}
+        return None
+
     ##~~ Commands
 
     def command_hello(self):
@@ -531,7 +581,7 @@ class StandardFlavor(metaclass=FlavorMeta):
         )
 
     def command_set_tool(self, tool):
-        return GcodeCommand("T{}".format(tool))
+        return GcodeCommand("T", tool=tool)
 
     def command_set_feedrate_multiplier(self, multiplier):
         return GcodeCommand("M220", s=multiplier)
@@ -602,6 +652,288 @@ class StandardFlavor(metaclass=FlavorMeta):
             "M104": "",
         }
         return command_lut.get(command.code)
+
+    ##~~ gcode handlers
+
+    def handle_gcode_T_queuing(self, command):
+        old_tool = self._protocol.internal_state.current_tool
+        new_tool = command.tool
+
+        if not self._protocol.validate_tool(new_tool):
+            message = (
+                "Not queuing T{}, that tool doesn't exist according to the printer profile or "
+                "was reported as invalid by the firmware. Make sure your "
+                "printer profile is set up correctly.".format(new_tool)
+            )
+            self._protocol.process_protocol_log(self._protocol.LOG_PREFIX_WARN + message)
+            self._protocol.notify_listeners(
+                "on_protocol_message_suppressed",
+                self._protocol,
+                str(command),
+                message,
+                "warn",
+            )
+
+            return (None,)
+
+        before = self._protocol.get_script(
+            "beforeToolChange",
+            context={"tool": {"old": old_tool, "new": new_tool}},
+            allow_missing=True,
+        )
+        after = self._protocol.get_script(
+            "afterToolChange",
+            context={"tool": {"old": old_tool, "new": new_tool}},
+            allow_missing=True,
+        )
+
+        return before + [command] + after
+
+    def handle_gcode_T_sending(self, command):
+        new_tool = command.tool
+
+        if not self._protocol.validate_tool(new_tool):
+            message = (
+                "Not sending T{}, that tool doesn't exist according to the printer profile or "
+                "was reported as invalid by the firmware. Make sure your "
+                "printer profile is set up correctly.".format(new_tool)
+            )
+            self._protocol.process_protocol_log(self._protocol.LOG_PREFIX_WARN + message)
+            self._protocol.notify_listeners(
+                "on_protocol_message_suppressed",
+                self._protocol,
+                str(command),
+                message,
+                "warn",
+            )
+
+            return (None,)
+
+    def handle_gcode_T_sent(self, command):
+        current_tool = self._protocol.internal_state.current_tool
+        new_tool = command.tool
+
+        if new_tool is not None and new_tool != current_tool:
+            self._protocol.internal_state.former_tool = current_tool
+            self._protocol.internal_state.current_tool = new_tool
+            self._protocol.notify_listeners(
+                "on_protocol_tool_change",
+                self._protocol,
+                current_tool,
+                new_tool,
+            )
+
+    def handle_gcode_G0_sent(self, command):
+        if command.z is not None and self._protocol.internal_state.current_z != command.z:
+            self._protocol.internal_state.current_z = command.z
+            self._protocol.notify_listeners(
+                "on_protocol_position_z_update",
+                self._protocol,
+                self._protocol.internal_state.current_z,
+            )
+        if command.f is not None:
+            self._protocol.internal_state.current_f = command.f
+
+    handle_gcode_G1_sent = handle_gcode_G0_sent
+
+    def handle_gcode_G2_sent(self, command):
+        if command.f is not None:
+            self._protocol.internal_state.current_f = command.f
+
+    handle_gcode_G3_sent = handle_gcode_G2_sent
+    handle_gcode_G28_sent = handle_gcode_G2_sent
+
+    def handle_gcode_M140_queuing(self, command):
+        if not self._protocol.printer_profile["heatedBed"]:
+            self._protocol.process_protocol_log(
+                'Warn: Not sending "{}", printer profile has no heated bed'.format(
+                    command
+                )
+            )
+            return (None,)  # Don't send bed commands if we don't have a heated bed
+
+    handle_gcode_M190_queuing = handle_gcode_M140_queuing
+
+    def handle_gcode_M155_sending(self, command):
+        try:
+            interval = int(command.s)
+            self._protocol.internal_state.temperature_autoreporting = (
+                self._protocol.internal_state.firmware_capabilities.get(
+                    self._protocol.CAPABILITY_AUTOREPORT_TEMP, False
+                )
+                and (interval > 0)
+            )
+        except Exception:
+            pass
+
+    def handle_gcode_M27_sending(self, command):
+        try:
+            interval = int(command.s)
+            self._protocol.internal_state.sd_status_autoreporting = (
+                self._protocol.internal_state.firmware_capabilities.get(
+                    self._protocol.CAPABILITY_AUTOREPORT_SD_STATUS, False
+                )
+                and (interval > 0)
+            )
+        except Exception:
+            pass
+
+    def _apply_temperature_offset(self, heater, command, support_r=False):
+        offset = self._protocol.internal_state.temperature_offsets.get(heater, 0)
+        if offset == 0 or "source:file" not in command.tags:
+            return
+
+        try:
+            if command.s is not None:
+                return command.with_args(s=float(command.s) + offset)
+            elif command.r is not None and support_r:
+                return command.with_args(r=float(command.r) + offset)
+        except Exception:
+            self._logger.exception("Error applying temperature offset")
+
+    def handle_gcode_M104_sending(self, command, support_r=False):
+        if command.t:
+            tool_num = command.t
+        else:
+            tool_num = self._protocol.internal_state.current_tool
+
+        return self._apply_temperature_offset(
+            "tool{}".format(tool_num), command, support_r=support_r
+        )
+
+    def handle_gcode_M109_sending(self, command):
+        return self.handle_gcode_M104_sending(command, support_r=True)
+
+    def handle_gcode_M140_sending(self, command):
+        return self._apply_temperature_offset("bed", command, support_r=False)
+
+    def handle_gcode_M190_sending(self, command):
+        return self._apply_temperature_offset("bed", command, support_r=True)
+
+    def handle_gcode_M141_sending(self, command):
+        return self._apply_temperature_offset("chamber", command, support_r=False)
+
+    def handle_gcode_M191_sending(self, command):
+        return self._apply_temperature_offset("chamber", command, support_r=True)
+
+    def handle_gcode_M104_sent(self, command, wait=False, support_r=False):
+        tool_num = self._protocol.internal_state.current_tool
+        if command.t:
+            tool_num = command.t
+
+            if wait:
+                self._protocol.internal_state.former_tool = (
+                    self._protocol.internal_state.current_tool
+                )
+                self._protocol.internal_state.current_tool = tool_num
+
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_tool(tool_num, target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M140_sent(self, command, wait=False, support_r=False):
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_bed(target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M141_sent(self, command, wait=False, support_r=False):
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_chamber(target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M109_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M104_sent(command, wait=True, support_r=True)
+
+    def handle_gcode_M190_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M140_sent(command, wait=True, support_r=True)
+
+    def handle_gcode_M191_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M141_sent(command, wait=True, support_r=True)
+
+    def handle_gcode_M116_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+
+    def handle_gcode_M110_sending(self, command):
+        new_line_number = None
+        if command.n:
+            try:
+                new_line_number = int(command.n)
+            except Exception:
+                pass
+        else:
+            new_line_number = 0
+
+        self._protocol.reset_linenumber(linenumber=new_line_number)
+        self._protocol.internal_state.resend_linenumber = None
+
+    def handle_gcode_M114_queued(self, command):
+        self._protocol.reset_position_timers()
+
+    handle_gcode_M114_sent = handle_gcode_M114_queued
+
+    def handle_gcode_G4_sent(self, command):
+        timeout = 0
+        if command.p is not None:
+            try:
+                timeout = float(command.p) / 1000.0
+            except ValueError:
+                pass
+        elif command.s is not None:
+            try:
+                timeout = float(command.s)
+            except ValueError:
+                pass
+
+        self._protocol.internal_state.timeout = (
+            self._protocol.get_timeout(
+                "communication_busy"
+                if self._protocol.internal_state.busy_detected
+                else "communication"
+            )
+            + timeout
+        )
+        self._protocol.internal_state.dwelling_until = time.monotonic() + timeout
 
     ##~~ Helpers
 

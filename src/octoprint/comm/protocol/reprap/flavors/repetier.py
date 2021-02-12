@@ -39,6 +39,10 @@ class RepetierFlavor(StandardFlavor):
       * ``target``: new target temperature (float)
     """
 
+    def __init__(self, protocol):
+        super().__init__(protocol)
+        self.resend_swallow_repetitions_counter = 0
+
     @classmethod
     def identifier(cls, firmware_name, firmware_info):
         return "repetier" in firmware_name.lower()
@@ -61,7 +65,7 @@ class RepetierFlavor(StandardFlavor):
                 temperatures[tool] = (None, target)
                 return {
                     "max_tool_num": max(
-                        tool_num, self._protocol.flags.get("current_tool", 0)
+                        tool_num, self._protocol.internal_state.current_tool
                     ),
                     "temperatures": temperatures,
                     "heatup_detected": False,
@@ -72,7 +76,7 @@ class RepetierFlavor(StandardFlavor):
                 target = float(match.group("target"))
                 temperatures = {"bed": (None, target)}
                 return {
-                    "max_tool_num": self._protocol.flags.get("current_tool", 0),
+                    "max_tool_num": self._protocol.internal_state.current_tool,
                     "temperatures": temperatures,
                     "heatup_detected": False,
                 }
@@ -87,19 +91,17 @@ class RepetierFlavor(StandardFlavor):
 
     def preprocess_comm_resend(self, linenumber):
         if (
-            self._protocol.flags.get("resend_swallow_repetitions", False)
-            and self._protocol.flags.get("resend_swallow_repetitions_counter", 0)
-            and linenumber == self._protocol.flags["resend_requested"]
-            and self._protocol.flags["resend_swallow_repetitions_counter"] > 0
+            self._protocol.internal_state.resend
+            and self.resend_swallow_repetitions_counter
+            and linenumber == self._protocol.internal_state.resend_requested
+            and self.resend_swallow_repetitions_counter > 0
         ):
-            self.logger.debug(
+            self._logger.debug(
                 "Ignoring resend request for line {}, that is "
                 "probably a repetition sent by the firmware to "
                 "ensure it arrives, not a real request".format(linenumber)
             )
-            self._protocol.flags["resend_swallow_repetitions_counter"] -= 1
+            self.resend_swallow_repetitions_counter -= 1
             return True
 
-        self._protocol.flags[
-            "resend_swallow_repetitions_counter"
-        ] = self.identical_resends_countdown
+        self.resend_swallow_repetitions_counter = self.identical_resends_countdown

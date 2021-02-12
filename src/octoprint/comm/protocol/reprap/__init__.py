@@ -66,37 +66,7 @@ from octoprint.comm.util.parameters import (
 from octoprint.events import Events
 from octoprint.util import ResettableTimer, TypeAlreadyInQueue
 from octoprint.util import dummy_gettext as gettext
-from octoprint.util import protectedkeydict, to_bytes, to_unicode
-
-GCODE_TO_EVENT = {
-    # pause for user input
-    "M226": Events.WAITING,
-    "M0": Events.WAITING,
-    "M1": Events.WAITING,
-    # dwell command
-    "G4": Events.DWELL,
-    # part cooler
-    "M245": Events.COOLING,
-    # part conveyor
-    "M240": Events.CONVEYOR,
-    # part ejector
-    "M40": Events.EJECT,
-    # user alert
-    "M300": Events.ALERT,
-    # home print head
-    "G28": Events.HOME,
-    # emergency stop
-    "M112": Events.E_STOP,
-    # motors on/off
-    "M80": Events.POWER_ON,
-    "M81": Events.POWER_OFF,
-}
-
-CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
-CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
-CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
-CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
-CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+from octoprint.util import to_bytes, to_unicode
 
 
 class FallbackValue:
@@ -127,6 +97,72 @@ class BooleanCallbackValue:
         return bool(self.callback())
 
 
+class InternalState:
+    def __init__(self, protocol, **kwargs):
+        self._protocol = protocol
+
+        self.temperatures = TemperatureRecord()
+        self.heating_start = None
+        self.heating_lost = 0
+        self.heating = False
+        self.temperature_autoreporting = False
+        self.temperature_offsets = {}
+
+        self.current_tool = 0
+        self.former_tool = 0
+        self.invalid_tools = set()
+
+        self.current_f = None
+        self.current_z = None
+
+        self.sd_available = False
+        self.sd_files = []
+        self.sd_files_temp = None
+        self.sd_status_autoreporting = False
+
+        self.resend_requested = None
+        self.resend_linenumber = None
+        self.resend_count = None
+
+        self.long_running_command = False
+
+        self.only_from_job = BooleanCallbackValue(
+            lambda: self._protocol.state in ProtocolState.PROCESSING_STATES
+            and self._protocol.job
+            and self._protocol.job.exclusive
+        )
+        self.trigger_events = BooleanCallbackValue(
+            lambda: not (
+                self._protocol.state in ProtocolState.PROCESSING_STATES
+                and self._protocol.job
+                and self._protocol.job.exclusive
+            )
+        )
+        self.expect_continuous_comms = BooleanCallbackValue(
+            lambda: self._protocol.state in ProtocolState.PROCESSING_STATES
+            and self._protocol.job
+            and not self._protocol.job.parallel
+        )
+
+        self.ignore_ok = 0
+
+        self.job_on_hold = BooleanCallbackValue(lambda: self._protocol.job_on_hold)
+
+        self.timeout = None
+        self.timeout_consecutive = 0
+        self.ok_timeout = None
+        self.dwelling_until = None
+
+        self.firmware_identified = False
+        self.firmware_name = None
+        self.firmware_info = {}
+        self.firmware_capabilities = {}
+        self.firmware_capability_support = {}
+
+        self.busy_detected = False
+        self.multiline_error = False
+
+
 class ReprapGcodeProtocol(
     Protocol,
     Fdm3dPrinterProtocolMixin,
@@ -141,6 +177,17 @@ class ReprapGcodeProtocol(
     key = "reprap"
 
     supported_jobs = [LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob]
+
+    CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+    CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
+    CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
+    CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
+    CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+
+    LOG_PREFIX_TX = ">>> "
+    LOG_PREFIX_RX = "<<< "
+    LOG_PREFIX_MSG = "--- "
+    LOG_PREFIX_WARN = "!!! "
 
     @classmethod
     def get_connection_options(cls):
@@ -296,7 +343,7 @@ class ReprapGcodeProtocol(
                     (f.key, dict((key, getattr(f, key)) for key in f.overridable))
                     for f in all_flavors()
                 ),
-                default="generic",
+                default="standard",
             ),
             ParamGroup(
                 "error_handling",
@@ -708,96 +755,43 @@ class ReprapGcodeProtocol(
             "send_emergency_stop", True
         )
 
-        flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
-        flavor_message_attrs = self.get_flavor_attributes_starting_with(
-            self.flavor, "message_"
-        )
-        flavor_error_attrs = self.get_flavor_attributes_starting_with(
-            self.flavor, "error_"
+        self.sanity_check_tools = kwargs.get("sanity_checking", {}).get(
+            "sanity_check_tools", True
         )
 
-        self._comm_messages = flavor_comm_attrs
-        self._registered_messages = flavor_comm_attrs + flavor_message_attrs
-        self._current_registered_messages = self._registered_messages
-        self._error_messages = flavor_error_attrs
+        self._comm_messages = []
+        self._registered_messages = []
+        self._current_registered_messages = []
+        self._error_messages = []
+        self._gcode_handlers = []
+        self._activate_flavor(self.flavor)
 
-        self._handlers_gcode = self.get_attributes_starting_with("_gcode_")
-        self._handlers_atcommand = self.get_attributes_starting_with("_atcommand_")
-        self._handlers_command_phase = self.get_attributes_starting_with(
+        self._atcommand_handlers = self.get_attributes_starting_with("_atcommand_")
+        self._command_phase_handlers = self.get_attributes_starting_with(
             "_command_phase_"
         )
 
         self._capability_support = {
-            CAPABILITY_AUTOREPORT_TEMP: kwargs.get("capabilities", {}).get(
+            self.CAPABILITY_AUTOREPORT_TEMP: kwargs.get("capabilities", {}).get(
                 "autoreport_temp", True
             ),
-            CAPABILITY_AUTOREPORT_SD_STATUS: kwargs.get("capabilities", {}).get(
+            self.CAPABILITY_AUTOREPORT_SD_STATUS: kwargs.get("capabilities", {}).get(
                 "autoreport_sd_status", True
             ),
-            CAPABILITY_EMERGENCY_PARSER: kwargs.get("capabilities", {}).get(
+            self.CAPABILITY_EMERGENCY_PARSER: kwargs.get("capabilities", {}).get(
                 "emergency_parser", True
             ),
-            CAPABILITY_BUSY_PROTOCOL: kwargs.get("capabilities", {}).get(
+            self.CAPABILITY_BUSY_PROTOCOL: kwargs.get("capabilities", {}).get(
                 "busy_protocol", True
             ),
-            CAPABILITY_CHAMBER_TEMP: kwargs.get("capabilities", {}).get(
+            self.CAPABILITY_CHAMBER_TEMP: kwargs.get("capabilities", {}).get(
                 "chamber_temp", True
             ),
         }
 
         self._transport = None
 
-        self._internal_flags = {
-            "temperatures": TemperatureRecord(),
-            "heating_start": None,
-            "heating_lost": 0,
-            "heating": False,
-            "temperature_autoreporting": False,
-            "temperature_offsets": {},
-            "current_tool": 0,
-            "former_tool": 0,
-            "current_f": None,
-            "current_z": None,
-            "sd_available": False,
-            "sd_files": [],
-            "sd_files_temp": None,
-            "sd_status_autoreporting": False,
-            "resend_requested": None,
-            "resend_linenumber": None,
-            "resend_count": None,
-            "long_running_command": False,
-            "only_from_job": BooleanCallbackValue(
-                lambda: self.state in ProtocolState.PROCESSING_STATES
-                and self._job
-                and self._job.exclusive
-            ),
-            "trigger_events": BooleanCallbackValue(
-                lambda: not (
-                    self.state in ProtocolState.PROCESSING_STATES
-                    and self._job
-                    and self._job.exclusive
-                )
-            ),
-            "expect_continous_comms": BooleanCallbackValue(
-                lambda: self.state in ProtocolState.PROCESSING_STATES
-                and self._job
-                and not self._job.parallel
-            ),
-            "ignore_ok": 0,
-            "job_on_hold": BooleanCallbackValue(lambda: self.job_on_hold),
-            "timeout": None,
-            "timeout_consecutive": 0,
-            "ok_timeout": None,
-            "dwelling_until": None,
-            "firmware_identified": False,
-            "firmware_name": None,
-            "firmware_info": {},
-            "firmware_capabilities": {},
-            "firmware_capability_support": {},
-            "busy_detected": False,
-            "multiline_error": False,
-        }
-        self._protected_flags = protectedkeydict(self._internal_flags)
+        self.internal_state = InternalState(self)
 
         self._job_queue = JobQueue()
         self._command_queue = CommandQueue()
@@ -915,10 +909,6 @@ class ReprapGcodeProtocol(
             and self._send_queue_active
         )
 
-    @property
-    def flags(self):
-        return self._internal_flags
-
     def connect(self, transport, transport_args=None, transport_kwargs=None):
         if not isinstance(transport, Transport):
             raise ValueError(
@@ -927,7 +917,8 @@ class ReprapGcodeProtocol(
                 )
             )
 
-        self._internal_flags["timeout"] = self._get_timeout("connection")
+        self.internal_state = InternalState(self)
+        self.internal_state.timeout = self.get_timeout("connection")
 
         transport = PushingTransportWrapper(
             LineAwareTransportWrapper(transport), timeout=5.0
@@ -1229,10 +1220,10 @@ class ReprapGcodeProtocol(
         self.send_commands(command, tags=tags, **kwargs)
 
     def set_temperature_offset(self, heater, offset, *args, **kwargs):
-        self._internal_flags["temperature_offsets"][heater] = offset
+        self.internal_state.temperature_offsets[heater] = offset
 
     def get_temperature_offsets(self):
-        return copy.copy(self._internal_flags["temperature_offsets"])
+        return copy.copy(self.internal_state.temperature_offsets)
 
     ##~~ MotorControlProtocolMixin
 
@@ -1294,13 +1285,13 @@ class ReprapGcodeProtocol(
         self.send_commands(self.flavor.command_sd_status(), tags=tags, **kwargs)
 
     def start_file_print_status_monitor(self):
-        if self._internal_flags["sd_status_autoreporting"]:
+        if self.internal_state.sd_status_autoreporting:
             return
 
         from octoprint.util import RepeatedTimer
 
         def poll_status():
-            if self.can_send() and not self._internal_flags["sd_status_autoreporting"]:
+            if self.can_send() and not self.internal_state.sd_status_autoreporting:
                 self.get_file_print_status()
 
         self._sd_status_poller = RepeatedTimer(self.interval["sd_status"], poll_status)
@@ -1329,12 +1320,27 @@ class ReprapGcodeProtocol(
 
     ##~~
 
+    def reset_linenumber(self, linenumber=0):
+        with self._line_mutex:
+            self._logger.info(
+                "M110 detected, setting current line number to {}".format(linenumber)
+            )
+
+            # send M110 command with new line number
+            self._current_linenumber = linenumber
+
+            # after a reset of the line number we have no way to determine what line exactly the printer now wants
+            self._last_lines.clear()
+
+    def reset_position_timers(self):
+        pass
+
     def can_send(self):
         return (
             self._is_operational()
-            and not self._internal_flags["long_running_command"]
-            and not self._internal_flags["heating"]
-            and not self._internal_flags["dwelling_until"]
+            and not self.internal_state.long_running_command
+            and not self.internal_state.heating
+            and not self.internal_state.dwelling_until
         )
 
     def send_commands(self, *commands, **kwargs):
@@ -1405,9 +1411,7 @@ class ReprapGcodeProtocol(
 
         return result
 
-    def send_script(self, script, context=None, *args, **kwargs):
-        part_of_job = kwargs.get("part_of_job", False)
-
+    def get_script(self, script, context=None, allow_missing=False, *args, **kwargs):
         if context is None:
             context = {}
 
@@ -1422,7 +1426,7 @@ class ReprapGcodeProtocol(
             {
                 "printer_profile": self._printer_profile,
                 "last_position": self.last_position,
-                "last_temperature": self._internal_flags["temperatures"].as_script_dict(),
+                "last_temperature": self.internal_state.temperatures.as_script_dict(),
             }
         )
 
@@ -1441,7 +1445,13 @@ class ReprapGcodeProtocol(
                 }
             )
 
-        lines = script.render(context=context)
+        try:
+            lines = script.render(context=context)
+        except UnknownScript:
+            if not allow_missing:
+                raise
+            else:
+                return []
 
         # process any hooks
         prefix = []
@@ -1491,7 +1501,14 @@ class ReprapGcodeProtocol(
                 if s:
                     postfix += list(s)
 
-        lines = prefix + lines + postfix
+        return prefix + lines + postfix
+
+    def send_script(self, script, context=None, allow_missing=False, *args, **kwargs):
+        lines = self.get_script(
+            script, context=context, allow_missing=allow_missing, *args, **kwargs
+        )
+
+        part_of_job = kwargs.get("part_of_job", False)
         self.send_commands(
             tags={
                 "trigger:protocol.send_script",
@@ -1542,7 +1559,7 @@ class ReprapGcodeProtocol(
 
     def _on_switching_state_connected(self, old_state):
         if old_state == ProtocolState.CONNECTING:
-            self._internal_flags["timeout"] = self._get_timeout("communication")
+            self.internal_state.timeout = self.get_timeout("communication")
 
             self._send_command(self.flavor.command_set_line(0))
             self._send_command(self.flavor.command_get_firmware_info())
@@ -1556,12 +1573,12 @@ class ReprapGcodeProtocol(
                 if self.state in ProtocolState.PROCESSING_STATES:
                     return self.interval.get("temperature_printing", printing_default)
 
-                tools = self._internal_flags["temperatures"].tools
+                tools = self.internal_state.temperatures.tools
                 for temp in [tools[k][1] for k in tools]:
                     if temp > threshold:
                         return self.interval.get("temperature_target_set", target_default)
 
-                bed = self._internal_flags["temperatures"].bed
+                bed = self.internal_state.temperatures.bed
                 if bed and len(bed) > 0 and bed[1] is not None and bed[1] > threshold:
                     return self.interval.get("temperature_target_set", target_default)
 
@@ -1570,8 +1587,8 @@ class ReprapGcodeProtocol(
             def poll_temperature():
                 if (
                     self._is_operational()
-                    and not self._internal_flags["temperature_autoreporting"]
-                    and not self._internal_flags["only_from_job"]
+                    and not self.internal_state.temperature_autoreporting
+                    and not self.internal_state.only_from_job
                     and self.can_send()
                 ):
                     self._send_command(
@@ -1695,15 +1712,21 @@ class ReprapGcodeProtocol(
 
     def on_transport_log_message(self, transport, data):
         super(ReprapGcodeProtocol, self).on_transport_log_message(transport, data)
-        self._terminal_log.append("--- " + to_unicode(data.strip(), errors="replace"))
+        self._terminal_log.append(
+            self.LOG_PREFIX_MSG + to_unicode(data.strip(), errors="replace")
+        )
 
     def on_transport_log_received_data(self, transport, data):
         super(ReprapGcodeProtocol, self).on_transport_log_received_data(transport, data)
-        self._terminal_log.append("<<< " + to_unicode(data.strip(), errors="replace"))
+        self._terminal_log.append(
+            self.LOG_PREFIX_RX + to_unicode(data.strip(), errors="replace")
+        )
 
     def on_transport_log_sent_data(self, transport, data):
         super(ReprapGcodeProtocol, self).on_transport_log_sent_data(transport, data)
-        self._terminal_log.append(">>> " + to_unicode(data.strip(), errors="replace"))
+        self._terminal_log.append(
+            self.LOG_PREFIX_TX + to_unicode(data.strip(), errors="replace")
+        )
 
     ##~~ Receiving
 
@@ -1809,26 +1832,26 @@ class ReprapGcodeProtocol(
     def _on_comm_any(self, line, lower_line):
         timeout, _ = self.flavor.comm_timeout(line, lower_line)
         if not timeout:
-            self._internal_flags["timeout_consecutive"] = 0
+            self.internal_state.timeout_consecutive = 0
 
         offsets = [
             self.timeouts.get(
                 "communication_busy"
-                if self._internal_flags["busy_detected"]
+                if self.internal_state.busy_detected
                 else "communication",
                 0.0,
             ),
         ]
         if self._temperature_poller:
             offsets.append(self._temperature_poller.interval())
-        self._internal_flags["timeout"] = self._get_max_timeout(*offsets)
+        self.internal_state.timeout = self.get_max_timeout(*offsets)
 
         if len(line):
             if (
-                self._internal_flags["dwelling_until"]
-                and time.monotonic() > self._internal_flags["dwelling_until"]
+                self.internal_state.dwelling_until
+                and time.monotonic() > self.internal_state.dwelling_until
             ):
-                self._internal_flags["dwelling_until"] = False
+                self.internal_state.dwelling_until = False
 
         if self.state == ProtocolState.CONNECTING and len(line):
             hello = self.flavor.command_hello()
@@ -1851,7 +1874,7 @@ class ReprapGcodeProtocol(
         general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
 
         # figure out which consecutive timeout maximum we have to use
-        if self._internal_flags["long_running_command"]:
+        if self.internal_state.long_running_command:
             consecutive_max = self.max_consecutive_timeouts["long"]
         elif self.state in (
             ProtocolState.PROCESSING,
@@ -1863,14 +1886,14 @@ class ReprapGcodeProtocol(
             consecutive_max = self.max_consecutive_timeouts["idle"]
 
         # now increment the timeout counter
-        self._internal_flags["timeout_consecutive"] += 1
+        self.internal_state.timeout_consecutive += 1
         self._logger.debug(
             "Now at {} consecutive timeouts".format(
-                self._internal_flags["timeout_consecutive"]
+                self.internal_state.timeout_consecutive
             )
         )
 
-        if 0 < consecutive_max < self._internal_flags["timeout_consecutive"]:
+        if 0 < consecutive_max < self.internal_state.timeout_consecutive:
             # too many consecutive timeouts, we give up
             message = (
                 "No response from printer after {} consecutive communication timeouts. "
@@ -1884,7 +1907,7 @@ class ReprapGcodeProtocol(
 
             self.disconnect(error=True)
 
-        elif self._internal_flags["resend_requested"] is not None:
+        elif self.internal_state.resend_requested is not None:
             message = "Communication timeout during an active resend, resending same line again to trigger response from printer."
             self._logger.info(message)
             self.notify_listeners(
@@ -1898,13 +1921,13 @@ class ReprapGcodeProtocol(
                 )
                 self._clear_to_send.set()
 
-        elif self._internal_flags["heating"]:
+        elif self.internal_state.heating:
             # blocking heatup active, consider that finished
             message = "Timeout while in an active heatup, considering heatup to be over"
             self._logger.info(message)
             self._finish_heatup()
 
-        elif self._internal_flags["long_running_command"]:
+        elif self.internal_state.long_running_command:
             # long running command active, ignore timeout
             self._logger.debug(
                 "Ran into a communication timeout, but a command known to be a long runner is currently active"
@@ -1939,22 +1962,20 @@ class ReprapGcodeProtocol(
             )
             self._clear_to_send.set()
 
-        self._internal_flags["ok_timeout"] = self._get_timeout(
-            "communication_busy"
-            if self._internal_flags["busy_detected"]
-            else "communication"
+        self.internal_state.ok_timeout = self.get_timeout(
+            "communication_busy" if self.internal_state.busy_detected else "communication"
         )
 
         return self.state != ProtocolState.PROCESSING and line == ""
 
     def _on_comm_ok(self, wait=False):
-        if self._internal_flags["ignore_ok"] > 0:
-            self._internal_flags["ignore_ok"] -= 1
-            if self._internal_flags["ignore_ok"] < 0:
-                self._internal_flags["ignore_ok"] = 0
+        if self.internal_state.ignore_ok > 0:
+            self.internal_state.ignore_ok -= 1
+            if self.internal_state.ignore_ok < 0:
+                self.internal_state.ignore_ok = 0
             self._logger.debug(
                 "Ignoring this ok, ignore counter is now {}".format(
-                    self._internal_flags["ignore_ok"]
+                    self.internal_state.ignore_ok
                 )
             )
             return
@@ -1967,10 +1988,8 @@ class ReprapGcodeProtocol(
             self._resend_ok_timer.cancel()
             self._resend_ok_timer = None
 
-        self._internal_flags["ok_timeout"] = self._get_timeout(
-            "communication_busy"
-            if self._internal_flags["busy_detected"]
-            else "communication"
+        self.internal_state.ok_timeout = self.get_timeout(
+            "communication_busy" if self.internal_state.busy_detected else "communication"
         )
         self._commdebug_logger.debug(
             "on_comm_ok => clear_to_send.set: {} (counter: {})".format(
@@ -1981,11 +2000,11 @@ class ReprapGcodeProtocol(
 
         # reset long running commands, persisted current tools and heatup counters on ok
 
-        self._internal_flags["long_running_command"] = False
+        self.internal_state.long_running_command = False
 
-        if self._internal_flags["former_tool"]:
-            self._internal_flags["current_tool"] = self._internal_flags["former_tool"]
-            self._internal_flags["former_tool"] = None
+        if self.internal_state.former_tool:
+            self.internal_state.current_tool = self.internal_state.former_tool
+            self.internal_state.former_tool = None
 
         self._finish_heatup()
 
@@ -1994,17 +2013,15 @@ class ReprapGcodeProtocol(
 
         # process ongoing resend requests and queues if we are operational
 
-        if self._internal_flags["resend_requested"] is not None:
+        if self.internal_state.resend_requested is not None:
             self._send_next_from_resend()
         else:
             self._continue_sending()
 
     def _on_comm_ignore_ok(self):
-        self._internal_flags["ignore_ok"] += 1
+        self.internal_state.ignore_ok += 1
         self._logger.info(
-            "Ignoring next ok, counter is now at {}".format(
-                self._internal_flags["ignore_ok"]
-            )
+            "Ignoring next ok, counter is now at {}".format(self.internal_state.ignore_ok)
         )
 
     def _on_comm_wait(self):
@@ -2018,7 +2035,7 @@ class ReprapGcodeProtocol(
                 return False
 
             if (
-                self._internal_flags["resend_requested"] is None
+                self.internal_state.resend_requested is None
                 and linenumber == self._current_linenumber
             ):
                 # We don't expect to have an active resend request and the printer is requesting a resend of
@@ -2047,8 +2064,8 @@ class ReprapGcodeProtocol(
             if (
                 last_communication_error is not None
                 and last_communication_error == "linenumber"
-                and linenumber == self._internal_flags["resend_requested"]
-                and self._internal_flags["resend_count"]
+                and linenumber == self.internal_state.resend_requested
+                and self.internal_state.resend_count
                 < self._current_linenumber - linenumber - 1
             ):
                 self._logger.debug(
@@ -2061,7 +2078,7 @@ class ReprapGcodeProtocol(
                         linenumber
                     )
                 )
-                self._internal_flags["resend_count"] += 1
+                self.internal_state.resend_count += 1
                 return
 
             if linenumber not in self._last_lines:
@@ -2076,9 +2093,9 @@ class ReprapGcodeProtocol(
                 else:
                     return
 
-            self._internal_flags["resend_requested"] = linenumber
-            self._internal_flags["resend_linenumber"] = linenumber
-            self._internal_flags["resend_count"] = 0
+            self.internal_state.resend_requested = linenumber
+            self.internal_state.resend_linenumber = linenumber
+            self.internal_state.resend_count = 0
 
             # if we log resends, make sure we don't log more resends than the set rate within a window
             #
@@ -2144,7 +2161,7 @@ class ReprapGcodeProtocol(
                         "Aborting job since printer lost state."
                     )
                     self.process_protocol_log(message)
-                    self._logger.warn(message)
+                    self._logger.warning(message)
 
                     self._on_external_reset()
                     self.cancel_processing(log_position=False)
@@ -2214,20 +2231,18 @@ class ReprapGcodeProtocol(
         self._last_communication_error = error_type
 
     def _on_comm_busy(self):
-        self._internal_flags["ok_timeout"] = self._get_timeout(
-            "communcation_busy"
-            if self._internal_flags["busy_detected"]
-            else "communication"
+        self.internal_state.ok_timeout = self.get_timeout(
+            "communcation_busy" if self.internal_state.busy_detected else "communication"
         )
 
-        if not self._internal_flags["busy_detected"] and self._capability_support.get(
-            CAPABILITY_BUSY_PROTOCOL, False
+        if not self.internal_state.busy_detected and self._capability_support.get(
+            self.CAPABILITY_BUSY_PROTOCOL, False
         ):
             self.process_protocol_log(
                 "Printer seems to support the busy protocol, adjusting timeouts and setting busy "
                 "interval accordingly"
             )
-            self._internal_flags["busy_detected"] = True
+            self.internal_state.busy_detected = True
 
             new_communication_timeout = self.timeouts.get("communication_busy", 2)
             self._transport.timeout = new_communication_timeout
@@ -2281,11 +2296,11 @@ class ReprapGcodeProtocol(
     def _on_message_temperature(self, max_tool_num, temperatures, heatup_detected):
         if heatup_detected:
             self._logger.debug("Externally triggered heatup detected")
-            self._internal_flags["heating"] = True
-            self._internal_flags["heatup_start"] = time.monotonic()
+            self.internal_state.heating = True
+            self.internal_state.heatup_start = time.monotonic()
 
         shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
-        current_tool_key = "T{}".format(self._internal_flags["current_tool"])
+        current_tool_key = "T{}".format(self.internal_state.current_tool)
 
         for name, hook in self._temperature_hooks.items():
             try:
@@ -2309,25 +2324,23 @@ class ReprapGcodeProtocol(
                         continue
                 else:
                     actual, target = temperatures[tool]
-                self._internal_flags["temperatures"].set_tool(
-                    x, actual=actual, target=target
-                )
+                self.internal_state.temperatures.set_tool(x, actual=actual, target=target)
 
         if "B" in temperatures and self._printer_profile["heatedBed"]:
             actual, target = temperatures["B"]
-            self._internal_flags["temperatures"].set_bed(actual=actual, target=target)
+            self.internal_state.temperatures.set_bed(actual=actual, target=target)
 
         if "C" in temperatures and (
-            self._capability_support.get(CAPABILITY_CHAMBER_TEMP, False)
+            self._capability_support.get(self.CAPABILITY_CHAMBER_TEMP, False)
             or self._printer_profile["heatedChamber"]
         ):
             actual, target = temperatures["C"]
-            self._internal_flags["temperatures"].set_chamber(actual=actual, target=target)
+            self.internal_state.temperatures.set_chamber(actual=actual, target=target)
 
         self.notify_listeners(
             "on_protocol_temperature",
             self,
-            self._internal_flags["temperatures"].as_dict(),
+            self.internal_state.temperatures.as_dict(),
         )
 
     def _on_message_position(self, position):
@@ -2343,7 +2356,7 @@ class ReprapGcodeProtocol(
         else:
             # multiple extruder coordinates provided, find current one
             self.last_position.e = (
-                position.get("e{}".format(self._internal_flags["current_tool"]))
+                position.get("e{}".format(self.internal_state.current_tool))
                 if t_and_f_trustworthy
                 else None
             )
@@ -2352,10 +2365,10 @@ class ReprapGcodeProtocol(
             setattr(self.last_position, key, position.get(key))
 
         self.last_position.t = (
-            self._internal_flags["current_tool"] if t_and_f_trustworthy else None
+            self.internal_state.current_tool if t_and_f_trustworthy else None
         )
         self.last_position.f = (
-            self._internal_flags["current_f"] if t_and_f_trustworthy else None
+            self.internal_state.current_f if t_and_f_trustworthy else None
         )
 
         reason = None
@@ -2364,14 +2377,14 @@ class ReprapGcodeProtocol(
             reason = "pause"
             self._record_pause_data = False
             self.pause_position.copy_from(self.last_position)
-            self.pause_temperature.copy_from(self._internal_flags["temperatures"])
+            self.pause_temperature.copy_from(self.internal_state.temperatures)
             self._pause_preparation_done()
 
         if self._record_cancel_data:
             reason = "cancel"
             self._record_cancel_data = False
             self.cancel_position.copy_from(self.last_position)
-            self.cancel_temperature.copy_from(self._internal_flags["temperatures"])
+            self.cancel_temperature.copy_from(self.internal_state.temperatures)
             self._cancel_preparation_done()
 
         self.notify_listeners(
@@ -2383,7 +2396,7 @@ class ReprapGcodeProtocol(
             Events.FIRMWARE_DATA, {"name": firmware_name, "data": copy.copy(data)}
         )
 
-        if not self._internal_flags["firmware_identified"] and firmware_name:
+        if not self.internal_state.firmware_identified and firmware_name:
             self._logger.info('Printer reports firmware name "{}"'.format(firmware_name))
 
             for flavor_class in all_flavors():
@@ -2399,9 +2412,9 @@ class ReprapGcodeProtocol(
                     )
                     self._switch_flavor(flavor_class)
 
-            self._internal_flags["firmware_identified"] = True
-            self._internal_flags["firmware_name"] = firmware_name
-            self._internal_flags["firmware_info"] = data
+            self.internal_state.firmware_identified = True
+            self.internal_state.firmware_name = firmware_name
+            self.internal_state.firmware_info = data
 
             # notify plugins
             for name, hook in self._firmware_info_hooks.items():
@@ -2414,20 +2427,20 @@ class ReprapGcodeProtocol(
                     )
 
     def _on_message_firmware_capability(self, cap, enabled):
-        self._internal_flags["firmware_capabilities"][cap] = enabled
+        self.internal_state.firmware_capabilities[cap] = enabled
 
         if self._capability_support.get(cap, False):
-            if cap == CAPABILITY_AUTOREPORT_TEMP and enabled:
+            if cap == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
                 self._logger.info(
                     "Firmware states that it supports temperature autoreporting"
                 )
                 self._set_autoreport_temperature_interval()
-            elif cap == CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
+            elif cap == self.CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
                 self._logger.info(
                     "Firmware states that it supports sd status autoreporting"
                 )
                 self._set_autoreport_sdstatus_interval()
-            elif cap == CAPABILITY_EMERGENCY_PARSER and enabled:
+            elif cap == self.CAPABILITY_EMERGENCY_PARSER and enabled:
                 self._logger.info(
                     "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
                 )
@@ -2439,7 +2452,7 @@ class ReprapGcodeProtocol(
                     self,
                     cap,
                     enabled,
-                    copy.copy(self._internal_flags["firmware_capabilities"]),
+                    copy.copy(self.internal_state.firmware_capabilities),
                 )
             except Exception:
                 self._logger.exception(
@@ -2448,34 +2461,32 @@ class ReprapGcodeProtocol(
                 )
 
     def _on_message_sd_init_ok(self):
-        self._internal_flags["sd_available"] = True
+        self.internal_state.sd_available = True
         self.list_files()
         self.notify_listeners(
             "on_protocol_file_storage_available",
             self,
-            self._internal_flags["sd_available"],
+            self.internal_state.sd_available,
         )
 
     def _on_message_sd_init_fail(self):
-        self._internal_flags["sd_available"] = False
+        self.internal_state.sd_available = False
         self.notify_listeners(
             "on_protocol_file_storage_available",
             self,
-            self._internal_flags["sd_available"],
+            self.internal_state.sd_available,
         )
 
     def _on_message_sd_begin_file_list(self):
-        self._internal_flags["sd_files_temp"] = []
+        self.internal_state.sd_files_temp = []
 
     def _on_message_sd_end_file_list(self):
-        self._internal_flags["sd_files"] = self._internal_flags["sd_files_temp"]
-        self._internal_flags["sd_files_temp"] = None
-        self.notify_listeners(
-            "on_protocol_file_list", self, self._internal_flags["sd_files"]
-        )
+        self.internal_state.sd_files = self.internal_state.sd_files_temp
+        self.internal_state.sd_files_temp = None
+        self.notify_listeners("on_protocol_file_list", self, self.internal_state.sd_files)
 
     def _on_message_sd_entry(self, name, long_name, size):
-        self._internal_flags["sd_files_temp"].append((name, long_name, size))
+        self.internal_state.sd_files_temp.append((name, long_name, size))
 
     def _on_message_sd_file_opened(self, name, long_name, size):
         self.notify_listeners(
@@ -2488,14 +2499,53 @@ class ReprapGcodeProtocol(
     def _on_message_sd_printing_byte(self, current, total):
         self.notify_listeners("on_protocol_sd_status", self, current, total)
 
+    def _on_message_invalid_tool(self, tool):
+        if tool is None or tool == self.internal_state.current_tool:
+            if self.internal_state.former_tool is not None:
+                fallback_tool = self.internal_state.former_tool
+            else:
+                fallback_tool = 0
+
+            invalid_tool = self.internal_state.current_tool
+
+            if self.sanity_check_tools:
+                # log to terminal and remember as invalid
+                message = "T{} reported as invalid, reverting to T{}".format(
+                    invalid_tool, fallback_tool
+                )
+                self.process_protocol_log(self.LOG_PREFIX_WARN + message)
+                self._logger.warning(message)
+                self.notify_listeners(
+                    "on_protocol_tool_invalid", self, invalid_tool, fallback_tool
+                )
+
+                self.internal_state.invalid_tools.add(invalid_tool)
+
+                # we actually do send a tool command here instead of just setting
+                # self.internal_state.current_tool just in case we had any scripts or
+                # plugins modify stuff due to the prior tool change
+                self.send_commands(
+                    self.flavor.command_set_tool(fallback_tool),
+                    tags={
+                        "trigger:revert_invalid_tool",
+                    },
+                )
+            else:
+                # just log to terminal, user disabled sanity check
+                self.process_protocol_log(
+                    self.LOG_PREFIX_WARN
+                    + "T{} reported as invalid by the firmware, but you've "
+                    "disabled tool sanity checking, ignoring".format(invalid_tool)
+                )
+
     def _finish_heatup(self):
-        if self._internal_flags["heating"]:
-            if self._internal_flags["heating_start"]:
-                self._internal_flags["heating_lost"] = self._internal_flags[
-                    "heating_lost"
-                ] + (time.monotonic() - self._internal_flags["heating_start"])
-                self._internal_flags["heating_start"] = None
-            self._internal_flags["heating"] = False
+        if self.internal_state.heating:
+            if self.internal_state.heating_start:
+                self.internal_state.heating_lost = self.internal_state["heating_lost"] + (
+                    time.monotonic() - self.internal_state.heating_start
+                )
+                self.internal_state.heating_start = None
+            self.internal_state.heating = False
 
     def _on_external_reset(self):
         with self._send_queue.blocked():
@@ -2512,11 +2562,11 @@ class ReprapGcodeProtocol(
 
         self.send_commands(self.flavor.command_hello(), self.flavor.command_set_line(0))
 
-        if self._internal_flags["temperature_autoreporting"]:
+        if self.internal_state.temperature_autoreporting:
             self._set_autoreport_temperature_interval()
-        if self._internal_flags["sd_status_autoreporting"]:
+        if self.internal_state.sd_status_autoreporting:
             self._set_autoreport_sdstatus_interval()
-        if self._internal_flags["busy_detected"]:
+        if self.internal_state.busy_detected:
             self._set_busy_protocol_interval()
 
     ##~~ Sending
@@ -2577,7 +2627,7 @@ class ReprapGcodeProtocol(
     def _send_next_from_resend(self, again=False):
         self._commdebug_logger.debug(
             "send_next_from_resend (counter: {}, line number: {})".format(
-                self._clear_to_send.counter, self._internal_flags.get("resend_linenumber")
+                self._clear_to_send.counter, self.internal_state.resend_linenumber
             )
         )
         self._last_communication_error = None
@@ -2591,11 +2641,11 @@ class ReprapGcodeProtocol(
                 # if that's the case we set it to 0. It will then be incremented,
                 # the last line will be sent again, and then the delta will be
                 # decremented and set to None again, completing the cycle.
-                if self._internal_flags["resend_linenumber"] is None:
-                    self._internal_flags["resend_linenumber"] = self._current_linenumber
-                self._internal_flags["resend_linenumber"] -= 1
+                if self.internal_state.resend_linenumber is None:
+                    self.internal_state.resend_linenumber = self._current_linenumber
+                self.internal_state.resend_linenumber -= 1
 
-            linenumber = self._internal_flags["resend_linenumber"]
+            linenumber = self.internal_state.resend_linenumber
 
             try:
                 command = self._last_lines[linenumber]
@@ -2607,11 +2657,11 @@ class ReprapGcodeProtocol(
                 to_command(command), linenumber=linenumber, processed=True, resend=True
             )
 
-            self._internal_flags["resend_linenumber"] += 1
-            if self._internal_flags["resend_linenumber"] == self._current_linenumber:
-                self._internal_flags["resend_requested"] = None
-                self._internal_flags["resend_linenumber"] = None
-                self._internal_flags["resend_count"] = 0
+            self.internal_state.resend_linenumber += 1
+            if self.internal_state.resend_linenumber == self._current_linenumber:
+                self.internal_state.resend_requested = None
+                self.internal_state.resend_linenumber = None
+                self.internal_state.resend_count = 0
 
                 self._send_queue.resend_active = False
 
@@ -2671,7 +2721,7 @@ class ReprapGcodeProtocol(
         # from the queue, we'll send the second (if there is one). We do not
         # want to get stuck here by throwing away commands.
         while True:
-            if self._internal_flags["only_from_job"]:
+            if self.internal_state.only_from_job:
                 # irrelevant command queue => return
                 return False
 
@@ -2725,7 +2775,7 @@ class ReprapGcodeProtocol(
             else:
                 command = to_command(command, type=command_type, tags=tags)
 
-            if self._internal_flags["trigger_events"]:
+            if self.internal_state.trigger_events:
                 results = self._process_command_phase("queuing", command)
 
                 if not results:
@@ -2751,11 +2801,11 @@ class ReprapGcodeProtocol(
                         self._process_command_phase("queued", command)
 
                         if (
-                            self._internal_flags["trigger_events"]
+                            self.internal_state.trigger_events
                             and isinstance(command, GcodeCommand)
-                            and command.code in GCODE_TO_EVENT
+                            and command.code in self.flavor.gcode_to_event
                         ):
-                            self._event_bus.fire(GCODE_TO_EVENT[command.code])
+                            self._event_bus.fire(self.flavor.gcode_to_event[command.code])
                             pass
                     return True
                 else:
@@ -2841,11 +2891,11 @@ class ReprapGcodeProtocol(
                     now = time.monotonic()
                     if (
                         self.flavor.block_while_dwelling
-                        and self._internal_flags["dwelling_until"]
-                        and now < self._internal_flags["dwelling_until"]
+                        and self.internal_state.dwelling_until
+                        and now < self.internal_state.dwelling_until
                     ):
-                        time.sleep(self._internal_flags["dwelling_until"] - now)
-                        self._internal_flags["dwelling_until"] = False
+                        time.sleep(self.internal_state.dwelling_until - now)
+                        self.internal_state.dwelling_until = False
 
                     # fetch command and optional linenumber from queue
                     command, linenumber, on_sent, processed = entry
@@ -2965,7 +3015,7 @@ class ReprapGcodeProtocol(
 
         self._log_command_phase(phase, command)
 
-        if not self._internal_flags["trigger_events"] or phase not in (
+        if not self.internal_state.trigger_events or phase not in (
             "queuing",
             "queued",
             "sending",
@@ -3026,10 +3076,10 @@ class ReprapGcodeProtocol(
         modified = False
         for command in results:
             if isinstance(command, GcodeCommand):
-                gcode_handler = "_gcode_" + command.code + "_" + phase
-                if gcode_handler in self._handlers_gcode:
+                gcode_handler = "handle_gcode_" + command.code + "_" + phase
+                if gcode_handler in self._gcode_handlers:
                     # noinspection PyCallingNonCallable
-                    handler_results = getattr(self, gcode_handler)(command)
+                    handler_results = getattr(self.flavor, gcode_handler)(command)
                     new_results += normalize_command_handler_result(
                         command, handler_results
                     )
@@ -3048,7 +3098,7 @@ class ReprapGcodeProtocol(
 
         # send it through the phase specific command handler if it exists
         command_phase_handler = "_command_phase_" + phase
-        if command_phase_handler in self._handlers_command_phase:
+        if command_phase_handler in self._command_phase_handlers:
             new_results = []
             for command in results:
                 handler_results = getattr(self, command_phase_handler)(command)
@@ -3077,7 +3127,7 @@ class ReprapGcodeProtocol(
 
         # trigger built-in handler if available
         atcommand_handler = "_atcommand_{}_{}".format(command.atcommand, phase)
-        if atcommand_handler in self._handlers_atcommand:
+        if atcommand_handler in self._atcommand_handlers:
             try:
                 getattr(self, atcommand_handler)(command)
             except Exception:
@@ -3113,7 +3163,7 @@ class ReprapGcodeProtocol(
             return self.flavor.send_checksum != "never" and (
                 self.state == ProtocolState.PROCESSING  # TODO does job need checksum?
                 or self.flavor.send_checksum == "always"
-                or not self._internal_flags["firmware_identified"]
+                or not self.internal_state.firmware_identified
             )
         else:
             # transport has message integrity, no checksum
@@ -3126,10 +3176,10 @@ class ReprapGcodeProtocol(
                 message (unicode): the message to log
         """
         # only jump the queue with our command if the EMERGENCY_PARSER capability is available
-        if not self._internal_flags["firmware_capability_support"].get(
-            CAPABILITY_EMERGENCY_PARSER, False
-        ) or not self._internal_flags["firmware_capabilities"].get(
-            CAPABILITY_EMERGENCY_PARSER, False
+        if not self.internal_state.firmware_capability_support.get(
+            self.CAPABILITY_EMERGENCY_PARSER, False
+        ) or not self.internal_state.firmware_capabilities.get(
+            self.CAPABILITY_EMERGENCY_PARSER, False
         ):
             return
 
@@ -3187,227 +3237,6 @@ class ReprapGcodeProtocol(
         # type: (str, int) -> None
         self._last_lines.append(command, line_number=line_number)
 
-    ##~~ gcode command handlers
-
-    def _gcode_T_queuing(self, command):
-        # TODO evaluate "sanity_check_tools", block and trigger notification if needed
-        pass
-
-    def _gcode_T_sent(self, command):
-        if command.tool:
-            self._internal_flags["current_tool"] = int(command.tool)
-
-    def _gcode_G0_sent(self, command):
-        if command.z is not None and self._internal_flags["current_z"] != command.z:
-            self._internal_flags["current_z"] = command.z
-            self.notify_listeners(
-                "on_protocol_position_z_update", self, self._internal_flags["current_z"]
-            )
-        if command.f is not None:
-            self._internal_flags["current_f"] = command.f
-
-    _gcode_G1_sent = _gcode_G0_sent
-
-    def _gcode_G2_sent(self, command):
-        if command.f is not None:
-            self._internal_flags["current_f"] = command.f
-
-    _gcode_G3_sent = _gcode_G2_sent
-    _gcode_G28_sent = _gcode_G2_sent
-
-    def _gcode_M140_queuing(self, command):
-        if not self._printer_profile["heatedBed"]:
-            self.process_protocol_log(
-                'Warn: Not sending "{}", printer profile has no heated bed'.format(
-                    command
-                )
-            )
-            return (None,)  # Don't send bed commands if we don't have a heated bed
-
-    _gcode_M190_queuing = _gcode_M140_queuing
-
-    def _gcode_M155_sending(self, command):
-        try:
-            interval = int(command.s)
-            self._internal_flags["temperature_autoreporting"] = self._internal_flags[
-                "firmware_capabilities"
-            ].get(CAPABILITY_AUTOREPORT_TEMP, False) and (interval > 0)
-        except Exception:
-            pass
-
-    def _gcode_M27_sending(self, command):
-        try:
-            interval = int(command.s)
-            self._internal_flags["sd_status_autoreporting"] = self._internal_flags[
-                "firmware_capabilities"
-            ].get(CAPABILITY_AUTOREPORT_SD_STATUS, False) and (interval > 0)
-        except Exception:
-            pass
-
-    def _apply_temperature_offset(self, heater, command, support_r=False):
-        offset = self._internal_flags["temperature_offsets"].get(heater, 0)
-        if offset == 0 or "source:file" not in command.tags:
-            return
-
-        try:
-            if command.s is not None:
-                return command.with_args(s=float(command.s) + offset)
-            elif command.r is not None and support_r:
-                return command.with_args(r=float(command.r) + offset)
-        except Exception:
-            self._logger.exception("Error applying temperature offset")
-
-    def _gcode_M104_sending(self, command, support_r=False):
-        if command.t:
-            tool_num = command.t
-        else:
-            tool_num = self._internal_flags["current_tool"]
-
-        return self._apply_temperature_offset(
-            "tool{}".format(tool_num), command, support_r=support_r
-        )
-
-    def _gcode_M109_sending(self, command):
-        return self._gcode_M104_sending(command, support_r=True)
-
-    def _gcode_M140_sending(self, command):
-        return self._apply_temperature_offset("bed", command, support_r=False)
-
-    def _gcode_M190_sending(self, command):
-        return self._apply_temperature_offset("bed", command, support_r=True)
-
-    def _gcode_M141_sending(self, command):
-        return self._apply_temperature_offset("chamber", command, support_r=False)
-
-    def _gcode_M191_sending(self, command):
-        return self._apply_temperature_offset("chamber", command, support_r=True)
-
-    def _gcode_M104_sent(self, command, wait=False, support_r=False):
-        tool_num = self._internal_flags["current_tool"]
-        if command.t:
-            tool_num = command.t
-
-            if wait:
-                self._internal_flags["former_tool"] = self._internal_flags["current_tool"]
-                self._internal_flags["current_tool"] = tool_num
-
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._internal_flags["temperatures"].set_tool(tool_num, target=target)
-            self.notify_listeners(
-                "on_protocol_temperature",
-                self,
-                self._internal_flags["temperatures"].as_dict(),
-            )
-
-    def _gcode_M140_sent(self, command, wait=False, support_r=False):
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._internal_flags["temperatures"].set_bed(target=target)
-            self.notify_listeners(
-                "on_protocol_temperature",
-                self,
-                self._internal_flags["temperatures"].as_dict(),
-            )
-
-    def _gcode_M141_sent(self, command, wait=False, support_r=False):
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._internal_flags["temperatures"].set_chamber(target=target)
-            self.notify_listeners(
-                "on_protocol_temperature",
-                self,
-                self._internal_flags["temperatures"].as_dict(),
-            )
-
-    def _gcode_M109_sent(self, command):
-        self._internal_flags["heatup_start"] = time.monotonic()
-        self._internal_flags["long_running_command"] = True
-        self._internal_flags["heating"] = True
-        self._gcode_M104_sent(command, wait=True, support_r=True)
-
-    def _gcode_M190_sent(self, command):
-        self._internal_flags["heatup_start"] = time.monotonic()
-        self._internal_flags["long_running_command"] = True
-        self._internal_flags["heating"] = True
-        self._gcode_M140_sent(command, wait=True, support_r=True)
-
-    def _gcode_M191_sent(self, command):
-        self._internal_flags["heatup_start"] = time.monotonic()
-        self._internal_flags["long_running_command"] = True
-        self._internal_flags["heating"] = True
-        self._gcode_M141_sent(command, wait=True, support_r=True)
-
-    def _gcode_M116_sent(self, command):
-        self._internal_flags["heatup_start"] = time.monotonic()
-        self._internal_flags["long_running_command"] = True
-        self._internal_flags["heating"] = True
-
-    def _gcode_M110_sending(self, command):
-        new_line_number = None
-        if command.n:
-            try:
-                new_line_number = int(command.n)
-            except Exception:
-                pass
-        else:
-            new_line_number = 0
-
-        with self._line_mutex:
-            self._logger.info(
-                "M110 detected, setting current line number to {}".format(new_line_number)
-            )
-
-            # send M110 command with new line number
-            self._current_linenumber = new_line_number
-
-            # after a reset of the line number we have no way to determine what line exactly the printer now wants
-            self._last_lines.clear()
-        self._internal_flags["resend_linenumber"] = None
-
-    # TODO
-    # def _gcode_M114_queued(self, *args, **kwargs):
-    #     self._reset_position_timers()
-    # _gcode_M114_sent = _gcode_M114_queued
-
-    def _gcode_G4_sent(self, command):
-        timeout = 0
-        if command.p is not None:
-            try:
-                timeout = float(command.p) / 1000.0
-            except ValueError:
-                pass
-        elif command.s is not None:
-            try:
-                timeout = float(command.s)
-            except ValueError:
-                pass
-
-        self._internal_flags["timeout"] = (
-            self._get_timeout(
-                "communication_busy"
-                if self._internal_flags["busy_detected"]
-                else "communication"
-            )
-            + timeout
-        )
-        self._internal_flags["dwelling_until"] = time.monotonic() + timeout
-
     ##~~ atcommand handlers
 
     def _atcommand_pause_queuing(self, command):
@@ -3464,7 +3293,7 @@ class ReprapGcodeProtocol(
 
     def _command_phase_sending(self, command, gcode=None):
         if gcode is not None and gcode.code in self.flavor.long_running_commands:
-            self._internal_flags["long_running_command"] = True
+            self.internal_state.long_running_command = True
 
     ##~~ autoreporting
 
@@ -3505,13 +3334,19 @@ class ReprapGcodeProtocol(
 
     ##~~ helpers
 
-    def _get_timeout(self, timeout_type):
+    def validate_tool(self, tool):
+        return not self.sanity_check_tools or (
+            tool < self._printer_profile["extruder"]["count"]
+            and tool not in self.internal_state.invalid_tools
+        )
+
+    def get_timeout(self, timeout_type):
         if timeout_type in self.timeouts:
             return time.monotonic() + self.timeouts[timeout_type]
         else:
             return time.monotonic()
 
-    def _get_max_timeout(self, *offsets):
+    def get_max_timeout(self, *offsets):
         if len(offsets) == 0:
             offsets = (0.0,)
         return time.monotonic() + max(offsets)
@@ -3524,21 +3359,25 @@ class ReprapGcodeProtocol(
             log = message + "\n| " + log
         self._logger.log(level, log)
 
-    def _switch_flavor(self, flavor_class):
-        self.flavor = flavor_class(self, **self.flavor_overrides)
-
-        flavor_comm_attrs = self.get_flavor_attributes_starting_with(self.flavor, "comm_")
+    def _activate_flavor(self, flavor):
+        flavor_comm_attrs = self.get_flavor_attributes_starting_with(flavor, "comm_")
         flavor_message_attrs = self.get_flavor_attributes_starting_with(
-            self.flavor, "message_"
+            flavor, "message_"
         )
-        flavor_error_attrs = self.get_flavor_attributes_starting_with(
-            self.flavor, "error_"
+        flavor_error_attrs = self.get_flavor_attributes_starting_with(flavor, "error_")
+        flavor_gcode_handlers = self.get_flavor_attributes_starting_with(
+            flavor, "handle_gcode_"
         )
 
         self._comm_messages = flavor_comm_attrs
         self._registered_messages = flavor_comm_attrs + flavor_message_attrs
         self._current_registered_messages = self._registered_messages
         self._error_messages = flavor_error_attrs
+        self._gcode_handlers = flavor_gcode_handlers
+
+    def _switch_flavor(self, flavor_class):
+        self.flavor = flavor_class(self, **self.flavor_overrides)
+        self._activate_flavor(self.flavor)
 
     def _trigger_error(self, text, reason, disconnect=True):
         self.state = ProtocolState.ERROR
@@ -3593,11 +3432,11 @@ class ReprapGcodeProtocol(
         if close:
             # close to reset host state
             self.error = "Closing serial port due to emergency stop."
-            self.process_protocol_log("!!! " + self.error)
+            self.process_protocol_log(self.LOG_PREFIX_WARN + self.error)
             self._logger.warning(self.error)
             self.disconnect(error=True)
 
         # fire the M112 event since we sent it and we're going to prevent the caller from seeing it
         gcode = emergency_command.code
-        if gcode in GCODE_TO_EVENT:
-            self._event_bus.fire(GCODE_TO_EVENT[gcode])
+        if gcode in self.flavor.gcode_to_event:
+            self._event_bus.fire(self.flavor.gcode_to_event[gcode])

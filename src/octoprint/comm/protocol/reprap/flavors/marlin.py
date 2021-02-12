@@ -23,7 +23,7 @@ class MarlinFlavor(StandardFlavor):
         result = super().comm_error(line, lower_line)
 
         if self.regex_min_max_error.match(line):
-            self._protocol.flags["multiline_error"] = line
+            self._protocol.internal_state.multiline_error = line
 
         return result
 

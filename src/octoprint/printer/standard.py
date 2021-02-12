@@ -23,6 +23,7 @@ from octoprint.comm.job.gcode import LocalGcodeFilePrintjob, LocalGcodeStreamjob
 from octoprint.comm.job.sdcard import SDFilePrintjob
 from octoprint.comm.protocol import (
     FileAwareProtocolListener,
+    MultiToolAwareProtocolListener,
     PositionAwareProtocolListener,
     ProtocolListener,
     ProtocolState,
@@ -87,6 +88,7 @@ class Printer(
     ProtocolListener,
     FileAwareProtocolListener,
     PositionAwareProtocolListener,
+    MultiToolAwareProtocolListener,
 ):
     """
     Default implementation of the :class:`PrinterInterface`. Manages the communication layer object and registers
@@ -1705,6 +1707,21 @@ class Printer(
 
         eventManager().fire(Events.PRINTER_RESET, payload={"idle": idle})
 
+    def on_protocol_message_suppressed(
+        self, protocol, command, message, severity, *args, **kwargs
+    ):
+        if protocol != self._protocol:
+            return
+
+        eventManager().fire(
+            Events.COMMAND_SUPPRESSED,
+            payload={
+                "command": command,
+                "message": message,
+                "severity": message,
+            },
+        )
+
     # ~~ octoprint.comm.protocol.FileAwareProtocolListener implementation
 
     def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
@@ -1740,6 +1757,18 @@ class Printer(
         payload = {"reason": kwargs.get("reason", None)}
         payload.update(position)
         eventManager().fire(Events.POSITION_UPDATE, payload)
+
+    # ~~ octoprint.comm.protocol.MultiToolAwareProtocolListener implementation
+
+    def on_protocol_tool_change(self, protocol, old_tool, new_tool, *args, **kwargs):
+        payload = {"old": old_tool, "new": new_tool}
+        eventManager().fire(Events.TOOL_CHANGE, payload)
+
+    def on_protocol_tool_invalid(
+        self, protocol, invalid_tool, fallback_tool, *args, **kwargs
+    ):
+        payload = {"tool": invalid_tool, "fallback": fallback_tool}
+        eventManager().fire(Events.INVALID_TOOL_REPORTED, payload)
 
     # ~~ octoprint.comm.protocol.JobAwareProtocolListener implementation
 

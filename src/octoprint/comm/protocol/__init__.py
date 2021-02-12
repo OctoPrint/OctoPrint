@@ -5,6 +5,8 @@ import contextlib
 import copy
 import logging
 
+import frozendict
+
 from octoprint.comm.transport import TransportListener, TransportState
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
@@ -198,7 +200,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         self._error = None
         self._stats = ProtocolErrorStats()
 
-        self._printer_profile = kwargs.get("printer_profile")
+        self._printer_profile = frozendict.frozendict(kwargs.get("printer_profile"))
         self._plugin_manager = kwargs.get("plugin_manager")
         self._event_bus = kwargs.get("event_bus")
         self._settings = kwargs.get("settings")
@@ -294,6 +296,14 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
     @property
     def stats(self):
         return self._stats
+
+    @property
+    def printer_profile(self):
+        return self._printer_profile
+
+    @property
+    def job(self):
+        return self._job
 
     def connect(self, transport, transport_args=None, transport_kwargs=None):
         if self.state not in (
@@ -711,6 +721,11 @@ class ProtocolListener:
     def on_protocol_job_failed(self, protocol, job, *args, **kwargs):
         pass
 
+    def on_protocol_message_suppressed(
+        self, protocol, command, message, severity, *args, **kwargs
+    ):
+        pass
+
 
 class FileAwareProtocolListener:
     def on_protocol_file_storage_available(self, protocol, available, *args, **kwargs):
@@ -742,6 +757,16 @@ class PositionAwareProtocolListener:
         pass
 
     def on_protocol_position_z_update(self, protocol, z, *args, **kwargs):
+        pass
+
+
+class MultiToolAwareProtocolListener:
+    def on_protocol_tool_change(self, protocol, old_tool, new_tool, *args, **kwargs):
+        pass
+
+    def on_protocol_tool_invalid(
+        self, protocol, invalid_tool, fallback_tool, *args, **kwargs
+    ):
         pass
 
 
