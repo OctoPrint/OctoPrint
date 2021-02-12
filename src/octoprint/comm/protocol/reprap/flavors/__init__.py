@@ -44,6 +44,8 @@ class StandardFlavor(metaclass=FlavorMeta):
     key = "standard"
     name = "Standard Flavor"
 
+    ##------------------------------------------------------------------------------------
+
     unknown_requires_ack = False
     unknown_with_checksum = False
 
@@ -185,6 +187,8 @@ class StandardFlavor(metaclass=FlavorMeta):
         "M81": Events.POWER_OFF,  # motors off
     }
 
+    ##~~ Constructor ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     def __init__(self, protocol, **kwargs):
         from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
 
@@ -196,13 +200,13 @@ class StandardFlavor(metaclass=FlavorMeta):
         for key in self.overridable:
             setattr(self, key, kwargs.get(key, getattr(self.__class__, key)))
 
-    ##~~ Identifier
+    ##~~ Identifier ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @classmethod
     def identifier(cls, firmware_name, firmware_info):
         return False
 
-    ##~~ Message matchers
+    ##~~ Message matchers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def comm_timeout(self, line, lower_line):
         now = time.monotonic()
@@ -342,7 +346,7 @@ class StandardFlavor(metaclass=FlavorMeta):
     def message_invalid_tool(self, line, lower_line):
         return "invalid extruder" in lower_line
 
-    ##~~ Message parsers
+    ##~~ Message parsers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def parse_comm_error(self, line, lower_line):
         multiline = self._protocol.internal_state.multiline_error
@@ -524,7 +528,7 @@ class StandardFlavor(metaclass=FlavorMeta):
                 return {"tool": int(match.group("tool"))}
         return None
 
-    ##~~ Commands
+    ##~~ Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def command_hello(self):
         return self.command_set_line(0)
@@ -640,7 +644,213 @@ class StandardFlavor(metaclass=FlavorMeta):
     def command_busy_protocol_interval(self, interval):
         return GcodeCommand("M113", s=interval)
 
-    ##~~ gcode handlers
+    ##~~ gcode handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ##-- G codes -------------------------------------------------------------------------
+
+    def handle_gcode_G0_sent(self, command):
+        if command.z is not None and self._protocol.internal_state.current_z != command.z:
+            self._protocol.internal_state.current_z = command.z
+            self._protocol.notify_listeners(
+                "on_protocol_position_z_update",
+                self._protocol,
+                self._protocol.internal_state.current_z,
+            )
+        if command.f is not None:
+            self._protocol.internal_state.current_f = command.f
+
+    handle_gcode_G1_sent = handle_gcode_G0_sent
+
+    def handle_gcode_G2_sent(self, command):
+        if command.f is not None:
+            self._protocol.internal_state.current_f = command.f
+
+    handle_gcode_G3_sent = handle_gcode_G2_sent
+
+    def handle_gcode_G4_sent(self, command):
+        timeout = 0
+        if command.p is not None:
+            try:
+                timeout = float(command.p) / 1000.0
+            except ValueError:
+                pass
+        elif command.s is not None:
+            try:
+                timeout = float(command.s)
+            except ValueError:
+                pass
+
+        self._protocol.internal_state.timeout = (
+            self._protocol.get_timeout(
+                "communication_busy"
+                if self._protocol.internal_state.busy_detected
+                else "communication"
+            )
+            + timeout
+        )
+        self._protocol.internal_state.dwelling_until = time.monotonic() + timeout
+
+    handle_gcode_G28_sent = handle_gcode_G2_sent
+
+    ##-- M codes -------------------------------------------------------------------------
+
+    def handle_gcode_M27_sending(self, command):
+        try:
+            interval = int(command.s)
+            self._protocol.internal_state.sd_status_autoreporting = (
+                self._protocol.internal_state.firmware_capabilities.get(
+                    self._protocol.CAPABILITY_AUTOREPORT_SD_STATUS, False
+                )
+                and (interval > 0)
+            )
+        except Exception:
+            pass
+
+    def handle_gcode_M104_sending(self, command, support_r=False):
+        if command.t:
+            tool_num = command.t
+        else:
+            tool_num = self._protocol.internal_state.current_tool
+
+        return self._apply_temperature_offset(
+            "tool{}".format(tool_num), command, support_r=support_r
+        )
+
+    def handle_gcode_M104_sent(self, command, wait=False, support_r=False):
+        tool_num = self._protocol.internal_state.current_tool
+        if command.t:
+            tool_num = command.t
+
+            if wait:
+                self._protocol.internal_state.former_tool = (
+                    self._protocol.internal_state.current_tool
+                )
+                self._protocol.internal_state.current_tool = tool_num
+
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_tool(tool_num, target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M109_sending(self, command):
+        return self.handle_gcode_M104_sending(command, support_r=True)
+
+    def handle_gcode_M109_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M104_sent(command, wait=True, support_r=True)
+
+    def handle_gcode_M110_sending(self, command):
+        new_line_number = None
+        if command.n:
+            try:
+                new_line_number = int(command.n)
+            except Exception:
+                pass
+        else:
+            new_line_number = 0
+
+        self._protocol.reset_linenumber(linenumber=new_line_number)
+        self._protocol.internal_state.resend_linenumber = None
+
+    def handle_gcode_M114_queued(self, command):
+        self._protocol.reset_position_timers()
+
+    handle_gcode_M114_sent = handle_gcode_M114_queued
+
+    def handle_gcode_M116_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+
+    def handle_gcode_M140_queuing(self, command):
+        if not self._protocol.printer_profile["heatedBed"]:
+            self._protocol.process_protocol_log(
+                'Warn: Not sending "{}", printer profile has no heated bed'.format(
+                    command
+                )
+            )
+            return (None,)  # Don't send bed commands if we don't have a heated bed
+
+    def handle_gcode_M140_sending(self, command):
+        return self._apply_temperature_offset("bed", command, support_r=False)
+
+    def handle_gcode_M140_sent(self, command, wait=False, support_r=False):
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_bed(target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M141_sending(self, command):
+        return self._apply_temperature_offset("chamber", command, support_r=False)
+
+    def handle_gcode_M141_sent(self, command, wait=False, support_r=False):
+        target = None
+        if command.s is not None:
+            target = float(command.s)
+        elif command.r is not None and support_r:
+            target = float(command.r)
+
+        if target:
+            self._protocol.internal_state.temperatures.set_chamber(target=target)
+            self._protocol.notify_listeners(
+                "on_protocol_temperature",
+                self._protocol,
+                self._protocol.internal_state.temperatures.as_dict(),
+            )
+
+    def handle_gcode_M155_sending(self, command):
+        try:
+            interval = int(command.s)
+            self._protocol.internal_state.temperature_autoreporting = (
+                self._protocol.internal_state.firmware_capabilities.get(
+                    self._protocol.CAPABILITY_AUTOREPORT_TEMP, False
+                )
+                and (interval > 0)
+            )
+        except Exception:
+            pass
+
+    handle_gcode_M190_queuing = handle_gcode_M140_queuing
+
+    def handle_gcode_M190_sending(self, command):
+        return self._apply_temperature_offset("bed", command, support_r=True)
+
+    def handle_gcode_M190_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M140_sent(command, wait=True, support_r=True)
+
+    def handle_gcode_M191_sending(self, command):
+        return self._apply_temperature_offset("chamber", command, support_r=True)
+
+    def handle_gcode_M191_sent(self, command):
+        self._protocol.internal_state.heatup_start = time.monotonic()
+        self._protocol.internal_state.long_running_command = True
+        self._protocol.internal_state.heating = True
+        self.handle_gcode_M141_sent(command, wait=True, support_r=True)
+
+    ##-- T -------------------------------------------------------------------------------
 
     def handle_gcode_T_queuing(self, command):
         old_tool = self._protocol.internal_state.current_tool
@@ -710,60 +920,7 @@ class StandardFlavor(metaclass=FlavorMeta):
                 new_tool,
             )
 
-    def handle_gcode_G0_sent(self, command):
-        if command.z is not None and self._protocol.internal_state.current_z != command.z:
-            self._protocol.internal_state.current_z = command.z
-            self._protocol.notify_listeners(
-                "on_protocol_position_z_update",
-                self._protocol,
-                self._protocol.internal_state.current_z,
-            )
-        if command.f is not None:
-            self._protocol.internal_state.current_f = command.f
-
-    handle_gcode_G1_sent = handle_gcode_G0_sent
-
-    def handle_gcode_G2_sent(self, command):
-        if command.f is not None:
-            self._protocol.internal_state.current_f = command.f
-
-    handle_gcode_G3_sent = handle_gcode_G2_sent
-    handle_gcode_G28_sent = handle_gcode_G2_sent
-
-    def handle_gcode_M140_queuing(self, command):
-        if not self._protocol.printer_profile["heatedBed"]:
-            self._protocol.process_protocol_log(
-                'Warn: Not sending "{}", printer profile has no heated bed'.format(
-                    command
-                )
-            )
-            return (None,)  # Don't send bed commands if we don't have a heated bed
-
-    handle_gcode_M190_queuing = handle_gcode_M140_queuing
-
-    def handle_gcode_M155_sending(self, command):
-        try:
-            interval = int(command.s)
-            self._protocol.internal_state.temperature_autoreporting = (
-                self._protocol.internal_state.firmware_capabilities.get(
-                    self._protocol.CAPABILITY_AUTOREPORT_TEMP, False
-                )
-                and (interval > 0)
-            )
-        except Exception:
-            pass
-
-    def handle_gcode_M27_sending(self, command):
-        try:
-            interval = int(command.s)
-            self._protocol.internal_state.sd_status_autoreporting = (
-                self._protocol.internal_state.firmware_capabilities.get(
-                    self._protocol.CAPABILITY_AUTOREPORT_SD_STATUS, False
-                )
-                and (interval > 0)
-            )
-        except Exception:
-            pass
+    ##~~ Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def _apply_temperature_offset(self, heater, command, support_r=False):
         offset = self._protocol.internal_state.temperature_offsets.get(heater, 0)
@@ -777,152 +934,6 @@ class StandardFlavor(metaclass=FlavorMeta):
                 return command.with_args(r=float(command.r) + offset)
         except Exception:
             self._logger.exception("Error applying temperature offset")
-
-    def handle_gcode_M104_sending(self, command, support_r=False):
-        if command.t:
-            tool_num = command.t
-        else:
-            tool_num = self._protocol.internal_state.current_tool
-
-        return self._apply_temperature_offset(
-            "tool{}".format(tool_num), command, support_r=support_r
-        )
-
-    def handle_gcode_M109_sending(self, command):
-        return self.handle_gcode_M104_sending(command, support_r=True)
-
-    def handle_gcode_M140_sending(self, command):
-        return self._apply_temperature_offset("bed", command, support_r=False)
-
-    def handle_gcode_M190_sending(self, command):
-        return self._apply_temperature_offset("bed", command, support_r=True)
-
-    def handle_gcode_M141_sending(self, command):
-        return self._apply_temperature_offset("chamber", command, support_r=False)
-
-    def handle_gcode_M191_sending(self, command):
-        return self._apply_temperature_offset("chamber", command, support_r=True)
-
-    def handle_gcode_M104_sent(self, command, wait=False, support_r=False):
-        tool_num = self._protocol.internal_state.current_tool
-        if command.t:
-            tool_num = command.t
-
-            if wait:
-                self._protocol.internal_state.former_tool = (
-                    self._protocol.internal_state.current_tool
-                )
-                self._protocol.internal_state.current_tool = tool_num
-
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._protocol.internal_state.temperatures.set_tool(tool_num, target=target)
-            self._protocol.notify_listeners(
-                "on_protocol_temperature",
-                self._protocol,
-                self._protocol.internal_state.temperatures.as_dict(),
-            )
-
-    def handle_gcode_M140_sent(self, command, wait=False, support_r=False):
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._protocol.internal_state.temperatures.set_bed(target=target)
-            self._protocol.notify_listeners(
-                "on_protocol_temperature",
-                self._protocol,
-                self._protocol.internal_state.temperatures.as_dict(),
-            )
-
-    def handle_gcode_M141_sent(self, command, wait=False, support_r=False):
-        target = None
-        if command.s is not None:
-            target = float(command.s)
-        elif command.r is not None and support_r:
-            target = float(command.r)
-
-        if target:
-            self._protocol.internal_state.temperatures.set_chamber(target=target)
-            self._protocol.notify_listeners(
-                "on_protocol_temperature",
-                self._protocol,
-                self._protocol.internal_state.temperatures.as_dict(),
-            )
-
-    def handle_gcode_M109_sent(self, command):
-        self._protocol.internal_state.heatup_start = time.monotonic()
-        self._protocol.internal_state.long_running_command = True
-        self._protocol.internal_state.heating = True
-        self.handle_gcode_M104_sent(command, wait=True, support_r=True)
-
-    def handle_gcode_M190_sent(self, command):
-        self._protocol.internal_state.heatup_start = time.monotonic()
-        self._protocol.internal_state.long_running_command = True
-        self._protocol.internal_state.heating = True
-        self.handle_gcode_M140_sent(command, wait=True, support_r=True)
-
-    def handle_gcode_M191_sent(self, command):
-        self._protocol.internal_state.heatup_start = time.monotonic()
-        self._protocol.internal_state.long_running_command = True
-        self._protocol.internal_state.heating = True
-        self.handle_gcode_M141_sent(command, wait=True, support_r=True)
-
-    def handle_gcode_M116_sent(self, command):
-        self._protocol.internal_state.heatup_start = time.monotonic()
-        self._protocol.internal_state.long_running_command = True
-        self._protocol.internal_state.heating = True
-
-    def handle_gcode_M110_sending(self, command):
-        new_line_number = None
-        if command.n:
-            try:
-                new_line_number = int(command.n)
-            except Exception:
-                pass
-        else:
-            new_line_number = 0
-
-        self._protocol.reset_linenumber(linenumber=new_line_number)
-        self._protocol.internal_state.resend_linenumber = None
-
-    def handle_gcode_M114_queued(self, command):
-        self._protocol.reset_position_timers()
-
-    handle_gcode_M114_sent = handle_gcode_M114_queued
-
-    def handle_gcode_G4_sent(self, command):
-        timeout = 0
-        if command.p is not None:
-            try:
-                timeout = float(command.p) / 1000.0
-            except ValueError:
-                pass
-        elif command.s is not None:
-            try:
-                timeout = float(command.s)
-            except ValueError:
-                pass
-
-        self._protocol.internal_state.timeout = (
-            self._protocol.get_timeout(
-                "communication_busy"
-                if self._protocol.internal_state.busy_detected
-                else "communication"
-            )
-            + timeout
-        )
-        self._protocol.internal_state.dwelling_until = time.monotonic() + timeout
-
-    ##~~ Helpers
 
     def _canonicalize_temperatures(self, parsed, current):
         """
