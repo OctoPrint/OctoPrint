@@ -1079,37 +1079,37 @@ class Server:
         # analysis backlog
         fileManager.process_backlog()
 
-        # auto connect
-        if self._settings.getBoolean(["serial", "autoconnect"]):
-            self._logger.info(
-                "Autoconnect on startup is configured, trying to connect to the printer..."
-            )
-            try:
-                (port, baudrate) = (
-                    self._settings.get(["serial", "port"]),
-                    self._settings.getInt(["serial", "baudrate"]),
-                )
-                printer_profile = printerProfileManager.get_default()
-                connectionOptions = printer.__class__.get_connection_options()
-                if port in connectionOptions["ports"] or port == "AUTO" or port is None:
-                    self._logger.info(
-                        "Trying to connect to configured serial port {}".format(port)
-                    )
-                    printer.connect(
-                        port=port,
-                        baudrate=baudrate,
-                        profile=printer_profile["id"]
-                        if "id" in printer_profile
-                        else "_default",
-                    )
-                else:
-                    self._logger.info(
-                        "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
-                    )
-            except Exception:
-                self._logger.exception(
-                    "Something went wrong while attempting to automatically connect to the printer"
-                )
+        # TODO auto connect
+        # if self._settings.getBoolean(["serial", "autoconnect"]):
+        #    self._logger.info(
+        #        "Autoconnect on startup is configured, trying to connect to the printer..."
+        #    )
+        #    try:
+        #        (port, baudrate) = (
+        #            self._settings.get(["serial", "port"]),
+        #            self._settings.getInt(["serial", "baudrate"]),
+        #        )
+        #        printer_profile = printerProfileManager.get_default()
+        #        connectionOptions = printer.__class__.get_connection_options()
+        #        if port in connectionOptions["ports"] or port == "AUTO" or port is None:
+        #            self._logger.info(
+        #                "Trying to connect to configured serial port {}".format(port)
+        #            )
+        #            printer.connect(
+        #                port=port,
+        #                baudrate=baudrate,
+        #                profile=printer_profile["id"]
+        #                if "id" in printer_profile
+        #                else "_default",
+        #            )
+        #        else:
+        #            self._logger.info(
+        #                "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
+        #            )
+        #    except Exception:
+        #        self._logger.exception(
+        #            "Something went wrong while attempting to automatically connect to the printer"
+        #        )
 
         # start up watchdogs
         try:

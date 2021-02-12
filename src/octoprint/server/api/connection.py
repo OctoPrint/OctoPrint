@@ -77,7 +77,7 @@ def connectionCommand():
                 return make_response("Invalid printer profile: %s" % printerProfile, 400)
             kwargs["profile"] = printerProfile
 
-        if "save" in data and data["save"]:
+        if "save" in data and data["save"]:  # TODO
             """
             settings().set(["serial", "port"], port)
             settings().setInt(["serial", "baudrate"], baudrate)
@@ -130,7 +130,6 @@ def _get_options():
             }
         )
 
-    connection_options = printer.__class__.get_connection_options()
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
 
@@ -138,8 +137,6 @@ def _get_options():
     default_connection = connectionProfileManager.get_default()
 
     options = {
-        "ports": connection_options["ports"],
-        "baudrates": connection_options["baudrates"],
         "printerProfiles": [
             {
                 "id": printer_profile["id"],
@@ -154,8 +151,6 @@ def _get_options():
             connection_profile.as_dict()
             for connection_profile in connection_profiles.values()
         ],
-        "portPreference": connection_options["portPreference"],
-        "baudratePreference": connection_options["baudratePreference"],
         "printerProfilePreference": default_profile["id"]
         if "id" in default_profile
         else None,

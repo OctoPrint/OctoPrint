@@ -22,17 +22,7 @@ import re
 
 from octoprint.comm.scripts import UnknownScript  # noqa: F401,F403
 from octoprint.filemanager import FileDestinations
-from octoprint.settings import settings
-from octoprint.util import deprecated, natural_key
-
-
-@deprecated(
-    message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
-    includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
-    since="1.3.0",
-)
-def get_connection_options():
-    return PrinterInterface.get_connection_options()
+from octoprint.util import deprecated
 
 
 class PrinterInterface:
@@ -49,32 +39,6 @@ class PrinterInterface:
 
     valid_heater_regex = re.compile(r"^(tool\d+|bed|chamber)$")
     """Regex for valid heater identifiers."""
-
-    @classmethod
-    def get_connection_options(cls, *args, **kwargs):
-        """
-        Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
-
-        Returned ``dict`` has the following structure::
-
-            ports: <list of available serial ports>
-            baudrates: <list of available baudrates>
-            portPreference: <configured default serial port>
-            baudratePreference: <configured default baudrate>
-            autoconnect: <whether autoconnect upon server startup is enabled or not>
-
-        Returns:
-            (dict): A dictionary holding the connection options in the structure specified above
-        """
-        import octoprint.util.comm as comm
-
-        return {
-            "ports": sorted(comm.serialList(), key=natural_key),
-            "baudrates": sorted(comm.baudrateList(), reverse=True),
-            "portPreference": settings().get(["serial", "port"]),
-            "baudratePreference": settings().getInt(["serial", "baudrate"]),
-            "autoconnect": settings().getBoolean(["serial", "autoconnect"]),
-        }
 
     def connect(
         self,

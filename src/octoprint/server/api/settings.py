@@ -11,7 +11,7 @@ from werkzeug.exceptions import BadRequest
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
-from octoprint.server import pluginManager, printer, userManager
+from octoprint.server import pluginManager, userManager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
@@ -30,7 +30,6 @@ def _etag(lm=None):
     if lm is None:
         lm = _lastmodified()
 
-    connection_options = printer.__class__.get_connection_options()
     plugins = sorted(octoprint.plugin.plugin_manager().enabled_plugins)
     plugin_settings = _get_plugin_settings()
 
@@ -63,9 +62,6 @@ def _etag(lm=None):
     # output that are not stored in config.yaml
     hash_update(repr(sorted_plugin_settings))
 
-    # connection options are also part of the settings
-    hash_update(repr(connection_options))
-
     # if the list of plugins changes, the settings structure changes too
     hash_update(repr(plugins))
 
@@ -91,8 +87,6 @@ def getSettings():
         abort(403)
 
     s = settings()
-
-    connectionOptions = printer.__class__.get_connection_options()
 
     # NOTE: Remember to adjust the docs of the data model on the Settings API if anything
     # is changed, added or removed here
@@ -150,11 +144,7 @@ def getSettings():
         },
         "gcodeAnalysis": {"runAt": s.get(["gcodeAnalysis", "runAt"])},
         "serial": {
-            "port": connectionOptions["portPreference"],
-            "baudrate": connectionOptions["baudratePreference"],
             "exclusive": s.getBoolean(["serial", "exclusive"]),
-            "portOptions": connectionOptions["ports"],
-            "baudrateOptions": connectionOptions["baudrates"],
             "autoconnect": s.getBoolean(["serial", "autoconnect"]),
             "timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
             "timeoutDetectionFirst": s.getFloat(["serial", "timeout", "detectionFirst"]),
