@@ -352,7 +352,7 @@ class FilebasedGroupManager(GroupManager):
             import yaml
 
             yaml.safe_dump(
-                data, f, default_flow_style=False, indent=4, allow_unicode=True
+                data, f, default_flow_style=False, indent=2, allow_unicode=True
             )
             self._dirty = False
         self._load()

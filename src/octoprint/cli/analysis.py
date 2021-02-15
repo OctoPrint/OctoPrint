@@ -145,7 +145,7 @@ def gcode_command(
         yaml.safe_dump(
             interpreter.get_result(),
             default_flow_style=False,
-            indent=4,
+            indent=2,
             allow_unicode=True,
         )
     )

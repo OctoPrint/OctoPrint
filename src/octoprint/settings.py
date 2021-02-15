@@ -1680,7 +1680,7 @@ class Settings(object):
                     self._config,
                     configFile,
                     default_flow_style=False,
-                    indent=4,
+                    indent=2,
                     allow_unicode=True,
                 )
                 self._dirty = False
