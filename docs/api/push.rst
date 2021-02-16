@@ -81,7 +81,7 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
           Client->>API: GET /api/login?passive=true&apikey=...
           API->>Client: { name: ..., session: ..., ... }
 
-          note over Client auth = name + ":" + session
+          note over Client: auth = name ":" session
 
           Client->>Websocket: { "auth": auth }
 
