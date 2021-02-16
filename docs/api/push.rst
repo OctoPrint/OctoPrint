@@ -68,6 +68,32 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
          "auth": "someuser:LGZ0trf8By"
        }
 
+    Example for a auth roundtrip with only an API key, using the :ref:`JS Client Library <sec-jsclientlib-base>`:
+
+    .. sourcecode:: javascript
+
+       var client = new OctoPrintClient({baseurl: "http://example.com/octoprint1/", apikey: "apikey1"});
+       client.socket.connect();
+       client.browser.passiveLogin().done(function(response) {
+           client.socket.sendAuth(response.name, response.session).done(function() {
+               // the socket is now authenticated
+           })
+       })
+
+    .. mermaid::
+
+       sequenceDiagram
+          participant Client
+          participant API
+          participant Websocket
+
+          Client->>API: GET /api/login?passive=true&apikey=...
+          API->>Client: { name: ..., session: ..., ... }
+
+          note over Client auth = name + ":" + session
+
+          Client->>Websocket: { "auth": auth }
+
   * ``throttle``: Usually, OctoPrint will push the general state update
     in the ``current`` message twice per second. For some clients that might still
     be too fast, so they can signal a different factor to OctoPrint utilizing the
