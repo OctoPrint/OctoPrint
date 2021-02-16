@@ -29,6 +29,25 @@
    Tries to perform a passive login into OctoPrint, using existing session data
    stored in the browser's cookies.
 
+   .. code-block:: javascript
+
+      OctoPrint.browser.passiveLogin()
+          .done(function(response) {
+              // do something with the response
+          })
+
+   .. code-block:: javascript
+
+      var client = new OctoPrintClient({
+          baseurl: "https://example.com/",
+          apikey: "..."
+      });
+      client.browser.passiveLogin()
+          .done(function(response) {
+              // do something with the response, e.g. authenticate with the socket
+              // via response.name and response.session
+          })
+
    :param object opts: Additional request options
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 

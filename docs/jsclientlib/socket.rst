@@ -114,8 +114,12 @@
 
    Instructs the server to decrease the message rate by 500ms.
 
+.. _sec-jsclient-socket-authsample:
+
 Sample to setup an authed socket
 ================================
+
+If you have a username and a password:
 
 .. code-block:: javascript
 
@@ -123,6 +127,20 @@ Sample to setup an authed socket
       OctoPrint.browser.login("myusername", "mypassword", true)
           .done(function(response) {
               OctoPrint.socket.sendAuth("myusername", response.session);
+          });
+
+If you have an API key:
+
+.. code-block:: javascript
+
+      var client = new OctoPrintClient({
+          baseurl: "http://example.com/",
+          apikey: "abcdef"
+      });
+      client.socket.connect();
+      client.browser.passiveLogin()
+          .done(function(response) {
+              client.socket.sendAuth(response.name, response.session);
           });
 
 .. _sec-jsclient-socket-throttling:
