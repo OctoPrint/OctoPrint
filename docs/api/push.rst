@@ -68,17 +68,8 @@ OctoPrint's SockJS socket also accepts two commands from the client to the serve
          "auth": "someuser:LGZ0trf8By"
        }
 
-    Example for a auth roundtrip with only an API key, using the :ref:`JS Client Library <sec-jsclientlib-base>`:
-
-    .. sourcecode:: javascript
-
-       var client = new OctoPrintClient({baseurl: "http://example.com/octoprint1/", apikey: "apikey1"});
-       client.socket.connect();
-       client.browser.passiveLogin().done(function(response) {
-           client.socket.sendAuth(response.name, response.session).done(function() {
-               // the socket is now authenticated
-           })
-       })
+    An example for an auth roundtrip with only an API key using the :ref:`JS Client Library <sec-jsclientlib-base>`
+    can be found :ref:`here <sec-jsclient-socket-authsample>`.
 
     .. mermaid::
 
