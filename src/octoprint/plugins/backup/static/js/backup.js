@@ -27,9 +27,14 @@ $(function () {
         self.excludeFromBackup = ko.observableArray([]);
         self.backupInProgress = ko.observable(false);
         self.restoreSupported = ko.observable(true);
+        self.maxUploadSize = ko.observable(0);
 
         self.backupUploadData = undefined;
         self.backupUploadName = ko.observable();
+
+        self.isAboveUploadSize = function (data) {
+            return data.size > self.maxUploadSize();
+        };
 
         var backupFileuploadOptions = {
             dataType: "json",
@@ -70,6 +75,7 @@ $(function () {
             self.backups.updateItems(response.backups);
             self.unknownPlugins(response.unknown_plugins);
             self.restoreSupported(response.restore_supported);
+            self.maxUploadSize(response.max_upload_size);
         };
 
         self.createBackup = function () {
