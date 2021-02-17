@@ -1154,8 +1154,8 @@ class BackupPlugin(
                 metadata_bytes = zip.read(metadata_zipinfo)
                 metadata = json.loads(metadata_bytes)
 
-                backup_version = get_comparable_version(metadata["version"], base=True)
-                if backup_version > get_octoprint_version(base=True):
+                backup_version = get_comparable_version(metadata["version"], cut=1)
+                if backup_version > get_octoprint_version(cut=1):
                     if callable(on_invalid_backup):
                         on_invalid_backup(
                             "Backup is from a newer version of OctoPrint and cannot be applied"
