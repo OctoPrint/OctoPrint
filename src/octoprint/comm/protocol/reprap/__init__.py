@@ -329,7 +329,7 @@ class ReprapGcodeProtocol(
                             "ok_buffer_size",
                             gettext("`ok` buffer size"),
                             min=1,
-                            help=gettext("Only modifiy if told to do so"),
+                            help=gettext("Only modify if told to do so"),
                         ),
                     ],
                     help=gettext(
@@ -764,7 +764,6 @@ class ReprapGcodeProtocol(
         self._current_registered_messages = []
         self._error_messages = []
         self._gcode_handlers = []
-        self._activate_flavor(self.flavor)
 
         self._atcommand_handlers = self.get_attributes_starting_with("_atcommand_")
         self._command_phase_handlers = self.get_attributes_starting_with(
@@ -796,7 +795,11 @@ class ReprapGcodeProtocol(
         self._job_queue = JobQueue()
         self._command_queue = CommandQueue()
         self._send_queue = SendQueue()
-        self._clear_to_send = SendToken(max=10, name="protocol.clear_to_send")
+        self._clear_to_send = SendToken(
+            minimum=None,
+            maximum=self.flavor.ok_buffer_size,
+            name="protocol.clear_to_send",
+        )
 
         self._current_linenumber = 1
         self._last_lines = LineHistory(max=50)
@@ -900,6 +903,8 @@ class ReprapGcodeProtocol(
         # sending thread
         self._send_queue_active = False
         self._sending_thread = None
+
+        self._activate_flavor(self.flavor)
 
     @property
     def _active(self):
@@ -3374,6 +3379,8 @@ class ReprapGcodeProtocol(
         self._current_registered_messages = self._registered_messages
         self._error_messages = flavor_error_attrs
         self._gcode_handlers = flavor_gcode_handlers
+
+        self._clear_to_send.max = flavor.ok_buffer_size
 
     def _switch_flavor(self, flavor_class):
         self.flavor = flavor_class(self, **self.flavor_overrides)

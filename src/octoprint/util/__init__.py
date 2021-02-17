@@ -1663,7 +1663,7 @@ class CountedEvent:
     def blocked(self):
         return self.counter <= 0
 
-    def acquire(self, blocking=1):
+    def acquire(self, blocking=True):
         return self._mutex.acquire(blocking=blocking)
 
     def release(self):

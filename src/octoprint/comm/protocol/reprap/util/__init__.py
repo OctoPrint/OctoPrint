@@ -173,7 +173,7 @@ def normalize_command_handler_result(command, handler_results, tags_to_add=None)
 
 class SendToken(CountedEvent):
     def __init__(self, value=0, maximum=None, **kwargs):
-        super(SendToken, self).__init__(value=value, maximum=maximum, **kwargs)
+        super().__init__(value=value, maximum=maximum, **kwargs)
         self._ignored = 0
 
     def set(self, ignore=False):
