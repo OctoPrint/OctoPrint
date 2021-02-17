@@ -185,9 +185,13 @@ def get_comparable_version(version_string, cut=None, **kwargs):
         else:
             # new setuptools
             version = pkg_resources.parse_version(version.base_version)
-            if 0 < cut < len(version.release):
-                reduced = version.release[:-cut]
-                version = pkg_resources.parse_version(".".join(str(x) for x in reduced))
+            if cut is not None:
+                parts = version.base_version.split(".")
+                if 0 < cut < len(parts):
+                    reduced = parts[:-cut]
+                    version = pkg_resources.parse_version(
+                        ".".join(str(x) for x in reduced)
+                    )
 
     return version
 
