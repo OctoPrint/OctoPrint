@@ -470,6 +470,10 @@ $(function () {
                                 ",",
                                 true
                             );
+                        } else if (parameter.type === "integer") {
+                            result[parameter.name] = parseInt(parameter.value());
+                        } else if (parameter.type === "float") {
+                            result[parameter.name] = parseFloat(parameter.value());
                         } else {
                             result[parameter.name] = parameter.value();
                         }
