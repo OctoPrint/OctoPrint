@@ -29,7 +29,11 @@ from octoprint.server.util.flask import (
 )
 from octoprint.util import dict_merge, get_formatted_size, to_unicode
 from octoprint.util.pip import create_pip_caller
-from octoprint.util.version import get_comparable_version, get_python_version_string
+from octoprint.util.version import (
+    get_comparable_version,
+    get_python_version_string,
+    is_python_compatible,
+)
 
 from . import cli, exceptions, updaters, util, version_checks
 
@@ -367,23 +371,33 @@ class SoftwareUpdatePlugin(
             or self._overlay_cache_timestamp + self._overlay_cache_ttl < time.time()
         )
 
+    def _get_check_overlay(self, url):
+        self._logger.info("Fetching check overlays from {}".format(url))
+        try:
+            r = requests.get(url, timeout=3.1)
+            r.raise_for_status()
+            data = r.json()
+        except Exception as exc:
+            self._logger.error(
+                "Could not fetch check overlay from {}: {}".format(url, exc)
+            )
+            return {}
+        else:
+            return data
+
     def _get_check_overlays(self, force=False):
         if self._check_overlays_stale or force:
             if self._connectivity_checker.online:
-                # reload from URL
-                url = self._settings.get(["check_overlay_url"])
-                self._logger.info("Fetching check overlays from {}".format(url))
-                try:
-                    r = requests.get(url, timeout=3.1)
-                    r.raise_for_status()
-                    data = r.json()
-                except Exception as exc:
-                    self._logger.error(
-                        "Could not fetch check overlay from {}: {}".format(url, exc)
+                self._overlay_cache = self._get_check_overlay(
+                    self._settings.get(["check_overlay_url"])
+                )
+                if is_python_compatible("<3"):
+                    data = self._get_check_overlay(
+                        self._settings.get(["check_overlay_py2_url"])
                     )
-                    self._overlay_cache = {}
-                else:
-                    self._overlay_cache = data
+                    self._overlay_cache = octoprint.util.dict_merge(
+                        self._overlay_cache, data
+                    )
 
             else:
                 self._logger.info("Not fetching check overlays, we are offline")
@@ -530,6 +544,7 @@ class SoftwareUpdatePlugin(
             "ignore_throttled": False,
             "minimum_free_storage": 150,
             "check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
+            "check_overlay_py2_url": "https://plugins.octoprint.org/update_check_overlay_py2.json",
             "check_overlay_ttl": 6 * 60,
             "credentials": {
                 "github": None,
@@ -1331,6 +1346,7 @@ class SoftwareUpdatePlugin(
                         )
 
                         target_disabled = populated_check.get("disabled", False)
+                        target_compatible = populated_check.get("compatible", True)
                         update_available = update_available or (
                             target_update_available and not target_disabled
                         )
@@ -1380,6 +1396,7 @@ class SoftwareUpdatePlugin(
                             "online": target_online,
                             "error": target_error,
                             "disabled": target_disabled,
+                            "compatible": target_compatible,
                             "releaseChannels": {},
                         }
 
@@ -1485,6 +1502,9 @@ class SoftwareUpdatePlugin(
         update_available = False
         error = None
 
+        disabled = check.get("disabled", False)
+        compatible = check.get("compatible", True)
+
         try:
             version_checker = self._get_version_checker(target, check)
             information, is_current = version_checker.get_latest(
@@ -1501,7 +1521,7 @@ class SoftwareUpdatePlugin(
                     )
                     del self._version_cache[target]
                     self._version_cache_dirty = True
-                elif not is_current:
+                elif not is_current and compatible:
                     update_available = True
         except exceptions.CannotCheckOffline:
             update_possible = False
@@ -1539,14 +1559,14 @@ class SoftwareUpdatePlugin(
         else:
             try:
                 updater = self._get_updater(target, check)
-                update_possible = updater.can_perform_update(target, check, online=online)
+                update_possible = compatible and updater.can_perform_update(
+                    target, check, online=online
+                )
             except Exception:
                 self._logger.exception(
                     "Error while checking if {} can be updated".format(target)
                 )
                 update_possible = False
-
-        disabled = check.get("disabled", False)
 
         self._version_cache[target] = {
             "timestamp": time.time(),
@@ -1557,6 +1577,7 @@ class SoftwareUpdatePlugin(
             "online": online,
             "error": error,
             "disabled": disabled,
+            "compatible": compatible,
         }
         self._version_cache_dirty = True
         return information, update_available, update_possible, online, error
@@ -1638,7 +1659,7 @@ class SoftwareUpdatePlugin(
                     continue
                 check = checks[target]
 
-                if "enabled" in check and not check["enabled"]:
+                if not check.get("enabled", True) or not check.get("compatible", True):
                     continue
 
                 if target not in check_targets:
@@ -1731,8 +1752,17 @@ class SoftwareUpdatePlugin(
 
         if not update_possible:
             self._logger.warning(
-                "Cannot perform update for %s, update type is not fully configured"
-                % target
+                "Cannot perform update for {}, update type is not fully configured".format(
+                    target
+                )
+            )
+            return False, None
+
+        if not information.get("compatible", True):
+            self._logger.warning(
+                "Cannot perform update for {}, update is reported as incompatible".format(
+                    target
+                )
             )
             return False, None
 

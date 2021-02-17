@@ -97,10 +97,10 @@ $(function () {
                 levels.push(item);
                 configuredLoggers.push(logger);
             });
-            let sortedLevels = _.sortBy(levels, function (o) {
+            var sortedLevels = _.sortBy(levels, function (o) {
                 return o.component;
             });
-            self.configuredLoggers(levels);
+            self.configuredLoggers(sortedLevels);
 
             // loggers
             var availableLoggers = _.difference(response.loggers, configuredLoggers);

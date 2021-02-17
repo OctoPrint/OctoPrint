@@ -6,7 +6,6 @@ import logging
 
 from flask import abort, jsonify, make_response, request
 from flask_login import current_user
-from past.builtins import basestring
 from werkzeug.exceptions import BadRequest
 
 import octoprint.plugin
@@ -914,7 +913,7 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
-                if not isinstance(script, basestring):
+                if not isinstance(script, str):
                     continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")

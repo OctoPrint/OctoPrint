@@ -45,11 +45,14 @@ from flask_babel import gettext
 
 from octoprint.plugins.pluginmanager import DEFAULT_PLUGIN_REPOSITORY
 from octoprint.settings import valid_boolean_trues
+from octoprint.util import get_formatted_size
 from octoprint.util.text import sanitize
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
 BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
+
+MAX_UPLOAD_SIZE = 1024 * 1024 * 1024  # 1GB
 
 
 class BackupPlugin(
@@ -118,6 +121,12 @@ class BackupPlugin(
             {"type": "wizard", "name": gettext("Restore Backup?")},
         ]
 
+    def get_template_vars(self):
+        return {
+            "max_upload_size": MAX_UPLOAD_SIZE,
+            "max_upload_size_str": get_formatted_size(MAX_UPLOAD_SIZE),
+        }
+
     ##~~ BlueprintPlugin
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
@@ -131,6 +140,7 @@ class BackupPlugin(
             backup_in_progress=len(self._in_progress) > 0,
             unknown_plugins=unknown_plugins,
             restore_supported=self._restore_supported(self._settings),
+            max_upload_size=MAX_UPLOAD_SIZE,
         )
 
     @octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
@@ -385,8 +395,8 @@ class BackupPlugin(
         ]
 
     def bodysize_hook(self, current_max_body_sizes, *args, **kwargs):
-        # max upload size of 1GB for the restore endpoint
-        return [("POST", r"/restore", 1024 * 1024 * 1024)]
+        # max upload size for the restore endpoint
+        return [("POST", r"/restore", MAX_UPLOAD_SIZE)]
 
     # Exported plugin helpers
     def create_backup_helper(self, exclude=None, filename=None):
@@ -1136,8 +1146,8 @@ class BackupPlugin(
                 metadata_bytes = zip.read(metadata_zipinfo)
                 metadata = json.loads(metadata_bytes)
 
-                backup_version = get_comparable_version(metadata["version"], base=True)
-                if backup_version > get_octoprint_version(base=True):
+                backup_version = get_comparable_version(metadata["version"], cut=1)
+                if backup_version > get_octoprint_version(cut=1):
                     if callable(on_invalid_backup):
                         on_invalid_backup(
                             "Backup is from a newer version of OctoPrint and cannot be applied"

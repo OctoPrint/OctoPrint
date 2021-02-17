@@ -58,6 +58,17 @@ inputs:
         - No, it did not persist (it's an issue with one of your installed plugins, don't report here)
         - I cannot test this issue in safe mode (state why below)
       required: true
+  - type: input
+    attributes:
+      label: If you could not test in safe mode, please state why
+      description: >-
+        Issues caused by a third party plugin are a major cause of bugs reported here, so we really need to
+        rule out that a plugin is at fault here. [Safe mode](https://docs.octoprint.org/en/master/features/safemode.html) is an easy way to do that. Only skip safe mode
+        if your particular problem *absolutely requires* third party plugins to be enabled. "It would take
+        too long" is **not** a reason to skip testing in safe mode, neither is "I do not know how to
+        enable it" as you can find info on that [here](https://docs.octoprint.org/en/master/features/safemode.html).
+
+        If you really *cannot* test in safe mode, leave a short explanation as to why.
   - type: description
     attributes:
       value: |
@@ -92,10 +103,10 @@ inputs:
       value: >-
         Please also be sure to upload the following files below:
 
-          * `octoprint.log`: See [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know where to find that.
+          * `octoprint.log`: See [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know where to find that. Just attach down below as-is.
           * `serial.log` or the contents of your terminal tab, if applicable. Always
             include if unsure. **Please note that you need to enable `serial.log` first**,
-            see [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know how to do or where to find it.
+            see [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know how to do or where to find it. Just attach down below as-is.
           * Your browser's JavaScript console, if you are reporting a problem with the
             user interface. See [here](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers) on where to find that.
           * If possible, screenshots or videos showing the problem, especially if you

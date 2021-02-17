@@ -1985,6 +1985,7 @@ class Server:
         )
 
         js_libs = [
+            "js/lib/babel-polyfill.min.js",
             "js/lib/jquery/jquery.min.js",
             "js/lib/modernizr.custom.js",
             "js/lib/lodash.min.js",
@@ -2028,6 +2029,7 @@ class Server:
             "js/lib/sockjs.min.js",
             "js/lib/ResizeSensor.js",
             "js/lib/hls.js",
+            "js/lib/less.js",
         ]
         js_client = [
             "js/app/client/base.js",
@@ -2072,6 +2074,7 @@ class Server:
             JsDelimiterBundler,
             JsPluginBundle,
             LessImportRewrite,
+            RJSMinExtended,
             SourceMapRemove,
             SourceMapRewrite,
         )
@@ -2081,6 +2084,7 @@ class Server:
         register_filter(SourceMapRemove)
         register_filter(JsDelimiterBundler)
         register_filter(GzipFile)
+        register_filter(RJSMinExtended)
 
         def all_assets_for_plugins(collection):
             """Gets all plugin assets for a dict of plugin->assets"""
@@ -2091,16 +2095,16 @@ class Server:
 
         # -- JS --------------------------------------------------------------------------------------------------------
 
-        filters = ["sourcemap_remove", "js_delimiter_bundler"]
+        filters = ["sourcemap_remove"]
         if self._settings.getBoolean(["devel", "webassets", "minify"]):
-            filters.append("rjsmin")
-        filters.append("gzip")
+            filters += ["rjsmin_extended"]
+        filters += ["js_delimiter_bundler", "gzip"]
 
         js_filters = filters
         if self._settings.getBoolean(["devel", "webassets", "minify_plugins"]):
             js_plugin_filters = js_filters
         else:
-            js_plugin_filters = [x for x in js_filters if x not in ("rjsmin",)]
+            js_plugin_filters = [x for x in js_filters if x not in ("rjsmin_extended",)]
 
         def js_bundles_for_plugins(collection, filters=None):
             """Produces JsPluginBundle instances that output IIFE wrapped assets"""
