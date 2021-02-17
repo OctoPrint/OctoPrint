@@ -11,6 +11,8 @@ jobs:
     steps:
     - name: ⬇ Checkout
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: 🔀 Merge master on maintenance
       uses: robotology/gh-action-nightly-merge@v1.3.2
