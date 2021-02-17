@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🔀 Merge master on maintenance
+      - name: 🔀 Merge master into maintenance
         uses: robotology/gh-action-nightly-merge@v1.3.2
         with:
           stable_branch: "master"
@@ -23,11 +23,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔀 Merge maintenance on devel
-        uses: robotology/gh-action-nightly-merge@v1.3.2
-        with:
-          stable_branch: "master"
-          development_branch: "maintenance"
-          allow_ff: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #- name: 🔀 Merge maintenance into devel
+      #  uses: robotology/gh-action-nightly-merge@v1.3.2
+      #  with:
+      #    stable_branch: "maintenance"
+      #    development_branch: "devel"
+      #    allow_ff: false
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
