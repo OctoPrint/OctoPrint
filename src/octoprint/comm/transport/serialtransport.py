@@ -11,6 +11,7 @@ from octoprint.comm.util.parameters import (
     BooleanType,
     ChoiceType,
     IntegerType,
+    ListType,
     SmallChoiceType,
     SuggestionType,
     UrlType,
@@ -25,33 +26,30 @@ class SerialTransport(Transport):
     key = "serial"
     message_integrity = False
 
-    suggested_baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
-    unix_port_patterns = [
-        "/dev/ttyUSB*",
-        "/dev/ttyACM*",
-        "/dev/tty.usb*",
-        "/dev/cu.*",
-        "/dev/cuaU*",
-        "/dev/rfcomm*",
-    ]
-
     max_write_passes = 5
 
-    @classmethod
-    def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
-        patterns = SerialTransport.unix_port_patterns
-        if additional_ports:
-            patterns += additional_ports
+    baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+    ignored_ports = [
+        "/dev/ttyAMA0",
+        "/dev/ttyS*",
+    ]
 
-        baudrates = SerialTransport.suggested_baudrates
-        if additional_baudrates:
-            baudrates += additional_baudrates
-
-        return type(
-            cls.__name__ + "WithAdditionalPorts",
-            (cls,),
-            {"unix_port_patterns": patterns, "suggested_baudrates": baudrates},
-        )
+    settings = [
+        ListType(
+            "baudrates",
+            gettext("Baudrates"),
+            sep="\n",
+            factory=int,
+            default=baudrates,
+        ),
+        ListType(
+            "ignored_ports",
+            gettext("Ignored ports"),
+            help=gettext("Serial ports you'd like to ignore"),
+            sep="\n",
+            default=ignored_ports,
+        ),
+    ]
 
     @classmethod
     def get_connection_options(cls):
@@ -131,43 +129,14 @@ class SerialTransport(Transport):
 
     @classmethod
     def get_available_serial_ports(cls):
-        import sys
-
-        if sys.platform == "win32":
-            # windows
-            from serial.tools.list_ports import comports
-
-            ports = comports()
-
-        else:
-            # posix
-            import glob
-
-            devices = [
-                device
-                for pattern in cls.unix_port_patterns
-                for device in glob.glob(pattern)
-            ]
-
-            plat = sys.platform.lower()
-
-            if plat[:5] == "linux":
-                # linux
-                from serial.tools.list_ports_linux import SysFS
-
-                ports = [
-                    info
-                    for info in [SysFS(d) for d in devices]
-                    if info.subsystem != "platform"
-                ]
-            else:
-                # other posix systems
-                from serial.tools import list_ports_common
-
-                ports = [list_ports_common.ListPortInfo(d) for d in devices]
+        from serial.tools.list_ports import comports
 
         port_values = [Value(None, title="Auto detect")] + sorted(
-            [Value(port.device, title=port.description) for port in ports],
+            [
+                Value(port.device, title=port.description)
+                for port in comports()
+                if port.device not in cls.ignored_ports
+            ],
             key=lambda x: x.title,
         )
         return port_values
@@ -175,7 +144,7 @@ class SerialTransport(Transport):
     @classmethod
     def get_available_baudrates(cls):
         return [Value(0, title="Auto detect")] + sorted(
-            [Value(baudrate) for baudrate in cls.suggested_baudrates],
+            [Value(baudrate) for baudrate in cls.baudrates],
             key=lambda x: x.title,
             reverse=True,
         )

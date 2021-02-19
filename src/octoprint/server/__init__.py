@@ -603,12 +603,12 @@ class Server:
         # register available transports
         from octoprint.comm.transport import register_transports
 
-        register_transports()
+        register_transports(self._settings, ["connection", "transports"])
 
         # register available protocols
         from octoprint.comm.protocol import register_protocols
 
-        register_protocols()
+        register_protocols(self._settings, ["connection", "protocols"])
 
         # log environment data now
         self._environment_detector.log_detected_environment()

@@ -5,7 +5,7 @@ import copy
 import logging
 import time
 
-from octoprint.comm.util.parameters import get_param_dict
+from octoprint.comm.util.parameters import get_param_dict, register_settings_overlay
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
 from octoprint.util.listener import ListenerAware
@@ -13,26 +13,28 @@ from octoprint.util.listener import ListenerAware
 _registry = {}
 
 
-def register_transports():
+def register_transports(settings, path):
     from .serialtransport import SerialTransport, SerialUrlTransport
     from .sockettransport import SerialOverTcpTransport, TcpTransport
 
-    logger = logging.getLogger(__name__)
-
     # stock transports
-    register_transport(SerialTransport)
-    register_transport(SerialUrlTransport)
-    register_transport(TcpTransport)
-    register_transport(SerialOverTcpTransport)
+    for transport in (
+        SerialTransport,
+        SerialUrlTransport,
+        TcpTransport,
+        SerialOverTcpTransport,
+    ):
+        register_transport(transport, settings, path)
 
     # more transports provided by plugins
+    logger = logging.getLogger(__name__)
     hooks = plugin_manager().get_hooks("octoprint.comm.transport.register")
     for name, hook in hooks.items():
         try:
             transports = hook()
             for transport in transports:
                 try:
-                    register_transport(transport)
+                    register_transport(transport, settings, path)
                 except Exception:
                     logger.exception(
                         "Error while registering transport class {} for plugin {}".format(
@@ -47,18 +49,59 @@ def register_transports():
             )
 
 
-def register_transport(transport_class):
+def register_transport(transport_class, settings, path):
+    logger = logging.getLogger(__name__)
+
     if not hasattr(transport_class, "key"):
         raise ValueError("Transport class {} is missing key".format(transport_class))
-    _registry[transport_class.key] = transport_class
+
+    # register settings overlay
+    overlay = register_transport_overlay(transport_class, settings, path)
+    logger.debug(
+        "Registered settings overlay for transport {} under key {}".format(
+            transport_class, overlay
+        )
+    )
+
+    # register transport
+    key = transport_class.key
+    overrides = settings.get(path, merged=True)
+    _registry[key] = (
+        transport_class,
+        transport_class.with_settings(**overrides.get(key, {})),
+    )
+
+
+def register_transport_overlay(transport_class, settings, path):
+    if not hasattr(transport_class, "key"):
+        raise ValueError("Transport class {} is missing key".format(transport_class))
+    if not hasattr(transport_class, "settings"):
+        raise ValueError("Transport class {} is missing settings".format(transport_class))
+
+    params = transport_class.settings
+    return register_settings_overlay(settings, path + [transport_class.key], params)
+
+
+def refresh_transports(settings, path):
+    for key in _registry:
+        refresh_transport(key, settings, path)
+
+
+def refresh_transport(key, settings, path):
+    transport_class, _ = _registry[key]
+    overrides = settings.get(path, merged=True)
+    _registry[key] = (
+        transport_class,
+        transport_class.with_settings(**overrides.get(key, {})),
+    )
 
 
 def lookup_transport(key):
-    return _registry.get(key)
+    return _registry.get(key, (None, None))[1]
 
 
 def all_transports():
-    return _registry.values()
+    return map(lambda x: x[1], _registry.values())
 
 
 class Transport(ListenerAware):
@@ -73,13 +116,19 @@ class Transport(ListenerAware):
 
     message_integrity = False
 
+    settings = []
+
+    @classmethod
+    def with_settings(cls, **settings):
+        return type(
+            cls.__name__ + "WithSettings",
+            (cls,),
+            settings,
+        )
+
     @classmethod
     def get_connection_options(cls):
         return []
-
-    @classmethod
-    def get_settings_defaults(cls):
-        return {}
 
     def __init__(self, *args, **kwargs):
         super(Transport, self).__init__()

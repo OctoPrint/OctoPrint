@@ -167,6 +167,8 @@ default_settings = {
     "connection": {
         "log": {"connection": False, "commdebug": False},
         "profiles": {"default": None},
+        "protocols": {},
+        "transports": {},
     },
     "server": {
         "host": None,

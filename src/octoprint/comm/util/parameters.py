@@ -2,6 +2,32 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+def register_settings_overlay(settings, path, params, key=None):
+    overlay = {}
+
+    node = overlay
+    for p in path:
+        node[p] = {}
+        node = node[p]
+    node.update(**get_param_defaults(params))
+
+    # our overlay is now complete, register it
+    return settings.add_overlay(overlay, key=key)
+
+
+def get_param_defaults(options):
+    result = {}
+    for option in options:
+        if option.type == "group":
+            result[option.name] = get_param_defaults(option.params)
+        elif option.type == "groupchoice":
+            result[option.name] = option.default
+            result[option.group.name] = option.defaults
+        else:
+            result[option.name] = option.default
+    return result
+
+
 def get_param_dict(data, options):
     options_by_name = dict((option.name, option) for option in options)
 
@@ -212,21 +238,26 @@ class SuggestionType(ParamType):
 class ListType(ParamType):
     type = "list"
 
-    def __init__(self, name, title, factory=None, **kwargs):
+    def __init__(self, name, title, sep=",", factory=None, **kwargs):
         if factory is None:
             factory = lambda x: x
 
         self.factory = factory
+        self.sep = sep
+
+        if kwargs.get("default") is None:
+            kwargs["default"] = []
+
         ParamType.__init__(self, name, title, **kwargs)
 
     def convert(self, value):
         if isinstance(value, str):
-            items = map(str.strip, value.split(","))
+            items = map(str.strip, value.split(self.sep))
         elif isinstance(value, list):
             items = value
         else:
             raise ValueError(
-                "value {!r} must be either a comma-separated string or a list".format(
+                "value {!r} must be either a self.sep separated string or a list".format(
                     value
                 )
             )

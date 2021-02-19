@@ -8,6 +8,7 @@ import logging
 import frozendict
 
 from octoprint.comm.transport import TransportListener, TransportState
+from octoprint.comm.util.parameters import register_settings_overlay
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
 from octoprint.util import CountedEvent, to_unicode
@@ -16,22 +17,21 @@ from octoprint.util.listener import ListenerAware
 _registry = {}
 
 
-def register_protocols():
+def register_protocols(settings, path):
     from .reprap import ReprapGcodeProtocol
 
-    logger = logging.getLogger(__name__)
-
     # stock protocols
-    register_protocol(ReprapGcodeProtocol)
+    register_protocol(ReprapGcodeProtocol, settings, path)
 
     # more protocols provided by plugins
+    logger = logging.getLogger(__name__)
     hooks = plugin_manager().get_hooks("octoprint.comm.protocol.register")
     for name, hook in hooks.items():
         try:
             protocols = hook()
             for protocol in protocols:
                 try:
-                    register_protocol(protocol)
+                    register_protocol(protocol, settings, path)
                 except Exception:
                     logger.exception(
                         "Error while registering protocol class {} for plugin {}".format(
@@ -46,18 +46,51 @@ def register_protocols():
             )
 
 
-def register_protocol(protocol_class):
+def register_protocol(protocol_class, settings, path):
+    logger = logging.getLogger(__name__)
+
     if not hasattr(protocol_class, "key"):
         raise ValueError("Protocol class {} is missing key".format(protocol_class))
-    _registry[protocol_class.key] = protocol_class
+    if not hasattr(protocol_class, "settings"):
+        raise ValueError("Protocol class {} is missing settings".format(protocol_class))
+
+    # register settings overlay
+    overlay = register_settings_overlay(settings, path, protocol_class.settings)
+    logger.debug(
+        "Registered settings overlay for protocol {} under key {}".format(
+            protocol_class, overlay
+        )
+    )
+
+    # register protocol
+    key = protocol_class.key
+    overrides = settings.get(path, merged=True)
+    _registry[key] = (
+        protocol_class,
+        protocol_class.with_settings(**overrides.get(key, {})),
+    )
+
+
+def refresh_protocols(settings, path):
+    for key in _registry:
+        refresh_protocol(key, settings, path)
+
+
+def refresh_protocol(key, settings, path):
+    protocol_class, _ = _registry[key]
+    overrides = settings.get(path, merged=True)
+    _registry[key] = (
+        protocol_class,
+        protocol_class.with_settings(**overrides.get(key, {})),
+    )
 
 
 def lookup_protocol(key):
-    return _registry.get(key)
+    return _registry.get(key, (None, None))[1]
 
 
 def all_protocols():
-    return _registry.values()
+    return map(lambda x: x[1], _registry.values())
 
 
 class ProtocolErrorStats(ListenerAware):
@@ -183,13 +216,19 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
     supported_jobs = []
 
+    settings = []
+
+    @classmethod
+    def with_settings(cls, **settings):
+        return type(
+            cls.__name__ + "WithSettings",
+            (cls,),
+            settings,
+        )
+
     @classmethod
     def get_connection_options(cls):
         return []
-
-    @classmethod
-    def get_settings_defaults(cls):
-        return {}
 
     def __init__(self, *args, **kwargs):
         super(Protocol, self).__init__()
