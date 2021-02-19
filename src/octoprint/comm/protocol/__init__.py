@@ -231,7 +231,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         return []
 
     def __init__(self, *args, **kwargs):
-        super(Protocol, self).__init__()
+        super().__init__()
 
         self._logger = logging.getLogger(__name__)
         self._connection_logger = logging.getLogger("CONNECTION")

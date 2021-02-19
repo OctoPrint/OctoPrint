@@ -131,9 +131,18 @@ class SerialTransport(Transport):
     def get_available_serial_ports(cls):
         from serial.tools.list_ports import comports
 
+        def port_title(port):
+            if port.vid and port.pid:
+                # usb
+                return "{desc} [{vid:04x}:{pid:04x}]".format(
+                    desc=port.description, vid=port.vid, pid=port.pid
+                )
+            else:
+                return port.description
+
         port_values = [Value(None, title="Auto detect")] + sorted(
             [
-                Value(port.device, title=port.description)
+                Value(port.device, title=port_title(port))
                 for port in comports()
                 if port.device not in cls.ignored_ports
             ],
