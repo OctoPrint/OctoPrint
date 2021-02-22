@@ -386,15 +386,13 @@ class TestCommHelpers(unittest.TestCase):
                 "MACHINE_TYPE": "Ender 5 Pro",
                 "EXTRUDER_COUNT": "1",
                 "UUID": "cede2a2f-41a2-4748-9b12-c55c62f367ff",
-            }
+            },
         ),
         # Test that keys beginning with _ or number are ignored
         (
             "KEY1:VALUE1 _KEY2:INVALID 123:INVALID",
-            {
-                "KEY1": "VALUE1 _", "KEY2": "INVALID 123:INVALID"
-            }
-        )
+            {"KEY1": "VALUE1 _", "KEY2": "INVALID 123:INVALID"},
+        ),
     )
     @unpack
     def test_parse_firmware_line(self, line, expected):
