@@ -606,6 +606,9 @@ class TestSettings(unittest.TestCase):
             basedir, configfile = paths
             settings = octoprint.settings.Settings()
 
+            # Make sure the config files last modified time changes
+            time.sleep(1.0)
+
             self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
             # modify yaml file externally
