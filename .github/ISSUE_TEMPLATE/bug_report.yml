@@ -1,9 +1,9 @@
-name: Bug report
-about: Create a report to help improve OctoPrint
+name: 🐛 Report a bug
+about: Create a bug report to help improve OctoPrint
 title: ""
 issue_body: true
-inputs:
-  - type: description
+body:
+  - type: markdown
     attributes:
       value: >
         **Thank you for wanting to report a bug in OctoPrint!**
@@ -35,7 +35,6 @@ inputs:
   - type: textarea
     attributes:
       label: The problem
-      required: true
       description: >-
         Describe the issue you are experiencing here. Tell us what you were trying to do
         step by step, and what happened that you did not expect.
@@ -46,6 +45,8 @@ inputs:
         1. ...
         2. ...
         3. ...
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: Did the issue persist even in safe mode?
@@ -53,10 +54,11 @@ inputs:
         Testing in safe mode is required to make sure the issue you are reporting is not
         caused by a third party plugin. Please see [here](https://docs.octoprint.org/en/master/features/safemode.html)
         on how to run OctoPrint in safe mode.
-      choices:
+      options:
         - Yes, it did persist
         - No, it did not persist (it's an issue with one of your installed plugins, don't report here)
         - I cannot test this issue in safe mode (state why below)
+    validations:
       required: true
   - type: input
     attributes:
@@ -69,7 +71,7 @@ inputs:
         enable it" as you can find info on that [here](https://docs.octoprint.org/en/master/features/safemode.html).
 
         If you really *cannot* test in safe mode, leave a short explanation as to why.
-  - type: description
+  - type: markdown
     attributes:
       value: |
         ## Environment
@@ -77,6 +79,7 @@ inputs:
     attributes:
       label: Version of OctoPrint
       description: Can be found in the lower left corner of the web interface.
+    validations:
       required: true
   - type: input
     attributes:
@@ -85,6 +88,7 @@ inputs:
         OctoPi, Linux, Windows, MacOS, something else? With version please? OctoPi's
         version can be found in `/etc/octopi_version` or in the lower left corner of the
         web interface.
+    validations:
       required: true
   - type: input
     attributes:
@@ -94,11 +98,11 @@ inputs:
     attributes:
       label: Browser and version of browser, operating system running browser
       description: If applicable, always include if unsure
-  - type: description
+  - type: markdown
     attributes:
       value: |
         ## Logs and other files needed for analysis
-  - type: description
+  - type: markdown
     attributes:
       value: >-
         Please also be sure to upload the following files below:
@@ -119,14 +123,14 @@ inputs:
   - type: checkboxes
     attributes:
       label: Checklist of files to include below
-      choices:
+      options:
         - label: octoprint.log
           required: true
         - label: serial.log or contents of your terminal tab (always include in cases of issues with printer communication)
         - label: Contents of the JavaScript browser console (always include in cases of issues with the user interface)
         - label: Screenshots and/or videos showing the problem (always include in case of issues with the user interface)
         - label: GCODE file with which to reproduce (always include in case of issues with GCODE analysis or printing behaviour)
-  - type: description
+  - type: markdown
     attributes:
       value: |
         ## Additional information & file uploads
