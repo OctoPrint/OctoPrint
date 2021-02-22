@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from time import sleep
-
 """
 Tests for OctoPrint's Settings class
 
@@ -609,7 +607,7 @@ class TestSettings(unittest.TestCase):
             settings = octoprint.settings.Settings()
 
             # Make sure the config files last modified time changes
-            sleep(0.3)
+            time.sleep(1.0)
 
             self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
