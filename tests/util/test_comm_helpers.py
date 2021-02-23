@@ -390,8 +390,8 @@ class TestCommHelpers(unittest.TestCase):
         ),
         # Test that keys beginning with _ or number are ignored
         (
-            "KEY1:VALUE1 _KEY2:INVALID 123:INVALID",
-            {"KEY1": "VALUE1 _", "KEY2": "INVALID 123:INVALID"},
+            "KEY1:VALUE1 _KEY2:INVALID 123:INVALID 1KEY:INVALID KEY2:VALUE2",
+            {"KEY1": "VALUE1 _KEY2:INVALID 123:INVALID 1KEY:INVALID", "KEY2": "VALUE2"},
         ),
     )
     @unpack
