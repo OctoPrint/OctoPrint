@@ -475,6 +475,20 @@ $(function () {
         };
 
         self.showGCodeViewer = function (response, rstatus) {
+            // Slice of the gcode
+            var findThis = self.settings.settings.plugins.gcodeviewer.skipUntilThis();
+            if (findThis && findThis !== "") {
+                var indexPos = response.indexOf("\n" + findThis);
+                // Try windows newlines if not found
+                if (indexPos === -1) {
+                    indexPos = response.indexOf("\r" + findThis);
+                }
+                if (indexPos !== -1) {
+                    // Slice and make sure we comment out any string left back after slicing - so if a user configures something like "G1" we dont end up with a snippet of gcode commands
+                    // Yes it would be prettier to parse it line by line and remove the entire line, that is very slow and uses mem - this way we find the string, and remove it
+                    response = ";" + response.slice(indexPos + findThis.length + 1);
+                }
+            }
             var par = {
                 target: {
                     result: response
