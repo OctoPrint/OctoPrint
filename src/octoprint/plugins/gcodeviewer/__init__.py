@@ -49,7 +49,7 @@ class GcodeviewerPlugin(
         return {
             "mobileSizeThreshold": 2 * 1024 * 1024,  # 2MB
             "sizeThreshold": 20 * 1024 * 1024,  # 20MB
-            "skipUntilthis": None,
+            "skipUntilThis": None,
         }
 
     def get_settings_version(self):
