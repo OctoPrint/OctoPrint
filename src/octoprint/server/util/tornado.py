@@ -1204,6 +1204,13 @@ class LargeResponseHandler(
         else:
             return self.get_content_version(self.absolute_path)
 
+    def check_etag_header(self):
+        requested_version = self.request.headers.get("If-None-Match", None)
+        if requested_version is not None:
+            current_version = str(self.compute_etag())
+            return requested_version == current_version
+        return False
+
     # noinspection PyAttributeOutsideInit
     def get_content_type(self):
         if self._mime_type_guesser is not None:
