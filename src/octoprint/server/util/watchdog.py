@@ -43,8 +43,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
             """Recursively yield DirEntry objects for given directory."""
             for entry in scandir(path):
                 if entry.is_dir(follow_symlinks=False):
-                    for entry in _recursive_scandir(entry.path):
-                        yield entry
+                    yield from _recursive_scandir(entry.path)
                 else:
                     yield entry
 
