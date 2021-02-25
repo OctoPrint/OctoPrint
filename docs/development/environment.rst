@@ -1,14 +1,15 @@
 .. _sec-development-environment:
 
+************************************
 Setting up a Development environment
-====================================
+************************************
 
 .. _sec-development-environment-source:
 
 Obtaining, building and running the source
-------------------------------------------
+==========================================
 
-This describes the general steps in obtaining, building and running. OS specific instructions can be found
+This describes the **general, platform agnostic** steps in obtaining, building and running. OS specific instructions can be found
 below.
 
   * Prerequisites:
@@ -77,10 +78,11 @@ Go to the directory `docs` and you can then build the documentation:
   * ``sphinx-build -b html . _build``
 
 The documentation will be available in the newly created ``_build`` directory. You can simply browse it locally by opening ``index.html``
+
 .. _sec-development-environment-source-linux:
 
 Linux
-.....
+-----
 
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -119,7 +121,7 @@ You can then start OctoPrint via ``octoprint`` after activating one of the two v
 .. _sec-development-environment-windows:
 
 Windows
-.......
+-------
 
 This assumes you'll host your OctoPrint development checkout at ``C:\Devel\OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -131,8 +133,13 @@ First download & install:
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
     * it's recommended to install Python 2.7 into ``C:\Python27`` and Python 3 into ``C:\Python38`` - if you select
       different install locations please substitute accordingly
+    * it's also recommended to have both versions get installed for all users
 
   * `Build Tools for Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
+
+    * install "C++ build tools" and ensure the latest versions of "MSVCv142 - VS 2019 C++ x64/x86 build tools" and
+      "Windows 10 SDK" are checked.
+
   * `Git for Windows <https://git-scm.com/downloads>`_
 
 Open the Git Bash you just installed and in that:
@@ -145,15 +152,40 @@ Open the Git Bash you just installed and in that:
    cd OctoPrint
    virtualenv --python=C:\Python38\python.exe venv
    source ./venv/Scripts/activate
-   pip install --upgrade pip
-   pip install -e .[develop,plugins,docs]
+   python -m pip install --upgrade pip
+   python -m pip install -e .[develop,plugins,docs]
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+.. _sec-development-environment-windows-optional:
+
+Optional but recommended tools
+..............................
+
+These are some tools that are recommended but not required to have on hand:
+
+  * `Visual Studio Code <https://code.visualstudio.com/download>`_
+  * `Windows Terminal <https://github.com/microsoft/terminal>`_
+
+    Add the following profile to ``profiles.list`` in the settings, that will allow you to
+    easily start Git Bash from the terminal:
+
+    .. code-block:: js
+
+       {
+           "guid": "{3df4550c-eebd-496c-a189-e55f2f8b01ce}",
+           "hidden": false,
+           "name": "Git Bash",
+           "commandline": "C:\\Program Files\\Git\\bin\\bash.exe --login -i",
+           "startingDirectory": "C:\\Devel",
+           "tabTitle": "Git Bash",
+           "suppressApplicationTitle": true
+       },
 
 .. _sec-development-environment-mac:
 
 Mac OS X
-........
+--------
 
 .. note::
 
@@ -204,7 +236,7 @@ You'll need a user account with administrator privileges.
 .. _sec-development-environment-ides:
 
 IDE Setup
----------
+=========
 
 .. todo::
 
@@ -215,7 +247,7 @@ IDE Setup
 .. _sec-development-environment-ides-pycharm:
 
 PyCharm
-.......
+-------
 
   - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
   - Register virtual environments:

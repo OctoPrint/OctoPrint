@@ -169,7 +169,7 @@ Groups will be as follows:
   * ``value``: reported position value
 """
 
-regex_firmware_splitter = re.compile(r"\s*([A-Z0-9_]+):\s*")
+regex_firmware_splitter = re.compile(r"(^|\s+)([A-Z][A-Z0-9_]*):")
 """Regex to use for splitting M115 responses."""
 
 regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
@@ -6074,6 +6074,10 @@ def parse_firmware_line(line):
     The result will be a dictionary mapping from the contained keys to the contained
     values.
 
+    Valid keys must only contain A-Z, 0-9 and _ and must start with a letter. See the
+    unit tests for valid and invalid examples. There sadly is no existing specification
+    of the key format, but this is the format extracted from real life logs.
+
     Arguments:
         line (str): the line to parse
 
@@ -6091,7 +6095,7 @@ def parse_firmware_line(line):
     split_line = regex_firmware_splitter.split(line.strip())[
         1:
     ]  # first entry is empty start of trimmed string
-    for key, value in chunks(split_line, 2):
+    for _, key, value in chunks(split_line, 3):
         result[key] = value.strip()
     return result
 

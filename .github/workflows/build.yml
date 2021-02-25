@@ -46,22 +46,6 @@ jobs:
         run: |
           pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
 
-  lint-prettier:
-    name: 🧹 prettier
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: 🏗 Set up dev dependencies
-        run: |
-          pip install -e .[develop]
-      - name: 🚀 Run prettier
-        run: |
-          pre-commit run --hook-stage manual prettier --all-files --show-diff-on-failure
-
   lint-isort:
     name: 🧹 isort
     runs-on: ubuntu-latest
@@ -93,6 +77,38 @@ jobs:
       - name: 🚀 Run flake8
         run: |
           pre-commit run --hook-stage manual flake8 --all-files
+
+  lint-prettier:
+    name: 🧹 prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run prettier
+        run: |
+          pre-commit run --hook-stage manual prettier --all-files --show-diff-on-failure
+
+  lint-eslint:
+    name: 🧹 eslint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: 🏗 Set up dev dependencies
+        run: |
+          pip install -e .[develop]
+      - name: 🚀 Run eslint
+        run: |
+          pre-commit run --hook-stage manual eslint --all-files
 
   test-unit:
     name: 🧪 Unit tests
@@ -192,9 +208,10 @@ jobs:
     if: github.event_name == 'release'
     needs:
       - lint-black
-      - lint-prettier
       - lint-isort
       - lint-flake8
+      - lint-prettier
+      - lint-eslint
       - test-unit
       - test-install
       - test-e2e

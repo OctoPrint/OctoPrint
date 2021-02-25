@@ -1451,7 +1451,7 @@ class LocalFileStorage(Storage):
             try:
                 with atomic_write(metadata_path, mode="wb") as f:
                     f.write(
-                        to_bytes(json.dumps(metadata, indent=4, separators=(",", ": ")))
+                        to_bytes(json.dumps(metadata, indent=2, separators=(",", ": ")))
                     )
             except Exception:
                 self._logger.exception(
@@ -1525,7 +1525,7 @@ class LocalFileStorage(Storage):
                 return
 
             with atomic_write(metadata_path_json, mode="wb") as f:
-                f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
+                f.write(to_bytes(json.dumps(metadata, indent=2, separators=(",", ": "))))
 
             try:
                 os.remove(metadata_path_yaml)

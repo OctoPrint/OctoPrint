@@ -64,11 +64,23 @@
 
    Sends a message of type ``type`` with the provided ``payload`` to the server.
 
-   Note that at the time of writing, OctoPrint only supports the ``throttle`` message. See
+   Note that at the time of writing, OctoPrint only supports the ``throttle`` and ``auth`` messages. See
    also the :ref:`Push API documentation <sec-api-push>`.
 
    :param string type: Type of message to send
    :param object payload: Payload to send
+
+.. js:function:: OctoPrintClient.socket.sendAuth(userId, session)
+
+   Sends an ``auth`` message with the provided ``userId`` and ``session`` to the server.
+
+   ``session`` is expected to be the ``session`` value retrieved
+   from any valid :ref:`OctoPrint.browser.login(userId,...) <sec-jsclientlib-browser>` response.
+
+   See also the :ref:`Push API documentation <sec-api-push>`.
+
+   :param string userId: An existing OctoPrint username
+   :param string session: A valid session id for the provided username
 
 .. js:function:: OctoPrintClient.socket.onRateTooLow(measured, minimum)
 
@@ -101,6 +113,35 @@
 .. js:function:: OctoPrintClient.socket.decreaseRate()
 
    Instructs the server to decrease the message rate by 500ms.
+
+.. _sec-jsclient-socket-authsample:
+
+Sample to setup an authed socket
+================================
+
+If you have a username and a password:
+
+.. code-block:: javascript
+
+      OctoPrint.socket.connect();
+      OctoPrint.browser.login("myusername", "mypassword", true)
+          .done(function(response) {
+              OctoPrint.socket.sendAuth("myusername", response.session);
+          });
+
+If you have an API key:
+
+.. code-block:: javascript
+
+      var client = new OctoPrintClient({
+          baseurl: "http://example.com/",
+          apikey: "abcdef"
+      });
+      client.socket.connect();
+      client.browser.passiveLogin()
+          .done(function(response) {
+              client.socket.sendAuth(response.name, response.session);
+          });
 
 .. _sec-jsclient-socket-throttling:
 
