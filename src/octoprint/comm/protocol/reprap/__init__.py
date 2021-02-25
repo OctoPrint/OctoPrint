@@ -339,10 +339,10 @@ class ReprapGcodeProtocol(
                     ),
                     advanced=True,
                 ),
-                defaults=dict(
-                    (f.key, dict((key, getattr(f, key)) for key in f.overridable))
+                defaults={
+                    f.key: {key: getattr(f, key) for key in f.overridable}
                     for f in all_flavors()
-                ),
+                },
                 default="standard",
             ),
             ParamGroup(
@@ -688,7 +688,7 @@ class ReprapGcodeProtocol(
 
     @classmethod
     def get_attributes_starting_with(cls, prefix):
-        return dict((x, getattr(cls, x)) for x in dir(cls) if x.startswith(prefix))
+        return {x: getattr(cls, x) for x in dir(cls) if x.startswith(prefix)}
 
     def __init__(self, flavor=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -936,7 +936,7 @@ class ReprapGcodeProtocol(
         self._sending_thread.daemon = True
         self._sending_thread.start()
 
-        super(ReprapGcodeProtocol, self).connect(
+        super().connect(
             transport, transport_args=transport_args, transport_kwargs=transport_kwargs
         )
 
@@ -1716,19 +1716,19 @@ class ReprapGcodeProtocol(
     ##~~ Transport logging
 
     def on_transport_log_message(self, transport, data):
-        super(ReprapGcodeProtocol, self).on_transport_log_message(transport, data)
+        super().on_transport_log_message(transport, data)
         self._terminal_log.append(
             self.LOG_PREFIX_MSG + to_unicode(data.strip(), errors="replace")
         )
 
     def on_transport_log_received_data(self, transport, data):
-        super(ReprapGcodeProtocol, self).on_transport_log_received_data(transport, data)
+        super().on_transport_log_received_data(transport, data)
         self._terminal_log.append(
             self.LOG_PREFIX_RX + to_unicode(data.strip(), errors="replace")
         )
 
     def on_transport_log_sent_data(self, transport, data):
-        super(ReprapGcodeProtocol, self).on_transport_log_sent_data(transport, data)
+        super().on_transport_log_sent_data(transport, data)
         self._terminal_log.append(
             self.LOG_PREFIX_TX + to_unicode(data.strip(), errors="replace")
         )

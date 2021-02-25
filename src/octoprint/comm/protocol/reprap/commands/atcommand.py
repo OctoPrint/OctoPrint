@@ -26,7 +26,7 @@ class AtCommand(Command):
     def __init__(self, line, atcommand, parameters, **kwargs):
         self.atcommand = atcommand
         self.parameters = parameters
-        super(AtCommand, self).__init__(line, **kwargs)
+        super().__init__(line, **kwargs)
 
     def __repr__(self):
         return "AtCommand({!r},{!r},{!r},type={!r},tags={}".format(

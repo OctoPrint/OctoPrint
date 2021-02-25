@@ -54,7 +54,7 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
         )
 
     def __init__(self, remote, *args, **kwargs):
-        super(LocalGcodeStreamjob, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._remote = remote
 
     @property
@@ -62,25 +62,21 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob, CopyJobMixin):
         return self._remote
 
     def process(self, protocol, position=0, user=None, tags=None, **kwargs):
-        super(LocalGcodeStreamjob, self).process(
-            protocol, position=position, user=user, tags=tags, **kwargs
-        )
+        super().process(protocol, position=position, user=user, tags=tags, **kwargs)
         self._protocol.record_file(self._remote)
 
     def process_job_done(self, user=None, tags=None, **kwargs):
         self._protocol.stop_recording_file()
-        super(LocalGcodeStreamjob, self).process_job_done(user=user, tags=tags, **kwargs)
+        super().process_job_done(user=user, tags=tags, **kwargs)
 
     def process_job_failed(self, **kwargs):
         self._protocol.stop_recording_file()
-        super(LocalGcodeStreamjob, self).process_job_failed(**kwargs)
+        super().process_job_failed(**kwargs)
 
     def process_job_cancelled(self, user=None, tags=None, **kwargs):
         self._protocol.stop_recording_file()
         self._protocol.delete_file(self.remote)
-        super(LocalGcodeStreamjob, self).process_job_cancelled(
-            user=user, tags=tags, **kwargs
-        )
+        super().process_job_cancelled(user=user, tags=tags, **kwargs)
 
     def can_process(self, protocol):
         from octoprint.comm.protocol import (

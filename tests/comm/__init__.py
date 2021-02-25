@@ -14,7 +14,7 @@ from octoprint.util import monotonic_time, to_bytes
 
 class TestTransport(Transport):
     def __init__(self, *args, **kwargs):
-        super(TestTransport, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.outgoing = bytearray()
         self.incoming = []
 

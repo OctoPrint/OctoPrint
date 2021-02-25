@@ -142,7 +142,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(),
+            {},
             "set",
         ),
         (
@@ -153,7 +153,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 "some_value",
             ),
-            dict(force=True),
+            {"force": True},
             "set",
         ),
         (
@@ -164,7 +164,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(),
+            {},
             "setInt",
         ),
         (
@@ -175,7 +175,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 23,
             ),
-            dict(force=True),
+            {"force": True},
             "setInt",
         ),
         (
@@ -186,7 +186,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(),
+            {},
             "setFloat",
         ),
         (
@@ -197,7 +197,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 2.3,
             ),
-            dict(force=True),
+            {"force": True},
             "setFloat",
         ),
         (
@@ -208,7 +208,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(),
+            {},
             "setBoolean",
         ),
         (
@@ -219,7 +219,7 @@ class SettingsTestCase(unittest.TestCase):
                 ],
                 True,
             ),
-            dict(force=True),
+            {"force": True},
             "setBoolean",
         ),
     )

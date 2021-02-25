@@ -159,7 +159,7 @@ class SerialTransport(Transport):
         )
 
     def __init__(self, *args, **kwargs):
-        super(SerialTransport, self).__init__()
+        super().__init__()
 
         self.serial_factory = kwargs.get("serial_factory", None)
 

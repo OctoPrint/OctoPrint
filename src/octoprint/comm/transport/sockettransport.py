@@ -18,7 +18,7 @@ class TcpTransport(Transport):
         return [TextType("host", "Host"), IntegerType("port", "Port", min=1, max=65535)]
 
     def __init__(self):
-        super(TcpTransport, self).__init__()
+        super().__init__()
 
         self._socket = None
 

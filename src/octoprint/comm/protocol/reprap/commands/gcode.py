@@ -108,7 +108,7 @@ class GcodeCommand(Command):
         else:
             line = self.original
 
-        super(GcodeCommand, self).__init__(line, type=command_type, tags=tags)
+        super().__init__(line, type=command_type, tags=tags)
 
         self._repr = self._to_repr()
 

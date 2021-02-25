@@ -29,7 +29,7 @@ def get_param_defaults(options):
 
 
 def get_param_dict(data, options):
-    options_by_name = dict((option.name, option) for option in options)
+    options_by_name = {option.name: option for option in options}
 
     result = {}
     for key, value in data.items():
@@ -284,7 +284,7 @@ class ParamGroup(ParamType):
     def convert(self, value):
         if not isinstance(value, dict):
             raise ValueError("value {!r} must be a dict".format(value))
-        return dict((k, v.convert()) for k, v in value.items())
+        return {k: v.convert() for k, v in value.items()}
 
 
 class Value:

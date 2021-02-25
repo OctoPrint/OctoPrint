@@ -131,7 +131,7 @@ class Transport(ListenerAware):
         return []
 
     def __init__(self, *args, **kwargs):
-        super(Transport, self).__init__()
+        super().__init__()
 
         self._logger = logging.getLogger(__name__)
         self._state = TransportState.DISCONNECTED
@@ -261,10 +261,10 @@ class TransportWrapper(ListenerAware):
             def f(*args, **kwargs):
                 # replace references to self.transport with self
                 args = [self if arg == self.transport else arg for arg in args]
-                kwargs = dict(
-                    (key, self if value == self.transport else value)
+                kwargs = {
+                    key: self if value == self.transport else value
                     for key, value in kwargs.items()
-                )
+                }
 
                 # forward
                 self.notify_listeners(name, *args, **kwargs)
@@ -350,7 +350,7 @@ class PushingTransportWrapper(TransportWrapper):
     def __init__(
         self, transport, name=b"PushingTransportWrapper.receiver_loop", timeout=None
     ):
-        super(PushingTransportWrapper, self).__init__(transport)
+        super().__init__(transport)
         self.name = name
         self.timeout = timeout
 

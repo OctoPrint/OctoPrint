@@ -13,10 +13,10 @@ class GcodeScript(Script):
                 raise UnknownScript(name)
             return lines
 
-        super(GcodeScript, self).__init__(name, renderer, context=context)
+        super().__init__(name, renderer, context=context)
 
     def render(self, context=None):
-        script = super(GcodeScript, self).render(context)
+        script = super().render(context)
         return list(
             filter(
                 lambda x: x is not None and x.strip() != "",

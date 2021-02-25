@@ -701,7 +701,7 @@ class Printer(
         if len(axes) != len(validated_axes):
             raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
 
-        kwargs = dict((axes, True) for axes in validated_axes)
+        kwargs = {axes: True for axes in validated_axes}
         self._protocol.home(**kwargs)
 
     def extrude(self, amount, speed=None, *args, **kwargs):

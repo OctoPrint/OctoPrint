@@ -74,11 +74,11 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
         self._protocol.start_file_print_status_monitor()
 
     def pause(self, user=None, tags=None, **kwargs):
-        super(SDFilePrintjob, self).pause(user=user, tags=tags, **kwargs)
+        super().pause(user=user, tags=tags, **kwargs)
         self._protocol.pause_file_print(user=user, tags=tags, part_of_job=True, **kwargs)
 
     def resume(self, user=None, tags=None, **kwargs):
-        super(SDFilePrintjob, self).resume(user=user, tags=tags, **kwargs)
+        super().resume(user=user, tags=tags, **kwargs)
         self._protocol.resume_file_print(user=user, tags=tags, part_of_job=True, **kwargs)
 
     def on_protocol_sd_status(self, protocol, pos, total):
@@ -103,7 +103,7 @@ class SDFilePrintjob(StoragePrintjob, FileAwareProtocolListener):
         self._protocol.resume_file_print(**kwargs)
 
     def reset_job(self, success=True):
-        super(SDFilePrintjob, self).reset_job(success=success)
+        super().reset_job(success=success)
         self._active = False
         self._last_pos = None
         self._size = None

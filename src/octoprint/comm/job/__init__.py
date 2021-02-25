@@ -34,7 +34,7 @@ class Printjob(ProtocolListener, ListenerAware, metaclass=ABCMeta):
         if event_data is None:
             event_data = {}
 
-        super(Printjob, self).__init__()
+        super().__init__()
         self._logger = logging.getLogger(__name__)
         self._start = None
         self._protocol = None
@@ -284,7 +284,7 @@ class LocalFilePrintjob(StoragePrintjob):
 
     def cancel(self, error=False, user=None, tags=None, **kwargs):
         self._cancel_pos = self.pos
-        super(LocalFilePrintjob, self).cancel(error=error, user=user, tags=tags, **kwargs)
+        super().cancel(error=error, user=user, tags=tags, **kwargs)
 
     def get_next(self):
         from octoprint.util import to_unicode
@@ -339,11 +339,10 @@ class LocalFilePrintjob(StoragePrintjob):
         from octoprint.util import bom_aware_open
 
         with bom_aware_open(self._path, encoding=self._encoding, error="replace") as f:
-            for line in f.readline():
-                yield line
+            yield from f.readline()
 
     def reset_job(self, success=True):
-        super(LocalFilePrintjob, self).reset_job(success=success)
+        super().reset_job(success=success)
         self.close()
         self._pos = self._read_lines = 0
 
