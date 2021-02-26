@@ -1217,7 +1217,7 @@ class ReprapGcodeProtocol(
         elif heater == "chamber":
             command = self.flavor.command_set_chamber_temp(temperature, wait=wait)
         else:
-            self._logger.warn(
+            self._logger.warning(
                 "Got unknown heater identifier to set temperature on: {}".format(heater)
             )
             return
@@ -2156,7 +2156,7 @@ class ReprapGcodeProtocol(
                         "Resetting state to be on the safe side."
                     )
                     self.process_protocol_log(message)
-                    self._logger.warn(message)
+                    self._logger.warning(message)
 
                     self._on_external_reset()
 

@@ -233,7 +233,7 @@ class SerialTransport(Transport):
             try:
                 written += try_to_write(to_send)
             except serial.SerialTimeoutException:
-                self._logger.warn(
+                self._logger.warning(
                     "Serial timeout while writing to serial port, trying again."
                 )
                 try:
@@ -256,8 +256,8 @@ class SerialTransport(Transport):
                 passes += 1
                 if passes > self.max_write_passes:
                     message = (
-                        "Could not write anything to the serial port in {} tries, something appears to be "
-                        "wrong with the printer communication".format(
+                        "Could not write anything to the serial port in {} tries, "
+                        "something appears to be wrong with the communication".format(
                             self.max_write_passes
                         )
                     )
