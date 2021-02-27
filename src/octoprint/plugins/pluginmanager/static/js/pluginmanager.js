@@ -50,7 +50,7 @@ $(function () {
                     return !item.enabled;
                 }
             },
-            "name",
+            "popularity",
             [],
             [
                 ["bundled", "3rdparty"],
