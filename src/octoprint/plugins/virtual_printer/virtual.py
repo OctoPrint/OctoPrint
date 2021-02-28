@@ -745,7 +745,10 @@ class VirtualPrinter(object):
         # type: (str) -> None
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
-            self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            try:
+                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            except AttributeError:
+                self._send("echo:")
 
     def _gcode_M155(self, data):
         # type: (str) -> None
