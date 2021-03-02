@@ -32,7 +32,6 @@ INSTALL_REQUIRES = [
     "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
     "tornado==5.1.1",  # newer versions require Python 3
     "markdown>=3.1,<3.2",  # newer versions require Python 3
-    "rsa==4.0",  # newer versions require Python 3
     "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
     # anything below this should be checked on releases for new versions
     "flask>=1.1.2,<2",
