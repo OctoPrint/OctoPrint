@@ -1200,9 +1200,13 @@ class LargeResponseHandler(
 
     def compute_etag(self):
         if self._etag_generator is not None:
-            return self._etag_generator(self)
+            etag = self._etag_generator(self)
         else:
-            return self.get_content_version(self.absolute_path)
+            etag = str(self.get_content_version(self.absolute_path))
+
+        if not etag.endswith('"'):
+            etag = '"{}"'.format(etag)
+        return etag
 
     # noinspection PyAttributeOutsideInit
     def get_content_type(self):
