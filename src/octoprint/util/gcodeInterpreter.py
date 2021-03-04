@@ -146,11 +146,33 @@ class MinMax3D(object):
     >>> empty = MinMax3D()
     >>> empty.size == Vector3D(0.0, 0.0, 0.0)
     True
+    >>> weird = MinMax3D(min_z=-1.0)
+    >>> weird.record(Vector3D(2.0, 2.0, 2.0))
+    >>> weird.record(Vector3D(1.0, 2.0, 3.0))
+    >>> weird.min.z == -1.0
+    True
+    >>> weird.size == Vector3D(1.0, 0.0, 4.0)
+    True
     """
 
-    def __init__(self):
-        self.min = Vector3D(float("inf"), float("inf"), float("inf"))
-        self.max = Vector3D(-float("inf"), -float("inf"), -float("inf"))
+    def __init__(
+        self,
+        min_x=None,
+        min_y=None,
+        min_z=None,
+        max_x=None,
+        max_y=None,
+        max_z=None,
+    ):
+        min_x = min_x if min_x is not None else float("inf")
+        min_y = min_y if min_y is not None else float("inf")
+        min_z = min_z if min_z is not None else float("inf")
+        max_x = max_x if max_x is not None else -float("inf")
+        max_y = max_y if max_y is not None else -float("inf")
+        max_z = max_z if max_z is not None else -float("inf")
+
+        self.min = Vector3D(min_x, min_y, min_z)
+        self.max = Vector3D(max_x, max_y, max_z)
 
     def record(self, coordinate):
         """
@@ -227,7 +249,9 @@ class gcode(object):
         offsets=None,
         max_extruders=10,
         g90_extruder=False,
+        bed_z=0.0,
     ):
+        self._minMax.min.z = bed_z
         if os.path.isfile(filename):
             self.filename = filename
             self._fileSize = os.stat(filename).st_size
@@ -448,17 +472,17 @@ class gcode(object):
                 x = getCodeFloat(line, "X")
                 y = getCodeFloat(line, "Y")
                 z = getCodeFloat(line, "Z")
-                center = Vector3D(0.0, 0.0, 0.0)
+                origin = Vector3D(0.0, 0.0, 0.0)
                 if x is None and y is None and z is None:
-                    pos = center
+                    pos = origin
                 else:
                     pos = Vector3D(pos)
                     if x is not None:
-                        pos.x = center.x
+                        pos.x = origin.x
                     if y is not None:
-                        pos.y = center.y
+                        pos.y = origin.y
                     if z is not None:
-                        pos.z = center.z
+                        pos.z = origin.z
             elif gcode == "G90":  # Absolute position
                 relativeMode = False
                 if g90_extruder:

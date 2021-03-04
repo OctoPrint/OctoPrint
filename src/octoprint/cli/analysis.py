@@ -69,6 +69,7 @@ def util():
 @click.option("--offset", "offset", type=(float, float), multiple=True)
 @click.option("--max-t", "maxt", type=int, default=10)
 @click.option("--g90-extruder", "g90_extruder", is_flag=True)
+@click.option("--bed-z", "bedz", type=float, default=0)
 @click.option("--progress", "progress", is_flag=True)
 @click.argument("path", type=click.Path())
 def gcode_command(
@@ -81,6 +82,7 @@ def gcode_command(
     throttle,
     throttle_lines,
     g90_extruder,
+    bedz,
     progress,
 ):
     """Runs a GCODE file analysis."""
@@ -127,6 +129,7 @@ def gcode_command(
         throttle=throttle_callback,
         max_extruders=maxt,
         g90_extruder=g90_extruder,
+        bed_z=bedz,
     )
 
     click.echo("DONE:{}s".format(monotonic_time() - start_time))

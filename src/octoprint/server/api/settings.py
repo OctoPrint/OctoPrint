@@ -153,7 +153,10 @@ def getSettings():
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
         },
-        "gcodeAnalysis": {"runAt": s.get(["gcodeAnalysis", "runAt"])},
+        "gcodeAnalysis": {
+            "runAt": s.get(["gcodeAnalysis", "runAt"]),
+            "bedZ": s.getFloat(["gcodeAnalysis", "bedZ"]),
+        },
         "serial": {
             "port": connectionOptions["portPreference"],
             "baudrate": connectionOptions["baudratePreference"],
@@ -614,6 +617,8 @@ def _saveSettings(data):
     if "gcodeAnalysis" in data:
         if "runAt" in data["gcodeAnalysis"]:
             s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
+        if "bedZ" in data["gcodeAnalysis"]:
+            s.setBoolean(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
     if "serial" in data:
         if "autoconnect" in data["serial"]:
