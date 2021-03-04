@@ -21,7 +21,7 @@ import filetype
 import pkg_resources
 import requests
 import sarge
-from flask import jsonify, make_response
+from flask import Response, abort, jsonify, make_response, request
 from flask_babel import gettext
 from past.builtins import basestring
 
@@ -30,13 +30,14 @@ import octoprint.plugin.core
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
+from octoprint.server import safe_mode
 from octoprint.server.util.flask import (
     check_etag,
     no_firstrun_access,
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import TemporaryDirectory, to_bytes, to_native_str
+from octoprint.util import TemporaryDirectory, deprecated, to_bytes, to_native_str
 from octoprint.util.net import download_file
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.platform import get_os, is_os_compatible
@@ -427,15 +428,158 @@ class PluginManagerPlugin(
     def export_plugin_list(self):
         import json
 
-        import flask
-
         plugins = self.generate_plugins_json(self._settings, self._plugin_manager)
 
-        return flask.Response(
+        return Response(
             json.dumps(plugins),
             mimetype="text/plain",
             headers={"Content-Disposition": 'attachment; filename="plugin_list.json"'},
         )
+
+    def _plugin_response(self):
+        return {
+            "plugins": self._get_plugins(),
+            "os": get_os(),
+            "octoprint": get_octoprint_version_string(),
+            "pip": {
+                "available": self._pip_caller.available,
+                "version": self._pip_caller.version_string,
+                "install_dir": self._pip_caller.install_dir,
+                "use_user": self._pip_caller.use_user,
+                "virtual_env": self._pip_caller.virtual_env,
+                "additional_args": self._settings.get(["pip_args"]),
+                "python": sys.executable,
+            },
+            "safe_mode": safe_mode,
+            "online": self._connectivity_checker.online,
+        }
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugins(self):
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh or not self._is_notices_cache_valid():
+            self._notices_available = self._refresh_notices()
+
+        def view():
+            return jsonify(**self._plugin_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._get_plugins()))
+            hash_update(str(self._notices_available))
+            hash_update(repr(self._notices))
+            hash_update(repr(safe_mode))
+            hash_update(repr(self._connectivity_checker.online))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins/<string:key>")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_specific_plugin(self, key):
+        plugin = self._plugin_manager.get_plugin_info(key, require_enabled=False)
+        if plugin is None:
+            return abort(404)
+
+        return jsonify(plugin=self._to_external_plugin(plugin))
+
+    def _orphan_response(self):
+        return {"orphan_data": self._get_orphans()}
+
+    @octoprint.plugin.BlueprintPlugin.route("/orphans")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugin_orphans(self):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            return make_response("Insufficient rights", 403)
+
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh:
+            self._get_orphans(refresh=True)
+
+        def view():
+            return jsonify(**self._orphan_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._get_orphans()))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
+
+    def _repository_response(self):
+        return {
+            "repository": {
+                "available": self._repository_available,
+                "plugins": self._repository_plugins,
+            }
+        }
+
+    @octoprint.plugin.BlueprintPlugin.route("/repository")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugin_repository(self):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            return make_response("Insufficient rights", 403)
+
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh or not self._is_repository_cache_valid():
+            self._repository_available = self._refresh_repository()
+
+        def view():
+            return jsonify(**self._repository_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(str(self._repository_available))
+            hash_update(repr(self._repository_plugins))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
 
     def is_blueprint_protected(self):
         return False
@@ -465,80 +609,6 @@ class PluginManagerPlugin(
             "cleanup_all": [],
             "refresh_repository": [],
         }
-
-    def on_api_get(self, request):
-        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
-
-        from octoprint.server import safe_mode
-
-        refresh_repository = (
-            request.values.get("refresh_repository", "false") in valid_boolean_trues
-        )
-        if refresh_repository or not self._is_repository_cache_valid():
-            self._repository_available = self._refresh_repository()
-
-        refresh_notices = (
-            request.values.get("refresh_notices", "false") in valid_boolean_trues
-        )
-        if refresh_notices or not self._is_notices_cache_valid():
-            self._notices_available = self._refresh_notices()
-
-        refresh_orphan = (
-            request.values.get("refresh_orphans", "false") in valid_boolean_trues
-        )
-
-        def view():
-            return jsonify(
-                plugins=self._get_plugins(),
-                repository={
-                    "available": self._repository_available,
-                    "plugins": self._repository_plugins,
-                },
-                orphan_data=self._get_orphans(refresh=refresh_orphan),
-                os=get_os(),
-                octoprint=get_octoprint_version_string(),
-                pip={
-                    "available": self._pip_caller.available,
-                    "version": self._pip_caller.version_string,
-                    "install_dir": self._pip_caller.install_dir,
-                    "use_user": self._pip_caller.use_user,
-                    "virtual_env": self._pip_caller.virtual_env,
-                    "additional_args": self._settings.get(["pip_args"]),
-                    "python": sys.executable,
-                },
-                safe_mode=safe_mode,
-                online=self._connectivity_checker.online,
-            )
-
-        def etag():
-            import hashlib
-
-            hash = hashlib.sha1()
-
-            def hash_update(value):
-                value = value.encode("utf-8")
-                hash.update(value)
-
-            hash_update(repr(self._get_plugins()))
-            hash_update(str(self._repository_available))
-            hash_update(repr(self._repository_plugins))
-            hash_update(str(self._notices_available))
-            hash_update(repr(self._notices))
-            hash_update(repr(self._get_orphans()))
-            hash_update(repr(safe_mode))
-            hash_update(repr(self._connectivity_checker.online))
-            hash_update(repr(_DATA_FORMAT_VERSION))
-            return hash.hexdigest()
-
-        def condition():
-            return check_etag(etag())
-
-        return with_revalidation_checking(
-            etag_factory=lambda *args, **kwargs: etag(),
-            condition=lambda *args, **kwargs: condition(),
-            unless=lambda: refresh_repository or refresh_notices or refresh_orphan,
-        )(view)()
 
     def on_api_command(self, command, data):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
@@ -601,6 +671,39 @@ class PluginManagerPlugin(
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_toggle(plugin, command)
+
+    @deprecated(
+        "Deprecated API endpoint api/plugin/pluginmanager used. "
+        "Please switch clients to plugin/pluginmanager/*",
+        since="1.6.0",
+    )
+    def on_api_get(self, r):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            return make_response("Insufficient rights", 403)
+
+        refresh_repository = (
+            request.values.get("refresh_repository", "false") in valid_boolean_trues
+        )
+        if refresh_repository or not self._is_repository_cache_valid():
+            self._repository_available = self._refresh_repository()
+
+        refresh_notices = (
+            request.values.get("refresh_notices", "false") in valid_boolean_trues
+        )
+        if refresh_notices or not self._is_notices_cache_valid():
+            self._notices_available = self._refresh_notices()
+
+        refresh_orphan = (
+            request.values.get("refresh_orphans", "false") in valid_boolean_trues
+        )
+        if refresh_orphan:
+            self._get_orphans(refresh=True)
+
+        result = {}
+        result.update(**self._plugin_response())
+        result.update(**self._orphan_response())
+        result.update(**self._repository_response())
+        return jsonify(**result)
 
     # noinspection PyMethodMayBeStatic
     def _is_archive(self, path):
