@@ -85,7 +85,7 @@ $(function () {
             }
         };
 
-        var optionsLocalStorageKey = "core.gcodeviewer.options";
+        var optionsLocalStorageKey = "plugin.action_command_notification.options";
         self._toLocalStorage = function () {
             saveToLocalStorage(optionsLocalStorageKey, {sortDesc: self.sortDesc()});
         };
