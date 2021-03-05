@@ -51,7 +51,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new/choose).
+[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml).
 
 Before you do that for the first time though please take a moment to read the
 following section *completely* and also follow the instructions in the
