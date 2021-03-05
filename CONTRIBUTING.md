@@ -126,7 +126,7 @@ there.
 First of all make sure your use **a descriptive title**. "It doesn't work"
 and similar unspecific complaints are NOT descriptive titles.
 
-Always fill out the [reporting form](https://github.com/OctoPrint/OctoPrint/issues/new/choose) **completely** and include as much
+Always fill out the [reporting form](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml) **completely** and include as much
 information as possible.
 
 Provide the same kind and amount of information also when you are just adding on to an
