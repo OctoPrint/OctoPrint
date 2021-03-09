@@ -141,7 +141,7 @@ def slicingListSlicerProfiles(slicer):
     try:
         return jsonify(_getSlicingProfilesData(slicer, require_configured=configured))
     except (UnknownSlicer, SlicerNotConfigured):
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return make_response("Unknown slicer", 404)
 
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
@@ -151,7 +151,7 @@ def slicingGetSlicerProfile(slicer, name):
     try:
         profile = slicingManager.load_profile(slicer, name, require_configured=False)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return make_response("Unknown slicer", 404)
     except UnknownProfile:
         return make_response("Profile not found", 404)
 
@@ -195,7 +195,7 @@ def slicingAddSlicerProfile(slicer, name):
             description=description,
         )
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return make_response("Unknown slicer", 404)
 
     result = _getSlicingProfileData(slicer, name, profile)
     r = make_response(jsonify(result), 201)
@@ -213,11 +213,9 @@ def slicingPatchSlicerProfile(slicer, name):
     try:
         profile = slicingManager.load_profile(slicer, name, require_configured=False)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return make_response("Unknown slicer", 404)
     except UnknownProfile:
-        return make_response(
-            "Profile {name} for slicer {slicer} not found".format(**locals()), 404
-        )
+        return make_response("Profile for slicer not found", 404)
 
     try:
         json_data = request.get_json()
@@ -262,12 +260,10 @@ def slicingDelSlicerProfile(slicer, name):
     try:
         slicingManager.delete_profile(slicer, name)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return make_response("Unknown slicer", 404)
     except CouldNotDeleteProfile as e:
         return make_response(
-            "Could not delete profile {profile} for slicer {slicer}: {cause}".format(
-                profile=name, slicer=slicer, cause=str(e.cause)
-            ),
+            "Could not delete profile for slicer: {cause}".format(cause=str(e.cause)),
             500,
         )
 

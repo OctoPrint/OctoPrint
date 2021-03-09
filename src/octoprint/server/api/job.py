@@ -60,9 +60,7 @@ def controlJob():
                 printer.resume_print(tags=tags, user=user)
             else:
                 return make_response(
-                    "Unknown action '{}', allowed values for action parameter are 'pause', 'resume' and 'toggle'".format(
-                        action
-                    ),
+                    "Unknown action, allowed values for action parameter are 'pause', 'resume' and 'toggle'",
                     400,
                 )
         elif command == "cancel":

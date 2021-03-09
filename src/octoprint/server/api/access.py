@@ -277,7 +277,7 @@ def change_password_for_user(username):
         try:
             userManager.change_user_password(username, data["password"])
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            return make_response(("Unknown user", 404, []))
 
         return jsonify(SUCCESS)
     else:
@@ -300,7 +300,7 @@ def get_settings_for_user(username):
     try:
         return jsonify(userManager.get_all_user_settings(username))
     except users.UnknownUser:
-        return make_response("Unknown user: %s" % username, 404)
+        return make_response("Unknown user", 404)
 
 
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
@@ -328,7 +328,7 @@ def change_settings_for_user(username):
         userManager.change_user_settings(username, data)
         return jsonify(SUCCESS)
     except users.UnknownUser:
-        return make_response("Unknown user: %s" % username, 404)
+        return make_response("Unknown user", 404)
 
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
@@ -345,7 +345,7 @@ def delete_apikey_for_user(username):
         try:
             userManager.delete_api_key(username)
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            return make_response(("Unknown user", 404, []))
         return jsonify(SUCCESS)
     else:
         return make_response(("Forbidden", 403, []))
@@ -368,7 +368,7 @@ def generate_apikey_for_user(username):
         try:
             apikey = userManager.generate_api_key(username)
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            return make_response(("Unknown user", 404, []))
         return jsonify({"apikey": apikey})
     else:
         return make_response(("Forbidden", 403, []))

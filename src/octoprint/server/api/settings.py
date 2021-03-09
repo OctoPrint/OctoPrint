@@ -385,8 +385,8 @@ def setSettings():
 
     if not isinstance(data, dict):
         return make_response(
-            "Malformed request, need settings dictionary, "
-            "got a {} instead: {!r}".format(type(data).__name__, data),
+            "Malformed request, need settings dictionary"
+            "got a {} instead".format(type(data).__name__),
             400,
         )
 

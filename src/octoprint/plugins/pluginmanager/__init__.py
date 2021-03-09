@@ -646,7 +646,7 @@ class PluginManagerPlugin(
         elif command == "uninstall":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin: %s" % plugin_name, 404)
+                return make_response("Unknown plugin", 404)
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
@@ -667,7 +667,7 @@ class PluginManagerPlugin(
         elif command == "enable" or command == "disable":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin: %s" % plugin_name, 404)
+                return make_response("Unknown plugin", 404)
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_toggle(plugin, command)

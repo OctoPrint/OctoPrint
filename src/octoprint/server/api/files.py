@@ -180,7 +180,7 @@ def readGcodeFiles():
 )
 def readGcodeFilesForOrigin(origin):
     if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-        return make_response("Unknown origin: %s" % origin, 404)
+        return make_response("Unknown origin", 404)
 
     filter = request.values.get("filter", False)
     recursive = request.values.get("recursive", "false") in valid_boolean_trues
@@ -216,7 +216,7 @@ def readGcodeFilesForOrigin(origin):
 )
 def readGcodeFile(target, filename):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-        return make_response("Unknown target: %s" % target, 404)
+        return make_response("Unknown target", 404)
 
     recursive = False
     if "recursive" in request.values:
@@ -224,7 +224,7 @@ def readGcodeFile(target, filename):
 
     file = _getFileDetails(target, filename, recursive=recursive)
     if not file:
-        return make_response("File not found on '%s': %s" % (target, filename), 404)
+        return make_response("File not found", 404)
 
     return jsonify(file)
 
@@ -450,7 +450,7 @@ def uploadGcodeFile(target):
     )
     if input_upload_name in request.values and input_upload_path in request.values:
         if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-            return make_response("Unknown target: %s" % target, 404)
+            return make_response("Unknown target", 404)
 
         upload = octoprint.filemanager.util.DiskFileWrapper(
             request.values[input_upload_name], request.values[input_upload_path]
@@ -514,9 +514,7 @@ def uploadGcodeFile(target):
             futureFilename = None
 
         if futureFilename is None:
-            return make_response(
-                "Can not upload file %s, wrong format?" % upload.filename, 415
-            )
+            return make_response("Can not upload file, wrong format?", 415)
 
         if "path" in request.values and request.values["path"]:
             # we currently only support uploads to sdcard via local, so first target is local instead of "target"
@@ -534,8 +532,7 @@ def uploadGcodeFile(target):
 
         if not printer.can_modify_file(futureFullPathInStorage, sd):
             return make_response(
-                "Trying to overwrite file that is currently being printed: %s"
-                % futureFullPath,
+                "Trying to overwrite file that is currently being printed",
                 409,
             )
 
@@ -595,15 +592,11 @@ def uploadGcodeFile(target):
         except octoprint.filemanager.storage.StorageError as e:
             if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
                 return make_response(
-                    'Could not upload the file "{}", invalid type'.format(
-                        upload.filename
-                    ),
+                    "Could not upload the file, invalid type",
                     400,
                 )
             else:
-                return make_response(
-                    'Could not upload the file "{}"'.format(upload.filename), 500
-                )
+                return make_response("Could not upload the file", 500)
 
         if octoprint.filemanager.valid_file_type(added_file, "stl"):
             filename = added_file
@@ -688,7 +681,7 @@ def uploadGcodeFile(target):
         foldername = request.values["foldername"]
 
         if target not in [FileDestinations.LOCAL]:
-            return make_response("Unknown target: %s" % target, 400)
+            return make_response("Unknown target", 400)
 
         canonPath, canonName = fileManager.canonicalize(target, foldername)
         futurePath = fileManager.sanitize_path(target, canonPath)
@@ -704,7 +697,7 @@ def uploadGcodeFile(target):
         futureFullPath = fileManager.join_path(target, futurePath, futureName)
         if octoprint.filemanager.valid_file_type(futureName):
             return make_response(
-                "Can't create a folder named %s, please try another name" % futureName,
+                "Can't create folder, please try another name",
                 409,
             )
 
@@ -714,11 +707,9 @@ def uploadGcodeFile(target):
             )
         except octoprint.filemanager.storage.StorageError as e:
             if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
-                return make_response(
-                    "Could not create folder {}, invalid directory".format(futureName)
-                )
+                return make_response("Could not create folder, invalid directory")
             else:
-                return make_response("Could not create folder {}".format(futureName))
+                return make_response("Could not create folder")
 
         location = url_for(
             ".readGcodeFile",
@@ -745,7 +736,7 @@ def uploadGcodeFile(target):
 @no_firstrun_access
 def gcodeFileCommand(filename, target):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-        return make_response("Unknown target: %s" % target, 404)
+        return make_response("Invalid target", 400)
 
     # valid file commands, dict mapping command name to mandatory parameters
     valid_commands = {
@@ -765,16 +756,12 @@ def gcodeFileCommand(filename, target):
     if command == "select":
         with Permissions.FILES_SELECT.require(403):
             if not _verifyFileExists(target, filename):
-                return make_response(
-                    "File not found on '%s': %s" % (target, filename), 404
-                )
+                return make_response("File not found", 404)
 
             # selects/loads a file
             if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
                 return make_response(
-                    "Cannot select {filename} for printing, not a machinecode file".format(
-                        **locals()
-                    ),
+                    "Cannot select file for printing, not a machinecode file",
                     415,
                 )
 
@@ -804,9 +791,7 @@ def gcodeFileCommand(filename, target):
     elif command == "slice":
         with Permissions.SLICE.require(403):
             if not _verifyFileExists(target, filename):
-                return make_response(
-                    "File not found on '%s': %s" % (target, filename), 404
-                )
+                return make_response("File not found", 404)
 
             try:
                 if "slicer" in data:
@@ -820,13 +805,11 @@ def gcodeFileCommand(filename, target):
 
                 else:
                     return make_response(
-                        "Cannot slice {filename}, no slicer available".format(**locals()),
+                        "Cannot slice file, no slicer available",
                         415,
                     )
-            except octoprint.slicing.UnknownSlicer as e:
-                return make_response(
-                    "Slicer {slicer} is not available".format(slicer=e.slicer), 400
-                )
+            except octoprint.slicing.UnknownSlicer:
+                return make_response("Slicer is not available", 400)
 
             if not any(
                 [
@@ -836,9 +819,7 @@ def gcodeFileCommand(filename, target):
                     )
                 ]
             ):
-                return make_response(
-                    "Cannot slice {filename}, not a model file".format(**locals()), 415
-                )
+                return make_response("Cannot slice file, not a model file", 415)
 
             cores = psutil.cpu_count()
             if (
@@ -848,9 +829,7 @@ def gcodeFileCommand(filename, target):
             ):
                 # slicer runs on same device as OctoPrint, slicing while printing is hence disabled
                 return make_response(
-                    "Cannot slice on {slicer} while printing on single core systems or systems of unknown core count due to performance reasons".format(
-                        **locals()
-                    ),
+                    "Cannot slice on this slicer while printing on single core systems or systems of unknown core count due to performance reasons",
                     409,
                 )
 
@@ -896,8 +875,7 @@ def gcodeFileCommand(filename, target):
                 and (printer.is_printing() or printer.is_paused())
             ):
                 make_response(
-                    "Trying to slice into file that is currently being printed: %s"
-                    % full_path,
+                    "Trying to slice into file that is currently being printed",
                     409,
                 )
 
@@ -980,11 +958,8 @@ def gcodeFileCommand(filename, target):
                     ),
                 )
             except octoprint.slicing.UnknownProfile:
-                return make_response(
-                    "Profile {profile} doesn't exist".format(**locals()), 400
-                )
+                return make_response("Profile doesn't exist", 400)
 
-            files = {}
             location = url_for(
                 ".readGcodeFile", target=target, filename=full_path, _external=True
             )
@@ -1010,9 +985,7 @@ def gcodeFileCommand(filename, target):
     elif command == "analyse":
         with Permissions.FILES_UPLOAD.require(403):
             if not _verifyFileExists(target, filename):
-                return make_response(
-                    "File not found on '%s': %s" % (target, filename), 404
-                )
+                return make_response("File not found", 404)
 
             printer_profile = None
             if "printerProfile" in data and data["printerProfile"]:
@@ -1021,24 +994,18 @@ def gcodeFileCommand(filename, target):
             if not fileManager.analyse(
                 target, filename, printer_profile_id=printer_profile
             ):
-                return make_response(
-                    "No analysis possible for {} on {}".format(filename, target), 400
-                )
+                return make_response("No analysis possible", 400)
 
     elif command == "copy" or command == "move":
         with Permissions.FILES_UPLOAD.require(403):
             # Copy and move are only possible on local storage
             if target not in [FileDestinations.LOCAL]:
-                return make_response(
-                    "Unsupported target for {}: {}".format(command, target), 400
-                )
+                return make_response("Unsupported target for {}".format(command), 400)
 
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
                 target, filename
             ):
-                return make_response(
-                    "File or folder not found on {}: {}".format(target, filename), 404
-                )
+                return make_response("File or folder not found", 404)
 
             path, name = fileManager.split_path(target, filename)
 
@@ -1060,9 +1027,7 @@ def gcodeFileCommand(filename, target):
                 target, destination
             ):
                 return make_response(
-                    "File or folder does already exist on {}: {}".format(
-                        target, destination
-                    ),
+                    "File or folder does already exist",
                     409,
                 )
 
@@ -1071,9 +1036,7 @@ def gcodeFileCommand(filename, target):
 
             if not (is_file or is_folder):
                 return make_response(
-                    "{} on {} is neither file or folder, can't {}".format(
-                        filename, target, command
-                    ),
+                    "Neither file nor folder, can't {}",
                     400,
                 )
 
@@ -1083,9 +1046,7 @@ def gcodeFileCommand(filename, target):
                     target, destination
                 ):
                     return make_response(
-                        "File or folder does already exist on {}: {}".format(
-                            target, destination
-                        ),
+                        "File or folder does already exist",
                         409,
                     )
 
@@ -1098,9 +1059,7 @@ def gcodeFileCommand(filename, target):
                 with Permissions.FILES_DELETE.require(403):
                     if _isBusy(target, filename):
                         return make_response(
-                            "Trying to move a file or folder that is currently in use: {}".format(
-                                filename
-                            ),
+                            "Trying to move a file or folder that is currently in use",
                             409,
                         )
 
@@ -1110,9 +1069,7 @@ def gcodeFileCommand(filename, target):
                         or _verifyFolderExists(target, destination)
                     ) and sanitized_destination != filename:
                         return make_response(
-                            "File or folder does already exist on {}: {}".format(
-                                target, destination
-                            ),
+                            "File or folder does already exist",
                             409,
                         )
 
@@ -1158,18 +1115,14 @@ def deleteGcodeFile(filename, target):
     if not _verifyFileExists(target, filename) and not _verifyFolderExists(
         target, filename
     ):
-        return make_response(
-            "File/Folder not found on '%s': %s" % (target, filename), 404
-        )
+        return make_response("File/folder not found", 404)
 
     if _verifyFileExists(target, filename):
         if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-            return make_response("Unknown target: %s" % target, 400)
+            return make_response("Unknown target", 400)
 
         if _isBusy(target, filename):
-            return make_response(
-                "Trying to delete a file that is currently in use: %s" % filename, 409
-            )
+            return make_response("Trying to delete a file that is currently in use", 409)
 
         # deselect the file if it's currently selected
         currentOrigin, currentPath = _getCurrentFile()
@@ -1188,12 +1141,11 @@ def deleteGcodeFile(filename, target):
 
     elif _verifyFolderExists(target, filename):
         if target not in [FileDestinations.LOCAL]:
-            return make_response("Unknown target: %s" % target, 400)
+            return make_response("Unknown target", 400)
 
         if _isBusy(target, filename):
             return make_response(
-                "Trying to delete a folder that contains a file that is currently in use: %s"
-                % filename,
+                "Trying to delete a folder that contains a file that is currently in use",
                 409,
             )
 

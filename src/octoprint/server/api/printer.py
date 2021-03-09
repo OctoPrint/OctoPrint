@@ -96,9 +96,9 @@ def printerToolCommand():
     if command == "select":
         tool = data["tool"]
         if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
-            return make_response("Invalid tool: %s" % tool, 400)
+            return make_response("Invalid tool", 400)
         if not tool.startswith("tool"):
-            return make_response("Invalid tool for selection: %s" % tool, 400)
+            return make_response("Invalid tool for selection", 400)
 
         printer.change_tool(tool, tags=tags)
 
@@ -110,11 +110,9 @@ def printerToolCommand():
         validated_values = {}
         for tool, value in targets.items():
             if re.match(validation_regex, tool) is None:
-                return make_response(
-                    "Invalid target for setting temperature: %s" % tool, 400
-                )
+                return make_response("Invalid target for setting temperature", 400)
             if not isinstance(value, (int, long, float)):
-                return make_response("Not a number for %s: %r" % (tool, value), 400)
+                return make_response("Target is not a number", 400)
             validated_values[tool] = value
 
         # perform the actual temperature commands
@@ -129,15 +127,11 @@ def printerToolCommand():
         validated_values = {}
         for tool, value in offsets.items():
             if re.match(validation_regex, tool) is None:
-                return make_response(
-                    "Invalid target for setting temperature: %s" % tool, 400
-                )
+                return make_response("Invalid target for setting temperature offset", 400)
             if not isinstance(value, (int, long, float)):
-                return make_response("Not a number for %s: %r" % (tool, value), 400)
+                return make_response("Offset is not a number", 400)
             if not -50 <= value <= 50:
-                return make_response(
-                    "Offset %s not in range [-50, 50]: %f" % (tool, value), 400
-                )
+                return make_response("Offset not in range [-50, 50]", 400)
             validated_values[tool] = value
 
         # set the offsets
@@ -152,17 +146,17 @@ def printerToolCommand():
         amount = data["amount"]
         speed = data.get("speed", None)
         if not isinstance(amount, (int, long, float)):
-            return make_response("Not a number for extrusion amount: %r" % amount, 400)
+            return make_response("Extrusion amount is not a number", 400)
         printer.extrude(amount, speed=speed, tags=tags)
 
     elif command == "flowrate":
         factor = data["factor"]
         if not isinstance(factor, (int, long, float)):
-            return make_response("Not a number for flow rate: %r" % factor, 400)
+            return make_response("Flow rate is not a number", 400)
         try:
             printer.flow_rate(factor, tags=tags)
-        except ValueError as e:
-            return make_response("Invalid value for flow rate: %s" % str(e), 400)
+        except ValueError:
+            return make_response("Invalid value for flow rate", 400)
 
     return NO_CONTENT
 
@@ -203,7 +197,7 @@ def printerBedCommand():
 
         # make sure the target is a number
         if not isinstance(target, (int, long, float)):
-            return make_response("Not a number: %r" % target, 400)
+            return make_response("Target is not a number", 400)
 
         # perform the actual temperature command
         printer.set_temperature("bed", target, tags=tags)
@@ -214,9 +208,9 @@ def printerBedCommand():
 
         # make sure the offset is valid
         if not isinstance(offset, (int, long, float)):
-            return make_response("Not a number: %r" % offset, 400)
+            return make_response("Offset is not a number", 400)
         if not -50 <= offset <= 50:
-            return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+            return make_response("Offset is not in range [-50, 50]", 400)
 
         # set the offsets
         printer.set_temperature_offset({"bed": offset})
@@ -267,7 +261,7 @@ def printerChamberCommand():
 
         # make sure the target is a number
         if not isinstance(target, (int, long, float)):
-            return make_response("Not a number: %r" % target, 400)
+            return make_response("Target is not a number", 400)
 
         # perform the actual temperature command
         printer.set_temperature("chamber", target, tags=tags)
@@ -278,9 +272,9 @@ def printerChamberCommand():
 
         # make sure the offset is valid
         if not isinstance(offset, (int, long, float)):
-            return make_response("Not a number: %r" % offset, 400)
+            return make_response("Offset is not a number", 400)
         if not -50 <= offset <= 50:
-            return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+            return make_response("Offset is not in range [-50, 50]", 400)
 
         # set the offsets
         printer.set_temperature_offset({"chamber": offset})
@@ -332,9 +326,7 @@ def printerPrintheadCommand():
             if axis in data:
                 value = data[axis]
                 if not isinstance(value, (int, long, float)):
-                    return make_response(
-                        "Not a number for axis %s: %r" % (axis, value), 400
-                    )
+                    return make_response("Axis value is not a number", 400)
                 validated_values[axis] = value
 
         absolute = "absolute" in data and data["absolute"] in valid_boolean_trues
@@ -349,7 +341,7 @@ def printerPrintheadCommand():
         axes = data["axes"]
         for axis in axes:
             if axis not in valid_axes:
-                return make_response("Invalid axis: %s" % axis, 400)
+                return make_response("Invalid axis", 400)
             validated_values.append(axis)
 
         # execute the home command
@@ -358,11 +350,11 @@ def printerPrintheadCommand():
     elif command == "feedrate":
         factor = data["factor"]
         if not isinstance(factor, (int, long, float)):
-            return make_response("Not a number for feed rate: %r" % factor, 400)
+            return make_response("Feed rate is not a number", 400)
         try:
             printer.feed_rate(factor, tags=tags)
-        except ValueError as e:
-            return make_response("Invalid value for feed rate: %s" % str(e), 400)
+        except ValueError:
+            return make_response("Invalid value for feed rate", 400)
 
     return NO_CONTENT
 

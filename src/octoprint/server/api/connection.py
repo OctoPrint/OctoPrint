@@ -49,15 +49,15 @@ def connectionCommand():
         if "port" in data:
             port = data["port"]
             if port not in connection_options["ports"] and port != "AUTO":
-                return make_response("Invalid port: %s" % port, 400)
+                return make_response("Invalid port", 400)
         if "baudrate" in data:
             baudrate = data["baudrate"]
             if baudrate not in connection_options["baudrates"] and baudrate != 0:
-                return make_response("Invalid baudrate: %d" % baudrate, 400)
+                return make_response("Invalid baudrate", 400)
         if "printerProfile" in data:
             printerProfile = data["printerProfile"]
             if not printerProfileManager.exists(printerProfile):
-                return make_response("Invalid printer profile: %s" % printerProfile, 400)
+                return make_response("Invalid printer profile", 400)
         if "save" in data and data["save"]:
             settings().set(["serial", "port"], port)
             settings().setInt(["serial", "baudrate"], baudrate)

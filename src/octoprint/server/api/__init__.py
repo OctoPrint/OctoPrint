@@ -84,9 +84,7 @@ def pluginData(name):
 
     if len(api_plugins) > 1:
         return make_response(
-            "More than one api provider registered for {name}, can't proceed".format(
-                name=name
-            ),
+            "More than one api provider registered, can't proceed",
             500,
         )
 
@@ -124,9 +122,7 @@ def pluginCommand(name):
 
     if len(api_plugins) > 1:
         return make_response(
-            "More than one api provider registered for {name}, can't proceed".format(
-                name=name
-            ),
+            "More than one api provider registered, can't proceed",
             500,
         )
 
@@ -589,9 +585,7 @@ def _test_url(data):
             timeout = float(data["timeout"])
         except Exception:
             return make_response(
-                "{!r} is not a valid value for timeout (must be int or float)".format(
-                    data["timeout"]
-                ),
+                "Not a valid value for timeout (must be int or float)",
                 400,
             )
 
@@ -704,9 +698,7 @@ def _test_server(data):
     try:
         port = int(data["port"])
     except Exception:
-        return make_response(
-            "{!r} is not a valid value for port (must be int)".format(data["port"]), 400
-        )
+        return make_response("Not a valid value for port (must be int)", 400)
 
     timeout = 3.05
     if "timeout" in data:
@@ -714,16 +706,14 @@ def _test_server(data):
             timeout = float(data["timeout"])
         except Exception:
             return make_response(
-                "{!r} is not a valid value for timeout (must be int or float)".format(
-                    data["timeout"]
-                ),
+                "Not a valid value for timeout (must be int or float)",
                 400,
             )
 
     protocol = data.get("protocol", "tcp")
     if protocol not in ("tcp", "udp"):
         return make_response(
-            "{!r} is not a valid value for protocol, must be tcp or udp".format(protocol),
+            "Not a valid value for protocol, must be tcp or udp",
             400,
         )
 

@@ -107,9 +107,7 @@ def printerProfilesAdd():
         return make_response("Profile is invalid", 400)
     except CouldNotOverwriteError:
         return make_response(
-            "Profile {} already exists and overwriting was not allowed".format(
-                profile["id"]
-            ),
+            "Profile already exists and overwriting was not allowed",
             400,
         )
     except Exception as e:
@@ -124,7 +122,7 @@ def printerProfilesAdd():
 def printerProfilesGet(identifier):
     profile = printerProfileManager.get(identifier)
     if profile is None:
-        return make_response("Unknown profile: %s" % identifier, 404)
+        return make_response("Unknown profile", 404)
     else:
         return jsonify(_convert_profile(profile))
 
@@ -135,13 +133,11 @@ def printerProfilesGet(identifier):
 def printerProfilesDelete(identifier):
     current_profile = printerProfileManager.get_current()
     if current_profile and current_profile["id"] == identifier:
-        return make_response(
-            "Cannot delete currently selected profile: {}".format(identifier), 409
-        )
+        return make_response("Cannot delete currently selected profile", 409)
 
     default_profile = printerProfileManager.get_default()
     if default_profile and default_profile["id"] == identifier:
-        return make_response("Cannot delete default profile: {}".format(identifier), 409)
+        return make_response("Cannot delete default profile", 409)
 
     printerProfileManager.remove(identifier, trigger_event=True)
     return NO_CONTENT

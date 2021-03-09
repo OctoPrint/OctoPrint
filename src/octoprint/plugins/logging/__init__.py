@@ -94,7 +94,7 @@ class LoggingPlugin(
             or is_hidden_path(secure)
             or not filename.endswith(".log")
         ):
-            return make_response("File not found: %s" % filename, 404)
+            return make_response("File not found", 404)
 
         os.remove(secure)
 

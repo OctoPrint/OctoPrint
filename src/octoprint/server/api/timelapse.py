@@ -231,68 +231,56 @@ def setTimelapseConfig():
             try:
                 postRoll = int(data["postRoll"])
             except ValueError:
-                return make_response(
-                    "Invalid value for postRoll: %r" % data["postRoll"], 400
-                )
+                return make_response("Invalid value for postRoll", 400)
             else:
                 if postRoll >= 0:
                     config["postRoll"] = postRoll
                 else:
-                    return make_response("Invalid value for postRoll: %d" % postRoll, 400)
+                    return make_response("Invalid value for postRoll", 400)
 
         if "fps" in data:
             try:
                 fps = int(data["fps"])
             except ValueError:
-                return make_response("Invalid value for fps: %r" % data["fps"], 400)
+                return make_response("Invalid value for fps", 400)
             else:
                 if fps > 0:
                     config["fps"] = fps
                 else:
-                    return make_response("Invalid value for fps: %d" % fps, 400)
+                    return make_response("Invalid value for fps", 400)
 
         if "interval" in data:
             try:
                 interval = int(data["interval"])
             except ValueError:
-                return make_response(
-                    "Invalid value for interval: %r" % data["interval"], 400
-                )
+                return make_response("Invalid value for interval", 400)
             else:
                 if interval > 0:
                     config["options"]["interval"] = interval
                 else:
-                    return make_response("Invalid value for interval: %d" % interval, 400)
+                    return make_response("Invalid value for interval", 400)
 
         if "retractionZHop" in data:
             try:
                 retractionZHop = float(data["retractionZHop"])
             except ValueError:
-                return make_response(
-                    "Invalid value for retraction Z-Hop: %r" % data["retractionZHop"], 400
-                )
+                return make_response("Invalid value for retraction z-hop", 400)
             else:
                 if retractionZHop >= 0:
                     config["options"]["retractionZHop"] = retractionZHop
                 else:
-                    return make_response(
-                        "Invalid value for retraction Z-Hop: %f" % retractionZHop, 400
-                    )
+                    return make_response("Invalid value for retraction z-hop", 400)
 
         if "minDelay" in data:
             try:
                 minDelay = float(data["minDelay"])
             except ValueError:
-                return make_response(
-                    "Invalid value for minimum delay: %r" % data["minDelay"], 400
-                )
+                return make_response("Invalid value for minimum delay", 400)
             else:
                 if minDelay > 0:
                     config["options"]["minDelay"] = minDelay
                 else:
-                    return make_response(
-                        "Invalid value for minimum delay: %f" % minDelay, 400
-                    )
+                    return make_response("Invalid value for minimum delay", 400)
 
         if (
             admin_permission.can()

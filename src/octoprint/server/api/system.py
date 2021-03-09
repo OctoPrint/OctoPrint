@@ -111,7 +111,7 @@ def retrieveSystemCommandsForSource(source):
     elif source == "custom":
         specs = _get_custom_command_specs()
     else:
-        return make_response("Unknown system command source: {}".format(source), 404)
+        return make_response("Unknown system command source", 404)
 
     return jsonify(_to_client_specs(specs))
 
@@ -127,13 +127,11 @@ def executeSystemCommand(source, command):
 
     command_spec = _get_command_spec(source, command)
     if not command_spec:
-        return make_response("Command {}:{} not found".format(source, command), 404)
+        return make_response("Command not found", 404)
 
     if "command" not in command_spec:
         return make_response(
-            "Command {}:{} does not define a command to execute, can't proceed".format(
-                source, command
-            ),
+            "Command does not define a command to execute, can't proceed",
             500,
         )
 
