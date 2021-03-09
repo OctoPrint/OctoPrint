@@ -19,6 +19,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
+from octoprint.util import is_hidden_path
 
 try:
     from os import scandir
@@ -88,7 +89,11 @@ class LoggingPlugin(
     @Permissions.PLUGIN_LOGGING_MANAGE.require(403)
     def delete_log(self, filename):
         secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
-        if not os.path.exists(secure):
+        if (
+            not os.path.exists(secure)
+            or is_hidden_path(secure)
+            or not filename.endswith(".log")
+        ):
             return make_response("File not found: %s" % filename, 404)
 
         os.remove(secure)
@@ -142,6 +147,12 @@ class LoggingPlugin(
         files = []
         basedir = settings().getBaseFolder("logs", check_writable=False)
         for entry in scandir(basedir):
+            if is_hidden_path(entry.path) or not entry.name.endswith(".log"):
+                continue
+
+            if not entry.is_file():
+                continue
+
             files.append(
                 {
                     "name": entry.name,

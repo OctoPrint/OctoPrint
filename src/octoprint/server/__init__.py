@@ -747,10 +747,13 @@ class Server(object):
                 lambda path: not octoprint.util.is_hidden_path(path), status_code=404
             )
         }
+
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
+            path
+        ) and octoprint.timelapse.valid_timelapse(path)
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and octoprint.timelapse.valid_timelapse(path),
+                valid_timelapse,
                 status_code=404,
             )
         }
@@ -761,12 +764,23 @@ class Server(object):
                 status_code=400,
             )
         }
+
+        valid_log = (
+            lambda path: not octoprint.util.is_hidden_path(path)
+            and path.endswith(".log")
+            and os.path.realpath(os.path.abspath(path)).startswith(
+                settings().getBaseFolder("logs")
+            )
+        )
+        log_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                valid_log,
+                status_code=404,
+            )
+        }
         logs_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and os.path.realpath(os.path.abspath(path)).startswith(
-                    settings().getBaseFolder("logs")
-                ),
+                valid_log,
                 status_code=400,
             )
         }
@@ -841,6 +855,7 @@ class Server(object):
                     },
                     download_handler_kwargs,
                     log_permission_validator,
+                    log_path_validator,
                 ),
             ),
             # zipped log file bundles
