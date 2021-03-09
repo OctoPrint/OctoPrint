@@ -273,6 +273,27 @@ $(function () {
             );
         };
 
+        self.enableBulkDownload = ko.pureComputed(function () {
+            return self.markedForDeletion().length && !self.bulkDownloadUrlTooLong();
+        });
+
+        self.bulkDownloadUrlTooLong = ko.pureComputed(function () {
+            return BASEURL.length + self.bulkDownloadUrl().length >= 2000;
+        });
+
+        self.bulkDownloadButtonUrl = ko.pureComputed(function () {
+            var files = self.markedForDeletion();
+            if (!files.length || self.bulkDownloadUrlTooLong()) {
+                return "javascript:void(0)";
+            }
+            return self.bulkDownloadUrl();
+        });
+
+        self.bulkDownloadUrl = function () {
+            var files = self.markedForDeletion();
+            return OctoPrint.plugins.logging.bulkDownloadUrl(files);
+        };
+
         self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = self.onSettingsShown = function () {
             if (
                 !self.loginState.hasPermission(
