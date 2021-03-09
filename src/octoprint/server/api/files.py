@@ -218,6 +218,9 @@ def readGcodeFile(target, filename):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
         return make_response("Unknown target", 404)
 
+    if filename != fileManager.sanitize(target, filename):
+        return make_response("File not found", 404)
+
     recursive = False
     if "recursive" in request.values:
         recursive = request.values["recursive"] in valid_boolean_trues
@@ -736,7 +739,10 @@ def uploadGcodeFile(target):
 @no_firstrun_access
 def gcodeFileCommand(filename, target):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-        return make_response("Invalid target", 400)
+        return make_response("Unknown target", 404)
+
+    if filename != fileManager.sanitize(target, filename):
+        return make_response("File not found", 404)
 
     # valid file commands, dict mapping command name to mandatory parameters
     valid_commands = {
@@ -1112,15 +1118,18 @@ def gcodeFileCommand(filename, target):
 @no_firstrun_access
 @Permissions.FILES_DELETE.require(403)
 def deleteGcodeFile(filename, target):
+    if filename != fileManager.sanitize(target, filename):
+        return make_response("File not found", 400)
+
     if not _verifyFileExists(target, filename) and not _verifyFolderExists(
         target, filename
     ):
-        return make_response("File/folder not found", 404)
+        return make_response("File not found", 404)
+
+    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+        return make_response("Unknown target", 404)
 
     if _verifyFileExists(target, filename):
-        if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-            return make_response("Unknown target", 400)
-
         if _isBusy(target, filename):
             return make_response("Trying to delete a file that is currently in use", 409)
 
@@ -1140,9 +1149,6 @@ def deleteGcodeFile(filename, target):
             fileManager.remove_file(target, filename)
 
     elif _verifyFolderExists(target, filename):
-        if target not in [FileDestinations.LOCAL]:
-            return make_response("Unknown target", 400)
-
         if _isBusy(target, filename):
             return make_response(
                 "Trying to delete a folder that contains a file that is currently in use",
