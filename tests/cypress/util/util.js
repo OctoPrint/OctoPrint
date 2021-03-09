@@ -5,7 +5,7 @@ export const prepare_server = () => {
     cy.route("GET", "/api/settings").as("settings");
     cy.route("GET", "/api/files?recursive=true").as("files");
     cy.route("GET", "/plugin/softwareupdate/check").as("softwareupdate");
-    cy.route("GET", "/api/plugin/pluginmanager").as("pluginmanager");
+    cy.route("GET", "/plugin/pluginmanager/plugins").as("pluginmanager");
     cy.route("POST", "/api/connection").as("connectionCommand");
     cy.route("GET", "/api/connection").as("connectionDetails");
 };
