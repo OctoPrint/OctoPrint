@@ -42,6 +42,7 @@ from flask_login import (  # noqa: F401
 from past.builtins import basestring, unicode
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
+from werkzeug.exceptions import HTTPException
 
 import octoprint.util
 import octoprint.util.net
@@ -65,8 +66,8 @@ except ImportError:
     fcntl = None
 
 SUCCESS = {}
-NO_CONTENT = ("", 204)
-NOT_MODIFIED = ("Not Modified", 304)
+NO_CONTENT = ("", 204, {"Content-Type": "text/plain"})
+NOT_MODIFIED = ("Not Modified", 304, {"Content-Type": "text/plain"})
 
 app = Flask("octoprint")
 
@@ -1733,9 +1734,11 @@ class Server(object):
         # do not remove or the index view won't be found
         import octoprint.server.views  # noqa: F401
         from octoprint.server.api import api
+        from octoprint.server.util.flask import make_api_error
 
         blueprints = OrderedDict()
         blueprints["/api"] = api
+        json_errors = ["/api"]
 
         # also register any blueprints defined in BlueprintPlugins
         blueprints.update(self._prepare_blueprint_plugins())
@@ -1749,6 +1752,13 @@ class Server(object):
         # register everything with the system
         for url_prefix, blueprint in blueprints.items():
             app.register_blueprint(blueprint, url_prefix=url_prefix)
+
+        @app.errorhandler(HTTPException)
+        def _handle_api_error(ex):
+            if any(map(lambda x: request.path.startswith(x), json_errors)):
+                return make_api_error(ex.description, ex.code)
+            else:
+                return ex
 
     def _prepare_blueprint_plugins(self):
         blueprints = OrderedDict()

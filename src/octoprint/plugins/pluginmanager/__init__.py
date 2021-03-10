@@ -21,7 +21,7 @@ import filetype
 import pkg_resources
 import requests
 import sarge
-from flask import Response, abort, jsonify, make_response, request
+from flask import Response, abort, jsonify, request
 from flask_babel import gettext
 from past.builtins import basestring
 
@@ -367,7 +367,7 @@ class PluginManagerPlugin(
             input_upload_path not in flask.request.values
             or input_upload_name not in flask.request.values
         ):
-            return flask.make_response("No file included", 400)
+            abort(400, description="No file included")
         upload_path = flask.request.values[input_upload_path]
         upload_name = flask.request.values[input_upload_name]
 
@@ -378,9 +378,9 @@ class PluginManagerPlugin(
             )
         )
         if not len(exts):
-            return flask.make_response(
-                "File doesn't have a valid extension for a plugin archive or a single file plugin",
+            abort(
                 400,
+                description="File doesn't have a valid extension for a plugin archive or a single file plugin",
             )
 
         ext = exts[0]
@@ -407,7 +407,7 @@ class PluginManagerPlugin(
 
         with self._install_lock:
             if self._install_task is not None:
-                return make_response("There's already a plugin being installed", 409)
+                abort(409, description="There's already a plugin being installed")
 
             self._install_task = threading.Thread(
                 target=perform_install,
@@ -506,7 +506,7 @@ class PluginManagerPlugin(
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
     def retrieve_plugin_orphans(self):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
+            abort(403)
 
         refresh = request.values.get("refresh", "false") in valid_boolean_trues
         if refresh:
@@ -549,7 +549,7 @@ class PluginManagerPlugin(
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
     def retrieve_plugin_repository(self):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
+            abort(403)
 
         refresh = request.values.get("refresh", "false") in valid_boolean_trues
         if refresh or not self._is_repository_cache_valid():
@@ -612,21 +612,21 @@ class PluginManagerPlugin(
 
     def on_api_command(self, command, data):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
+            abort(403)
 
         if self._printer.is_printing() or self._printer.is_paused():
             # do not update while a print job is running
-            return make_response("Printer is currently printing or paused", 409)
+            abort(409, description="Printer is currently printing or paused")
 
         if command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
-                return make_response("Insufficient rights", 403)
+                abort(403)
             url = data["url"]
             plugin_name = data["plugin"] if "plugin" in data else None
 
             with self._install_lock:
                 if self._install_task is not None:
-                    return make_response("There's already a plugin being installed", 409)
+                    abort(409, description="There's already a plugin being installed")
 
                 self._install_task = threading.Thread(
                     target=self.command_install,
@@ -646,7 +646,7 @@ class PluginManagerPlugin(
         elif command == "uninstall":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin", 404)
+                abort(404, description="Unknown plugin")
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
@@ -667,7 +667,7 @@ class PluginManagerPlugin(
         elif command == "enable" or command == "disable":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin", 404)
+                abort(404, description="Unknown plugin")
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_toggle(plugin, command)
@@ -679,7 +679,7 @@ class PluginManagerPlugin(
     )
     def on_api_get(self, r):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
+            abort(403)
 
         refresh_repository = (
             request.values.get("refresh_repository", "false") in valid_boolean_trues
@@ -1192,15 +1192,15 @@ class PluginManagerPlugin(
 
     def command_uninstall(self, plugin, cleanup=False):
         if plugin.key == "pluginmanager":
-            return make_response("Can't uninstall Plugin Manager", 403)
+            abort(403, description="Can't uninstall Plugin Manager")
 
         if not plugin.managable:
-            return make_response(
-                "Plugin is not managable and hence cannot be uninstalled", 403
+            abort(
+                403, description="Plugin is not managable and hence cannot be uninstalled"
             )
 
         if plugin.bundled:
-            return make_response("Bundled plugins cannot be uninstalled", 403)
+            abort(403, description="Bundled plugins cannot be uninstalled")
 
         if plugin.origin is None:
             self._logger.warning(
@@ -1208,7 +1208,7 @@ class PluginManagerPlugin(
                     **locals()
                 )
             )
-            return make_response("Could not uninstall plugin, its origin is unknown")
+            abort(500, description="Could not uninstall plugin, its origin is unknown")
 
         if plugin.origin.type == "entry_point":
             # plugin is installed through entry point, need to use pip to uninstall it
@@ -1221,9 +1221,9 @@ class PluginManagerPlugin(
                 self._call_pip(pip_args)
             except Exception:
                 self._logger.exception("Could not uninstall plugin via pip")
-                return make_response(
-                    "Could not uninstall plugin via pip, see the log for more details",
+                abort(
                     500,
+                    description="Could not uninstall plugin via pip, see the log for more details",
                 )
 
         elif plugin.origin.type == "folder":
@@ -1258,7 +1258,7 @@ class PluginManagerPlugin(
                     **locals()
                 )
             )
-            return make_response("Could not uninstall plugin, its origin is unknown")
+            abort(500, description="Could not uninstall plugin, its origin is unknown")
 
         needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin) or cleanup
         needs_refresh = plugin.implementation and isinstance(
@@ -1446,7 +1446,7 @@ class PluginManagerPlugin(
 
     def command_toggle(self, plugin, command):
         if plugin.key == "pluginmanager" or (plugin.hidden and plugin.bundled):
-            return make_response("Can't enable/disable Plugin Manager", 400)
+            abort(400, description="Can't enable/disable Plugin Manager")
 
         pending = (command == "disable" and plugin.key in self._pending_enable) or (
             command == "enable" and plugin.key in self._pending_disable

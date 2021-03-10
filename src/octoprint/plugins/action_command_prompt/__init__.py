@@ -126,10 +126,10 @@ class ActionCommandPromptPlugin(
     def on_api_command(self, command, data):
         if command == "select":
             if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
-                return flask.abort(403, "Insufficient permissions")
+                return flask.abort(403)
 
             if self._prompt is None:
-                return flask.abort(409, "No active prompt")
+                return flask.abort(409, description="No active prompt")
 
             choice = data["choice"]
             if not isinstance(choice, int) or not self._prompt.validate_choice(choice):
@@ -141,7 +141,7 @@ class ActionCommandPromptPlugin(
 
     def on_api_get(self, request):
         if not Permissions.PLUGIN_ACTION_COMMAND_PROMPT_INTERACT.can():
-            return flask.abort(403, "Insufficient permissions")
+            return flask.abort(403)
         if self._prompt is None:
             return flask.jsonify()
         else:

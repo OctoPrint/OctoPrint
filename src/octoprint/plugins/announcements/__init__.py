@@ -289,7 +289,7 @@ class AnnouncementPlugin(
 
         elif command == "toggle":
             if not Permissions.PLUGIN_ANNOUNCEMENTS_MANAGE.can():
-                return flask.make_response("Insufficient rights", 403)
+                flask.abort(403)
             self._toggle(channel)
 
         return NO_CONTENT

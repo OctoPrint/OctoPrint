@@ -1279,7 +1279,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
         for you. You may also return regular responses as you would return from any Flask view here though, e.g.
-        ``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+        ``return flask.jsonify(result="some json result")`` or ``flask.abort(404)``.
 
         :param string command: the command with which the resource was called
         :param dict data:      the full request body of the POST request parsed from JSON into a Python dictionary
@@ -1297,7 +1297,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
         for you. You may also return regular responses as you would return from any Flask view here though, e.g.
-        ``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+        ``return flask.jsonify(result="some json result")`` or ``flask.abort(404)``.
 
         :param request: the Flask request object
         :return: ``None`` in which case OctoPrint will generate a ``204 No content`` response with empty body, or optionally
@@ -1327,7 +1327,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
            @octoprint.plugin.BlueprintPlugin.route("/echo", methods=["GET"])
            def myEcho(self):
                if not "text" in flask.request.values:
-                   return flask.make_response("Expected a text to echo back.", 400)
+                   abort(400, description="Expected a text to echo back.")
                return flask.request.values["text"]
 
        __plugin_implementation__ = MyBlueprintPlugin()

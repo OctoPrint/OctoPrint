@@ -8,7 +8,7 @@ import io
 import os
 
 import yaml
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
@@ -94,7 +94,7 @@ class LoggingPlugin(
             or is_hidden_path(secure)
             or not filename.endswith(".log")
         ):
-            return make_response("File not found", 404)
+            abort(404)
 
         os.remove(secure)
 
@@ -119,15 +119,15 @@ class LoggingPlugin(
     @Permissions.PLUGIN_LOGGING_MANAGE.require(403)
     def set_logging_levels_api(self):
         if "application/json" not in request.headers["Content-Type"]:
-            return make_response("Expected content-type JSON", 400)
+            abort(400, description="Expected content-type JSON")
 
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON body in request", 400)
+            abort(400, description="Malformed JSON body in request")
 
         if not isinstance(json_data, dict):
-            return make_response("Invalid log level configuration", 400)
+            abort(400, description="Invalid log level configuration")
 
         # TODO validate further
 

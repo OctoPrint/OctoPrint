@@ -10,7 +10,7 @@ import threading
 
 import psutil
 import sarge
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 
 from octoprint.access.permissions import Permissions
@@ -87,7 +87,7 @@ def performSystemAction():
         data = request.values
 
     if "action" not in data:
-        return make_response("action to perform is not defined", 400)
+        abort(400, description="action is missing")
 
     return executeSystemCommand("custom", data["action"])
 
@@ -111,7 +111,7 @@ def retrieveSystemCommandsForSource(source):
     elif source == "custom":
         specs = _get_custom_command_specs()
     else:
-        return make_response("Unknown system command source", 404)
+        abort(404)
 
     return jsonify(_to_client_specs(specs))
 
@@ -123,16 +123,15 @@ def executeSystemCommand(source, command):
     logger = logging.getLogger(__name__)
 
     if command == "divider":
-        return make_response("Dividers cannot be executed", 400)
+        abort(400, description="Dividers cannot be executed")
 
     command_spec = _get_command_spec(source, command)
     if not command_spec:
-        return make_response("Command not found", 404)
+        abort(404)
 
     if "command" not in command_spec:
-        return make_response(
-            "Command does not define a command to execute, can't proceed",
-            500,
+        abort(
+            500, description="Command does not define a command to execute, can't proceed"
         )
 
     do_async = command_spec.get("async", False)
@@ -155,7 +154,7 @@ def executeSystemCommand(source, command):
         if not do_ignore:
             error = 'Command "before" for {}:{} failed: {}'.format(source, command, e)
             logger.warning(error)
-            return make_response(error, 500)
+            abort(500, description=error)
 
     try:
 
@@ -192,13 +191,13 @@ def executeSystemCommand(source, command):
             try:
                 execute()
             except CommandFailed as exc:
-                return make_response(exc.error, 500)
+                abort(500, exc.error)
 
     except Exception as e:
         if not do_ignore:
             error = "Command for {}:{} failed: {}".format(source, command, e)
             logger.warning(error)
-            return make_response(error, 500)
+            abort(500, error)
 
     return NO_CONTENT
 
