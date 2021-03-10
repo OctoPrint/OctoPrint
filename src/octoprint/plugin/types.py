@@ -1477,8 +1477,21 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         If you want your blueprint's endpoints to have specific permissions, return ``False`` for this and do your
         permissions checks explicitly.
         """
-
         return True
+
+    # noinspection PyMethodMayBeStatic
+    def get_blueprint_api_prefixes(self):
+        """
+        Return all prefixes of your endpoint that are an API that should be containing JSON only.
+
+        Anything that matches this will generate JSON error messages in case of flask.abort
+        calls, instead of the default HTML ones.
+
+        Defaults to all endpoints under the blueprint. Limit this further as needed. E.g.,
+        if you only want your endpoints /foo, /foo/1 and /bar to be declared as API,
+        return ``["/foo", "/bar"]``. A match will be determined via startswith.
+        """
+        return [""]
 
 
 class SettingsPlugin(OctoPrintPlugin):

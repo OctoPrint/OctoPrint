@@ -1741,7 +1741,12 @@ class Server(object):
         json_errors = ["/api"]
 
         # also register any blueprints defined in BlueprintPlugins
-        blueprints.update(self._prepare_blueprint_plugins())
+        (
+            blueprint_from_plugins,
+            api_prefixes_from_plugins,
+        ) = self._prepare_blueprint_plugins()
+        blueprints.update(blueprint_from_plugins)
+        json_errors += api_prefixes_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
         blueprints.update(self._prepare_asset_plugins())
@@ -1762,6 +1767,7 @@ class Server(object):
 
     def _prepare_blueprint_plugins(self):
         blueprints = OrderedDict()
+        api_prefixes = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
@@ -1769,6 +1775,9 @@ class Server(object):
         for plugin in blueprint_plugins:
             try:
                 blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+                api_prefixes += map(
+                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+                )
                 blueprints[prefix] = blueprint
             except Exception:
                 self._logger.exception(
@@ -1778,7 +1787,7 @@ class Server(object):
                 )
                 continue
 
-        return blueprints
+        return blueprints, api_prefixes
 
     def _prepare_asset_plugins(self):
         blueprints = OrderedDict()
